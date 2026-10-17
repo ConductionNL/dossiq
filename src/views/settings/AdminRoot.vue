@@ -2,9 +2,93 @@
 	<CnAdminSettingsShell
 		appId="dossiq"
 		appName="Dossiq"
-		:title="t('dossiq', 'Dossiq settings')"
+		look="board"
+		:title="pageTitle"
+		docUrl="https://dossiq.conduction.nl/docs/intro"
+		:breadcrumbs="breadcrumbs"
+		:breadcrumbNote="breadcrumbNote"
+		:tabs="adminTabs"
+		tabStorageKey="dossiq.admin.activeTab"
+		tabsVariant="underline"
+		:compact="true"
+		:sectionColumns="1"
+		:showSetup="true"
+		:setupSteps="setupSteps"
+		lazyTabs
+		@tabChange="onTabChange"
 		@reimported="onReimported">
 		<Settings />
+
+		<CnSettingsSection
+			id="section-menu-structure"
+			:name="t('dossiq', 'Menu structure')"
+			:description="
+				t('dossiq', 'Choose how much the menu shows. Simple is the default.')
+			">
+			<MenuStructureTab />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			id="section-background-service-account"
+			:name="t('dossiq', 'Background service account')"
+			:description="
+				t(
+					'dossiq',
+					'The account background jobs save as, with the access checks of OpenRegister on.',
+				)
+			">
+			<BackgroundServiceAccountSettings />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			id="section-mailbox"
+			:name="t('dossiq', 'Case email: shared mailbox')"
+			:description="
+				t(
+					'dossiq',
+					'Shared functional mailbox ingest (IMAP) and transport for case correspondence. Outbound mail and per-user accounts are owned by Nextcloud Mail.',
+				)
+			"
+			:loading="!storesReady">
+			<EmailSettings v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('dossiq', 'AI-assisted processing')"
+			:description="
+				t(
+					'dossiq',
+					'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support',
+				)
+			"
+			:loading="!storesReady">
+			<AiSettingsTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('dossiq', 'Consultation management')"
+			:description="
+				t(
+					'dossiq',
+					'Adviesaanvragen: advisory body registry, mandatory-gate config, n8n webhook contracts and external response settings.',
+				)
+			"
+			:loading="!storesReady">
+			<ConsultationSettingsTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			id="section-search-index"
+			:name="t('dossiq', 'Search index')"
+			:description="
+				t(
+					'dossiq',
+					'The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.',
+				)
+			"
+			:loading="!storesReady">
+			<SearchIndexTab v-if="storesReady" />
+		</CnSettingsSection>
 
 		<CnSettingsSection
 			id="section-first-run"
@@ -20,15 +104,6 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			id="section-menu-structure"
-			:name="t('dossiq', 'Menu structure')"
-			:description="
-				t('dossiq', 'Choose how much the menu shows. Simple is the default.')
-			">
-			<MenuStructureTab />
-		</CnSettingsSection>
-
-		<CnSettingsSection
 			id="section-prerequisites"
 			:name="t('dossiq', 'Prerequisites')"
 			:description="
@@ -41,47 +116,35 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-shipped-configuration"
+			:name="t('dossiq', 'What shipped with dossiq')"
+			:description="
+				t(
+					'dossiq',
+					'Every case type, status, result and role dossiq seeded, and whether you changed it since. A newer shipped version is offered per object and never overwrites a change you made.',
+				)
+			"
+			:loading="!storesReady">
+			<ShippedConfiguration v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('dossiq', 'Tenant onboarding')"
+			:description="
+				t(
+					'dossiq',
+					'Track a tenant through the seven onboarding steps, run the go-live readiness check and activate the tenant. One-time setup, so it belongs here rather than in the daily navigation.',
+				)
+			"
+			:loading="!storesReady">
+			<TenantOnboardingTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('dossiq', 'Case type management')"
 			:description="t('dossiq', 'Manage case types and their configurations')"
 			:loading="!storesReady">
 			<CaseTypeAdmin v-if="storesReady" />
-		</CnSettingsSection>
-
-		<CnSettingsSection
-			id="section-zgw"
-			:name="t('dossiq', 'ZGW API mapping')"
-			:description="
-				t(
-					'dossiq',
-					'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields',
-				)
-			"
-			:loading="!storesReady">
-			<ZgwMappingSettings v-if="storesReady" />
-		</CnSettingsSection>
-
-		<CnSettingsSection
-			:name="t('dossiq', 'VTH inspection checklists')"
-			:description="
-				t(
-					'dossiq',
-					'Configure reusable inspection checklists for VTH cases (Toezicht). Checklists are versioned and linked to case types.',
-				)
-			"
-			:loading="!storesReady">
-			<ChecklistsTab v-if="storesReady" />
-		</CnSettingsSection>
-
-		<CnSettingsSection
-			:name="t('dossiq', 'AI-assisted processing')"
-			:description="
-				t(
-					'dossiq',
-					'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support',
-				)
-			"
-			:loading="!storesReady">
-			<AiSettingsTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
@@ -132,31 +195,6 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			id="section-store"
-			:name="t('dossiq', 'Store registry')"
-			:description="
-				t(
-					'dossiq',
-					'Connect the OpenRegister instance the Store page browses. Without one, dossiq stays offline and shows only its own templates.',
-				)
-			"
-			:loading="!storesReady">
-			<StoreSettingsTab v-if="storesReady" />
-		</CnSettingsSection>
-
-		<CnSettingsSection
-			:name="t('dossiq', 'Consultation management')"
-			:description="
-				t(
-					'dossiq',
-					'Adviesaanvragen: advisory body registry, mandatory-gate config, n8n webhook contracts and external response settings.',
-				)
-			"
-			:loading="!storesReady">
-			<ConsultationSettingsTab v-if="storesReady" />
-		</CnSettingsSection>
-
-		<CnSettingsSection
 			id="section-archival"
 			:name="t('dossiq', 'Archiving')"
 			:description="
@@ -167,81 +205,6 @@
 			"
 			:loading="!storesReady">
 			<ArchivalSettingsTab v-if="storesReady" />
-		</CnSettingsSection>
-
-		<CnSettingsSection
-			id="section-search-index"
-			:name="t('dossiq', 'Search index')"
-			:description="
-				t(
-					'dossiq',
-					'The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.',
-				)
-			"
-			:loading="!storesReady">
-			<SearchIndexTab v-if="storesReady" />
-		</CnSettingsSection>
-
-		<CnSettingsSection
-			id="section-background-service-account"
-			:name="t('dossiq', 'Background service account')"
-			:description="
-				t(
-					'dossiq',
-					'The account background jobs save as, with the access checks of OpenRegister on.',
-				)
-			">
-			<BackgroundServiceAccountSettings />
-		</CnSettingsSection>
-
-		<CnSettingsSection
-			id="section-mailbox"
-			:name="t('dossiq', 'Case email: shared mailbox')"
-			:description="
-				t(
-					'dossiq',
-					'Shared functional mailbox ingest (IMAP) and transport for case correspondence. Outbound mail and per-user accounts are owned by Nextcloud Mail.',
-				)
-			"
-			:loading="!storesReady">
-			<EmailSettings v-if="storesReady" />
-		</CnSettingsSection>
-
-		<CnSettingsSection
-			id="section-kcc"
-			:name="t('dossiq', 'KCC-werkplek integration')"
-			:description="
-				t(
-					'dossiq',
-					'Burger identification, case-voorblad limits, sentiment trigger words, and belplan overflow thresholds for the KCC contact-center bridge.',
-				)
-			"
-			:loading="!storesReady">
-			<KccIntegrationSettings v-if="storesReady" />
-		</CnSettingsSection>
-
-		<CnSettingsSection
-			id="section-dmn"
-			:name="t('dossiq', 'Decision tables (DMN)')"
-			:description="
-				t(
-					'dossiq',
-					'Decision tables live in the decision-tables register of OpenRegister. Dossiq stores its own tables there under keys that start with dossiq. and evaluates them from workflow steps and the enforcement recommendation. Open OpenRegister to read or change a table.',
-				)
-			"
-			:loading="!storesReady" />
-
-		<CnSettingsSection
-			id="section-financial"
-			:name="t('dossiq', 'Financial integration: dwangsom callback')"
-			:description="
-				t(
-					'dossiq',
-					'Configure the shared secret used to validate ERP payment-confirmation callbacks for dwangsom (penalty payment) uitbetalingen.',
-				)
-			"
-			:loading="!storesReady">
-			<FinancialIntegrationTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
@@ -257,60 +220,163 @@
 			<WooReportsSettingsTab v-if="storesReady" />
 		</CnSettingsSection>
 
-		<CnSettingsSection
-			id="section-shipped-configuration"
-			:name="t('dossiq', 'What shipped with dossiq')"
-			:description="
-				t(
-					'dossiq',
-					'Every case type, status, result and role dossiq seeded, and whether you changed it since. A newer shipped version is offered per object and never overwrites a change you made.',
-				)
-			"
-			:loading="!storesReady">
-			<ShippedConfiguration v-if="storesReady" />
-		</CnSettingsSection>
+		<template #tab-integrations>
+			<CnSettingsSection
+				id="section-zgw"
+				:name="t('dossiq', 'ZGW API mapping')"
+				:description="
+					t(
+						'dossiq',
+						'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields',
+					)
+				"
+				:loading="!storesReady">
+				<ZgwMappingSettings v-if="storesReady" />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			id="section-stuf"
-			:name="t('dossiq', 'StUF-ZKN endpoints')"
-			:description="
-				t(
-					'dossiq',
-					'Outbound StUF-ZKN/BG zaaksysteem endpoints per gemeente, with per-endpoint circuit-breaker health. Endpoints, WSSE credentials and mTLS certificates are managed by the platform operator.',
-				)
-			"
-			:loading="!storesReady">
-			<StufEndpoints v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				id="section-kcc"
+				:name="t('dossiq', 'KCC-werkplek integration')"
+				:description="
+					t(
+						'dossiq',
+						'Burger identification, case-voorblad limits, sentiment trigger words, and belplan overflow thresholds for the KCC contact-center bridge.',
+					)
+				"
+				:loading="!storesReady">
+				<KccIntegrationSettings v-if="storesReady" />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			:name="t('dossiq', 'Tenant onboarding')"
-			:description="
-				t(
-					'dossiq',
-					'Track a tenant through the seven onboarding steps, run the go-live readiness check and activate the tenant. One-time setup, so it belongs here rather than in the daily navigation.',
-				)
-			"
-			:loading="!storesReady">
-			<TenantOnboardingTab v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				id="section-dmn"
+				:name="t('dossiq', 'Decision tables (DMN)')"
+				:description="
+					t(
+						'dossiq',
+						'Decision tables live in the decision-tables register of OpenRegister. Dossiq stores its own tables there under keys that start with dossiq. and evaluates them from workflow steps and the enforcement recommendation. Open OpenRegister to read or change a table.',
+					)
+				"
+				:loading="!storesReady" />
 
-		<CnSettingsSection
-			:name="t('dossiq', 'StUF-ZKN audit log')"
-			:description="
-				t(
-					'dossiq',
-					'Per-call audit log for outbound and inbound StUF SOAP envelopes (full XML, HTTP status, duration, retry history).',
-				)
-			"
-			:loading="!storesReady">
-			<StufAuditLog v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				id="section-financial"
+				:name="t('dossiq', 'Financial integration: dwangsom callback')"
+				:description="
+					t(
+						'dossiq',
+						'Configure the shared secret used to validate ERP payment-confirmation callbacks for dwangsom (penalty payment) uitbetalingen.',
+					)
+				"
+				:loading="!storesReady">
+				<FinancialIntegrationTab v-if="storesReady" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
+				id="section-stuf"
+				:name="t('dossiq', 'StUF-ZKN endpoints')"
+				:description="
+					t(
+						'dossiq',
+						'Outbound StUF-ZKN/BG zaaksysteem endpoints per gemeente, with per-endpoint circuit-breaker health. Endpoints, WSSE credentials and mTLS certificates are managed by the platform operator.',
+					)
+				"
+				:loading="!storesReady">
+				<StufEndpoints v-if="storesReady" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
+				:name="t('dossiq', 'StUF-ZKN audit log')"
+				:description="
+					t(
+						'dossiq',
+						'Per-call audit log for outbound and inbound StUF SOAP envelopes (full XML, HTTP status, duration, retry history).',
+					)
+				"
+				:loading="!storesReady">
+				<StufAuditLog v-if="storesReady" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
+				id="section-store"
+				:name="t('dossiq', 'Store registry')"
+				:description="
+					t(
+						'dossiq',
+						'Connect the OpenRegister instance the Store page browses. Without one, dossiq stays offline and shows only its own templates.',
+					)
+				"
+				:loading="!storesReady">
+				<StoreSettingsTab v-if="storesReady" />
+			</CnSettingsSection>
+		</template>
+
+		<template #tab-mail>
+			<CnSettingsSection
+				id="section-mail-intake"
+				:name="t('dossiq', 'Mail to cases')"
+				:description="
+					t(
+						'dossiq',
+						'Every mail the shared mailbox took in, and the case it went to or why it was skipped. The mailbox itself is set up under General.',
+					)
+				">
+				<NcButton :href="mailIntakeLogUrl" variant="secondary">
+					{{ t('dossiq', 'View the mail intake log') }}
+				</NcButton>
+			</CnSettingsSection>
+		</template>
+
+		<template #tab-map-layers>
+			<CnSettingsSection
+				id="section-map-layers"
+				:name="t('dossiq', 'Map layers')"
+				:description="
+					t(
+						'dossiq',
+						'The WMS and WMTS layers the case map and the location fields offer. Each layer is a record you add, order and switch on in the map layers list.',
+					)
+				">
+				<NcButton :href="mapLayersUrl" variant="secondary">
+					{{ t('dossiq', 'Open the map layers') }}
+				</NcButton>
+			</CnSettingsSection>
+		</template>
+
+		<template #tab-vth>
+			<CnSettingsSection
+				:name="t('dossiq', 'VTH inspection checklists')"
+				:description="
+					t(
+						'dossiq',
+						'Configure reusable inspection checklists for VTH cases (Toezicht). Checklists are versioned and linked to case types.',
+					)
+				"
+				:loading="!storesReady">
+				<ChecklistsTab v-if="storesReady" />
+			</CnSettingsSection>
+		</template>
+
+		<template #tab-substitution>
+			<CnSettingsSection
+				id="section-substitution"
+				:name="t('dossiq', 'Substitution')"
+				:description="
+					t(
+						'dossiq',
+						'Who takes over the cases of an absent handler, and the bulk reassignment of their work.',
+					)
+				">
+				<SubstitutionAdmin />
+			</CnSettingsSection>
+		</template>
 	</CnAdminSettingsShell>
 </template>
 
 <script>
 import { CnAdminSettingsShell, CnSettingsSection } from '@conduction/nextcloud-vue'
+import { generateUrl } from '@nextcloud/router'
+import { NcButton } from '@nextcloud/vue'
+import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
 import BackgroundServiceAccountSettings from './BackgroundServiceAccountSettings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
 import EmailSettings from './EmailSettings.vue'
@@ -336,6 +402,7 @@ import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
 import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
 import WooReportsSettingsTab from './tabs/WooReportsSettingsTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
+import manifest from '../../manifest.json'
 import { initializeStores } from '../../store/store.js'
 
 export default {
@@ -368,12 +435,131 @@ export default {
 		ShippedConfiguration,
 		StufEndpoints,
 		StufAuditLog,
+		NcButton,
+		SubstitutionAdmin,
 	},
 
 	data() {
 		return {
 			storesReady: false,
+			activeTab: 'general',
 		}
+	},
+
+	computed: {
+		/**
+		 * The tabs of the page, in the order the board draws them. Every
+		 * section the page had before sits on one of them.
+		 *
+		 * @return {Array<{id: string, label: string}>} The tabs.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		adminTabs() {
+			return [
+				{ id: 'general', label: this.t('dossiq', 'General') },
+				{
+					id: 'integrations',
+					label: this.t('dossiq', 'Integration settings'),
+				},
+				{ id: 'mail', label: this.t('dossiq', 'Mail') },
+				{ id: 'map-layers', label: this.t('dossiq', 'Map layers') },
+				{ id: 'vth', label: this.t('dossiq', 'VTH') },
+				{ id: 'substitution', label: this.t('dossiq', 'Substitution') },
+			]
+		},
+
+		/**
+		 * The open tab's label.
+		 *
+		 * @return {string} The label, or the app's settings title before a tab is known.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		activeTabLabel() {
+			const tab = this.adminTabs.find((entry) => entry.id === this.activeTab)
+			return tab ? tab.label : this.t('dossiq', 'Dossiq settings')
+		},
+
+		/**
+		 * The page title names the app and the open tab.
+		 *
+		 * @return {string} The title.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		pageTitle() {
+			return this.t('dossiq', 'Dossiq administration: {tab}', {
+				tab: /^[A-Z]{2,}$/.test(this.activeTabLabel)
+					? this.activeTabLabel
+					: this.activeTabLabel.toLocaleLowerCase(),
+			})
+		},
+
+		/**
+		 * The path under the title: the Nextcloud administration settings,
+		 * the app, then the open tab.
+		 *
+		 * @return {Array<{label: string, href?: string}>} The crumbs.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		breadcrumbs() {
+			return [
+				{
+					label: this.t('dossiq', 'Admin settings'),
+					href: generateUrl('/settings/admin'),
+				},
+				{ label: 'Dossiq' },
+				{ label: this.activeTabLabel },
+			]
+		},
+
+		/**
+		 * The note after the path: what the open tab's settings hold for.
+		 *
+		 * @return {string} The note.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		breadcrumbNote() {
+			if (this.activeTab === 'vth') {
+				return this.t(
+					'dossiq',
+					'permits, supervision and enforcement, for the whole organisation',
+				)
+			}
+			return this.t(
+				'dossiq',
+				'applies to the whole organisation; case types, flows and departments are in the app under Settings',
+			)
+		},
+
+		/**
+		 * The first-run wizard's steps, as the app's manifest declares them,
+		 * so the version card can start the wizard again.
+		 *
+		 * @return {Array<object>} The steps.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		setupSteps() {
+			return manifest.setup?.steps ?? []
+		},
+
+		/**
+		 * The in-app log of the mail the shared mailbox took in.
+		 *
+		 * @return {string} The address.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		mailIntakeLogUrl() {
+			return generateUrl('/apps/dossiq/mail-intake-log')
+		},
+
+		/**
+		 * The in-app list of map layers, where a layer is added and ordered.
+		 *
+		 * @return {string} The address.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		mapLayersUrl() {
+			return generateUrl('/apps/dossiq/settings/wms-layers')
+		},
 	},
 
 	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
@@ -383,6 +569,16 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Remember which tab is open, for the title and the path.
+		 *
+		 * @param {string} id The open tab's id.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		onTabChange(id) {
+			this.activeTab = id
+		},
+
 		/**
 		 * Refresh the app stores after the shell re-imports the OpenRegister configuration.
 		 *
