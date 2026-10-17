@@ -8752,6 +8752,7 @@
         "The young person's age. From sixteen they give consent in their own right": "Leeftijd van de jeugdige; vanaf 16 is de jeugdige zelfstandig toestemmingspartij",
         "The young person's BSN, which is special category personal data": "BSN van de jeugdige (bijzonder persoonsgegeven)",
         "The youth team assigned, which is a data driven ground for access": "Toegewezen jeugdteam; data-driven toegangsgrond",
+        "The {app} app is not installed, so there is nothing to list here.": "De app {app} is niet geïnstalleerd, dus hier staat niets.",
         "Their function or department.": "Hun functie of afdeling.",
         "Their Nextcloud user, when they have one.": "Hun Nextcloud-gebruiker, als ze er een hebben.",
         "Theme": "Thema",

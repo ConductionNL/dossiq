@@ -55,6 +55,7 @@ const PROPER = new Set([
 	'Dossiq',
 	'KCC',
 	'Nextcloud',
+	'Omgevingsloket',
 	'OpenRegister',
 	'PHP',
 	'StUF',

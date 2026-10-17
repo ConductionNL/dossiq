@@ -230,7 +230,17 @@
 						'A connection stays off until you choose a source. Off means: not one request goes outside.',
 					)
 				">
+				<NcNoteCard v-if="!ownerApps.integriq" type="info">
+					{{
+						t(
+							'dossiq',
+							'The {app} app is not installed, so there is nothing to list here.',
+							{ app: 'integriq' },
+						)
+					}}
+				</NcNoteCard>
 				<CnWidgetObjectTable
+					v-else
 					:hideWrapper="true"
 					:source="connectionsSource"
 					:columns="connectionColumns"
@@ -373,7 +383,17 @@
 						'An application from the DSO becomes a case of the linked case type. The mapping is integriq\'s.',
 					)
 				">
+				<NcNoteCard v-if="!ownerApps.integriq" type="info">
+					{{
+						t(
+							'dossiq',
+							'The {app} app is not installed, so there is nothing to list here.',
+							{ app: 'integriq' },
+						)
+					}}
+				</NcNoteCard>
 				<CnWidgetObjectTable
+					v-else
 					:hideWrapper="true"
 					:source="intakeActivitySource"
 					:columns="intakeActivityColumns"
@@ -389,7 +409,17 @@
 						'What a case type costs, per rule and validity date. The fee schedules are shillinq\'s.',
 					)
 				">
+				<NcNoteCard v-if="!ownerApps.shillinq" type="info">
+					{{
+						t(
+							'dossiq',
+							'The {app} app is not installed, so there is nothing to list here.',
+							{ app: 'shillinq' },
+						)
+					}}
+				</NcNoteCard>
 				<CnWidgetObjectTable
+					v-else
 					:hideWrapper="true"
 					:source="feeScheduleSource"
 					:columns="feeScheduleColumns"
@@ -447,8 +477,9 @@ import {
 	CnSettingsSection,
 	CnWidgetObjectTable,
 } from '@conduction/nextcloud-vue'
+import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
-import { NcButton } from '@nextcloud/vue'
+import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
 import BackgroundServiceAccountSettings from './BackgroundServiceAccountSettings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
@@ -510,6 +541,7 @@ export default {
 		StufEndpoints,
 		StufAuditLog,
 		NcButton,
+		NcNoteCard,
 		SubstitutionAdmin,
 	},
 
@@ -531,6 +563,10 @@ export default {
 		return {
 			storesReady: false,
 			activeTab: 'general',
+			ownerApps: loadState('dossiq', 'ownerApps', {
+				integriq: true,
+				shillinq: true,
+			}),
 		}
 	},
 
