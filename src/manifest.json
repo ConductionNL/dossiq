@@ -8401,6 +8401,22 @@
 							}
 						},
 						"widget": "badge"
+					},
+					{
+						"key": "lastContact",
+						"label": "Last contact",
+						"sortable": false,
+						"formatter": "date",
+						"aggregate": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"op": "max",
+							"field": "startTime",
+							"where": {
+								"contact": "@self.id"
+							},
+							"zeroLabel": "No contact yet"
+						}
 					}
 				],
 				"actions": [
