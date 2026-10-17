@@ -117,6 +117,7 @@ class ZaakdossierListContractTest extends TestCase {
 		$this->request = $this->createMock(IRequest::class);
 		$this->fileService = $this->createMock(ZaakdossierService::class);
 		$this->reader = $this->createMock(InformatieobjectReader::class);
+		$this->reader->method('withScanVerdicts')->willReturnArgument(0);
 		$this->uploadHandler = $this->createMock(DossierUploadHandler::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 

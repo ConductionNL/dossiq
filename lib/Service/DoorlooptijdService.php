@@ -106,6 +106,10 @@ class DoorlooptijdService {
 			'compliance' => $this->complianceCalculator->computeMonthlyCompliance(cases: $enriched, period: $period),
 			'caseTypeBreakdown' => $this->throughputCalculator->computeCaseTypeBreakdown(cases: $enriched, caseTypes: $caseTypes),
 			'cases' => $this->complianceCalculator->buildCaseList(cases: $enriched, atRiskDays: $atRiskDays),
+			'summary' => [
+				...$this->complianceCalculator->computeSummary(cases: $enriched, period: $period),
+				'withinNormByCaseType' => $this->throughputCalculator->computeWithinNormByCaseType(cases: $enriched, caseTypes: $caseTypes),
+			],
 		];
 	}//end getMetrics()
 

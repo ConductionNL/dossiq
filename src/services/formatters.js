@@ -111,6 +111,24 @@ export default {
 	caseTypeName: (value) => lookupRelatedName('caseType', value),
 
 	/**
+	 * A number shown masked to its last four characters ("*****7609"), the
+	 * way the contact page shows a BSN before Show is pressed. A list never
+	 * reveals: the full number is on the record's own page, where showing it
+	 * is logged. Empty stays empty.
+	 *
+	 * @param {string|number} value The number.
+	 * @return {string} The masked number.
+	 * @spec openspec/changes/screens-round12-relations/specs/initiator-display/spec.md
+	 */
+	masked: (value) => {
+		const text = value === null || value === undefined ? '' : String(value).trim()
+		if (text === '') {
+			return ''
+		}
+		return text.length <= 4 ? text : '*'.repeat(Math.min(text.length - 4, 5)) + text.slice(-4)
+	},
+
+	/**
 	 * Human label for a case object's `case` UUID reference.
 	 *
 	 * The Objects index answers "which cases are on this building", so the
@@ -224,6 +242,29 @@ export default {
 	// document nobody routed, which renders NOTHING rather than a word: an
 	// empty marker and "Approved" are different rows.
 	approvalChain: (value) => approvalMarkerLabel(value),
+
+	/**
+	 * A document's confidentiality, by its label, for the Files tab's
+	 * Visible to column. The value is the stored level; a row without one
+	 * renders nothing.
+	 *
+	 * @param {string} value The confidentiality level.
+	 * @return {string} The label.
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 */
+	confidentialityLabel: (value) => {
+		const labels = {
+			openbaar: t('dossiq', 'Public'),
+			beperkt_openbaar: t('dossiq', 'Restricted public'),
+			intern: t('dossiq', 'Internal'),
+			zaakvertrouwelijk: t('dossiq', 'Case confidential'),
+			vertrouwelijk: t('dossiq', 'Confidential'),
+			confidentieel: t('dossiq', 'Classified confidential'),
+			geheim: t('dossiq', 'Secret'),
+			zeer_geheim: t('dossiq', 'Top secret'),
+		}
+		return labels[String(value ?? '')] ?? ''
+	},
 
 	/**
 	 * Sub-case count badge for a case row in the case list. Returns "N

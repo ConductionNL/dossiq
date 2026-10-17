@@ -182,3 +182,19 @@ describe('the requesterName formatter', () => {
 		expect(found[0].formatter).toBe('requesterName')
 	})
 })
+
+describe('the masked formatter the Contacts list reads its BSN column with', () => {
+	it('keeps the last four characters and masks the rest', () => {
+		expect(formatters.masked('123457609')).toBe('*****7609')
+	})
+
+	it('masks at most five characters, so a long number keeps one width', () => {
+		expect(formatters.masked('1234567890123')).toBe('*****0123')
+	})
+
+	it('leaves a short value and an empty value as they are', () => {
+		expect(formatters.masked('7609')).toBe('7609')
+		expect(formatters.masked('')).toBe('')
+		expect(formatters.masked(null)).toBe('')
+	})
+})
