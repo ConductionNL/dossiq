@@ -65,10 +65,9 @@ describe('the app defaults the personal layer starts from', () => {
 
 describe('the one personal settings screen', () => {
 	it('is the user settings dialog, which App.vue fills', () => {
-		// Filling CnAppRoot's #user-settings slot is what puts the sections
-		// in the dialog. Without it the dialog shows the library's fallback
-		// and every dossiq preference has nowhere to live.
-		expect(app).toContain('<template #user-settings>')
+		// Filling CnAppRoot's #user-settings-sections slot is what puts the
+		// sections in the dialog, beside the library's own.
+		expect(app).toContain('<template #user-settings-sections>')
 		expect(app).toContain('<UserSettings')
 	})
 
@@ -99,13 +98,23 @@ describe('the one personal settings screen', () => {
 		expect(userSettings).toContain(`<${section} />`)
 	})
 
-	it('keeps the sections the library draws when the slot is empty', () => {
-		// The slot replaces CnAppRoot's fallback wholesale, credentials and
-		// the walkthrough replay included, and nothing reports the loss.
-		expect(userSettings).toContain('<CnCredentials')
-		expect(userSettings).toContain('id="cn-walkthrough"')
-		expect(app).toContain('continueWalkthroughFromSettings()')
-		expect(app).toContain('restartWalkthroughFromSettings()')
+	it('keeps the library sections beside its own, except the notification pane it replaces', () => {
+		// The credentials, the guided tour and the integrations are the
+		// library's sections; dossiq's Notices section is the screen over the
+		// notification preferences, so the library's pane stays out.
+		expect(app).toContain(
+			"return ['app', 'credentials', 'walkthrough', 'integrations']",
+		)
+		expect(app).toContain(':userSettingsSections="userSettingsSections"')
+		expect(userSettings).not.toContain('<CnCredentials')
+		expect(userSettings).not.toContain('id="cn-walkthrough"')
+	})
+
+	it('gives every section a nav icon', () => {
+		const sections = userSettings.match(/<NcAppSettingsSection/g) ?? []
+		const icons = userSettings.match(/<template #icon>/g) ?? []
+		expect(sections.length).toBeGreaterThan(0)
+		expect(icons).toHaveLength(sections.length)
 	})
 
 	it('opens on the hash the My case types pencil links to', () => {
