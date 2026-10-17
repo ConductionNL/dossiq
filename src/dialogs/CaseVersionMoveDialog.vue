@@ -25,7 +25,7 @@
   @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
 		:name="t('dossiq', 'Move to another version')"
 		size="normal"
 		data-testid="case-version-move-dialog"
@@ -149,16 +149,16 @@
 				{{ t('dossiq', 'Move the case') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 
@@ -169,7 +169,7 @@ export default {
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcSelect,
 		NcTextArea,
 	},

@@ -263,6 +263,21 @@ describe('the cases list', () => {
 		)
 	})
 
+	it('opens New case as the board\'s two-column form with the duplicate check (DqNieuweZaak)', () => {
+		const button = simple.headerButtons.find((entry) => entry.label === 'New case')
+		const form = simple.headerActions.find((entry) => entry.id === button.action)
+		expect(form).toMatchObject({
+			type: 'open-form',
+			formEyebrow: 'All cases',
+			formTitle: 'New case',
+			columns: 2,
+			createOverride: 'caseCreateWithDuplicateCheck',
+		})
+		expect(form.includeFields.slice(0, 4)).toEqual(['caseType', 'title', 'requester', 'intakeChannel'])
+		// The actions menu keeps what the bar's own menu loses while header buttons show.
+		expect(simple.headerButtons.find((entry) => entry.action === 'actions-menu').items).toContain('import')
+	})
+
 	it('touches nothing else on the list', () => {
 		const rest = ({
 			quickFilters,
@@ -275,6 +290,8 @@ describe('the cases list', () => {
 			footerNote,
 			bulkHint,
 			headerButtons,
+			headerActions,
+			showAdd,
 			showViewToggle,
 			headerFilters,
 			searchPlaceholder,
@@ -338,12 +355,13 @@ describe('the landing page', () => {
 			'simple-my-tasks',
 			'simple-per-step',
 			'simple-continue',
+			'simple-recent-activity',
 			'followed-cases',
 			'archival-reviews',
 		])
 		// The design (DqDashboard) draws two columns under the counts: the
 		// week, the steps and "continue working" take two thirds on the left,
-		// my tasks the right third beside all three.
+		// my tasks and recent activity under it the right third beside all three.
 		for (const id of ['simple-week', 'simple-per-step', 'simple-continue']) {
 			expect(entry(id).gridX, id).toBe(0)
 			expect(entry(id).gridWidth, id).toBe(8)
@@ -353,8 +371,13 @@ describe('the landing page', () => {
 			gridY: 4,
 			gridWidth: 4,
 		})
+		expect(entry('simple-recent-activity')).toMatchObject({
+			gridX: 8,
+			gridY: entry('simple-my-tasks').gridY + entry('simple-my-tasks').gridHeight,
+			gridWidth: 4,
+		})
 		expect(
-			entry('simple-my-tasks').gridY + entry('simple-my-tasks').gridHeight,
+			entry('simple-recent-activity').gridY + entry('simple-recent-activity').gridHeight,
 		).toBe(entry('simple-continue').gridY + entry('simple-continue').gridHeight)
 	})
 

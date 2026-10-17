@@ -800,6 +800,30 @@
 					"publishedAt": "{{datetime:-18 10:00}}"
 				}
 			}
+		},
+		{
+			"key": "lhs-advies-molenweg",
+			"register": "dossiq",
+			"schema": "lhsRecommendation",
+			"lookups": {
+				"case": {
+					"schema": "case",
+					"where": {
+						"title": "Schuur Molenweg 3"
+					}
+				}
+			},
+			"data": {
+				"case": "{{lookup:case}}",
+				"severity": "ernstig",
+				"behaviour": "onverschillig",
+				"actorType": "burger",
+				"matrixVersion": 2,
+				"recommendedIntervention": "last_under_penaltypayment",
+				"finalIntervention": "last_under_penaltypayment",
+				"override": false,
+				"recommendedBy": "{{cast:thomas.displayName}}"
+			}
 		}
 	],
 	"changes": [

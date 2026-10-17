@@ -13,6 +13,7 @@
         "#",
         "1 week",
         "AVG",
+        "BAG",
         "BSN",
         "Chat",
         "Checklist",
@@ -44,6 +45,7 @@
         "PHP",
         "Partner",
         "Platform",
+        "Privacy",
         "Procedure",
         "Process mining",
         "Register",
@@ -80,6 +82,8 @@
         "Relevant",
         "{title}",
         "{displayName}",
-        "{time}, +{extension}"
+        "{time}, +{extension}",
+        "{ground} · %n document",
+        "%n document"
     ]
 }
