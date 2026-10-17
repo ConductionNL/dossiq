@@ -217,7 +217,7 @@ class ConnectionsDeclarationTest extends TestCase {
 				$panel = substr($adminRoot, 0, (int)strpos($adminRoot, '<template #tab-'));
 			} else {
 				$start = strpos($adminRoot, '<template #tab-' . $tab . '>');
-				$this->assertNotFalse($start, $connection['key'] . ' links to a missing tab');
+				$this->assertNotFalse(condition: $start, message: $connection['key'] . ' links to a missing tab');
 				$panel = substr($adminRoot, (int)$start, strpos($adminRoot, "\n\t\t</template>", (int)$start) - (int)$start);
 			}
 			$this->assertStringContainsString(
