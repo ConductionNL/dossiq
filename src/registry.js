@@ -233,8 +233,6 @@ import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
 //     customComponents map, plus the handlers a manifest names by string. ---
-import FeaturesRoadmapView from './views/FeaturesRoadmapView.vue'
-import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
@@ -436,20 +434,6 @@ const registry = {
 		_note: "Full-screen multi-object cases-on-map overview. Markers come from OpenRegister's page-level maps-overview surface (RBAC-scoped, OR #154) and render through the lib's CnMapWidget — no bespoke Leaflet/WMS/WFS plumbing (ADR-022).",
 	},
 
-	// --- Flows (ADR-110 Decision 4). ---
-	// The shared CnFlowIndexPage / CnFlowDetail surfaces over OpenRegister's
-	// native flow store, scoped `app: "dossiq"` so this app sees only its own.
-	// Only the SIDEBAR is an app component now. The list and the canvas are the
-	// shared `flows` / `flow-detail` manifest page types (nextcloud-vue 2.19.0),
-	// so this app no longer carries wrapper copies of them — the three apps that
-	// did each carried the same dead `@rowClick` listener.
-	// @spec openspec/specs/automatic-actions/spec.md
-	FlowDetailSidebar: {
-		kind: 'page',
-		component: FlowDetailSidebar,
-		_note: 'CnFlowSidebar in the NC app sidebar; shares useFlowStore with the canvas.',
-	},
-
 	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
 	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
@@ -568,6 +552,8 @@ const registry = {
 	'case-pipelinq-contact-moments': {
 		// @custom-widget-ratchet exclude a pipelinq contact moment is not a dossiq OBJECT: the rows come from pipelinq's leaf through PipelinqCaseController, by membership of the case set, with a shared marker that counts cases the reader may not open; and filing onto or off a case is pipelinq's act, not an object write
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CasePipelinqContactMoments,
 		...PANEL_WIDGET_META,
 		_note: "CaseDetail Communication tab, the Customer record section (board DqZaakContactmomenten): pipelinq's contact moments by membership, the shared line, and the two filing acts. Says in words when pipelinq is absent, which is not the same as no moments.",
@@ -738,6 +724,8 @@ const registry = {
 	CasePlanPanel: {
 		// @custom-widget-ratchet exclude the adaptive plan is a TREE of plan items with a six-state lifecycle and per-item transition actions, living in OpenRegister's case layer rather than in the case object; no declarative widget reads /api/cases, and an object-list over the case would render neither the nesting nor the transitions. Deleted the day the manifest vocabulary has a case-plan widget type
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CasePlanPanel,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail: the stages, tasks and milestones OpenRegister holds for this case, with enable, complete and stop per item. Fails CLOSED on an unreachable case layer: an error with a retry, never an empty plan, because an outage and a finished case look identical from the browser and only one of them is safe to act on.',
@@ -792,6 +780,8 @@ const registry = {
 	'case-work-instruction': {
 		// @custom-widget-ratchet exclude the value lives on the case TYPE and the page is bound to the CASE, and CnDetailPage reads no `extend` (measured: the string does not occur in CnDetailPage.vue of the installed 3.4.0), so a declared widget over a dotted `caseType.knowledgeBasePage` path renders blank while looking configured. Deleted the day a detail page can expand a reference, or the manifest vocabulary has a widget that reads one
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseWorkInstructionPanel,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Knowledge tab, first section: the Collectives page that explains how this municipality handles this kind of case, followed one reference from the case to its type. dossiq stores no article text and fetches no article body, so a handler whose role group is not in the collective\'s team meets Collectives\' own refusal on the page rather than a copy dossiq made. Nothing renders when the type names no page, because most types will not for a while and a heading over "no work instruction" is a reproach for something an administrator has not done. A lookup that FAILED says so with a retry: a blank panel would read as a type without an instruction.',
@@ -949,6 +939,8 @@ const registry = {
 	'case-task-pane': {
 		// @custom-widget-ratchet exclude blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column, so a lifecycle button cannot be put inside a row from the manifest; the widget returns to type object-list and this entry is deleted the moment the library ships one (https://github.com/ConductionNL/nextcloud-vue/issues/1033)
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseTaskPane,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Tasks tab: the first open task of the case with the lifecycle buttons OpenRegister answers for it, a toast on completion and the next open task in its place. No built-in fits: CnObjectListWidget accepts register/schema/filter/sort/limit/columns/rowRoute/prompt/emptyText/viewAllRoute/viewAllQuery and nothing else, has no rowActions and no per-row slot, and a config key it does not declare is dropped in silence. Interim by construction, and the e2e asserts on the tab and the button labels rather than on this component so it survives the swap back.',
@@ -980,6 +972,8 @@ const registry = {
 	'case-conversations-pane': {
 		// @custom-widget-ratchet exclude the surface is an ACT, not a collection of OpenRegister objects: it starts a Talk room, declares the case major and opens the one channel that declaration made, and a built-in object-list takes a register and a schema and offers no button. The records it lists live on the case itself as `case.conversations`, which no widget type can read as a collection either. Deleted the day the library ships a widget type that posts to an app endpoint and renders the array a field holds
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseConversationsPanel,
 		...PANEL_WIDGET_META,
 		_note: 'The Live conversation section of the Communication tab: start a conversation in Talk from any case, see what the case recorded of the ones already held, and declare the case major. The hoorzitting reaches the same mechanism through HearingService; this is the surface for every other case. Absent Talk, it says so rather than offering a button that cannot work.',
@@ -999,6 +993,8 @@ const registry = {
 	'case-location-map': {
 		// @custom-widget-ratchet exclude blocked: the library `map` widget cannot be scoped to one case. `markers.dataSource.{register,schema}` fetches the register with `_limit` and no filter, and `markers.dataSource.url` is not token-resolved, so `@objectId` would be sent literally. Either route plots every case's locations on this case's page. This entry is deleted and the manifest returns to `type: "map"` the moment the library takes a filter (https://github.com/ConductionNL/nextcloud-vue/issues/1141)
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseLocationMap,
 		...PANEL_WIDGET_META,
 		_note: 'Replaces the Locations list that was the second section of the retired Objects and locations tab. `case-location` already carries latitude and longitude, so the addresses were a table of coordinates nobody could picture. A row with no usable pair is skipped rather than plotted at (0, 0), which is open water and looks like a real pin.',
@@ -1461,15 +1457,6 @@ const registry = {
 
 	// --- Pages that were only ever in the legacy customComponents map. ---
 	//
-	// Same `kind: 'page'` as every other full-page custom route above:
-	// CnPageRenderer resolves a `type: "custom"` page's `component` (and a
-	// `slots.main`) with requireKind 'page', so any other kind here would be
-	// skipped and the page would render the renderer's empty placeholder.
-	FeaturesRoadmapView: {
-		kind: 'page',
-		component: FeaturesRoadmapView,
-		_note: "Features & roadmap. Wraps the library's CnFeaturesAndRoadmapPage (which has no slots) and adds one link to the capability comparison on dossiq.conduction.nl/compare.",
-	},
 	DeletedCasesView: {
 		kind: 'page',
 		component: DeletedCasesView,

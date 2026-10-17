@@ -176,17 +176,19 @@ describe('the Files tab declares its columns', () => {
 		// 🔴 The property, not the label. A column bound to a key nothing
 		// answers renders blank forever and raises nothing anywhere: the
 		// dossier listing carries senderName and recipientNames, and
-		// scan-verdict-on-the-row added scanVerdict, which the scan endpoint
-		// answers rather than the listing. Those three names are what this
-		// asserts.
+		// scan-verdict-on-the-row added scanVerdict, which the listing now
+		// carries per row, and vertrouwelijkheidaanduiding is the row's own
+		// confidentiality. In the DqDocumentenBeheer order: scan and
+		// visibility first.
 		expect(
 			columns
 				.filter((column) => typeof column === 'object')
 				.map((column) => column.property),
 		).toEqual([
+			'scanVerdict',
+			'vertrouwelijkheidaanduiding',
 			'senderName',
 			'recipientNames',
-			'scanVerdict',
 			// #3004: where a document sits in decidiq's approval route. Read
 			// from the approval leaf rather than the listing, same as
 			// scanVerdict above it.
@@ -199,7 +201,7 @@ describe('the Files tab declares its columns', () => {
 			.props.columns.filter((column) => typeof column === 'object')
 			.map((column) => column.label)
 
-		expect(labels).toEqual(['Sender', 'Recipients', 'Scan', 'Approval'])
+		expect(labels).toEqual(['Scan', 'Visible to', 'Sender', 'Recipients', 'Approval'])
 		for (const label of labels) {
 			expect(label).not.toMatch(/—|--/)
 		}

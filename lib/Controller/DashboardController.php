@@ -181,6 +181,7 @@ class DashboardController extends Controller {
 		$this->initialState->provideInitialState('features_roadmap_features', $this->roadmapFeatures());
 		$this->initialState->provideInitialState(MenuStructure::KEY, $this->menuStructure());
 		$this->initialState->provideInitialState('version', $this->installedVersion());
+		$this->initialState->provideInitialState('features_roadmap_app_version', $this->installedVersion());
 
 		return new TemplateResponse($this->appName, 'index');
 	}//end renderIndex()

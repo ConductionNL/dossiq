@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.115.0",
+	"version": "2.121.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -335,6 +335,11 @@
 						}
 					}
 				},
+				"searchPlaceholder": {
+					"type": "string",
+					"minLength": 1,
+					"description": "i18n key / text for the line on the search field in Nextcloud's header (screens-board-top-bar-search, 2.118.0), naming what the app's search finds, for example \"Search cases, documents or contacts\". Applied by CnAppRoot under `look: \"board\"` on a page with `#header`; it replaces only the text of the resting field. Omitted, the field keeps Nextcloud's own line."
+				},
 				"featureRequestRepo": {
 					"type": "string",
 					"description": "`<owner>/<repo>` slug on the forge that the in-product feature-request deep-link targets (provided to descendants as `cnFeatureRequestRepo`). Falls back to `Conduction/<appId>` when omitted."
@@ -592,7 +597,7 @@
 		"folderSidebarScope": {
 			"type": "object",
 			"additionalProperties": true,
-			"description": "One folder in `config.folderSidebar.folders[]`, which doubles as a SCOPE: the three optional list-layout keys below let one index page show each folder the way that folder needs. Every other key (id, name, icon, ...) stays free-form, so an existing folder list validates unchanged. The page's `config.columns` still decides which columns this page HAS; a scope only decides which of them are shown, in what order, sorted by what and searched over what. A scope naming a column the page does not declare is refused by validateManifestV2, not silently rendered.",
+			"description": "One folder in `config.folderSidebar.folders[]`, which doubles as a SCOPE: the three optional list-layout keys below let one index page show each folder the way that folder needs. Every other key (id, name, icon, ...) stays free-form, so an existing folder list validates unchanged. A scope (or the `x-index` block of the row a register-derived folder comes from) may also carry the presentation keys a query preset sets, under the same names: title, quickFilters, cardFields, countText, searchPlaceholder, footerNote, viewSwitch, addLabel, headerButtons, breadcrumb, headerMeta and afterList (index-scope-presentation); a scope's value wins over a preset's. The page's `config.columns` still decides which columns this page HAS; a scope only decides which of them are shown, in what order, sorted by what and searched over what. A scope naming a column the page does not declare is refused by validateManifestV2, not silently rendered.",
 			"properties": {
 				"columns": {
 					"type": "array",
@@ -2189,17 +2194,18 @@
 									"legendPosition": { "type": "string", "enum": ["top", "bottom", "left", "right"], "description": "Legend placement override (empty/omitted keeps the automatic placement)." },
 								"valueAxisBaseline": { "type": "string", "enum": ["auto", "zero", "fit"], "description": "Value-axis baseline: 'auto' (the default — zero for bar/area, a bounded window for line/scatter), 'zero' (force a zero baseline), or 'fit' (let ApexCharts frame the data range, for a series living far from zero such as an SLA hovering 95–99%)." },
 									"valueFormat": {
-										"description": "Named value formatter applied to the value axis + tooltip: 'currency' | 'currency-compact' | 'percent', or the object form { name, currency?, decimals? }.",
+										"description": "Named value formatter applied to the value axis + tooltip: 'currency' | 'currency-compact' | 'percent' | 'number', or the object form { name, currency?, decimals?, suffix? }. 'number' with `suffix` reads '9 d'.",
 										"oneOf": [
-											{ "type": "string", "enum": ["currency", "currency-compact", "percent"] },
+											{ "type": "string", "enum": ["currency", "currency-compact", "percent", "number"] },
 											{
 												"type": "object",
 												"additionalProperties": false,
 												"required": ["name"],
 												"properties": {
-													"name": { "type": "string", "enum": ["currency", "currency-compact", "percent"] },
+													"name": { "type": "string", "enum": ["currency", "currency-compact", "percent", "number"] },
 													"currency": { "type": "string", "description": "ISO-4217 code (EUR default; invalid codes fall back to EUR)." },
-													"decimals": { "type": "integer", "minimum": 0, "description": "Fraction digits override." }
+													"decimals": { "type": "integer", "minimum": 0, "description": "Fraction digits override." },
+													"suffix": { "type": "string", "description": "Text after a 'number' value, e.g. ' d'." }
 												}
 											}
 										]
@@ -2210,6 +2216,19 @@
 										"description": "Per-category colour map ({ categoryLabel: cssColor }) for pie/donut/radialBar slices and (distributed) bar categories."
 									},
 									"emptyLabel": { "type": "string", "description": "Empty-state message rendered instead of the chart when the resolved series contain no data points." },
+									"barMax": { "type": "number", "exclusiveMinimum": 0, "description": "chartKind 'bar-list': the value a full track stands for (100 for percentages). Omitted = the largest value." },
+									"footnote": { "type": "string", "description": "chartKind 'bar-list' or 'matrix': a line under the rows, through the host's translate." },
+									"highlight": {
+										"type": "object",
+										"additionalProperties": false,
+										"required": ["row", "column"],
+										"description": "chartKind 'matrix': the cell to outline, usually the record's on a detail page. `row` matches a series key, name or 1-based position; `column` an entry of columnKeys, a category label or a 1-based position. Both take tokens such as '@object.behaviour'.",
+										"properties": {
+											"row": { "type": ["string", "number"] },
+											"column": { "type": ["string", "number"] },
+											"columnKeys": { "type": "array", "items": { "type": ["string", "number"] } }
+										}
+									},
 									"endpointSource": {
 										"$ref": "#/$defs/chartEndpointSource",
 										"description": "Wave 2 (#91): endpoint-bound series/labels — the shared endpoint transport plus the labelsPath / series[] {name, path} response mapping. Exactly one of dataSource | endpointSource (post-schema check)."
@@ -3300,6 +3319,12 @@
 					"type": "string",
 					"description": "Labels/categories mapping: a per-item field path for an ARRAY payload ('date'), or the path of a parallel label array for an OBJECT payload ('labels')."
 				},
+				"rowsPath": {
+					"type": "string",
+					"description": "Path of an array of rows, one series each (chartKind 'matrix': one row per case type). Each row's name is at rowLabelPath and its values at rowValuesPath; the columns are at labelsPath."
+				},
+				"rowLabelPath": { "type": "string", "description": "Per-row path of the series name (default 'label')." },
+				"rowValuesPath": { "type": "string", "description": "Per-row path of the values array (default 'values')." },
 				"series": {
 					"type": "array",
 					"description": "Series mapping — one entry per rendered series.",
@@ -3677,9 +3702,10 @@
 						},
 						"entitySource": {
 							"type": "string",
-							"enum": ["flows", "tasks"],
+							"enum": ["flows", "flowRuns", "tasks", "endpoint", "search", "users"],
 							"description": "Name a registered NON-OBJECT entity collection for a type='index' page, instead of register+schema. Deliberately NOT called `source`: that key is already taken on page config and is polymorphic (a URL string in some manifests, an object with `params` in others), so reusing it would give one key two meanings and break six deployed shillinq pages. A flow definition is deliberately not an OpenRegister object, so an index had nothing to bind to and such lists became bespoke type='custom' pages. With a source the index loads the list itself. Takes precedence over register/schema; non-empty `objects` still wins over both. Registered sources live in src/composables/indexSources.js. `tasks` lists the viewer's task inbox from OpenRegister's flow-tasks read (cn-tasks-entity-source)."
 						},
+						"sourceConfig": { "type": "object", "additionalProperties": true, "description": "type='index' with `entitySource`: what the named source loads with. `endpoint`: `url` (an app path, required) and `rowsPath` (default `results`); its other keys go along as query parameters. `search`: `kinds` (`{ id, label, register, schema, titleField?, subtitleField?, statusField?, href?, limit? }` or `{ id, label, files: true }`), `term` and `termQuery` (default `q`). `users`: `defaultGroup`, `functionField`, `rolesField`. `flows` / `tasks`: `app`, `scope`. Maps to CnIndexPage `sourceConfig`.", "properties": { "url": { "type": "string", "minLength": 1 }, "rowsPath": { "type": "string", "minLength": 1 }, "kinds": { "type": "array", "items": { "type": "object", "required": ["id"], "additionalProperties": true, "properties": { "id": { "type": "string", "minLength": 1 }, "label": { "type": "string" }, "register": { "type": "string" }, "schema": { "type": "string" }, "files": { "type": "boolean" } } } }, "term": { "type": "string" }, "termQuery": { "type": "string", "minLength": 1 }, "defaultGroup": { "type": "string", "minLength": 1 } } },
 						"app": {
 							"type": "string",
 							"description": "Scopes a named `entitySource` to one app (e.g. entitySource='flows' with app='dossiq' lists that app's flows)."
@@ -4254,6 +4280,7 @@
 								"properties": {
 									"id": { "type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9_-]+$", "description": "The view id, written to the address as `?view=<id>`." },
 									"label": { "type": "string", "minLength": 1, "description": "The option label and the region's accessible name (through the app's translations)." },
+									"title": { "type": "string", "minLength": 1, "description": "type='dashboard': the page title while this view is open, e.g. \"My team\" (through the app's translations; view-title, 2.119.0). Without it the page keeps its own title." },
 									"icon": { "type": "string", "minLength": 1, "description": "Optional MDI icon name, reserved for an icon-bearing switch." },
 									"emptyText": { "type": "string", "minLength": 1, "description": "The sentence shown when the view has nothing to draw." },
 									"widgets": { "type": "array", "description": "The view's widget definitions, the same shape as the page's `widgets`.", "items": { "type": "object", "additionalProperties": true } },
@@ -4401,7 +4428,12 @@
 									"searchPlaceholder": { "type": "string", "minLength": 1, "description": "The search placeholder while the preset applies." },
 									"footerNote": { "type": "string", "minLength": 1, "description": "The footer note while the preset applies." },
 									"defaultSort": { "type": "array", "description": "The default sort while the preset applies; same shape as config.defaultSort." },
-									"viewSwitch": { "type": "array", "items": { "type": "string", "enum": ["table", "cards", "board", "map"] }, "description": "The drawn view segments while the preset applies." }
+									"viewSwitch": { "type": "array", "items": { "type": "string", "enum": ["table", "cards", "board", "map"] }, "description": "The drawn view segments while the preset applies." },
+									"addLabel": { "type": "string", "minLength": 1, "description": "The add button label while the preset applies (index-scope-presentation)." },
+									"headerButtons": { "type": "array", "description": "The header buttons while the preset applies; same shape as config.headerButtons (index-scope-presentation)." },
+									"breadcrumb": { "description": "The breadcrumb while the preset applies; same shape as config.breadcrumb (index-scope-presentation).", "anyOf": [{ "$ref": "#/$defs/breadcrumbCrumb" }, { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/breadcrumbCrumb" } }] },
+									"headerMeta": { "type": "string", "minLength": 1, "description": "The note after the breadcrumb while the preset applies (index-scope-presentation)." },
+									"afterList": { "type": "array", "description": "The cards after the list while the preset applies; same shape as config.afterList (index-scope-presentation).", "items": { "type": "object", "required": ["id", "type"], "properties": { "id": { "type": "string", "minLength": 1 }, "type": { "type": "string", "minLength": 1 }, "title": { "type": "string" }, "subtitle": { "type": "string" }, "content": { "type": "object" }, "headerLink": { "type": "object" } } } }
 								}
 							}
 						},
@@ -4452,6 +4484,7 @@
 							"description": "type='index': the property keys the cards view shows as the facts list of each card, in order; defaults to the first four list columns under the board look (screens-card-parity). Maps to CnIndexPage `cardFields`.",
 							"items": { "type": "string", "minLength": 1 }
 						},
+						"afterList": { "type": "array", "description": "type='index': cards after the list, stacked full width in the listed order, the counterpart of statRow above it (index-scope-presentation). Each entry is a widget definition resolved like statRow's. A query preset or a folder scope can set its own. Maps to CnIndexPage `afterList`.", "items": { "type": "object", "required": ["id", "type"], "properties": { "id": { "type": "string", "minLength": 1 }, "type": { "type": "string", "minLength": 1 }, "title": { "type": "string" }, "subtitle": { "type": "string" }, "content": { "type": "object" }, "headerLink": { "type": "object" } } } },
 						"statRow": {
 							"type": "array",
 							"default": [],

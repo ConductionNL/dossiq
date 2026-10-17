@@ -30,6 +30,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\DeadlineReportingService
  * @uses \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
  * @uses \OCA\Dossiq\Service\Termijn\TermOutcome
+ * @uses \OCA\Dossiq\Service\Termijn\TermDashboardFigures
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Term\DayCount
  */
@@ -198,6 +199,50 @@ class DeadlineReportingServiceTest extends TestCase {
 		self::assertSame(75.0, $k['withinTermijnPercent']);
 		self::assertSame(1, $k['overrunCount']);
 		self::assertSame(61.0, $k['avgDurationDays']);
+	}
+
+	/**
+	 * The running figures count only terms that still run, read against the
+	 * given day, and the share per case type comes from that day's quarter.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function testKpiCarriesTheRunningFiguresOfTheDay(): void {
+		$this->objects->seed('case', ['id' => 'case-due', 'caseType' => 'ct-woo']);
+		$this->objects->seed('deadlineInstance', [
+			'id' => 'ti-due',
+			'case' => 'case-due',
+			'startDate' => '2026-06-20T10:00:00+00:00',
+			'endDateCurrent' => '2026-06-30',
+			'status' => 'verlengd',
+		]);
+
+		$k = $this->service->getTermijnKpi([], new \DateTimeImmutable('2026-07-02'));
+
+		self::assertSame(2, $k['runningCount']);
+		self::assertSame(2, $k['runningCaseTypeCount']);
+		self::assertSame(1, $k['dueThisWeekCount']);
+		self::assertSame(1, $k['overdueCount']);
+		self::assertSame(0.0, $k['penaltyRunningEuros']);
+		self::assertSame([], $k['onTimeByCaseType']['labels']);
+	}
+
+	/**
+	 * A window given by the page decides which terms the share per case type covers.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function testShareOnTimeFollowsTheGivenWindow(): void {
+		$inWindow = $this->service->getTermijnKpi([], new \DateTimeImmutable('2026-10-16'), '2026-04-01', '2026-06-30');
+		self::assertSame(['Omgevingsvergunning (regulier)'], $inWindow['onTimeByCaseType']['labels']);
+		self::assertSame([75.0], $inWindow['onTimeByCaseType']['shares']);
+
+		$currentQuarter = $this->service->getTermijnKpi([], new \DateTimeImmutable('2026-10-16'));
+		self::assertSame([], $currentQuarter['onTimeByCaseType']['labels']);
 	}
 
 	/**

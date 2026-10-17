@@ -20,6 +20,9 @@
         "Circuit open",
         "Cloud",
         "Code",
+        "Privacy",
+        "Schema",
+        "{name}",
         "Contact",
         "Contract",
         "DKIM",
@@ -82,7 +85,21 @@
         "Relevant",
         "{title}",
         "{time}, +{extension}",
+        "Offline",
+        "Online",
+        "{operationType} · {queuedAt|datetime}",
+        "{caseRef.title}",
+        "{targetEntity}",
+        "{templateSnapshot.name}",
         "{ground} · %n document",
-        "%n document"
+        "%n document",
+        "{adviceDate|date} · {committeeChair}",
+        "{grantedByName} · {grantedDate|date}",
+        "{aanvraagnummer}",
+        "{adviceType}",
+        "{competentCourt}",
+        "{scheduledDate|date}",
+        "{tedoel}",
+        "Agenda"
     ]
 }

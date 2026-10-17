@@ -202,7 +202,9 @@ describe.each([
 			// with a last-changed card closing the side column.
 			'contact-history',
 		])
-		expect(widget(p, 'contact-card').content.editable).toBe(false)
+		// A facts card in two columns, as the board draws it; facts are read only.
+		expect(widget(p, 'contact-card').type).toBe('facts')
+		expect(widget(p, 'contact-card').content.columns).toBe(2)
 	})
 
 	it('filters both lists on this object, not on a field that does not exist', () => {
