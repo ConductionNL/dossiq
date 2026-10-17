@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.9",
+          "version": "1.4.10",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -508,7 +508,73 @@
         "documentReview": {
           "enabled": true
         },
-        "maxExtensions": 1
+        "maxExtensions": 1,
+        "x-index": {
+          "title": "Woo requests",
+          "countText": "{shown} of {total} Woo requests · sorted by legal term",
+          "addLabel": "New case",
+          "footerNote": "click a column heading to sort · 20 per page",
+          "searchFields": [
+            "title",
+            "identifier",
+            "initiatorDisplayName"
+          ],
+          "columns": [
+            "title",
+            "identifier",
+            "initiatorDisplayName",
+            "deadline",
+            "status",
+            "assignee"
+          ],
+          "defaultSort": [
+            {
+              "key": "deadline",
+              "order": "asc"
+            }
+          ],
+          "quickFilters": [
+            {
+              "label": "All",
+              "filter": {},
+              "default": true
+            },
+            {
+              "label": "Within term",
+              "filter": {
+                "deadline": {
+                  "gte": "@today"
+                },
+                "isFinalStatus": false
+              }
+            },
+            {
+              "label": "Due this week",
+              "filter": {
+                "deadline": {
+                  "gte": "@today",
+                  "lte": "@today+7d"
+                },
+                "isFinalStatus": false
+              }
+            },
+            {
+              "label": "Late",
+              "filter": {
+                "deadline": {
+                  "lt": "@today"
+                },
+                "isFinalStatus": false
+              }
+            },
+            {
+              "label": "Published",
+              "filter": {
+                "wooPublicationStatus": "published"
+              }
+            }
+          ]
+        }
       },
       {
         "@self": {

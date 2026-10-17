@@ -27,20 +27,16 @@ function filesProps() {
 }
 
 describe('the Files tab columns as the library reads them', () => {
-	it('renders the name first, then the declared columns', () => {
+	it('renders the name, then the board columns, and keeps the rest in the side cards', () => {
 		const keys = normaliseFileColumns(filesProps().columns).map(
 			(column) => column.key,
 		)
 
-		expect(keys[0]).toBe('name')
-		expect(keys).toEqual(
-			expect.arrayContaining([
-				'senderName',
-				'recipientNames',
-				'scanVerdict',
-				'approvalMarker',
-			]),
-		)
+		expect(keys).toEqual(['name', 'scanVerdict', 'vertrouwelijkheidaanduiding'])
+
+		// The rest of the row moved into the selected file's cards (DqDocumentenBeheer).
+		const cardKeys = filesProps().sideCards.flatMap((card) => card.fields.map((field) => field.key))
+		expect(cardKeys).toEqual(expect.arrayContaining(['senderName', 'recipientNames', 'approvalMarker', 'integrity.value']))
 	})
 
 	it('reads the row columns from the dossier listing, keyed by file id', () => {
