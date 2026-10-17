@@ -611,6 +611,10 @@ describe('the header and the side column', () => {
 				shown.push(field)
 			}
 		}
+		// The handler reads as a display name, not a user id (DqZaak Behandeling).
+		const handling = cards.find((card) => card.id === 'side-handling')
+		expect(handling.type).toBe('facts')
+		expect(handling.content.fields.find((field) => field.path === 'assignee').format).toBe('user')
 		// Nothing the requester card showed before is gone.
 		expect(shown).toEqual(expect.arrayContaining(['initiatorDisplayName', 'initiatorType', 'intakeChannel']))
 		// The deadline has its own card, so no data card repeats it.

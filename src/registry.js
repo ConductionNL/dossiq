@@ -233,8 +233,6 @@ import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
 //     customComponents map, plus the handlers a manifest names by string. ---
-import FeaturesRoadmapView from './views/FeaturesRoadmapView.vue'
-import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
@@ -434,20 +432,6 @@ const registry = {
 		kind: 'page',
 		component: CasesOnMapView,
 		_note: "Full-screen multi-object cases-on-map overview. Markers come from OpenRegister's page-level maps-overview surface (RBAC-scoped, OR #154) and render through the lib's CnMapWidget — no bespoke Leaflet/WMS/WFS plumbing (ADR-022).",
-	},
-
-	// --- Flows (ADR-110 Decision 4). ---
-	// The shared CnFlowIndexPage / CnFlowDetail surfaces over OpenRegister's
-	// native flow store, scoped `app: "dossiq"` so this app sees only its own.
-	// Only the SIDEBAR is an app component now. The list and the canvas are the
-	// shared `flows` / `flow-detail` manifest page types (nextcloud-vue 2.19.0),
-	// so this app no longer carries wrapper copies of them — the three apps that
-	// did each carried the same dead `@rowClick` listener.
-	// @spec openspec/specs/automatic-actions/spec.md
-	FlowDetailSidebar: {
-		kind: 'page',
-		component: FlowDetailSidebar,
-		_note: 'CnFlowSidebar in the NC app sidebar; shares useFlowStore with the canvas.',
 	},
 
 	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
@@ -1473,15 +1457,6 @@ const registry = {
 
 	// --- Pages that were only ever in the legacy customComponents map. ---
 	//
-	// Same `kind: 'page'` as every other full-page custom route above:
-	// CnPageRenderer resolves a `type: "custom"` page's `component` (and a
-	// `slots.main`) with requireKind 'page', so any other kind here would be
-	// skipped and the page would render the renderer's empty placeholder.
-	FeaturesRoadmapView: {
-		kind: 'page',
-		component: FeaturesRoadmapView,
-		_note: "Features & roadmap. Wraps the library's CnFeaturesAndRoadmapPage (which has no slots) and adds one link to the capability comparison on dossiq.conduction.nl/compare.",
-	},
 	DeletedCasesView: {
 		kind: 'page',
 		component: DeletedCasesView,
