@@ -1412,6 +1412,7 @@
 					{
 						"id": "team",
 						"label": "My team",
+						"title": "My team",
 						"emptyText": "Nothing to show for your team yet",
 						"widgets": [
 							{
