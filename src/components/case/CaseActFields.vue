@@ -51,9 +51,11 @@
 		@apply="$emit('applyTemplate', $event)" />
 
 	<div v-if="inputs.reason" class="case-acts__field">
+		<label class="case-acts__label" for="case-act-reason">{{ t('dossiq', 'Reason') }}</label>
 		<NcTextArea
+			id="case-act-reason"
 			:modelValue="reason"
-				data-testid="case-act-reason-input"
+			data-testid="case-act-reason-input"
 			:label="t('dossiq', 'Reason')"
 			:labelOutside="true"
 			resize="vertical"
@@ -239,6 +241,11 @@ export default {
 .case-acts__facts dd {
 	margin: 2px 0 0;
 	font-size: 15px;
+	font-weight: 600;
+}
+
+.case-acts__label {
+	font-size: 14px;
 	font-weight: 600;
 }
 

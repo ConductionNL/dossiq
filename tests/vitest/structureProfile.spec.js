@@ -457,10 +457,11 @@ describe('the simple profile', () => {
 	// 67 -> 70: data subject requests, contracts and suppliers get their lists (DqPrivacy, DqContracten).
 	// 70 -> 71: the Postvak (board DqPostvak) adds one page.
 	// 71 -> 72: the catalogue gets a page (DqCatalogus).
-	it('builds the same 72 pages as the full profile, so every route stays', () => {
+	// 72 -> 73: the field inspection view (DqInspectie).
+	it('builds the same 73 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(72)
+		expect(built.pages).toHaveLength(73)
 	})
 })
 
