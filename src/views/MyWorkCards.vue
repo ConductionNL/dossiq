@@ -22,7 +22,8 @@
 		:title="t('dossiq', 'Assigned to me')"
 		:showTitle="true"
 		:headerButtons="headerButtons"
-		:countText="t('dossiq', '{total} cases in your name, most urgent first')"
+		:breadcrumb="{ label: t('dossiq', 'My work'), route: 'MyWorkHome' }"
+		:headerMeta="t('dossiq', '{total} cases in your name · most urgent first')"
 		:footerNote="
 			t(
 				'dossiq',
@@ -54,7 +55,21 @@
 		@pageChanged="onRankedPage"
 		@clearFilters="onRankedClear">
 		<template #below-header>
-			<WorkloadSummaryBar :handlers="workloadHandlers" />
+			<WorkloadSummaryBar :handlers="workloadHandlers" @select="openHandlerWork" />
+			<p
+				v-if="urgencyFellBack"
+				class="mywork-fallback"
+				data-testid="urgency-fallback">
+				{{
+					t(
+						'dossiq',
+						'Ordered by deadline: the urgency could not be computed.',
+					)
+				}}
+			</p>
+		</template>
+		<!-- The sort sits beside the search, so the board's toolbar keeps one row. -->
+		<template #after-search>
 			<div
 				class="mywork-sort-toggle"
 				role="group"
@@ -70,17 +85,6 @@
 					{{ t('dossiq', 'Newest') }}
 				</NcButton>
 			</div>
-			<p
-				v-if="urgencyFellBack"
-				class="mywork-fallback"
-				data-testid="urgency-fallback">
-				{{
-					t(
-						'dossiq',
-						'Ordered by deadline: the urgency could not be computed.',
-					)
-				}}
-			</p>
 		</template>
 		<!-- Work routed here by an active substitution, above the reader's own
 		     list and marked with whose it is. It is a group of its own because
@@ -587,6 +591,21 @@ export default {
 		 *
 		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
+		/**
+		 * Open a colleague's open cases on the Cases list; the reader's own chip stays here.
+		 *
+		 * @param {string} handler The colleague's user id.
+		 */
+		openHandlerWork(handler) {
+			if (handler === getCurrentUser()?.uid) {
+				return
+			}
+			this.$router.push({
+				name: 'Cases',
+				query: { assignee: handler, isFinalStatus: 'false', statusHiddenInLists: 'false', isDraft: 'false' },
+			})
+		},
+
 		async fetchWorkload() {
 			try {
 				const response = await axios.get(
@@ -691,8 +710,8 @@ export default {
 <style scoped lang="scss">
 .mywork-sort-toggle {
 	display: flex;
-	gap: 8px;
-	margin-bottom: 8px;
+	gap: 4px;
+	margin-inline-start: auto;
 }
 
 .mywork-fallback {

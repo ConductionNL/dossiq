@@ -162,6 +162,7 @@ import MagnifyScan from 'vue-material-design-icons/MagnifyScan.vue'
 import MapMarker from 'vue-material-design-icons/MapMarker.vue'
 import MapMarkerOutline from 'vue-material-design-icons/MapMarkerOutline.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
+import MapMarkerPlusOutline from 'vue-material-design-icons/MapMarkerPlusOutline.vue'
 import MapOutline from 'vue-material-design-icons/MapOutline.vue'
 import MessageAlertOutline from 'vue-material-design-icons/MessageAlertOutline.vue'
 import MessageOutline from 'vue-material-design-icons/MessageOutline.vue'
@@ -378,6 +379,7 @@ export default {
 	MagnifyScan,
 	MapMarker,
 	MapMarkerOutline,
+	MapMarkerPlusOutline,
 	MapMarkerPath,
 	MapOutline,
 	MessageAlertOutline,

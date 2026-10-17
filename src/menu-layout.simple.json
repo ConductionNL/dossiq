@@ -265,6 +265,22 @@
 								"type": "stat",
 								"title": "My open cases",
 								"content": {
+									"caption": "{count} new this week",
+									"captionSource": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false,
+											"startDate": {
+												"gte": "@today-7d"
+											}
+										},
+										"zeroText": "nothing new this week"
+									},
 									"label": "My open cases",
 									"format": {
 										"style": "decimal",
@@ -298,6 +314,23 @@
 								"type": "stat",
 								"title": "Due this week",
 								"content": {
+									"caption": "{count} ends today",
+									"captionSource": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false,
+											"deadline": {
+												"gte": "@today",
+												"lt": "@today+1d"
+											}
+										},
+										"zeroText": "nothing ends today"
+									},
 									"label": "Due this week",
 									"format": {
 										"style": "decimal",
@@ -338,6 +371,23 @@
 								"type": "stat",
 								"title": "Waiting on the applicant",
 								"content": {
+									"caption": "{count} for longer than a week",
+									"captionSource": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false,
+											"waitingOnApplicant": true,
+											"currentStatusEnteredAt": {
+												"lt": "@today-7d"
+											}
+										},
+										"zeroText": "none for longer than a week"
+									},
 									"label": "Waiting on the applicant",
 									"format": {
 										"style": "decimal",
@@ -538,6 +588,17 @@
 								"type": "custom",
 								"title": "My archival reviews",
 								"icon": "ArchiveOutline"
+							},
+							{
+								"id": "simple-recent-activity",
+								"type": "nc-widget",
+								"title": "Recent activity",
+								"_note": "DqMijnWerk's Recente activiteit under My tasks: what happened on the reader's work, newest first. Nextcloud's own Activity dashboard widget, read through its items API, so dossiq keeps no feed of its own.",
+								"content": {
+									"widgetId": "activity",
+									"displayMode": "list",
+									"limit": 3
+								}
 							}
 						],
 						"layout": [
@@ -619,7 +680,7 @@
 								"gridX": 8,
 								"gridY": 4,
 								"gridWidth": 4,
-								"gridHeight": 12,
+								"gridHeight": 7,
 								"showTitle": true,
 								"headerLink": {
 									"label": "All tasks",
@@ -664,6 +725,15 @@
 										"_watching": "true"
 									}
 								}
+							},
+							{
+								"id": "s13",
+								"widgetId": "simple-recent-activity",
+								"gridX": 8,
+								"gridY": 11,
+								"gridWidth": 4,
+								"gridHeight": 5,
+								"showTitle": true
 							},
 							{
 								"id": "s12",
@@ -919,13 +989,15 @@
 						"group": "Case"
 					},
 					"start-flow": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Start a flow"
 					},
 					"case-split": {
 						"group": "Case"
 					},
 					"case-merge": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Merge with another case"
 					},
 					"copy-case": {
 						"group": "Case"
@@ -1059,7 +1131,6 @@
 									"label": "Files"
 								},
 								{
-									"widgetId": "case-communication-panel",
 									"label": "Contact",
 									"countFrom": {
 										"register": "dossiq",
@@ -1067,11 +1138,25 @@
 										"filter": {
 											"case": "@objectId"
 										}
-									}
+									},
+									"widgetIds": [
+										"case-contact-moments-card",
+										"case-acknowledgement-card",
+										"case-conversations-card",
+										"case-customer-record-card"
+									],
+									"_note": "DqZaakContact: the communication panel's sections as the board's cards, contact moments first, then the receipt confirmation, the live conversation and the customer record from pipelinq."
 								},
 								{
-									"widgetId": "case-work-panel",
-									"label": "Tasks"
+									"label": "Tasks",
+									"widgetIds": [
+										"case-tasks-card",
+										"case-planned-actions-card",
+										"case-incidents-card",
+										"case-calendar-card",
+										"case-deck-card"
+									],
+									"_note": "DqZaakTaken: the work panel's sections as the board's cards, the tasks first, then what comes next, incidents, appointments and cards."
 								},
 								{
 									"widgetId": "case-timeline-panel",
@@ -1163,169 +1248,6 @@
 					},
 					"case-kpis-hours": {
 						"title": "Record hours"
-					},
-					"case-work-panel": {
-						"_note": "DqZaakTaken: the tasks, then what happens next, then incidents, appointments and cards. The same sections as the full profile, in the board's order.",
-						"content": {
-							"sections": [
-								{
-									"label": "Tasks",
-									"widget": {
-										"id": "case-tasks",
-										"type": "case-task-pane",
-										"title": "Tasks",
-										"icon": "ClipboardCheckOutline",
-										"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon and the tab entry are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column. `register` and `schema` are NOT kept, and that is remove-casetask 4.2: the component reads the task engine and has ignored both keys since dossiq#2357, so the pair named a schema that no longer exists and claimed a binding the widget does not make. The day the swap back happens, the list the widget goes back to is the engine's, not an object list, so neither key comes back.",
-										"content": {
-											"filter": {
-												"case": "@objectId"
-											},
-											"sort": {
-												"field": "dueDate",
-												"dir": "asc"
-											},
-											"limit": 25,
-											"columns": [
-												{
-													"key": "title",
-													"label": "Title"
-												},
-												{
-													"key": "status",
-													"label": "Status"
-												},
-												{
-													"key": "assignee",
-													"label": "Assignee"
-												},
-												{
-													"key": "dueDate",
-													"label": "Due"
-												},
-												{
-													"key": "priority",
-													"label": "Priority"
-												}
-											],
-											"rowRoute": "TaskDetail",
-											"viewAllRoute": "Tasks",
-											"viewAllQuery": {
-												"case": "@objectId"
-											},
-											"emptyText": "No tasks for this case yet"
-										}
-									}
-								},
-								{
-									"label": "What happens next",
-									"widget": {
-										"id": "case-planned-actions",
-										"type": "object-list",
-										"title": "Planned actions",
-										"icon": "CalendarClock",
-										"_note": "task-dependencies-and-the-next-planned-action, gap register row 3.28. A case answers what happens next WITHOUT anybody reading the history, which is the whole reason the record exists. It sits beside Tasks rather than inside it because the two answer different questions: a task is work somebody is doing now, a planned action is work the case type says comes next and that nobody has started. The filter keeps `state: planned` and the sort is `plannedFor` ascending, so the FIRST ROW IS THE ANSWER; completed actions stay readable through the case's own object list rather than crowding the one sentence this section exists to say. `plannedFrom` is a column on purpose: it is what makes a chain readable backwards, so a handler can see that this call was planned by the confirmation before it rather than by somebody typing a date. Rows carry no `rowRoute`: there is no plannedAction detail page, and a route naming a page that does not exist pushes vue-router at a name it cannot resolve.",
-										"content": {
-											"register": "dossiq",
-											"schema": "plannedAction",
-											"filter": {
-												"case": "@objectId",
-												"state": "planned"
-											},
-											"sort": {
-												"field": "plannedFor",
-												"dir": "asc"
-											},
-											"limit": 10,
-											"columns": [
-												{
-													"key": "plannedFor",
-													"label": "Planned for"
-												},
-												{
-													"key": "label",
-													"label": "Action"
-												},
-												{
-													"key": "owner",
-													"label": "Owner"
-												},
-												{
-													"key": "plannedFrom",
-													"label": "Planned by"
-												}
-											],
-											"emptyText": "No next action is planned on this case"
-										}
-									}
-								},
-								{
-									"label": "Incidents",
-									"widget": {
-										"id": "case-incidents",
-										"type": "object-list",
-										"title": "Incidents",
-										"icon": "AlertOutline",
-										"_note": "splitting-a-case-and-its-incidents REQ-CM-53. Several dated reports inside one case, which is how repeat reports on one address are handled: the case holds the address and the history, and each report is a record with its own reporter, its own owner and its own outcome. SORTED BY `eventDate` AND NOT BY THE RECORDING MOMENT (D-6): a report written up three weeks late belongs where it happened, and `createdAt` order would quietly rewrite the sequence the case is about. It sits in the Work tab rather than in a tab of its own, because the strip is already eleven entries and an incident is work on the case; `recordedAt` is a column beside the event date so the delay between the two is visible rather than hidden. NOT a deelzaak: an incident has no number, no term and no decision, and making one would give every report a beslistermijn it does not have (D-4).",
-										"content": {
-											"register": "dossiq",
-											"schema": "caseIncident",
-											"filter": {
-												"case": "@objectId"
-											},
-											"sort": {
-												"field": "eventDate",
-												"dir": "asc"
-											},
-											"limit": 25,
-											"columns": [
-												{
-													"key": "eventDate",
-													"label": "Happened"
-												},
-												{
-													"key": "recordedAt",
-													"label": "Recorded"
-												},
-												{
-													"key": "reporter",
-													"label": "Reporter"
-												},
-												{
-													"key": "state",
-													"label": "State"
-												},
-												{
-													"key": "assignee",
-													"label": "Owner"
-												}
-											],
-											"emptyText": "No incidents recorded on this case yet"
-										}
-									}
-								},
-								{
-									"label": "Appointments",
-									"widget": {
-										"id": "case-calendar",
-										"type": "integration",
-										"integrationId": "calendar",
-										"title": "Appointments & hearings",
-										"icon": "Calendar"
-									}
-								},
-								{
-									"label": "Cards",
-									"widget": {
-										"id": "case-deck",
-										"type": "integration",
-										"integrationId": "deck",
-										"title": "Coordination board",
-										"icon": "ViewColumnOutline",
-										"_note": "leaf-integrations REQ-LEAF-105: a board for the ad-hoc coordination around a case, beside the tasks and never instead of them. NOTHING IN DOSSIQ READS OR WRITES A DECK CARD FROM A `task`, OR THE OTHER WAY ROUND. Task lifecycle belongs to WorkflowEngineService alone and the kanban WorkflowBoardView is the workflow surface; a mirror would give a handler two places to finish the same work and no rule about which one counts. A SECTION of the Work panel rather than a body widget with a layout entry, which is what the design named: the case body is a tab strip and its grid is full, and a card board is work, so it belongs beside the tasks. The leaf owns link, create and unlink, so dossiq ships no Deck code at all; with the Deck app absent the library renders its own empty state rather than an error."
-									}
-								}
-							]
-						}
 					}
 				},
 				"layout": {
@@ -1703,6 +1625,266 @@
 								}
 							]
 						}
+					},
+					{
+						"id": "case-contact-moments-card",
+						"type": "object-list",
+						"title": "Contact moments on this case",
+						"icon": "PhoneInTalk",
+						"_note": "Every call, visit and message logged on this case, newest first. The contactmoment schema was the KCC workplace's alone and no case page read it; `contactmoment.case` is the single case reference the object-list filter needs, because `relatedCases` is a list and a list cannot be a filter. Notes and Mail are NOT beside it and are not going to be: page-topology-cleanup moved both to the sidebar on the rule that one log in two places is duplication rather than coverage, which retires design D4's fold rather than deferring it. The tab that holds this list already holds two widgets as stacked sections, through the case-sections container type, so the capability D4 waited on is here and the fold is what is no longer wanted. The Log contact header action beside this list seeds FOUR values through `props`, not just the case: design D3 has ContactMomentService fill the KCC fields the form does not ask for, which holds for the API path (ContactMomentController) but not for this one, because an open-form action saves straight to /apps/openregister/api/objects and no dossiq service runs. `contactmoment` requires identificationMethod, kccEmployeeId and nature, so without the seeds every save from that button answers 400 with the required list. Seeded values are written and never rendered: CnFormDialog takes its fields from includeFields and merges initialData over the form data, so the handler still sees the five fields the spec names. `relatedCases` is seeded from the same token because the KCC voorblad reads that list; ContactMomentService does the same for the API path, where the service DOES run.",
+						"content": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "startTime",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "startTime",
+									"label": "Date"
+								},
+								{
+									"key": "notificationChannel",
+									"label": "Channel"
+								},
+								{
+									"key": "direction",
+									"label": "Direction"
+								},
+								{
+									"key": "summary",
+									"label": "Summary"
+								}
+							],
+							"emptyText": "No contact logged on this case yet"
+						}
+					},
+					{
+						"id": "case-acknowledgement-card",
+						"type": "data",
+						"title": "Receipt confirmation",
+						"icon": "EmailOutline",
+						"_note": "ontvangstbevestiging REQ-TERM-023 and REQ-TERM-024: whether this case confirmed receipt under Awb 4:3a, when, to whom and by which channel, and the messages it sent on its own. It sits in Communication rather than Data because it IS correspondence, beside the contact a handler logs by hand. A `data` widget and not a bespoke component: both fields are declared on the case schema, so the library renders them from the schema and this change adds no widget to the custom-widget ratchet. Read-only throughout: the duty is written by the acknowledgement service and cleared through the Record receipt confirmed action, never by typing over the field, because a duty a handler can edit silently is the state this feature exists to make visible.",
+						"content": {
+							"title": "Receipt confirmation",
+							"columns": 3,
+							"include": [
+								"receivedAt",
+								"termStartsAt",
+								"receivedOutsideWorkingHours",
+								"acknowledgementDuty",
+								"outboundCommunications"
+							],
+							"overrides": {
+								"receivedAt": {
+									"editable": false
+								},
+								"termStartsAt": {
+									"editable": false
+								},
+								"receivedOutsideWorkingHours": {
+									"editable": false
+								},
+								"acknowledgementDuty": {
+									"editable": false
+								},
+								"outboundCommunications": {
+									"editable": false
+								}
+							}
+						}
+					},
+					{
+						"id": "case-conversations-card",
+						"type": "case-conversations-pane",
+						"title": "Live conversation",
+						"icon": "PhoneInTalk",
+						"_note": "A conversation held live from this case, in Nextcloud Talk, and what the case recorded of the ones already held: the moment, who joined and how long it lasted. It sits in Communication rather than in a tab of its own because a handler reading what was said on this case is already here, and a call and a contact moment are the same question asked of two moments. Rendered by TYPE (case-conversations-pane in registry.js): a section child resolves from the widget registry, and a component registered only by name draws an empty panel and logs nothing. The icon is PhoneInTalk, which src/icons.js carries; an icon a manifest names but no registry holds renders the default glyph and breaks nothing visibly, which is how that goes unnoticed."
+					},
+					{
+						"id": "case-customer-record-card",
+						"type": "case-pipelinq-contact-moments",
+						"title": "Contact moments in the customer record",
+						"icon": "Forum",
+						"_note": "parties-and-contact-moments-consume-pipelinq 2.2 and 2.3, board DqZaakContactmomenten: pipelinq's contact moments read by MEMBERSHIP of this case, with the line saying a moment is also on other cases (a case the reader may not open counted, not named), and the two filing acts. It sits under dossiq's own Communication list rather than replacing it, because that list is dossiq's record and the one an instance without pipelinq has; this section says in words when pipelinq is absent. Rendered by TYPE (registry key case-pipelinq-contact-moments), as a section child resolves from the registry and an unknown type draws nothing."
+					},
+					{
+						"id": "case-tasks-card",
+						"type": "case-task-pane",
+						"title": "Tasks on this case",
+						"icon": "ClipboardCheckOutline",
+						"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon and the tab entry are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column. `register` and `schema` are NOT kept, and that is remove-casetask 4.2: the component reads the task engine and has ignored both keys since dossiq#2357, so the pair named a schema that no longer exists and claimed a binding the widget does not make. The day the swap back happens, the list the widget goes back to is the engine's, not an object list, so neither key comes back.",
+						"content": {
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "dueDate",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "title",
+									"label": "Title"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								},
+								{
+									"key": "assignee",
+									"label": "Assignee"
+								},
+								{
+									"key": "dueDate",
+									"label": "Due"
+								},
+								{
+									"key": "priority",
+									"label": "Priority"
+								}
+							],
+							"rowRoute": "TaskDetail",
+							"viewAllRoute": "Tasks",
+							"viewAllQuery": {
+								"case": "@objectId"
+							},
+							"emptyText": "No tasks for this case yet"
+						}
+					},
+					{
+						"id": "case-planned-actions-card",
+						"type": "object-list",
+						"title": "What comes next",
+						"icon": "CalendarClock",
+						"_note": "task-dependencies-and-the-next-planned-action, gap register row 3.28. A case answers what happens next WITHOUT anybody reading the history, which is the whole reason the record exists. It sits beside Tasks rather than inside it because the two answer different questions: a task is work somebody is doing now, a planned action is work the case type says comes next and that nobody has started. The filter keeps `state: planned` and the sort is `plannedFor` ascending, so the FIRST ROW IS THE ANSWER; completed actions stay readable through the case's own object list rather than crowding the one sentence this section exists to say. `plannedFrom` is a column on purpose: it is what makes a chain readable backwards, so a handler can see that this call was planned by the confirmation before it rather than by somebody typing a date. Rows carry no `rowRoute`: there is no plannedAction detail page, and a route naming a page that does not exist pushes vue-router at a name it cannot resolve.",
+						"content": {
+							"register": "dossiq",
+							"schema": "plannedAction",
+							"filter": {
+								"case": "@objectId",
+								"state": "planned"
+							},
+							"sort": {
+								"field": "plannedFor",
+								"dir": "asc"
+							},
+							"limit": 10,
+							"columns": [
+								{
+									"key": "plannedFor",
+									"label": "Planned for"
+								},
+								{
+									"key": "label",
+									"label": "Action"
+								},
+								{
+									"key": "owner",
+									"label": "Owner"
+								},
+								{
+									"key": "plannedFrom",
+									"label": "Planned by"
+								}
+							],
+							"emptyText": "No next action is planned on this case"
+						}
+					},
+					{
+						"id": "case-incidents-card",
+						"type": "object-list",
+						"title": "Incidents",
+						"icon": "AlertOutline",
+						"_note": "splitting-a-case-and-its-incidents REQ-CM-53. Several dated reports inside one case, which is how repeat reports on one address are handled: the case holds the address and the history, and each report is a record with its own reporter, its own owner and its own outcome. SORTED BY `eventDate` AND NOT BY THE RECORDING MOMENT (D-6): a report written up three weeks late belongs where it happened, and `createdAt` order would quietly rewrite the sequence the case is about. It sits in the Work tab rather than in a tab of its own, because the strip is already eleven entries and an incident is work on the case; `recordedAt` is a column beside the event date so the delay between the two is visible rather than hidden. NOT a deelzaak: an incident has no number, no term and no decision, and making one would give every report a beslistermijn it does not have (D-4).",
+						"content": {
+							"register": "dossiq",
+							"schema": "caseIncident",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "eventDate",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "eventDate",
+									"label": "Happened"
+								},
+								{
+									"key": "recordedAt",
+									"label": "Recorded"
+								},
+								{
+									"key": "reporter",
+									"label": "Reporter"
+								},
+								{
+									"key": "state",
+									"label": "State"
+								},
+								{
+									"key": "assignee",
+									"label": "Owner"
+								}
+							],
+							"emptyText": "No incidents recorded on this case yet"
+						}
+					},
+					{
+						"id": "case-calendar-card",
+						"type": "integration",
+						"integrationId": "calendar",
+						"title": "Appointments",
+						"icon": "Calendar"
+					},
+					{
+						"id": "case-deck-card",
+						"type": "integration",
+						"integrationId": "deck",
+						"title": "Cards",
+						"icon": "ViewColumnOutline",
+						"_note": "leaf-integrations REQ-LEAF-105: a board for the ad-hoc coordination around a case, beside the tasks and never instead of them. NOTHING IN DOSSIQ READS OR WRITES A DECK CARD FROM A `task`, OR THE OTHER WAY ROUND. Task lifecycle belongs to WorkflowEngineService alone and the kanban WorkflowBoardView is the workflow surface; a mirror would give a handler two places to finish the same work and no rule about which one counts. A SECTION of the Work panel rather than a body widget with a layout entry, which is what the design named: the case body is a tab strip and its grid is full, and a card board is work, so it belongs beside the tasks. The leaf owns link, create and unlink, so dossiq ships no Deck code at all; with the Deck app absent the library renders its own empty state rather than an error."
+					}
+				],
+				"headerActions": [
+					{
+						"id": "add-location",
+						"type": "open-modal",
+						"target": "CaseLocationDialog",
+						"label": "Add location",
+						"icon": "MapMarkerPlusOutline",
+						"group": "Case",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "empty"
+						}
+					},
+					{
+						"id": "share-with-organisation",
+						"type": "open-modal",
+						"target": "CaseShareOrganisationDialog",
+						"label": "Share with another organisation",
+						"icon": "ShareVariant",
+						"group": "Case",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "empty"
+						}
 					}
 				]
 			},
@@ -1712,8 +1894,10 @@
 					"case-claim",
 					"case-release",
 					"case-hand-over",
+					"share-with-organisation",
 					"add-party",
 					"link-object",
+					"add-location",
 					"case-acknowledgement-met",
 					"plan-follow-up",
 					"case-remind",
@@ -1745,6 +1929,7 @@
 			"_note": "The dashboard in the simple structure. Since openspec/changes/landing-views it is the dashboard of the full structure: the greeting, First today and the counts of MY cases moved to the landing page (MyWorkHome), whose My work / My team switch now changes views on that page instead of opening this one. The one thing this overlay still adds is the link to Close out your day, because this profile takes that entry out of the menu.",
 			"config": {
 				"description": "How the team is doing",
+				"editLabel": "Edit layout",
 				"kpiRow": [
 					"kpi-open-cases",
 					"kpi-overdue",
@@ -1918,6 +2103,11 @@
 						"target": "EndOfDay"
 					}
 				]
+			},
+			"configOrder": {
+				"headerActions": [
+					"open-end-of-day"
+				]
 			}
 		},
 		{
@@ -1991,16 +2181,25 @@
 					},
 					{
 						"action": "actions-menu",
-						"label": "Actions"
+						"label": "Actions",
+						"items": [
+							"header-actions",
+							"import",
+							"refresh",
+							"copy-selected",
+							"delete-selected",
+							"documentation"
+						]
 					},
 					{
-						"action": "add",
+						"action": "new-case",
 						"label": "New case",
 						"variant": "primary",
 						"icon": "Plus"
 					}
 				],
-				"showViewToggle": true
+				"showViewToggle": true,
+				"showAdd": false
 			},
 			"configPatch": {
 				"quickFilters": {
@@ -2019,6 +2218,85 @@
 				}
 			},
 			"configAppend": {
+				"headerActions": [
+					{
+						"id": "new-case",
+						"type": "open-form",
+						"label": "New case",
+						"icon": "Plus",
+						"formEyebrow": "All cases",
+						"formTitle": "New case",
+						"formSubtitle": "Fields marked * are required. The case starts in the first status of its case type. The system fills in the receipt date and the start date itself, from the moment the request came in.",
+						"size": "large",
+						"columns": 2,
+						"includeFields": [
+							"caseType",
+							"title",
+							"requester",
+							"intakeChannel",
+							"description",
+							"plannedEndDate",
+							"assignee",
+							"confidentiality",
+							"impact",
+							"urgency"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea",
+								"order": 5
+							},
+							"requester": {
+								"widget": "InitiatorPicker",
+								"label": "Requester",
+								"order": 3
+							},
+							"confidentiality": {
+								"enumLabels": {
+									"openbaar": "Public",
+									"beperkt_openbaar": "Restricted public",
+									"intern": "Internal",
+									"zaakvertrouwelijk": "Case confidential",
+									"vertrouwelijk": "Confidential",
+									"confidentieel": "Classified confidential",
+									"geheim": "Secret",
+									"zeer_geheim": "Top secret"
+								},
+								"order": 8
+							},
+							"caseType": {
+								"order": 1
+							},
+							"title": {
+								"order": 2
+							},
+							"intakeChannel": {
+								"order": 4
+							},
+							"plannedEndDate": {
+								"order": 6
+							},
+							"assignee": {
+								"order": 7
+							},
+							"impact": {
+								"order": 9
+							},
+							"urgency": {
+								"order": 10
+							}
+						},
+						"register": "dossiq",
+						"schema": "case",
+						"createOverride": "caseCreateWithDuplicateCheck",
+						"onSuccessRoute": "CaseDetail",
+						"successMessage": "Case created.",
+						"props": {
+							"assignee": "@me",
+							"confidentiality": "vertrouwelijk"
+						}
+					}
+				],
 				"quickFilters": [
 					{
 						"label": "Woo requests",
@@ -2056,27 +2334,104 @@
 					},
 					{
 						"action": "actions-menu",
-						"label": "Actions"
+						"label": "Actions",
+						"items": [
+							"header-actions",
+							"import",
+							"refresh",
+							"copy-selected",
+							"delete-selected",
+							"documentation"
+						]
 					}
 				],
-				"showViewToggle": true
+				"showViewToggle": true,
+				"columns": [
+					{
+						"key": "title",
+						"width": "150px",
+						"label": "Task",
+						"cellClass": "cn-cell--strong"
+					},
+					{
+						"key": "subjectLabel",
+						"width": "170px",
+						"label": "Subject"
+					},
+					{
+						"key": "stateLabel",
+						"label": "Status",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"Ready to claim": "info",
+								"Klaar om op te pakken": "info",
+								"In progress": "primary",
+								"In behandeling": "primary",
+								"Completed": "success",
+								"Afgerond": "success",
+								"Terminated": "error",
+								"Beëindigd": "error"
+							}
+						}
+					},
+					{
+						"key": "priorityLabel",
+						"label": "Priority",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"High": "warning",
+								"Hoog": "warning",
+								"Urgent": "error"
+							}
+						}
+					},
+					{
+						"key": "dueAt",
+						"label": "Deadline",
+						"widget": "date",
+						"widgetProps": {
+							"due": {
+								"todayLabel": "Today",
+								"emptyText": "No deadline"
+							}
+						}
+					},
+					{
+						"key": "assignee",
+						"label": "Handler",
+						"widget": "avatar",
+						"widgetProps": {
+							"user": true
+						}
+					}
+				]
 			},
 			"configPatch": {
 				"quickFilters": {
+					"All": {
+						"showCount": true
+					},
 					"Mine": {
-						"label": "My tasks"
+						"label": "My tasks",
+						"showCount": true
 					},
 					"Unclaimed": {
-						"label": "Not claimed"
+						"label": "Not claimed",
+						"showCount": true
 					},
 					"Closed": {
-						"label": "Finished"
+						"label": "Finished",
+						"showCount": true
 					},
 					"Overdue": {
-						"label": "Late"
+						"label": "Late",
+						"showCount": true
 					},
 					"Due this week": {
-						"label": "This week"
+						"label": "This week",
+						"showCount": true
 					}
 				}
 			}

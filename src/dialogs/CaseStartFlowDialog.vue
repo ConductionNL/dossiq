@@ -21,8 +21,8 @@
   @spec openspec/specs/workflow-definition-engine/spec.md
 -->
 <template>
-	<NcDialog
-		:name="t('dossiq', 'Start a sub-process')"
+	<CnDialog
+		:name="t('dossiq', 'Start a flow')"
 		data-testid="case-start-flow-dialog"
 		@closing="$emit('close')">
 		<div class="case-start-flow">
@@ -83,17 +83,17 @@
 				{{ t('dossiq', 'Run') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { caseActionRefusal } from '../utils/caseActionsHelpers.js'
 
@@ -102,7 +102,7 @@ const PAGE_REFRESH = 'cn:page:refresh'
 export default {
 	name: 'CaseStartFlowDialog',
 
-	components: { NcButton, NcCheckboxRadioSwitch, NcDialog, NcLoadingIcon },
+	components: { NcButton, NcCheckboxRadioSwitch, CnDialog, NcLoadingIcon },
 
 	props: {
 		/**

@@ -23,7 +23,7 @@
 	@spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02
 -->
 <template>
-	<NcDialog
+	<CnDialog
 		:name="t('dossiq', 'Log contact')"
 		data-testid="log-contact-dialog"
 		@closing="$emit('close')">
@@ -151,15 +151,15 @@
 				{{ t('dossiq', 'Close') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import {
@@ -175,7 +175,7 @@ export default {
 		NcButton,
 		NcCheckboxRadioSwitch,
 		NcDateTimePicker,
-		NcDialog,
+		CnDialog,
 		NcTextArea,
 		NcTextField,
 	},

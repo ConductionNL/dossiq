@@ -13,6 +13,7 @@
         "#",
         "1 week",
         "AVG",
+        "BAG",
         "BSN",
         "Chat",
         "Checklist",
@@ -80,6 +81,8 @@
         "{percent}%",
         "Relevant",
         "{title}",
-        "{time}, +{extension}"
+        "{time}, +{extension}",
+        "{ground} · %n document",
+        "%n document"
     ]
 }
