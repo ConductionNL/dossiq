@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Queue;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Queue\QueueFigures;
+use OCA\Dossiq\Service\Term\DayCount;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -37,7 +38,7 @@ class QueueFiguresTest extends TestCase {
 	 */
 	public function testUnreadableDatesAndMissingTypesFoldQuietly(): void {
 		$today = new DateTimeImmutable('2026-10-16');
-		$figures = (new QueueFigures())->fold(
+		$figures = (new QueueFigures(new DayCount()))->fold(
 			openCases: [
 				['startDate' => 'not a date', 'deadline' => ''],
 				['startDate' => '2026-10-20', 'caseType' => 'woo'],
@@ -59,7 +60,7 @@ class QueueFiguresTest extends TestCase {
 	 * @return void
 	 */
 	public function testNothingOpenFoldsToZero(): void {
-		$figures = (new QueueFigures())->fold(openCases: [], today: new DateTimeImmutable('2026-10-16'), typeTitles: []);
+		$figures = (new QueueFigures(new DayCount()))->fold(openCases: [], today: new DateTimeImmutable('2026-10-16'), typeTitles: []);
 
 		$this->assertSame(
 			['queueCount' => 0, 'queueNewToday' => 0, 'queueDueSoon' => 0, 'queueOldestDays' => 0, 'queueByType' => []],

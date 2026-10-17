@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\KpiAggregationService;
 use OCA\Dossiq\Service\Queue\QueueFigures;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -502,7 +503,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, new QueueFigures(), $l10n, new NullLogger());
+		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, new QueueFigures(new DayCount()), $l10n, new NullLogger());
 	}
 
 	/**

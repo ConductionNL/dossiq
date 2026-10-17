@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Term\DayCount;
 
 /**
  * Folds the open cases into the team queue's figures. A case is in the queue while it has no handler.
@@ -36,6 +37,18 @@ use DateTimeImmutable;
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 class QueueFigures {
+	/**
+	 * Constructor.
+	 *
+	 * @param DayCount $dayCount Counts the days a case has waited.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly DayCount $dayCount,
+	) {
+	}//end __construct()
+
 	/**
 	 * Fold the open cases into the queue figures.
 	 *
@@ -135,7 +148,7 @@ class QueueFigures {
 		}
 
 		try {
-			$days = (int)(new DateTimeImmutable($date))->diff(new DateTimeImmutable($today))->format('%r%a');
+			$days = $this->dayCount->signed(from: new DateTimeImmutable($date), to: new DateTimeImmutable($today));
 		} catch (\Exception $e) {
 			return 0;
 		}
