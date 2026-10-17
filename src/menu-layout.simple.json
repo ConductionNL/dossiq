@@ -1440,6 +1440,44 @@
 									}
 								},
 								{
+									"widgetId": "case-grant-decisions",
+									"label": "Grant decisions",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Subsidies",
+											"Grants"
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "subsidieBeschikking",
+										"filter": {
+											"_referenced[subsidieAanvraag][subsidieaanvraag][case]": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "case-grant-advances",
+									"label": "Advances",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Subsidies",
+											"Grants"
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "subsidieUitvoering",
+										"filter": {
+											"_referenced[subsidieAanvraag][subsidieaanvraag][case]": "@objectId"
+										}
+									}
+								},
+								{
 									"widgetId": "case-files",
 									"label": "Files"
 								},
@@ -2455,6 +2493,85 @@
 								}
 							],
 							"emptyText": "No objection recorded on this case"
+						}
+					},
+					{
+						"id": "case-grant-decisions",
+						"type": "object-list",
+						"title": "Grant decisions",
+						"icon": "FileSign",
+						"_note": "DqSubsidie: records of the subsidy application linked to this case, reached through that application (openregister `_referenced`, PR #4678).",
+						"content": {
+							"register": "dossiq",
+							"schema": "subsidieBeschikking",
+							"filter": {
+								"_referenced[subsidieAanvraag][subsidieaanvraag][case]": "@objectId"
+							},
+							"sort": {
+								"field": "termStart",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "termStart",
+									"label": "Year from",
+									"format": "date"
+								},
+								{
+									"key": "grantedAmount",
+									"label": "Granted",
+									"formatter": "currency"
+								},
+								{
+									"key": "verplichtingen",
+									"label": "Condition",
+									"sortable": false
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"widget": "badge"
+								}
+							],
+							"emptyText": "No grant decisions yet"
+						}
+					},
+					{
+						"id": "case-grant-advances",
+						"type": "object-list",
+						"title": "Advances",
+						"icon": "Cash",
+						"_note": "DqSubsidie: records of the subsidy application linked to this case, reached through that application (openregister `_referenced`, PR #4678).",
+						"content": {
+							"register": "dossiq",
+							"schema": "subsidieUitvoering",
+							"filter": {
+								"_referenced[subsidieAanvraag][subsidieaanvraag][case]": "@objectId"
+							},
+							"sort": {
+								"field": "status",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "betaaldeVoorschotten",
+									"label": "Paid advances",
+									"sortable": false
+								},
+								{
+									"key": "outstandingAdvances",
+									"label": "Open advances",
+									"sortable": false
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"widget": "badge"
+								}
+							],
+							"emptyText": "No advances yet"
 						}
 					}
 				],
