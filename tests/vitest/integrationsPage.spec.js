@@ -277,7 +277,7 @@ describe('the connection declaration', () => {
 		for (const connection of linked) {
 			const anchor = connection.settingsUrl.split('#')[1]
 			expect(
-				connection.settingsUrl.startsWith('/settings/admin/dossiq#'),
+				connection.settingsUrl.startsWith('/settings/admin/dossiq?tab='),
 			).toBe(true)
 			expect(adminRoot).toContain(`id="${anchor}"`)
 		}
