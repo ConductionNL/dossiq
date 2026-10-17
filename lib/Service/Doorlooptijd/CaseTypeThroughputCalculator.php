@@ -133,17 +133,19 @@ class CaseTypeThroughputCalculator {
 
 	/**
 	 * The share of closed cases per case type that ended on or before their
-	 * deadline, as parallel arrays a chart reads directly. A case without a
-	 * deadline has no norm to meet and is left out.
+	 * deadline, as parallel arrays a chart reads directly, for the case types
+	 * that closed the most cases. A case without a deadline has no norm to
+	 * meet and is left out.
 	 *
 	 * @param array<int, array<string, mixed>> $cases     Enriched cases.
 	 * @param array<int, array<string, mixed>> $caseTypes Case types.
+	 * @param int                              $limit     How many case types, busiest first.
 	 *
 	 * @return array{labels: array<int, string>, shares: array<int, int>}
 	 *
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
-	public function computeWithinNormByCaseType(array $cases, array $caseTypes): array {
+	public function computeWithinNormByCaseType(array $cases, array $caseTypes, int $limit=5): array {
 		$titles = $this->titlesById(caseTypes: $caseTypes);
 
 		$closed = array_filter(
@@ -165,9 +167,11 @@ class CaseTypeThroughputCalculator {
 			}
 		}
 
+		uasort($tally, static fn (array $left, array $right): int => ($right['total'] <=> $left['total']));
+
 		$labels = [];
 		$shares = [];
-		foreach ($tally as $caseTypeId => $counts) {
+		foreach (array_slice($tally, 0, $limit, true) as $caseTypeId => $counts) {
 			$labels[] = ($titles[$caseTypeId] ?? $caseTypeId);
 			$shares[] = (int)round(($counts['met'] / $counts['total']) * 100);
 		}

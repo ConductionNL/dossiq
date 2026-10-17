@@ -1643,6 +1643,10 @@
         "version": "1.0.1",
         "digest": "19b2d7d234140944ff68df3c04c963449ac62f50f43c0e1a9fa3fa1e45b5fe83"
     },
+    "lib/Settings/register.d/96-case-type-list-presentation.json::caseType": {
+        "version": "1.23.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/96-lhs-recommendation-labels.json::lhsRecommendation": {
         "version": "1.1.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
