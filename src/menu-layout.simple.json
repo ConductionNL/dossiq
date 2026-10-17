@@ -1165,13 +1165,16 @@
 						"group": "Case"
 					},
 					"case-release": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Let the case go"
 					},
 					"case-hand-over": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Give to another team"
 					},
 					"add-party": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Add a party"
 					},
 					"message-applicant": {
 						"group": "Case"
@@ -1183,7 +1186,8 @@
 						"group": "Case"
 					},
 					"plan-follow-up": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Plan what follows"
 					},
 					"case-remind": {
 						"group": "Case"
@@ -1236,16 +1240,19 @@
 						"group": "Case"
 					},
 					"case-version-move": {
-						"group": "Case"
+						"group": "Case",
+						"label": "To another version"
 					},
 					"cross-domain-lookup": {
 						"group": "Case"
 					},
 					"case-inspect-raw": {
-						"adminOnly": true
+						"adminOnly": true,
+						"label": "View raw data"
 					},
 					"case-inspect-runs": {
-						"adminOnly": true
+						"adminOnly": true,
+						"label": "View flow runs"
 					},
 					"send-digital-post": {
 						"label": "Message"
