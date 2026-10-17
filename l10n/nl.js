@@ -9306,6 +9306,7 @@ OC.L10N.register(
         "Viewing version {version}. Active version is {active}.": "Versie {version} wordt weergegeven. De actieve versie is {active}.",
         "Violation class": "Classificatie",
         "Visibility": "Zichtbaarheid",
+        "Visible to": "Zichtbaar voor",
         "Visible to the applicant": "Zichtbaar voor de aanvrager",
         "Visits": "Bezoeken",
         "Volume of support per week.": "Omvang van de ondersteuning per week.",

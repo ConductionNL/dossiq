@@ -9306,6 +9306,7 @@ OC.L10N.register(
         "Viewing version {version}. Active version is {active}.": "Viewing version {version}. Active version is {active}.",
         "Violation class": "Violation class",
         "Visibility": "Visibility",
+        "Visible to": "Visible to",
         "Visible to the applicant": "Visible to the applicant",
         "Visits": "Visits",
         "Volume of support per week.": "Volume of support per week.",

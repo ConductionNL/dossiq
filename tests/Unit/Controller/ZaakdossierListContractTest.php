@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Service\Documents\ScanVerdictReader;
 use OCA\Dossiq\Controller\ZaakdossierController;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
@@ -193,6 +194,51 @@ class ZaakdossierListContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
 		$this->assertSame(['error' => 'OpenRegister register not configured'], $response->getData());
 	}//end testListDossierAnswers503WhenTheDossierStoreIsUnavailable()
+
+	/**
+	 * With the scanner reader wired, every filtered row carries what the
+	 * scanner recorded for its file, read by the row's own file id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 */
+	public function testListDossierPutsTheScanVerdictOnEveryRow(): void {
+		$verdicts = $this->createMock(ScanVerdictReader::class);
+		$verdicts->expects($this->once())
+			->method('verdictFor')
+			->with(42)
+			->willReturn(['state' => 'clean']);
+
+		$controller = new ZaakdossierController(
+			appName: 'dossiq',
+			request: $this->request,
+			fileService: $this->fileService,
+			reader: $this->reader,
+			uploadHandler: $this->uploadHandler,
+			userSession: $this->userSession,
+			approvals: $this->approvals,
+			bulk: new BulkDocumentActions(reader: $this->reader, fileService: $this->fileService),
+			verdicts: $verdicts,
+		);
+		$this->signIn(uid: 'handler-1');
+
+		$row = ['id' => 'doc-1', 'fileId' => 42];
+		$this->fileService->method('getDossierForCase')->willReturn(['informatieobjecten' => [$row]]);
+		$this->reader->method('filterForUser')->willReturn([$row]);
+
+		$grouped = [];
+		$this->fileService->method('groupByType')->willReturnCallback(
+			static function (array $documents) use (&$grouped): array {
+				$grouped = $documents;
+				return ['overig' => $documents];
+			}
+		);
+
+		$controller->listDossier(caseId: 'case-1');
+
+		$this->assertSame([['id' => 'doc-1', 'fileId' => 42, 'scanVerdict' => ['state' => 'clean']]], $grouped);
+	}//end testListDossierPutsTheScanVerdictOnEveryRow()
 
 	/**
 	 * The clearance filter runs for the session user, and the list that is
