@@ -13,7 +13,8 @@
 		:notificationLabels="notificationLabels"
 		:permissions="permissions"
 		:supportDialog="supportDialog"
-		:userSettingsSections="userSettingsSections">
+		:userSettingsSections="userSettingsSections"
+		:userSettingsNextcloudLinks="userSettingsNextcloudLinks">
 		<!--
 			Host-mounted object sidebar (decidesk pattern). CnAppRoot
 			suppresses its own auto-mounted CnObjectSidebar because this
@@ -207,6 +208,54 @@ export default {
 		 */
 		userSettingsSections() {
 			return ['app', 'credentials', 'walkthrough', 'integrations']
+		},
+
+		/**
+		 * Nextcloud's own personal settings, linked from the dialog's navigation
+		 * above the app's entry. Nextcloud offers an app no list of them.
+		 *
+		 * @return {Array<{label: string, section: string, icon: string}>} The links.
+		 * @spec openspec/specs/personal-settings-surface/spec.md
+		 */
+		userSettingsNextcloudLinks() {
+			return [
+				{
+					label: 'Personal info',
+					section: 'personal-info',
+					icon: 'AccountOutline',
+				},
+				{ label: 'Security', section: 'security', icon: 'LockOutline' },
+				{
+					label: 'Notifications',
+					section: 'notifications',
+					icon: 'BellOutline',
+				},
+				{
+					label: 'Mobile & desktop',
+					section: 'sync-clients',
+					icon: 'Cellphone',
+				},
+				{
+					label: 'Sharing',
+					section: 'sharing',
+					icon: 'ShareVariantOutline',
+				},
+				{
+					label: 'Appearance and accessibility',
+					section: 'theming',
+					icon: 'EyeOutline',
+				},
+				{
+					label: 'Availability',
+					section: 'availability',
+					icon: 'ClockOutline',
+				},
+				{
+					label: 'Privacy',
+					section: 'privacy',
+					icon: 'ShieldAccountOutline',
+				},
+			]
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
