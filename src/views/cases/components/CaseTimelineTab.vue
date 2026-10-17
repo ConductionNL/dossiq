@@ -27,47 +27,6 @@
 -->
 <template>
 	<div class="case-timeline" data-testid="case-timeline">
-		<form
-			v-if="canManage"
-			class="case-timeline__composer"
-			data-testid="case-timeline-composer"
-			@submit.prevent="submit">
-			<NcSelect
-				v-if="textBlocks.length"
-				v-model="chosenBlock"
-				class="case-timeline__filter"
-				:options="blockOptions"
-				:clearable="true"
-				label="label"
-				:inputLabel="t('dossiq', 'Standard note')"
-				:placeholder="t('dossiq', 'Write your own')"
-				data-testid="case-timeline-block"
-				@input="pickBlock" />
-
-			<label class="case-timeline__draft-label" for="case-timeline-draft">
-				{{ t('dossiq', 'Write a note on this case') }}
-			</label>
-			<textarea
-				id="case-timeline-draft"
-				v-model="draft"
-				class="case-timeline__draft"
-				:placeholder="t('dossiq', 'Write a note on this case')"
-				data-testid="case-timeline-draft" />
-
-			<NcCheckboxRadioSwitch
-				v-model="draftIsPublic"
-				data-testid="case-timeline-draft-public">
-				{{ t('dossiq', 'Visible to the applicant') }}
-			</NcCheckboxRadioSwitch>
-
-			<NcButton
-				variant="primary"
-				type="submit"
-				:disabled="saving || !draft.trim()"
-				data-testid="case-timeline-save">
-				{{ t('dossiq', 'Add to the timeline') }}
-			</NcButton>
-		</form>
 
 		<div class="case-timeline__controls">
 			<NcSelect
@@ -181,6 +140,54 @@
 				</div>
 			</li>
 		</ul>
+
+		<form
+			v-if="canManage"
+			class="case-timeline__composer"
+			data-testid="case-timeline-composer"
+			@submit.prevent="submit">
+			<h3 class="case-timeline__composer-title">
+				{{ t('dossiq', 'Add a note') }}
+			</h3>
+			<p class="case-timeline__composer-hint">
+				{{ t('dossiq', 'Goes on the timeline above, internal unless you make it visible') }}
+			</p>
+			<NcSelect
+				v-if="textBlocks.length"
+				v-model="chosenBlock"
+				class="case-timeline__filter"
+				:options="blockOptions"
+				:clearable="true"
+				label="label"
+				:inputLabel="t('dossiq', 'Standard note')"
+				:placeholder="t('dossiq', 'Write your own')"
+				data-testid="case-timeline-block"
+				@input="pickBlock" />
+
+			<label class="case-timeline__draft-label" for="case-timeline-draft">
+				{{ t('dossiq', 'Write a note on this case') }}
+			</label>
+			<textarea
+				id="case-timeline-draft"
+				v-model="draft"
+				class="case-timeline__draft"
+				:placeholder="t('dossiq', 'Write a note on this case')"
+				data-testid="case-timeline-draft" />
+
+			<NcCheckboxRadioSwitch
+				v-model="draftIsPublic"
+				data-testid="case-timeline-draft-public">
+				{{ t('dossiq', 'Visible to the applicant') }}
+			</NcCheckboxRadioSwitch>
+
+			<NcButton
+				variant="primary"
+				type="submit"
+				:disabled="saving || !draft.trim()"
+				data-testid="case-timeline-save">
+				{{ t('dossiq', 'Add to the timeline') }}
+			</NcButton>
+		</form>
 
 		<PortalMessageDialog
 			v-if="replyTo"
@@ -639,7 +646,20 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	margin-block-end: 16px;
+	margin-block-start: 24px;
+	padding-block-start: 16px;
+	border-block-start: 1px solid var(--color-border);
+}
+
+.case-timeline__composer-title {
+	margin: 0;
+	font-size: 16px;
+	font-weight: bold;
+}
+
+.case-timeline__composer-hint {
+	margin: 0;
+	color: var(--color-text-maxcontrast);
 }
 
 .case-timeline__draft-label {
