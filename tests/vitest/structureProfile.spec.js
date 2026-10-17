@@ -456,10 +456,11 @@ describe('the simple profile', () => {
 	// 68 -> 67: the Workflow board page retires; `/workflow-board` redirects to the Cases board.
 	// 67 -> 70: data subject requests, contracts and suppliers get their lists (DqPrivacy, DqContracten).
 	// 70 -> 71: the Postvak (board DqPostvak) adds one page.
-	it('builds the same 71 pages as the full profile, so every route stays', () => {
+	// 71 -> 72: search results over cases, objects and documents (DqZoekresultaten).
+	it('builds the same 72 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(71)
+		expect(built.pages).toHaveLength(72)
 	})
 })
 
