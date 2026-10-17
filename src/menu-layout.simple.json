@@ -2092,7 +2092,8 @@
 							"viewAllQuery": {
 								"case": "@objectId"
 							},
-							"emptyText": "No tasks for this case yet"
+							"emptyText": "No tasks for this case yet",
+							"mode": "table"
 						}
 					},
 					{
