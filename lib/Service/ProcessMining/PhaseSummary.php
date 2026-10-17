@@ -44,6 +44,13 @@ class PhaseSummary {
 	private const HOURS_PER_DAY = 24.0;
 
 	/**
+	 * The cell of a phase a case type never passes.
+	 *
+	 * @var string
+	 */
+	private const NONE = 'none';
+
+	/**
 	 * What the page reads: the days per phase (mean and median) and where cases stick.
 	 *
 	 * @param array<int, array<string, mixed>> $caseTypes The per case type reports.
@@ -65,42 +72,70 @@ class PhaseSummary {
 	/**
 	 * The days per phase per case type, as columns and rows a matrix reads.
 	 *
-	 * Columns are the phases in the order they first appear; a case type that
-	 * never passes a phase has null in that cell.
+	 * Columns are the named phases in the order they first appear, rows the
+	 * case types that passed at least one of them; a case type that
+	 * never passes a phase has the word `none` in that cell, which the page
+	 * shows translated rather than as an empty cell.
 	 *
 	 * @param array<int, array<string, mixed>> $caseTypes The per case type reports.
 	 * @param string                           $measure   `meanHours` or `medianHours`.
 	 *
-	 * @return array{columns: array<int, string>, rows: array<int, array{label: string, values: array<int, int|null>}>}
+	 * @return array{columns: array<int, string>, rows: array<int, array{label: string, values: array<int, int|string>}>}
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function matrix(array $caseTypes, string $measure='meanHours'): array {
 		$columns = [];
-		foreach ($caseTypes as $report) {
-			foreach (($report['dwellTime'] ?? []) as $stat) {
-				$name = (string)($stat['statusName'] ?? '');
-				if ($name !== '' && in_array($name, $columns, true) === false) {
-					$columns[] = $name;
-				}
-			}
-		}
-
 		$rows = [];
 		foreach ($caseTypes as $report) {
 			$byName = [];
-			foreach (($report['dwellTime'] ?? []) as $stat) {
-				$byName[(string)($stat['statusName'] ?? '')] = (int)round(((float)($stat[$measure] ?? 0)) / self::HOURS_PER_DAY);
+			foreach ($this->namedStats(report: $report) as $stat) {
+				$name = (string)$stat['statusName'];
+				$byName[$name] = (int)round(((float)($stat[$measure] ?? 0)) / self::HOURS_PER_DAY);
+				if (in_array($name, $columns, true) === false) {
+					$columns[] = $name;
+				}
 			}
 
-			$rows[] = [
-				'label' => (string)($report['title'] ?? ''),
-				'values' => array_map(static fn (string $name): ?int => ($byName[$name] ?? null), $columns),
-			];
+			if ($byName !== []) {
+				$rows[] = ['label' => (string)($report['title'] ?? ''), 'byName' => $byName];
+			}
 		}
 
-		return ['columns' => $columns, 'rows' => $rows];
+		return [
+			'columns' => $columns,
+			'rows' => array_map(
+				static fn (array $row): array => [
+					'label' => $row['label'],
+					'values' => array_map(static fn (string $name): int|string => ($row['byName'][$name] ?? self::NONE), $columns),
+				],
+				$rows
+			),
+		];
 	}//end matrix()
+
+	/**
+	 * The dwell statistics of a report whose status resolved to a name. A
+	 * status the index could not name carries its id as its name, and an id
+	 * is no phase a reader recognises, so it is left out.
+	 *
+	 * @param array<string, mixed> $report One case type's report.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	private function namedStats(array $report): array {
+		return array_values(
+			array_filter(
+				(array)($report['dwellTime'] ?? []),
+				static function (array $stat): bool {
+					$name = (string)($stat['statusName'] ?? '');
+					return $name !== '' && $name !== (string)($stat['statusId'] ?? '');
+				}
+			)
+		);
+	}//end namedStats()
 
 	/**
 	 * Where cases stick: the highest ranked bottleneck of every case type,

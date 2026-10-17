@@ -1,0 +1,36 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V.
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * The LHS matrix on the enforcement advice page (board DqHandhaving) is read
+ * from the municipality's own lhsMatrix record, never from a table written
+ * into the manifest: a fixed table would show one municipality's matrix on
+ * every install and could disagree with the matrix the advice used.
+ *
+ * @spec openspec/changes/screens-round12-enforcement-advice/specs/enforcement-advice/spec.md
+ */
+
+import { describe, expect, it } from 'vitest'
+import manifest from '../../src/manifest.json'
+
+const page = manifest.pages.find((p) => p.id === 'LhsRecommendationDetail')
+const matrix = page.config.widgets.find((w) => w.id === 'lhs-matrix')
+
+describe('the LHS matrix on the enforcement advice', () => {
+	it('reads the cells from the matrix record the advice names', () => {
+		expect(matrix.content.chartKind).toBe('matrix')
+		const source = matrix.content.cellSource
+		expect(source.schema).toBe('lhsMatrix')
+		expect(source.filter).toEqual({ version: '@object.matrixVersion' })
+		expect(source.cellFilter).toEqual({ actorType: '@object.actorType' })
+		// Only the matrix the advice was calculated with, never a stand-in.
+		expect(source.fallbackFilter).toBeUndefined()
+		expect(matrix.content.series).toBeUndefined()
+		expect(matrix.content.categories).toBeUndefined()
+	})
+
+	it('outlines the cell of the advice and comes first on the page', () => {
+		expect(matrix.content.highlight).toEqual({ row: '@object.behaviour', column: '@object.severity' })
+		expect(page.config.layout[0].widgetId).toBe('lhs-matrix')
+	})
+})
