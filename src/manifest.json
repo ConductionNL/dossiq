@@ -5162,35 +5162,6 @@
 						"icon": "ViewDashboardOutline"
 					}
 				],
-				"pageFilters": [
-					{
-						"key": "period",
-						"label": "Period",
-						"default": "12m",
-						"options": [
-							{
-								"value": "3m",
-								"label": "Last 3 months"
-							},
-							{
-								"value": "6m",
-								"label": "Last 6 months"
-							},
-							{
-								"value": "12m",
-								"label": "Last 12 months"
-							},
-							{
-								"value": "year",
-								"label": "This year"
-							},
-							{
-								"value": "all",
-								"label": "All time"
-							}
-						]
-					}
-				],
 				"widgets": [
 					{
 						"id": "dt-avg",
@@ -5210,7 +5181,7 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.period?",
+									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -5241,7 +5212,7 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.period?",
+									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -5272,7 +5243,7 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.period?",
+									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -5303,7 +5274,7 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.period?",
+									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -5333,7 +5304,7 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.period?",
+									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								},
 								"labelsPath": "summary.monthlyAvgDays.labels",
@@ -5371,12 +5342,16 @@
 						"type": "chart",
 						"title": "Within the norm per case type",
 						"content": {
-							"chartKind": "bar",
-							"height": 220,
+							"chartKind": "bar-list",
+							"barMax": 100,
+							"valueFormat": {
+								"name": "number",
+								"suffix": " %"
+							},
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.period?",
+									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								},
 								"labelsPath": "summary.withinNormByCaseType.labels",
@@ -5386,23 +5361,6 @@
 										"path": "summary.withinNormByCaseType.shares"
 									}
 								]
-							},
-							"options": {
-								"plotOptions": {
-									"bar": {
-										"horizontal": true,
-										"barHeight": "40%"
-									}
-								},
-								"xaxis": {
-									"max": 100
-								},
-								"legend": {
-									"show": false
-								},
-								"dataLabels": {
-									"enabled": true
-								}
 							}
 						}
 					},
@@ -5510,7 +5468,33 @@
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
-				"kpiRow": ["dt-avg", "dt-within-norm", "dt-over-norm", "dt-closed"]
+				"kpiRow": ["dt-avg", "dt-within-norm", "dt-over-norm", "dt-closed"],
+				"dateRange": {
+					"enabled": true,
+					"control": "segmented",
+					"placement": "description",
+					"persistKey": "dossiq-doorlooptijd-range",
+					"default": {
+						"preset": "year"
+					},
+					"presets": [
+						{
+							"id": "1m",
+							"label": "Month",
+							"period": "month"
+						},
+						{
+							"id": "3m",
+							"label": "Quarter",
+							"period": "quarter"
+						},
+						{
+							"id": "year",
+							"label": "Year",
+							"period": "year"
+						}
+					]
+				}
 			},
 			"slots": {
 				"header-actions": "DtCaseTypeFilter",
@@ -5558,6 +5542,39 @@
 					}
 				],
 				"widgets": [
+					{
+						"id": "pm-phase-days",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-phase-days",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
+						"type": "chart",
+						"title": "Days per phase",
+						"subtitle": "Per case type, average",
+						"content": {
+							"chartKind": "matrix",
+							"valueFormat": {
+								"name": "number",
+								"suffix": " d"
+							},
+							"footnote": "The darker, the longer a case stays in that phase.",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"caseType": "@workspace.caseType?"
+								},
+								"responsePath": "phaseDays.mean",
+								"labelsPath": "columns",
+								"rowsPath": "rows",
+								"rowLabelPath": "label",
+								"rowValuesPath": "values"
+							}
+						}
+					},
 					{
 						"id": "pm-stuck",
 						"roles": ["controllers", "beheerders", "admin"],
@@ -5663,10 +5680,26 @@
 				],
 				"layout": [
 					{
+						"id": 6,
+						"widgetId": "pm-phase-days",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 5
+					},
+					{
+						"id": 0,
+						"widgetId": "pm-stuck",
+						"gridX": 0,
+						"gridY": 5,
+						"gridWidth": 12,
+						"gridHeight": 3
+					},
+					{
 						"id": 1,
 						"widgetId": "pm-kpis",
 						"gridX": 0,
-						"gridY": 0,
+						"gridY": 8,
 						"gridWidth": 12,
 						"gridHeight": 3
 					},
@@ -5674,7 +5707,7 @@
 						"id": 2,
 						"widgetId": "pm-dwell",
 						"gridX": 0,
-						"gridY": 3,
+						"gridY": 11,
 						"gridWidth": 6,
 						"gridHeight": 6
 					},
@@ -5682,7 +5715,7 @@
 						"id": 3,
 						"widgetId": "pm-throughput",
 						"gridX": 6,
-						"gridY": 3,
+						"gridY": 11,
 						"gridWidth": 6,
 						"gridHeight": 6
 					},
@@ -5690,7 +5723,7 @@
 						"id": 4,
 						"widgetId": "pm-bottlenecks",
 						"gridX": 0,
-						"gridY": 9,
+						"gridY": 17,
 						"gridWidth": 12,
 						"gridHeight": 6
 					},
@@ -5698,17 +5731,9 @@
 						"id": 5,
 						"widgetId": "pm-dwell-by-assignee",
 						"gridX": 0,
-						"gridY": 15,
+						"gridY": 23,
 						"gridWidth": 12,
 						"gridHeight": 6
-					},
-					{
-						"id": 0,
-						"widgetId": "pm-stuck",
-						"gridX": 0,
-						"gridY": 21,
-						"gridWidth": 12,
-						"gridHeight": 3
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
@@ -7417,8 +7442,12 @@
 						"type": "chart",
 						"title": "Decided on time per case type",
 						"content": {
-							"chartKind": "bar",
-							"height": 220,
+							"chartKind": "bar-list",
+							"barMax": 100,
+							"valueFormat": {
+								"name": "number",
+								"suffix": " %"
+							},
 							"endpointSource": {
 								"url": "/apps/dossiq/api/termijn/dashboard/kpi",
 								"labelsPath": "onTimeByCaseType.labels",
@@ -7431,23 +7460,6 @@
 								"params": {
 									"from": "@workspace.dateFrom?",
 									"to": "@workspace.dateTo?"
-								}
-							},
-							"options": {
-								"plotOptions": {
-									"bar": {
-										"horizontal": true,
-										"barHeight": "40%"
-									}
-								},
-								"xaxis": {
-									"max": 100
-								},
-								"dataLabels": {
-									"enabled": true
-								},
-								"legend": {
-									"show": false
 								}
 							}
 						},
