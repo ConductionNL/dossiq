@@ -5473,7 +5473,8 @@
 									"watch": "warning"
 								}
 							},
-							"emptyText": "No phase stands out in this period"
+							"emptyText": "No phase stands out in this period",
+							"limit": 3
 						}
 					},
 					{
@@ -5544,18 +5545,10 @@
 				],
 				"layout": [
 					{
-						"id": 0,
-						"widgetId": "pm-stuck",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 4
-					},
-					{
 						"id": 1,
 						"widgetId": "pm-kpis",
 						"gridX": 0,
-						"gridY": 4,
+						"gridY": 0,
 						"gridWidth": 12,
 						"gridHeight": 3
 					},
@@ -5563,7 +5556,7 @@
 						"id": 2,
 						"widgetId": "pm-dwell",
 						"gridX": 0,
-						"gridY": 7,
+						"gridY": 3,
 						"gridWidth": 6,
 						"gridHeight": 6
 					},
@@ -5571,7 +5564,7 @@
 						"id": 3,
 						"widgetId": "pm-throughput",
 						"gridX": 6,
-						"gridY": 7,
+						"gridY": 3,
 						"gridWidth": 6,
 						"gridHeight": 6
 					},
@@ -5579,7 +5572,7 @@
 						"id": 4,
 						"widgetId": "pm-bottlenecks",
 						"gridX": 0,
-						"gridY": 13,
+						"gridY": 9,
 						"gridWidth": 12,
 						"gridHeight": 6
 					},
@@ -5587,9 +5580,17 @@
 						"id": 5,
 						"widgetId": "pm-dwell-by-assignee",
 						"gridX": 0,
-						"gridY": 19,
+						"gridY": 15,
 						"gridWidth": 12,
 						"gridHeight": 6
+					},
+					{
+						"id": 0,
+						"widgetId": "pm-stuck",
+						"gridX": 0,
+						"gridY": 21,
+						"gridWidth": 12,
+						"gridHeight": 3
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"

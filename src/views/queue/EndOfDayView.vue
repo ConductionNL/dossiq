@@ -20,9 +20,12 @@
 <template>
 	<div class="end-of-day">
 		<header class="end-of-day__head">
-			<h1 class="end-of-day__title">
-				{{ t('dossiq', 'Close out your day') }}
-			</h1>
+			<div class="end-of-day__title-row">
+				<h1 class="end-of-day__title">
+					{{ t('dossiq', 'Close out your day') }}
+				</h1>
+				<CnBuildiqEditButton />
+			</div>
 			<nav class="end-of-day__crumbs" :aria-label="t('dossiq', 'Breadcrumb')">
 				<router-link :to="{ name: 'MyWorkHome' }">
 					{{ t('dossiq', 'My work') }}
@@ -202,35 +205,35 @@
 					<h2 class="end-of-day__side-title">
 						{{ t('dossiq', 'Your day') }}
 					</h2>
-					<dl class="end-of-day__figures">
-						<div>
-							<dt>{{ t('dossiq', 'Opened') }}</dt>
-							<dd class="end-of-day__figure">
+					<div class="end-of-day__figures">
+						<div class="end-of-day__fig">
+							<span class="end-of-day__figure-label">{{ t('dossiq', 'Opened') }}</span>
+							<span class="end-of-day__figure">
 								{{ items.length }}
-							</dd>
-							<dd class="end-of-day__figure-note">
+							</span>
+							<span class="end-of-day__figure-note">
 								{{ t('dossiq', '{cases} cases, {tasks} tasks', { cases: countOf('case'), tasks: countOf('task') }) }}
-							</dd>
+							</span>
 						</div>
-						<div>
-							<dt>{{ t('dossiq', 'Notes recorded') }}</dt>
-							<dd class="end-of-day__figure">
+						<div class="end-of-day__fig">
+							<span class="end-of-day__figure-label">{{ t('dossiq', 'Notes recorded') }}</span>
+							<span class="end-of-day__figure">
 								{{ recorded.length }}
-							</dd>
-							<dd class="end-of-day__figure-note">
+							</span>
+							<span class="end-of-day__figure-note">
 								{{ t('dossiq', 'of the {total}', { total: items.length }) }}
-							</dd>
+							</span>
 						</div>
-						<div>
-							<dt>{{ t('dossiq', 'Ready to record') }}</dt>
-							<dd class="end-of-day__figure">
+						<div class="end-of-day__fig">
+							<span class="end-of-day__figure-label">{{ t('dossiq', 'Ready to record') }}</span>
+							<span class="end-of-day__figure">
 								{{ filledItems.length }}
-							</dd>
-							<dd class="end-of-day__figure-note">
+							</span>
+							<span class="end-of-day__figure-note">
 								{{ t('dossiq', 'filled in, not recorded yet') }}
-							</dd>
+							</span>
 						</div>
-					</dl>
+					</div>
 				</section>
 
 				<section
@@ -268,6 +271,7 @@
 </template>
 
 <script>
+import { CnBuildiqEditButton } from '@conduction/nextcloud-vue'
 import { getCanonicalLocale, translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard, NcTextField } from '@nextcloud/vue'
 import CheckIcon from 'vue-material-design-icons/Check.vue'
@@ -288,6 +292,7 @@ export default {
 
 	components: {
 		CheckIcon,
+		CnBuildiqEditButton,
 		ClipboardCheckOutline,
 		NcButton,
 		NcLoadingIcon,
@@ -546,6 +551,14 @@ export default {
 	flex-direction: column;
 	gap: 6px;
 	padding: 4px 0 8px;
+}
+
+.end-of-day__title-row {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 12px 24px;
 }
 
 .end-of-day__title {
@@ -820,26 +833,26 @@ export default {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 14px 16px;
-	margin: 0;
 }
 
-.end-of-day__figures dt {
+.end-of-day__fig {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+	text-align: start;
+}
+
+.end-of-day__figure-label,
+.end-of-day__figure-note {
 	font-size: 13px;
 	color: var(--color-text-maxcontrast);
-}
-
-.end-of-day__figures dd {
-	margin: 0;
 }
 
 .end-of-day__figure {
 	font-size: 22px;
 	font-weight: 700;
-}
-
-.end-of-day__figure-note {
-	font-size: 13px;
-	color: var(--color-text-maxcontrast);
+	line-height: 1.2;
 }
 
 .end-of-day__side-text {
