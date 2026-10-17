@@ -1807,11 +1807,11 @@
 				],
 				"headerActions": [
 					{
-						"id": "share-with-organisation",
+						"id": "add-location",
 						"type": "open-modal",
-						"target": "CaseShareOrganisationDialog",
-						"label": "Share with another organisation",
-						"icon": "ShareVariant",
+						"target": "CaseLocationDialog",
+						"label": "Add location",
+						"icon": "MapMarkerPlusOutline",
 						"group": "Case",
 						"props": {
 							"caseId": "@objectId"
@@ -1820,15 +1820,13 @@
 							"field": "@self.archived",
 							"op": "empty"
 						}
-					}
-				],
-				"headerActions": [
+					},
 					{
-						"id": "add-location",
+						"id": "share-with-organisation",
 						"type": "open-modal",
-						"target": "CaseLocationDialog",
-						"label": "Add location",
-						"icon": "MapMarkerPlusOutline",
+						"target": "CaseShareOrganisationDialog",
+						"label": "Share with another organisation",
+						"icon": "ShareVariant",
 						"group": "Case",
 						"props": {
 							"caseId": "@objectId"
