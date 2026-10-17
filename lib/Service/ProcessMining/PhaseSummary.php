@@ -44,6 +44,13 @@ class PhaseSummary {
 	private const HOURS_PER_DAY = 24.0;
 
 	/**
+	 * The cell of a phase a case type never passes.
+	 *
+	 * @var string
+	 */
+	private const NONE = 'none';
+
+	/**
 	 * What the page reads: the days per phase (mean and median) and where cases stick.
 	 *
 	 * @param array<int, array<string, mixed>> $caseTypes The per case type reports.
@@ -66,12 +73,13 @@ class PhaseSummary {
 	 * The days per phase per case type, as columns and rows a matrix reads.
 	 *
 	 * Columns are the phases in the order they first appear; a case type that
-	 * never passes a phase has null in that cell.
+	 * never passes a phase has the word `none` in that cell, which the page
+	 * shows translated rather than as an empty cell.
 	 *
 	 * @param array<int, array<string, mixed>> $caseTypes The per case type reports.
 	 * @param string                           $measure   `meanHours` or `medianHours`.
 	 *
-	 * @return array{columns: array<int, string>, rows: array<int, array{label: string, values: array<int, int|null>}>}
+	 * @return array{columns: array<int, string>, rows: array<int, array{label: string, values: array<int, int|string>}>}
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
@@ -95,7 +103,7 @@ class PhaseSummary {
 
 			$rows[] = [
 				'label' => (string)($report['title'] ?? ''),
-				'values' => array_map(static fn (string $name): ?int => ($byName[$name] ?? null), $columns),
+				'values' => array_map(static fn (string $name): int|string => ($byName[$name] ?? self::NONE), $columns),
 			];
 		}
 
