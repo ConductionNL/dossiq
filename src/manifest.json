@@ -7155,7 +7155,8 @@
 						"href": "https://dossiq.conduction.nl/compare"
 					},
 					"documentationButton": true,
-					"suggestButton": false
+					"suggestButton": false,
+					"summaries": false
 				}
 			}
 		},
