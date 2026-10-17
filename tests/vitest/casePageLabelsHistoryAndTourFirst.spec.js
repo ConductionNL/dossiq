@@ -121,7 +121,15 @@ describe('N-3: field labels and the term tile read Dutch', () => {
 		).config.widgets.find((widget) => widget.id === 'case-tile-deadline')
 		const { label, ...rest } = base.content
 		expect(label).toBe('Deadline')
-		expect(tile.content).toEqual(rest)
+		expect(tile.content).toMatchObject(rest)
+		// And it draws the board's term card: days, the decide-by line, the
+		// bar from the start date and the suspend act.
+		expect(tile.content).toMatchObject({
+			daysLabel: { one: '{count} day', other: '{count} days' },
+			caption: 'Decide by {date}',
+			startField: 'startDate',
+			action: { type: 'open-modal', target: 'CaseLifecycleMenuDialog', props: { act: 'suspend' } },
+		})
 	})
 })
 
