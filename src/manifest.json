@@ -5065,35 +5065,6 @@
 						"icon": "ViewDashboardOutline"
 					}
 				],
-				"pageFilters": [
-					{
-						"key": "period",
-						"label": "Period",
-						"default": "12m",
-						"options": [
-							{
-								"value": "3m",
-								"label": "Last 3 months"
-							},
-							{
-								"value": "6m",
-								"label": "Last 6 months"
-							},
-							{
-								"value": "12m",
-								"label": "Last 12 months"
-							},
-							{
-								"value": "year",
-								"label": "This year"
-							},
-							{
-								"value": "all",
-								"label": "All time"
-							}
-						]
-					}
-				],
 				"widgets": [
 					{
 						"id": "dt-avg",
@@ -5113,7 +5084,7 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.period?",
+									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -5144,7 +5115,7 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.period?",
+									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -5175,7 +5146,7 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.period?",
+									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -5206,7 +5177,7 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.period?",
+									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -5236,7 +5207,7 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.period?",
+									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								},
 								"labelsPath": "summary.monthlyAvgDays.labels",
@@ -5283,7 +5254,7 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.period?",
+									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								},
 								"labelsPath": "summary.withinNormByCaseType.labels",
@@ -5400,7 +5371,33 @@
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
-				"kpiRow": ["dt-avg", "dt-within-norm", "dt-over-norm", "dt-closed"]
+				"kpiRow": ["dt-avg", "dt-within-norm", "dt-over-norm", "dt-closed"],
+				"dateRange": {
+					"enabled": true,
+					"control": "segmented",
+					"placement": "description",
+					"persistKey": "dossiq-doorlooptijd-range",
+					"default": {
+						"preset": "year"
+					},
+					"presets": [
+						{
+							"id": "1m",
+							"label": "Month",
+							"period": "month"
+						},
+						{
+							"id": "3m",
+							"label": "Quarter",
+							"period": "quarter"
+						},
+						{
+							"id": "year",
+							"label": "Year",
+							"period": "year"
+						}
+					]
+				}
 			},
 			"slots": {
 				"header-actions": "DtCaseTypeFilter",

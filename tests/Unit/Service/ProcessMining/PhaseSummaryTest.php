@@ -73,6 +73,26 @@ class PhaseSummaryTest extends TestCase {
 	}//end testMatrixHasAColumnPerPhase()
 
 	/**
+	 * A status the index could not name is no column, and a case type with
+	 * only such statuses is no row.
+	 *
+	 * @return void
+	 */
+	public function testUnnamedStatusesAreLeftOut(): void {
+		$reports = $this->reports();
+		$reports[] = [
+			'id' => 'bezwaar',
+			'title' => 'Bezwaar',
+			'dwellTime' => [['statusId' => 'uuid-1', 'statusName' => 'uuid-1', 'meanHours' => 48.0, 'medianHours' => 48.0]],
+		];
+
+		$matrix = (new PhaseSummary())->matrix(caseTypes: $reports, measure: 'meanHours');
+
+		self::assertSame(expected: ['Ontvangst', 'Advies'], actual: $matrix['columns']);
+		self::assertCount(expectedCount: 2, haystack: $matrix['rows']);
+	}//end testUnnamedStatusesAreLeftOut()
+
+	/**
 	 * The worst case type's bottleneck leads and is the only one marked as such.
 	 *
 	 * @return void
