@@ -477,8 +477,8 @@ describe('the landing page', () => {
 	it('gives the dashboard back its full-structure widgets', () => {
 		const dashboard = page(builtSimple, 'Dashboard')
 		const before = original('Dashboard')
-		// The two charts draw as the board's horizontal bars; every other
-		// widget is the full structure's, and the five KPI tiles leave the
+		// Every widget is the full structure's (both structures draw the two
+		// charts as the board's bar lists), and the five KPI tiles leave the
 		// grid for the KPI row above it.
 		// Two KPI tiles carry the board's own words: Late (Te laat) and Within
 		// deadline (Binnen termijn).
@@ -495,9 +495,7 @@ describe('the landing page', () => {
 						content: { ...item.content, label: boardWords[item.id] },
 					}
 				}
-				return item.type === 'chart'
-					? { ...item, content: { ...item.content, horizontal: true } }
-					: item
+				return item
 			})
 		expect(dashboard.config.widgets).toEqual(sameButBars(before.config.widgets))
 		expect(dashboard.config.kpiRow).toEqual([

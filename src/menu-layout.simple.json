@@ -2666,8 +2666,8 @@
 					},
 					"cases-by-status": {
 						"content": {
-							"chartKind": "bar",
-							"horizontal": true,
+							"chartKind": "bar-list",
+							"footnote": "Click a bar to see the cases",
 							"dataSource": {
 								"register": "dossiq",
 								"schema": "case",
@@ -2679,6 +2679,7 @@
 								"aggregate": {
 									"groupBy": "status",
 									"metric": "count",
+									"topN": 5,
 									"labelResolve": {
 										"schema": "statusType",
 										"labelField": "name"
@@ -2693,8 +2694,8 @@
 					},
 					"cases-by-type": {
 						"content": {
-							"chartKind": "bar",
-							"horizontal": true,
+							"chartKind": "bar-list",
+							"footnote": "Click a bar to see the cases",
 							"dataSource": {
 								"register": "dossiq",
 								"schema": "case",
@@ -2706,6 +2707,7 @@
 								"aggregate": {
 									"groupBy": "caseType",
 									"metric": "count",
+									"topN": 5,
 									"labelResolve": {
 										"schema": "caseType",
 										"labelField": "title"
