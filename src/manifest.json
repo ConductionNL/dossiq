@@ -6433,6 +6433,63 @@
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
+						"id": "lhs-matrix",
+						"type": "chart",
+						"title": "Advice under the national enforcement strategy",
+						"icon": "TableLarge",
+						"_note": "DqHandhaving: the LHS matrix the advice was calculated with, read from the lhsMatrix record of the advice's matrixVersion and no other (no matrix rather than one the advice was not calculated with), sliced to the advice's actor type, with the advised cell outlined. The matrix is register data each municipality keeps, never a fixed table in this manifest (nextcloud-vue #1747).",
+						"content": {
+							"chartKind": "matrix",
+							"cellSource": {
+								"register": "dossiq",
+								"schema": "lhsMatrix",
+								"filter": {
+									"version": "@object.matrixVersion"
+								},
+								"cellsPath": "cells",
+								"cellFilter": {
+									"actorType": "@object.actorType"
+								},
+								"rowField": "behaviour",
+								"columnField": "severity",
+								"valueField": "intervention",
+								"rowOrderPath": "behaviourAxis",
+								"columnOrderPath": "severityAxis"
+							},
+							"rowLabels": {
+								"goedwillend": "Behaviour: well-meaning",
+								"onverschillig": "Behaviour: indifferent",
+								"calculerend": "Behaviour: calculating",
+								"crimineel": "Behaviour: criminal"
+							},
+							"columnLabels": {
+								"gering": "Consequence: minor",
+								"aanzienlijk": "Consequence: considerable",
+								"ernstig": "Consequence: serious"
+							},
+							"valueLabels": {
+								"warning": "Warning",
+								"herstelactie": "Remedial action",
+								"last_under_penaltypayment": "Order subject to a penalty",
+								"last_plus_pv": "Order and official report",
+								"bestuursdwang": "Administrative enforcement",
+								"pv_plus_bestuursdwang": "Official report and administrative enforcement"
+							},
+							"colorMap": {
+								"herstelactie": "success",
+								"warning": "warning",
+								"last_under_penaltypayment": "error",
+								"last_plus_pv": "error",
+								"bestuursdwang": "danger",
+								"pv_plus_bestuursdwang": "danger"
+							},
+							"highlight": {
+								"row": "@object.behaviour",
+								"column": "@object.severity"
+							}
+						}
+					},
+					{
 						"id": "lhsrecommendation-data",
 						"type": "data",
 						"title": "Recommendation",
@@ -6482,10 +6539,18 @@
 				],
 				"layout": [
 					{
+						"id": "0",
+						"widgetId": "lhs-matrix",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 7
+					},
+					{
 						"id": "1",
 						"widgetId": "lhsrecommendation-data",
 						"gridX": 0,
-						"gridY": 0,
+						"gridY": 7,
 						"gridWidth": 12,
 						"gridHeight": 5,
 						"showTitle": false
@@ -6494,7 +6559,7 @@
 						"id": "3",
 						"widgetId": "lhsrecommendation-override",
 						"gridX": 0,
-						"gridY": 5,
+						"gridY": 12,
 						"gridWidth": 12,
 						"gridHeight": 4
 					}
