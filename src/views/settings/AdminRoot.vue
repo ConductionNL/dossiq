@@ -365,6 +365,38 @@
 
 		<template #tab-vth>
 			<CnSettingsSection
+				id="section-intake-activities"
+				:name="t('dossiq', 'Activities from the Omgevingsloket')"
+				:description="
+					t(
+						'dossiq',
+						'An application from the DSO becomes a case of the linked case type. The mapping is integriq\'s.',
+					)
+				">
+				<CnWidgetObjectTable
+					:hideWrapper="true"
+					:source="intakeActivitySource"
+					:columns="intakeActivityColumns"
+					:emptyText="t('dossiq', 'No activities linked yet.')" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
+				id="section-fee-schedules"
+				:name="t('dossiq', 'Fee rules')"
+				:description="
+					t(
+						'dossiq',
+						'What a case type costs, per rule and validity date. The fee schedules are shillinq\'s.',
+					)
+				">
+				<CnWidgetObjectTable
+					:hideWrapper="true"
+					:source="feeScheduleSource"
+					:columns="feeScheduleColumns"
+					:emptyText="t('dossiq', 'No fee rules for dossiq yet.')" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
 				:name="t('dossiq', 'VTH inspection checklists')"
 				:description="
 					t(
@@ -634,6 +666,77 @@ export default {
 					widget: 'badge',
 				},
 				{ key: '@self.updated', label: this.t('dossiq', 'Last contact') },
+			]
+		},
+
+		/**
+		 * integriq's DSO activity mappings: which case type an activity becomes.
+		 *
+		 * @return {object} The table source.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		intakeActivitySource() {
+			return {
+				register: 'integriq',
+				schema: 'dso_activity_mapping',
+				limit: 50,
+			}
+		},
+
+		/**
+		 * The DSO activity table's columns.
+		 *
+		 * @return {Array<object>} The columns.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		intakeActivityColumns() {
+			return [
+				{
+					key: 'activityName',
+					label: this.t('dossiq', 'DSO activity'),
+					cellClass: 'cn-cell--strong',
+				},
+				{ key: 'caseTypes', label: this.t('dossiq', 'Becomes case type') },
+				{ key: 'note', label: this.t('dossiq', 'Note') },
+				{
+					key: 'isActive',
+					label: this.t('dossiq', 'Active'),
+					widget: 'badge',
+				},
+			]
+		},
+
+		/**
+		 * shillinq's fee schedules for dossiq's records.
+		 *
+		 * @return {object} The table source.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		feeScheduleSource() {
+			return {
+				register: 'shillinq',
+				schema: 'FeeSchedule',
+				filter: { targetApp: 'dossiq' },
+				limit: 50,
+			}
+		},
+
+		/**
+		 * The fee table's columns.
+		 *
+		 * @return {Array<object>} The columns.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		feeScheduleColumns() {
+			return [
+				{
+					key: 'typeValue',
+					label: this.t('dossiq', 'Rule'),
+					cellClass: 'cn-cell--strong',
+				},
+				{ key: 'legalBasis.regulation', label: this.t('dossiq', 'Basis') },
+				{ key: 'amount', label: this.t('dossiq', 'Amount') },
+				{ key: 'validFrom', label: this.t('dossiq', 'Valid from') },
 			]
 		},
 
