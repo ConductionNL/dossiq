@@ -32,24 +32,17 @@
 								{
 									"key": "today",
 									"title": "Today",
-									"widgetIds": [
-										"inspections-today",
-										"inspections-offline-note"
-									]
+									"widgetIds": ["inspections-today", "inspections-offline-note"]
 								},
 								{
 									"key": "checklist",
 									"title": "Checklist",
-									"widgetIds": [
-										"checklist-run"
-									]
+									"widgetIds": ["checklist-run"]
 								},
 								{
 									"key": "sync",
 									"title": "Synchronise",
-									"widgetIds": [
-										"inspection-sync-queue"
-									]
+									"widgetIds": ["inspection-sync-queue"]
 								}
 							]
 						}
@@ -68,9 +61,7 @@
 									"lt": "@today+1d"
 								}
 							},
-							"extend": [
-								"caseRef"
-							],
+							"extend": ["caseRef"],
 							"sort": {
 								"field": "scheduledAt",
 								"dir": "asc"
@@ -169,11 +160,7 @@
 							"register": "dossiq",
 							"schema": "syncQueue",
 							"filter": {
-								"status": [
-									"pending",
-									"conflict",
-									"failed"
-								]
+								"status": ["pending", "conflict", "failed"]
 							},
 							"sort": {
 								"field": "queuedAt",
