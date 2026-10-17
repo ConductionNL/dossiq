@@ -244,6 +244,29 @@ export default {
 	approvalChain: (value) => approvalMarkerLabel(value),
 
 	/**
+	 * A document's confidentiality, by its label, for the Files tab's
+	 * Visible to column. The value is the stored level; a row without one
+	 * renders nothing.
+	 *
+	 * @param {string} value The confidentiality level.
+	 * @return {string} The label.
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 */
+	confidentialityLabel: (value) => {
+		const labels = {
+			openbaar: t('dossiq', 'Public'),
+			beperkt_openbaar: t('dossiq', 'Restricted public'),
+			intern: t('dossiq', 'Internal'),
+			zaakvertrouwelijk: t('dossiq', 'Case confidential'),
+			vertrouwelijk: t('dossiq', 'Confidential'),
+			confidentieel: t('dossiq', 'Classified confidential'),
+			geheim: t('dossiq', 'Secret'),
+			zeer_geheim: t('dossiq', 'Top secret'),
+		}
+		return labels[String(value ?? '')] ?? ''
+	},
+
+	/**
 	 * Sub-case count badge for a case row in the case list. Returns "N
 	 * deelzaken" for cases with one or more sub-cases and an empty string
 	 * (no badge) otherwise. The count is read from the reactive deelzaak
