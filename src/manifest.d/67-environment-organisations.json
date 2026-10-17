@@ -81,7 +81,7 @@
 						"active": "success",
 						"suspended": "warning",
 						"provisioning": "info",
-						"deprovisioned": "neutral"
+						"deprovisioned": "default"
 					}
 				},
 				"headerFields": [
