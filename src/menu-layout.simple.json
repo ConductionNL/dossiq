@@ -126,7 +126,7 @@
 	],
 	"nav": {
 		"brand": {
-			"name": "dossiq",
+			"name": "Dossiq",
 			"caption": "@theming.name",
 			"logo": "@theming.emblem|@theming.logo"
 		},

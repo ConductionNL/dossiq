@@ -221,7 +221,7 @@ describe('the simple profile', () => {
 		// The profile asks the instance's theming for the name and the logo;
 		// the app only puts its own name there.
 		expect(simpleFile.nav.brand).toEqual({
-			name: 'dossiq',
+			name: 'Dossiq',
 			caption: '@theming.name',
 			logo: '@theming.emblem|@theming.logo',
 		})
@@ -252,13 +252,13 @@ describe('the simple profile', () => {
 			{ theming },
 		)
 		expect(withTheming.nav.brand).toEqual({
-			name: 'dossiq',
+			name: 'Dossiq',
 			caption: 'Gemeente Voorbeeld',
 			logo: '/core/img/logo.svg',
 		})
 		// An instance that answers nothing gets no caption and no logo: the
 		// profile invents no municipality.
-		expect(built.nav.brand).toEqual({ name: 'dossiq', caption: '', logo: '' })
+		expect(built.nav.brand).toEqual({ name: 'Dossiq', caption: '', logo: '' })
 		// The full profile declares no brand and gets none.
 		expect(build(fullFile).nav).toBeUndefined()
 		// main.js hands the theming capabilities over.
