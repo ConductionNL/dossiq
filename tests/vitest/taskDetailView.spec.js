@@ -290,6 +290,11 @@ describe('TaskDetailView', () => {
 		expect(facts.at(1).props('content').link.label).toBe('To the case')
 	})
 
+	it('keeps the task history beside the work as well as behind its tab (DqTaak)', async () => {
+		const wrapper = await mountPage(TASK)
+		expect(wrapper.find('aside [data-testid="task-history-card"]').exists()).toBe(true)
+	})
+
 	it('draws no case card for a task with no case', async () => {
 		const wrapper = await mountPage({
 			uuid: 'task-1',

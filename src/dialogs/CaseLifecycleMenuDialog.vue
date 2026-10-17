@@ -34,9 +34,11 @@
   @spec openspec/changes/finishing-picks-a-result/specs/case-management/spec.md
 -->
 <template>
-	<NcDialog
-		:name="t('dossiq', 'What you can do with this case')"
-		size="normal"
+	<CnDialog
+		:name="chosen === null ? t('dossiq', 'What you can do with this case') : actTitle(chosen)"
+		:eyebrow="eyebrow"
+		:subtitle="chosen === null ? '' : explainer(chosen)"
+		width="form"
 		data-testid="case-acts-dialog"
 		@closing="$emit('close')">
 		<div v-if="chosen === null" class="case-acts">
@@ -113,9 +115,36 @@
 		</div>
 
 		<div v-else class="case-acts">
-			<p class="case-acts__explainer">
-				{{ explainer(chosen) }}
-			</p>
+			<template v-if="chosen.id === 'archive' && kase">
+				<div class="case-acts__case" data-testid="case-act-archive-case">
+					<FolderOutline :size="20" class="case-acts__case-icon" />
+					<span class="case-acts__case-text">
+						<strong>{{ kase.title }}</strong>
+						<span class="case-acts__muted">{{ [kase.identifier, kase.initiatorDisplayName].filter(Boolean).join(' · ') }}</span>
+					</span>
+					<span v-if="kase.resultPublicLabel" class="case-acts__badge">{{ kase.resultPublicLabel }}</span>
+				</div>
+
+				<section class="case-acts__retention" data-testid="case-act-archive-retention">
+					<h3 class="case-acts__section-title">
+						{{ t('dossiq', 'Retention under the case type') }}
+					</h3>
+					<dl class="case-acts__facts">
+						<div>
+							<dt>{{ t('dossiq', 'Archive nomination') }}</dt>
+							<dd>{{ kase.archiveNomination || t('dossiq', 'Not set') }}</dd>
+						</div>
+						<div>
+							<dt>{{ t('dossiq', 'Destruction date') }}</dt>
+							<dd>{{ kase.archiveActionDate || t('dossiq', 'Not set') }}</dd>
+						</div>
+						<div>
+							<dt>{{ t('dossiq', 'Archive status afterwards') }}</dt>
+							<dd>{{ kase.archiveStatus || t('dossiq', 'Not set') }}</dd>
+						</div>
+					</dl>
+				</section>
+			</template>
 
 			<TemplatePicker
 				v-if="inputs.result"
@@ -125,11 +154,24 @@
 				:label="t('dossiq', 'Result template')"
 				@apply="applyTemplate" />
 
-			<NcTextArea
-				v-if="inputs.reason"
-				v-model="reason"
-				data-testid="case-act-reason-input"
-				:label="t('dossiq', 'Reason')" />
+			<div v-if="inputs.reason" class="case-acts__field">
+				<NcTextArea
+					v-model="reason"
+					data-testid="case-act-reason-input"
+					:label="t('dossiq', 'Reason')"
+					:labelOutside="true"
+					resize="vertical" />
+				<span class="case-acts__muted">
+					{{ t('dossiq', 'Goes into the history of the case.') }}
+				</span>
+			</div>
+
+			<NcNoteCard
+				v-if="chosen.id === 'archive'"
+				type="info"
+				:heading="t('dossiq', 'Read only afterwards')">
+				{{ t('dossiq', 'Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.') }}
+			</NcNoteCard>
 
 			<!--
 				A closing move or ending act picks from the case type's own
@@ -185,28 +227,33 @@
 				:disabled="!canConfirm"
 				:aria-busy="busy ? 'true' : null"
 				@click="confirm">
-				<template v-if="busy" #icon>
-					<NcLoadingIcon :size="20" data-testid="case-acts-confirm-busy" />
+				<template v-if="busy || chosen.id === 'archive'" #icon>
+					<NcLoadingIcon v-if="busy" :size="20" data-testid="case-acts-confirm-busy" />
+					<ArchiveOutline v-else :size="20" />
 				</template>
-				{{ t('dossiq', 'Confirm') }}
+				{{ chosen.id === 'archive' ? t('dossiq', 'Archive it') : t('dossiq', 'Confirm') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showSuccess, showWarning } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import ArchiveOutline from 'vue-material-design-icons/ArchiveOutline.vue'
+import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import TemplatePicker from '../components/TemplatePicker.vue'
+import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { buildActsMenu, endpointFor, inputsFor } from '../utils/caseActsMenu.js'
 import {
 	approvalHeading,
@@ -226,9 +273,12 @@ export default {
 	name: 'CaseLifecycleMenuDialog',
 
 	components: {
+		ArchiveOutline,
+		CnDialog,
+		FolderOutline,
 		NcButton,
-		NcDialog,
 		NcLoadingIcon,
+		NcNoteCard,
 		NcSelect,
 		NcTextArea,
 		NcTextField,
@@ -244,6 +294,12 @@ export default {
 			type: String,
 			default: '',
 		},
+
+		/** An act to open on directly, such as `archive`, when the case allows it. */
+		act: {
+			type: String,
+			default: '',
+		},
 	},
 
 	emits: ['close'],
@@ -251,6 +307,7 @@ export default {
 	data() {
 		return {
 			entries: [],
+			kase: null,
 			awaiting: [],
 			chosen: null,
 			loading: true,
@@ -265,6 +322,14 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {string} The context line above the title.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		eyebrow() {
+			return caseEyebrow(this.chosen === null ? t('dossiq', 'Lifecycle') : this.label(this.chosen), this.kase)
+		},
+
 		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
@@ -500,6 +565,13 @@ export default {
 						: null,
 				acts: actsBody,
 			})
+			fetchCaseSummary(this.targetCaseId).then((kase) => {
+				this.kase = kase
+			})
+			const preset = this.entries.find((entry) => entry.id === this.act && !entry.disabled)
+			if (this.act !== '' && preset !== undefined) {
+				this.choose(preset)
+			}
 			this.awaiting = awaitingApprovals(actsBody)
 			// The case type scopes the result templates. '' is a real answer:
 			// the picker then offers the templates meant for every case type.
@@ -563,6 +635,15 @@ export default {
 		 */
 		approvers(entry) {
 			return approversLine(entry)
+		},
+
+		/**
+		 * @param {object} entry A menu entry.
+		 * @return {string} The dialog title while that act is open.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		actTitle(entry) {
+			return entry?.id === 'archive' ? t('dossiq', 'Archive this case') : this.label(entry)
 		},
 
 		/**
@@ -715,6 +796,76 @@ export default {
 </script>
 
 <style scoped>
+.case-acts__case {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 14px 16px;
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+}
+
+.case-acts__case-icon {
+	color: var(--color-primary-element);
+}
+
+.case-acts__case-text {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.case-acts__badge {
+	padding: 3px 10px;
+	border-radius: 12px;
+	background: var(--color-success-light, var(--color-background-dark));
+	color: var(--color-success-text);
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.case-acts__muted {
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+}
+
+.case-acts__section-title {
+	margin: 0 0 8px;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.case-acts__facts {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0 24px;
+	margin: 0;
+}
+
+.case-acts__facts > div {
+	padding: 10px 0;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.case-acts__facts dt {
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+}
+
+.case-acts__facts dd {
+	margin: 2px 0 0;
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.case-acts__field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
 .case-acts {
 	display: flex;
 	flex-direction: column;

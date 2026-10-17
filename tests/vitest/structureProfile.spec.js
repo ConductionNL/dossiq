@@ -432,9 +432,10 @@ describe('the simple profile', () => {
 				.find((page) => page.id === 'MyWorkHome')
 				.config.viewLinks.map((link) => link.route),
 		).toEqual(['PersonalQueue', 'MyWork', 'EndOfDay'])
+		// DqDashboard: Close out your day leads, the primary New case ends the row.
 		expect(actionIds(built, 'Dashboard')).toEqual([
-			'new-case',
 			'open-end-of-day',
+			'new-case',
 		])
 		expect(actionIds(build(fullFile), 'MyWorkHome')).toEqual(['new-case'])
 		expect(actionIds(build(fullFile), 'Dashboard')).toEqual(['new-case'])
@@ -442,7 +443,8 @@ describe('the simple profile', () => {
 		// Each link names a page that exists and an icon the app registers.
 		const pageIds = new Set(built.pages.map((page) => page.id))
 		for (const overlay of simpleFile.pages) {
-			for (const action of overlay.configAppend?.headerActions ?? []) {
+			const links = (overlay.configAppend?.headerActions ?? []).filter((action) => action.type === 'open-page')
+			for (const action of links) {
 				expect(pageIds.has(action.target), action.id).toBe(true)
 				expect(iconsSource).toContain(`\n\t${action.icon},\n`)
 			}
@@ -452,10 +454,12 @@ describe('the simple profile', () => {
 	// 69 -> 67: tenancy step 5 retires the Tenants and TenantDetail pages.
 	// 67 -> 68: woo-delivered-set-is-a-record adds one page.
 	// 68 -> 67: the Workflow board page retires; `/workflow-board` redirects to the Cases board.
-	it('builds the same 68 pages as the full profile, so every route stays', () => {
+	// 67 -> 70: data subject requests, contracts and suppliers get their lists (DqPrivacy, DqContracten).
+	// 70 -> 71: the catalogue gets a page (DqCatalogus).
+	it('builds the same 71 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(68)
+		expect(built.pages).toHaveLength(71)
 	})
 })
 

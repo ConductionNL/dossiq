@@ -47,6 +47,7 @@
         "PHP",
         "Partner",
         "Platform",
+        "Privacy",
         "Procedure",
         "Process mining",
         "Register",
@@ -82,6 +83,8 @@
         "{percent}%",
         "Relevant",
         "{title}",
-        "{time}, +{extension}"
+        "{time}, +{extension}",
+        "{ground} · %n document",
+        "%n document"
     ]
 }
