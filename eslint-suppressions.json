@@ -59,11 +59,6 @@
       "count": 1
     }
   },
-  "src/dialogs/BeschikkingComposerDialog.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    }
-  },
   "src/dialogs/CaseTransferDialog.vue": {
     "@nextcloud/l10n-enforce-ellipsis": {
       "count": 3
