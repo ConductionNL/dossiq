@@ -99,5 +99,8 @@ class ThroughputSummaryTest extends TestCase {
 
 		self::assertSame(['Woo-verzoek', 'Bezwaar'], $shares['labels']);
 		self::assertSame([50, 100], $shares['shares']);
+
+		$busiest = (new CaseTypeThroughputCalculator())->computeWithinNormByCaseType($cases, $caseTypes, 1);
+		self::assertSame(['Woo-verzoek'], $busiest['labels']);
 	}//end testWithinNormIsSharedPerCaseType()
 }//end class
