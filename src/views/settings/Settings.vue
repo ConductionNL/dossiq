@@ -11,27 +11,31 @@
 		docUrl="https://dossiq.conduction.nl/docs/intro"
 		:loading="loading">
 		<div class="dossiq-configuration">
-			<NcSelect
-				class="dossiq-configuration__register"
-				:inputLabel="t('dossiq', 'Register')"
-				:options="registerOptions"
-				:modelValue="optionFor(registerOptions, form.register)"
-				:loading="loadingRegisters"
-				:clearable="false"
-				@update:modelValue="onRegister" />
-			<div class="dossiq-configuration__schemas">
+			<div class="dossiq-configuration__field dossiq-configuration__register">
 				<NcSelect
+					:inputLabel="t('dossiq', 'Register')"
+					:options="registerOptions"
+					:modelValue="optionFor(registerOptions, form.register)"
+					:loading="loadingRegisters"
+					:clearable="false"
+					@update:modelValue="onRegister" />
+			</div>
+			<div class="dossiq-configuration__schemas">
+				<div
 					v-for="field in schemaFields"
 					:key="field.key"
-					:inputLabel="field.label"
-					:options="schemaOptions"
-					:modelValue="optionFor(schemaOptions, form[field.key])"
-					:loading="loadingSchemas"
-					:disabled="!form.register"
-					:clearable="false"
-					@update:modelValue="
-						(option) => (form[field.key] = option ? option.id : '')
-					" />
+					class="dossiq-configuration__field">
+					<NcSelect
+						:inputLabel="field.label"
+						:options="schemaOptions"
+						:modelValue="optionFor(schemaOptions, form[field.key])"
+						:loading="loadingSchemas"
+						:disabled="!form.register"
+						:clearable="false"
+						@update:modelValue="
+							(option) => (form[field.key] = option ? option.id : '')
+						" />
+				</div>
 			</div>
 		</div>
 
@@ -263,6 +267,16 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
+}
+
+.dossiq-configuration__field {
+	display: block;
+	min-width: 0;
+}
+
+.dossiq-configuration__field :deep(.v-select.select) {
+	width: 100%;
+	min-width: 0;
 }
 
 .dossiq-configuration__register {
