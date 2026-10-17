@@ -27,6 +27,7 @@
 				v-model="template"
 				:options="templateOptions"
 				:inputLabel="t('dossiq', 'Template')"
+				:placeholder="t('dossiq', 'Choose a template (optional)')"
 				:clearable="true"
 				data-testid="plan-item-template"
 				@update:modelValue="applyTemplate" />
@@ -34,12 +35,14 @@
 			<NcTextField
 				v-model="title"
 				:label="t('dossiq', 'What is it')"
+				:labelOutside="true"
 				data-testid="plan-item-title" />
 
 			<NcTextField
 				v-model="startsAt"
 				type="datetime-local"
 				:label="t('dossiq', 'When')"
+				:labelOutside="true"
 				data-testid="plan-item-when" />
 
 			<NcNoteCard v-if="failure" type="error" data-testid="plan-item-error">
@@ -55,7 +58,7 @@
 				<template #icon>
 					<CalendarClockOutline :size="20" />
 				</template>
-				{{ t('dossiq', 'Plan it') }}
+				{{ t('dossiq', 'Schedule it') }}
 			</NcButton>
 		</template>
 	</CnDialog>

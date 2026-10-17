@@ -60,5 +60,6 @@ describe('PlanItemDialog', () => {
 
 		expect(wrapper.emitted('close')).toHaveLength(1)
 		expect(wrapper.emitted('planned')).toBeUndefined()
+		expect(wrapper.findAll('button').at(-1).text()).toBe('Schedule it')
 	})
 })
