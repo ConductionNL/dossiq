@@ -481,6 +481,20 @@ export default {
 		SubstitutionAdmin,
 	},
 
+	/**
+	 * The admin page has no CnAppRoot, so it hands the library dossiq's own
+	 * translate itself: the setup wizard reads its step copy from the manifest
+	 * through `cnTranslate`.
+	 *
+	 * @return {object} The provided values.
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	provide() {
+		return {
+			cnTranslate: (key, vars) => this.t('dossiq', key, vars),
+		}
+	},
+
 	data() {
 		return {
 			storesReady: false,
