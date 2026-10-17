@@ -29,11 +29,11 @@ export const dtWidgetMixin = {
 			return useDoorlooptijdStore()
 		},
 		/**
-		 * @return {string} Period preset from the page header.
+		 * @return {string} Period preset from the page header: a page filter, or the period switch.
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		dtPreset() {
-			return this.workspace?.period || '12m'
+			return this.workspace?.period || this.workspace?.datePreset || '12m'
 		},
 		/**
 		 * @return {string|null} Case type from the page header.

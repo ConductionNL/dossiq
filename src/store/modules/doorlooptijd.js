@@ -35,7 +35,7 @@ import { useObjectStore } from './object.js'
 /**
  * Resolve a period preset into a `{ from, to }` date pair.
  *
- * @param {string} preset One of `3m`, `6m`, `12m`, `year`, `all`.
+ * @param {string} preset One of `1m`, `3m`, `6m`, `12m`, `year`, `all`.
  * @return {{from: Date|null, to: Date}} The resolved range; `from` null = no bound.
  * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
  */
@@ -43,6 +43,9 @@ export function resolveRange(preset) {
 	const now = new Date()
 	let from
 	switch (preset) {
+		case '1m':
+			from = new Date(now.getFullYear(), now.getMonth(), 1)
+			break
 		case '3m':
 			from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
 			break
@@ -70,6 +73,8 @@ export function resolveRange(preset) {
  */
 export function trendMonthsFor(preset) {
 	switch (preset) {
+		case '1m':
+			return 1
 		case '3m':
 			return 3
 		case '6m':
