@@ -1,0 +1,43 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"board": "DqAfdelingen",
+		"why": "Departments and staff as Nextcloud keeps them: the groups as folders with their member counts, a group's members with their function, roles, e-mail and today's presence. Read through the library's users entity source and groups folder source; dossiq keeps no copy. No group is named here: which groups an organisation has is the instance's, not the app's."
+	},
+	"menu": [
+		{
+			"id": "DepartmentsMenu",
+			"label": "Departments and staff",
+			"icon": "AccountGroupOutline",
+			"route": "Departments",
+			"section": "settings",
+			"order": 91,
+			"permission": "admin"
+		}
+	],
+	"pages": [
+		{
+			"id": "Departments",
+			"route": "/settings/departments",
+			"type": "index",
+			"title": "Departments and staff",
+			"permission": "admin",
+			"config": {
+				"entitySource": "users",
+				"showTitle": true,
+				"folderSidebar": {
+					"source": "groups",
+					"filterField": "group",
+					"title": "Departments"
+				},
+				"breadcrumb": {
+					"label": "Settings",
+					"href": "/index.php/settings/admin/dossiq"
+				},
+				"headerMeta": "from Nextcloud groups, with function and absence",
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		}
+	]
+}
