@@ -957,68 +957,6 @@
 						"_note": "DqZaak Werkinstructie: the case type's work instruction beside the case; the Knowledge tab keeps it with the linked pages."
 					},
 					{
-						"id": "side-objection-hearing",
-						"type": "record-list",
-						"title": "Hearing",
-						"visibleWhen": {
-							"field": "@context.caseType.category",
-							"op": "in",
-							"value": [
-								"Bezwaar en beroep"
-							]
-						},
-						"_note": "DqBezwaar: the hearing of this objection, read from hearingSession. Shown only for a case type in the objection category.",
-						"content": {
-							"register": "dossiq",
-							"schema": "hearingSession",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "scheduledDate",
-								"dir": "desc"
-							},
-							"limit": 1,
-							"presentation": "rows",
-							"title": "{scheduledDate|date}",
-							"meta": "{location}",
-							"pill": {
-								"field": "status"
-							},
-							"emptyText": "No hearing planned"
-						}
-					},
-					{
-						"id": "side-objection-advice",
-						"type": "record-list",
-						"title": "Advice of the committee",
-						"visibleWhen": {
-							"field": "@context.caseType.category",
-							"op": "in",
-							"value": [
-								"Bezwaar en beroep"
-							]
-						},
-						"_note": "DqBezwaar: the advice of the objections committee, read from advisoryReport.",
-						"content": {
-							"register": "dossiq",
-							"schema": "advisoryReport",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "adviceDate",
-								"dir": "desc"
-							},
-							"limit": 1,
-							"presentation": "rows",
-							"title": "{adviceType}",
-							"meta": "{adviceDate|date} · {committeeChair}",
-							"text": "{recommendation}",
-							"emptyText": "No advice received yet"
-						}
-					},
-					{
 						"id": "side-objection-appeal",
 						"type": "record-list",
 						"title": "Appeal",
@@ -1321,6 +1259,7 @@
 								{
 									"widgetIds": [
 										"case-objection-grounds",
+										"case-objection-advice-card",
 										"case-request",
 										"case-details",
 										"case-priority-card",
@@ -2479,6 +2418,45 @@
 								}
 							],
 							"emptyText": "No objection recorded on this case"
+						}
+					},
+					{
+						"id": "case-objection-advice-card",
+						"type": "facts",
+						"title": "Advice of the objections committee",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Bezwaar en beroep"
+							]
+						},
+						"_note": "DqBezwaar Advies van de bezwaarschriftencommissie: the latest advisoryReport of this case, under the grounds in the Overview stack. The Advice tab lists every report.",
+						"content": {
+							"source": {
+								"url": "/apps/openregister/api/objects/dossiq/advisoryReport?case=@objectId&_order[adviceDate]=desc&_limit=1"
+							},
+							"fields": [
+								{
+									"label": "Chair",
+									"path": "results.0.committeeChair",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "role",
+										"labelField": "name"
+									}
+								},
+								{
+									"label": "Advice",
+									"path": "results.0.recommendation"
+								},
+								{
+									"label": "Issued",
+									"path": "results.0.adviceDate",
+									"format": "date-long"
+								}
+							],
+							"emptyText": "No advice received yet"
 						}
 					}
 				],
