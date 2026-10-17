@@ -4959,6 +4959,7 @@ OC.L10N.register(
         "Nobody": "Niemand",
         "Nobody answered, so the question went to the unit": "Niemand antwoordde, dus de vraag ging naar het team",
         "Nobody follows this case yet": "Nog niemand volgt deze zaak",
+        "Nobody handles this case yet": "Nog niemand behandelt deze zaak",
         "Nobody has asked for this case": "Niemand heeft om deze zaak gevraagd",
         "Nobody has booked an appointment on this task": "Er is nog geen afspraak op deze taak geboekt",
         "Nobody has changed this, so it is on the setting it ships with.": "Niemand heeft dit gewijzigd, dus het staat op de standaardinstelling.",
