@@ -19,7 +19,7 @@ const FILES = [
 	'src/dialogs/AssessmentDecisionDialog.vue',
 	'src/dialogs/BerichtenboxComposeDialog.vue',
 	'src/dialogs/CaseHandoverDialog.vue',
-	'src/dialogs/CaseLifecycleMenuDialog.vue',
+	'src/components/case/CaseActFields.vue',
 	'src/views/queue/EndOfDayView.vue',
 ]
 
