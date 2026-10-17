@@ -144,6 +144,7 @@ import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 // @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
 import CaseRawDataDialog from './dialogs/CaseRawDataDialog.vue'
 import CaseRebindDialog from './dialogs/CaseRebindDialog.vue'
+import CaseShareOrganisationDialog from './dialogs/CaseShareOrganisationDialog.vue'
 import CaseSplitDialog from './dialogs/CaseSplitDialog.vue'
 import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // The three case-type gestures a declarative action cannot carry: a file, a
@@ -665,6 +666,14 @@ const registry = {
 		component: CaseCopyDialog,
 		propsSchema: {},
 		_note: "CaseDetail Actions menu: what the copy is called, and whether the source's documents come along. NOT CnCopyDialog, which the design named: the library's 2.41.0 copy dialog offers three naming PATTERNS over a fixed name and carries no slots at all, so there is nowhere to put the Include documents checkbox and no way to type a title that is not one of the three. It reads the case from the ROUTE, because an open-modal action forwards its props verbatim and `@objectId` would arrive as that literal string. Deleted the day nextcloud-vue ships a `copy` header-action type taking a field list and an endpoint (tasks 1.4).",
+	},
+
+	// --- Sharing a case with, or handing it to, another organisation (board DqZaakSamenwerken). ---
+	// @spec openspec/specs/federated-case-collaboration/spec.md
+	CaseShareOrganisationDialog: {
+		kind: 'modal',
+		component: CaseShareOrganisationDialog,
+		propsSchema: {},
 	},
 
 	// --- The case as Open Register stored it (admin-inspect-entry, row 2.22). ---

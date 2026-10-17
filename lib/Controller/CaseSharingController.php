@@ -160,11 +160,14 @@ class CaseSharingController extends Controller {
 			);
 		}
 
+		$exclusions = $this->request->getParam('fieldExclusions', []);
 		$partnerShare = $this->caseSharingService->createPartnerShare(
-			$caseId,
-			$partnerId,
-			$permissionLevel,
-			$createdBy,
+			caseId: $caseId,
+			partnerId: $partnerId,
+			permissionLevel: $permissionLevel,
+			createdBy: $createdBy,
+			message: (string)$this->request->getParam('message', ''),
+			fieldExclusions: is_array($exclusions) === true ? $exclusions : [],
 		);
 
 		if (isset($partnerShare['error']) === false) {
