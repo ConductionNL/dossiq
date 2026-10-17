@@ -1157,7 +1157,15 @@
 					"separator": "/"
 				},
 				"headerCard": true,
-				"headerWidget": "case-stages"
+				"headerWidget": "case-stages",
+				"typePill": {
+					"field": "caseType",
+					"resolve": {
+						"register": "dossiq",
+						"schema": "caseType",
+						"labelField": "title"
+					}
+				}
 			},
 			"configPatch": {
 				"headerActions": {

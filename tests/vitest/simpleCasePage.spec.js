@@ -579,7 +579,11 @@ describe('the tabs', () => {
 		// the deadline is the first card of the side column, and neither
 		// widget is still placed in the grid, so nothing renders twice.
 		expect(simple.breadcrumb.currentField).toBe('identifier')
-		expect(simple.typePill).toBeUndefined()
+		// The pill above the title names the case type, as DqZaak draws "Woo-verzoek".
+		expect(simple.typePill).toEqual({
+			field: 'caseType',
+			resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title' },
+		})
 		expect(simple.sideColumn[0]).toBe('case-tile-deadline')
 		const placed = simple.layout.map((entry) => entry.widgetId)
 		expect(placed).not.toContain('case-tile-deadline')
@@ -593,6 +597,7 @@ describe('the header and the side column', () => {
 	it('reads the pills and the cards from fields the case carries', () => {
 		expect(onTheCase(simple.statusPill.field)).toBe(true)
 		expect(onTheCase(simple.breadcrumb.currentField)).toBe(true)
+		expect(onTheCase(simple.typePill.field)).toBe(true)
 		// The cards every case shows; the case-type cards are gated and checked below.
 		const cards = simple.sideColumn.filter((card) => typeof card === 'object' && !card.visibleWhen)
 		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Work instruction'])
