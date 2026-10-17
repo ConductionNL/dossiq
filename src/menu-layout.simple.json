@@ -1059,7 +1059,7 @@
 				},
 				"widgets": {
 					"case-tile-deadline": {
-						"_note": "The deadline is the first card of the side column, and the card already carries the widget title (Termijn) as its heading, as DqZaak draws it. The countdown's own label would print the same word a second time under it, so the simple structure leaves it out. The rest of the content is the manifest's, repeated because a patch replaces `content` whole.",
+						"_note": "The deadline is the first card of the side column, and the card already carries the widget title (Termijn) as its heading, as DqZaak draws it. The countdown's own label would print the same word a second time under it, so the simple structure leaves it out. The rest of the content is the manifest's, repeated because a patch replaces `content` whole. DqZaak draws the card as the headline in days, \"Beslissen uiterlijk <date>\" under it, a bar for the share of the term that has passed since the start date, and Termijn opschorten, which opens the lifecycle dialog on its suspend act (nextcloud-vue countdown board anatomy).",
 						"content": {
 							"field": "deadline",
 							"icon": "ClockAlertOutline",
@@ -1069,6 +1069,21 @@
 							"thresholds": {
 								"warn": 14,
 								"danger": 5
+							},
+							"daysLabel": {
+								"one": "{count} day",
+								"other": "{count} days"
+							},
+							"caption": "Decide by {date}",
+							"startField": "startDate",
+							"action": {
+								"label": "Suspend the term",
+								"type": "open-modal",
+								"target": "CaseLifecycleMenuDialog",
+								"props": {
+									"caseId": "@objectId",
+									"act": "suspend"
+								}
 							}
 						}
 					},
