@@ -5242,6 +5242,7 @@ OC.L10N.register(
         "Only this group and administrators read the intake log. Only they release a held message. The log keeps the original of every message the mailbox received. Leave it empty and only administrators can read it.": "Only this group and administrators read the intake log. Only they release a held message. The log keeps the original of every message the mailbox received. Leave it empty and only administrators can read it.",
         "Only used when responseType is getal or meting": "Only used when responseType is getal or meting",
         "Only what I can do unilaterally": "Only what I can do unilaterally",
+        "Only what this case allows now is active. The rest is greyed out, with the reason.": "Only what this case allows now is active. The rest is greyed out, with the reason.",
         "Only you can see this. It does not change the case status.": "Only you can see this. It does not change the case status.",
         "Ontvangen": "Ontvangen",
         "Ontvangstbevestiging": "Receipt confirmation",
