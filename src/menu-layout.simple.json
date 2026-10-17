@@ -1655,7 +1655,7 @@
 						"key": "title",
 						"label": "Case type",
 						"cellClass": "cn-cell--strong",
-						"secondary": "{identifier}"
+						"secondary": "{subject}"
 					},
 					{
 						"key": "category",
@@ -1720,7 +1720,7 @@
 		},
 		{
 			"id": "CaseTypeDetail",
-			"_note": "DqZaaktype, DqZaaktypeOverzicht and DqZaaktypeVelden: one record page with the type's parts as tabs and its versions and facts in the side column. Every widget the full profile shows is still on a tab.",
+			"_note": "DqZaaktype, DqZaaktypeOverzicht and DqZaaktypeVelden: one record page with the type's parts as tabs and its versions and facts in the side column. Every widget the full profile shows is still on a tab. The four app widgets are named by their registry type here, because a tab child resolves by type and a type:custom child renders an empty panel.",
 			"config": {
 				"showTypeEyebrow": false,
 				"breadcrumb": {
@@ -1839,18 +1839,39 @@
 							"variant": "segmented",
 							"tabs": [
 								{
+									"label": "Overview",
 									"widgetIds": [
 										"case-type-statuses",
-										"case-type-core"
+										"case-type-rights",
+										"case-type-privacy",
+										"case-type-translations"
 									],
-									"label": "Overview"
+									"layout": [
+										{
+											"widgetId": "case-type-statuses",
+											"gridWidth": 12
+										},
+										{
+											"widgetId": "case-type-rights",
+											"gridWidth": 12
+										},
+										{
+											"widgetId": "case-type-privacy",
+											"gridWidth": 6
+										},
+										{
+											"widgetId": "case-type-translations",
+											"gridWidth": 6
+										}
+									]
 								},
 								{
+									"label": "Fields",
 									"widgetIds": [
 										"case-type-fields",
+										"case-type-core",
 										"case-type-list-layout"
 									],
-									"label": "Fields",
 									"countFrom": {
 										"register": "dossiq",
 										"schema": "propertyDefinition",
@@ -1860,8 +1881,8 @@
 									}
 								},
 								{
-									"widgetId": "case-type-statuses-list",
 									"label": "Statuses",
+									"widgetId": "case-type-statuses-list",
 									"countFrom": {
 										"register": "dossiq",
 										"schema": "statusType",
@@ -1871,31 +1892,31 @@
 									}
 								},
 								{
+									"label": "Phases and tasks",
 									"widgetIds": [
 										"case-type-blueprint",
 										"case-type-terms",
 										"case-type-messages"
-									],
-									"label": "Phases and tasks"
+									]
 								},
 								{
-									"widgetId": "case-type-rights",
-									"label": "Rights"
+									"label": "Rights",
+									"widgetId": "case-type-rights"
 								},
 								{
-									"widgetId": "case-type-privacy",
-									"label": "Privacy"
+									"label": "Privacy",
+									"widgetId": "case-type-privacy"
 								},
 								{
-									"widgetId": "case-type-translations",
-									"label": "Translations"
+									"label": "Translations",
+									"widgetId": "case-type-translations"
 								},
 								{
+									"label": "Versions",
 									"widgetIds": [
 										"case-type-chain",
 										"case-type-versions"
 									],
-									"label": "Versions",
 									"countFrom": {
 										"register": "dossiq",
 										"schema": "caseType",
@@ -1905,11 +1926,11 @@
 									}
 								},
 								{
+									"label": "Portal",
 									"widgetIds": [
 										"case-type-portal",
 										"case-type-party-kinds"
-									],
-									"label": "Portal"
+									]
 								}
 							]
 						}
@@ -2050,18 +2071,57 @@
 					},
 					{
 						"id": "case-type-rights",
-						"type": "data",
+						"type": "field-list",
 						"title": "Rights",
+						"description": "Who may do what with cases of this type",
 						"content": {
-							"title": "Rights",
-							"columns": 1,
-							"include": [
-								"rightsMatrix"
+							"field": "rightsMatrix",
+							"readOnly": true,
+							"variant": "table",
+							"columns": [
+								{
+									"header": "Role",
+									"path": "role",
+									"strong": true
+								},
+								{
+									"header": "Department",
+									"path": "department"
+								},
+								{
+									"header": "Confidentiality",
+									"path": "confidentiality"
+								},
+								{
+									"header": "Actions",
+									"path": "actions"
+								},
+								{
+									"header": "Until",
+									"path": "until",
+									"format": "date"
+								}
 							],
-							"hideEmpty": false
+							"emptyText": "No rights declared for this case type yet"
 						}
 					}
 				]
+			},
+			"configPatch": {
+				"widgets": {
+					"case-type-blueprint": {
+						"type": "CaseTypeBlueprintWidget"
+					},
+					"case-type-translations": {
+						"type": "CaseTypeTranslationsWidget"
+					},
+					"case-type-portal": {
+						"type": "CaseTypePortalWidget"
+					},
+					"case-type-party-kinds": {
+						"type": "CaseTypePartyKindsWidget"
+					}
+				}
 			}
 		}
 	]
