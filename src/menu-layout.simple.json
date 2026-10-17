@@ -2314,18 +2314,14 @@
 								"caseRef": "@objectId"
 							},
 							"sort": {
-								"field": "submittedDate",
-								"dir": "desc"
+								"field": "rank",
+								"dir": "asc"
 							},
 							"limit": 25,
 							"columns": [
 								{
-									"key": "title",
-									"label": "Bid"
-								},
-								{
 									"key": "supplierRef",
-									"label": "Supplier",
+									"label": "Bidder",
 									"widget": "fkResolve",
 									"widgetProps": {
 										"register": "dossiq",
@@ -2339,9 +2335,20 @@
 									"formatter": "currency"
 								},
 								{
-									"key": "submittedDate",
-									"label": "Submitted",
-									"format": "date"
+									"key": "priceScore",
+									"label": "Price score"
+								},
+								{
+									"key": "qualityScore",
+									"label": "Quality score"
+								},
+								{
+									"key": "totalScore",
+									"label": "Total score"
+								},
+								{
+									"key": "rank",
+									"label": "Rank"
 								},
 								{
 									"key": "status",

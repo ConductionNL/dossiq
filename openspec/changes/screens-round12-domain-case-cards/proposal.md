@@ -21,6 +21,11 @@ name this case:
   (toestemming)
 - procurement ("Inkoop en leveranciers"): Bids (supplierTender)
 
+The case tab strip gains gated tabs over the same kind of records: Hearing,
+Advice and Decision on the objection; Indication and Case meeting in the
+social domain; Bids on a tender, which now carry their price score, quality
+score, total and rank (`supplierTender` 1.2.0, fragment 97).
+
 No card carries text the register does not back; the boards' mandate line and
 need-to-know banner wait for data that says so.
 
