@@ -113,7 +113,7 @@ class ZaakdossierController extends Controller {
 			informatieobjecten: ($file['informatieobjecten'] ?? []),
 		);
 
-		$regrouped = $this->fileService->groupByType(documents: $filtered);
+		$regrouped = $this->fileService->groupByType(documents: $this->reader->withScanVerdicts(documents: $filtered));
 
 		return new JSONResponse($regrouped);
 	}//end listDossier()
