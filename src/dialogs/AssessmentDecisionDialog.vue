@@ -55,20 +55,7 @@
 					:descriptionLines="1" />
 
 				<p
-					v-if="countsError === ''"
-					class="assessment-decision__hint"
-					data-testid="assessment-decision-counts">
-					{{ t('dossiq', 'From the assessment:') }}
-					<template v-for="(row, index) in counts" :key="row.value">
-						<span :data-testid="'assessment-decision-count-' + row.value">{{ row.count }}</span>
-						{{ row.label.toLowerCase() }}{{ index < counts.length - 1 ? ',' : '' }}
-					</template>
-					· {{ t('dossiq', 'not assessed yet') }}
-					<span data-testid="assessment-decision-count-outstanding">{{ outstanding.length }}</span>.
-					{{ t('dossiq', 'The decision follows the assessment; you change it per document.') }}
-				</p>
-				<p
-					v-else
+					v-if="countsError !== ''"
 					role="status"
 					data-testid="assessment-decision-counts-error">
 					{{ countsError }}
@@ -146,7 +133,7 @@
 					</div>
 				</template>
 
-				<NcNoteCard v-if="note" type="info">
+				<NcNoteCard v-if="note" type="info" :heading="noteHeading ? t('dossiq', noteHeading) : undefined">
 					{{ t('dossiq', note) }}
 				</NcNoteCard>
 
@@ -258,7 +245,11 @@ export default {
 			default: () => ({}),
 		},
 
-		/** The classifications: `{ value, label }`. */
+		/**
+		 * The classifications: `{ value, label, decisionLabel?, description? }`.
+		 * `label` names an assessment; `decisionLabel` names the decision
+		 * option and `description` says what it means (both i18n keys).
+		 */
 		classifications: {
 			type: Array,
 			default: () => [],
@@ -272,6 +263,12 @@ export default {
 
 		/** An i18n key shown as a note under the form: what follows the decision. */
 		note: {
+			type: String,
+			default: '',
+		},
+
+		/** An i18n key shown as the note's heading. */
+		noteHeading: {
 			type: String,
 			default: '',
 		},
@@ -312,9 +309,24 @@ export default {
 		outcomeOptions() {
 			return this.counts.map((row) => ({
 				value: row.value,
-				label: row.label,
-				description: n('dossiq', '%n document assessed this way', '%n documents assessed this way', row.count),
+				label: row.decisionLabel,
+				description: row.value === this.proposedOutcome && this.countsError === ''
+					? t('dossiq', 'Proposal from the assessment: {counts}', { counts: this.countsSummary })
+					: row.description,
 			}))
+		},
+
+		/**
+		 * The assessed documents per classification, e.g. "4 public, 2 disclosed in part".
+		 *
+		 * @return {string} The summary; classifications nobody chose are left out.
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
+		 */
+		countsSummary() {
+			return this.counts
+				.filter((row) => row.count > 0)
+				.map((row) => `${row.count} ${row.label.toLowerCase()}`)
+				.join(', ')
 		},
 
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
@@ -362,9 +374,14 @@ export default {
 		counts() {
 			return this.classifications.map((option) => {
 				const value = String(option?.value ?? '')
+				const label = t('dossiq', String(option?.label ?? value))
 				return {
 					value,
-					label: t('dossiq', String(option?.label ?? value)),
+					label,
+					decisionLabel: option?.decisionLabel ? t('dossiq', String(option.decisionLabel)) : label,
+					description: option?.description
+						? t('dossiq', String(option.description))
+						: n('dossiq', '%n document assessed this way', '%n documents assessed this way', this.tally[value] ?? 0),
 					count: this.tally[value] ?? 0,
 				}
 			})
@@ -581,6 +598,7 @@ export default {
 
 	&__date {
 		box-sizing: border-box;
+		width: 100%;
 		height: 40px;
 		padding: 0 12px;
 		border: 1px solid var(--color-border-dark);

@@ -112,29 +112,21 @@ describe('AssessmentDecisionDialog', () => {
 		;(await import('@nextcloud/event-bus')).emit.mockReset()
 	})
 
-	it('counts the documents per classification', async () => {
+	it('proposes the mixed outcome and counts the documents in its description', async () => {
 		const { wrapper } = await mountDialog()
 
-		expect(
-			wrapper
-				.find('[data-testid="assessment-decision-count-openbaar"]')
-				.text(),
-		).toBe('2')
-		expect(
-			wrapper
-				.find('[data-testid="assessment-decision-count-deels_openbaar"]')
-				.text(),
-		).toBe('1')
-		expect(
-			wrapper
-				.find('[data-testid="assessment-decision-count-niet_openbaar"]')
-				.text(),
-		).toBe('0')
-		expect(
-			wrapper
-				.find('[data-testid="assessment-decision-count-outstanding"]')
-				.text(),
-		).toBe('0')
+		expect(wrapper.vm.proposedOutcome).toBe('deels_openbaar')
+		expect(wrapper.vm.outcomeOptions.map((option) => option.label)).toEqual([
+			'Made public',
+			'Made public in part',
+			'Not made public',
+		])
+		expect(wrapper.vm.outcomeOptions[1].description).toBe(
+			'Proposal from the assessment: 2 public, 1 disclosed in part',
+		)
+		expect(wrapper.vm.outcomeOptions[0].description).toBe(
+			'All requested documents become public',
+		)
 	})
 
 	it('testOutstandingDocumentsBlockSubmit', async () => {
@@ -179,9 +171,9 @@ describe('AssessmentDecisionDialog', () => {
 	it('still decides when only the counts cannot be read', async () => {
 		const { wrapper } = await mountDialog({ assessed: new Error('403') })
 
-		expect(
-			wrapper.find('[data-testid="assessment-decision-counts"]').exists(),
-		).toBe(false)
+		expect(wrapper.vm.outcomeOptions[1].description).toBe(
+			'Some of the documents become public, in full or in part',
+		)
 		expect(
 			wrapper
 				.find('[data-testid="assessment-decision-counts-error"]')
