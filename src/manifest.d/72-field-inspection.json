@@ -15,6 +15,7 @@
 			"config": {
 				"description": "What an inspector sees on the phone: the day offline, a checklist with photos and the queue to synchronise",
 				"allowEdit": false,
+				"showActionsMenu": false,
 				"widgets": [
 					{
 						"id": "inspection-frames",
