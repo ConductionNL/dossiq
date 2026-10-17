@@ -1232,7 +1232,7 @@
         "digest": "07eefb766e6f75a558f5d26fca5c4d2c344de6f6de84e8a71aebb3f8d6028068"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::noticeOfDefault": {
-        "version": "1.1.1",
+        "version": "1.1.2",
         "digest": "59e7a80ed4c1e91ce6b9691df689397d59f6751cad2a09b9dc64abb787656d8d"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::penaltyPaymentCalculation": {
@@ -1648,6 +1648,10 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/96-supplier-contract-status.json::supplierContract": {
+        "version": "1.2.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/97-supplier-tender-scores.json::supplierTender": {
         "version": "1.2.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
