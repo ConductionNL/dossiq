@@ -24,7 +24,7 @@
   @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
 		:name="t('dossiq', 'Known in another domain')"
 		size="normal"
 		data-testid="cross-domain-lookup-dialog"
@@ -106,15 +106,15 @@
 				{{ t('dossiq', 'Look up') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 
@@ -123,7 +123,7 @@ export default {
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcSelect,
 		NcTextField,
 	},

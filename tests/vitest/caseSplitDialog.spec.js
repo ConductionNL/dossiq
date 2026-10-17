@@ -97,7 +97,7 @@ async function mountDialog() {
 		props: { caseId: 'case-1' },
 		global: {
 			stubs: {
-				NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
+				CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 				NcLoadingIcon: { template: '<span class="loading" />' },
 				NcTextField: {
 					props: { modelValue: { type: String, default: '' } },

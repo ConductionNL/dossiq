@@ -3973,13 +3973,24 @@
 					},
 					{
 						"id": "woo-publish",
-						"type": "api-call",
+						"type": "open-modal",
 						"label": "Publish (Woo)",
 						"icon": "Publish",
-						"url": "/apps/dossiq/api/cases/@objectId/woo/publish",
-						"method": "POST",
-						"confirm": true,
-						"successMessage": "The decision is published.",
+						"target": "CasePublishDialog",
+						"props": {
+							"caseId": "@objectId",
+							"title": "Publish (Woo)",
+							"act": "Publication",
+							"subtitle": "The decision and the public documents go to opencatalogi. Anyone can find and read them afterwards.",
+							"publishUrl": "/apps/dossiq/api/cases/{caseId}/woo/publish",
+							"assessments": { "register": "dossiq", "schema": "wooDocumentAssessment", "caseField": "caseRef", "classificationField": "classification" },
+							"classifications": [
+								{ "value": "openbaar", "label": "Public", "note": "goes along as it is", "tone": "success" },
+								{ "value": "deels_openbaar", "label": "Disclosed in part", "note": "only the redacted version goes along", "tone": "warning" },
+								{ "value": "niet_openbaar", "label": "Not public", "note": "never goes along", "tone": "error", "excluded": true }
+							],
+							"note": "Publish (Woo) sits in More, under Publication. Only the handler sees it, and only once the decision is ready to publish. Afterwards Withdraw publication and Published: view the publication sit there, and the case data shows the status and the link."
+						},
 						"visibleWhen": {
 							"all": [
 								{ "field": "wooPublicationStatus", "op": "eq", "value": "ready" },
@@ -4143,7 +4154,9 @@
 						"target": "AssessmentDecisionDialog",
 						"props": {
 							"caseId": "@objectId",
-							"title": "Woo decision",
+							"title": "Next step",
+							"mixedOutcome": "deels_openbaar",
+							"note": "Publishing comes after this. Once the decision is recorded the publication is ready, and Publish (Woo) under More sends the public and partly public documents to the reading room. What is not public never goes along.",
 							"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
 							"decideUrl": "/apps/dossiq/api/cases/{caseId}/woo/decision",
 							"assessments": {
@@ -5951,7 +5964,6 @@
 					},
 					"variant": "error"
 				},
-				"editLabel": "Deviate with a reason",
 				"breadcrumb": {
 					"label": "Enforcement",
 					"route": "LhsRecommendations"
@@ -7590,18 +7602,35 @@
 				"allowSavedViews": true,
 				"showViewAction": false,
 				"_folderSidebarNote": "THE FOLDER SIDEBAR IS STILL ABSENT, AND IT IS NO LONGER WAITED ON. `contacts-domain` recorded why one could not ship, and both measurements still hold against nextcloud-vue 2.41.0. FIRST, there is no `hidden`: `folderSidebarFolders()` hands `folders[]` to CnFolderTree verbatim, so an Organisations folder would render, and selecting it would filter this page's `brpPerson` rows by a value no person carries and show an empty list. SECOND, `filterField: \"@self.schema\"` is not a filter OpenRegister answers: the wire form is a NESTED `@self` object (see `VthSeedLookup`'s `['@self' => ['slug' => ...]]`), so a flat `@self.schema` key reads as a filter on a field no object has and the search returns nothing while looking like an empty register. WHAT CHANGED is the question the sidebar was answering. It was never wanted for its own sake; it was the only way anyone could think of to reach the ten `kvkCompany` rows, which until now were listed on no page at all. The `Organisations` page below is that list, as a CHILD of this entry, so the answer costs no top-level navigation and no folder seam. If B10 ever lands, a folder that swaps the schema becomes a presentation choice between two pages rather than the thing that decides whether organisations are reachable, which is the right size for it.",
+				"searchPlaceholder": "Search by name, BSN or place of residence",
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {},
+						"default": true
+					},
+					{
+						"label": "With data protection",
+						"filter": {
+							"indicatieGeheim": true
+						}
+					}
+				],
 				"columns": [
 					{
 						"key": "displayName",
-						"label": "Name"
+						"label": "Name",
+						"widget": "avatar",
+						"secondary": "{residence.street} {residence.houseNumber}, {residence.city}"
 					},
 					{
 						"key": "citizenServiceNumber",
-						"label": "Number"
+						"label": "BSN",
+						"formatter": "masked"
 					},
 					{
 						"key": "residence.city",
-						"label": "Residence",
+						"label": "Place of residence",
 						"sortable": false
 					},
 					{
@@ -7638,6 +7667,39 @@
 				"schema": "kvkCompany",
 				"allowSavedViews": true,
 				"showViewAction": false,
+				"searchPlaceholder": "Search by name, KvK number or place",
+				"rowIcon": "OfficeBuildingOutline",
+				"defaultSort": [
+					{
+						"field": "tradeName",
+						"order": "asc"
+					}
+				],
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {},
+						"default": true
+					},
+					{
+						"label": "Associations",
+						"filter": {
+							"legalForm": "Vereniging"
+						}
+					},
+					{
+						"label": "Foundations",
+						"filter": {
+							"legalForm": "Stichting"
+						}
+					},
+					{
+						"label": "Companies",
+						"filter": {
+							"legalForm": ["BV", "NV", "Eenmanszaak", "VoF", "Maatschap", "Coöperatie"]
+						}
+					}
+				],
 				"columns": [
 					{
 						"key": "tradeName",
@@ -8062,9 +8124,19 @@
 								{
 									"widgetId": "contact-documents",
 									"label": "Files"
+								},
+								{
+									"widgetId": "contact-history",
+									"label": "Record history"
 								}
 							]
 						}
+					},
+					{
+						"id": "contact-history",
+						"type": "audit-trail",
+						"title": "History",
+						"icon": "History"
 					}
 				],
 				"follow": false,
@@ -8155,7 +8227,33 @@
 									"separator": " "
 								}
 							],
-							"emptyText": "No address on file"
+							"emptyText": "No address on file",
+							"link": {
+								"label": "Cases on the map",
+								"route": "CaseMap"
+							}
+						}
+					},
+					{
+						"id": "side-history",
+						"type": "facts",
+						"title": "Record history",
+						"content": {
+							"fields": [
+								{
+									"as": "text",
+									"parts": [
+										{
+											"text": "Last changed on"
+										},
+										{
+											"path": "@self.updated",
+											"format": "date-long"
+										}
+									],
+									"separator": " "
+								}
+							]
 						}
 					}
 				],
@@ -8588,9 +8686,19 @@
 								{
 									"widgetId": "contact-documents",
 									"label": "Files"
+								},
+								{
+									"widgetId": "contact-history",
+									"label": "Record history"
 								}
 							]
 						}
+					},
+					{
+						"id": "contact-history",
+						"type": "audit-trail",
+						"title": "History",
+						"icon": "History"
 					}
 				],
 				"follow": false,
@@ -8642,15 +8750,9 @@
 									"separator": " "
 								}
 							],
-							"action": {
-								"label": "Log contact",
-								"icon": "PhoneLogOutline",
-								"type": "open-form",
-								"register": "dossiq",
-								"schema": "contactmoment",
-								"props": {
-									"contact": "@objectId"
-								}
+							"link": {
+								"label": "Cases on the map",
+								"route": "CaseMap"
 							}
 						}
 					},
@@ -8684,6 +8786,28 @@
 							"trailing": "Term {deadline|date}",
 							"rowRoute": "CaseDetail",
 							"emptyText": "No open cases"
+						}
+					},
+					{
+						"id": "side-history",
+						"type": "facts",
+						"title": "Record history",
+						"content": {
+							"fields": [
+								{
+									"as": "text",
+									"parts": [
+										{
+											"text": "Last changed on"
+										},
+										{
+											"path": "@self.updated",
+											"format": "date-long"
+										}
+									],
+									"separator": " "
+								}
+							]
 						}
 					}
 				],

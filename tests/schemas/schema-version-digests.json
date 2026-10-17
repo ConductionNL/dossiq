@@ -1468,7 +1468,7 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/83-woo-document-assessment.json::wooDocumentAssessment": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "1d0a9ca7042939efab4202f938d992bff7ed8a4692b277aca418c42bcaacde6a"
     },
     "lib/Settings/register.d/84-woo-refusal-grounds.json::wooRefusalGround": {
@@ -1642,6 +1642,14 @@
     "lib/Settings/register.d/95-dmn-decision-tables.json::decisionTable": {
         "version": "1.0.1",
         "digest": "19b2d7d234140944ff68df3c04c963449ac62f50f43c0e1a9fa3fa1e45b5fe83"
+    },
+    "lib/Settings/register.d/96-lhs-recommendation-labels.json::lhsRecommendation": {
+        "version": "1.1.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/96-supplier-contract-status.json::supplierContract": {
+        "version": "1.2.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/dso-omgevingsloket.json::case": {
         "version": "",
