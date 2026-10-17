@@ -16,17 +16,6 @@
 				"body": "Dossiq handles cases from intake to archive. Load the demo data to see it work."
 			},
 			{
-				"id": "demo-data",
-				"type": "choice",
-				"display": "cards",
-				"optionsSource": "datasets",
-				"configKey": "demo_dataset",
-				"loadAction": "load-demo-data",
-				"title": "Load example data?",
-				"required": false,
-				"body": "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Each card has its own Load button. Pick \"None\" on a production install."
-			},
-			{
 				"id": "dwangsom-secret",
 				"type": "config-fields",
 				"title": "Dwangsom callback signing secret",
@@ -43,6 +32,17 @@
 						}
 					}
 				}
+			},
+			{
+				"id": "demo-data",
+				"type": "choice",
+				"display": "cards",
+				"optionsSource": "datasets",
+				"configKey": "demo_dataset",
+				"loadAction": "load-demo-data",
+				"title": "Example data",
+				"required": false,
+				"body": "Want to look around with example cases first? Each card loads its own set. Pick \"None\" on a production install."
 			},
 			{
 				"id": "done",
