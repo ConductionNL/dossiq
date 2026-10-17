@@ -3973,13 +3973,24 @@
 					},
 					{
 						"id": "woo-publish",
-						"type": "api-call",
+						"type": "open-modal",
 						"label": "Publish (Woo)",
 						"icon": "Publish",
-						"url": "/apps/dossiq/api/cases/@objectId/woo/publish",
-						"method": "POST",
-						"confirm": true,
-						"successMessage": "The decision is published.",
+						"target": "CasePublishDialog",
+						"props": {
+							"caseId": "@objectId",
+							"title": "Publish (Woo)",
+							"act": "Publication",
+							"subtitle": "The decision and the public documents go to opencatalogi. Anyone can find and read them afterwards.",
+							"publishUrl": "/apps/dossiq/api/cases/{caseId}/woo/publish",
+							"assessments": { "register": "dossiq", "schema": "wooDocumentAssessment", "caseField": "caseRef", "classificationField": "classification" },
+							"classifications": [
+								{ "value": "openbaar", "label": "Public", "note": "goes along as it is", "tone": "success" },
+								{ "value": "deels_openbaar", "label": "Disclosed in part", "note": "only the redacted version goes along", "tone": "warning" },
+								{ "value": "niet_openbaar", "label": "Not public", "note": "never goes along", "tone": "error", "excluded": true }
+							],
+							"note": "Publish (Woo) sits in More, under Publication. Only the handler sees it, and only once the decision is ready to publish. Afterwards Withdraw publication and Published: view the publication sit there, and the case data shows the status and the link."
+						},
 						"visibleWhen": {
 							"all": [
 								{ "field": "wooPublicationStatus", "op": "eq", "value": "ready" },
@@ -4143,7 +4154,9 @@
 						"target": "AssessmentDecisionDialog",
 						"props": {
 							"caseId": "@objectId",
-							"title": "Woo decision",
+							"title": "Next step",
+							"mixedOutcome": "deels_openbaar",
+							"note": "Publishing comes after this. Once the decision is recorded the publication is ready, and Publish (Woo) under More sends the public and partly public documents to the reading room. What is not public never goes along.",
 							"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
 							"decideUrl": "/apps/dossiq/api/cases/{caseId}/woo/decision",
 							"assessments": {
