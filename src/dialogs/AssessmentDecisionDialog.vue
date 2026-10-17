@@ -132,7 +132,9 @@
 					</div>
 
 					<div class="assessment-decision__field">
+						<label class="assessment-decision__label" for="assessment-decision-reasons">{{ t('dossiq', 'Reasons for the decision') }}</label>
 						<NcTextArea
+							id="assessment-decision-reasons"
 							v-model="description"
 							data-testid="assessment-decision-description"
 							:label="t('dossiq', 'Reasons for the decision')"
