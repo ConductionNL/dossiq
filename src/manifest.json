@@ -8166,11 +8166,13 @@
 				"quickFilters": [
 					{
 						"label": "All",
+						"showCount": true,
 						"filter": {},
 						"default": true
 					},
 					{
 						"label": "With data protection",
+						"showCount": true,
 						"filter": {
 							"indicatieGeheim": true
 						}
@@ -8238,23 +8240,27 @@
 				"quickFilters": [
 					{
 						"label": "All",
+						"showCount": true,
 						"filter": {},
 						"default": true
 					},
 					{
 						"label": "Associations",
+						"showCount": true,
 						"filter": {
 							"legalForm": "Vereniging"
 						}
 					},
 					{
 						"label": "Foundations",
+						"showCount": true,
 						"filter": {
 							"legalForm": "Stichting"
 						}
 					},
 					{
 						"label": "Companies",
+						"showCount": true,
 						"filter": {
 							"legalForm": ["BV", "NV", "Eenmanszaak", "VoF", "Maatschap", "Coöperatie"]
 						}

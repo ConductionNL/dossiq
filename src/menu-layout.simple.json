@@ -3077,6 +3077,7 @@
 					},
 					{
 						"action": "actions-menu",
+						"items": ["export", "import", "refresh", "documentation"],
 						"label": "Actions"
 					},
 					{
@@ -3108,6 +3109,7 @@
 					},
 					{
 						"action": "actions-menu",
+						"items": ["export", "import", "refresh", "documentation"],
 						"label": "Actions"
 					},
 					{
