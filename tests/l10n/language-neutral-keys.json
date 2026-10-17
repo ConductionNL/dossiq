@@ -20,6 +20,9 @@
         "Circuit open",
         "Cloud",
         "Code",
+        "Privacy",
+        "Schema",
+        "{name}",
         "Contact",
         "Contract",
         "DKIM",
@@ -84,6 +87,14 @@
         "{displayName}",
         "{time}, +{extension}",
         "{ground} · %n document",
-        "%n document"
+        "%n document",
+        "{adviceDate|date} · {committeeChair}",
+        "{grantedByName} · {grantedDate|date}",
+        "{aanvraagnummer}",
+        "{adviceType}",
+        "{competentCourt}",
+        "{scheduledDate|date}",
+        "{tedoel}",
+        "Agenda"
     ]
 }

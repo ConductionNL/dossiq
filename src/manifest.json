@@ -2809,7 +2809,7 @@
 						"title": "Files",
 						"icon": "FolderOutline",
 						"_note": "The Files tab: the case's own folder as a files browser on the Files app's primitives (nextcloud-vue CnFilesBrowser through the `files` leaf): the trail of crumbs from the user's root down to this folder, the Files app's New menu (new folder, templates, create file request) and its row actions, DAV upload, rename. Replaces the Documents tab of 2026-09-13, which held the ZGW document list (DossierTab) above this folder as two sections under two headings: one title on the page, and the word is files (Ruben). The ZGW informatieobject API, the register and the ZaakdossierController stay; only their page surface is retired.",
-						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files. document-correspondents: `columns` declares Sender and Recipients, read by nextcloud-vue `files-browser-columns` as `source: row` columns over `rowDataUrl` (the dossier listing, keyed by `fileId`, which carries senderName and recipientNames). 🔴 THE LIBRARY DROPS A COLUMN WITHOUT `key` AND A NON-EMPTY LIST REPLACES ITS DEFAULT: declared as `{id, property}` alone, every column was dropped and the name column went with the default, so the Files tab showed icon-only rows (rehearsal R2, 15 Oct). `name` and `modified` are therefore declared here too. scan-verdict-on-the-row: `columns` also declares Scan, over `scanVerdict` and the formatter of the same name in src/services/formatters.js; the listing does not carry the verdict, so the formatter reads Not scanned until it does. document-acts-reach-a-surface: `rowActions` also carries Versions (VersionHistoryPanel), Mark as final and Change confidentiality (BulkDocumentActionDialog in its two mutating modes). All three were registered in src/registry.js and named by NO manifest action from 2026-09-13, when the Documents tab that opened them was retired and this leaf replaced it; tests/vitest/registryOrphans.spec.js fails on a modal no page opens, so the next retirement says so on its own branch. CnFilesBrowser merges the clicked node's `fileId`, `fileName` and `path` onto an `open-modal` action's props, which is how each dialog knows which file it was opened on; `caseId` is the unresolved `@objectId` token here, exactly as it is for every other open-modal on this page, and each dialog falls back to the route. THERE IS NO `bulkActions` ENTRY AND THAT IS DELIBERATE: CnFilesBrowser carries no selection bar (its own header note says the Files app's list, its selection bar and its inline rename are bound to the Files router and cannot be mounted here), so a `bulkActions` prop declared on this widget would be read by nothing and would be a second dark declaration of the kind this change exists to end. The three acts are offered per row until the library carries a selection; the whole case file as one download is the CaseDetail Export dossier header action. inbound-messages-consume-integriq: `rowActions` also carries Read as a message, a FUNCTION handler rather than a declarative act, because CnFilesBrowser's row-action vocabulary is `open-modal` and `handler` and holds no `api-call`, so a declared POST would render a menu item that does nothing when clicked. It is offered on EVERY file row and not only on a `.eml` or `.msg`, because the browser has no per-row condition at all; the handler checks the name and answers with a sentence rather than being absent, and the SERVER decides what a file really is, since integriq's reader looks at the bytes and a `.msg` renamed `.eml` still parses as what it is. dossiq parses nothing itself: reading MS-CFB in two apps is two answers to one question and the one in integriq is tested. The original file is never moved or deleted, because it is the record and an archive that kept only the reading cannot answer a question about the bytes later on. dossiq scans nothing: the verdict is whatever `files_antivirus` recorded for the node, read through GET /api/files/{fileId}/scan, and an instance with no scanner reads Not scanned rather than clean (ADR-102).",
+						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files. document-correspondents: `columns` declares Sender and Recipients, read by nextcloud-vue `files-browser-columns` as `source: row` columns over `rowDataUrl` (the dossier listing, keyed by `fileId`, which carries senderName and recipientNames). 🔴 THE LIBRARY DROPS A COLUMN WITHOUT `key` AND A NON-EMPTY LIST REPLACES ITS DEFAULT: declared as `{id, property}` alone, every column was dropped and the name column went with the default, so the Files tab showed icon-only rows (rehearsal R2, 15 Oct). `name` and `modified` are therefore declared here too. scan-verdict-on-the-row: `columns` also declares Scan, over `scanVerdict` and the formatter of the same name in src/services/formatters.js; the dossier listing carries the verdict per row (ZaakdossierController reads it through ScanVerdictReader), and a row without a file reads Not scanned. Visible to shows the row's confidentiality level, the only access fact a row carries. document-acts-reach-a-surface: `rowActions` also carries Versions (VersionHistoryPanel), Mark as final and Change confidentiality (BulkDocumentActionDialog in its two mutating modes). All three were registered in src/registry.js and named by NO manifest action from 2026-09-13, when the Documents tab that opened them was retired and this leaf replaced it; tests/vitest/registryOrphans.spec.js fails on a modal no page opens, so the next retirement says so on its own branch. CnFilesBrowser merges the clicked node's `fileId`, `fileName` and `path` onto an `open-modal` action's props, which is how each dialog knows which file it was opened on; `caseId` is the unresolved `@objectId` token here, exactly as it is for every other open-modal on this page, and each dialog falls back to the route. THERE IS NO `bulkActions` ENTRY AND THAT IS DELIBERATE: CnFilesBrowser carries no selection bar (its own header note says the Files app's list, its selection bar and its inline rename are bound to the Files router and cannot be mounted here), so a `bulkActions` prop declared on this widget would be read by nothing and would be a second dark declaration of the kind this change exists to end. The three acts are offered per row until the library carries a selection; the whole case file as one download is the CaseDetail Export dossier header action. inbound-messages-consume-integriq: `rowActions` also carries Read as a message, a FUNCTION handler rather than a declarative act, because CnFilesBrowser's row-action vocabulary is `open-modal` and `handler` and holds no `api-call`, so a declared POST would render a menu item that does nothing when clicked. It is offered on EVERY file row and not only on a `.eml` or `.msg`, because the browser has no per-row condition at all; the handler checks the name and answers with a sentence rather than being absent, and the SERVER decides what a file really is, since integriq's reader looks at the bytes and a `.msg` renamed `.eml` still parses as what it is. dossiq parses nothing itself: reading MS-CFB in two apps is two answers to one question and the one in integriq is tested. The original file is never moved or deleted, because it is the record and an archive that kept only the reading cannot answer a question about the bytes later on. dossiq scans nothing: the verdict is whatever `files_antivirus` recorded for the node, read through GET /api/files/{fileId}/scan, and an instance with no scanner reads Not scanned rather than clean (ADR-102).",
 						"_dropNote": "files-dropped-on-the-list (boards DqZaakDocumenten and DqZaakDocumentenSlepen, design-system#148): `uploadButton` puts Add files beside the New menu as the primary button, `dropOverlay` draws Drop to add over the list while files are dragged onto it and announces it in a polite live region, `dropHint` puts Or drag files onto this list. under it. All three are nextcloud-vue CnFilesBrowser opt-ins (nextcloud-vue#1419) whose words, and their Dutch, come from the library: a label declared here would reach the component untranslated. The drop is never the only way in: the button stays, and the New menu keeps its upload entry. Carried since nextcloud-vue 2.77.0: the tabs widget renders this leaf bare, so the props reach CnFilesTab, which hands them to CnFilesBrowser.",
 						"props": {
 							"uploadButton": true,
@@ -2879,6 +2879,22 @@
 							"columns": [
 								"name",
 								{
+									"id": "scan",
+									"key": "scanVerdict",
+									"source": "row",
+									"label": "Scan",
+									"property": "scanVerdict",
+									"formatter": "scanVerdict"
+								},
+								{
+									"id": "visible-to",
+									"key": "vertrouwelijkheidaanduiding",
+									"source": "row",
+									"label": "Visible to",
+									"property": "vertrouwelijkheidaanduiding",
+									"formatter": "confidentialityLabel"
+								},
+								{
 									"id": "sender",
 									"key": "senderName",
 									"source": "row",
@@ -2891,14 +2907,6 @@
 									"source": "row",
 									"label": "Recipients",
 									"property": "recipientNames"
-								},
-								{
-									"id": "scan",
-									"key": "scanVerdict",
-									"source": "row",
-									"label": "Scan",
-									"property": "scanVerdict",
-									"formatter": "scanVerdict"
 								},
 								{
 									"id": "approval-chain",
@@ -5041,13 +5049,13 @@
 			"route": "/doorlooptijd",
 			"type": "dashboard",
 			"title": "Processing time",
-			"_note": "SLA / processing-time analytics. Was nominally type:dashboard but its config was ONE 12x12 widget whose slot rendered a complete second dashboard with its own <h2> — the dashboard-in-dashboard antipattern (hydra#316). Now five widgets over one shared store (src/store/modules/doorlooptijd.js). The presentational sub-components in views/doorlooptijd/components/ are unchanged; only their host moved.",
+			"_note": "Processing time as drawn on the DqDoorlooptijd board: four figures, the average per month and the share within the norm per case type, read from /api/doorlooptijd/metrics (its `summary` block), then the compliance charts, the Woo deadlines, the cases at risk and the breakdown, which read the shared store (src/store/modules/doorlooptijd.js). The period and case type filters write the workspace, which both halves read.",
 			"config": {
 				"userLayout": true,
 				"allowEdit": true,
 				"appId": "dossiq",
 				"pageId": "Doorlooptijd",
-				"description": "SLA adherence and processing time analysis",
+				"description": "All case types",
 				"headerActions": [
 					{
 						"id": "back-to-dashboard",
@@ -5088,17 +5096,218 @@
 				],
 				"widgets": [
 					{
-						"id": "dt-kpis",
+						"id": "dt-avg",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-kpis",
+							"field": "visible.dt-avg",
 							"op": "eq",
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
-						"title": "Overview",
-						"type": "custom"
+						"type": "stat",
+						"title": "Average processing time",
+						"content": {
+							"label": "Average processing time",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/doorlooptijd/metrics",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?"
+								}
+							},
+							"valueField": "summary.avgDays",
+							"format": {
+								"style": "decimal",
+								"decimals": 0,
+								"suffix": " days"
+							},
+							"caption": "Closed cases, last twelve months"
+						}
+					},
+					{
+						"id": "dt-within-norm",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-within-norm",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "stat",
+						"title": "Within the norm",
+						"content": {
+							"label": "Within the norm",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/doorlooptijd/metrics",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?"
+								}
+							},
+							"valueField": "kpi.onTimePercent",
+							"format": {
+								"style": "decimal",
+								"decimals": 0,
+								"suffix": " %"
+							},
+							"caption": "Norm per case type"
+						}
+					},
+					{
+						"id": "dt-over-norm",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-over-norm",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "stat",
+						"title": "Longer than the norm",
+						"content": {
+							"label": "Longer than the norm",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/doorlooptijd/metrics",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?"
+								}
+							},
+							"valueField": "kpi.overdue",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "Running cases",
+							"captionVariant": "error"
+						}
+					},
+					{
+						"id": "dt-closed",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-closed",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "stat",
+						"title": "Handled",
+						"content": {
+							"label": "Handled",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/doorlooptijd/metrics",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?"
+								}
+							},
+							"valueField": "summary.closedThisYear",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "This year"
+						}
+					},
+					{
+						"id": "dt-monthly",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-monthly",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "chart",
+						"title": "Average processing time per month",
+						"content": {
+							"chartKind": "line",
+							"height": 260,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/doorlooptijd/metrics",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?"
+								},
+								"labelsPath": "summary.monthlyAvgDays.labels",
+								"series": [
+									{
+										"name": "Average processing time",
+										"path": "summary.monthlyAvgDays.values"
+									}
+								]
+							},
+							"options": {
+								"stroke": {
+									"width": 3
+								},
+								"legend": {
+									"show": false
+								},
+								"dataLabels": {
+									"enabled": false
+								}
+							}
+						},
+						"subtitle": "Chart from the OpenRegister analysis layer. Dossiq works out the norm and what counts as within it."
+					},
+					{
+						"id": "dt-within-by-type",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-within-by-type",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "chart",
+						"title": "Within the norm per case type",
+						"content": {
+							"chartKind": "bar",
+							"height": 220,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/doorlooptijd/metrics",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?"
+								},
+								"labelsPath": "summary.withinNormByCaseType.labels",
+								"series": [
+									{
+										"name": "Within the norm",
+										"path": "summary.withinNormByCaseType.shares"
+									}
+								]
+							},
+							"options": {
+								"plotOptions": {
+									"bar": {
+										"horizontal": true,
+										"barHeight": "40%"
+									}
+								},
+								"xaxis": {
+									"max": 100
+								},
+								"legend": {
+									"show": false
+								},
+								"dataLabels": {
+									"enabled": true
+								}
+							}
+						}
 					},
 					{
 						"id": "dt-charts",
@@ -5156,50 +5365,58 @@
 				"layout": [
 					{
 						"id": 1,
-						"widgetId": "dt-kpis",
+						"widgetId": "dt-monthly",
 						"gridX": 0,
 						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": 2,
+						"widgetId": "dt-within-by-type",
+						"gridX": 0,
+						"gridY": 4,
 						"gridWidth": 12,
 						"gridHeight": 3
 					},
 					{
-						"id": 2,
+						"id": 3,
 						"widgetId": "dt-charts",
 						"gridX": 0,
-						"gridY": 3,
+						"gridY": 7,
 						"gridWidth": 12,
 						"gridHeight": 8
 					},
 					{
-						"id": 3,
+						"id": 4,
 						"widgetId": "dt-woo",
 						"gridX": 0,
-						"gridY": 11,
+						"gridY": 15,
 						"gridWidth": 12,
 						"gridHeight": 5
 					},
 					{
-						"id": 4,
+						"id": 5,
 						"widgetId": "dt-atrisk",
 						"gridX": 0,
-						"gridY": 16,
+						"gridY": 20,
 						"gridWidth": 6,
 						"gridHeight": 6
 					},
 					{
-						"id": 5,
+						"id": 6,
 						"widgetId": "dt-breakdown",
 						"gridX": 6,
-						"gridY": 16,
+						"gridY": 20,
 						"gridWidth": 6,
 						"gridHeight": 6
 					}
 				],
-				"documentationUrl": "https://dossiq.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"kpiRow": ["dt-avg", "dt-within-norm", "dt-over-norm", "dt-closed"]
 			},
 			"slots": {
 				"header-actions": "DtCaseTypeFilter",
-				"widget-dt-kpis": "DtKpiWidget",
 				"widget-dt-charts": "DtChartsWidget",
 				"widget-dt-woo": "DtWooWidget",
 				"widget-dt-atrisk": "DtAtRiskWidget",
@@ -5210,7 +5427,7 @@
 			"id": "ProcessMiningDashboard",
 			"route": "/process-mining",
 			"type": "dashboard",
-			"title": "Process mining",
+			"title": "Process analysis",
 			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from a dedicated ProcessMiningService aggregation endpoint, not a register query, so the widgets are type:custom and read one shared store (src/store/modules/processMining.js) rather than a register/schema binding. The page owns the heading, the period presets and the case-type filter; each widget renders content only — a widget that drew its own page heading would be the dashboard-in-dashboard antipattern (hydra#316).",
 			"config": {
 				"userLayout": true,
@@ -5244,6 +5461,43 @@
 					}
 				],
 				"widgets": [
+					{
+						"id": "pm-stuck",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-stuck",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
+						"type": "record-list",
+						"title": "Where cases get stuck",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"caseType": "@workspace.caseType?"
+								},
+								"responsePath": "stuck"
+							},
+							"title": "{caseType}, phase {phase}",
+							"text": "Median {days} days, {visits} visits",
+							"pill": {
+								"field": "level",
+								"labels": {
+									"bottleneck": "Bottleneck",
+									"watch": "Watch"
+								},
+								"colorMap": {
+									"bottleneck": "error",
+									"watch": "warning"
+								}
+							},
+							"emptyText": "No phase stands out in this period",
+							"limit": 3
+						}
+					},
 					{
 						"id": "pm-kpis",
 						"roles": ["controllers", "beheerders", "admin"],
@@ -5350,6 +5604,14 @@
 						"gridY": 15,
 						"gridWidth": 12,
 						"gridHeight": 6
+					},
+					{
+						"id": 0,
+						"widgetId": "pm-stuck",
+						"gridX": 0,
+						"gridY": 21,
+						"gridWidth": 12,
+						"gridHeight": 3
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
@@ -5964,6 +6226,7 @@
 					},
 					"variant": "error"
 				},
+				"editLabel": "Deviate with a reason",
 				"breadcrumb": {
 					"label": "Enforcement",
 					"route": "LhsRecommendations"
@@ -6878,26 +7141,241 @@
 			"route": "/termijn-dashboard",
 			"type": "dashboard",
 			"title": "Deadline monitoring",
-			"_note": "Deadline-monitoring KPIs plus the quarterly report and annual dwangsom audit. The figures come from /api/termijn/* aggregation endpoints, not a register query, so the widgets are type:custom over one shared store (src/store/modules/termijnDashboard.js). The page owns the heading and the case-type filter; the quarter and year inputs stay inside their own widgets because they scope THAT report, not the page.",
+			"_note": "Deadline monitoring as drawn on the DqTermijnen board: five figures, the share decided on time per case type, the notices of default, then the quarterly report and the annual penalty audit. The figures come from /api/termijn/dashboard/kpi, which counts the running terms and penalties server side; the notices are a register list.",
 			"config": {
 				"userLayout": true,
 				"allowEdit": true,
 				"appId": "dossiq",
 				"pageId": "TermijnDashboard",
-				"description": "Deadline compliance, quarterly reporting and the annual dwangsom audit",
+				"description": "Running terms, all teams",
 				"widgets": [
 					{
-						"id": "td-kpis",
+						"id": "td-running",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-kpis",
+							"field": "visible.td-running",
 							"op": "eq",
 							"value": true
 						},
-						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
-						"title": "Overview",
-						"type": "custom"
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "stat",
+						"title": "Running terms",
+						"content": {
+							"label": "Running terms",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+							},
+							"valueField": "runningCount",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "in {runningCaseTypeCount} case types"
+						}
+					},
+					{
+						"id": "td-due-week",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-due-week",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "stat",
+						"title": "Ending this week",
+						"content": {
+							"label": "Ending this week",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+							},
+							"valueField": "dueThisWeekCount",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "within the next seven days"
+						}
+					},
+					{
+						"id": "td-overdue",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-overdue",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "stat",
+						"title": "Overdue",
+						"content": {
+							"label": "Overdue",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+							},
+							"valueField": "overdueCount",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "Decide today or extend",
+							"captionVariant": "error"
+						}
+					},
+					{
+						"id": "td-penalty",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-penalty",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "stat",
+						"title": "Penalty running",
+						"content": {
+							"label": "Penalty running",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+							},
+							"valueField": "penaltyRunningEuros",
+							"format": {
+								"style": "currency",
+								"currency": "EUR",
+								"decimals": 0
+							},
+							"caption": "Cases: {penaltyRunningCount}",
+							"captionVariant": "error"
+						}
+					},
+					{
+						"id": "td-on-time",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-on-time",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "stat",
+						"title": "Decided on time",
+						"content": {
+							"label": "Decided on time",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+							},
+							"valueField": "withinTermijnPercent",
+							"format": {
+								"style": "decimal",
+								"decimals": 0,
+								"suffix": " %"
+							},
+							"caption": "Decided within the term"
+						}
+					},
+					{
+						"id": "td-on-time-by-type",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-on-time-by-type",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "chart",
+						"title": "Decided on time per case type",
+						"content": {
+							"chartKind": "bar",
+							"height": 220,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/dashboard/kpi",
+								"labelsPath": "onTimeByCaseType.labels",
+								"series": [
+									{
+										"name": "Decided on time",
+										"path": "onTimeByCaseType.shares"
+									}
+								],
+								"params": {
+									"from": "@workspace.dateFrom?",
+									"to": "@workspace.dateTo?"
+								}
+							},
+							"options": {
+								"plotOptions": {
+									"bar": {
+										"horizontal": true,
+										"barHeight": "40%"
+									}
+								},
+								"xaxis": {
+									"max": 100
+								},
+								"dataLabels": {
+									"enabled": true
+								},
+								"legend": {
+									"show": false
+								}
+							}
+						},
+						"subtitle": "Decided within the statutory or extended term"
+					},
+					{
+						"id": "td-notices",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-notices",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "table",
+						"title": "Notices of default and penalty payments",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "noticeOfDefault",
+								"filter": {},
+								"limit": 10
+							},
+							"columns": [
+								{
+									"key": "receiptDate",
+									"label": "Notice of default",
+									"format": "date"
+								},
+								{
+									"key": "validityStatus",
+									"label": "Assessment",
+									"widget": "badge"
+								},
+								{
+									"key": "decisionRegisteredDate",
+									"label": "Decision registered",
+									"format": "date"
+								},
+								{
+									"key": "notificationChannel",
+									"label": "Received via"
+								}
+							],
+							"borderless": true,
+							"emptyText": "No notice of default has been received"
+						},
+						"subtitle": "Awb 4:17 and 4:18"
 					},
 					{
 						"id": "td-quarterly",
@@ -6929,34 +7407,88 @@
 				"layout": [
 					{
 						"id": 1,
-						"widgetId": "td-kpis",
+						"widgetId": "td-on-time-by-type",
 						"gridX": 0,
 						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 3
+					},
+					{
+						"id": 2,
+						"widgetId": "td-notices",
+						"gridX": 0,
+						"gridY": 3,
 						"gridWidth": 12,
 						"gridHeight": 4
 					},
 					{
-						"id": 2,
+						"id": 3,
 						"widgetId": "td-quarterly",
 						"gridX": 0,
-						"gridY": 4,
+						"gridY": 7,
 						"gridWidth": 12,
 						"gridHeight": 7
 					},
 					{
-						"id": 3,
+						"id": 4,
 						"widgetId": "td-annual",
 						"gridX": 0,
-						"gridY": 11,
+						"gridY": 14,
 						"gridWidth": 12,
 						"gridHeight": 4
 					}
 				],
-				"documentationUrl": "https://dossiq.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"kpiRow": ["td-running", "td-due-week", "td-overdue", "td-penalty", "td-on-time"],
+				"headerActions": [
+					{
+						"id": "td-reports",
+						"type": "navigate",
+						"label": "Quarterly report",
+						"icon": "Download",
+						"target": "/reports"
+					},
+					{
+						"id": "td-register-notice",
+						"type": "open-form",
+						"label": "Register notice of default",
+						"icon": "Plus",
+						"variant": "primary",
+						"formTitle": "Register notice of default",
+						"register": "dossiq",
+						"schema": "noticeOfDefault",
+						"includeFields": ["deadlineInstance", "receiptDate", "notificationChannel", "documentLink"],
+						"successMessage": "Notice of default registered."
+					}
+				],
+				"dateRange": {
+					"enabled": true,
+					"control": "segmented",
+					"placement": "description",
+					"persistKey": "dossiq-termijn-range",
+					"default": {
+						"preset": "quarter"
+					},
+					"presets": [
+						{
+							"id": "week",
+							"label": "This week",
+							"period": "week"
+						},
+						{
+							"id": "quarter",
+							"label": "This quarter",
+							"period": "quarter"
+						},
+						{
+							"id": "year",
+							"label": "This year",
+							"period": "year"
+						}
+					]
+				}
 			},
 			"slots": {
-				"header-actions": "TdCaseTypeFilter",
-				"widget-td-kpis": "TdKpiWidget",
 				"widget-td-quarterly": "TdQuarterlyWidget",
 				"widget-td-annual": "TdAnnualWidget"
 			}
@@ -7839,27 +8371,57 @@
 				"widgets": [
 					{
 						"id": "contact-card",
-						"type": "data",
+						"type": "facts",
 						"title": "Contact",
 						"icon": "CardAccountDetailsOutline",
+						"_note": "The board's Contact card (DqContact): two columns, label above value. The BSN is not in it: it shows masked in the side Identity card, so the overview does not undo the mask.",
 						"content": {
-							"title": "Contact",
 							"columns": 2,
-							"editable": false,
-							"include": [
-								"displayName",
-								"description"
-							],
-							"overrides": {
-								"displayName": {
-									"order": 1
+							"fields": [
+								{
+									"path": "displayName",
+									"label": "Name"
 								},
-								"description": {
-									"order": 2
+								{
+									"path": "name.givenNames",
+									"label": "Given names"
+								},
+								{
+									"path": "name.surname",
+									"label": "Surname"
+								},
+								{
+									"path": "birth.date",
+									"label": "Date of birth",
+									"format": "date-long"
+								},
+								{
+									"key": "address",
+									"label": "Home address",
+									"separator": ", ",
+									"parts": [
+										{
+											"parts": [
+												"residence.street",
+												"residence.houseNumber"
+											],
+											"separator": " "
+										},
+										{
+											"parts": [
+												"residence.postcode",
+												"residence.city"
+											],
+											"separator": " "
+										}
+									]
+								},
+								{
+									"path": "description",
+									"label": "Description"
 								}
-							}
-						},
-						"_note": "The board's Contact card. The BSN is not in it: it shows masked in the side Identity card, so the overview does not undo the mask. Name parts, birth date and address are nested objects, which the data widget does not render; the side cards show them through facts paths instead."
+							]
+						}
 					},
 					{
 						"id": "contact-open-cases",
@@ -8193,11 +8755,6 @@
 									}
 								},
 								{
-									"label": "Date of birth",
-									"path": "birth.date",
-									"format": "date-long"
-								},
-								{
 									"as": "line",
 									"text": "Source: Basisregistratie personen"
 								}
@@ -8394,33 +8951,51 @@
 				"widgets": [
 					{
 						"id": "contact-card",
-						"type": "data",
+						"type": "facts",
 						"title": "Organisation",
 						"icon": "CardAccountDetailsOutline",
+						"_note": "The board's Organisation card (DqOrganisatie): two columns, label above value.",
 						"content": {
-							"title": "Organisation",
 							"columns": 2,
-							"editable": false,
-							"include": [
-								"tradeName",
-								"kvkNumber",
-								"legalForm",
-								"description"
-							],
-							"overrides": {
-								"tradeName": {
-									"order": 1
+							"fields": [
+								{
+									"path": "tradeName",
+									"label": "Trade name"
 								},
-								"kvkNumber": {
-									"order": 2
+								{
+									"path": "kvkNumber",
+									"label": "KvK number"
 								},
-								"legalForm": {
-									"order": 3
+								{
+									"path": "legalForm",
+									"label": "Legal form"
 								},
-								"description": {
-									"order": 4
+								{
+									"key": "address",
+									"label": "Address",
+									"separator": ", ",
+									"parts": [
+										{
+											"parts": [
+												"address.streetName",
+												"address.houseNumber"
+											],
+											"separator": " "
+										},
+										{
+											"parts": [
+												"address.postcode",
+												"address.place"
+											],
+											"separator": " "
+										}
+									]
+								},
+								{
+									"path": "description",
+									"label": "Description"
 								}
-							}
+							]
 						}
 					},
 					{
