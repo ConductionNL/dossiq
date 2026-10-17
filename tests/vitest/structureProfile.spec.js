@@ -90,14 +90,14 @@ describe('the full profile', () => {
 		expect(build(fullFile)).toEqual(before)
 	})
 
-	it('still counts 36 entries: 13 main, 5 footer, 15 settings, 3 integrations', () => {
+	it('still counts 37 entries: 13 main, 5 footer, 16 settings, 3 integrations', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
-		expect(flat(menu)).toHaveLength(36)
+		expect(flat(menu)).toHaveLength(37)
 		expect(count('main')).toBe(13)
 		expect(count('footer')).toBe(5)
-		expect(count('settings')).toBe(15)
+		expect(count('settings')).toBe(16)
 		expect(count('integrations')).toBe(3)
 	})
 })
@@ -221,7 +221,7 @@ describe('the simple profile', () => {
 		// The profile asks the instance's theming for the name and the logo;
 		// the app only puts its own name there.
 		expect(simpleFile.nav.brand).toEqual({
-			name: 'dossiq',
+			name: 'Dossiq',
 			caption: '@theming.name',
 			logo: '@theming.emblem|@theming.logo',
 		})
@@ -252,13 +252,13 @@ describe('the simple profile', () => {
 			{ theming },
 		)
 		expect(withTheming.nav.brand).toEqual({
-			name: 'dossiq',
+			name: 'Dossiq',
 			caption: 'Gemeente Voorbeeld',
 			logo: '/core/img/logo.svg',
 		})
 		// An instance that answers nothing gets no caption and no logo: the
 		// profile invents no municipality.
-		expect(built.nav.brand).toEqual({ name: 'dossiq', caption: '', logo: '' })
+		expect(built.nav.brand).toEqual({ name: 'Dossiq', caption: '', logo: '' })
 		// The full profile declares no brand and gets none.
 		expect(build(fullFile).nav).toBeUndefined()
 		// main.js hands the theming capabilities over.
@@ -456,10 +456,11 @@ describe('the simple profile', () => {
 	// 68 -> 67: the Workflow board page retires; `/workflow-board` redirects to the Cases board.
 	// 67 -> 70: data subject requests, contracts and suppliers get their lists (DqPrivacy, DqContracten).
 	// 70 -> 71: the Postvak (board DqPostvak) adds one page.
-	it('builds the same 71 pages as the full profile, so every route stays', () => {
+	// 71 -> 72: the catalogue gets a page (DqCatalogus).
+	it('builds the same 72 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(71)
+		expect(built.pages).toHaveLength(72)
 	})
 })
 
