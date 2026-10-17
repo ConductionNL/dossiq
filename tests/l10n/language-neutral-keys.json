@@ -103,6 +103,7 @@
         "{competentCourt}",
         "{scheduledDate|date}",
         "{tedoel}",
-        "Agenda"
+        "Agenda",
+        "In status"
     ]
 }
