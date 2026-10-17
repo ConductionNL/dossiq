@@ -832,7 +832,8 @@
 						"type": "chart",
 						"title": "Cases by Status",
 						"content": {
-							"chartKind": "bar",
+							"chartKind": "bar-list",
+							"footnote": "Click a bar to see the cases",
 							"dataSource": {
 								"register": "dossiq",
 								"schema": "case",
@@ -861,7 +862,8 @@
 						"type": "chart",
 						"title": "Cases by Type",
 						"content": {
-							"chartKind": "bar",
+							"chartKind": "bar-list",
+							"footnote": "Click a bar to see the cases",
 							"dataSource": {
 								"register": "dossiq",
 								"schema": "case",
@@ -1412,6 +1414,7 @@
 					{
 						"id": "team",
 						"label": "My team",
+						"title": "My team",
 						"emptyText": "Nothing to show for your team yet",
 						"widgets": [
 							{
@@ -1533,7 +1536,8 @@
 								"type": "chart",
 								"title": "Cases by Status",
 								"content": {
-									"chartKind": "bar",
+									"chartKind": "bar-list",
+									"footnote": "Click a bar to see the cases",
 									"dataSource": {
 										"register": "dossiq",
 										"schema": "case",
@@ -1562,7 +1566,8 @@
 								"type": "chart",
 								"title": "Cases by Type",
 								"content": {
-									"chartKind": "bar",
+									"chartKind": "bar-list",
+									"footnote": "Click a bar to see the cases",
 									"dataSource": {
 										"register": "dossiq",
 										"schema": "case",
