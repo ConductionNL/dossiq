@@ -38,6 +38,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Termijn\TermCaseTypeResolver;
+use OCA\Dossiq\Service\Termijn\TermDashboardFigures;
 use OCA\Dossiq\Service\Termijn\TermOutcome;
 use RuntimeException;
 
@@ -72,6 +73,13 @@ class DeadlineReportingService {
 	private readonly TermOutcome $outcomes;
 
 	/**
+	 * The running figures and the share on time the deadline dashboard shows.
+	 *
+	 * @var TermDashboardFigures
+	 */
+	private readonly TermDashboardFigures $figures;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService           $settingsService Settings.
@@ -85,7 +93,23 @@ class DeadlineReportingService {
 	) {
 		$this->caseTypes = ($caseTypes ?? new TermCaseTypeResolver(settingsService: $settingsService));
 		$this->outcomes = new TermOutcome();
+		$this->figures = new TermDashboardFigures(settingsService: $settingsService, caseTypes: $this->caseTypes);
 	}//end __construct()
+
+	/**
+	 * The per case type aggregates of the terms that started inside a window.
+	 *
+	 * @param array{from: string, until: string} $window First and last day (YYYY-MM-DD).
+	 *
+	 * @return array<string, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function perTypeBetween(array $window): array {
+		$rows = $this->listInstances(from: $window['from'], until: $window['until']);
+		$types = $this->caseTypes->resolve(rows: $rows);
+		return $this->reducePerType(byType: $this->aggregateByType(rows: $rows, department: null, types: $types['byRow']));
+	}//end perTypeBetween()
 
 	/**
 	 * Generate a quarterly KPI report.
@@ -100,12 +124,8 @@ class DeadlineReportingService {
 	public function generateQuarterlyReport(string $period, ?string $department = null): array {
 		$bounds = $this->resolveQuarter(period: $period);
 		$rows = $this->listInstances(from: $bounds['from'], until: $bounds['until']);
-
 		$types = $this->caseTypes->resolve(rows: $rows);
-		$byType = $this->aggregateByType(rows: $rows, department: $department, types: $types['byRow']);
-
-		// Reduce per-type aggregates.
-		$perType = $this->reducePerType(byType: $byType);
+		$perType = $this->reducePerType(byType: $this->aggregateByType(rows: $rows, department: $department, types: $types['byRow']));
 
 		return [
 			// 'periode' and 'department' are RESPONSE KEYS, not identifiers. They
@@ -316,13 +336,16 @@ class DeadlineReportingService {
 	/**
 	 * Compute a snapshot KPI summary for the dashboard widget.
 	 *
-	 * @param array<string, mixed> $filters Optional filters (afdeling, zaaktype).
+	 * @param array<string, mixed>   $filters Optional filters (afdeling, zaaktype).
+	 * @param DateTimeImmutable|null $today   The day the running figures are read on; now when absent.
+	 * @param string|null            $from    First day (YYYY-MM-DD) of the window the share per case type covers; the current quarter when absent.
+	 * @param string|null            $until   Last day (YYYY-MM-DD) of that window.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
-	public function getTermijnKpi(array $filters = []): array {
+	public function getTermijnKpi(array $filters = [], ?DateTimeImmutable $today = null, ?string $from = null, ?string $until = null): array {
 		$rows = $this->listInstances(from: '1970-01-01', until: '2999-12-31');
 
 		$dwTotal = 0;
@@ -348,6 +371,11 @@ class DeadlineReportingService {
 			'overrunCount' => $overrun,
 			'dwangsomTotalCents' => $dwTotal,
 			'lastUpdated' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+			...$this->figures->forDashboard(
+				rows: $rows,
+				today: $today,
+				perType: $this->perTypeBetween(window: $this->figures->window(today: $today, from: $from, until: $until))
+			),
 		];
 	}//end getTermijnKpi()
 

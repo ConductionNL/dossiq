@@ -50,6 +50,7 @@ namespace OCA\Dossiq\Service;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Dossiq\Service\ProcessMining\PhaseSummary;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
 use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
 use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
@@ -70,6 +71,7 @@ class ProcessMiningService {
 	 * @param ThroughputTrendCalculator $throughputCalculator Weekly closed-case throughput trend.
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param LanguageMapText $text A translatable title or name as one string.
+	 * @param PhaseSummary $phases The phase matrix and the stuck list the page leads with.
 	 *
 	 * @return void
 	 */
@@ -80,6 +82,7 @@ class ProcessMiningService {
 		private readonly ThroughputTrendCalculator $throughputCalculator,
 		private readonly CaseDateNormaliser $dates,
 		private readonly LanguageMapText $text = new LanguageMapText(),
+		private readonly PhaseSummary $phases = new PhaseSummary(),
 	) {
 	}//end __construct()
 
@@ -95,6 +98,20 @@ class ProcessMiningService {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function getReport(array $params): array {
+		$report = $this->buildReport(params: $params);
+		return [...$report, ...$this->phases->forPage(caseTypes: $report['caseTypes'])];
+	}//end getReport()
+
+	/**
+	 * The report itself: per case type dwell, bottlenecks and transitions, and the throughput trend.
+	 *
+	 * @param array<string, mixed> $params Query parameters (from, to, caseType).
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	private function buildReport(array $params): array {
 		$to = ($this->dates->tryParse($params['to'] ?? null) ?? $this->dates->today());
 		$from = $to->sub(new DateInterval('P12M'));
 		$fromParam = $this->nonEmptyStringParam(params: $params, key: 'from');
@@ -188,7 +205,7 @@ class ProcessMiningService {
 			'caseTypes' => $caseTypeReports,
 			'throughputTrend' => $this->throughputCalculator->computeThroughputTrend(cases: $casesById, from: $from, to: $to),
 		];
-	}//end getReport()
+	}//end buildReport()
 
 	/**
 	 * Build dwell-time intervals: one entry per (case, status-visit).
