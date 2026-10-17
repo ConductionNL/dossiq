@@ -455,10 +455,11 @@ describe('the simple profile', () => {
 	// 67 -> 68: woo-delivered-set-is-a-record adds one page.
 	// 68 -> 67: the Workflow board page retires; `/workflow-board` redirects to the Cases board.
 	// 67 -> 70: data subject requests, contracts and suppliers get their lists (DqPrivacy, DqContracten).
-	it('builds the same 70 pages as the full profile, so every route stays', () => {
+	// 70 -> 71: the field inspection view (DqInspectie).
+	it('builds the same 71 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(70)
+		expect(built.pages).toHaveLength(71)
 	})
 })
 
