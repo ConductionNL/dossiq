@@ -2496,7 +2496,7 @@
 		{
 			"id": "Queue",
 			"title": "Team queue",
-			"_note": "DqTeamwachtrij: three counts above the list, a chip per case type, the list with how long each case has waited in front, and two cards beside it. The counts and the per-type card read the queue figures of /api/dashboard/kpis, which folds the open cases once. Team today reads the coordinator workload, so a reader who is not a coordinator sees its error text, never someone else's numbers. A chip per case type needs the case type ids, which differ per instance except the seeded Woo request; the strip carries All types and Woo requests until the library can draw one chip per value of a field.",
+			"_note": "DqTeamwachtrij: three counts above the list, a chip per case type, the list with how long each case has waited in front, and two cards beside it. The counts and the per-type card read the queue figures of /api/dashboard/kpis, which folds the open cases once. Team today reads the coordinator workload, so a reader who is not a coordinator sees its error text, never someone else's numbers. The chips are one per case type in the queue, with its count, drawn from the case type field (quickFiltersFrom).",
 			"config": {
 				"folderSidebar": null,
 				"searchPlaceholder": "Search by case, number or requester",
@@ -2557,21 +2557,13 @@
 						}
 					}
 				],
-				"quickFilters": [
-					{
-						"label": "All types",
-						"filter": {},
-						"default": true,
-						"showCount": true
-					},
-					{
-						"label": "Woo request",
-						"filter": {
-							"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
-						},
-						"showCount": true
-					}
-				],
+				"quickFiltersFrom": {
+					"field": "caseType",
+					"register": "dossiq",
+					"schema": "caseType",
+					"labelField": "title",
+					"allLabel": "All types"
+				},
 				"sidePanel": [
 					{
 						"id": "queue-team-today",
