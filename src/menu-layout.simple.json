@@ -538,6 +538,17 @@
 								"type": "custom",
 								"title": "My archival reviews",
 								"icon": "ArchiveOutline"
+							},
+							{
+								"id": "simple-recent-activity",
+								"type": "nc-widget",
+								"title": "Recent activity",
+								"_note": "DqMijnWerk's Recente activiteit under My tasks: what happened on the reader's work, newest first. Nextcloud's own Activity dashboard widget, read through its items API, so dossiq keeps no feed of its own.",
+								"content": {
+									"widgetId": "activity",
+									"displayMode": "list",
+									"limit": 3
+								}
 							}
 						],
 						"layout": [
@@ -619,7 +630,7 @@
 								"gridX": 8,
 								"gridY": 4,
 								"gridWidth": 4,
-								"gridHeight": 12,
+								"gridHeight": 7,
 								"showTitle": true,
 								"headerLink": {
 									"label": "All tasks",
@@ -664,6 +675,15 @@
 										"_watching": "true"
 									}
 								}
+							},
+							{
+								"id": "s13",
+								"widgetId": "simple-recent-activity",
+								"gridX": 8,
+								"gridY": 11,
+								"gridWidth": 4,
+								"gridHeight": 5,
+								"showTitle": true
 							},
 							{
 								"id": "s12",
@@ -1825,6 +1845,7 @@
 			"_note": "The dashboard in the simple structure. Since openspec/changes/landing-views it is the dashboard of the full structure: the greeting, First today and the counts of MY cases moved to the landing page (MyWorkHome), whose My work / My team switch now changes views on that page instead of opening this one. The one thing this overlay still adds is the link to Close out your day, because this profile takes that entry out of the menu.",
 			"config": {
 				"description": "How the team is doing",
+				"editLabel": "Edit layout",
 				"kpiRow": [
 					"kpi-open-cases",
 					"kpi-overdue",
@@ -1997,6 +2018,11 @@
 						"icon": "ClipboardCheckOutline",
 						"target": "EndOfDay"
 					}
+				]
+			},
+			"configOrder": {
+				"headerActions": [
+					"open-end-of-day"
 				]
 			}
 		},
