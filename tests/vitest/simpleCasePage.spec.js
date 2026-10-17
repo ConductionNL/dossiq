@@ -360,8 +360,10 @@ describe('the tabs', () => {
 	it('shows the five the board draws and keeps the other panels under Acties, losing none', () => {
 		const strip = tabsOf(simple)
 		expect(strip.maxVisibleTabs).toBe(5)
+		// The five every case shows; a case type domain adds its own tabs
+		// behind a visibleWhen (checked under the side column).
 		expect(
-			strip.tabs.filter((tab) => !tab.overflow).map((tab) => tab.label),
+			strip.tabs.filter((tab) => !tab.overflow && !tab.visibleWhen).map((tab) => tab.label),
 		).toEqual(['Overview', 'Files', 'Contact', 'Tasks', 'Case history'])
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
@@ -446,7 +448,7 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		expect(others(simple)).toEqual(others(original))
@@ -631,6 +633,26 @@ describe('the header and the side column', () => {
 			expect(card.type).toBe('record-list')
 			expect(Object.values(card.content.filter)).toEqual(['@objectId'])
 			expect(JSON.stringify(card.visibleWhen)).toContain('@context.caseType.category')
+		}
+	})
+
+	it('adds the tabs of a case type domain only for that category, each over records linked to this case', () => {
+		const find = (config, id) => config.widgets.find((widget) => widget.id === id)
+		const tabs = find(simple, 'case-panels').content.tabs
+		const gated = tabs.filter((tab) => tab.visibleWhen)
+		expect(gated.map((tab) => tab.widgetId)).toEqual([
+			'case-objection-hearings',
+			'case-objection-advice',
+			'case-objection-decision',
+			'case-social-indications',
+			'case-social-meetings',
+			'case-tender-bids',
+		])
+		expect(tabs[0].label).toBe('Overview')
+		for (const tab of gated) {
+			const list = find(simple, tab.widgetId)
+			expect(list.type).toBe('object-list')
+			expect(Object.values(list.content.filter)).toEqual(['@objectId'])
 		}
 	})
 

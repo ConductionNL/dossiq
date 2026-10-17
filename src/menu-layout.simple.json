@@ -1268,6 +1268,127 @@
 									]
 								},
 								{
+									"widgetId": "case-objection-hearings",
+									"label": "Hearing",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Bezwaar en beroep"
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "hearingSession",
+										"filter": {
+											"case": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "case-objection-advice",
+									"label": "Advice",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Bezwaar en beroep"
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "advisoryReport",
+										"filter": {
+											"case": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "case-objection-decision",
+									"label": "Decision on the objection",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Bezwaar en beroep"
+										]
+									}
+								},
+								{
+									"widgetId": "case-social-indications",
+									"label": "Indication",
+									"visibleWhen": {
+										"any": [
+											{
+												"field": "gezinsplanId",
+												"op": "notEmpty"
+											},
+											{
+												"field": "@context.caseType.category",
+												"op": "in",
+												"value": [
+													"Sociaal domein",
+													"Jeugd",
+													"Jeugdhulp"
+												]
+											}
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "indicatiestelling",
+										"filter": {
+											"caseId": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "case-social-meetings",
+									"label": "Case meeting",
+									"visibleWhen": {
+										"any": [
+											{
+												"field": "gezinsplanId",
+												"op": "notEmpty"
+											},
+											{
+												"field": "@context.caseType.category",
+												"op": "in",
+												"value": [
+													"Sociaal domein",
+													"Jeugd",
+													"Jeugdhulp"
+												]
+											}
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "mdoOverleg",
+										"filter": {
+											"caseIds": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "case-tender-bids",
+									"label": "Bids",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Inkoop en leveranciers"
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "supplierTender",
+										"filter": {
+											"caseRef": "@objectId"
+										}
+									}
+								},
+								{
 									"widgetId": "case-files",
 									"label": "Files"
 								},
@@ -1994,6 +2115,242 @@
 						"title": "Cards",
 						"icon": "ViewColumnOutline",
 						"_note": "leaf-integrations REQ-LEAF-105: a board for the ad-hoc coordination around a case, beside the tasks and never instead of them. NOTHING IN DOSSIQ READS OR WRITES A DECK CARD FROM A `task`, OR THE OTHER WAY ROUND. Task lifecycle belongs to WorkflowEngineService alone and the kanban WorkflowBoardView is the workflow surface; a mirror would give a handler two places to finish the same work and no rule about which one counts. A SECTION of the Work panel rather than a body widget with a layout entry, which is what the design named: the case body is a tab strip and its grid is full, and a card board is work, so it belongs beside the tasks. The leaf owns link, create and unlink, so dossiq ships no Deck code at all; with the Deck app absent the library renders its own empty state rather than an error."
+					},
+					{
+						"id": "case-objection-hearings",
+						"type": "object-list",
+						"title": "Hearing",
+						"icon": "AccountVoice",
+						"content": {
+							"register": "dossiq",
+							"schema": "hearingSession",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "scheduledDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "scheduledDate",
+									"label": "Date",
+									"format": "date"
+								},
+								{
+									"key": "location",
+									"label": "Location"
+								},
+								{
+									"key": "chairperson",
+									"label": "Chair"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								}
+							],
+							"emptyText": "No hearing planned"
+						}
+					},
+					{
+						"id": "case-objection-advice",
+						"type": "object-list",
+						"title": "Advice",
+						"icon": "CommentTextOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "advisoryReport",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "adviceDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "adviceDate",
+									"label": "Date",
+									"format": "date"
+								},
+								{
+									"key": "adviceType",
+									"label": "Advice"
+								},
+								{
+									"key": "committeeChair",
+									"label": "Chair"
+								},
+								{
+									"key": "recommendation",
+									"label": "Advice given",
+									"sortable": false
+								}
+							],
+							"emptyText": "No advice received yet"
+						}
+					},
+					{
+						"id": "case-objection-decision",
+						"type": "object-list",
+						"title": "Decision on the objection",
+						"icon": "Gavel",
+						"content": {
+							"register": "dossiq",
+							"schema": "appealDecision",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "decisionDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "decisionDate",
+									"label": "Date",
+									"format": "date"
+								},
+								{
+									"key": "dispositionType",
+									"label": "Outcome"
+								},
+								{
+									"key": "followsAdvice",
+									"label": "Follows the advice"
+								},
+								{
+									"key": "decisionMaker",
+									"label": "Decision by"
+								}
+							],
+							"emptyText": "No decision on the objection yet"
+						}
+					},
+					{
+						"id": "case-social-indications",
+						"type": "object-list",
+						"title": "Indication",
+						"icon": "ClipboardTextOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "indicatiestelling",
+							"filter": {
+								"caseId": "@objectId"
+							},
+							"sort": {
+								"field": "dateInvestigation",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "dateInvestigation",
+									"label": "Investigated",
+									"format": "date"
+								},
+								{
+									"key": "indicationAuthor",
+									"label": "By"
+								},
+								{
+									"key": "advisedSupport",
+									"label": "Advised support",
+									"sortable": false
+								},
+								{
+									"key": "evaluationDate",
+									"label": "Evaluation",
+									"format": "date"
+								}
+							],
+							"emptyText": "No indication recorded"
+						}
+					},
+					{
+						"id": "case-social-meetings",
+						"type": "object-list",
+						"title": "Case meeting",
+						"icon": "AccountGroupOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "mdoOverleg",
+							"filter": {
+								"caseIds": "@objectId"
+							},
+							"sort": {
+								"field": "consultationDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "consultationDate",
+									"label": "Date",
+									"format": "date"
+								},
+								{
+									"key": "agenda",
+									"label": "Agenda",
+									"sortable": false
+								}
+							],
+							"emptyText": "No consultation recorded"
+						}
+					},
+					{
+						"id": "case-tender-bids",
+						"type": "object-list",
+						"title": "Bids",
+						"icon": "FileDocumentMultipleOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "supplierTender",
+							"filter": {
+								"caseRef": "@objectId"
+							},
+							"sort": {
+								"field": "submittedDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "title",
+									"label": "Bid"
+								},
+								{
+									"key": "supplierRef",
+									"label": "Supplier",
+									"widget": "fkResolve",
+									"widgetProps": {
+										"register": "dossiq",
+										"schema": "supplier",
+										"labelField": "legalName"
+									}
+								},
+								{
+									"key": "value",
+									"label": "Price",
+									"formatter": "currency"
+								},
+								{
+									"key": "submittedDate",
+									"label": "Submitted",
+									"format": "date"
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"widget": "badge"
+								}
+							],
+							"emptyText": "No bids yet"
+						}
 					}
 				]
 			},

@@ -89,6 +89,7 @@
         "{adviceType}",
         "{competentCourt}",
         "{scheduledDate|date}",
-        "{tedoel}"
+        "{tedoel}",
+        "Agenda"
     ]
 }
