@@ -190,8 +190,25 @@
 						"content": {
 							"fields": [
 								{
+									"as": "meter",
+									"key": "users",
 									"label": "Users",
 									"path": "usage.users"
+								},
+								{
+									"as": "meter",
+									"key": "storage",
+									"label": "Storage",
+									"path": "usage.storage",
+									"limitPath": "quota.storage",
+									"format": "bytes"
+								},
+								{
+									"as": "meter",
+									"key": "requests",
+									"label": "Requests this hour",
+									"path": "usage.requests",
+									"limitPath": "quota.requests"
 								}
 							],
 							"emptyText": "No usage recorded for this organisation"
