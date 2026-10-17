@@ -121,7 +121,15 @@ describe('N-3: field labels and the term tile read Dutch', () => {
 		).config.widgets.find((widget) => widget.id === 'case-tile-deadline')
 		const { label, ...rest } = base.content
 		expect(label).toBe('Deadline')
-		expect(tile.content).toEqual(rest)
+		expect(tile.content).toMatchObject(rest)
+		// And it draws the board's term card: days, the decide-by line, the
+		// bar from the start date and the suspend act.
+		expect(tile.content).toMatchObject({
+			daysLabel: { one: '{count} day', other: '{count} days' },
+			caption: 'Beslissen uiterlijk {date}',
+			startField: 'startDate',
+			action: { type: 'open-modal', target: 'CaseLifecycleMenuDialog', props: { act: 'suspend' } },
+		})
 	})
 })
 
@@ -134,7 +142,7 @@ describe('N-6: the case page names every tab once', () => {
 			).content.tabs
 			const sidebar = config.sidebar.tabs
 			const ids = [
-				...strip.map((tab) => `strip:${tab.widgetId}`),
+				...strip.map((tab) => `strip:${Array.isArray(tab.widgetIds) ? tab.widgetIds[0] : tab.widgetId}`),
 				...sidebar.map((tab) => `sidebar:${tab.id}`),
 			]
 			expect(new Set(ids).size).toBe(ids.length)

@@ -198,8 +198,13 @@ describe.each([
 			// The tab strip the board draws (DqContact): the four above are
 			// its panels.
 			'contact-panels',
+			// History, last as on pipelinq's relation pages: the last tab,
+			// with a last-changed card closing the side column.
+			'contact-history',
 		])
-		expect(widget(p, 'contact-card').content.editable).toBe(false)
+		// A facts card in two columns, as the board draws it; facts are read only.
+		expect(widget(p, 'contact-card').type).toBe('facts')
+		expect(widget(p, 'contact-card').content.columns).toBe(2)
 	})
 
 	it('filters both lists on this object, not on a field that does not exist', () => {
@@ -246,7 +251,9 @@ describe.each([
 			'contact-cases',
 			'contact-moments',
 			'contact-documents',
+			'contact-history',
 		])
+		expect(p.config.sideColumn[p.config.sideColumn.length - 1].id).toBe('side-history')
 	})
 
 	it('names the page the way the board does: breadcrumb, two quick acts, no follow', () => {

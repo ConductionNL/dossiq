@@ -91,10 +91,15 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// 64 -> 62: `tenancy-onto-openregister-organisation` step 5 retires
 		// Tenants and TenantDetail; a tenant is an OpenRegister organisation.
 		// 62 -> 63: `woo-delivered-set-is-a-record` adds one page.
-		expect(manifest.pages).toHaveLength(63)
+		// 63 -> 62: the WorkflowBoard page retires; the board is the Cases list.
+		expect(manifest.pages).toHaveLength(62)
+		// Two entries open Cases: the list, and the Werkbord, which is the
+		// same list in its board view (`query: { _view: 'board' }`).
 		expect(
-			manifest.menu.filter((entry) => entry.route === 'Cases'),
-		).toHaveLength(1)
+			manifest.menu
+				.filter((entry) => entry.route === 'Cases')
+				.map((entry) => entry.query?._view ?? ''),
+		).toEqual(['', 'board'])
 	})
 })
 

@@ -40,6 +40,7 @@
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCP\IUserSession;
 use RuntimeException;
 
 /**
@@ -401,6 +402,31 @@ trait SearchesObjects {
 
 		return $operation();
 	}//end runAsSystemIfAvailable()
+
+	/**
+	 * Run an operation as the system when nobody is signed in, else as the caller.
+	 *
+	 * An install, an import, an occ command or a cron job has no user, and
+	 * OpenRegister refuses every read by "Anonymous". A signed-in caller
+	 * keeps their own rights: this never elevates a request that has a user.
+	 *
+	 * @param object            $objectService The OpenRegister ObjectService instance.
+	 * @param IUserSession|null $userSession   The session; null runs the operation as it is.
+	 * @param callable          $operation     The operation.
+	 *
+	 * @return mixed Whatever the callable returns.
+	 *
+	 * @phpstan-impure Runs the caller's closure.
+	 *
+	 * @spec openspec/changes/background-reads-run-as-the-system/specs/case-management/spec.md
+	 */
+	protected function asSystemWithoutUser(object $objectService, ?IUserSession $userSession, callable $operation): mixed {
+		if ($userSession === null || $userSession->getUser() !== null) {
+			return $operation();
+		}
+
+		return $this->runAsSystemIfAvailable(objectService: $objectService, operation: $operation);
+	}//end asSystemWithoutUser()
 
 	/**
 	 * Coerce a searchObjects()/searchObjectsBySlug() return into a list of arrays.

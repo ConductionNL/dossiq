@@ -138,12 +138,15 @@ import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
 import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'
 import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
-import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'
-import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 // The case as OpenRegister stored it, behind the admin-only Inspect action.
 // @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+import CaseLocationDialog from './dialogs/CaseLocationDialog.vue'
+import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'
+import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
+import CasePublishDialog from './dialogs/CasePublishDialog.vue'
 import CaseRawDataDialog from './dialogs/CaseRawDataDialog.vue'
 import CaseRebindDialog from './dialogs/CaseRebindDialog.vue'
+import CaseShareOrganisationDialog from './dialogs/CaseShareOrganisationDialog.vue'
 import CaseSplitDialog from './dialogs/CaseSplitDialog.vue'
 import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // The three case-type gestures a declarative action cannot carry: a file, a
@@ -160,6 +163,7 @@ import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
 import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
+import DocumentRedactionDialog from './dialogs/DocumentRedactionDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
@@ -229,8 +233,6 @@ import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
 //     customComponents map, plus the handlers a manifest names by string. ---
-import FeaturesRoadmapView from './views/FeaturesRoadmapView.vue'
-import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
@@ -262,7 +264,6 @@ import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 import FirstTodayWidget from './views/widgets/FirstTodayWidget.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
 import WooReportsView from './views/woo/WooReportsView.vue'
-import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
 // Ask whether this case already exists, before it does.
 // @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
@@ -276,6 +277,7 @@ import {
 } from './utils/caseBulkActions.js'
 import { claimCase } from './utils/caseClaim.js'
 import { toggleCaseFollow } from './utils/caseFollow.js'
+import { caseStatusTargets, moveCaseStatus } from './utils/caseStatusBoardMoves.js'
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
 import { openCaseOfDocument } from './utils/contactDocuments.js'
 import { openIntegriqConnections } from './utils/integriqConnections.js'
@@ -432,28 +434,6 @@ const registry = {
 		_note: "Full-screen multi-object cases-on-map overview. Markers come from OpenRegister's page-level maps-overview surface (RBAC-scoped, OR #154) and render through the lib's CnMapWidget — no bespoke Leaflet/WMS/WFS plumbing (ADR-022).",
 	},
 
-	// --- Workflow Board — Kanban with drag-to-advance status transitions. ---
-	// @spec openspec/specs/dashboard/spec.md
-	WorkflowBoardView: {
-		kind: 'page',
-		component: WorkflowBoardView,
-		_note: 'Kanban board: column per non-final status, drag-to-advance via saveObject (RBAC-enforced). No declarative board page type in lib yet.',
-	},
-
-	// --- Flows (ADR-110 Decision 4). ---
-	// The shared CnFlowIndexPage / CnFlowDetail surfaces over OpenRegister's
-	// native flow store, scoped `app: "dossiq"` so this app sees only its own.
-	// Only the SIDEBAR is an app component now. The list and the canvas are the
-	// shared `flows` / `flow-detail` manifest page types (nextcloud-vue 2.19.0),
-	// so this app no longer carries wrapper copies of them — the three apps that
-	// did each carried the same dead `@rowClick` listener.
-	// @spec openspec/specs/automatic-actions/spec.md
-	FlowDetailSidebar: {
-		kind: 'page',
-		component: FlowDetailSidebar,
-		_note: 'CnFlowSidebar in the NC app sidebar; shares useFlowStore with the canvas.',
-	},
-
 	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
 	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
@@ -572,6 +552,8 @@ const registry = {
 	'case-pipelinq-contact-moments': {
 		// @custom-widget-ratchet exclude a pipelinq contact moment is not a dossiq OBJECT: the rows come from pipelinq's leaf through PipelinqCaseController, by membership of the case set, with a shared marker that counts cases the reader may not open; and filing onto or off a case is pipelinq's act, not an object write
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CasePipelinqContactMoments,
 		...PANEL_WIDGET_META,
 		_note: "CaseDetail Communication tab, the Customer record section (board DqZaakContactmomenten): pipelinq's contact moments by membership, the shared line, and the two filing acts. Says in words when pipelinq is absent, which is not the same as no moments.",
@@ -583,6 +565,13 @@ const registry = {
 		component: CaseProgrammeSection,
 		...PANEL_WIDGET_META,
 		_note: "CaseDetail Related tab, the Programme section (board DqZaakPartijen): the pipelinq programme the case hangs under, its progress with the mode, an uncomputable figure said rather than drawn as zero, and the link dialog with pipelinq's refusal naming the holder.",
+	},
+
+	CasePublishDialog: {
+		kind: 'modal',
+		component: CasePublishDialog,
+		propsSchema: {},
+		_note: 'CaseDetail More menu, Publication group: what a decided case publishes, counted per assessment, then one press (board DqPubliceren). The groups, their notes and the group that never goes along come from the action props.',
 	},
 
 	CaseHandoverDialog: {
@@ -625,6 +614,14 @@ const registry = {
 		_note: "Assess documents from the case page (document-assessment REQ-DAS-002), built to the Wat nog openstaat table of board DqWooReview. Generic (decision 182): the header action that opens it carries the configuration in its props, namely where the outstanding list is read, where the assessment is posted, the classifications and which of them need a ground, the schema the grounds are read from, and the names of the posted fields. The Woo request case type configures it as `document-assess`; no code names the procedure. The selection is posted once. A refusal keeps the dialog open with the server's sentence beside the document, and the list is read again, so nothing reads as saved that the server did not store. The manifest carries no _note because $defs/action refuses one.",
 	},
 
+	// @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-follows-board-dqlakken-req-drd-005
+	DocumentRedactionDialog: {
+		kind: 'modal',
+		component: DocumentRedactionDialog,
+		propsSchema: {},
+		_note: "Redact the partly public documents of a case (document-redaction REQ-DRD-005), built to board DqLakken: the document text with the passages marked, and the proposal with a verdict per passage (Agreed, Adjust, Do not redact) and Add passage. Generic (decision 182): the header action carries the routes and the passage type labels in its props; the Woo request case type configures it as `document-redact`. Record redaction is enabled only when every passage has a verdict, and records the officer's check before it asks filinq for the copy. Upload redacted version records a version made elsewhere. A refusal shows the server's sentence. The manifest carries no _note because $defs/action refuses one.",
+	},
+
 	// @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
 	AssessmentDecisionDialog: {
 		kind: 'modal',
@@ -664,6 +661,22 @@ const registry = {
 		component: CaseCopyDialog,
 		propsSchema: {},
 		_note: "CaseDetail Actions menu: what the copy is called, and whether the source's documents come along. NOT CnCopyDialog, which the design named: the library's 2.41.0 copy dialog offers three naming PATTERNS over a fixed name and carries no slots at all, so there is nowhere to put the Include documents checkbox and no way to type a title that is not one of the three. It reads the case from the ROUTE, because an open-modal action forwards its props verbatim and `@objectId` would arrive as that literal string. Deleted the day nextcloud-vue ships a `copy` header-action type taking a field list and an endpoint (tasks 1.4).",
+	},
+
+	// --- Sharing a case with, or handing it to, another organisation (board DqZaakSamenwerken). ---
+	// @spec openspec/specs/federated-case-collaboration/spec.md
+	CaseShareOrganisationDialog: {
+		kind: 'modal',
+		component: CaseShareOrganisationDialog,
+		propsSchema: {},
+	},
+
+	// --- Adding a location to a case from the BAG (board DqZaakLocatie). ---
+	// @spec openspec/specs/case-dashboard-view/spec.md
+	CaseLocationDialog: {
+		kind: 'modal',
+		component: CaseLocationDialog,
+		propsSchema: {},
 	},
 
 	// --- The case as Open Register stored it (admin-inspect-entry, row 2.22). ---
@@ -711,6 +724,8 @@ const registry = {
 	CasePlanPanel: {
 		// @custom-widget-ratchet exclude the adaptive plan is a TREE of plan items with a six-state lifecycle and per-item transition actions, living in OpenRegister's case layer rather than in the case object; no declarative widget reads /api/cases, and an object-list over the case would render neither the nesting nor the transitions. Deleted the day the manifest vocabulary has a case-plan widget type
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CasePlanPanel,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail: the stages, tasks and milestones OpenRegister holds for this case, with enable, complete and stop per item. Fails CLOSED on an unreachable case layer: an error with a retry, never an empty plan, because an outage and a finished case look identical from the browser and only one of them is safe to act on.',
@@ -765,6 +780,8 @@ const registry = {
 	'case-work-instruction': {
 		// @custom-widget-ratchet exclude the value lives on the case TYPE and the page is bound to the CASE, and CnDetailPage reads no `extend` (measured: the string does not occur in CnDetailPage.vue of the installed 3.4.0), so a declared widget over a dotted `caseType.knowledgeBasePage` path renders blank while looking configured. Deleted the day a detail page can expand a reference, or the manifest vocabulary has a widget that reads one
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseWorkInstructionPanel,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Knowledge tab, first section: the Collectives page that explains how this municipality handles this kind of case, followed one reference from the case to its type. dossiq stores no article text and fetches no article body, so a handler whose role group is not in the collective\'s team meets Collectives\' own refusal on the page rather than a copy dossiq made. Nothing renders when the type names no page, because most types will not for a while and a heading over "no work instruction" is a reproach for something an administrator has not done. A lookup that FAILED says so with a retry: a blank panel would read as a type without an instruction.',
@@ -922,6 +939,8 @@ const registry = {
 	'case-task-pane': {
 		// @custom-widget-ratchet exclude blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column, so a lifecycle button cannot be put inside a row from the manifest; the widget returns to type object-list and this entry is deleted the moment the library ships one (https://github.com/ConductionNL/nextcloud-vue/issues/1033)
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseTaskPane,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Tasks tab: the first open task of the case with the lifecycle buttons OpenRegister answers for it, a toast on completion and the next open task in its place. No built-in fits: CnObjectListWidget accepts register/schema/filter/sort/limit/columns/rowRoute/prompt/emptyText/viewAllRoute/viewAllQuery and nothing else, has no rowActions and no per-row slot, and a config key it does not declare is dropped in silence. Interim by construction, and the e2e asserts on the tab and the button labels rather than on this component so it survives the swap back.',
@@ -953,6 +972,8 @@ const registry = {
 	'case-conversations-pane': {
 		// @custom-widget-ratchet exclude the surface is an ACT, not a collection of OpenRegister objects: it starts a Talk room, declares the case major and opens the one channel that declaration made, and a built-in object-list takes a register and a schema and offers no button. The records it lists live on the case itself as `case.conversations`, which no widget type can read as a collection either. Deleted the day the library ships a widget type that posts to an app endpoint and renders the array a field holds
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseConversationsPanel,
 		...PANEL_WIDGET_META,
 		_note: 'The Live conversation section of the Communication tab: start a conversation in Talk from any case, see what the case recorded of the ones already held, and declare the case major. The hoorzitting reaches the same mechanism through HearingService; this is the surface for every other case. Absent Talk, it says so rather than offering a button that cannot work.',
@@ -972,6 +993,8 @@ const registry = {
 	'case-location-map': {
 		// @custom-widget-ratchet exclude blocked: the library `map` widget cannot be scoped to one case. `markers.dataSource.{register,schema}` fetches the register with `_limit` and no filter, and `markers.dataSource.url` is not token-resolved, so `@objectId` would be sent literally. Either route plots every case's locations on this case's page. This entry is deleted and the manifest returns to `type: "map"` the moment the library takes a filter (https://github.com/ConductionNL/nextcloud-vue/issues/1141)
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseLocationMap,
 		...PANEL_WIDGET_META,
 		_note: 'Replaces the Locations list that was the second section of the retired Objects and locations tab. `case-location` already carries latitude and longitude, so the addresses were a table of coordinates nobody could picture. A row with no usable pair is skipped rather than plotted at (0, 0), which is open water and looks like a real pin.',
@@ -1434,15 +1457,6 @@ const registry = {
 
 	// --- Pages that were only ever in the legacy customComponents map. ---
 	//
-	// Same `kind: 'page'` as every other full-page custom route above:
-	// CnPageRenderer resolves a `type: "custom"` page's `component` (and a
-	// `slots.main`) with requireKind 'page', so any other kind here would be
-	// skipped and the page would render the renderer's empty placeholder.
-	FeaturesRoadmapView: {
-		kind: 'page',
-		component: FeaturesRoadmapView,
-		_note: "Features & roadmap. Wraps the library's CnFeaturesAndRoadmapPage (which has no slots) and adds one link to the capability comparison on dossiq.conduction.nl/compare.",
-	},
 	DeletedCasesView: {
 		kind: 'page',
 		component: DeletedCasesView,
@@ -1485,6 +1499,17 @@ const registry = {
 	// the declarative path cannot express what it does — the reason is on each
 	// entry.
 	// @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	// @spec openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+	moveCaseStatus: {
+		kind: 'handler',
+		handler: moveCaseStatus,
+		_note: "The Cases board view's `board.moveHandler`. A status is the output of a transition, so a drop asks the status-transition engine for the offered transition that ends on the dropped status and posts it, the same write path the case page uses. A PATCH of `status` would skip every guard, side effect and statusRecord.",
+	},
+	caseStatusTargets: {
+		kind: 'handler',
+		handler: caseStatusTargets,
+		_note: "The Cases board view's `board.moveTargetsHandler`: every status the engine offers one case, from /available-transitions. One a guard holds comes back as not allowed with the guard's sentence, so the board fades it during a drag and the card menu says what holds the case.",
+	},
 	claimCase: {
 		kind: 'handler',
 		handler: claimCase,

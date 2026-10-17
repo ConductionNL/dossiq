@@ -26,8 +26,8 @@
   @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
 -->
 <template>
-	<NcDialog
-		:name="t('dossiq', 'Plan a follow-up case')"
+	<CnDialog
+		:name="t('dossiq', 'Plan follow-up')"
 		data-testid="case-plan-dialog"
 		@closing="$emit('close')">
 		<div class="case-plan">
@@ -124,17 +124,17 @@
 				{{ t('dossiq', 'Plan follow-up') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import {
@@ -153,7 +153,7 @@ export default {
 	components: {
 		NcButton,
 		NcDateTimePicker,
-		NcDialog,
+		CnDialog,
 		NcSelect,
 		NcTextField,
 	},

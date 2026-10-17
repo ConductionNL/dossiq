@@ -59,7 +59,7 @@ use Throwable;
 /**
  * Sets `integration.bag.check` to `on` where the old BAG client was switched on.
  *
- * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-an-instance-that-checked-bag-locations-before-the-upgrade-keeps-checking-them
+ * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-an-instance-that-checked-bag-locations-before-the-upgrade-keeps-checking-them
  */
 class CarryBagCheckSetting implements IRepairStep {
 	/**

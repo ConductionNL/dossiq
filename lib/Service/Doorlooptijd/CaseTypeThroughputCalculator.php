@@ -132,6 +132,73 @@ class CaseTypeThroughputCalculator {
 	}//end computeCaseTypeBreakdown()
 
 	/**
+	 * The share of closed cases per case type that ended on or before their
+	 * deadline, as parallel arrays a chart reads directly, for the case types
+	 * that closed the most cases. A case without a deadline has no norm to
+	 * meet and is left out.
+	 *
+	 * @param array<int, array<string, mixed>> $cases     Enriched cases.
+	 * @param array<int, array<string, mixed>> $caseTypes Case types.
+	 * @param int                              $limit     How many case types, busiest first.
+	 *
+	 * @return array{labels: array<int, string>, shares: array<int, int>}
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function computeWithinNormByCaseType(array $cases, array $caseTypes, int $limit=5): array {
+		$titles = $this->titlesById(caseTypes: $caseTypes);
+
+		$closed = array_filter(
+			$cases,
+			static fn (array $caseData): bool => $caseData['_isOpen'] !== true && $caseData['_endDate'] !== null && $caseData['_deadline'] !== null
+		);
+
+		$tally = [];
+		foreach ($closed as $caseData) {
+			$caseTypeId = (string)($caseData['caseType'] ?? '');
+			if ($caseTypeId === '') {
+				continue;
+			}
+
+			$tally[$caseTypeId] ??= ['met' => 0, 'total' => 0];
+			$tally[$caseTypeId]['total']++;
+			if ($caseData['_endDate'] <= $caseData['_deadline']) {
+				$tally[$caseTypeId]['met']++;
+			}
+		}
+
+		uasort($tally, static fn (array $left, array $right): int => ($right['total'] <=> $left['total']));
+
+		$labels = [];
+		$shares = [];
+		foreach (array_slice($tally, 0, $limit, true) as $caseTypeId => $counts) {
+			$labels[] = ($titles[$caseTypeId] ?? $caseTypeId);
+			$shares[] = (int)round(($counts['met'] / $counts['total']) * 100);
+		}
+
+		return ['labels' => $labels, 'shares' => $shares];
+	}//end computeWithinNormByCaseType()
+
+	/**
+	 * The title of every case type, by its id.
+	 *
+	 * @param array<int, array<string, mixed>> $caseTypes Case types.
+	 *
+	 * @return array<string, string>
+	 */
+	private function titlesById(array $caseTypes): array {
+		$titles = [];
+		foreach ($caseTypes as $caseType) {
+			$id = (string)($caseType['id'] ?? '');
+			if ($id !== '') {
+				$titles[$id] = $this->text->textOf(value: ($caseType['title'] ?? $id));
+			}
+		}
+
+		return $titles;
+	}//end titlesById()
+
+	/**
 	 * Sum and count closed-case throughput days per case-type id.
 	 *
 	 * @param array<int, array<string, mixed>> $cases Enriched cases.

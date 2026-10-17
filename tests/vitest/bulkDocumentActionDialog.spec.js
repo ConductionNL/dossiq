@@ -256,13 +256,11 @@ describe('BulkDocumentActionDialog — zip', () => {
 })
 
 describe('BulkDocumentActionDialog opened from a file row', () => {
-	// document-acts-reach-a-surface REQ-ZAK-021. The dialog's only caller now
-	// is the `case-files` leaf, which hands over the clicked node's `fileId`
-	// and NO selection: CnFilesBrowser carries no selection bar, because the
-	// Files app's own list is bound to the Files router and cannot be mounted
-	// off the Files page. So the dialog resolves one document through the
-	// case's dossier listing, which is the one endpoint carrying every record
-	// beside its `fileId`.
+	// document-acts-reach-a-surface REQ-ZAK-021. The dialog's caller is the
+	// `case-files` leaf, which hands over the clicked node's `fileId`, or the
+	// ticked files' `fileIds` from its bulk bar. The dialog resolves them
+	// through the case's dossier listing, which is the one endpoint carrying
+	// every record beside its `fileId`.
 	it('resolves the clicked file to its document id before POSTing', async () => {
 		mockGet.mockImplementation((url) => {
 			if (String(url).includes('/dossier'))
@@ -293,6 +291,35 @@ describe('BulkDocumentActionDialog opened from a file row', () => {
 		expect(mockPost).toHaveBeenCalledWith(
 			expect.stringContaining('bulk/status'),
 			{ ids: ['doc-7'], status: 'final' },
+		)
+	})
+
+	it('resolves every file ticked in the bulk bar to its document id', async () => {
+		mockGet.mockImplementation((url) => {
+			if (String(url).includes('/dossier'))
+				return Promise.resolve({
+					data: {
+						informatieobjecten: [
+							{ id: 'doc-7', fileId: 77, title: 'Besluit' },
+							{ id: 'doc-8', fileId: 88, title: 'Bijlage' },
+							{ id: 'doc-9', fileId: 99, title: 'Notitie' },
+						],
+					},
+				})
+			return Promise.resolve({ data: {} })
+		})
+		mockPost.mockResolvedValue({ data: { results: [{ success: true }, { success: true }] } })
+
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'mark-final', fileIds: [77, 99], caseId: 'case-1' },
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockPost).toHaveBeenCalledWith(
+			expect.stringContaining('bulk/status'),
+			{ ids: ['doc-7', 'doc-9'], status: 'final' },
 		)
 	})
 

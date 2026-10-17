@@ -44,9 +44,6 @@ export const CasesOnMapView = '/map'
 /** `src/views/MyWorkCards.vue` — the personal workload cards (manifest page `MyWork`). */
 export const MyWorkCards = '/my-work'
 
-/** `src/views/workflow-board/WorkflowBoard.vue` — the kanban status board. */
-export const WorkflowBoard = '/workflow-board'
-
 /**
  * `src/views/settings/SubstitutionSettings.vue` — self-service vervanging.
  * Retired as an app page by page-topology-cleanup (B4); it is a PERSONAL

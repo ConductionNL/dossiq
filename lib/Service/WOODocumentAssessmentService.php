@@ -347,6 +347,88 @@ class WOODocumentAssessmentService {
 	}//end findAssessment()
 
 	/**
+	 * The assessments of a case that judged their document partly public, as far as the caller may read them.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The assessments.
+	 *
+	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
+	 */
+	public function partlyPublicAssessments(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
+		if ($objectService === null || empty($register) === true || empty($assessmentSchema) === true) {
+			return [];
+		}
+
+		$rows = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $assessmentSchema,
+			filters: ['caseRef' => $caseId, 'classification' => 'deels_openbaar', '_limit' => 500],
+		);
+
+		return array_values(
+			array_filter(
+				$rows,
+				static fn (array $row): bool => (string)($row['caseRef'] ?? '') === $caseId
+					&& (string)($row['classification'] ?? '') === 'deels_openbaar'
+			)
+		);
+	}//end partlyPublicAssessments()
+
+	/**
+	 * The partly public documents of a case that have no redacted copy yet.
+	 *
+	 * Read regardless of the caller, like the outstanding list (REQ-WSA-004):
+	 * an assessment the caller may not read still holds up the stage it is in.
+	 * Only document references are answered.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{partlyPublic: int, waiting: list<string>} How many documents are partly public, and which still wait.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable.
+	 *
+	 * @spec openspec/changes/the-redaction-stage-waits-for-every-redacted-copy/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
+	 */
+	public function partlyPublicWithoutCopy(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
+		if (empty($assessmentSchema) === true) {
+			return ['partlyPublic' => 0, 'waiting' => []];
+		}
+
+		$rows = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $assessmentSchema,
+			filters: ['caseRef' => $caseId, 'classification' => 'deels_openbaar', '_limit' => 500],
+		);
+
+		$partlyPublic = 0;
+		$waiting = [];
+		foreach ($rows as $row) {
+			if ((string)($row['caseRef'] ?? '') !== $caseId || (string)($row['classification'] ?? '') !== 'deels_openbaar') {
+				continue;
+			}
+
+			$partlyPublic++;
+			if ((string)($row['redactedDocumentRef'] ?? '') === '') {
+				$waiting[] = (string)($row['documentRef'] ?? '');
+			}
+		}
+
+		return ['partlyPublic' => $partlyPublic, 'waiting' => $waiting];
+	}//end partlyPublicWithoutCopy()
+
+	/**
 	 * Attach (or update) a `redactionProposal` on an EXISTING wooAssessment
 	 * record — the document must already have a disclosure classification
 	 * (business rule: assess first, then request redaction assistance).
@@ -370,6 +452,58 @@ class WOODocumentAssessmentService {
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
 	 */
 	public function saveRedactionProposal(string $caseId, string $documentRef, array $proposal): array {
+		$savedObject = $this->updateAssessment(caseId: $caseId, documentRef: $documentRef, fields: ['redactionProposal' => $proposal]);
+
+		$this->logger->info(
+			'WOO redaction proposal saved for document ' . $documentRef . ' in case ' . $caseId
+			. ' (status: ' . ($proposal['status'] ?? 'unknown') . ')',
+			['app' => Application::APP_ID],
+		);
+
+		return $savedObject;
+	}//end saveRedactionProposal()
+
+	/**
+	 * Record the redaction of a document on its EXISTING assessment.
+	 *
+	 * Writes the `redaction` record and, when given, the redacted copy the
+	 * publication delivers in place of the original. The same author,
+	 * supervisor or administrator rule holds as for the verdict (REQ-CRA-003).
+	 *
+	 * @param string               $caseId              The case UUID.
+	 * @param string               $documentRef         The document UUID.
+	 * @param array<string, mixed> $redaction           The redaction record.
+	 * @param string|null          $redactedDocumentRef The redacted copy, or null to leave it as it is.
+	 *
+	 * @return array<string, mixed> The updated assessment record.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable or the document has not been assessed.
+	 * @throws RefusedException (403 `owned-by-another-reviewer`) When the caller may not change this assessment.
+	 *
+	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 */
+	public function saveRedaction(string $caseId, string $documentRef, array $redaction, ?string $redactedDocumentRef = null): array {
+		$fields = ['redaction' => $redaction];
+		if ($redactedDocumentRef !== null) {
+			$fields['redactedDocumentRef'] = $redactedDocumentRef;
+		}
+
+		return $this->updateAssessment(caseId: $caseId, documentRef: $documentRef, fields: $fields);
+	}//end saveRedaction()
+
+	/**
+	 * Change fields of an EXISTING assessment, under the reviewer rule.
+	 *
+	 * @param string               $caseId      The case UUID.
+	 * @param string               $documentRef The document UUID.
+	 * @param array<string, mixed> $fields      The fields to set.
+	 *
+	 * @return array<string, mixed> The updated assessment record.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable or the document has not been assessed.
+	 * @throws RefusedException When the caller may not change this assessment.
+	 */
+	private function updateAssessment(string $caseId, string $documentRef, array $fields): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -382,35 +516,23 @@ class WOODocumentAssessmentService {
 			);
 		}
 
-		// The redaction proposal is part of the assessment, so the same rule
-		// holds as for the verdict (REQ-CRA-003): its author, a supervisor or
-		// an administrator. Proposing and reviewing both write here.
+		// The redaction is part of the assessment, so the same rule holds as
+		// for the verdict (REQ-CRA-003): its author, a supervisor or an
+		// administrator.
 		$this->reviewerAccess?->assertMayChange(
 			caseId: $caseId,
 			record: $existing,
 			userId: (string)$this->userSession->getUser()?->getUID()
 		);
 
-		$register = $this->settingsService->getConfigValue('register');
-		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
-		$existingId = $existing['id'] ?? $existing['uuid'] ?? null;
-
-		$updated = $existing;
-		$updated['redactionProposal'] = $proposal;
-
-		$savedObject = $objectService->saveObject(
-			object: $updated,
-			register: $register,
-			schema: $assessmentSchema,
-			uuid: (string)$existingId,
+		$saved = $this->patchObjectAsArray(
+			objectService: $objectService,
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $this->settingsService->getConfigValue('woo_assessment_schema'),
+			id: (string)($existing['id'] ?? $existing['uuid'] ?? ''),
+			changes: $fields,
 		);
 
-		$this->logger->info(
-			'WOO redaction proposal saved for document ' . $documentRef . ' in case ' . $caseId
-			. ' (status: ' . ($proposal['status'] ?? 'unknown') . ')',
-			['app' => Application::APP_ID],
-		);
-
-		return $savedObject;
-	}//end saveRedactionProposal()
+		return ($saved ?? array_merge($existing, $fields));
+	}//end updateAssessment()
 }//end class

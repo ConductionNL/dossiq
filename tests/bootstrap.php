@@ -682,6 +682,19 @@ if (class_exists('\\OCA\\Filinq\\Exception\\DetectionUnavailableException') === 
 	include_once __DIR__ . '/Stubs/Filinq/Exception/DetectionUnavailableException.php';
 }
 
+// Filinq's review gate (partly-public-documents-get-a-redacted-copy): the
+// redaction step is tested against filinq's own guard, gate and run identity,
+// with the marks kept in memory.
+if (class_exists('\\OCA\\Filinq\\Exception\\RedactionNotReviewedException') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Exception/RedactionNotReviewedException.php';
+}
+
+foreach (['DetectionRunIdentity', 'RedactionReviewGate', 'RedactionReviewMarkRepository', 'RedactionOutputGuard'] as $stubRedaction) {
+	if (class_exists('\\OCA\\Filinq\\Service\\Redaction\\' . $stubRedaction) === false) {
+		include_once __DIR__ . '/Stubs/Filinq/Service/Redaction/' . $stubRedaction . '.php';
+	}
+}
+
 // case-merge: OpenRegister's merge event. CaseMergeRegistrar names it by
 // `::class`, which does not autoload, so the registration is silent at runtime
 // without openregister and reads to the analysers as a class that does not

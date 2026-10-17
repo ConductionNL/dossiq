@@ -100,6 +100,7 @@ class CaseTypeAcknowledgement {
 		'contentOnPlatform' => false,
 		'language' => 'nl',
 		'addressFields' => [],
+		'emailCopy' => false,
 	];
 
 	/**
@@ -130,6 +131,7 @@ class CaseTypeAcknowledgement {
 		$declaration['enabled'] = ($declaration['enabled'] !== false);
 		$declaration['statutory'] = ($declaration['statutory'] !== false);
 		$declaration['contentOnPlatform'] = ($declaration['contentOnPlatform'] === true);
+		$declaration['emailCopy'] = ($declaration['emailCopy'] === true);
 		$declaration['intakeChannels'] = $this->channelList(value: $declaration['intakeChannels']);
 		$declaration['defaultChannel'] = trim((string)$declaration['defaultChannel']);
 		$declaration['language'] = trim((string)$declaration['language']);
@@ -235,6 +237,19 @@ class CaseTypeAcknowledgement {
 	public function contentStaysOnPlatform(array $caseType): bool {
 		return ($this->declarationFor(caseType: $caseType)['contentOnPlatform'] === true);
 	}//end contentStaysOnPlatform()
+
+	/**
+	 * Whether the acknowledgement also goes by e-mail when another channel took it.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return boolean TRUE when the case type declares `emailCopy`.
+	 *
+	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 */
+	public function sendsEmailCopy(array $caseType): bool {
+		return ($this->declarationFor(caseType: $caseType)['emailCopy'] === true);
+	}//end sendsEmailCopy()
 
 	/**
 	 * The channel this acknowledgement goes out through.

@@ -277,6 +277,11 @@ function endingEntries(acts) {
 				? String(verdict.reason ?? '')
 				: 'What you may do with this case could not be read.',
 			role: verdict ? String(verdict.role ?? '') : '',
+			// Finish and abort close with one of the case type's results, the
+			// same list the act refuses against. Archive takes the result the
+			// case already has.
+			resultTypes:
+				ending.act === 'archive' ? [] : resultChoices(acts?.resultTypes),
 		}
 	})
 }

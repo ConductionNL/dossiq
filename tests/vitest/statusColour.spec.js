@@ -22,7 +22,6 @@ import {
 	DEFAULT_STATUS_COLOUR,
 	isLightStatusColour,
 	isStatusColour,
-	mergeColumnColour,
 	normaliseStatusColour,
 	STATUS_COLOUR_BADGE_VARIANTS,
 	STATUS_COLOURS,
@@ -199,52 +198,6 @@ describe('statusBadgeStyle', () => {
 		)
 		expect(cell).toContain('statusBadgeStyle(this.colour)')
 		expect(cell).not.toContain('statusColourStyle(')
-	})
-})
-
-describe('mergeColumnColour', () => {
-	it('takes the candidate when the column has none yet', () => {
-		expect(mergeColumnColour(null, 'orange')).toBe('orange')
-	})
-
-	it('keeps the colour the column already took', () => {
-		// Two case types can colour the same status name differently and the
-		// merged board column can only be one of them: first wins, and the
-		// second is ignored rather than blended into a third colour neither
-		// author asked for.
-		expect(mergeColumnColour('orange', 'purple')).toBe('orange')
-	})
-
-	it('stays null while neither side names a palette colour', () => {
-		// null rather than grey: the column has no colour YET, and a caller
-		// that merges a third status must still be able to take its colour.
-		expect(mergeColumnColour(null, '')).toBeNull()
-		expect(mergeColumnColour(undefined, 'teal')).toBeNull()
-	})
-
-	it('lets a later status colour a column an earlier one left unset', () => {
-		expect(mergeColumnColour(mergeColumnColour(null, ''), 'red')).toBe('red')
-	})
-
-	it('lets a chosen hue beat a stored grey, whichever arrives first', () => {
-		// The schema defaults `statusType.colour` to grey, so a status nobody
-		// coloured is STORED as grey and is indistinguishable from a deliberate
-		// one. Letting that grey win the merge made the column's colour depend on
-		// which case type the collection endpoint happened to answer first: the
-		// board drew an authored orange status grey while its own status badge
-		// stayed orange.
-		expect(mergeColumnColour('grey', 'orange')).toBe('orange')
-		expect(mergeColumnColour('orange', 'grey')).toBe('orange')
-	})
-
-	it('stays grey when grey is all any of the merged statuses carry', () => {
-		expect(mergeColumnColour('grey', 'grey')).toBe('grey')
-		expect(mergeColumnColour(null, 'grey')).toBe('grey')
-		expect(mergeColumnColour('grey', '')).toBe('grey')
-	})
-
-	it('treats grey-light as a chosen hue, because nothing defaults to it', () => {
-		expect(mergeColumnColour('grey', 'grey-light')).toBe('grey-light')
 	})
 })
 

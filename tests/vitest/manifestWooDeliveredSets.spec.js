@@ -60,6 +60,40 @@ describe('the delivered sets of a Woo request', () => {
 		const publish = widgetsWithId(manifest, 'woo-publish')
 		expect(publish).toHaveLength(1)
 		expect(publish[0].label).toBe('Publish (Woo)')
-		expect(publish[0].url).toBe('/apps/dossiq/api/cases/@objectId/woo/publish')
+		expect(publish[0].props.publishUrl).toBe('/apps/dossiq/api/cases/{caseId}/woo/publish')
+	})
+
+	it("shows its dates in the reader's locale and its state in words", () => {
+		// Rehearsal R3: the table read `2026-10-16T08:44:21+00:00` and `frozen`.
+		const list = widgetsWithId(manifest, 'case-woo-delivered-sets')[0]
+		const column = (key) =>
+			list.content.columns.find((entry) => entry.key === key)
+		expect(column('deliveredAt').format).toBe('date-time')
+		expect(column('withdrawnAt').format).toBe('date-time')
+
+		const state = column('status')
+		const schema = JSON.parse(
+			fs.readFileSync(
+				path.join(
+					ROOT,
+					'lib',
+					'Settings',
+					'register.d',
+					'86-woo-delivered-set.json',
+				),
+				'utf8',
+			),
+		)
+		const states =
+			schema.components.schemas.wooDeliveredSet.properties.status.enum
+		expect(Object.keys(state.enumLabels).sort()).toEqual([...states].sort())
+
+		const nl = JSON.parse(
+			fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8'),
+		).translations
+		for (const label of Object.values(state.enumLabels)) {
+			expect(nl[label], label).toBeTruthy()
+			expect(nl[label]).not.toBe(label)
+		}
 	})
 })

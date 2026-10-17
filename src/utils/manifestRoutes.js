@@ -19,6 +19,19 @@ import { buildManifestRoutes } from '@conduction/nextcloud-vue'
 import { currentPermissions, permits } from './permissions.js'
 
 /**
+ * Addresses of retired pages, each sent on to the page that replaced it, so a
+ * bookmark lands where the feature now lives instead of on the dashboard.
+ *
+ * @type {Array<{path: string, redirect: object}>}
+ */
+export const RETIRED_ROUTES = [
+	{
+		path: '/workflow-board',
+		redirect: { name: 'Cases', query: { _view: 'board' } },
+	},
+]
+
+/**
  * Build the vue-router config from the manifest.
  *
  * The records come from the library's `buildManifestRoutes()`, not from a
@@ -40,8 +53,8 @@ import { currentPermissions, permits } from './permissions.js'
  * - `props: true` for a path that declares a `:` parameter, so the underlying
  *   detail or custom component receives the route param.
  *
- * The catch-all redirect is ours as well: `buildManifestRoutes()` returns the
- * manifest's pages and nothing else.
+ * The catch-all redirect is ours as well, and so are the redirects for retired
+ * pages: `buildManifestRoutes()` returns the manifest's pages and nothing else.
  *
  * @param {object} manifest  The built manifest (with `pages[]`).
  * @param {object} component The component every manifest route renders.
@@ -61,6 +74,7 @@ export function routesFromManifest(manifest, component) {
 			},
 		}),
 	})
+	routes.push(...RETIRED_ROUTES)
 	// Catch-all redirect to dashboard, preserving prior router behaviour.
 	// vue-router 4 syntax: the bare '*' catch-all became a named param matcher.
 	routes.push({ path: '/:pathMatch(.*)*', redirect: '/' })

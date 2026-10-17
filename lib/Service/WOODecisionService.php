@@ -171,7 +171,12 @@ class WOODecisionService {
 
 		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
 
-		$this->readiness->markCaseReady(objectService: $objectService, register: $register, caseId: $caseId);
+		$this->readiness->markCaseReady(
+			objectService: $objectService,
+			register: $register,
+			caseId: $caseId,
+			decisionId: (string)$decision->getUuid(),
+		);
 
 		$this->logger->info(
 			'WOO besluit assembled for case ' . $caseId . ': decision ' . $decision->getUuid(),

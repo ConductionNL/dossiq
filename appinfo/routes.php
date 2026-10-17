@@ -877,6 +877,14 @@ $extra = [
         'requirements' => ['documentRef' => '[^/]+'],
     ],
 
+        // The redaction step: a partly public document gets its redacted copy through filinq, or by upload
+        // (partly-public-documents-get-a-redacted-copy).
+    ['name' => 'documentRedaction#index',  'url' => '/api/cases/{id}/redactions',                       'verb' => 'GET'],
+    ['name' => 'documentRedaction#detect', 'url' => '/api/cases/{id}/redactions/{documentRef}/detect', 'verb' => 'POST', 'requirements' => ['documentRef' => '[^/]+']],
+    ['name' => 'documentRedaction#check',  'url' => '/api/cases/{id}/redactions/{documentRef}/check',  'verb' => 'POST', 'requirements' => ['documentRef' => '[^/]+']],
+    ['name' => 'documentRedaction#redact', 'url' => '/api/cases/{id}/redactions/{documentRef}/redact', 'verb' => 'POST', 'requirements' => ['documentRef' => '[^/]+']],
+    ['name' => 'documentRedaction#upload', 'url' => '/api/cases/{id}/redactions/{documentRef}/upload', 'verb' => 'POST', 'requirements' => ['documentRef' => '[^/]+']],
+
         // ── Milestone tracking ───────────────────────────────────────────
     ['name' => 'milestone#progress', 'url' => '/api/cases/{caseId}/milestones/progress/{caseTypeId}', 'verb' => 'GET'],
     ['name' => 'milestone#caseProgress', 'url' => '/api/cases/{caseId}/milestones/progress', 'verb' => 'GET'],

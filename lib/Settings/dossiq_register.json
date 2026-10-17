@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.47"
+        "version": "0.20.50"
     },
     "x-openregister": {
         "type": "application",
@@ -3355,6 +3355,17 @@
                         "default": "manual",
                         "description": "The channel through which this case was intaken",
                         "title": "Intake channel",
+                        "x-enum-labels": {
+                            "manual": "Manual",
+                            "balie": "Counter",
+                            "phone": "Phone",
+                            "email": "Email",
+                            "post": "Letter",
+                            "website": "Website",
+                            "forms": "Web form",
+                            "other": "Other",
+                            "zgw-api": "ZGW API"
+                        },
                         "facetable": true,
                         "order": 8
                     },
@@ -3437,6 +3448,12 @@
                         "readOnly": true,
                         "description": "What the matrix says this case's priority is, kept beside the value everything reads. It carries on being computed underneath a raise or an override, so clearing an override returns the case to the right answer rather than to whatever was last typed.",
                         "title": "Derived priority",
+                        "x-enum-labels": {
+                            "low": "Low",
+                            "normal": "Normal",
+                            "high": "High",
+                            "urgent": "Urgent"
+                        },
                         "order": 17
                     },
                     "priorityOrder": {
@@ -3457,6 +3474,12 @@
                         "readOnly": true,
                         "description": "The lowest priority a declared rule has raised this case to. A floor rather than a value, because writing the raised priority straight into priority would last until the next save and then sink back down the queue. A floor only ever lifts, which is why an extended term cannot make a raised case less urgent.",
                         "title": "Priority floor",
+                        "x-enum-labels": {
+                            "low": "Low",
+                            "normal": "Normal",
+                            "high": "High",
+                            "urgent": "Urgent"
+                        },
                         "order": 19
                     },
                     "priorityRaisedBy": {
@@ -3476,6 +3499,12 @@
                         ],
                         "description": "A priority a person set by hand, which wins over the derived answer until it is cleared. Set it with a reason. Clearing it returns the case to the value the matrix derives now, not to the one it derived when the override was made.",
                         "title": "Priority override",
+                        "x-enum-labels": {
+                            "low": "Low",
+                            "normal": "Normal",
+                            "high": "High",
+                            "urgent": "Urgent"
+                        },
                         "order": 21
                     },
                     "priorityOverrideBy": {
@@ -9299,7 +9328,7 @@
             "caseShare": {
                 "slug": "caseShare",
                 "icon": "ShareVariant",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:CreativeWork",
                 "title": "Case share",
                 "description": "Token- or partner-based share over a case for external collaboration",
@@ -9371,6 +9400,11 @@
                         "type": "string",
                         "description": "JSON-encoded list of field names to exclude from the shared view",
                         "title": "Field Exclusions"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "A note to the receiving organisation, written with a partner share",
+                        "title": "Message"
                     },
                     "createdBy": {
                         "type": "string",
@@ -12589,12 +12623,92 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
-                    "version": "1.1.0",
+                    "version": "1.2.0",
                     "slug": "klacht-behandeling"
                 },
                 "title": "Klacht behandeling",
                 "category": "Klachten en meldingen",
                 "identifier": "klacht-behandeling",
+                "x-index": {
+                    "title": "Complaints",
+                    "breadcrumb": {
+                        "label": "All cases",
+                        "route": "Cases"
+                    },
+                    "headerMeta": "Awb chapter 9 · handle within 6 weeks, hear where needed",
+                    "addLabel": "Register a complaint",
+                    "searchFields": [
+                        "title",
+                        "identifier",
+                        "initiatorDisplayName"
+                    ],
+                    "footerNote": "20 per page",
+                    "columns": [
+                        "title",
+                        "identifier",
+                        "initiatorDisplayName",
+                        "deadline",
+                        "status"
+                    ],
+                    "defaultSort": [
+                        {
+                            "key": "deadline",
+                            "order": "asc"
+                        }
+                    ],
+                    "quickFilters": [
+                        {
+                            "label": "All",
+                            "filter": {},
+                            "default": true
+                        },
+                        {
+                            "label": "Running",
+                            "filter": {
+                                "isFinalStatus": false
+                            }
+                        },
+                        {
+                            "label": "Due this week",
+                            "filter": {
+                                "deadline": {
+                                    "gte": "@today",
+                                    "lte": "@today+7d"
+                                },
+                                "isFinalStatus": false
+                            }
+                        },
+                        {
+                            "label": "Handled",
+                            "filter": {
+                                "isFinalStatus": true
+                            }
+                        }
+                    ],
+                    "afterList": [
+                        {
+                            "id": "complaints-per-subject",
+                            "type": "chart",
+                            "title": "Complaints per subject, this year",
+                            "content": {
+                                "chartKind": "bar",
+                                "dataSource": {
+                                    "register": "dossiq",
+                                    "schema": "complaint",
+                                    "filter": {
+                                        "receiptDate": {
+                                            "gte": "@yearStart"
+                                        }
+                                    },
+                                    "aggregate": {
+                                        "groupBy": "category",
+                                        "metric": "count"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
                 "description": "Behandeling van een klacht over een gedraging van de gemeente conform Awb hoofdstuk 9.",
                 "purpose": "Behandeling van klachten van burgers en bedrijven",
                 "trigger": "Klacht ingediend door burger of bedrijf",

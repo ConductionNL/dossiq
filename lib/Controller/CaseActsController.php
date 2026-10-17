@@ -419,8 +419,10 @@ class CaseActsController extends Controller {
 				['caseId' => $caseId, 'exception' => $e->getMessage()],
 			);
 
+			$sentence = 'The case could not be changed.';
+
 			return new JSONResponse(
-				['message' => 'The case could not be changed.', 'error' => 'act-failed'],
+				['message' => ($this->refusalTranslator()?->t($sentence) ?? $sentence), 'error' => 'act-failed'],
 				Http::STATUS_INTERNAL_SERVER_ERROR,
 			);
 		}//end try

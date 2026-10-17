@@ -24,6 +24,13 @@ namespace OCA\Dossiq\Tests\Support;
 class UuidAnsweringRegister {
 
 	/**
+	 * How many uuids this register minted.
+	 *
+	 * @var int
+	 */
+	private int $minted = 0;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param InMemoryRegister   $store   The rows.
@@ -101,10 +108,14 @@ class UuidAnsweringRegister {
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): mixed {
-		$row = $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
 		if (in_array((string)$schema, $this->schemas, true) === false) {
-			return $row;
+			return $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
 		}
+
+		// A create on these schemas mints a uuid, as OpenRegister does, so a
+		// caller that writes the answered id into a uuid-typed property fits.
+		$uuid ??= sprintf('00000000-0000-4000-8000-%012d', ++$this->minted);
+		$row = $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
 
 		return new class((string)$row['id']) {
 			/**

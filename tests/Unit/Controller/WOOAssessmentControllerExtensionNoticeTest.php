@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\WOOAssessmentController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Cases\HandlerActsAsSystem;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
@@ -205,6 +206,7 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 			new CaseAccessGuard(settingsService: $settings, groupManager: $groups, logger: $logger),
 			$logger,
 			$this->createMock(IL10N::class),
+			$this->createMock(HandlerActsAsSystem::class),
 			$notice,
 		);
 	}//end controller()

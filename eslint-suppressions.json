@@ -59,11 +59,6 @@
       "count": 1
     }
   },
-  "src/dialogs/BeschikkingComposerDialog.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    }
-  },
   "src/dialogs/CaseTransferDialog.vue": {
     "@nextcloud/l10n-enforce-ellipsis": {
       "count": 3
@@ -394,9 +389,6 @@
     }
   },
   "src/views/settings/Settings.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
     "vue/multi-word-component-names": {
       "count": 1
     }
@@ -511,14 +503,6 @@
       "count": 1
     }
   },
-  "src/views/settings/tabs/DecisionTablesTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
   "src/views/settings/tabs/DecisionTypesTab.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 3
@@ -620,21 +604,6 @@
   "src/views/widgets/TaskRemindersWidget.vue": {
     "no-console": {
       "count": 1
-    }
-  },
-  "src/views/workflow-board/BoardColumn.vue": {
-    "vue/custom-event-name-casing": {
-      "count": 2
-    }
-  },
-  "src/views/workflow-board/CaseCard.vue": {
-    "vue/custom-event-name-casing": {
-      "count": 1
-    }
-  },
-  "src/views/workflow-board/WorkflowBoard.vue": {
-    "no-console": {
-      "count": 3
     }
   }
 }
