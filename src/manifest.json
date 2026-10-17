@@ -8747,11 +8747,6 @@
 									}
 								},
 								{
-									"label": "Date of birth",
-									"path": "birth.date",
-									"format": "date-long"
-								},
-								{
 									"as": "line",
 									"text": "Source: Basisregistratie personen"
 								}
