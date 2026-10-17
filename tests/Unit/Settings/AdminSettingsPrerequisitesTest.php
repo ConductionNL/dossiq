@@ -70,6 +70,39 @@ class AdminSettingsPrerequisitesTest extends TestCase {
 	}//end testTheFormPassesTheRunningNextcloud()
 
 	/**
+	 * The admin tables learn which owning apps are installed.
+	 *
+	 * @return void
+	 */
+	public function testTheFormSaysWhichOwningAppsAreInstalled(): void {
+		$provided = [];
+		$initialState = $this->createMock(originalClassName: IInitialState::class);
+		$initialState->method('provideInitialState')
+			->willReturnCallback(
+				static function (string $key, mixed $data) use (&$provided): void {
+					$provided[$key] = $data;
+				}
+			);
+
+		$appManager = $this->createMock(originalClassName: IAppManager::class);
+		$appManager->method('isInstalled')->willReturnCallback(
+			static fn (string $appId): bool => $appId === 'integriq'
+		);
+
+		$settingsService = $this->createMock(originalClassName: SettingsService::class);
+		$settings = new AdminSettings(
+			appManager: $appManager,
+			initialState: $initialState,
+			settingsService: $settingsService,
+			queueUrgency: new QueueUrgencySettings(settings: $settingsService),
+			serverVersion: $this->serverVersion(major: 34),
+		);
+		$settings->getForm();
+
+		$this->assertSame(expected: ['integriq' => true, 'shillinq' => false], actual: $provided['ownerApps']);
+	}//end testTheFormSaysWhichOwningAppsAreInstalled()
+
+	/**
 	 * A real ServerVersion that reports a given major.
 	 *
 	 * The class is readonly, so PHPUnit cannot double it, and its constructor
