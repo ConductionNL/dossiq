@@ -161,7 +161,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import ArchiveOutline from 'vue-material-design-icons/ArchiveOutline.vue'
 import CaseActFields from '../components/case/CaseActFields.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
-import { buildActsMenu, endpointFor, inputsFor } from '../utils/caseActsMenu.js'
+import { buildActsMenu, endpointFor, iconFor, inputsFor } from '../utils/caseActsMenu.js'
 import {
 	approvalHeading,
 	approversLine,
@@ -268,6 +268,7 @@ export default {
 
 		/**
 		 * The acts as choice cards: what each does, or why the case does not allow it now.
+		 * A refused act carries its reason once, as the card's disabled reason.
 		 *
 		 * @return {Array<object>} CnChoiceCards options.
 		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
@@ -276,7 +277,8 @@ export default {
 			return this.entries.map((entry) => ({
 				value: this.entryKey(entry),
 				label: this.label(entry),
-				description: entry.disabled ? this.refusalOn(entry) : this.explainer(entry),
+				icon: iconFor(entry),
+				description: entry.disabled ? '' : this.explainer(entry),
 				disabled: Boolean(entry.disabled),
 				disabledReason: this.refusalOn(entry),
 			}))
@@ -395,9 +397,9 @@ export default {
 				case 'finish':
 					return t('dossiq', 'Finish')
 				case 'abort':
-					return t('dossiq', 'Abort')
+					return t('dossiq', 'Break off')
 				case 'archive':
-					return t('dossiq', 'Archive')
+					return t('dossiq', 'Archive it')
 				case 'unarchive':
 					return t('dossiq', 'Restore from the archive')
 				case 'hold':
@@ -419,16 +421,24 @@ export default {
 		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 		 */
 		explainer(entry) {
+			if (entry?.kind === 'transition') {
+				return t(
+					'dossiq',
+					'The next status of the case type. Statuses that cannot follow from here are greyed out.',
+				)
+			}
 			switch (String(entry?.id ?? '')) {
 				case 'finish':
 					return t(
 						'dossiq',
-						'The case reached its result. The result decides what is kept.',
+						'Choose the result type. The end date and the archive outcome are recorded.',
 					)
+				case 'suspend':
+					return t('dossiq', 'The term stands still until the answer is in.')
 				case 'abort':
 					return t(
 						'dossiq',
-						'An intrekking. There is a result, and it is not a besluit.',
+						'The case stops without a decision. Asks for a reason.',
 					)
 				case 'archive':
 					return t(
@@ -441,10 +451,7 @@ export default {
 						'The case comes back into the working lists and can be edited again.',
 					)
 				case 'hold':
-					return t(
-						'dossiq',
-						'You park the case until a date. The statutory term keeps running.',
-					)
+					return t('dossiq', 'Park it internally, the term keeps running.')
 				case 'release-hold':
 					return t('dossiq', 'You pick the case up again before its date.')
 				case 'promote':

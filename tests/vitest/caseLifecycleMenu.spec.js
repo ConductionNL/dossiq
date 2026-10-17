@@ -189,8 +189,9 @@ describe('the one lifecycle menu', () => {
 	})
 
 	it('puts the irreversible acts after the ordinary ones', () => {
-		// Transitions, then the term gestures, then the three ways to end it.
-		// A hurried handler should not meet Archive at the top of a list.
+		// Board DqVolgendeStap: the moves, Finish, the term gestures, then
+		// Abort and Archive. A hurried handler should not meet Archive at the
+		// top of a list.
 		const menu = buildActsMenu({
 			transitions: [{ id: 'lc-approve', label: 'Approve' }],
 			state: OPEN,
@@ -198,9 +199,10 @@ describe('the one lifecycle menu', () => {
 		})
 		const at = (id) => menu.findIndex((row) => row.id === id)
 
-		expect(at('lc-approve')).toBeLessThan(at('suspend'))
-		expect(at('suspend')).toBeLessThan(at('finish'))
-		expect(at('finish')).toBeLessThan(at('archive'))
+		expect(at('lc-approve')).toBeLessThan(at('finish'))
+		expect(at('finish')).toBeLessThan(at('suspend'))
+		expect(at('suspend')).toBeLessThan(at('abort'))
+		expect(at('abort')).toBeLessThan(at('archive'))
 	})
 })
 
