@@ -35,7 +35,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Documents\ScanVerdictReader;
 use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
 use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
@@ -66,7 +65,6 @@ class ZaakdossierController extends Controller {
 	 *        so a document in an unfinished route cannot be made final.
 	 * @param BulkDocumentActions $bulk One act over many documents: the clearance gate that runs
 	 *        before a bulk transition writes anything, and the metadata run that reports per id.
-	 * @param ScanVerdictReader|null $verdicts What the virus scanner recorded per file, for the listing's Scan column.
 	 */
 	public function __construct(
 		string $appName,
@@ -77,7 +75,6 @@ class ZaakdossierController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly DocumentApprovalClearance $approvals,
 		private readonly BulkDocumentActions $bulk,
-		private readonly ?ScanVerdictReader $verdicts = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -116,36 +113,10 @@ class ZaakdossierController extends Controller {
 			informatieobjecten: ($file['informatieobjecten'] ?? []),
 		);
 
-		$regrouped = $this->fileService->groupByType(documents: $this->withScanVerdicts(documents: $filtered));
+		$regrouped = $this->fileService->groupByType(documents: $this->reader->withScanVerdicts(documents: $filtered));
 
 		return new JSONResponse($regrouped);
 	}//end listDossier()
-
-	/**
-	 * Put what the virus scanner recorded on every document row that has a
-	 * file, so the Files tab's Scan column reads the listing instead of
-	 * asking once per row. The rows were already narrowed to what the caller
-	 * may see.
-	 *
-	 * @param array<int, array<string, mixed>> $documents The rows.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
-	 */
-	private function withScanVerdicts(array $documents): array {
-		if ($this->verdicts === null) {
-			return $documents;
-		}
-
-		return array_map(
-			fn (array $document): array => [
-				...$document,
-				'scanVerdict' => $this->verdicts->verdictFor(fileId: (int)($document['fileId'] ?? 0)),
-			],
-			$documents
-		);
-	}//end withScanVerdicts()
 
 	/**
 	 * Upload one or more documents to a case dossier.
