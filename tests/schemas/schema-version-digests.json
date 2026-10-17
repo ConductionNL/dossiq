@@ -652,7 +652,7 @@
         "digest": "2ac7f59d24ab82a1d5741317ec63700674ada4bccf9d1985b5a0d4de461ca777"
     },
     "lib/Settings/dossiq_register.json::caseShare": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "0f3accb5c8e7addf47d535d48469421bf7e8ae25ad401481b87bba1f8735396d"
     },
     "lib/Settings/dossiq_register.json::caseSupplierInvoice": {
