@@ -3,7 +3,7 @@
 		"spdx-license": "EUPL-1.2",
 		"spdx-copyright": "2026 Conduction B.V.",
 		"board": "DqPostvak",
-		"note": "The organisation's mailbox of messages that belong to no case yet: the intake triage queue (outcome inbox or quarantined, sleeping items left out), read through dossiq's own /api/intake/triage, which holds the intake-role check. The generic object endpoint would apply the register's permissions instead and show the originals to anyone the register lets read, so the list reads `collectionUrl` and never the schema's own endpoint. Each row carries the case its subject quotes (`suggestion`, CaseMatchSuggestion). `collectionUrl` and the `actions` cell widget are nextcloud-vue keys in progress (L25); until they land the page lists nothing rather than the wrong rows."
+		"note": "The organisation's mailbox of messages that belong to no case yet: the intake triage queue (outcome inbox or quarantined, sleeping items left out), read through dossiq's own /api/intake/triage, which holds the intake-role check. The generic object endpoint would apply the register's permissions instead and show the originals to anyone the register lets read, so the list is an endpoint source (`entitySource: endpoint`) over that route and never the schema's own endpoint. Each row carries the case its subject quotes (`suggestion`, CaseMatchSuggestion). The endpoint source (nextcloud-vue #1750) and the `actions` cell widget are nextcloud-vue keys in progress (L25); until they land the page lists nothing rather than the wrong rows."
 	},
 	"pages": [
 		{
@@ -12,9 +12,11 @@
 			"type": "index",
 			"title": "Mailbox",
 			"config": {
-				"register": "dossiq",
-				"schema": "mailIntakeEntry",
-				"collectionUrl": "/apps/dossiq/api/intake/triage",
+				"entitySource": "endpoint",
+				"sourceConfig": {
+					"url": "/apps/dossiq/api/intake/triage",
+					"rowsPath": "results"
+				},
 				"showTitle": true,
 				"headerMeta": "messages for the whole organisation that belong to no case yet",
 				"countText": "{shown} of {total} messages",
@@ -90,6 +92,11 @@
 					{
 						"id": "link-to-case",
 						"label": "Link to case",
+						"variant": "secondary",
+						"visibleWhen": {
+							"field": "suggestion.case",
+							"op": "notEmpty"
+						},
 						"type": "handler",
 						"handler": "navigate",
 						"route": "CaseDetail",
@@ -100,6 +107,7 @@
 					{
 						"id": "new-case-from-message",
 						"label": "New case",
+						"variant": "secondary",
 						"type": "handler",
 						"handler": "navigate",
 						"route": "Cases"
