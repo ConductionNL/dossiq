@@ -1,0 +1,57 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"board": "DqZoekresultaten",
+		"note": "One result list over cases, case objects and documents for the term in the address (`?q=`), each read through the reader's own permissions, so it shows only what the reader may see. A chip per kind with its count. Built on the cross-schema search source (`entitySource: search`, nextcloud-vue #1755). The board's saved-search and exports cards are not part of this page yet: the source does not cover them."
+	},
+	"pages": [
+		{
+			"id": "SearchResults",
+			"route": "/search",
+			"type": "index",
+			"title": "Search",
+			"config": {
+				"entitySource": "search",
+				"sourceConfig": {
+					"termQuery": "q",
+					"kinds": [
+						{
+							"id": "cases",
+							"label": "Cases",
+							"register": "dossiq",
+							"schema": "case",
+							"subtitleField": "identifier",
+							"statusField": "status",
+							"href": "/apps/dossiq/cases/{id}"
+						},
+						{
+							"id": "objects",
+							"label": "Objects",
+							"register": "dossiq",
+							"schema": "caseObject"
+						},
+						{
+							"id": "documents",
+							"label": "Documents",
+							"files": true
+						}
+					]
+				},
+				"showTitle": true,
+				"countText": "{total} results in cases, objects and documents, only what you may see",
+				"footerNote": "{shown} of {total} · 20 per page",
+				"searchPlaceholder": "Search cases, objects and documents",
+				"showAdd": false,
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					}
+				],
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		}
+	]
+}

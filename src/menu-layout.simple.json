@@ -126,7 +126,7 @@
 	],
 	"nav": {
 		"brand": {
-			"name": "dossiq",
+			"name": "Dossiq",
 			"caption": "@theming.name",
 			"logo": "@theming.emblem|@theming.logo"
 		},
@@ -927,18 +927,27 @@
 					},
 					{
 						"id": "side-handling",
-						"type": "data",
+						"type": "facts",
 						"title": "Handling",
+						"_note": "DqZaak Behandeling: who handles the case, in which team and since when, as label and value rows; the handler reads as the user's display name (facts format user).",
 						"content": {
-							"title": "Handling",
-							"columns": 1,
-							"include": [
-								"assignee",
-								"assignedGroupPublicName",
-								"startDate"
+							"fields": [
+								{
+									"path": "assignee",
+									"label": "Handler",
+									"format": "user"
+								},
+								{
+									"path": "assignedGroupPublicName",
+									"label": "Team"
+								},
+								{
+									"path": "startDate",
+									"label": "Started",
+									"format": "date"
+								}
 							],
-							"hideEmpty": true,
-							"editable": false
+							"emptyText": "Nobody handles this case yet"
 						}
 					},
 					{
@@ -946,6 +955,197 @@
 						"type": "case-work-instruction",
 						"title": "Work instruction",
 						"_note": "DqZaak Werkinstructie: the case type's work instruction beside the case; the Knowledge tab keeps it with the linked pages."
+					},
+					{
+						"id": "side-objection-hearing",
+						"type": "record-list",
+						"title": "Hearing",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Bezwaar en beroep"
+							]
+						},
+						"_note": "DqBezwaar: the hearing of this objection, read from hearingSession. Shown only for a case type in the objection category.",
+						"content": {
+							"register": "dossiq",
+							"schema": "hearingSession",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "scheduledDate",
+								"dir": "desc"
+							},
+							"limit": 1,
+							"presentation": "rows",
+							"title": "{scheduledDate|date}",
+							"meta": "{location}",
+							"pill": {
+								"field": "status"
+							},
+							"emptyText": "No hearing planned"
+						}
+					},
+					{
+						"id": "side-objection-advice",
+						"type": "record-list",
+						"title": "Advice of the committee",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Bezwaar en beroep"
+							]
+						},
+						"_note": "DqBezwaar: the advice of the objections committee, read from advisoryReport.",
+						"content": {
+							"register": "dossiq",
+							"schema": "advisoryReport",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "adviceDate",
+								"dir": "desc"
+							},
+							"limit": 1,
+							"presentation": "rows",
+							"title": "{adviceType}",
+							"meta": "{adviceDate|date} · {committeeChair}",
+							"text": "{recommendation}",
+							"emptyText": "No advice received yet"
+						}
+					},
+					{
+						"id": "side-objection-appeal",
+						"type": "record-list",
+						"title": "Appeal",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Bezwaar en beroep"
+							]
+						},
+						"_note": "DqBezwaar Beroep: an appeal lodged against the decision on this objection, read from beroep. Lodging one is the existing remedy-lodge action in the Case group.",
+						"content": {
+							"register": "dossiq",
+							"schema": "beroep",
+							"filter": {
+								"case": "@objectId"
+							},
+							"limit": 1,
+							"presentation": "rows",
+							"title": "{competentCourt}",
+							"meta": "{courtReference} · filed {appellantFilingDate|date}",
+							"pill": {
+								"field": "judgmentOutcome"
+							},
+							"emptyText": "No appeal lodged"
+						}
+					},
+					{
+						"id": "side-grant-application",
+						"type": "record-list",
+						"title": "Grant application",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Subsidies",
+								"Grants"
+							]
+						},
+						"_note": "DqSubsidie: the subsidy application linked to this case (subsidieAanvraag.case), with the scheme and the amount asked.",
+						"content": {
+							"register": "dossiq",
+							"schema": "subsidieAanvraag",
+							"filter": {
+								"case": "@objectId"
+							},
+							"limit": 1,
+							"presentation": "rows",
+							"title": "{aanvraagnummer}",
+							"meta": "requested {requestedAmount} · {projectStartDate|date} to {projectEndDate|date}",
+							"pill": {
+								"field": "status"
+							},
+							"rowRoute": "SubsidieDetail",
+							"emptyText": "No application linked"
+						}
+					},
+					{
+						"id": "side-social-consent",
+						"type": "record-list",
+						"title": "Consent",
+						"visibleWhen": {
+							"any": [
+								{
+									"field": "gezinsplanId",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@context.caseType.category",
+									"op": "in",
+									"value": [
+										"Sociaal domein",
+										"Jeugd",
+										"Jeugdhulp"
+									]
+								}
+							]
+						},
+						"_note": "DqSociaalDomein Toestemming: the consents recorded on this case (toestemming.caseId): who gave it, for what purpose, until when.",
+						"content": {
+							"register": "dossiq",
+							"schema": "toestemming",
+							"filter": {
+								"caseId": "@objectId"
+							},
+							"sort": {
+								"field": "grantedDate",
+								"dir": "desc"
+							},
+							"limit": 3,
+							"presentation": "rows",
+							"title": "{tedoel}",
+							"meta": "{grantedByName} · {grantedDate|date}",
+							"emptyText": "No consent recorded"
+						}
+					},
+					{
+						"id": "side-tender-bids",
+						"type": "record-list",
+						"title": "Bids",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Inkoop en leveranciers"
+							]
+						},
+						"_note": "DqAanbesteding: the bids on this tender (supplierTender.caseRef), with their status.",
+						"content": {
+							"register": "dossiq",
+							"schema": "supplierTender",
+							"filter": {
+								"caseRef": "@objectId"
+							},
+							"sort": {
+								"field": "submittedDate",
+								"dir": "asc"
+							},
+							"limit": 5,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "submitted {submittedDate|date}",
+							"pill": {
+								"field": "status"
+							},
+							"emptyText": "No bids yet"
+						}
 					},
 					"case-banner-stack"
 				],
@@ -1059,7 +1259,7 @@
 				},
 				"widgets": {
 					"case-tile-deadline": {
-						"_note": "The deadline is the first card of the side column, and the card already carries the widget title (Termijn) as its heading, as DqZaak draws it. The countdown's own label would print the same word a second time under it, so the simple structure leaves it out. The rest of the content is the manifest's, repeated because a patch replaces `content` whole.",
+						"_note": "The deadline is the first card of the side column, and the card already carries the widget title (Termijn) as its heading, as DqZaak draws it. The countdown's own label would print the same word a second time under it, so the simple structure leaves it out. The rest of the content is the manifest's, repeated because a patch replaces `content` whole. DqZaak draws the card as the headline in days, \"Beslissen uiterlijk <date>\" under it, a bar for the share of the term that has passed since the start date, and Termijn opschorten, which opens the lifecycle dialog on its suspend act (nextcloud-vue countdown board anatomy).",
 						"content": {
 							"field": "deadline",
 							"icon": "ClockAlertOutline",
@@ -1069,6 +1269,21 @@
 							"thresholds": {
 								"warn": 14,
 								"danger": 5
+							},
+							"daysLabel": {
+								"one": "{count} day",
+								"other": "{count} days"
+							},
+							"caption": "Decide by {date}",
+							"startField": "startDate",
+							"action": {
+								"label": "Suspend the term",
+								"type": "open-modal",
+								"target": "CaseLifecycleMenuDialog",
+								"props": {
+									"caseId": "@objectId",
+									"act": "suspend"
+								}
 							}
 						}
 					},
@@ -1105,6 +1320,7 @@
 							"tabs": [
 								{
 									"widgetIds": [
+										"case-objection-grounds",
 										"case-request",
 										"case-details",
 										"case-priority-card",
@@ -1127,8 +1343,129 @@
 									]
 								},
 								{
+									"widgetId": "case-objection-hearings",
+									"label": "Hearing",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Bezwaar en beroep"
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "hearingSession",
+										"filter": {
+											"case": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "case-objection-advice",
+									"label": "Advice",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Bezwaar en beroep"
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "advisoryReport",
+										"filter": {
+											"case": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "case-objection-decision",
+									"label": "Decision on the objection",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Bezwaar en beroep"
+										]
+									}
+								},
+								{
+									"widgetId": "case-social-indications",
+									"label": "Indication",
+									"visibleWhen": {
+										"any": [
+											{
+												"field": "gezinsplanId",
+												"op": "notEmpty"
+											},
+											{
+												"field": "@context.caseType.category",
+												"op": "in",
+												"value": [
+													"Sociaal domein",
+													"Jeugd",
+													"Jeugdhulp"
+												]
+											}
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "indicatiestelling",
+										"filter": {
+											"caseId": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "case-social-meetings",
+									"label": "Case meeting",
+									"visibleWhen": {
+										"any": [
+											{
+												"field": "gezinsplanId",
+												"op": "notEmpty"
+											},
+											{
+												"field": "@context.caseType.category",
+												"op": "in",
+												"value": [
+													"Sociaal domein",
+													"Jeugd",
+													"Jeugdhulp"
+												]
+											}
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "mdoOverleg",
+										"filter": {
+											"caseIds": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "case-tender-bids",
+									"label": "Bids",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Inkoop en leveranciers"
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "supplierTender",
+										"filter": {
+											"caseRef": "@objectId"
+										}
+									}
+								},
+								{
 									"widgetId": "case-files",
-									"label": "Files"
+									"label": "Documents"
 								},
 								{
 									"label": "Contact",
@@ -1853,6 +2190,296 @@
 						"title": "Cards",
 						"icon": "ViewColumnOutline",
 						"_note": "leaf-integrations REQ-LEAF-105: a board for the ad-hoc coordination around a case, beside the tasks and never instead of them. NOTHING IN DOSSIQ READS OR WRITES A DECK CARD FROM A `task`, OR THE OTHER WAY ROUND. Task lifecycle belongs to WorkflowEngineService alone and the kanban WorkflowBoardView is the workflow surface; a mirror would give a handler two places to finish the same work and no rule about which one counts. A SECTION of the Work panel rather than a body widget with a layout entry, which is what the design named: the case body is a tab strip and its grid is full, and a card board is work, so it belongs beside the tasks. The leaf owns link, create and unlink, so dossiq ships no Deck code at all; with the Deck app absent the library renders its own empty state rather than an error."
+					},
+					{
+						"id": "case-objection-hearings",
+						"type": "object-list",
+						"title": "Hearing",
+						"icon": "AccountVoice",
+						"content": {
+							"register": "dossiq",
+							"schema": "hearingSession",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "scheduledDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "scheduledDate",
+									"label": "Date",
+									"format": "date"
+								},
+								{
+									"key": "location",
+									"label": "Location"
+								},
+								{
+									"key": "chairperson",
+									"label": "Chair"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								}
+							],
+							"emptyText": "No hearing planned"
+						}
+					},
+					{
+						"id": "case-objection-advice",
+						"type": "object-list",
+						"title": "Advice",
+						"icon": "CommentTextOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "advisoryReport",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "adviceDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "adviceDate",
+									"label": "Date",
+									"format": "date"
+								},
+								{
+									"key": "adviceType",
+									"label": "Advice"
+								},
+								{
+									"key": "committeeChair",
+									"label": "Chair"
+								},
+								{
+									"key": "recommendation",
+									"label": "Advice given",
+									"sortable": false
+								}
+							],
+							"emptyText": "No advice received yet"
+						}
+					},
+					{
+						"id": "case-objection-decision",
+						"type": "object-list",
+						"title": "Decision on the objection",
+						"icon": "Gavel",
+						"content": {
+							"register": "dossiq",
+							"schema": "appealDecision",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "decisionDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "decisionDate",
+									"label": "Date",
+									"format": "date"
+								},
+								{
+									"key": "dispositionType",
+									"label": "Outcome"
+								},
+								{
+									"key": "followsAdvice",
+									"label": "Follows the advice"
+								},
+								{
+									"key": "decisionMaker",
+									"label": "Decision by"
+								}
+							],
+							"emptyText": "No decision on the objection yet"
+						}
+					},
+					{
+						"id": "case-social-indications",
+						"type": "object-list",
+						"title": "Indication",
+						"icon": "ClipboardTextOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "indicatiestelling",
+							"filter": {
+								"caseId": "@objectId"
+							},
+							"sort": {
+								"field": "dateInvestigation",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "dateInvestigation",
+									"label": "Investigated",
+									"format": "date"
+								},
+								{
+									"key": "indicationAuthor",
+									"label": "By"
+								},
+								{
+									"key": "advisedSupport",
+									"label": "Advised support",
+									"sortable": false
+								},
+								{
+									"key": "evaluationDate",
+									"label": "Evaluation",
+									"format": "date"
+								}
+							],
+							"emptyText": "No indication recorded"
+						}
+					},
+					{
+						"id": "case-social-meetings",
+						"type": "object-list",
+						"title": "Case meeting",
+						"icon": "AccountGroupOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "mdoOverleg",
+							"filter": {
+								"caseIds": "@objectId"
+							},
+							"sort": {
+								"field": "consultationDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "consultationDate",
+									"label": "Date",
+									"format": "date"
+								},
+								{
+									"key": "agenda",
+									"label": "Agenda",
+									"sortable": false
+								}
+							],
+							"emptyText": "No consultation recorded"
+						}
+					},
+					{
+						"id": "case-tender-bids",
+						"type": "object-list",
+						"title": "Bids",
+						"icon": "FileDocumentMultipleOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "supplierTender",
+							"filter": {
+								"caseRef": "@objectId"
+							},
+							"sort": {
+								"field": "rank",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "supplierRef",
+									"label": "Bidder",
+									"widget": "fkResolve",
+									"widgetProps": {
+										"register": "dossiq",
+										"schema": "supplier",
+										"labelField": "legalName"
+									}
+								},
+								{
+									"key": "value",
+									"label": "Price",
+									"formatter": "currency"
+								},
+								{
+									"key": "priceScore",
+									"label": "Price score"
+								},
+								{
+									"key": "qualityScore",
+									"label": "Quality score"
+								},
+								{
+									"key": "totalScore",
+									"label": "Total score"
+								},
+								{
+									"key": "rank",
+									"label": "Rank"
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"widget": "badge"
+								}
+							],
+							"emptyText": "No bids yet"
+						}
+					},
+					{
+						"id": "case-objection-grounds",
+						"type": "facts",
+						"title": "Grounds of the objection",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Bezwaar en beroep"
+							]
+						},
+						"_note": "DqBezwaar Gronden van het bezwaar: the objection record of this case (objection.case), read through the objects endpoint so the card needs no id of its own. First card of the Overview stack, only for a case type in the objection category (a tab-stack child follows its own visibleWhen since nextcloud-vue 2.94.0, #1725).",
+						"content": {
+							"source": {
+								"url": "/apps/openregister/api/objects/dossiq/objection?case=@objectId&_limit=1"
+							},
+							"fields": [
+								{
+									"as": "text",
+									"path": "results.0.grounds"
+								},
+								{
+									"label": "Contested decision",
+									"path": "results.0.contestedDecision",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "decision",
+										"labelField": "title"
+									}
+								},
+								{
+									"label": "Received",
+									"path": "results.0.receivedDate",
+									"format": "date-long"
+								},
+								{
+									"label": "Lodged in time",
+									"path": "results.0.isTimely",
+									"map": {
+										"true": "Yes",
+										"false": "No"
+									}
+								}
+							],
+							"emptyText": "No objection recorded on this case"
+						}
 					}
 				],
 				"headerActions": [
@@ -2563,6 +3190,11 @@
 				"folderSidebar": null,
 				"showTitle": true,
 				"countSubtitle": "{total} case types",
+				"breadcrumb": {
+					"label": "Settings",
+					"href": "/index.php/settings/admin/dossiq"
+				},
+				"headerMeta": "{total} case types",
 				"searchPlaceholder": "Search in this list",
 				"headerActions": [
 					{
@@ -2595,7 +3227,7 @@
 						"key": "title",
 						"label": "Case type",
 						"cellClass": "cn-cell--strong",
-						"secondary": "{identifier}"
+						"secondary": "{subject}"
 					},
 					{
 						"key": "category",
@@ -2656,6 +3288,412 @@
 						"showCount": true
 					}
 				]
+			}
+		},
+		{
+			"id": "CaseTypeDetail",
+			"_note": "DqZaaktype, DqZaaktypeOverzicht and DqZaaktypeVelden: one record page with the type's parts as tabs and its versions and facts in the side column. Every widget the full profile shows is still on a tab. The four app widgets are named by their registry type here, because a tab child resolves by type and a type:custom child renders an empty panel.",
+			"config": {
+				"showTypeEyebrow": false,
+				"breadcrumb": {
+					"label": "Case types",
+					"route": "CaseTypes"
+				},
+				"typePill": {
+					"field": "category"
+				},
+				"statusPill": {
+					"field": "isDraft",
+					"labels": {
+						"false": "Published",
+						"true": "Draft"
+					},
+					"colorMap": {
+						"false": "success",
+						"true": "warning"
+					}
+				},
+				"headerMeta": "{identifier}",
+				"quickActions": [
+					"case-type-export"
+				],
+				"actionsMenu": {
+					"showRefresh": false,
+					"showHelpLinks": false,
+					"label": "More"
+				},
+				"tabsLabel": "Case type parts",
+				"sideColumn": [
+					{
+						"id": "side-case-type-versions",
+						"type": "record-list",
+						"title": "Versions",
+						"content": {
+							"register": "dossiq",
+							"schema": "caseType",
+							"filter": {
+								"identifier": "@object.identifier"
+							},
+							"sort": {
+								"field": "version",
+								"dir": "desc"
+							},
+							"limit": 5,
+							"presentation": "rows",
+							"title": "Version {version}",
+							"meta": "{validFrom|date}",
+							"pill": {
+								"field": "isDraft",
+								"labels": {
+									"false": "Published",
+									"true": "Draft"
+								},
+								"colorMap": {
+									"false": "success",
+									"true": "warning"
+								}
+							},
+							"rowRoute": "CaseTypeDetail",
+							"emptyText": "This case type has only this version"
+						}
+					},
+					{
+						"id": "side-case-type-facts",
+						"type": "facts",
+						"title": "Data",
+						"content": {
+							"fields": [
+								{
+									"label": "Domain",
+									"path": "category"
+								},
+								{
+									"label": "Subject",
+									"path": "subject"
+								},
+								{
+									"label": "Handling model",
+									"path": "handlingModel"
+								},
+								{
+									"label": "Confidentiality",
+									"path": "confidentiality"
+								},
+								{
+									"label": "Identifier",
+									"path": "identifier"
+								}
+							]
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "panels",
+						"widgetId": "case-type-panels",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 24,
+						"showTitle": false
+					}
+				]
+			},
+			"configAppend": {
+				"widgets": [
+					{
+						"id": "case-type-panels",
+						"type": "tabs",
+						"title": "Case type parts",
+						"icon": "ViewDashboard",
+						"content": {
+							"ariaLabel": "Case type parts",
+							"variant": "segmented",
+							"tabs": [
+								{
+									"label": "Overview",
+									"widgetIds": [
+										"case-type-statuses",
+										"case-type-rights",
+										"case-type-privacy",
+										"case-type-translations"
+									],
+									"layout": [
+										{
+											"widgetId": "case-type-statuses",
+											"gridWidth": 12
+										},
+										{
+											"widgetId": "case-type-rights",
+											"gridWidth": 12
+										},
+										{
+											"widgetId": "case-type-privacy",
+											"gridWidth": 6
+										},
+										{
+											"widgetId": "case-type-translations",
+											"gridWidth": 6
+										}
+									]
+								},
+								{
+									"label": "Fields",
+									"widgetIds": [
+										"case-type-fields",
+										"case-type-core",
+										"case-type-list-layout"
+									],
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "propertyDefinition",
+										"filter": {
+											"caseType": "@objectId"
+										}
+									}
+								},
+								{
+									"label": "Statuses",
+									"widgetId": "case-type-statuses-list",
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "statusType",
+										"filter": {
+											"caseType": "@objectId"
+										}
+									}
+								},
+								{
+									"label": "Phases and tasks",
+									"widgetIds": [
+										"case-type-blueprint",
+										"case-type-terms",
+										"case-type-messages"
+									]
+								},
+								{
+									"label": "Rights",
+									"widgetId": "case-type-rights"
+								},
+								{
+									"label": "Privacy",
+									"widgetId": "case-type-privacy"
+								},
+								{
+									"label": "Translations",
+									"widgetId": "case-type-translations"
+								},
+								{
+									"label": "Versions",
+									"widgetIds": [
+										"case-type-chain",
+										"case-type-versions"
+									],
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "caseType",
+										"filter": {
+											"identifier": "@object.identifier"
+										}
+									}
+								},
+								{
+									"label": "Portal",
+									"widgetIds": [
+										"case-type-portal",
+										"case-type-party-kinds"
+									]
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-statuses",
+						"type": "record-list",
+						"title": "Statuses",
+						"content": {
+							"register": "dossiq",
+							"schema": "statusType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "order",
+								"dir": "asc"
+							},
+							"limit": 20,
+							"presentation": "cards",
+							"title": "{name}",
+							"pill": {
+								"field": "isFinal",
+								"labels": {
+									"true": "End"
+								},
+								"hideValues": [
+									"false"
+								],
+								"variant": "neutral"
+							},
+							"emptyText": "This case type has no statuses yet"
+						}
+					},
+					{
+						"id": "case-type-statuses-list",
+						"type": "object-list",
+						"title": "Statuses",
+						"content": {
+							"register": "dossiq",
+							"schema": "statusType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "order",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "order",
+									"label": "Order"
+								},
+								{
+									"key": "name",
+									"label": "Status"
+								},
+								{
+									"key": "publicLabel",
+									"label": "Public label"
+								},
+								{
+									"key": "isFinal",
+									"label": "Final"
+								}
+							],
+							"emptyText": "This case type has no statuses yet"
+						}
+					},
+					{
+						"id": "case-type-fields",
+						"type": "object-list",
+						"title": "Fields",
+						"content": {
+							"register": "dossiq",
+							"schema": "propertyDefinition",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Field"
+								},
+								{
+									"key": "propertyType",
+									"label": "Type"
+								},
+								{
+									"key": "isRequired",
+									"label": "Required"
+								},
+								{
+									"key": "propertySource",
+									"label": "Origin"
+								},
+								{
+									"key": "filterable",
+									"label": "In the list"
+								}
+							],
+							"emptyText": "This case type has no fields of its own yet"
+						}
+					},
+					{
+						"id": "case-type-messages",
+						"type": "object-list",
+						"title": "Messages to the applicant",
+						"content": {
+							"register": "dossiq",
+							"schema": "emailTemplate",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "messageCategory",
+									"label": "Moment"
+								},
+								{
+									"key": "name",
+									"label": "Message"
+								},
+								{
+									"key": "subject",
+									"label": "Subject"
+								}
+							],
+							"emptyText": "This case type sends no messages of its own"
+						}
+					},
+					{
+						"id": "case-type-rights",
+						"type": "field-list",
+						"title": "Rights",
+						"description": "Who may do what with cases of this type",
+						"content": {
+							"field": "rightsMatrix",
+							"readOnly": true,
+							"variant": "table",
+							"columns": [
+								{
+									"header": "Role",
+									"path": "role",
+									"strong": true
+								},
+								{
+									"header": "Department",
+									"path": "department"
+								},
+								{
+									"header": "Confidentiality",
+									"path": "confidentiality"
+								},
+								{
+									"header": "Actions",
+									"path": "actions"
+								},
+								{
+									"header": "Until",
+									"path": "until",
+									"format": "date"
+								}
+							],
+							"emptyText": "No rights declared for this case type yet"
+						}
+					}
+				]
+			},
+			"configPatch": {
+				"widgets": {
+					"case-type-blueprint": {
+						"type": "CaseTypeBlueprintWidget"
+					},
+					"case-type-translations": {
+						"type": "CaseTypeTranslationsWidget"
+					},
+					"case-type-portal": {
+						"type": "CaseTypePortalWidget"
+					},
+					"case-type-party-kinds": {
+						"type": "CaseTypePartyKindsWidget"
+					}
+				}
 			}
 		}
 	]
