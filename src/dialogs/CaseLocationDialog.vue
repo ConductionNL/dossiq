@@ -39,8 +39,11 @@
 						height="200px"
 						:ariaLabel="t('dossiq', 'The chosen address on a map')" />
 				</div>
-				<fieldset v-if="layers.length" class="case-location-dialog__layers" data-testid="case-location-layers">
+				<fieldset class="case-location-dialog__layers" data-testid="case-location-layers">
 					<legend>{{ t('dossiq', 'Map layers') }}</legend>
+					<p v-if="layers.length === 0" class="case-location-dialog__hint">
+						{{ t('dossiq', 'No map layers are set up yet.') }}
+					</p>
 					<NcCheckboxRadioSwitch
 						v-for="layer in layers"
 						:key="layer.id"
@@ -51,12 +54,12 @@
 				</fieldset>
 			</div>
 
-			<div v-if="chosen" class="case-location-dialog__facts">
+			<div class="case-location-dialog__facts">
 				<section class="case-location-dialog__card" data-testid="case-location-bag">
 					<h3>{{ t('dossiq', 'BAG') }}</h3>
 					<dl>
 						<dt>{{ t('dossiq', 'Address designation') }}</dt>
-						<dd>{{ chosen.result.nummeraanduiding_id || '—' }}</dd>
+						<dd>{{ chosen?.result?.nummeraanduiding_id || '—' }}</dd>
 						<dt>{{ t('dossiq', 'Use') }}</dt>
 						<dd>{{ useLabel || '—' }}</dd>
 					</dl>
@@ -356,6 +359,10 @@ export default {
 .case-location-dialog__hint {
 	margin: 0;
 	color: var(--color-text-maxcontrast);
+}
+
+.case-location-dialog__map {
+	min-height: 200px;
 }
 
 .case-location-dialog__map-row {
