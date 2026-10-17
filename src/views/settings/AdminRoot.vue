@@ -1,6 +1,5 @@
 <template>
 	<CnAdminSettingsShell
-		class="dossiq-admin"
 		appId="dossiq"
 		appName="Dossiq"
 		look="board"
@@ -593,11 +592,3 @@ export default {
 	},
 }
 </script>
-
-<style scoped>
-/* The boards draw the admin sections as one column of full-width cards. */
-.dossiq-admin.dossiq-admin :deep(.cn-admin-settings-shell__panel),
-.dossiq-admin.dossiq-admin.cn-admin-settings-shell {
-	grid-template-columns: minmax(0, 1fr);
-}
-</style>
