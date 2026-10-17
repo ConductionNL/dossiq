@@ -48,6 +48,7 @@ use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Email\IntakePolicy;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
+use OCA\Dossiq\Service\Intake\CaseMatchSuggestion;
 use OCA\Dossiq\Service\Intake\CaseClassification;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
 use OCA\Dossiq\Service\Intake\DuplicatePolicy;
@@ -110,6 +111,7 @@ class IntakeTriageController extends Controller {
 	 * @param CaseAccessGuard       $caseAccessGuard  Per-case authorization.
 	 * @param IUserSession          $userSession      The caller.
 	 * @param LoggerInterface       $logger           Logger.
+	 * @param CaseMatchSuggestion   $suggestions      The case each queued message probably belongs to.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -128,6 +130,7 @@ class IntakeTriageController extends Controller {
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly CaseMatchSuggestion $suggestions,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -280,14 +283,16 @@ class IntakeTriageController extends Controller {
 	}//end judgeAdmissibility()
 
 	/**
-	 * The triage queue, with its sleeping items taken out.
+	 * The triage queue, with its sleeping items taken out and each item's likely case suggested.
+	 *
+	 * @param string $suggestion `IS NOT NULL` for the items that look like a case, `IS NULL` for the rest, empty for all.
 	 *
 	 * @return JSONResponse The items a handler should see.
 	 *
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
 	 */
 	#[NoAdminRequired]
-	public function queue(): JSONResponse {
+	public function queue(string $suggestion = ''): JSONResponse {
 		$refusal = $this->requireIntakeRole();
 		if ($refusal !== null) {
 			return $refusal;
@@ -302,10 +307,15 @@ class IntakeTriageController extends Controller {
 		}
 
 		$awake = $this->sleep->awake(queue: $items);
+		$results = $this->suggestions->narrow(
+			items: $this->suggestions->annotate(items: array_values($awake)),
+			suggestion: $suggestion
+		);
 
 		return new JSONResponse(
 			[
-				'results' => $awake,
+				'results' => $results,
+				'total' => count($results),
 				'sleeping' => (count($items) - count($awake)),
 			]
 		);
