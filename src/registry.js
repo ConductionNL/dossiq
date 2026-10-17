@@ -138,10 +138,11 @@ import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
 import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'
 import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
-import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'
-import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 // The case as OpenRegister stored it, behind the admin-only Inspect action.
 // @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+import CaseLocationDialog from './dialogs/CaseLocationDialog.vue'
+import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'
+import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 import CaseRawDataDialog from './dialogs/CaseRawDataDialog.vue'
 import CaseRebindDialog from './dialogs/CaseRebindDialog.vue'
 import CaseShareOrganisationDialog from './dialogs/CaseShareOrganisationDialog.vue'
@@ -673,6 +674,14 @@ const registry = {
 	CaseShareOrganisationDialog: {
 		kind: 'modal',
 		component: CaseShareOrganisationDialog,
+		propsSchema: {},
+	},
+
+	// --- Adding a location to a case from the BAG (board DqZaakLocatie). ---
+	// @spec openspec/specs/case-dashboard-view/spec.md
+	CaseLocationDialog: {
+		kind: 'modal',
+		component: CaseLocationDialog,
 		propsSchema: {},
 	},
 
