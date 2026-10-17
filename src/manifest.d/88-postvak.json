@@ -92,6 +92,11 @@
 					{
 						"id": "link-to-case",
 						"label": "Link to case",
+						"variant": "secondary",
+						"visibleWhen": {
+							"field": "suggestion.case",
+							"op": "notEmpty"
+						},
 						"type": "handler",
 						"handler": "navigate",
 						"route": "CaseDetail",
@@ -102,6 +107,7 @@
 					{
 						"id": "new-case-from-message",
 						"label": "New case",
+						"variant": "secondary",
 						"type": "handler",
 						"handler": "navigate",
 						"route": "Cases"
