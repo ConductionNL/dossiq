@@ -8,6 +8,8 @@
  * @spec openspec/specs/admin-settings/spec.md
  */
 
+import fs from 'fs'
+import path from 'path'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@nextcloud/axios', () => ({ default: { get: vi.fn() } }))
@@ -88,4 +90,32 @@ describe('the Configuratie section', () => {
 			'status_type_schema',
 		])
 	})
+})
+
+describe('every Configuratie select is labelled', () => {
+	const source = fs.readFileSync(
+		path.resolve(__dirname, '../../src/views/settings/Settings.vue'),
+		'utf8',
+	)
+	const template = source.slice(0, source.indexOf('<script>'))
+	const selects = [...template.matchAll(/<NcSelect([\s\S]*?)\/>/g)].map(
+		(m) => m[1],
+	)
+
+	it('finds the selects it checks', () => {
+		expect(selects.length).toBe(2)
+	})
+
+	it.each(selects.map((attrs, i) => [i, attrs]))(
+		'select %i names its input and keeps the label outside',
+		(i, attrs) => {
+			const id = attrs.match(/:?inputId="([^"]+)"/)
+			expect(id, 'inputId').not.toBeNull()
+			expect(attrs).toContain(':labelOutside="true"')
+			const forAttr = id[0].startsWith(':')
+				? `:for="${id[1]}"`
+				: `for="${id[1]}"`
+			expect(template).toContain(forAttr)
+		},
+	)
 })

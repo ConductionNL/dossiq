@@ -12,8 +12,14 @@
 		:loading="loading">
 		<div class="dossiq-configuration">
 			<div class="dossiq-configuration__field dossiq-configuration__register">
+				<label
+					class="dossiq-configuration__label"
+					for="dossiq-configuration-register">
+					{{ t('dossiq', 'Register') }}
+				</label>
 				<NcSelect
-					:inputLabel="t('dossiq', 'Register')"
+					inputId="dossiq-configuration-register"
+					:labelOutside="true"
 					:options="registerOptions"
 					:modelValue="optionFor(registerOptions, form.register)"
 					:loading="loadingRegisters"
@@ -25,8 +31,14 @@
 					v-for="field in schemaFields"
 					:key="field.key"
 					class="dossiq-configuration__field">
+					<label
+						class="dossiq-configuration__label"
+						:for="`dossiq-configuration-${field.key}`">
+						{{ field.label }}
+					</label>
 					<NcSelect
-						:inputLabel="field.label"
+						:inputId="`dossiq-configuration-${field.key}`"
+						:labelOutside="true"
 						:options="schemaOptions"
 						:modelValue="optionFor(schemaOptions, form[field.key])"
 						:loading="loadingSchemas"
@@ -277,6 +289,12 @@ export default {
 .dossiq-configuration__field :deep(.v-select.select) {
 	width: 100%;
 	min-width: 0;
+}
+
+.dossiq-configuration__label {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: bold;
 }
 
 .dossiq-configuration__register {
