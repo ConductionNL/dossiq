@@ -265,6 +265,22 @@
 								"type": "stat",
 								"title": "My open cases",
 								"content": {
+									"caption": "{count} new this week",
+									"captionSource": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false,
+											"startDate": {
+												"gte": "@today-7d"
+											}
+										},
+										"zeroText": "nothing new this week"
+									},
 									"label": "My open cases",
 									"format": {
 										"style": "decimal",
@@ -298,6 +314,23 @@
 								"type": "stat",
 								"title": "Due this week",
 								"content": {
+									"caption": "{count} ends today",
+									"captionSource": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false,
+											"deadline": {
+												"gte": "@today",
+												"lt": "@today+1d"
+											}
+										},
+										"zeroText": "nothing ends today"
+									},
 									"label": "Due this week",
 									"format": {
 										"style": "decimal",
@@ -338,6 +371,23 @@
 								"type": "stat",
 								"title": "Waiting on the applicant",
 								"content": {
+									"caption": "{count} for longer than a week",
+									"captionSource": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false,
+											"waitingOnApplicant": true,
+											"currentStatusEnteredAt": {
+												"lt": "@today-7d"
+											}
+										},
+										"zeroText": "none for longer than a week"
+									},
 									"label": "Waiting on the applicant",
 									"format": {
 										"style": "decimal",
@@ -2359,6 +2409,38 @@
 							"emptyText": "No bids yet"
 						}
 					}
+				],
+				"headerActions": [
+					{
+						"id": "add-location",
+						"type": "open-modal",
+						"target": "CaseLocationDialog",
+						"label": "Add location",
+						"icon": "MapMarkerPlusOutline",
+						"group": "Case",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "empty"
+						}
+					},
+					{
+						"id": "share-with-organisation",
+						"type": "open-modal",
+						"target": "CaseShareOrganisationDialog",
+						"label": "Share with another organisation",
+						"icon": "ShareVariant",
+						"group": "Case",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "empty"
+						}
+					}
 				]
 			},
 			"configOrder": {
@@ -2367,8 +2449,10 @@
 					"case-claim",
 					"case-release",
 					"case-hand-over",
+					"share-with-organisation",
 					"add-party",
 					"link-object",
+					"add-location",
 					"case-acknowledgement-met",
 					"plan-follow-up",
 					"case-remind",
