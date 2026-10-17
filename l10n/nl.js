@@ -3598,6 +3598,7 @@ OC.L10N.register(
         "in selected period": "in geselecteerde periode",
         "In seven steps you register your first case and see where it goes. The case you save is a real record, not a demo.": "In zeven stappen registreer je je eerste zaak en zie je waar die terechtkomt. De zaak die je opslaat is een echte registratie, geen demo.",
         "In werkingtreding": "Inwerkingtreding",
+        "In which register Dossiq keeps cases, and with which schemas.": "In welk register Dossiq zaken bewaart, en met welke schema's.",
         "Inactive": "Inactief",
         "Inadmissible": "Niet-ontvankelijk",
         "Inadmissible (niet-ontvankelijk)": "Niet-ontvankelijk",

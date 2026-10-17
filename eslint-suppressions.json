@@ -394,9 +394,6 @@
     }
   },
   "src/views/settings/Settings.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
     "vue/multi-word-component-names": {
       "count": 1
     }
@@ -509,14 +506,6 @@
     },
     "@nextcloud/no-deprecated-library-props": {
       "count": 1
-    }
-  },
-  "src/views/settings/tabs/DecisionTablesTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
     }
   },
   "src/views/settings/tabs/DecisionTypesTab.vue": {
