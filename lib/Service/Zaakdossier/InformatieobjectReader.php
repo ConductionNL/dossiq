@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Service\Documents\ScanVerdictReader;
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
@@ -54,6 +55,7 @@ class InformatieobjectReader {
 	 * @param ZaakdossierService $fileService The dossier orchestrator.
 	 * @param InformatieobjectAccessGuard $accessGuard The confidentiality guard.
 	 * @param ZgwDocumentService $documentService The binary storage service.
+	 * @param ScanVerdictReader|null $verdicts What the virus scanner recorded per file, for the listing's Scan column.
 	 *
 	 * @return void
 	 */
@@ -61,6 +63,7 @@ class InformatieobjectReader {
 		private readonly ZaakdossierService $fileService,
 		private readonly InformatieobjectAccessGuard $accessGuard,
 		private readonly ZgwDocumentService $documentService,
+		private readonly ?ScanVerdictReader $verdicts = null,
 	) {
 	}//end __construct()
 
@@ -147,4 +150,30 @@ class InformatieobjectReader {
 			return null;
 		}
 	}//end contentFor()
+
+	/**
+	 * Put what the virus scanner recorded on every document row that has a
+	 * file, so the Files tab's Scan column reads the listing instead of
+	 * asking once per row. Call it on rows already narrowed to what the
+	 * caller may see.
+	 *
+	 * @param array<int, array<string, mixed>> $documents The rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 */
+	public function withScanVerdicts(array $documents): array {
+		if ($this->verdicts === null) {
+			return $documents;
+		}
+
+		return array_map(
+			fn (array $document): array => [
+				...$document,
+				'scanVerdict' => $this->verdicts->verdictFor(fileId: (int)($document['fileId'] ?? 0)),
+			],
+			$documents
+		);
+	}//end withScanVerdicts()
 }//end class

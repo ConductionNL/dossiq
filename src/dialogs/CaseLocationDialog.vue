@@ -402,7 +402,14 @@ export default {
 	display: grid;
 	grid-template-columns: max-content 1fr;
 	gap: 4px 16px;
+	justify-items: start;
 	margin: 0;
+}
+
+.case-location-dialog__card dt,
+.case-location-dialog__card dd {
+	text-align: start;
+	width: auto;
 }
 
 .case-location-dialog__card dt {
