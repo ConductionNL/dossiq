@@ -98,6 +98,20 @@ class ProcessMiningService {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function getReport(array $params): array {
+		$report = $this->buildReport(params: $params);
+		return [...$report, ...$this->phases->forPage(caseTypes: $report['caseTypes'])];
+	}//end getReport()
+
+	/**
+	 * The report itself: per case type dwell, bottlenecks and transitions, and the throughput trend.
+	 *
+	 * @param array<string, mixed> $params Query parameters (from, to, caseType).
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	private function buildReport(array $params): array {
 		$to = ($this->dates->tryParse($params['to'] ?? null) ?? $this->dates->today());
 		$from = $to->sub(new DateInterval('P12M'));
 		$fromParam = $this->nonEmptyStringParam(params: $params, key: 'from');
@@ -190,13 +204,8 @@ class ProcessMiningService {
 			'caseTypeFilter' => $caseTypeFilter,
 			'caseTypes' => $caseTypeReports,
 			'throughputTrend' => $this->throughputCalculator->computeThroughputTrend(cases: $casesById, from: $from, to: $to),
-			'phaseDays' => [
-				'mean' => $this->phases->matrix(caseTypes: $caseTypeReports, measure: 'meanHours'),
-				'median' => $this->phases->matrix(caseTypes: $caseTypeReports, measure: 'medianHours'),
-			],
-			'stuck' => $this->phases->stuck(caseTypes: $caseTypeReports),
 		];
-	}//end getReport()
+	}//end buildReport()
 
 	/**
 	 * Build dwell-time intervals: one entry per (case, status-visit).

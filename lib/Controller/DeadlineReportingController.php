@@ -170,13 +170,11 @@ class DeadlineReportingController extends Controller {
 		}
 
 		try {
-			$from = $this->request->getParam('from');
-			$until = $this->request->getParam('to');
 			$row = $this->service->getTermijnKpi(
 				filters: [],
 				today: null,
-				from: is_string($from) === true ? $from : null,
-				until: is_string($until) === true ? $until : null
+				from: $this->stringParam(name: 'from'),
+				until: $this->stringParam(name: 'to')
 			);
 			return new JSONResponse($row);
 		} catch (Throwable $e) {
@@ -184,6 +182,22 @@ class DeadlineReportingController extends Controller {
 			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end dashboard()
+
+	/**
+	 * A request parameter as a string, or null when it is absent or not a string.
+	 *
+	 * @param string $name The parameter.
+	 *
+	 * @return string|null
+	 */
+	private function stringParam(string $name): ?string {
+		$value = $this->request->getParam($name);
+		if (is_string($value) === false) {
+			return null;
+		}
+
+		return $value;
+	}//end stringParam()
 
 	/**
 	 * Quarterly KPI report.

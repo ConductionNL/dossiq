@@ -38,6 +38,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Termijn\TermCaseTypeResolver;
+use OCA\Dossiq\Service\Termijn\TermDashboardFigures;
 use OCA\Dossiq\Service\Termijn\TermOutcome;
 use RuntimeException;
 
@@ -72,6 +73,13 @@ class DeadlineReportingService {
 	private readonly TermOutcome $outcomes;
 
 	/**
+	 * The running figures and the share on time the deadline dashboard shows.
+	 *
+	 * @var TermDashboardFigures
+	 */
+	private readonly TermDashboardFigures $figures;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService           $settingsService Settings.
@@ -85,7 +93,23 @@ class DeadlineReportingService {
 	) {
 		$this->caseTypes = ($caseTypes ?? new TermCaseTypeResolver(settingsService: $settingsService));
 		$this->outcomes = new TermOutcome();
+		$this->figures = new TermDashboardFigures(settingsService: $settingsService, caseTypes: $this->caseTypes);
 	}//end __construct()
+
+	/**
+	 * The per case type aggregates of the terms that started inside a window.
+	 *
+	 * @param array{from: string, until: string} $window First and last day (YYYY-MM-DD).
+	 *
+	 * @return array<string, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function perTypeBetween(array $window): array {
+		$rows = $this->listInstances(from: $window['from'], until: $window['until']);
+		$types = $this->caseTypes->resolve(rows: $rows);
+		return $this->reducePerType(byType: $this->aggregateByType(rows: $rows, department: null, types: $types['byRow']));
+	}//end perTypeBetween()
 
 	/**
 	 * Generate a quarterly KPI report.
@@ -100,12 +124,8 @@ class DeadlineReportingService {
 	public function generateQuarterlyReport(string $period, ?string $department = null): array {
 		$bounds = $this->resolveQuarter(period: $period);
 		$rows = $this->listInstances(from: $bounds['from'], until: $bounds['until']);
-
 		$types = $this->caseTypes->resolve(rows: $rows);
-		$byType = $this->aggregateByType(rows: $rows, department: $department, types: $types['byRow']);
-
-		// Reduce per-type aggregates.
-		$perType = $this->reducePerType(byType: $byType);
+		$perType = $this->reducePerType(byType: $this->aggregateByType(rows: $rows, department: $department, types: $types['byRow']));
 
 		return [
 			// 'periode' and 'department' are RESPONSE KEYS, not identifiers. They
@@ -351,139 +371,13 @@ class DeadlineReportingService {
 			'overrunCount' => $overrun,
 			'dwangsomTotalCents' => $dwTotal,
 			'lastUpdated' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-			...$this->collectRunningFigures(rows: $rows, today: ($today ?? new DateTimeImmutable())),
-			...$this->collectRunningPenalties(),
-			'onTimeByCaseType' => $this->onTimeByCaseType(today: ($today ?? new DateTimeImmutable()), from: $from, until: $until),
+			...$this->figures->forDashboard(
+				rows: $rows,
+				today: $today,
+				perType: $this->perTypeBetween(window: $this->figures->window(today: $today, from: $from, until: $until))
+			),
 		];
 	}//end getTermijnKpi()
-
-	/**
-	 * Count the terms that still run: all of them, those ending within seven
-	 * days, those already past their end date, and the case types they span.
-	 *
-	 * @param array<int, array<string, mixed>> $rows  Instance rows.
-	 * @param DateTimeImmutable                $today The day the figures are read on.
-	 *
-	 * @return array{runningCount:int,runningCaseTypeCount:int,dueThisWeekCount:int,overdueCount:int}
-	 *
-	 * @spec openspec/specs/termijn-reporting/spec.md
-	 */
-	private function collectRunningFigures(array $rows, DateTimeImmutable $today): array {
-		$todayDate = $today->format('Y-m-d');
-		$weekEnd = $today->modify('+7 days')->format('Y-m-d');
-		$running = array_values(
-			array_filter(
-				$rows,
-				static fn (array $row): bool => in_array((string)($row['status'] ?? ''), ['lopend', 'paused', 'verlengd'], true)
-			)
-		);
-
-		$dueThisWeek = 0;
-		$overdue = 0;
-		foreach ($running as $row) {
-			$end = substr((string)($row['endDateCurrent'] ?? ''), 0, 10);
-			if ($end === '') {
-				continue;
-			}
-
-			if ($end < $todayDate) {
-				$overdue++;
-				continue;
-			}
-
-			if ($end <= $weekEnd) {
-				$dueThisWeek++;
-			}
-		}
-
-		$types = $this->caseTypes->resolve(rows: $running);
-		$keys = array_unique(array_map(static fn (array $type): string => $type['key'], $types['byRow']));
-
-		return [
-			'runningCount' => count($running),
-			'runningCaseTypeCount' => count($keys),
-			'dueThisWeekCount' => $dueThisWeek,
-			'overdueCount' => $overdue,
-		];
-	}//end collectRunningFigures()
-
-	/**
-	 * Sum the penalty payments that are still accruing, in whole euros.
-	 *
-	 * @return array{penaltyRunningEuros:float,penaltyRunningCount:int}
-	 *
-	 * @spec openspec/specs/termijn-reporting/spec.md
-	 */
-	private function collectRunningPenalties(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
-		$rows = [];
-		if ($objectService !== null && $register !== '' && $schema !== '') {
-			try {
-				$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
-			} catch (\Throwable $e) {
-				$rows = [];
-			}
-		}
-
-		$cents = 0;
-		$count = 0;
-		foreach ($rows as $row) {
-			if ((string)($row['status'] ?? '') !== 'lopend') {
-				continue;
-			}
-
-			$cents += (int)($row['cumulativeAmount'] ?? 0);
-			$count++;
-		}
-
-		return ['penaltyRunningEuros' => round($cents / 100, 2), 'penaltyRunningCount' => $count];
-	}//end collectRunningPenalties()
-
-	/**
-	 * The share of decided terms met per case type over a window, as parallel
-	 * arrays a chart reads directly. Without a window it is the quarter that
-	 * holds the given day.
-	 *
-	 * @param DateTimeImmutable $today The day whose quarter is reported when no window is given.
-	 * @param string|null       $from  First day of the window (YYYY-MM-DD).
-	 * @param string|null       $until Last day of the window (YYYY-MM-DD).
-	 *
-	 * @return array{labels:array<int,string>,shares:array<int,float>}
-	 *
-	 * @spec openspec/specs/termijn-reporting/spec.md
-	 */
-	private function onTimeByCaseType(DateTimeImmutable $today, ?string $from = null, ?string $until = null): array {
-		$quarter = (int)ceil(((int)$today->format('n')) / 3);
-		$bounds = $this->resolveQuarter(period: $today->format('Y') . '-Q' . $quarter);
-		if ($from !== null && $from !== '') {
-			$bounds['from'] = substr($from, 0, 10);
-			$bounds['until'] = substr((string)($until ?? '2999-12-31'), 0, 10);
-		}
-
-		$rows = $this->listInstances(from: $bounds['from'], until: $bounds['until']);
-		$types = $this->caseTypes->resolve(rows: $rows);
-		$report = ['perType' => $this->reducePerType(byType: $this->aggregateByType(rows: $rows, department: null, types: $types['byRow']))];
-
-		$labels = [];
-		$shares = [];
-		foreach ($report['perType'] as $key => $row) {
-			if ($row['binnenTermijnPct'] === null) {
-				continue;
-			}
-
-			$label = (string)$key;
-			if ($row['title'] !== '') {
-				$label = $row['title'];
-			}
-
-			$labels[] = $label;
-			$shares[] = (float)$row['binnenTermijnPct'];
-		}
-
-		return ['labels' => $labels, 'shares' => $shares];
-	}//end onTimeByCaseType()
 
 	/**
 	 * Tally the dashboard KPI counters over the instance rows.

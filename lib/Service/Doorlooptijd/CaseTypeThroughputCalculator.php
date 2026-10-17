@@ -144,18 +144,17 @@ class CaseTypeThroughputCalculator {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function computeWithinNormByCaseType(array $cases, array $caseTypes): array {
-		$titles = [];
-		foreach ($caseTypes as $caseType) {
-			$id = (string)($caseType['id'] ?? '');
-			if ($id !== '') {
-				$titles[$id] = $this->text->textOf(value: ($caseType['title'] ?? $id));
-			}
-		}
+		$titles = $this->titlesById(caseTypes: $caseTypes);
+
+		$closed = array_filter(
+			$cases,
+			static fn (array $caseData): bool => $caseData['_isOpen'] !== true && $caseData['_endDate'] !== null && $caseData['_deadline'] !== null
+		);
 
 		$tally = [];
-		foreach ($cases as $caseData) {
+		foreach ($closed as $caseData) {
 			$caseTypeId = (string)($caseData['caseType'] ?? '');
-			if ($caseData['_isOpen'] === true || $caseData['_endDate'] === null || $caseData['_deadline'] === null || $caseTypeId === '') {
+			if ($caseTypeId === '') {
 				continue;
 			}
 
@@ -175,6 +174,25 @@ class CaseTypeThroughputCalculator {
 
 		return ['labels' => $labels, 'shares' => $shares];
 	}//end computeWithinNormByCaseType()
+
+	/**
+	 * The title of every case type, by its id.
+	 *
+	 * @param array<int, array<string, mixed>> $caseTypes Case types.
+	 *
+	 * @return array<string, string>
+	 */
+	private function titlesById(array $caseTypes): array {
+		$titles = [];
+		foreach ($caseTypes as $caseType) {
+			$id = (string)($caseType['id'] ?? '');
+			if ($id !== '') {
+				$titles[$id] = $this->text->textOf(value: ($caseType['title'] ?? $id));
+			}
+		}
+
+		return $titles;
+	}//end titlesById()
 
 	/**
 	 * Sum and count closed-case throughput days per case-type id.

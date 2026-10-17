@@ -44,6 +44,25 @@ class PhaseSummary {
 	private const HOURS_PER_DAY = 24.0;
 
 	/**
+	 * What the page reads: the days per phase (mean and median) and where cases stick.
+	 *
+	 * @param array<int, array<string, mixed>> $caseTypes The per case type reports.
+	 *
+	 * @return array{phaseDays: array{mean: array<string, mixed>, median: array<string, mixed>}, stuck: array<int, array<string, mixed>>}
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	public function forPage(array $caseTypes): array {
+		return [
+			'phaseDays' => [
+				'mean' => $this->matrix(caseTypes: $caseTypes, measure: 'meanHours'),
+				'median' => $this->matrix(caseTypes: $caseTypes, measure: 'medianHours'),
+			],
+			'stuck' => $this->stuck(caseTypes: $caseTypes),
+		];
+	}//end forPage()
+
+	/**
 	 * The days per phase per case type, as columns and rows a matrix reads.
 	 *
 	 * Columns are the phases in the order they first appear; a case type that

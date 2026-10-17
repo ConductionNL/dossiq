@@ -5406,7 +5406,7 @@
 			"id": "ProcessMiningDashboard",
 			"route": "/process-mining",
 			"type": "dashboard",
-			"title": "Process mining",
+			"title": "Process analysis",
 			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from a dedicated ProcessMiningService aggregation endpoint, not a register query, so the widgets are type:custom and read one shared store (src/store/modules/processMining.js) rather than a register/schema binding. The page owns the heading, the period presets and the case-type filter; each widget renders content only — a widget that drew its own page heading would be the dashboard-in-dashboard antipattern (hydra#316).",
 			"config": {
 				"userLayout": true,
