@@ -138,10 +138,11 @@ import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
 import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'
 import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
-import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'
-import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 // The case as OpenRegister stored it, behind the admin-only Inspect action.
 // @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+import CaseLocationDialog from './dialogs/CaseLocationDialog.vue'
+import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'
+import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 import CaseRawDataDialog from './dialogs/CaseRawDataDialog.vue'
 import CaseRebindDialog from './dialogs/CaseRebindDialog.vue'
 import CaseSplitDialog from './dialogs/CaseSplitDialog.vue'
@@ -665,6 +666,14 @@ const registry = {
 		component: CaseCopyDialog,
 		propsSchema: {},
 		_note: "CaseDetail Actions menu: what the copy is called, and whether the source's documents come along. NOT CnCopyDialog, which the design named: the library's 2.41.0 copy dialog offers three naming PATTERNS over a fixed name and carries no slots at all, so there is nowhere to put the Include documents checkbox and no way to type a title that is not one of the three. It reads the case from the ROUTE, because an open-modal action forwards its props verbatim and `@objectId` would arrive as that literal string. Deleted the day nextcloud-vue ships a `copy` header-action type taking a field list and an endpoint (tasks 1.4).",
+	},
+
+	// --- Adding a location to a case from the BAG (board DqZaakLocatie). ---
+	// @spec openspec/specs/case-dashboard-view/spec.md
+	CaseLocationDialog: {
+		kind: 'modal',
+		component: CaseLocationDialog,
+		propsSchema: {},
 	},
 
 	// --- The case as Open Register stored it (admin-inspect-entry, row 2.22). ---

@@ -62,6 +62,7 @@ import { CnMapWidget } from '@conduction/nextcloud-vue'
  * @spec openspec/specs/case-dashboard-view/spec.md
  */
 import { showError } from '@nextcloud/dialogs'
+import { subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
@@ -164,7 +165,29 @@ export default {
 		},
 	},
 
+	mounted() {
+		subscribe('dossiq:case-location:saved', this.onLocationSaved)
+	},
+
+	beforeUnmount() {
+		unsubscribe('dossiq:case-location:saved', this.onLocationSaved)
+	},
+
 	methods: {
+		/**
+		 * Read the locations again when one was added to this case.
+		 *
+		 * @param {{caseId: string}} event The saved location's case.
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
+		onLocationSaved(event) {
+			if (String(event?.caseId ?? '') === String(this.objectId ?? '')) {
+				this.load()
+			}
+		},
+
 		/**
 		 * Read this case's locations and turn them into GeoJSON.
 		 *

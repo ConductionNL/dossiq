@@ -244,13 +244,14 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 32 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 33 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
 		}
 		// Every action is still there; the simple page orders them as DqZaakMeer lists them.
-		expect([...simple.headerActions.map((action) => action.id)].sort()).toEqual([...ids].sort())
+		// The simple page adds one act, Add location (DqZaakLocatie).
+		expect([...simple.headerActions.map((action) => action.id)].sort()).toEqual([...ids, 'add-location'].sort())
 		expect(simple.headerActions.map((action) => action.id).slice(0, overlay.configOrder.headerActions.length)).toEqual(overlay.configOrder.headerActions)
 
 		const placed = simple.headerActions.map((action) => {
@@ -260,10 +261,10 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(32)
+		expect(placed).toHaveLength(33)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(17)
+		expect(count('Case')).toBe(18)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)

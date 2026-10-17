@@ -1704,6 +1704,23 @@
 							]
 						}
 					}
+				],
+				"headerActions": [
+					{
+						"id": "add-location",
+						"type": "open-modal",
+						"target": "CaseLocationDialog",
+						"label": "Add location",
+						"icon": "MapMarkerPlusOutline",
+						"group": "Case",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "empty"
+						}
+					}
 				]
 			},
 			"configOrder": {
@@ -1714,6 +1731,7 @@
 					"case-hand-over",
 					"add-party",
 					"link-object",
+					"add-location",
 					"case-acknowledgement-met",
 					"plan-follow-up",
 					"case-remind",

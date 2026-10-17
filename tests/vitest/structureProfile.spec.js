@@ -439,11 +439,17 @@ describe('the simple profile', () => {
 		expect(actionIds(build(fullFile), 'MyWorkHome')).toEqual(['new-case'])
 		expect(actionIds(build(fullFile), 'Dashboard')).toEqual(['new-case'])
 
-		// Each link names a page that exists and an icon the app registers.
+		// Each link names a page that exists, each dialog a registered modal,
+		// and every one an icon the app registers.
 		const pageIds = new Set(built.pages.map((page) => page.id))
+		const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 		for (const overlay of simpleFile.pages) {
 			for (const action of overlay.configAppend?.headerActions ?? []) {
-				expect(pageIds.has(action.target), action.id).toBe(true)
+				if (action.type === 'open-modal') {
+					expect(registrySource, action.id).toContain(`\t${action.target}: {\n\t\tkind: 'modal',`)
+				} else {
+					expect(pageIds.has(action.target), action.id).toBe(true)
+				}
 				expect(iconsSource).toContain(`\n\t${action.icon},\n`)
 			}
 		}
