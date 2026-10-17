@@ -87,7 +87,7 @@ describe('ContactDetail and the BSN', () => {
 			(f) => f.path === 'citizenServiceNumber',
 		)
 		expect(bsn.format).toBe('masked')
-		expect(widget(p, 'contact-card').content.include).not.toContain(
+		expect(widget(p, 'contact-card').content.fields.map((f) => f.path)).not.toContain(
 			'citizenServiceNumber',
 		)
 	})

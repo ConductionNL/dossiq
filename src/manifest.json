@@ -6226,6 +6226,7 @@
 					},
 					"variant": "error"
 				},
+				"editLabel": "Deviate with a reason",
 				"breadcrumb": {
 					"label": "Enforcement",
 					"route": "LhsRecommendations"
@@ -8397,27 +8398,57 @@
 				"widgets": [
 					{
 						"id": "contact-card",
-						"type": "data",
+						"type": "facts",
 						"title": "Contact",
 						"icon": "CardAccountDetailsOutline",
+						"_note": "The board's Contact card (DqContact): two columns, label above value. The BSN is not in it: it shows masked in the side Identity card, so the overview does not undo the mask.",
 						"content": {
-							"title": "Contact",
 							"columns": 2,
-							"editable": false,
-							"include": [
-								"displayName",
-								"description"
-							],
-							"overrides": {
-								"displayName": {
-									"order": 1
+							"fields": [
+								{
+									"path": "displayName",
+									"label": "Name"
 								},
-								"description": {
-									"order": 2
+								{
+									"path": "name.givenNames",
+									"label": "Given names"
+								},
+								{
+									"path": "name.surname",
+									"label": "Surname"
+								},
+								{
+									"path": "birth.date",
+									"label": "Date of birth",
+									"format": "date-long"
+								},
+								{
+									"key": "address",
+									"label": "Home address",
+									"separator": ", ",
+									"parts": [
+										{
+											"parts": [
+												"residence.street",
+												"residence.houseNumber"
+											],
+											"separator": " "
+										},
+										{
+											"parts": [
+												"residence.postcode",
+												"residence.city"
+											],
+											"separator": " "
+										}
+									]
+								},
+								{
+									"path": "description",
+									"label": "Description"
 								}
-							}
-						},
-						"_note": "The board's Contact card. The BSN is not in it: it shows masked in the side Identity card, so the overview does not undo the mask. Name parts, birth date and address are nested objects, which the data widget does not render; the side cards show them through facts paths instead."
+							]
+						}
 					},
 					{
 						"id": "contact-open-cases",
@@ -8751,11 +8782,6 @@
 									}
 								},
 								{
-									"label": "Date of birth",
-									"path": "birth.date",
-									"format": "date-long"
-								},
-								{
 									"as": "line",
 									"text": "Source: Basisregistratie personen"
 								}
@@ -8952,33 +8978,51 @@
 				"widgets": [
 					{
 						"id": "contact-card",
-						"type": "data",
+						"type": "facts",
 						"title": "Organisation",
 						"icon": "CardAccountDetailsOutline",
+						"_note": "The board's Organisation card (DqOrganisatie): two columns, label above value.",
 						"content": {
-							"title": "Organisation",
 							"columns": 2,
-							"editable": false,
-							"include": [
-								"tradeName",
-								"kvkNumber",
-								"legalForm",
-								"description"
-							],
-							"overrides": {
-								"tradeName": {
-									"order": 1
+							"fields": [
+								{
+									"path": "tradeName",
+									"label": "Trade name"
 								},
-								"kvkNumber": {
-									"order": 2
+								{
+									"path": "kvkNumber",
+									"label": "KvK number"
 								},
-								"legalForm": {
-									"order": 3
+								{
+									"path": "legalForm",
+									"label": "Legal form"
 								},
-								"description": {
-									"order": 4
+								{
+									"key": "address",
+									"label": "Address",
+									"separator": ", ",
+									"parts": [
+										{
+											"parts": [
+												"address.streetName",
+												"address.houseNumber"
+											],
+											"separator": " "
+										},
+										{
+											"parts": [
+												"address.postcode",
+												"address.place"
+											],
+											"separator": " "
+										}
+									]
+								},
+								{
+									"path": "description",
+									"label": "Description"
 								}
-							}
+							]
 						}
 					},
 					{
