@@ -1298,6 +1298,8 @@ const registry = {
 		kind: 'widget',
 		component: CaseBannerStack,
 		...STRIP_WIDGET_META,
+		// The strips are their own surfaces; the side column must not wrap them in a titled card.
+		selfChromed: true,
 		_note: 'CaseDetail: Archived, Favourite, Follow, New since you last looked, What this status asks for and Attention in ONE grid row rather than six. Four of the six render conditionally, so six rows meant four reserved empty ones on an ordinary case — open, nothing new, nothing flagged, status fine — and a visible gap where they were. The row carries `sizeToContent` (nextcloud-vue CnDashboardGrid) so its height is whatever actually rendered, down to nothing. The six widget types stay registered: they are still valid placements, this is just the one the page uses.',
 	},
 
