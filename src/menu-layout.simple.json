@@ -897,6 +897,197 @@
 						"title": "Work instruction",
 						"_note": "DqZaak Werkinstructie: the case type's work instruction beside the case; the Knowledge tab keeps it with the linked pages."
 					},
+					{
+						"id": "side-objection-hearing",
+						"type": "record-list",
+						"title": "Hearing",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Bezwaar en beroep"
+							]
+						},
+						"_note": "DqBezwaar: the hearing of this objection, read from hearingSession. Shown only for a case type in the objection category.",
+						"content": {
+							"register": "dossiq",
+							"schema": "hearingSession",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "scheduledDate",
+								"dir": "desc"
+							},
+							"limit": 1,
+							"presentation": "rows",
+							"title": "{scheduledDate|date}",
+							"meta": "{location}",
+							"pill": {
+								"field": "status"
+							},
+							"emptyText": "No hearing planned"
+						}
+					},
+					{
+						"id": "side-objection-advice",
+						"type": "record-list",
+						"title": "Advice of the committee",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Bezwaar en beroep"
+							]
+						},
+						"_note": "DqBezwaar: the advice of the objections committee, read from advisoryReport.",
+						"content": {
+							"register": "dossiq",
+							"schema": "advisoryReport",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "adviceDate",
+								"dir": "desc"
+							},
+							"limit": 1,
+							"presentation": "rows",
+							"title": "{adviceType}",
+							"meta": "{adviceDate|date} · {committeeChair}",
+							"text": "{recommendation}",
+							"emptyText": "No advice received yet"
+						}
+					},
+					{
+						"id": "side-objection-appeal",
+						"type": "record-list",
+						"title": "Appeal",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Bezwaar en beroep"
+							]
+						},
+						"_note": "DqBezwaar Beroep: an appeal lodged against the decision on this objection, read from beroep. Lodging one is the existing remedy-lodge action in the Case group.",
+						"content": {
+							"register": "dossiq",
+							"schema": "beroep",
+							"filter": {
+								"case": "@objectId"
+							},
+							"limit": 1,
+							"presentation": "rows",
+							"title": "{competentCourt}",
+							"meta": "{courtReference} · filed {appellantFilingDate|date}",
+							"pill": {
+								"field": "judgmentOutcome"
+							},
+							"emptyText": "No appeal lodged"
+						}
+					},
+					{
+						"id": "side-grant-application",
+						"type": "record-list",
+						"title": "Grant application",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Subsidies",
+								"Grants"
+							]
+						},
+						"_note": "DqSubsidie: the subsidy application linked to this case (subsidieAanvraag.case), with the scheme and the amount asked.",
+						"content": {
+							"register": "dossiq",
+							"schema": "subsidieAanvraag",
+							"filter": {
+								"case": "@objectId"
+							},
+							"limit": 1,
+							"presentation": "rows",
+							"title": "{aanvraagnummer}",
+							"meta": "requested {requestedAmount} · {projectStartDate|date} to {projectEndDate|date}",
+							"pill": {
+								"field": "status"
+							},
+							"rowRoute": "SubsidieDetail",
+							"emptyText": "No application linked"
+						}
+					},
+					{
+						"id": "side-social-consent",
+						"type": "record-list",
+						"title": "Consent",
+						"visibleWhen": {
+							"any": [
+								{
+									"field": "gezinsplanId",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@context.caseType.category",
+									"op": "in",
+									"value": [
+										"Sociaal domein",
+										"Jeugd",
+										"Jeugdhulp"
+									]
+								}
+							]
+						},
+						"_note": "DqSociaalDomein Toestemming: the consents recorded on this case (toestemming.caseId): who gave it, for what purpose, until when.",
+						"content": {
+							"register": "dossiq",
+							"schema": "toestemming",
+							"filter": {
+								"caseId": "@objectId"
+							},
+							"sort": {
+								"field": "grantedDate",
+								"dir": "desc"
+							},
+							"limit": 3,
+							"presentation": "rows",
+							"title": "{tedoel}",
+							"meta": "{grantedByName} · {grantedDate|date}",
+							"emptyText": "No consent recorded"
+						}
+					},
+					{
+						"id": "side-tender-bids",
+						"type": "record-list",
+						"title": "Bids",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Inkoop en leveranciers"
+							]
+						},
+						"_note": "DqAanbesteding: the bids on this tender (supplierTender.caseRef), with their status.",
+						"content": {
+							"register": "dossiq",
+							"schema": "supplierTender",
+							"filter": {
+								"caseRef": "@objectId"
+							},
+							"sort": {
+								"field": "submittedDate",
+								"dir": "asc"
+							},
+							"limit": 5,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "submitted {submittedDate|date}",
+							"pill": {
+								"field": "status"
+							},
+							"emptyText": "No bids yet"
+						}
+					},
 					"case-banner-stack"
 				],
 				"showTypeEyebrow": false,

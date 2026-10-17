@@ -589,7 +589,8 @@ describe('the header and the side column', () => {
 	it('reads the pills and the cards from fields the case carries', () => {
 		expect(onTheCase(simple.statusPill.field)).toBe(true)
 		expect(onTheCase(simple.breadcrumb.currentField)).toBe(true)
-		const cards = simple.sideColumn.filter((card) => typeof card === 'object')
+		// The cards every case shows; the case-type cards are gated and checked below.
+		const cards = simple.sideColumn.filter((card) => typeof card === 'object' && !card.visibleWhen)
 		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Work instruction'])
 		const shown = []
 		for (const card of cards) {
@@ -610,6 +611,27 @@ describe('the header and the side column', () => {
 		expect(shown).toEqual(expect.arrayContaining(['initiatorDisplayName', 'initiatorType', 'intakeChannel']))
 		// The deadline has its own card, so no data card repeats it.
 		expect(shown).not.toContain('deadline')
+	})
+
+	it('shows a domain card only for its case type category, over records linked to this case', () => {
+		// DqBezwaar, DqSubsidie, DqSociaalDomein, DqAanbesteding: one generic
+		// case page, with side cards gated on the case type's category. Each
+		// card lists records that name this case, so no card states a fact
+		// the register does not hold.
+		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen)
+		expect(gated.map((card) => card.id)).toEqual([
+			'side-objection-hearing',
+			'side-objection-advice',
+			'side-objection-appeal',
+			'side-grant-application',
+			'side-social-consent',
+			'side-tender-bids',
+		])
+		for (const card of gated) {
+			expect(card.type).toBe('record-list')
+			expect(Object.values(card.content.filter)).toEqual(['@objectId'])
+			expect(JSON.stringify(card.visibleWhen)).toContain('@context.caseType.category')
+		}
 	})
 
 	it('draws the header as a card holding the stages, and the banners in the side column', () => {
