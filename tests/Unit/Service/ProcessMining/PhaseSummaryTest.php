@@ -60,7 +60,7 @@ class PhaseSummaryTest extends TestCase {
 	}//end reports()
 
 	/**
-	 * Phases become columns in first-seen order; a phase a case type never passes is null.
+	 * Phases become columns in first-seen order; a phase a case type never passes reads none.
 	 *
 	 * @return void
 	 */
@@ -69,7 +69,7 @@ class PhaseSummaryTest extends TestCase {
 
 		self::assertSame(expected: ['Ontvangst', 'Advies'], actual: $matrix['columns']);
 		self::assertSame(expected: ['label' => 'Woo-verzoek', 'values' => [2, 6]], actual: $matrix['rows'][0]);
-		self::assertSame(expected: ['label' => 'Melding', 'values' => [1, null]], actual: $matrix['rows'][1]);
+		self::assertSame(expected: ['label' => 'Melding', 'values' => [1, 'none']], actual: $matrix['rows'][1]);
 	}//end testMatrixHasAColumnPerPhase()
 
 	/**
