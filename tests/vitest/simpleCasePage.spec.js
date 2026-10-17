@@ -390,7 +390,8 @@ describe('the tabs', () => {
 		}
 		expect(Object.keys(contactCards).sort()).toEqual([...communication].sort())
 		const contactTab = strip.tabs.find((tab) => tab.label === 'Contact')
-		expect(contactTab.widgetIds).toEqual(Object.values(contactCards))
+		// DqZaakContact opens with the thread with the resident, over the contact moments.
+		expect(contactTab.widgetIds).toEqual(['case-resident-thread', ...Object.values(contactCards)])
 		const card = (id) => simple.widgets.find((widget) => widget.id === id)
 		const dataSections = find(original, 'case-data-panel').content.sections.map((section) => section.widget.id)
 		const movedTo = {
@@ -450,7 +451,7 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		expect(others(simple)).toEqual(others(original))
