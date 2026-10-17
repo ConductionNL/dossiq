@@ -126,7 +126,7 @@
 	],
 	"nav": {
 		"brand": {
-			"name": "dossiq",
+			"name": "Dossiq",
 			"caption": "@theming.name",
 			"logo": "@theming.emblem|@theming.logo"
 		},
@@ -2563,6 +2563,11 @@
 				"folderSidebar": null,
 				"showTitle": true,
 				"countSubtitle": "{total} case types",
+				"breadcrumb": {
+					"label": "Settings",
+					"href": "/index.php/settings/admin/dossiq"
+				},
+				"headerMeta": "{total} case types",
 				"searchPlaceholder": "Search in this list",
 				"headerActions": [
 					{
@@ -2595,7 +2600,7 @@
 						"key": "title",
 						"label": "Case type",
 						"cellClass": "cn-cell--strong",
-						"secondary": "{identifier}"
+						"secondary": "{subject}"
 					},
 					{
 						"key": "category",
@@ -2656,6 +2661,412 @@
 						"showCount": true
 					}
 				]
+			}
+		},
+		{
+			"id": "CaseTypeDetail",
+			"_note": "DqZaaktype, DqZaaktypeOverzicht and DqZaaktypeVelden: one record page with the type's parts as tabs and its versions and facts in the side column. Every widget the full profile shows is still on a tab. The four app widgets are named by their registry type here, because a tab child resolves by type and a type:custom child renders an empty panel.",
+			"config": {
+				"showTypeEyebrow": false,
+				"breadcrumb": {
+					"label": "Case types",
+					"route": "CaseTypes"
+				},
+				"typePill": {
+					"field": "category"
+				},
+				"statusPill": {
+					"field": "isDraft",
+					"labels": {
+						"false": "Published",
+						"true": "Draft"
+					},
+					"colorMap": {
+						"false": "success",
+						"true": "warning"
+					}
+				},
+				"headerMeta": "{identifier}",
+				"quickActions": [
+					"case-type-export"
+				],
+				"actionsMenu": {
+					"showRefresh": false,
+					"showHelpLinks": false,
+					"label": "More"
+				},
+				"tabsLabel": "Case type parts",
+				"sideColumn": [
+					{
+						"id": "side-case-type-versions",
+						"type": "record-list",
+						"title": "Versions",
+						"content": {
+							"register": "dossiq",
+							"schema": "caseType",
+							"filter": {
+								"identifier": "@object.identifier"
+							},
+							"sort": {
+								"field": "version",
+								"dir": "desc"
+							},
+							"limit": 5,
+							"presentation": "rows",
+							"title": "Version {version}",
+							"meta": "{validFrom|date}",
+							"pill": {
+								"field": "isDraft",
+								"labels": {
+									"false": "Published",
+									"true": "Draft"
+								},
+								"colorMap": {
+									"false": "success",
+									"true": "warning"
+								}
+							},
+							"rowRoute": "CaseTypeDetail",
+							"emptyText": "This case type has only this version"
+						}
+					},
+					{
+						"id": "side-case-type-facts",
+						"type": "facts",
+						"title": "Data",
+						"content": {
+							"fields": [
+								{
+									"label": "Domain",
+									"path": "category"
+								},
+								{
+									"label": "Subject",
+									"path": "subject"
+								},
+								{
+									"label": "Handling model",
+									"path": "handlingModel"
+								},
+								{
+									"label": "Confidentiality",
+									"path": "confidentiality"
+								},
+								{
+									"label": "Identifier",
+									"path": "identifier"
+								}
+							]
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "panels",
+						"widgetId": "case-type-panels",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 24,
+						"showTitle": false
+					}
+				]
+			},
+			"configAppend": {
+				"widgets": [
+					{
+						"id": "case-type-panels",
+						"type": "tabs",
+						"title": "Case type parts",
+						"icon": "ViewDashboard",
+						"content": {
+							"ariaLabel": "Case type parts",
+							"variant": "segmented",
+							"tabs": [
+								{
+									"label": "Overview",
+									"widgetIds": [
+										"case-type-statuses",
+										"case-type-rights",
+										"case-type-privacy",
+										"case-type-translations"
+									],
+									"layout": [
+										{
+											"widgetId": "case-type-statuses",
+											"gridWidth": 12
+										},
+										{
+											"widgetId": "case-type-rights",
+											"gridWidth": 12
+										},
+										{
+											"widgetId": "case-type-privacy",
+											"gridWidth": 6
+										},
+										{
+											"widgetId": "case-type-translations",
+											"gridWidth": 6
+										}
+									]
+								},
+								{
+									"label": "Fields",
+									"widgetIds": [
+										"case-type-fields",
+										"case-type-core",
+										"case-type-list-layout"
+									],
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "propertyDefinition",
+										"filter": {
+											"caseType": "@objectId"
+										}
+									}
+								},
+								{
+									"label": "Statuses",
+									"widgetId": "case-type-statuses-list",
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "statusType",
+										"filter": {
+											"caseType": "@objectId"
+										}
+									}
+								},
+								{
+									"label": "Phases and tasks",
+									"widgetIds": [
+										"case-type-blueprint",
+										"case-type-terms",
+										"case-type-messages"
+									]
+								},
+								{
+									"label": "Rights",
+									"widgetId": "case-type-rights"
+								},
+								{
+									"label": "Privacy",
+									"widgetId": "case-type-privacy"
+								},
+								{
+									"label": "Translations",
+									"widgetId": "case-type-translations"
+								},
+								{
+									"label": "Versions",
+									"widgetIds": [
+										"case-type-chain",
+										"case-type-versions"
+									],
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "caseType",
+										"filter": {
+											"identifier": "@object.identifier"
+										}
+									}
+								},
+								{
+									"label": "Portal",
+									"widgetIds": [
+										"case-type-portal",
+										"case-type-party-kinds"
+									]
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-statuses",
+						"type": "record-list",
+						"title": "Statuses",
+						"content": {
+							"register": "dossiq",
+							"schema": "statusType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "order",
+								"dir": "asc"
+							},
+							"limit": 20,
+							"presentation": "cards",
+							"title": "{name}",
+							"pill": {
+								"field": "isFinal",
+								"labels": {
+									"true": "End"
+								},
+								"hideValues": [
+									"false"
+								],
+								"variant": "neutral"
+							},
+							"emptyText": "This case type has no statuses yet"
+						}
+					},
+					{
+						"id": "case-type-statuses-list",
+						"type": "object-list",
+						"title": "Statuses",
+						"content": {
+							"register": "dossiq",
+							"schema": "statusType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "order",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "order",
+									"label": "Order"
+								},
+								{
+									"key": "name",
+									"label": "Status"
+								},
+								{
+									"key": "publicLabel",
+									"label": "Public label"
+								},
+								{
+									"key": "isFinal",
+									"label": "Final"
+								}
+							],
+							"emptyText": "This case type has no statuses yet"
+						}
+					},
+					{
+						"id": "case-type-fields",
+						"type": "object-list",
+						"title": "Fields",
+						"content": {
+							"register": "dossiq",
+							"schema": "propertyDefinition",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Field"
+								},
+								{
+									"key": "propertyType",
+									"label": "Type"
+								},
+								{
+									"key": "isRequired",
+									"label": "Required"
+								},
+								{
+									"key": "propertySource",
+									"label": "Origin"
+								},
+								{
+									"key": "filterable",
+									"label": "In the list"
+								}
+							],
+							"emptyText": "This case type has no fields of its own yet"
+						}
+					},
+					{
+						"id": "case-type-messages",
+						"type": "object-list",
+						"title": "Messages to the applicant",
+						"content": {
+							"register": "dossiq",
+							"schema": "emailTemplate",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "messageCategory",
+									"label": "Moment"
+								},
+								{
+									"key": "name",
+									"label": "Message"
+								},
+								{
+									"key": "subject",
+									"label": "Subject"
+								}
+							],
+							"emptyText": "This case type sends no messages of its own"
+						}
+					},
+					{
+						"id": "case-type-rights",
+						"type": "field-list",
+						"title": "Rights",
+						"description": "Who may do what with cases of this type",
+						"content": {
+							"field": "rightsMatrix",
+							"readOnly": true,
+							"variant": "table",
+							"columns": [
+								{
+									"header": "Role",
+									"path": "role",
+									"strong": true
+								},
+								{
+									"header": "Department",
+									"path": "department"
+								},
+								{
+									"header": "Confidentiality",
+									"path": "confidentiality"
+								},
+								{
+									"header": "Actions",
+									"path": "actions"
+								},
+								{
+									"header": "Until",
+									"path": "until",
+									"format": "date"
+								}
+							],
+							"emptyText": "No rights declared for this case type yet"
+						}
+					}
+				]
+			},
+			"configPatch": {
+				"widgets": {
+					"case-type-blueprint": {
+						"type": "CaseTypeBlueprintWidget"
+					},
+					"case-type-translations": {
+						"type": "CaseTypeTranslationsWidget"
+					},
+					"case-type-portal": {
+						"type": "CaseTypePortalWidget"
+					},
+					"case-type-party-kinds": {
+						"type": "CaseTypePartyKindsWidget"
+					}
+				}
 			}
 		}
 	]
