@@ -46,7 +46,6 @@ use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Lifecycle\TermExtensionRule;
-use OCA\Dossiq\Service\Pause\PauseReasonReader;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use Psr\Log\LoggerInterface;
@@ -78,7 +77,6 @@ class CaseLifecycleService {
 	 * @param CaseEndingActs $endings Reads which act ended the case, so a reopen keeps it
 	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
 	 *        statutory term end lands on a day the administered calendar works.
-	 * @param PauseReasonReader|null $pauseReasons The case type's declared pause reasons
 	 *
 	 * @return void
 	 */
@@ -91,7 +89,6 @@ class CaseLifecycleService {
 		private readonly LoggerInterface $logger,
 		private readonly CaseEndingActs $endings,
 		private readonly ?TermijnTimerService $timerService = null,
-		private readonly ?PauseReasonReader $pauseReasons = null,
 	) {
 	}//end __construct()
 
@@ -133,14 +130,7 @@ class CaseLifecycleService {
 			'deadline' => (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? '')),
 			'statusName' => $this->store->lookupStatusName(statusTypeId: (string)($case['status'] ?? '')),
 			'caseType' => (string)($case['caseType'] ?? ''),
-			'pauseReasons' => array_map(
-				static fn (array $reason): array => [
-					'key' => $reason['key'],
-					'name' => $reason['name'],
-					'legalBasis' => $reason['legalBasis'],
-				],
-				$this->declaredPauseReasons(caseId: $caseId),
-			),
+			'pauseReasons' => $this->pauseService->offeredReasons(caseId: $caseId),
 		];
 	}//end state()
 
@@ -167,18 +157,13 @@ class CaseLifecycleService {
 	public function suspend(string $caseId, string $reason, int $days, string $pauseReason = ''): array {
 		$case = $this->requireCase(caseId: $caseId);
 		$key = trim($pauseReason);
-		$chosen = null;
+		$rationale = $reason;
 		if ($key === '') {
 			$this->requireReason(reason: $reason);
 		}
 
 		if ($key !== '') {
-			$chosen = $this->declaredPauseReason(caseId: $caseId, key: $key);
-		}
-
-		$rationale = $reason;
-		if (trim($reason) === '') {
-			$rationale = (string)($chosen['name'] ?? '');
+			$rationale = $this->pauseService->suspendRationale(caseId: $caseId, reason: $reason, pauseReason: $key);
 		}
 
 		$caseType = $this->caseTypes->read(caseTypeId: (string)($case['caseType'] ?? ''));
@@ -640,45 +625,6 @@ class CaseLifecycleService {
 
 		return $case;
 	}//end requireCase()
-
-	/**
-	 * The pause reasons the case's case type declares, normalised.
-	 *
-	 * @param string $caseId Case UUID
-	 *
-	 * @return array<int, array<string, mixed>> The reasons, empty when none are declared.
-	 *
-	 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
-	 */
-	private function declaredPauseReasons(string $caseId): array {
-		if ($this->pauseReasons === null) {
-			return [];
-		}
-
-		return $this->pauseReasons->forCase(caseId: $caseId);
-	}//end declaredPauseReasons()
-
-	/**
-	 * The declared pause reason with this key.
-	 *
-	 * @param string $caseId Case UUID
-	 * @param string $key The reason key the handler picked
-	 *
-	 * @return array<string, mixed> The normalised reason.
-	 *
-	 * @throws RuntimeException When the case type declares no reason with this key
-	 *
-	 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
-	 */
-	private function declaredPauseReason(string $caseId, string $key): array {
-		foreach ($this->declaredPauseReasons(caseId: $caseId) as $reason) {
-			if ($reason['key'] === $key) {
-				return $reason;
-			}
-		}
-
-		throw new RuntimeException('pause_reason_not_declared');
-	}//end declaredPauseReason()
 
 	/**
 	 * Every gesture asks for a reason, and an empty one is not a reason.
