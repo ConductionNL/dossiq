@@ -5082,6 +5082,7 @@ OC.L10N.register(
         "Nobody has changed this, so it is on the setting it ships with.": "Nobody has changed this, so it is on the setting it ships with.",
         "Nobody has written a note here yet": "Nobody has written a note here yet",
         "Nobody is handling this case.": "Nobody is handling this case.",
+        "Nobody is involved yet": "Nobody is involved yet",
         "Nobody is linked to this case yet. Add a party on the People tab first.": "Nobody is linked to this case yet. Add a party on the People tab first.",
         "Nobody outside can open this case yet.": "Nobody outside can open this case yet.",
         "Node": "Node",
