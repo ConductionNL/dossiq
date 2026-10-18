@@ -34,6 +34,8 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
 use OCA\Dossiq\Service\DemoDataService;
+use OCA\Dossiq\Service\Setup\ActiveOrganisationProfile;
+use OCA\Dossiq\Service\Setup\CaseTypePackageChoice;
 use OCA\Dossiq\Service\Setup\FirstRunReadiness;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -111,6 +113,8 @@ class SetupController extends Controller {
 	 * @param SettingsService $settingsService OpenRegister availability + config import.
 	 * @param PackageInstaller $packages Installs the case definition package the `seed` action asks for.
 	 * @param FirstRunReadiness $readiness The minimum an instance needs, read live.
+	 * @param ActiveOrganisationProfile $organisationProfile The active organisation's name and logo (Organisation step).
+	 * @param CaseTypePackageChoice $caseTypes The on-request case type packages (Case types step).
 	 */
 	public function __construct(
 		string $appName,
@@ -120,6 +124,8 @@ class SetupController extends Controller {
 		private readonly SettingsService $settingsService,
 		private readonly PackageInstaller $packages,
 		private readonly FirstRunReadiness $readiness,
+		private readonly ActiveOrganisationProfile $organisationProfile,
+		private readonly CaseTypePackageChoice $caseTypes,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -138,6 +144,7 @@ class SetupController extends Controller {
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function status(): DataResponse {
@@ -192,10 +199,17 @@ class SetupController extends Controller {
 			// `optionsSource: datasets` and no options of its own, so a dataset
 			// missing from this list is a dataset nobody can pick.
 			'datasets' => $this->demoDataService->listChoices(),
+			// The Case types step's cards, read the same way.
+			'caseTypePackages' => $this->caseTypes->options(),
 			// Exactly the ids of `manifest.setup.steps`: a step the server
 			// never reports stays open and reopens the wizard.
 			'steps' => [
-				'welcome' => ['done' => true],
+				// Optional, so settled once there is a name to show; an
+				// instance without OpenRegister has nothing to name.
+				'organisation-details' => ['done' => $this->organisationNamed()],
+				// A hand-off to the theming app, never outstanding.
+				'house-style' => ['done' => true],
+				'case-types' => ['done' => ($this->caseTypes->isDecided() === true || $wizardDoneBefore === true)],
 				// A pick without a load still counts: a wizard that predates
 				// `loadAction` can only record the pick.
 				'demo-data' => ['done' => ($demoDecided === true || $pickedDataset !== '')],
@@ -276,6 +290,7 @@ class SetupController extends Controller {
 	 * @return DataResponse `{ success }`.
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function saveConfig(): DataResponse {
@@ -305,8 +320,18 @@ class SetupController extends Controller {
 			}
 		}
 
-		foreach ($this->request->getParams() as $key => $value) {
-			if (in_array($key, ['_route'], true) === true) {
+		// The organisation's name and logo live on the OpenRegister
+		// Organisation, not in app config.
+		$params = $this->request->getParams();
+		$organisationFields = [ActiveOrganisationProfile::NAME_FIELD, ActiveOrganisationProfile::LOGO_FIELD];
+		if ($this->organisationProfile->write(fields: array_intersect_key($params, array_flip($organisationFields))) === false) {
+			return new DataResponse(
+				['success' => false, 'message' => 'The organisation name and logo could not be saved.']
+			);
+		}
+
+		foreach ($params as $key => $value) {
+			if (in_array($key, array_merge(['_route'], $organisationFields), true) === true) {
 				continue;
 			}
 
@@ -328,12 +353,13 @@ class SetupController extends Controller {
 	/**
 	 * Run a privileged server-side setup action.
 	 *
-	 * @param string $actionId One of `load-demo-data` | `install-demo-data` | `skip-demo-data` | `dismiss-setup` | `init-register` | `seed`.
+	 * @param string $actionId One of `load-demo-data` | `install-demo-data` | `skip-demo-data` | `dismiss-setup` | `init-register` | `seed` | `install-case-types`.
 	 *
 	 * @return DataResponse `{ success, message, detail }`.
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function runAction(string $actionId): DataResponse {
@@ -365,6 +391,16 @@ class SetupController extends Controller {
 
 		if ($actionId === 'seed') {
 			return $this->installSeedPackage();
+		}
+
+		// The Case types step: a card's Load button posts its package as `dataset`.
+		if ($actionId === 'install-case-types') {
+			$outcome = $this->caseTypes->install(id: (string)$this->request->getParam('dataset', ''));
+			if ($outcome['success'] === false) {
+				return new DataResponse($outcome, Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+
+			return new DataResponse($outcome);
 		}
 
 		return new DataResponse(
@@ -531,6 +567,18 @@ class SetupController extends Controller {
 
 		return new DataResponse(['success' => true, 'message' => 'No example data was loaded.']);
 	}//end skipDemoData()
+
+	/**
+	 * Whether the Organisation step is settled: the active organisation has a
+	 * name, or there is no organisation to name.
+	 *
+	 * @return bool True when settled.
+	 */
+	private function organisationNamed(): bool {
+		$profile = $this->organisationProfile->read();
+
+		return $profile['available'] === false || $profile['name'] !== '';
+	}//end organisationNamed()
 
 	/**
 	 * Read a dossiq app-config string value.

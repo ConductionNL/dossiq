@@ -10,10 +10,57 @@
 		"dismissAction": "dismiss-setup",
 		"steps": [
 			{
-				"id": "welcome",
+				"id": "organisation-details",
+				"type": "config-fields",
+				"title": "Organisation",
+				"body": "Dossiq handles cases from intake to archive for your organisation. Its name and logo are kept on the organisation in OpenRegister, so every app shows the same ones. Leave a field blank to keep what is there.",
+				"required": false,
+				"configKeys": ["organisation_name", "organisation_logo"],
+				"schema": {
+					"type": "object",
+					"properties": {
+						"organisation_name": {
+							"type": "string",
+							"title": "Organisation name",
+							"order": 1
+						},
+						"organisation_logo": {
+							"type": "string",
+							"format": "uri",
+							"title": "Logo address (URL)",
+							"order": 2
+						}
+					}
+				}
+			},
+			{
+				"id": "house-style",
 				"type": "info",
-				"title": "Welcome to Dossiq",
-				"body": "Dossiq handles cases from intake to archive. Load the demo data to see it work."
+				"title": "House style",
+				"body": "The house style comes from Thematiq. Choose your organisation's token set in the Thematiq administration settings; Dossiq follows it straight away.",
+				"requires": ["thematiq"]
+			},
+			{
+				"id": "case-types",
+				"type": "choice",
+				"display": "cards",
+				"optionsSource": "caseTypePackages",
+				"configKey": "case_type_package",
+				"loadAction": "install-case-types",
+				"title": "Case types",
+				"required": false,
+				"body": "Switch on the case types you work with. Each card installs its own set; the case types every instance needs are already there."
+			},
+			{
+				"id": "demo-data",
+				"type": "choice",
+				"display": "cards",
+				"optionsSource": "datasets",
+				"configKey": "demo_dataset",
+				"loadAction": "load-demo-data",
+				"title": "Example data",
+				"required": false,
+				"body": "Want to look around with example cases first? Each card loads its own set. Pick \"None\" on a production install."
 			},
 			{
 				"id": "dwangsom-secret",
@@ -32,17 +79,6 @@
 						}
 					}
 				}
-			},
-			{
-				"id": "demo-data",
-				"type": "choice",
-				"display": "cards",
-				"optionsSource": "datasets",
-				"configKey": "demo_dataset",
-				"loadAction": "load-demo-data",
-				"title": "Example data",
-				"required": false,
-				"body": "Want to look around with example cases first? Each card loads its own set. Pick \"None\" on a production install."
 			},
 			{
 				"id": "done",

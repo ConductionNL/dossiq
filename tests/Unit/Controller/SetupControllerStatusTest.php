@@ -36,6 +36,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\SetupController;
 use OCA\Dossiq\Service\DemoDataService;
 use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
+use OCA\Dossiq\Service\Setup\ActiveOrganisationProfile;
+use OCA\Dossiq\Service\Setup\CaseTypePackageChoice;
 use OCA\Dossiq\Service\Setup\FirstRunReadiness;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
@@ -71,6 +73,8 @@ class SetupControllerStatusTest extends TestCase {
 	 * @param array<string,mixed>|null $seedResult         What the package installer answers, when it is asked.
 	 * @param array<string,mixed>|\Throwable|null $demoResult What the demo import returns, or throws.
 	 * @param array<string,mixed>|null $requestParams      Request params, for the config-fields step.
+	 * @param ActiveOrganisationProfile|null $profile      The Organisation step's store; a named organisation by default.
+	 * @param array<int,array<string,mixed>> $catalogue    The case definition packages the installer lists.
 	 *
 	 * @return array{controller: SetupController, written: array<string,string>, settings: SettingsService, asked: list<string>} The
 	 *   controller, a live view of every app-config value it wrote, its settings collaborator, and the package ids the installer was asked for.
@@ -83,6 +87,8 @@ class SetupControllerStatusTest extends TestCase {
 		?array $seedResult = null,
 		array|\Throwable|null $demoResult = null,
 		?array $requestParams = null,
+		?ActiveOrganisationProfile $profile = null,
+		array $catalogue = [],
 	): array {
 		$written = [];
 		$asked = [];
@@ -106,6 +112,7 @@ class SetupControllerStatusTest extends TestCase {
 		$settings->method('isOpenRegisterAvailable')->willReturn($openRegisterOnline);
 
 		$packages = $this->createMock(PackageInstaller::class);
+		$packages->method('catalogue')->willReturn($catalogue);
 		// ADR-111 added the generated demo dataset as its own service and its
 		// own setup step. Since the bezwaar/beroep `seed` step was retired,
 		// the demo import IS the app's demo-data affordance, so it is driven
@@ -157,11 +164,27 @@ class SetupControllerStatusTest extends TestCase {
 			settingsService: $settings,
 			packages: $packages,
 			readiness: new FirstRunReadiness(settingsService: $settings, appConfig: $appConfig),
+			organisationProfile: ($profile ?? $this->namedOrganisation()),
+			caseTypes: new CaseTypePackageChoice(packages: $packages, appConfig: $appConfig),
 		);
 
 		return ['controller' => $controller, 'written' => &$written, 'settings' => $settings, 'asked' => &$asked];
 
 	}//end build()
+
+	/**
+	 * An organisation profile that reads a named organisation and accepts every write.
+	 *
+	 * @return ActiveOrganisationProfile The fake.
+	 */
+	private function namedOrganisation(): ActiveOrganisationProfile {
+		$profile = $this->createMock(ActiveOrganisationProfile::class);
+		$profile->method('read')->willReturn(['available' => true, 'name' => 'Gemeente Zuiddrecht', 'logo' => '']);
+		$profile->method('write')->willReturn(true);
+
+		return $profile;
+
+	}//end namedOrganisation()
 
 	/**
 	 * A fully-provisioned register with the sample data not yet loaded.
@@ -930,4 +953,135 @@ class SetupControllerStatusTest extends TestCase {
 		$this->assertArrayNotHasKey('dismissed', $data);
 
 	}//end testNoCloseNoDismissedKey()
+	/**
+	 * The board's three opening steps are reported, and the old welcome is gone.
+	 *
+	 * @return void
+	 */
+	public function testTheBoardStepsAreReported(): void {
+		$data = $this->controller($this->provisioned())->status()->getData();
+
+		$this->assertTrue($data['steps']['organisation-details']['done'], 'a named organisation settles the optional step');
+		$this->assertTrue($data['steps']['house-style']['done'], 'the house style is a hand-off, never outstanding');
+		$this->assertFalse($data['steps']['case-types']['done'], 'nothing chosen and nothing installed leaves the step open');
+		$this->assertArrayNotHasKey('welcome', $data['steps']);
+
+	}//end testTheBoardStepsAreReported()
+
+	/**
+	 * An organisation without a name leaves the Organisation step open.
+	 *
+	 * @return void
+	 */
+	public function testAnUnnamedOrganisationLeavesTheStepOpen(): void {
+		$profile = $this->createMock(ActiveOrganisationProfile::class);
+		$profile->method('read')->willReturn(['available' => true, 'name' => '', 'logo' => '']);
+
+		$data = $this->build(config: $this->provisioned(), profile: $profile)['controller']->status()->getData();
+
+		$this->assertFalse($data['steps']['organisation-details']['done']);
+
+	}//end testAnUnnamedOrganisationLeavesTheStepOpen()
+
+	/**
+	 * The Case types step's cards are the on-request packages, after a none card.
+	 *
+	 * @return void
+	 */
+	public function testStatusCarriesTheCaseTypeCards(): void {
+		$catalogue = [
+			['id' => 'bezwaar-beroep', 'title' => 'Bezwaar en beroep', 'version' => '1.0.0', 'install' => 'on-request', 'installed' => '', 'valid' => true],
+			['id' => 'vth', 'title' => 'VTH', 'version' => '1.0.0', 'install' => 'auto', 'installed' => '1.0.0', 'valid' => true],
+		];
+
+		$data = $this->build(config: $this->provisioned(), catalogue: $catalogue)['controller']->status()->getData();
+
+		$this->assertSame(['none', 'bezwaar-beroep'], array_column($data['caseTypePackages'], 'id'), 'an auto package is already there and is not offered');
+
+	}//end testStatusCarriesTheCaseTypeCards()
+
+	/**
+	 * The organisation fields go to the organisation, never into app config.
+	 *
+	 * @return void
+	 */
+	public function testOrganisationFieldsAreWrittenToTheOrganisation(): void {
+		$profile = $this->createMock(ActiveOrganisationProfile::class);
+		$profile->expects($this->once())
+			->method('write')
+			->with(['organisation_name' => 'Gemeente Waterland', 'organisation_logo' => ''])
+			->willReturn(true);
+
+		$built = $this->build(
+			config: $this->provisioned(),
+			requestParams: ['organisation_name' => 'Gemeente Waterland', 'organisation_logo' => '', '_route' => 'x'],
+			profile: $profile,
+		);
+
+		$this->assertTrue($built['controller']->saveConfig()->getData()['success']);
+		$this->assertSame([], $built['written'], 'the name and logo live on the OpenRegister organisation');
+
+	}//end testOrganisationFieldsAreWrittenToTheOrganisation()
+
+	/**
+	 * A failed organisation write is reported and stores nothing else.
+	 *
+	 * @return void
+	 */
+	public function testAFailedOrganisationWriteIsReported(): void {
+		$profile = $this->createMock(ActiveOrganisationProfile::class);
+		$profile->method('write')->willReturn(false);
+
+		$built = $this->build(
+			config: $this->provisioned(),
+			requestParams: ['organisation_name' => 'Gemeente Waterland', 'other_key' => 'x'],
+			profile: $profile,
+		);
+
+		$this->assertFalse($built['controller']->saveConfig()->getData()['success']);
+		$this->assertSame([], $built['written']);
+
+	}//end testAFailedOrganisationWriteIsReported()
+
+	/**
+	 * A case type card installs its package and records the choice.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeCardInstallsItsPackage(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			seedResult: ['status' => PackageInstaller::INSTALLED, 'message' => 'Installed.'],
+			requestParams: ['dataset' => 'subsidie'],
+			catalogue: [['id' => 'subsidie', 'title' => 'Subsidie', 'version' => '1.0.0', 'install' => 'on-request', 'installed' => '', 'valid' => true]],
+		);
+
+		$response = $built['controller']->runAction(actionId: 'install-case-types');
+
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame(['subsidie'], $built['asked']);
+		$this->assertSame('subsidie', $built['written']['case_type_package']);
+
+	}//end testACaseTypeCardInstallsItsPackage()
+
+	/**
+	 * A package the step does not offer is refused before the installer is asked.
+	 *
+	 * @return void
+	 */
+	public function testAnUnofferedCaseTypePackageIsRefused(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			seedResult: ['status' => PackageInstaller::INSTALLED, 'message' => 'Installed.'],
+			requestParams: ['dataset' => 'vth'],
+			catalogue: [['id' => 'vth', 'title' => 'VTH', 'version' => '1.0.0', 'install' => 'auto', 'installed' => '', 'valid' => true]],
+		);
+
+		$response = $built['controller']->runAction(actionId: 'install-case-types');
+
+		$this->assertSame(422, $response->getStatus());
+		$this->assertSame([], $built['asked']);
+		$this->assertArrayNotHasKey('case_type_package', $built['written']);
+
+	}//end testAnUnofferedCaseTypePackageIsRefused()
 }//end class
