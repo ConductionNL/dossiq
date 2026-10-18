@@ -608,6 +608,12 @@ export default {
 	provide() {
 		return {
 			cnTranslate: (key, vars) => this.t('dossiq', key, vars),
+			// Cell formatters for the admin tables. A connection's title and
+			// description arrive in English from integriq's registry, which
+			// stores dossiq's declaration as written.
+			cnFormatters: {
+				translated: (value) => (typeof value === 'string' && value !== '' ? this.t('dossiq', value) : value),
+			},
 		}
 	},
 
@@ -745,12 +751,25 @@ export default {
 					key: 'title',
 					label: this.t('dossiq', 'Connection'),
 					cellClass: 'cn-cell--strong',
-					secondary: '{description}',
+					formatter: 'translated',
+				},
+				{
+					key: 'description',
+					label: this.t('dossiq', 'Description'),
+					formatter: 'translated',
 				},
 				{
 					key: 'status',
 					label: this.t('dossiq', 'Status'),
 					widget: 'badge',
+					enum: ['configured', 'unconfigured', 'unavailable', 'simulated', 'error'],
+					enumLabels: {
+						configured: 'Set up',
+						unconfigured: 'Not set up',
+						unavailable: 'Not available',
+						simulated: 'Simulated',
+						error: 'Error',
+					},
 				},
 				{ key: '@self.updated', label: this.t('dossiq', 'Last contact') },
 			]
