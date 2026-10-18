@@ -10,7 +10,10 @@
   @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 -->
 <template>
-	<div class="case-act-fields" :data-testid="'case-act-fields-' + act.id">
+	<div
+		class="case-act-fields"
+		:class="{ 'case-act-fields--paired': act.id === 'suspend' }"
+		:data-testid="'case-act-fields-' + act.id">
 	<template v-if="act.id === 'archive' && kase">
 		<div class="case-acts__case" data-testid="case-act-archive-case">
 			<FolderOutline :size="20" class="case-acts__case-icon" />
@@ -104,6 +107,14 @@
 		data-testid="case-act-days-input"
 		:label="t('dossiq', 'Days the applicant is given')"
 		@update:modelValue="$emit('update:days', $event)" />
+
+	<div v-if="inputs.days && comesBackOn" class="case-acts__field case-acts__field--wide" data-testid="case-act-comes-back">
+		<span class="case-acts__label">{{ t('dossiq', 'The case comes back on') }}</span>
+		<span data-testid="case-act-comes-back-date">{{ comesBackOn }}</span>
+		<span class="case-acts__muted">
+			{{ t('dossiq', 'You pick the case up earlier if the answer comes in earlier.') }}
+		</span>
+	</div>
 	</div>
 </template>
 
@@ -115,6 +126,7 @@ import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import TemplatePicker from '../TemplatePicker.vue'
+import { formatDate } from '../../utils/caseHelpers.js'
 
 export default {
 	name: 'CaseActFields',
@@ -157,6 +169,24 @@ export default {
 
 	computed: {
 		/**
+		 * The day a suspended case comes back: today plus the days the
+		 * applicant is given. '' without days.
+		 *
+		 * @return {string} The date, or ''.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		comesBackOn() {
+			const days = Number.parseInt(this.days, 10)
+			if (!Number.isFinite(days) || days < 1) {
+				return ''
+			}
+			const date = new Date()
+			date.setDate(date.getDate() + days)
+
+			return formatDate(date.toISOString())
+		},
+
+		/**
 		 * The chosen result as its option.
 		 *
 		 * @return {object|null} The option, or null.
@@ -178,6 +208,17 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
+}
+
+/* Suspend sets the reason and the days side by side, as board DqVolgendeStap. */
+.case-act-fields--paired {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	align-items: start;
+}
+
+.case-acts__field--wide {
+	grid-column: 1 / -1;
 }
 
 .case-acts__case {
