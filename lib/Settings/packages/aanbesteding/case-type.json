@@ -15,7 +15,11 @@
     "publicationRequired": true,
     "isDraft": false,
     "confidentiality": "zaakvertrouwelijk",
-    "initialStatus": "775cbdfe-31e7-5ec8-8405-f2ff35d32fa4"
+    "initialStatus": "775cbdfe-31e7-5ec8-8405-f2ff35d32fa4",
+    "sideCards": [
+      "case-tile-deadline",
+      "case-banner-stack"
+    ]
   },
   "statusTypes": [
     {
