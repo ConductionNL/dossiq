@@ -4641,6 +4641,7 @@ OC.L10N.register(
         "Name of the contact person": "Name of the contact person",
         "Name of the grant program": "Name of the grant program",
         "Name of the managing contact": "Name of the managing contact",
+        "Name of the organisation": "Name of the organisation",
         "Name of the participant.": "Name of the participant.",
         "Name of the person or company who asked for this case, denormalised when you pick them so the list and the card can render it without a second read. Stays hidden as a form field: the picker writes it, you do not type it.": "Name of the person or company who asked for this case, denormalised when you pick them so the list and the card can render it without a second read. Stays hidden as a form field: the picker writes it, you do not type it.",
         "Name of the person who administers this catalogue.": "Name of the person who administers this catalogue.",
