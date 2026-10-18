@@ -4260,7 +4260,9 @@
 							"caseId": "@objectId",
 							"title": "Next step",
 							"mixedOutcome": "deels_openbaar",
-							"note": "Publishing comes after this. Once the decision is recorded the publication is ready, and Publish (Woo) under More sends the public and partly public documents to the reading room. What is not public never goes along.",
+							"noteHeading": "Publishing comes afterwards",
+							"letterPurpose": "decision",
+							"note": "Once the decision is recorded the publication is ready. Publish (Woo) under More sends the public and partly public documents to the reading room. What is not public never goes along.",
 							"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
 							"decideUrl": "/apps/dossiq/api/cases/{caseId}/woo/decision",
 							"assessments": {
@@ -4270,9 +4272,9 @@
 								"classificationField": "classification"
 							},
 							"classifications": [
-								{ "value": "openbaar", "label": "Public" },
-								{ "value": "deels_openbaar", "label": "Disclosed in part" },
-								{ "value": "niet_openbaar", "label": "Not public" }
+								{ "value": "openbaar", "label": "Public", "decisionLabel": "Made public", "description": "All requested documents become public" },
+								{ "value": "deels_openbaar", "label": "Disclosed in part", "decisionLabel": "Made public in part", "description": "Some of the documents become public, in full or in part" },
+								{ "value": "niet_openbaar", "label": "Not public", "decisionLabel": "Not made public", "description": "None of the documents becomes public, the reason is in the decision" }
 							]
 						},
 						"visibleWhen": {
