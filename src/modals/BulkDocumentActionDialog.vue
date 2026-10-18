@@ -124,18 +124,19 @@ export default {
 		/**
 		 * The clicked node's Nextcloud file id, merged onto an `open-modal`
 		 * row action's props by CnFilesBrowser.
-		 *
-		 * The `case-files` leaf is the surface this dialog has now, and it
-		 * names ONE file rather than a selection: CnFilesBrowser carries no
-		 * selection bar, because the Files app's list, its selection bar and
-		 * its inline rename are bound to the Files router and cannot be
-		 * mounted off the Files page. A `bulkActions` prop declared on that
-		 * widget would be read by nothing, which is the same darkness that
-		 * left this dialog with no caller at all from 2026-09-13.
 		 */
 		fileId: {
 			type: [String, Number],
 			default: '',
+		},
+
+		/**
+		 * The Nextcloud file ids of the files ticked in the Files tab, handed
+		 * in by CnFilesBrowser's bulk bar.
+		 */
+		fileIds: {
+			type: Array,
+			default: () => [],
 		},
 
 		/** The clicked node's name, for the dialog's own sentence. */
@@ -301,7 +302,8 @@ export default {
 		},
 
 		/**
-		 * The informatieobject id behind a clicked file node.
+		 * The informatieobject ids behind the clicked file node, or behind the
+		 * files ticked in the bulk bar.
 		 *
 		 * The case's dossier listing is the one endpoint that carries every
 		 * record together with its `fileId`, which is how DocumentMetadataDialog
@@ -310,16 +312,14 @@ export default {
 		 * act reports that it changed nothing rather than posting an empty id
 		 * an endpoint would answer as a miss.
 		 *
-		 * @return {Promise<Array<string>>} The one document id, or an empty list.
+		 * @return {Promise<Array<string>>} The document ids, or an empty list.
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async resolveFromFileId() {
-			const fileId = Number(this.fileId)
-			if (
-				!Number.isFinite(fileId)
-				|| fileId <= 0
-				|| this.resolvedCaseId === ''
-			) {
+			const wanted = [...this.fileIds, this.fileId]
+				.map((value) => Number(value))
+				.filter((value) => Number.isFinite(value) && value > 0)
+			if (wanted.length === 0 || this.resolvedCaseId === '') {
 				return []
 			}
 			const url = generateUrl(
@@ -329,9 +329,10 @@ export default {
 			const rows = Array.isArray(data?.informatieobjecten)
 				? data.informatieobjecten
 				: []
-			const record = rows.find((row) => Number(row.fileId) === fileId) || null
-			const id = record === null ? '' : String(record.id || '')
-			return id === '' ? [] : [id]
+			return rows
+				.filter((row) => wanted.includes(Number(row.fileId)))
+				.map((row) => String(row.id || ''))
+				.filter((id) => id !== '')
 		},
 
 		/**

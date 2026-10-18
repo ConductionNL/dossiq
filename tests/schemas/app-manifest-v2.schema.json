@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.121.0",
+	"version": "2.122.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -1296,6 +1296,7 @@
 						"filter": { "type": "object", "additionalProperties": true }
 					}
 				},
+				"resolve": { "type": "object", "additionalProperties": false, "required": ["register", "schema"], "description": "detail-pill-resolve: the field holds the id of a record of this register and schema; the pill shows that record's `labelField` (else its title or name) and keys `colorMap` by it. The raw value shows while the lookup runs and when it finds nothing.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "labelField": { "type": "string", "minLength": 1 } } },
 				"countLabel": {
 					"type": "object",
 					"additionalProperties": false,
@@ -2227,6 +2228,35 @@
 											"row": { "type": ["string", "number"] },
 											"column": { "type": ["string", "number"] },
 											"columnKeys": { "type": "array", "items": { "type": ["string", "number"] } }
+										}
+									},
+									"cellSource": {
+										"type": "object",
+										"additionalProperties": false,
+										"required": ["register", "schema", "rowField", "columnField", "valueField"],
+										"description": "chartKind 'matrix': read the cells from records that each hold one cell. The records are listed from register/schema with `filter` (tokens such as '@object.matrixVersion' resolved; the list waits while one is unresolved), then laid out by rowField / columnField with valueField as the cell. Labels come from rowLabels / columnLabels maps or rowLabelField / columnLabelField; order from rowOrder / columnOrder lists, else rowOrderField / columnOrderField, else natural order. valueLabels maps a stored value to the text shown; colorMap may key on either. With cellsPath the matrix sits inside ONE record: the first record filter finds (else fallbackFilter), its array at cellsPath narrowed by cellFilter (tokens allowed), and the axis order from rowOrderPath / columnOrderPath on that record. Wins over series / categories.",
+										"properties": {
+											"register": { "type": "string" },
+											"schema": { "type": "string" },
+											"filter": { "type": "object", "additionalProperties": true },
+											"rowField": { "type": "string" },
+											"columnField": { "type": "string" },
+											"valueField": { "type": "string" },
+											"rowLabelField": { "type": "string" },
+											"columnLabelField": { "type": "string" },
+											"rowLabels": { "type": "object", "additionalProperties": { "type": "string" } },
+											"columnLabels": { "type": "object", "additionalProperties": { "type": "string" } },
+											"valueLabels": { "type": "object", "additionalProperties": { "type": "string" } },
+											"rowOrder": { "type": "array", "items": { "type": ["string", "number"] } },
+											"columnOrder": { "type": "array", "items": { "type": ["string", "number"] } },
+											"rowOrderField": { "type": "string" },
+											"columnOrderField": { "type": "string" },
+											"limit": { "type": "integer", "minimum": 1 },
+											"cellsPath": { "type": "string", "description": "Path of the cells array inside the one record the source finds." },
+											"cellFilter": { "type": "object", "additionalProperties": true, "description": "Equality filter on the cells of that record, e.g. { actorType: '@object.actorType' }." },
+											"fallbackFilter": { "type": "object", "additionalProperties": true, "description": "Filter used when `filter` finds no record, e.g. { active: true }." },
+											"rowOrderPath": { "type": "string", "description": "Path of an array on that record giving the row order." },
+											"columnOrderPath": { "type": "string", "description": "Path of an array on that record giving the column order." }
 										}
 									},
 									"endpointSource": {
@@ -3702,8 +3732,8 @@
 						},
 						"entitySource": {
 							"type": "string",
-							"enum": ["flows", "flowRuns", "tasks", "endpoint", "search", "users"],
-							"description": "Name a registered NON-OBJECT entity collection for a type='index' page, instead of register+schema. Deliberately NOT called `source`: that key is already taken on page config and is polymorphic (a URL string in some manifests, an object with `params` in others), so reusing it would give one key two meanings and break six deployed shillinq pages. A flow definition is deliberately not an OpenRegister object, so an index had nothing to bind to and such lists became bespoke type='custom' pages. With a source the index loads the list itself. Takes precedence over register/schema; non-empty `objects` still wins over both. Registered sources live in src/composables/indexSources.js. `tasks` lists the viewer's task inbox from OpenRegister's flow-tasks read (cn-tasks-entity-source)."
+							"enum": ["flows", "flowRuns", "tasks", "endpoint", "search", "users", "organisations"],
+							"description": "Name a registered NON-OBJECT entity collection for a type='index' page, instead of register+schema. Deliberately NOT called `source`: that key is already taken on page config and is polymorphic (a URL string in some manifests, an object with `params` in others), so reusing it would give one key two meanings and break six deployed shillinq pages. A flow definition is deliberately not an OpenRegister object, so an index had nothing to bind to and such lists became bespoke type='custom' pages. With a source the index loads the list itself. Takes precedence over register/schema; non-empty `objects` still wins over both. Registered sources live in src/composables/indexSources.js. `tasks` lists the viewer's task inbox from OpenRegister's flow-tasks read (cn-tasks-entity-source). `organisations` lists the OpenRegister organisations the viewer belongs to. On a type='detail' page a source that reads one record (today `organisations`) loads the record whose id is the route's objectId, instead of register+schema, and feeds the header, pills, widgets and @objectId / @object.* tokens like a fetched object (organisations-entity-source)."
 						},
 						"sourceConfig": { "type": "object", "additionalProperties": true, "description": "type='index' with `entitySource`: what the named source loads with. `endpoint`: `url` (an app path, required) and `rowsPath` (default `results`); its other keys go along as query parameters. `search`: `kinds` (`{ id, label, register, schema, titleField?, subtitleField?, statusField?, href?, limit? }` or `{ id, label, files: true }`), `term` and `termQuery` (default `q`). `users`: `defaultGroup`, `functionField`, `rolesField`. `flows` / `tasks`: `app`, `scope`. Maps to CnIndexPage `sourceConfig`.", "properties": { "url": { "type": "string", "minLength": 1 }, "rowsPath": { "type": "string", "minLength": 1 }, "kinds": { "type": "array", "items": { "type": "object", "required": ["id"], "additionalProperties": true, "properties": { "id": { "type": "string", "minLength": 1 }, "label": { "type": "string" }, "register": { "type": "string" }, "schema": { "type": "string" }, "files": { "type": "boolean" } } } }, "term": { "type": "string" }, "termQuery": { "type": "string", "minLength": 1 }, "defaultGroup": { "type": "string", "minLength": 1 } } },
 						"app": {
