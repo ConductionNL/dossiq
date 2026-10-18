@@ -6,4 +6,4 @@
 - [x] 1.4 Unit test: no lookup of the Zuiddrecht set needs an on-request package
 - [x] 1.5 Example rows install only when the setup wizard's example data decision is `installed` (DemoDataService::DECIDED_KEY); otherwise skipped with one log line
 - [ ] 1.6 Follow-up: when an admin loads example data after a package was installed, install that package's examples then (the package version is already recorded, so a reinstall reports it current)
-- [ ] 1.7 Bids on the example tender: needs supplier rows that suit a youth care tender
+- [x] 1.7 Bids on the example tender: aanbesteding 1.1.0 ships four suppliers and their bids, written to dossiq's own supplier schemas by reference
