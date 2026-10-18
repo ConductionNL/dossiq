@@ -981,7 +981,7 @@
 							"pill": {
 								"field": "judgmentOutcome"
 							},
-							"emptyText": "No appeal lodged"
+							"emptyText": "After the decision on the objection the objector can appeal to the court. dossiq then opens an appeal case with this objection as its origin."
 						}
 					},
 					{
