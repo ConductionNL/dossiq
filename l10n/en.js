@@ -6878,6 +6878,7 @@ OC.L10N.register(
         "Say why you are keeping the case, so the answer means something.": "Say why you are keeping the case, so the answer means something.",
         "Sbi Codes": "Sbi Codes",
         "Scan": "Scan",
+        "Scan result": "Scan result",
         "Scanning…": "Scanning…",
         "Schedule": "Schedule",
         "Schedule callback": "Schedule callback",

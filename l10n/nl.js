@@ -6878,6 +6878,7 @@ OC.L10N.register(
         "Say why you are keeping the case, so the answer means something.": "Zeg waarom je de zaak houdt, zodat het antwoord iets betekent.",
         "Sbi Codes": "SBI-codes",
         "Scan": "Scannen",
+        "Scan result": "Scan",
         "Scanning…": "Scannen…",
         "Schedule": "Planning",
         "Schedule callback": "Terugbelafspraak plannen",

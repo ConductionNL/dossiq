@@ -2886,12 +2886,15 @@
 							"rowDataPath": "informatieobjecten",
 							"rowDataKey": "fileId",
 							"columns": [
-								"name",
+								{
+									"key": "name",
+									"label": "Document"
+								},
 								{
 									"id": "scan",
 									"key": "scanVerdict",
 									"source": "row",
-									"label": "Scan",
+									"label": "Scan result",
 									"property": "scanVerdict",
 									"formatter": "scanVerdict",
 									"widget": "badge",
