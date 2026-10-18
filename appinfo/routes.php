@@ -1206,6 +1206,9 @@ $extra = [
         // from a different app is worse than one that stops, because a
         // subscriber cannot tell it has moved.
 
+        // The catalogue page's object types: the schemas in dossiq's own register.
+    ['name' => 'catalogue#objectTypes', 'url' => '/api/catalogue/object-types', 'verb' => 'GET'],
+
         // Case-configuration store (ADR-080). Consume-only: dossiq browses a
         // remote OpenRegister registry through AppHost's GenericStoreService and
         // installs locally. It never publishes, and it builds no registry URL of

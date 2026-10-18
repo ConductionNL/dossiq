@@ -24,13 +24,13 @@ describe('the catalogue page', () => {
 		expect(page.config.description).toBeUndefined()
 	})
 
-	it('lists the object types with the table widget that reads an endpoint', () => {
+	it('lists dossiq\'s own object types with the table widget that reads an endpoint', () => {
 		// The legacy `table` type renders the OpenRegister object list, which
 		// ignores `endpointSource` and so always read empty.
 		const objectTypes = widget('catalogue-object-types')
 		expect(objectTypes.type).toBe('object-table')
 		expect(objectTypes.content.endpointSource).toMatchObject({
-			url: '/apps/openregister/api/schemas',
+			url: '/apps/dossiq/api/catalogue/object-types',
 			responsePath: 'results',
 		})
 	})

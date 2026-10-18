@@ -63,13 +63,12 @@
 						"description": "Objects you link to cases; you manage their properties here",
 						"content": {
 							"endpointSource": {
-								"url": "/apps/openregister/api/schemas",
-								"params": { "_limit": 20 },
+								"url": "/apps/dossiq/api/catalogue/object-types",
 								"responsePath": "results"
 							},
 							"columns": [
 								{ "key": "title", "label": "Object type", "secondary": "{description}" },
-								{ "key": "version", "label": "Schema" },
+								{ "key": "properties", "label": "Properties" },
 								{ "key": "slug", "label": "Name" }
 							],
 							"emptyText": "No object types yet"
