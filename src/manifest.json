@@ -7358,6 +7358,7 @@
 				"allowEdit": true,
 				"appId": "dossiq",
 				"pageId": "TermijnDashboard",
+				"showWidgetActions": false,
 				"description": "Running terms, all teams",
 				"widgets": [
 					{
