@@ -59,6 +59,17 @@ describe('the History tab kind chips', () => {
 		])
 	})
 
+	it('exports the entries the chips show as CSV, quotes escaped', () => {
+		const ctx = {
+			entries: [{ created: '2026-10-04T10:24:00Z', kind: 'status', author: 'Pieter "PJ" Jansen', visibility: 'public', message: 'Status gewijzigd' }],
+			kindLabel: () => 'Status',
+		}
+		const csv = CaseTimelineTab.methods.entriesCsv.call(ctx)
+		const [head, row] = csv.split('\r\n')
+		expect(head).toBe('"When","Kind","Who","Visibility","Message"')
+		expect(row).toBe('"2026-10-04T10:24:00Z","Status","Pieter ""PJ"" Jansen","public","Status gewijzigd"')
+	})
+
 	it('marks the chosen kind', () => {
 		const chips = kindChips.call(context({ id: 'status' }))
 		expect(chips.find((chip) => chip.active).label).toBe('Status')
