@@ -248,7 +248,7 @@ class PackageInstaller {
 		// Every address the package names, in a setting or a seed file, is
 		// found on this instance before a row is written.
 		$resolved = $this->references->resolve(settings: $settings);
-		$groups = $this->groups(parts: $parts, files: $files);
+		$groups = $this->groups(id: $id, parts: $parts, files: $files);
 		$missing = array_merge($resolved['missing'], array_column($groups, 'missing'));
 		if ($missing !== []) {
 			return $this->outcome(
@@ -330,15 +330,18 @@ class PackageInstaller {
 	 * The package's rows, grouped by the settings key of the schema they go to.
 	 *
 	 * Order matters for references: case type rows first, then flows that
-	 * name the case type, then seed rows, each seed file in name order.
+	 * name the case type, then seed rows, each seed file in name order, then
+	 * example rows (a case in flight, its dates relative to today) the same way,
+	 * on an instance that opted into example data.
 	 *
+	 * @param string                $id    The package id.
 	 * @param array<int, mixed>     $parts The declared parts.
 	 * @param array<string, string> $files The package files.
 	 *
 	 * @return array<int, array<string, mixed>> The groups: `schemaKey` and `rows`, and for a seed file
 	 *                                          `match`, `register` and `schema`, or `missing` and `reason`.
 	 */
-	private function groups(array $parts, array $files): array {
+	private function groups(string $id, array $parts, array $files): array {
 		$groups = [];
 		if (in_array('case-type', $parts, true) === true) {
 			$caseType = (array)json_decode($files['case-type.json'], true);
@@ -362,8 +365,35 @@ class PackageInstaller {
 			}
 		}
 
+		array_push($groups, ...$this->exampleGroups(id: $id, parts: $parts, files: $files));
+
 		return array_values(array_filter($groups, static fn (array $group): bool => $group['rows'] !== []));
 	}//end groups()
+
+	/**
+	 * The groups of the example rows, their date tokens filled relative to
+	 * today; none without an `examples` part, and none on an instance that
+	 * has not opted into example data.
+	 *
+	 * @param string                $id    The package id.
+	 * @param array<int, mixed>     $parts The declared parts.
+	 * @param array<string, string> $files The package files.
+	 *
+	 * @return array<int, array<string, mixed>> The groups, as {@see self::groups()} returns them.
+	 */
+	private function exampleGroups(string $id, array $parts, array $files): array {
+		if (in_array('examples', $parts, true) === false) {
+			return [];
+		}
+
+		$examples = new PackageExamples(appConfig: $this->appConfig, logger: $this->logger);
+		$groups = [];
+		foreach ($examples->toWrite(package: $id, examples: $this->rowsUnder(files: $files, dir: 'examples/')) as $example) {
+			$groups[] = $this->references->seedGroup(seed: $example);
+		}
+
+		return $groups;
+	}//end exampleGroups()
 
 	/**
 	 * The decoded .json files under one directory, in name order.

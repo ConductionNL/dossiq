@@ -1,7 +1,7 @@
 {
   "id": "verdagingsbrief",
   "title": "Verdagingsbrief",
-  "description": "Extension letter: tells an applicant the decision deadline has moved, and why.",
+  "description": "Voor het verlengen van de beslistermijn, met de reden.",
   "category": "document",
   "version": "1.0.0",
   "documentType": "Ontvangstbevestiging",

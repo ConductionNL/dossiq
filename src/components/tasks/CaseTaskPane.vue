@@ -44,7 +44,92 @@
   @spec openspec/specs/task-management/spec.md
 -->
 <template>
-	<div class="case-task-pane" data-testid="case-task-pane">
+	<div class="case-task-pane" :class="{ 'case-task-pane--table': isTable }" data-testid="case-task-pane">
+		<template v-if="isTable">
+			<div class="case-task-pane__head">
+				<p class="case-task-pane__summary" data-testid="case-task-pane-summary">
+					{{ t('dossiq', '{open} open, {done} done · sorted by deadline', { open: tasks.length, done: doneCount }) }}
+				</p>
+				<NcButton
+					variant="primary"
+					data-testid="case-task-pane-new"
+					@click="newTaskOpen = !newTaskOpen">
+					<template #icon>
+						<Plus :size="20" />
+					</template>
+					{{ t('dossiq', 'New task') }}
+				</NcButton>
+			</div>
+			<form
+				v-if="newTaskOpen"
+				class="case-task-pane__new"
+				data-testid="case-task-pane-new-form"
+				@submit.prevent="createTask">
+				<NcTextField
+					v-model="newTitle"
+					:label="t('dossiq', 'Task')"
+					data-testid="case-task-pane-new-title" />
+				<NcDateTimePickerNative
+					id="case-task-pane-new-due"
+					v-model="newDue"
+					type="date"
+					:label="t('dossiq', 'Task deadline')" />
+				<NcButton
+					type="submit"
+					variant="primary"
+					:disabled="creating || newTitle.trim() === ''"
+					data-testid="case-task-pane-new-save">
+					{{ t('dossiq', 'Add task') }}
+				</NcButton>
+			</form>
+			<table v-if="allTasks.length > 0" class="case-task-pane__table" data-testid="case-task-pane-table">
+				<thead>
+					<tr>
+						<th>{{ t('dossiq', 'Task') }}</th>
+						<th>{{ t('dossiq', 'Handler') }}</th>
+						<th>{{ t('dossiq', 'Task deadline') }}</th>
+						<th>{{ t('dossiq', 'Status') }}</th>
+						<th><span class="hidden-visually">{{ t('dossiq', 'Actions') }}</span></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr
+						v-for="task in allTasks"
+						:key="taskIdOf(task)"
+						:class="{ 'case-task-pane__row--done': isTerminal(task), 'case-task-pane__row--selected': taskIdOf(task) === selectedTaskId }"
+						:data-testid="`case-task-pane-row-${taskIdOf(task)}`">
+						<td>
+							<button
+								type="button"
+								class="case-task-pane__row-title"
+								:aria-expanded="taskIdOf(task) === selectedTaskId ? 'true' : 'false'"
+								@click="selectTask(task)">
+								{{ titleOf(task) }}
+							</button>
+							<span class="case-task-pane__row-meta">{{ referenceOf(task) }}</span>
+						</td>
+						<td>{{ task.assignee || t('dossiq', 'Unassigned') }}</td>
+						<td>{{ formatDate(task.dueDate) }}</td>
+						<td>
+							<span class="case-task-pane__state" :data-state="stateOf(task)">{{ stateLabel(task) }}</span>
+						</td>
+						<td>
+							<NcButton
+								v-if="!isTerminal(task)"
+								:disabled="busy"
+								variant="secondary"
+								:data-testid="`case-task-pane-row-complete-${taskIdOf(task)}`"
+								@click="invoke(verbs[0], task)">
+								{{ t('dossiq', 'Complete') }}
+							</NcButton>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<p v-else class="case-task-pane__empty" data-testid="case-task-pane-empty">
+				{{ t('dossiq', 'No tasks on this case yet') }}
+			</p>
+		</template>
 		<div
 			v-if="currentTask"
 			class="case-task-pane__current"
@@ -104,12 +189,12 @@
 				</NcButton>
 			</div>
 		</div>
-		<p v-else class="case-task-pane__empty" data-testid="case-task-pane-empty">
+		<p v-else-if="!isTable" class="case-task-pane__empty" data-testid="case-task-pane-empty">
 			{{ t('dossiq', 'No open tasks on this case') }}
 		</p>
 
 		<div
-			v-if="remainingTasks.length > 0"
+			v-if="!isTable && remainingTasks.length > 0"
 			class="case-task-pane__remaining"
 			data-testid="case-task-pane-remaining">
 			<h5 class="case-task-pane__remaining-title">
@@ -176,6 +261,9 @@ import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDateTimePickerNative from '@nextcloud/vue/components/NcDateTimePickerNative'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
+import Plus from 'vue-material-design-icons/Plus.vue'
 import TaskFormFields from './TaskFormFields.vue'
 import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
@@ -198,6 +286,9 @@ export default {
 
 	components: {
 		NcButton,
+		NcDateTimePickerNative,
+		NcTextField,
+		Plus,
 		TaskFormFields,
 	},
 
@@ -226,6 +317,15 @@ export default {
 		return {
 			/** The open tasks of this case, earliest due first. */
 			tasks: [],
+			/** Every task of this case, finished ones included, for the table mode. */
+			allTasks: [],
+			/** The task whose worker is open under the table, by id. */
+			selectedTaskId: '',
+			/** Whether the new-task form is open. */
+			newTaskOpen: false,
+			newTitle: '',
+			newDue: null,
+			creating: false,
 			/** Whether a verb is in flight, so a double click cannot fire twice. */
 			busy: false,
 			/**
@@ -267,7 +367,31 @@ export default {
 		 * @spec openspec/specs/task-management/spec.md
 		 */
 		currentTask() {
+			if (this.isTable) {
+				return this.tasks.find((task) => taskIdOf(task) === this.selectedTaskId) ?? null
+			}
 			return this.tasks[0] ?? null
+		},
+
+		/**
+		 * Whether the pane draws the case's tasks as a table (`content.mode:
+		 * "table"`), with the worker opening under it for the row clicked.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		isTable() {
+			return this.content?.mode === 'table'
+		},
+
+		/**
+		 * How many of the case's tasks are finished.
+		 *
+		 * @return {number}
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		doneCount() {
+			return this.allTasks.filter((task) => isTerminal(task)).length
 		},
 
 		/** @spec openspec/specs/task-management/spec.md */
@@ -566,6 +690,88 @@ export default {
 		},
 
 		/**
+		 * Whether a task is finished, for the template.
+		 *
+		 * @param {object} task The task row.
+		 * @return {boolean}
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		isTerminal(task) {
+			return isTerminal(task)
+		},
+
+		/**
+		 * The engine state of a task.
+		 *
+		 * @param {object} task The task row.
+		 * @return {string} The state, `available` when it names none.
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		stateOf(task) {
+			return String(task?.state ?? task?.status ?? '').trim() || 'available'
+		},
+
+		/**
+		 * A task's state as the reader reads it.
+		 *
+		 * @param {object} task The task row.
+		 * @return {string} The label.
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		stateLabel(task) {
+			const labels = {
+				available: t('dossiq', 'Not started'),
+				active: t('dossiq', 'In progress'),
+				completed: t('dossiq', 'Done'),
+				terminated: t('dossiq', 'Stopped'),
+				disabled: t('dossiq', 'Not needed'),
+			}
+			const state = this.stateOf(task)
+			return labels[state] ?? state
+		},
+
+		/**
+		 * Open the worker for a row under the table, or close it on a second click.
+		 *
+		 * @param {object} task The task row.
+		 * @return {void}
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		selectTask(task) {
+			const id = taskIdOf(task)
+			this.selectedTaskId = this.selectedTaskId === id ? '' : id
+		},
+
+		/**
+		 * Add a task to this case from the table's form.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		async createTask() {
+			const title = this.newTitle.trim()
+			if (title === '' || this.creating) {
+				return
+			}
+			this.creating = true
+			try {
+				const due = this.newDue instanceof Date ? this.newDue.toISOString().slice(0, 10) : String(this.newDue || '')
+				const created = await this.engineTasks.create({ title, case: String(this.objectId), dueDate: due })
+				if (created === null) {
+					this.report(this.engineTasks.error || t('dossiq', 'The task could not be added.'))
+					return
+				}
+				showSuccess(t('dossiq', 'Task added to the case.'))
+				this.newTitle = ''
+				this.newDue = null
+				this.newTaskOpen = false
+				await this.load()
+			} finally {
+				this.creating = false
+			}
+		},
+
+		/**
 		 * A task's display title, with a fallback so a titleless row is still
 		 * identifiable rather than rendering as an empty line.
 		 *
@@ -612,12 +818,14 @@ export default {
 			const caseId = String(this.objectId ?? '').trim()
 			if (caseId === '') {
 				this.tasks = []
+				this.allTasks = []
 				return
 			}
 
 			const rows = await this.engineTasks.list(
 				openTasksQuery(caseId, this.content),
 			)
+			this.allTasks = rows
 			this.tasks = rows.filter((row) => !isTerminal(row))
 
 			// The store surfaces its failure rather than throwing, because an
@@ -813,6 +1021,78 @@ export default {
 	&__link {
 		color: var(--color-primary-element);
 		text-decoration: underline;
+	}
+
+	&__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: calc(var(--default-grid-baseline) * 3);
+	}
+
+	&__summary {
+		margin: 0;
+		color: var(--color-text-maxcontrast);
+	}
+
+	&__new {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: calc(var(--default-grid-baseline) * 2);
+	}
+
+	&__table {
+		width: 100%;
+		border-collapse: collapse;
+
+		th {
+			padding: calc(var(--default-grid-baseline) * 2);
+			text-align: start;
+			color: var(--color-text-maxcontrast);
+			font-weight: bold;
+			background: var(--color-background-hover);
+		}
+
+		td {
+			padding: calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 2);
+			border-top: 1px solid var(--color-border);
+			vertical-align: middle;
+		}
+	}
+
+	&__row-title {
+		display: block;
+		padding: 0;
+		border: none;
+		background: none;
+		color: var(--color-main-text);
+		font-weight: bold;
+		text-align: start;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+
+	&__row-meta {
+		color: var(--color-text-maxcontrast);
+		font-size: 0.9em;
+	}
+
+	&__row--done &__row-title {
+		text-decoration: line-through;
+		color: var(--color-text-maxcontrast);
+	}
+
+	&__row--selected {
+		background: var(--color-primary-element-light);
+	}
+
+	&__state {
+		padding: 2px 8px;
+		border-radius: var(--border-radius-pill);
+		background: var(--color-background-dark);
+		font-weight: bold;
+		font-size: 0.9em;
 	}
 }
 </style>
