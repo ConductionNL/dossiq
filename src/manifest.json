@@ -60,7 +60,8 @@
 				"loadAction": "load-demo-data",
 				"title": "Example data",
 				"required": false,
-				"body": "Want to look around with example cases first? Each card loads its own set. Pick \"None\" on a production install."
+				"body": "Want to look around with example cases first? Each card loads its own set. Pick \"None\" on a production install.",
+				"note": "Example data uses fictional people and organisations only."
 			},
 			{
 				"id": "dwangsom-secret",

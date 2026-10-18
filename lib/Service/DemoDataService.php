@@ -161,8 +161,8 @@ class DemoDataService {
 		$choices = [
 			[
 				'id'          => self::NONE_DATASET,
-				'label'       => 'None, I will set this up myself',
-				'description' => 'Nothing is imported. You start with an empty app and add your own data.',
+				'label'       => 'Start empty',
+				'description' => 'You create the first case yourself.',
 				'objectCount' => 0,
 				'icon'        => 'CloseCircleOutline',
 			],
@@ -172,19 +172,14 @@ class DemoDataService {
 		if ($objects !== null) {
 			$choices[] = [
 				'id'    => self::DEMO_DATASET,
-				'label' => 'Example data',
+				'label' => 'Load example data',
 				// 🔴 NO NUMBER IN THIS SENTENCE. The wizard runs a card's
 				// description through the app's translation function, which is a
 				// literal lookup, so an interpolated count would make the string
 				// untranslatable and leave a Dutch operator reading English. The
 				// count travels as `objectCount` and the card renders it as a
 				// stat, with a label the library translates.
-				'description' => (
-					'Sample values for every schema this app supplies, generated from the schemas '
-					. 'themselves. It shows the lists, detail pages and dashboards working rather '
-					. 'than telling a story. Safe to run more than once, and you can delete it '
-					. 'afterwards.'
-				),
+				'description' => 'Sample records for every list in the app, all fictional. You can delete them afterwards.',
 				'objectCount' => $objects,
 				'icon'        => 'DatabaseOutline',
 			];
