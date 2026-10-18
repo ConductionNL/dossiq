@@ -4220,30 +4220,10 @@
 					},
 					{
 						"id": "document-redact",
-						"type": "open-modal",
+						"type": "navigate",
 						"label": "Redact documents",
 						"icon": "FileDocumentEditOutline",
-						"target": "DocumentRedactionDialog",
-						"props": {
-							"caseId": "@objectId",
-							"listUrl": "/apps/dossiq/api/cases/{caseId}/redactions",
-							"detectUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/detect",
-							"checkUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/check",
-							"redactUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/redact",
-							"uploadUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/upload",
-							"typeLabels": {
-								"PERSON": "Name",
-								"PHONE": "Phone number",
-								"EMAIL": "Email address",
-								"BSN": "BSN",
-								"IBAN": "Bank account",
-								"ADDRESS": "Address",
-								"POSTCODE": "Postcode",
-								"AMOUNT": "Amount",
-								"ORGANIZATION": "Organisation",
-								"UNKNOWN": "Other passage"
-							}
-						},
+						"target": "/cases/{objectId}/redact",
 						"visibleWhen": {
 							"all": [
 								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
@@ -4374,6 +4354,33 @@
 			},
 			"slots": {
 				"widget-cmmn-case-plan": "CasePlanPanel"
+			}
+		},
+		{
+			"id": "CaseRedaction",
+			"route": "/cases/:id/redact",
+			"type": "custom",
+			"title": "Redact documents",
+			"component": "CaseRedactionView",
+			"_note": "The redaction page of a case (board DqLakken): the case's partly public documents one by one, the text with its passages marked and the proposal beside it. The case page's Redact documents action navigates here. The config carries the routes and the passage type labels the panel reads.",
+			"config": {
+				"listUrl": "/apps/dossiq/api/cases/{caseId}/redactions",
+				"detectUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/detect",
+				"checkUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/check",
+				"redactUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/redact",
+				"uploadUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/upload",
+				"typeLabels": {
+					"PERSON": "Name",
+					"PHONE": "Phone number",
+					"EMAIL": "Email address",
+					"BSN": "BSN",
+					"IBAN": "Bank account",
+					"ADDRESS": "Address",
+					"POSTCODE": "Postcode",
+					"AMOUNT": "Amount",
+					"ORGANIZATION": "Organisation",
+					"UNKNOWN": "Other passage"
+				}
 			}
 		},
 		{

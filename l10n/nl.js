@@ -6296,6 +6296,7 @@ OC.L10N.register(
         "Recovery Trigger": "Aanleiding voor de terugvordering",
         "Recovery window in days": "Terughaaltermijn in dagen",
         "Red": "Rood",
+        "Redact": "Lakken",
         "Redact documents": "Documenten lakken",
         "Redact: {title}": "Lakken: {title}",
         "Redacted copy recorded": "Gelakte versie vastgelegd",

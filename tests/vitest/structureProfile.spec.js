@@ -461,10 +461,11 @@ describe('the simple profile', () => {
 	// 73 -> 74: search results over cases, objects and documents (DqZoekresultaten).
 	// 74 -> 76: the organisations on this environment get a list and a page (DqTenant).
 	// 76 -> 77: the departments and staff get a page (DqAfdelingen).
-	it('builds the same 77 pages as the full profile, so every route stays', () => {
+	// 77 -> 78: the redaction page of a case (DqLakken).
+	it('builds the same 78 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(77)
+		expect(built.pages).toHaveLength(78)
 	})
 })
 
