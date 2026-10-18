@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.123.0",
+	"version": "2.124.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -98,6 +98,7 @@
 							"title": { "type": "string" },
 							"body": { "type": "string", "description": "info: explanatory copy." },
 							"note": { "type": "string", "minLength": 1, "description": "choice: a footnote under the options, translated like body." },
+							"visibleWhen": { "description": "Offer the step only when the setup status says so: a dotted path into the setup status document whose value must be truthy, or { path, equals } for an exact value. Hidden while the status loads.", "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "required": ["path"], "additionalProperties": false, "properties": { "path": { "type": "string", "minLength": 1 }, "equals": {} } } ] },
 							"footnote": { "type": "string", "minLength": 1, "description": "choice: the same footnote under another name; note wins when both are set." },
 							"required": { "type": "boolean", "default": false, "description": "When true the step gates the app until done." },
 							"schema": { "description": "config-fields: a JSON Schema ref (string) or inline object rendered via fieldsFromSchema." },
@@ -4371,6 +4372,35 @@
 							"type": "boolean",
 							"default": true,
 							"description": "type='dashboard' and type='detail': `false` drops the overflow Actions menu from every widget that does not set `showActions` itself, for a dashboard whose widget headers carry a header link and nothing else (zuiddrecht-pixel-gaps-2), or a record page whose data cards carry none (zuiddrecht-pixel-gaps-3; a card with an Add action keeps it). When the key is not set a detail page keeps the menu, except under the board look, where side cards carry none (screens-detail-page-parity). Maps to CnDashboardPage / CnDetailPage `showWidgetActions`."
+						},
+						"pageFilters": {
+							"type": "array",
+							"description": "type='dashboard': page-level filter controls in the header. Each selection is written into the page's workspace context, so a widget reads it through a `@page.<key>` / `@workspace.<key>` token (an endpoint widget also in its `responsePath`). Maps to the CnDashboardPage `pageFilters` prop.",
+							"items": {
+								"type": "object",
+								"required": ["key", "options"],
+								"additionalProperties": false,
+								"properties": {
+									"key": { "type": "string", "minLength": 1, "description": "Workspace-context key written on change (the `@page.<key>` / `@workspace.<key>` token name)." },
+									"label": { "type": "string", "description": "Control label (i18n key or plain text)." },
+									"type": { "type": "string", "enum": ["select"], "default": "select", "description": "Control type, carried over from v1." },
+									"control": { "type": "string", "enum": ["select", "segmented"], "default": "select", "description": "How the filter is drawn: a select, or a compact segmented group." },
+									"placement": { "type": "string", "enum": ["row", "description"], "default": "row", "description": "Where the filter sits: in the header's filter row, or (a segmented group) on the description line after the period group (DqProcesanalyse)." },
+									"default": { "type": ["string", "number"], "description": "Initial value seeded into the context on mount; the first option's value when omitted." },
+									"options": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"required": ["value", "label"],
+											"additionalProperties": false,
+											"properties": {
+												"value": { "type": ["string", "number"], "description": "Value written into the context when picked." },
+												"label": { "type": "string", "description": "Display text (i18n key or plain text)." }
+											}
+										}
+									}
+								}
+							}
 						},
 						"kpiRow": {
 							"type": "array",
