@@ -11,9 +11,16 @@
  */
 
 import { shallowMount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
-import CaseActFields from '../../src/components/case/CaseActFields.vue'
+import { describe, expect, it, vi } from 'vitest'
 import { formatDate } from '../../src/utils/caseHelpers.js'
+
+vi.mock('@nextcloud/dialogs', () => ({
+	showWarning: vi.fn(),
+	showSuccess: vi.fn(),
+	showError: vi.fn(),
+}))
+
+const CaseActFields = (await import('../../src/components/case/CaseActFields.vue')).default
 
 /**
  * The suspend form with the given days.
