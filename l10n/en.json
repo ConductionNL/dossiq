@@ -8895,7 +8895,6 @@
         "There is no customer record here. The contact moments dossiq logs itself are in the Communication list.": "There is no customer record here. The contact moments dossiq logs itself are in the Communication list.",
         "There is no other published case type to move this case to.": "There is no other published case type to move this case to.",
         "These case types are in your dossiq menu, under My case types. One click opens their case list. Drag a handle to change the order.": "These case types are in your dossiq menu, under My case types. One click opens their case list. Drag a handle to change the order.",
-        "These case types are in your menu under My case types, in this order. Drag a row or use the arrow keys.": "These case types are in your menu under My case types, in this order. Drag a row or use the arrow keys.",
         "These cases are already linked through the main/sub-case hierarchy.": "These cases are already linked through the main/sub-case hierarchy.",
         "These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again.": "These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again.",
         "These cases were not merged.": "These cases were not merged.",
