@@ -54,7 +54,8 @@
 			{
 				"id": "demo-data",
 				"type": "choice",
-				"display": "cards",
+				"display": "rows",
+				"default": "demo",
 				"optionsSource": "datasets",
 				"configKey": "demo_dataset",
 				"title": "Example data",
