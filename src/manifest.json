@@ -717,9 +717,9 @@
 					{
 						"id": "kpi-overdue",
 						"type": "stat",
-						"title": "Overdue",
+						"title": "Late",
 						"content": {
-							"label": "Overdue",
+							"label": "Late",
 							"caption": "action needed",
 							"route": {
 								"name": "Cases",
@@ -1479,9 +1479,9 @@
 							{
 								"id": "kpi-overdue",
 								"type": "stat",
-								"title": "Overdue",
+								"title": "Late",
 								"content": {
-									"label": "Overdue",
+									"label": "Late",
 									"caption": "action needed",
 									"route": {
 										"name": "Cases",
@@ -1700,7 +1700,7 @@
 								"gridY": 6,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": false
+								"showTitle": true
 							},
 							{
 								"id": "t7",
@@ -1709,7 +1709,7 @@
 								"gridY": 6,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": false
+								"showTitle": true
 							}
 						]
 					}
