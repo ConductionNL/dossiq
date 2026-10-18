@@ -5515,6 +5515,7 @@
 				"allowEdit": true,
 				"appId": "dossiq",
 				"pageId": "ProcessMiningDashboard",
+				"showWidgetActions": false,
 				"description": "Bottleneck analysis from recorded case status history",
 				"pageFilters": [
 					{
@@ -5596,7 +5597,7 @@
 								"responsePath": "stuck"
 							},
 							"title": "{caseType}, phase {phase}",
-							"text": "Median {days} days, {visits} visits",
+							"meta": "Median {days} days, {visits} visits",
 							"pill": {
 								"field": "level",
 								"labels": {
