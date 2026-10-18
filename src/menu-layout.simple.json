@@ -3462,6 +3462,7 @@
 						}
 					}
 				],
+				"hideTableHeader": true,
 				"quickFilterMaxVisible": 4,
 				"quickFiltersFrom": {
 					"field": "caseType",
