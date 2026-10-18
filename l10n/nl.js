@@ -7703,6 +7703,7 @@ OC.L10N.register(
         "Synchronise day": "Dag synchroniseren",
         "Synchronise the day while online to download this checklist.": "Synchroniseer de dag terwijl je online bent om deze checklist te downloaden.",
         "Synchronising…": "Synchroniseren…",
+        "System": "Systeem",
         "Systemic issues (>50% QoQ)": "Systemische problemen (>50% k-o-k)",
         "Systems": "Systemen",
         "Taak": "Taak",
