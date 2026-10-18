@@ -1,6 +1,19 @@
 <template>
-	<div class="email-settings">
-		<NcNoteCard type="info">
+	<div class="email-settings" :class="{ 'email-settings--compact': !showHelp }">
+		<div class="email-settings__help-toggle">
+			<NcButton
+				variant="tertiary"
+				:aria-expanded="showHelp ? 'true' : 'false'"
+				data-testid="email-help-toggle"
+				@click="showHelp = !showHelp">
+				{{
+					showHelp
+						? t('dossiq', 'Hide the explanations')
+						: t('dossiq', 'Show the explanations')
+				}}
+			</NcButton>
+		</div>
+		<NcNoteCard type="info" class="email-settings__explanation">
 			{{
 				t(
 					'dossiq',
@@ -333,6 +346,9 @@ export default {
 
 	data() {
 		return {
+			// The long help under each field is folded away, as the board draws
+			// the section; one button shows every explanation again.
+			showHelp: false,
 			loading: true,
 			saving: false,
 			writable: true,
@@ -718,6 +734,16 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
+}
+
+.email-settings--compact .setting-help,
+.email-settings--compact .email-settings__explanation {
+	display: none;
+}
+
+.email-settings__help-toggle {
+	display: flex;
+	justify-content: flex-end;
 }
 
 .setting-help {
