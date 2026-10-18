@@ -30,4 +30,10 @@ describe('the relation lists read their derived columns from the library', () =>
 		const source = readFileSync(resolve(__dirname, '../../src/services/formatters.js'), 'utf8')
 		expect(source).not.toMatch(/^\s*masked:/m)
 	})
+
+	it('offers the organisations with an open case through the reverse reference', () => {
+		const chip = page('Organisations').config.quickFilters.find((q) => q.label === 'With an open case')
+		expect(chip.filter).toEqual({ '_related[case][requester][isFinalStatus]': false })
+		expect(chip.showCount).toBe(true)
+	})
 })
