@@ -1,3 +1,4 @@
+import { registerTranslations } from '@conduction/nextcloud-vue'
 import { createApp } from 'vue'
 import AdminRoot from './views/settings/AdminRoot.vue'
 import pinia from './pinia.js'
@@ -6,6 +7,8 @@ import pinia from './pinia.js'
 // side-effect imports from aliased packages. Without it the admin page drew
 // every library component unstyled (no table scroll box, no card look).
 import '@conduction/nextcloud-vue/css/index.css'
+
+registerTranslations()
 
 const app = createApp(AdminRoot)
 app.use(pinia)

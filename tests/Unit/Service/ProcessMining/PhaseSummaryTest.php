@@ -60,7 +60,7 @@ class PhaseSummaryTest extends TestCase {
 	}//end reports()
 
 	/**
-	 * Phases become columns in first-seen order; a phase a case type never passes is null.
+	 * Phases become columns in first-seen order; a phase a case type never passes reads none.
 	 *
 	 * @return void
 	 */
@@ -69,8 +69,28 @@ class PhaseSummaryTest extends TestCase {
 
 		self::assertSame(expected: ['Ontvangst', 'Advies'], actual: $matrix['columns']);
 		self::assertSame(expected: ['label' => 'Woo-verzoek', 'values' => [2, 6]], actual: $matrix['rows'][0]);
-		self::assertSame(expected: ['label' => 'Melding', 'values' => [1, null]], actual: $matrix['rows'][1]);
+		self::assertSame(expected: ['label' => 'Melding', 'values' => [1, 'none']], actual: $matrix['rows'][1]);
 	}//end testMatrixHasAColumnPerPhase()
+
+	/**
+	 * A status the index could not name is no column, and a case type with
+	 * only such statuses is no row.
+	 *
+	 * @return void
+	 */
+	public function testUnnamedStatusesAreLeftOut(): void {
+		$reports = $this->reports();
+		$reports[] = [
+			'id' => 'bezwaar',
+			'title' => 'Bezwaar',
+			'dwellTime' => [['statusId' => 'uuid-1', 'statusName' => 'uuid-1', 'meanHours' => 48.0, 'medianHours' => 48.0]],
+		];
+
+		$matrix = (new PhaseSummary())->matrix(caseTypes: $reports, measure: 'meanHours');
+
+		self::assertSame(expected: ['Ontvangst', 'Advies'], actual: $matrix['columns']);
+		self::assertCount(expectedCount: 2, haystack: $matrix['rows']);
+	}//end testUnnamedStatusesAreLeftOut()
 
 	/**
 	 * The worst case type's bottleneck leads and is the only one marked as such.
