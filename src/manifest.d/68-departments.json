@@ -26,10 +26,10 @@
 			"config": {
 				"entitySource": "users",
 				"showTitle": true,
+				"showViewToggle": false,
 				"folderSidebar": {
 					"source": "groups",
-					"filterField": "group",
-					"title": "Departments"
+					"filterField": "group"
 				},
 				"breadcrumb": {
 					"label": "Settings",
