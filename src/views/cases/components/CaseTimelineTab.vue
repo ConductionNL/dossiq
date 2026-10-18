@@ -37,15 +37,25 @@
 					{{ t('dossiq', 'What happened, who did it and when, newest first') }}
 				</p>
 			</div>
-			<NcButton
-				v-if="canManage"
-				data-testid="case-timeline-add-note"
-				@click="focusComposer">
+			<div class="case-timeline__header-actions">
+				<NcButton
+					v-if="canManage"
+					data-testid="case-timeline-add-note"
+					@click="focusComposer">
 				<template #icon>
 					<Plus :size="20" />
 				</template>
-				{{ t('dossiq', 'Add a note') }}
-			</NcButton>
+					{{ t('dossiq', 'Add a note') }}
+				</NcButton>
+				<NcButton
+					data-testid="case-timeline-export"
+					@click="exportEntries">
+					<template #icon>
+						<Download :size="20" />
+					</template>
+					{{ t('dossiq', 'Export') }}
+				</NcButton>
+			</div>
 		</div>
 
 		<div
@@ -246,6 +256,7 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import Download from 'vue-material-design-icons/Download.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import PortalMessageDialog from '../../../dialogs/PortalMessageDialog.vue'
 
@@ -265,6 +276,7 @@ export default {
 		NcLoadingIcon,
 		NcNoteCard,
 		NcSelect,
+		Download,
 		Plus,
 		PortalMessageDialog,
 	},
@@ -580,6 +592,42 @@ export default {
 		},
 
 		/**
+		 * The entries the chips show, as a CSV the handler can keep or send on:
+		 * when, kind, who, visibility and what.
+		 *
+		 * @return {string} The CSV text.
+		 *
+		 * @spec openspec/specs/case-history-surface/spec.md
+		 */
+		entriesCsv() {
+			const cell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`
+			const rows = [[t('dossiq', 'When'), t('dossiq', 'Kind'), t('dossiq', 'Who'), t('dossiq', 'Visibility'), t('dossiq', 'Message')]]
+			for (const entry of this.entries) {
+				rows.push([entry.created, this.kindLabel(entry), entry.author, entry.visibility, entry.message])
+			}
+			return rows.map((row) => row.map(cell).join(',')).join('\r\n')
+		},
+
+		/**
+		 * Download the entries the chips show as a CSV file.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/case-history-surface/spec.md
+		 */
+		exportEntries() {
+			const blob = new Blob([this.entriesCsv()], { type: 'text/csv;charset=utf-8' })
+			const url = URL.createObjectURL(blob)
+			const link = document.createElement('a')
+			link.href = url
+			link.download = `case-history-${this.objectId || 'case'}.csv`
+			document.body.appendChild(link)
+			link.click()
+			link.remove()
+			URL.revokeObjectURL(url)
+		},
+
+		/**
 		 * Bring the note composer under the list into view and focus it.
 		 *
 		 * @return {void}
@@ -746,6 +794,11 @@ export default {
 	justify-content: space-between;
 	gap: 12px;
 	margin-block-end: 12px;
+}
+
+.case-timeline__header-actions {
+	display: flex;
+	gap: 8px;
 }
 
 .case-timeline__title {

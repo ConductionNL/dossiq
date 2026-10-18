@@ -52,7 +52,11 @@ const CHOSEN = {
  */
 async function mountDialog() {
 	const axios = (await import('@nextcloud/axios')).default
-	axios.get.mockResolvedValue({ data: { results: [{ id: 'l1', title: 'Luchtfoto (PDOK)', url: 'https://x', layerName: 'a', isDefault: true }] } })
+	axios.get.mockImplementation((url) => Promise.resolve({
+		data: String(url).includes('/case/')
+			? { title: 'Kapvergunning Molenweg 4', identifier: '2026-0090' }
+			: { results: [{ id: 'l1', title: 'Luchtfoto (PDOK)', url: 'https://x', layerName: 'a', isDefault: true }] },
+	}))
 	axios.post.mockResolvedValue({ data: { id: 'loc-1' } })
 	return mount(CaseLocationDialog, {
 		props: { caseId: 'case-1' },
@@ -102,6 +106,12 @@ describe('the case-location record', () => {
 })
 
 describe('CaseLocationDialog', () => {
+	it('heads the dialog with the case it adds the location to', async () => {
+		const wrapper = await mountDialog()
+		await new Promise((resolve) => setTimeout(resolve, 0))
+		expect(wrapper.vm.eyebrow).toBe('Kapvergunning Molenweg 4, location')
+	})
+
 	it('will not save before an address is chosen', async () => {
 		const wrapper = await mountDialog()
 		expect(wrapper.find('[data-testid="case-location-save"]').attributes('disabled')).toBeDefined()
