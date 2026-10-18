@@ -8959,6 +8959,7 @@ OC.L10N.register(
         "This case type has no published versions yet": "This case type has no published versions yet",
         "This case type has no results yet": "This case type has no results yet",
         "This case type has no statuses yet": "This case type has no statuses yet",
+        "This case type has no such pause reason. Pick one of its reasons.": "This case type has no such pause reason. Pick one of its reasons.",
         "This case type has only this version": "This case type has only this version",
         "This case type is not ready to publish. Fix the following first.": "This case type is not ready to publish. Fix the following first.",
         "This case type names no role that may destroy a case. Declare one on the case type first.": "This case type names no role that may destroy a case. Declare one on the case type first.",

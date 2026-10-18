@@ -8959,6 +8959,7 @@ OC.L10N.register(
         "This case type has no published versions yet": "Dit zaaktype heeft nog geen gepubliceerde versies",
         "This case type has no results yet": "Dit zaaktype heeft nog geen resultaten",
         "This case type has no statuses yet": "Dit zaaktype heeft nog geen statussen",
+        "This case type has no such pause reason. Pick one of its reasons.": "Dit zaaktype kent deze opschortingsreden niet. Kies een van zijn redenen.",
         "This case type has only this version": "Dit zaaktype heeft alleen deze versie",
         "This case type is not ready to publish. Fix the following first.": "Dit zaaktype is nog niet klaar om te publiceren. Los eerst het volgende op.",
         "This case type names no role that may destroy a case. Declare one on the case type first.": "Dit zaaktype noemt geen rol die een zaak mag vernietigen. Leg die eerst vast op het zaaktype.",

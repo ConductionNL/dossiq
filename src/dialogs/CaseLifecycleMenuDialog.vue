@@ -172,6 +172,11 @@ import {
 	extensionNotice,
 	refusalMessage,
 } from '../utils/caseLifecycleHelpers.js'
+import {
+	asksReasonText,
+	offersPauseReasons,
+	pauseReasonToSend,
+} from '../utils/pauseReasonChoice.js'
 import { failedActionsWarning } from '../utils/transitionOutcome.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -218,6 +223,8 @@ export default {
 			resultTypeId: '',
 			until: '',
 			days: '14',
+			pauseReasons: [],
+			pauseReason: '',
 			caseType: '',
 			error: '',
 			busy: false,
@@ -313,6 +320,8 @@ export default {
 				resultTypeId: this.resultTypeId,
 				until: this.until,
 				days: this.days,
+				pauseReasons: this.pauseReasons,
+				pauseReason: this.pauseReason,
 			}
 		},
 
@@ -328,6 +337,7 @@ export default {
 				'update:resultTypeId': (value) => { this.resultTypeId = value },
 				'update:until': (value) => { this.until = value },
 				'update:days': (value) => { this.days = value },
+				'update:pauseReason': (value) => { this.pauseReason = value },
 				applyTemplate: (chosen) => this.applyTemplate(chosen),
 			}
 		},
@@ -337,8 +347,15 @@ export default {
 			if (this.busy || this.chosen === null) {
 				return false
 			}
-			if (this.inputs.reason && this.reason.trim().length === 0) {
-				return false
+			if (this.inputs.reason) {
+				// A picker of the case type's pause reasons needs a pick; the
+				// free text is asked for without one, and after Other.
+				if (offersPauseReasons(this.chosen, this.pauseReasons) && this.pauseReason === '') {
+					return false
+				}
+				if (asksReasonText(this.chosen, this.pauseReasons, this.pauseReason) && this.reason.trim().length === 0) {
+					return false
+				}
 			}
 			// A closing move with results to pick from waits for one: the
 			// engine refuses the close without it.
@@ -549,6 +566,10 @@ export default {
 				state.status === 'fulfilled'
 					? String(state.value?.data?.caseType ?? '')
 					: ''
+			this.pauseReasons =
+				state.status === 'fulfilled' && Array.isArray(state.value?.data?.pauseReasons)
+					? state.value.data.pauseReasons
+					: []
 			this.loading = false
 		},
 
@@ -654,8 +675,9 @@ export default {
 			}
 			this.chosen = entry
 			this.error = ''
-			// A result picked for one act is not an answer for another.
+			// A result or a pause reason picked for one act is not an answer for another.
 			this.resultTypeId = ''
+			this.pauseReason = ''
 		},
 
 		/**
@@ -731,6 +753,7 @@ export default {
 							resultTypeId: this.resultTypeId,
 							until: this.until,
 							days: Number(this.days) || 0,
+							pauseReason: pauseReasonToSend(this.pauseReason),
 						},
 					)
 					this.sayWhetherTheRequesterWasTold(data)
