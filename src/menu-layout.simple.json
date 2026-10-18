@@ -3473,9 +3473,7 @@
 									"label": "Overview",
 									"widgetIds": [
 										"case-type-statuses",
-										"case-type-rights",
-										"case-type-privacy",
-										"case-type-translations"
+										"case-type-rights"
 									],
 									"layout": [
 										{
@@ -3562,6 +3560,10 @@
 										"case-type-portal",
 										"case-type-party-kinds"
 									]
+								},
+								{
+									"widgetId": "case-type-history",
+									"label": "Record history"
 								}
 							]
 						}
@@ -3735,6 +3737,12 @@
 							],
 							"emptyText": "No rights declared for this case type yet"
 						}
+					},
+					{
+						"id": "case-type-history",
+						"type": "audit-trail",
+						"title": "Record history",
+						"icon": "History"
 					}
 				]
 			},
