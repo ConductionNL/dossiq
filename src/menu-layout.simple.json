@@ -3298,7 +3298,7 @@
 						"label": "Case",
 						"link": true,
 						"cellClass": "cn-cell--strong",
-						"secondary": "{identifier} · {initiatorDisplayName}"
+						"secondary": "{identifier} · {initiatorDisplayName} · {priority}"
 					},
 					{
 						"key": "caseType",
