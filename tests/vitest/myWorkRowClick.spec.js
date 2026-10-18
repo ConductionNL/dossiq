@@ -40,6 +40,9 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 			rowClickToView: { type: Boolean, default: false },
 			breadcrumb: { type: Object, default: null },
 			headerMeta: { type: String, default: '' },
+			showSortSelect: { type: Boolean, default: false },
+			sortSelectOptions: { type: Array, default: () => [] },
+			sortSelectValue: { type: String, default: '' },
 		},
 		emits: ['row-click', 'view'],
 		setup(props) {
@@ -105,6 +108,17 @@ describe('My Work row click', () => {
 
 		expect(indexPageProps.current.breadcrumb).toEqual({ label: 'My work', route: 'MyWorkHome' })
 		expect(indexPageProps.current.headerMeta).toBe('{total} cases in your name · most urgent first')
+
+		wrapper.unmount()
+	})
+
+	it('offers urgency and newest in the actions bar\'s sort select, urgency first (DqAanMijToegewezen)', async () => {
+		const { wrapper } = await mountMyWork()
+		const props = indexPageProps.current
+
+		expect(props.showSortSelect).toBe(true)
+		expect(props.sortSelectOptions.map((option) => option.value)).toEqual(['urgency', 'newest'])
+		expect(props.sortSelectValue).toBe('urgency')
 
 		wrapper.unmount()
 	})
