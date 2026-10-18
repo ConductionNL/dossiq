@@ -3235,6 +3235,7 @@
 						}
 					}
 				],
+				"quickFilterMaxVisible": 5,
 				"quickFiltersFrom": {
 					"field": "caseType",
 					"register": "dossiq",
