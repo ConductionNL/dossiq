@@ -150,6 +150,26 @@ class PackageExampleRowsMatchTheirSchemasTest extends TestCase {
 	}//end problems()
 
 	/**
+	 * The register slugs an example file writes to: by settings key, or by a
+	 * reference to dossiq's own register (app, register and slug).
+	 *
+	 * @param mixed $schema The file's `schema`.
+	 *
+	 * @return array<int, string> The slugs; empty when it names none of this register.
+	 */
+	private static function slugsOf(mixed $schema): array {
+		if (is_string($schema) === true) {
+			return array_map('strval', array_keys(SchemaSlugMap::SLUG_TO_CONFIG_KEY, $schema, true));
+		}
+
+		if (is_array($schema) === true && ($schema['app'] ?? '') === 'dossiq' && is_string($schema['slug'] ?? null) === true) {
+			return [$schema['slug']];
+		}
+
+		return [];
+	}//end slugsOf()
+
+	/**
 	 * Every example row of every shipped package, as written, matches its schema.
 	 *
 	 * @return void
@@ -163,8 +183,8 @@ class PackageExampleRowsMatchTheirSchemasTest extends TestCase {
 
 		$problems = [];
 		foreach ($files as $relative => $file) {
-			$slugs = array_keys(SchemaSlugMap::SLUG_TO_CONFIG_KEY, (string)$file['schema'], true);
-			self::assertNotSame(expected: [], actual: $slugs, message: "{$relative} writes to '{$file['schema']}', which names no schema of this register.");
+			$slugs = self::slugsOf(schema: $file['schema']);
+			self::assertNotSame(expected: [], actual: $slugs, message: "{$relative} names no schema of this register.");
 			foreach ((array)$file['rows'] as $index => $row) {
 				$schema = (array)($schemas[$slugs[0]] ?? []);
 				$problems = array_merge($problems, self::problems(row: (array)$row, schema: $schema, where: "{$relative} row {$index}"));
