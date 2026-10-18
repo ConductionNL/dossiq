@@ -5141,7 +5141,6 @@ OC.L10N.register(
         "Not relevant": "Not relevant",
         "Not scanned": "Not scanned",
         "Not set": "Not set",
-        "Not set up": "Not set up",
         "Not shown": "Not shown",
         "Not shown to the applicant": "Not shown to the applicant",
         "Not shown to you here: {fields}": "Not shown to you here: {fields}",

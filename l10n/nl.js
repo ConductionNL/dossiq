@@ -5141,7 +5141,6 @@ OC.L10N.register(
         "Not relevant": "Niet relevant",
         "Not scanned": "Niet gescand",
         "Not set": "Niet ingesteld",
-        "Not set up": "Niet ingesteld",
         "Not shown": "Niet getoond",
         "Not shown to the applicant": "Niet zichtbaar voor de aanvrager",
         "Not shown to you here: {fields}": "Hier niet aan u getoond: {fields}",

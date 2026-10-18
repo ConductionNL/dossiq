@@ -612,7 +612,10 @@ export default {
 			// description arrive in English from integriq's registry, which
 			// stores dossiq's declaration as written.
 			cnFormatters: {
-				translated: (value) => (typeof value === 'string' && value !== '' ? this.t('dossiq', value) : value),
+				translated: (value) =>
+					typeof value === 'string' && value !== ''
+						? this.t('dossiq', value)
+						: value,
 			},
 		}
 	},
@@ -752,15 +755,24 @@ export default {
 					label: this.t('dossiq', 'Connection'),
 					cellClass: 'cn-cell--strong',
 					formatter: 'translated',
+					secondary: (row) =>
+						row.description ? this.t('dossiq', row.description) : '',
 				},
 				{
 					key: 'status',
 					label: this.t('dossiq', 'Status'),
 					widget: 'badge',
-					enum: ['configured', 'unconfigured', 'unavailable', 'simulated', 'error'],
+					enum: [
+						'configured',
+						'unconfigured',
+						'unavailable',
+						'simulated',
+						'error',
+					],
+
 					enumLabels: {
-						configured: 'Set up',
-						unconfigured: 'Not set up',
+						configured: 'On',
+						unconfigured: 'Off',
 						unavailable: 'Not available',
 						simulated: 'Simulated',
 						error: 'Error',
