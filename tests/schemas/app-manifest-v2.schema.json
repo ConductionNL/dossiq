@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.126.0",
+	"version": "2.125.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -115,11 +115,10 @@
 								}
 							},
 							"optionsSource": { "type": "string", "description": "choice: where to read the option list from at runtime, instead of declaring it here. Names a key in the app's own GET /api/setup/status document (dots walk into nested objects, e.g. `profiles`). Entries accept `id` for `value` and `name` for `label`, and a numeric `objectCount` becomes the stat a card shows. Use it when the SERVER owns what is on offer, so the manifest cannot drift from it." },
-							"display": { "type": "string", "enum": ["select", "cards", "rows"], "default": "select", "description": "choice: how the options are rendered. `select` is a dropdown; `cards` is a grid of CnChoiceCards, which shows each option's description and stats; `rows` is CnChoiceCards' rows layout, one radio row per option with its description below the label. Pick cards or rows when the choice needs explaining." },
+							"display": { "type": "string", "enum": ["select", "cards"], "default": "select", "description": "choice: how the options are rendered. `select` is a dropdown; `cards` is a grid of CnChoiceCards, which shows each option's description and stats. Pick cards when the choice needs explaining." },
 							"dependsOn": { "type": "string", "description": "choice: the configKey of a previous choice step this one cascades from. Disabled until the parent is set; its option list is taken from optionsByParent[parentValue] (e.g. organisation-type depends on country)." },
 							"optionsByParent": { "type": "object", "description": "choice: map of parent-choice value → options[] for a dependent (dependsOn) choice. Same option item shape as `options`.", "additionalProperties": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["value", "label"], "properties": { "value": {}, "label": { "type": "string" } } } } },
 							"suggestFrom": { "type": "string", "description": "choice: the configKey of an earlier choice this step pre-fills a suggestion from. When that value is set and the user has not yet picked here, the option matching suggestMap[parentValue] is auto-selected (still user-overridable)." },
-							"default": { "description": "choice: the option value chosen when the step opens (an array of values with `multiple`). Not applied to a step the server already completed." },
 							"suggestMap": { "type": "object", "description": "choice: map of suggestFrom value → suggested option value. Used to auto-suggest a default (e.g. RGS template suggested from organisation type).", "additionalProperties": { "type": "string" } },
 							"multiple": { "type": "boolean", "default": false, "description": "choice: allow multi-select." },
 							"loadAction": { "type": "string", "minLength": 1, "description": "choice with display cards: an actionId each option card loads itself with. Every card except the one whose value is `none` gets its own Load button, which POSTs { dataset: <value> } to /api/setup/action/{loadAction}, spins while it runs and shows the result on that card. A successful load also selects the card. With loadAction the separate run-action step that loaded the picked dataset is no longer needed; manifests that keep it still work." },
@@ -542,18 +541,6 @@
 		}
 	},
 	"$defs": {
-		"fieldOverride": {
-			"type": "object",
-			"additionalProperties": true,
-			"description": "One field's overrides over its schema-derived descriptor (label, order, hidden, readOnly, widget, enumLabels and more stay free-form). A `widget` that is not one of the form's own widget names mounts the registered component of that name (the v2 registry, then customComponents). 2.126.0 documents the search look of a single select.",
-			"properties": {
-				"widget": { "type": "string", "minLength": 1 },
-				"look": { "type": "string", "enum": ["search"], "description": "`search` draws a single select as CnSearchSelect: a magnifier instead of the chevron, and rows with initials or an icon, the name, a secondary line and a check on the chosen one (DqOverdragen \"Nieuw team\")." },
-				"optionSecondary": { "type": "string", "description": "look 'search': the row's secondary line, a template filled from each option (\"{members} leden · {focus}\")." },
-				"optionAvatar": { "type": "boolean", "description": "look 'search': draw each option's initials." },
-				"optionIcon": { "type": "string", "minLength": 1, "description": "look 'search': one icon for every row." }
-			}
-		},
 		"breadcrumbCrumb": {
 			"type": "object",
 			"additionalProperties": false,
@@ -2176,39 +2163,6 @@
 					}
 				},
 				{
-					"description": "record-list built-in widget (CnRecordListWidget): the action under the list, `props.content.footerAction` (2.126.0). Other content keys stay free-form.",
-					"if": {
-						"properties": { "widgetKey": { "const": "record-list" } },
-						"required": ["widgetKey"]
-					},
-					"then": {
-						"properties": {
-							"props": {
-								"type": "object",
-								"properties": {
-									"content": {
-										"type": "object",
-										"properties": {
-											"footerAction": {
-												"type": "object",
-												"additionalProperties": true,
-												"required": ["label"],
-												"description": "One action under the list, also under the empty text (DqBezwaar \"Beroep registreren\"). Its other keys are an action's (`type`, `route`, `form`, ...). While `disabledWhen` holds it is disabled and says `disabledReason` (\"Kan zodra de beslissing is verzonden\"). Label and reason go through the host's translate.",
-												"properties": {
-													"label": { "type": "string", "minLength": 1 },
-													"icon": { "type": "string", "minLength": 1 },
-													"disabledWhen": { "$ref": "#/$defs/visibleWhen" },
-													"disabledReason": { "type": "string" }
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				},
-				{
 					"description": "audit-trail built-in widget (CnAuditTrailWidget, Wave 1): the object change-log card. All props are optional — register/schema/objectId normally arrive via the detail-page object-context merge; explicit props win.",
 					"if": {
 						"properties": { "widgetKey": { "const": "audit-trail" } },
@@ -2910,7 +2864,7 @@
 				},
 				"fieldOverrides": {
 					"type": "object",
-					"additionalProperties": { "$ref": "#/$defs/fieldOverride" },
+					"additionalProperties": true,
 					"description": "open-form: per-field overrides passed to fieldsFromSchema, keyed by field. Recognised keys include label, order, hidden, readOnly and widget."
 				},
 				"advanced": {
@@ -3247,9 +3201,9 @@
 				},
 				"op": {
 					"type": "string",
-					"enum": ["eq", "neq", "gt", "gte", "lt", "lte", "empty", "notEmpty", "in", "anyOf"],
+					"enum": ["eq", "neq", "gt", "gte", "lt", "lte", "empty", "notEmpty", "in"],
 					"default": "eq",
-					"description": "Comparison operator (default eq). eq/neq compare loosely-normalised primitives; ordering operators coerce both sides to Number. `in` holds when the value is one of the listed `value` array (2.87.0). `anyOf` holds when the value, or any entry of a list value, is one of the listed `value` array: a record whose `dataCategories` holds \"health\" among others matches `anyOf [\"health\", \"ethnicity\"]` (2.126.0). `empty` / `notEmpty` take no `value` and treat undefined, null, '' and an empty array alike — the one question eq cannot ask, because an unset field arrives in a shape that depends on the store and String(null) is the word 'null' rather than blank."
+					"description": "Comparison operator (default eq). eq/neq compare loosely-normalised primitives; ordering operators coerce both sides to Number. `in` holds when the value is one of the listed `value` array (2.87.0). `empty` / `notEmpty` take no `value` and treat undefined, null, '' and an empty array alike — the one question eq cannot ask, because an unset field arrives in a shape that depends on the store and String(null) is the word 'null' rather than blank."
 				},
 				"value": {
 					"description": "The right-hand side of the comparison, resolved through the shared @-token grammar so `@me` names the signed-in reader rather than a literal only the server knows. Omitted for `empty` / `notEmpty`."
@@ -4052,7 +4006,6 @@
 							"additionalProperties": true,
 							"description": "type='index': the opt-in folder navigation pane (CnFolderSidebar) rendered left of the list. Selecting a folder filters the list by `filterField` (or `field`); \"All\" clears it. Only the per-scope list-layout keys are typed here; the pane's own keys (source, register, schema, idField, nameField, folders, allLabel, title, allowCreate, ...) stay free-form. Maps to CnIndexPage `folderSidebar`.",
 							"properties": {
-								"pane": { "type": "boolean", "default": true, "description": "false keeps the folder scope (a deep link such as `?caseType=<uuid>` still applies the scope's look and filter) without drawing the pane (dossiq's simple profile, 2.126.0)." },
 								"folders": {
 									"type": "array",
 									"description": "Explicit folder list for source:'custom', and the place a folder declares its own list layout. Every other folder key stays free-form.",
@@ -4215,6 +4168,11 @@
 								]
 							}
 						},
+						"sideColumnFrom": {
+							"type": "string",
+							"minLength": 1,
+							"description": "type='detail': a field path, read like a `visibleWhen` field, whose value picks the side column and its order for this record, e.g. `@context.caseType.sideCards` (a case type that names the cards its cases show). When the value is a non-empty list of widget ids, the side column is those of `sideColumn` in that order and the rest are left out; each still follows its own `visibleWhen`. Any other value, or no value, keeps `sideColumn` as declared. Maps to CnDetailPage `sideColumnFrom`."
+						},
 						"headerActions": {
 							"type": "array",
 							"description": "Page-level header actions rendered inside CnActionsBar's overflow dropdown (between the built-in Refresh action and the `#action-items` slot). On a `type:'detail'` page the same entries render in the header's Actions menu, above the Request-a-feature / Report-a-bug / Documentation trio. Same shape as the row-level `actions[]` ($ref action), but handlers receive NO row context — they are page-level. Reserved ids (`refresh`, `import`, `export`, `copy`, `delete`) are dropped at render time to avoid shadowing built-ins. See manifest-icons-and-page-actions for the dispatch semantics.",
@@ -4348,7 +4306,7 @@
 						},
 						"fieldOverrides": {
 							"type": "object",
-							"additionalProperties": { "$ref": "#/$defs/fieldOverride" },
+							"additionalProperties": true,
 							"description": "Per-field overrides merged over the schema-derived field descriptors in the page's built-in Add/Edit form dialog (e.g. `{ \"description\": { \"widget\": \"textarea\" } }`). Which widget a field renders as belongs to the surface, not to the schema. Maps to CnIndexPage / CnDetailPage `fieldOverrides`."
 						},
 						"createDefaults": {
