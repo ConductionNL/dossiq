@@ -199,12 +199,14 @@ export function resolveNavPlaceholders(nav, theming) {
 		}
 		// `@theming.emblem|@theming.logo`: the first placeholder the instance
 		// answers wins, so a set with an emblem shows it and one without falls
-		// back to its wordmark.
+		// back to its wordmark. A part that is not a placeholder is a literal
+		// last resort (`@theming.staffAppName|Dossiq`).
 		const answer = value
 			.split('|')
 			.map((part) => part.trim())
-			.filter((part) => part.startsWith(THEMING_PLACEHOLDER))
-			.map(resolveOne)
+			.map((part) =>
+				part.startsWith(THEMING_PLACEHOLDER) ? resolveOne(part) : part,
+			)
 			.find((part) => part !== '')
 		if (answer === undefined) {
 			logger.debug(

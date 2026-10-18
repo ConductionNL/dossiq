@@ -291,7 +291,7 @@ describe('the English demo seed', () => {
 		// page tell the truth only until the next save.
 		for (const demo of demoCases.filter((entry) => entry.statutoryTerm)) {
 			expect(demo.statutoryTerm, demo['@self'].slug).toBe(
-				caseTypes[demo.caseType].processingDeadline,
+				caseTypes[String(demo.caseType).replace(/^@ref:caseType:/, '')].processingDeadline,
 			)
 		}
 	})

@@ -138,6 +138,7 @@ $extra = [
         // type rather than on a definition package, so they sit under
         // /api/case-types and on their own controller.
     ['name' => 'caseType#blueprint',       'url' => '/api/case-types/{id}/blueprint',        'verb' => 'GET'],
+    ['name' => 'caseTypePhases#index',     'url' => '/api/case-types/{id}/phases',           'verb' => 'GET'],
     ['name' => 'caseType#validatePublish', 'url' => '/api/case-types/{id}/publish/validate', 'verb' => 'GET'],
     ['name' => 'caseType#publish',         'url' => '/api/case-types/{id}/publish',          'verb' => 'POST'],
         // The case surfaces that read and act through pipelinq

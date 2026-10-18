@@ -195,6 +195,31 @@ class SettingsServiceTest extends TestCase {
 	}//end testGetFileServiceReturnsNullWhenTheContainerCannotResolveIt()
 
 	/**
+	 * The Kadaster and WOZ API keys are written and never read back: an admin
+	 * read and a non-admin read both say only whether one is stored.
+	 *
+	 * @return void
+	 */
+	public function testTheKadasterAndWozApiKeysAreNeverReadBack(): void {
+		$this->appConfig
+			->method('getValueString')
+			->willReturnCallback(
+				static fn (string $app, string $key, string $default): string => match ($key) {
+					'integration.brk.apiKey' => 'secret-brk-key',
+					default => '',
+				}
+			);
+
+		foreach ([$this->service->getSettings(), $this->service->getPublicSettings()] as $read) {
+			$this->assertArrayNotHasKey(key: 'integration.brk.apiKey', array: $read);
+			$this->assertArrayNotHasKey(key: 'integration.woz.apiKey', array: $read);
+			$this->assertTrue(condition: $read['integration.brk.apiKeySet']);
+			$this->assertFalse(condition: $read['integration.woz.apiKeySet']);
+			$this->assertNotContains(needle: 'secret-brk-key', haystack: $read);
+		}
+	}//end testTheKadasterAndWozApiKeysAreNeverReadBack()
+
+	/**
 	 * Test that getSettings returns all config keys with their values.
 	 *
 	 * @return void
