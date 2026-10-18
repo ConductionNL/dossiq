@@ -641,6 +641,7 @@ describe('the header and the side column', () => {
 			'side-objection-appeal',
 			'side-grant-application',
 			'side-social-consent',
+			'side-social-people',
 			'side-tender-bids',
 		])
 		for (const card of gated) {

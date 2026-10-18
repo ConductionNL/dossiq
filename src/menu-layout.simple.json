@@ -1054,6 +1054,41 @@
 						}
 					},
 					{
+						"id": "side-social-people",
+						"type": "record-list",
+						"title": "Who",
+						"visibleWhen": {
+							"any": [
+								{
+									"field": "gezinsplanId",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@context.caseType.category",
+									"op": "in",
+									"value": [
+										"Sociaal domein",
+										"Jeugd",
+										"Jeugdhulp"
+									]
+								}
+							]
+						},
+						"_note": "DqSociaalDomein Wie: the people on this case and what they do on it (role.name and role.description), so a need-to-know case shows who may look.",
+						"content": {
+							"register": "dossiq",
+							"schema": "role",
+							"filter": {
+								"case": "@objectId"
+							},
+							"limit": 5,
+							"presentation": "rows",
+							"title": "{name}",
+							"meta": "{description}",
+							"emptyText": "Nobody is involved yet"
+						}
+					},
+					{
 						"id": "side-tender-bids",
 						"type": "record-list",
 						"title": "Bids",
