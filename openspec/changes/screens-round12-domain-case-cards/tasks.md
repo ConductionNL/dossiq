@@ -7,3 +7,5 @@
 - [x] 1.5 The objection's grounds card opens the Overview stack, gated by its own `visibleWhen` (nextcloud-vue 2.94.0, #1725)
 - [ ] 1.6 Subsidy decisions per year (Beschikkingen): needs a list filtered through the linked application (`subsidieaanvraag.case`), which a filter cannot express yet (filter syntax from L30)
 - [ ] 1.7 Mandate and need-to-know cards: wait on data that backs them
+- [x] 1.8 The objection's committee advice is a card under the grounds in the Overview stack (DqBezwaar); the hearing and advice side cards go, their tabs keep every record
+- [x] 1.9 The objection example case ships with the bezwaar-beroep package (`examples/`), not with the Zuiddrecht set, so the set never depends on an on-request package
