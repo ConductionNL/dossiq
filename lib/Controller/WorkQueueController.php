@@ -36,6 +36,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -53,6 +54,7 @@ class WorkQueueController extends Controller {
 	 * @param IGroupManager $groupManager The group manager (coordinator = NC admin guard).
 	 * @param WorkQueueService $workQueueService The work queue scoring/aggregation service.
 	 * @param LoggerInterface $logger Logger.
+	 * @param IUserManager $userManager Resolves a handler's display name.
 	 *
 	 * @return void
 	 */
@@ -62,6 +64,7 @@ class WorkQueueController extends Controller {
 		private IGroupManager $groupManager,
 		private WorkQueueService $workQueueService,
 		private LoggerInterface $logger,
+		private IUserManager $userManager,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -117,13 +120,30 @@ class WorkQueueController extends Controller {
 		}
 
 		try {
-			$handlers = $this->workQueueService->computeWorkload();
+			$handlers = $this->withDisplayNames(handlers: $this->workQueueService->computeWorkload());
 			return new JSONResponse(['handlers' => $handlers]);
 		} catch (\Throwable $e) {
 			$this->logger->error('WorkQueue: workload failed', ['error' => $e->getMessage()]);
 			return new JSONResponse(['error' => 'Failed to compute workload'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end workload()
+
+	/**
+	 * Add each handler's display name, so a list can show a person rather than a user id.
+	 *
+	 * A handler that is no longer a user keeps the id as its name.
+	 *
+	 * @param array<int, array{handler: string, openCaseCount: int}> $handlers The per-handler counts.
+	 *
+	 * @return array<int, array{handler: string, openCaseCount: int, displayName: string}> The counts with names.
+	 */
+	private function withDisplayNames(array $handlers): array {
+		foreach ($handlers as $index => $row) {
+			$handlers[$index]['displayName'] = ($this->userManager->getDisplayName($row['handler']) ?? $row['handler']);
+		}
+
+		return $handlers;
+	}//end withDisplayNames()
 
 	/**
 	 * Whether a user holds the dossiq coordinator role (NC admin).

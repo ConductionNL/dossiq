@@ -89,6 +89,7 @@
         "{percent}%",
         "Relevant",
         "{title}",
+        "{displayName}",
         "{time}, +{extension}",
         "Offline",
         "Online",
