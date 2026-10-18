@@ -7188,6 +7188,7 @@ OC.L10N.register(
         "Shares": "Shares",
         "Sharing": "Sharing",
         "Sharing...": "Sharing...",
+        "Shipped": "Shipped",
         "Shipped origin": "Shipped origin",
         "Shipped set": "Shipped set",
         "Shipped, changed here": "Shipped, changed here",

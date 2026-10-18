@@ -7188,6 +7188,7 @@ OC.L10N.register(
         "Shares": "Gedeeld",
         "Sharing": "Delen",
         "Sharing...": "Bezig met delen...",
+        "Shipped": "Meegeleverd",
         "Shipped origin": "Herkomst uit levering",
         "Shipped set": "Meegeleverde set",
         "Shipped, changed here": "Meegeleverd, hier gewijzigd",
