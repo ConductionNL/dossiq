@@ -126,7 +126,7 @@
 	],
 	"nav": {
 		"brand": {
-			"name": "Dossiq",
+			"name": "@theming.staffAppName|Dossiq",
 			"caption": "@theming.name",
 			"logo": "@theming.emblem|@theming.logo"
 		},
@@ -957,68 +957,6 @@
 						"_note": "DqZaak Werkinstructie: the case type's work instruction beside the case; the Knowledge tab keeps it with the linked pages."
 					},
 					{
-						"id": "side-objection-hearing",
-						"type": "record-list",
-						"title": "Hearing",
-						"visibleWhen": {
-							"field": "@context.caseType.category",
-							"op": "in",
-							"value": [
-								"Bezwaar en beroep"
-							]
-						},
-						"_note": "DqBezwaar: the hearing of this objection, read from hearingSession. Shown only for a case type in the objection category.",
-						"content": {
-							"register": "dossiq",
-							"schema": "hearingSession",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "scheduledDate",
-								"dir": "desc"
-							},
-							"limit": 1,
-							"presentation": "rows",
-							"title": "{scheduledDate|date}",
-							"meta": "{location}",
-							"pill": {
-								"field": "status"
-							},
-							"emptyText": "No hearing planned"
-						}
-					},
-					{
-						"id": "side-objection-advice",
-						"type": "record-list",
-						"title": "Advice of the committee",
-						"visibleWhen": {
-							"field": "@context.caseType.category",
-							"op": "in",
-							"value": [
-								"Bezwaar en beroep"
-							]
-						},
-						"_note": "DqBezwaar: the advice of the objections committee, read from advisoryReport.",
-						"content": {
-							"register": "dossiq",
-							"schema": "advisoryReport",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "adviceDate",
-								"dir": "desc"
-							},
-							"limit": 1,
-							"presentation": "rows",
-							"title": "{adviceType}",
-							"meta": "{adviceDate|date} · {committeeChair}",
-							"text": "{recommendation}",
-							"emptyText": "No advice received yet"
-						}
-					},
-					{
 						"id": "side-objection-appeal",
 						"type": "record-list",
 						"title": "Appeal",
@@ -1173,13 +1111,16 @@
 						"group": "Case"
 					},
 					"case-release": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Let the case go"
 					},
 					"case-hand-over": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Give to another team"
 					},
 					"add-party": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Add a party"
 					},
 					"message-applicant": {
 						"group": "Case"
@@ -1191,7 +1132,8 @@
 						"group": "Case"
 					},
 					"plan-follow-up": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Plan what follows"
 					},
 					"case-remind": {
 						"group": "Case"
@@ -1244,16 +1186,19 @@
 						"group": "Case"
 					},
 					"case-version-move": {
-						"group": "Case"
+						"group": "Case",
+						"label": "To another version"
 					},
 					"cross-domain-lookup": {
 						"group": "Case"
 					},
 					"case-inspect-raw": {
-						"adminOnly": true
+						"adminOnly": true,
+						"label": "View raw data"
 					},
 					"case-inspect-runs": {
-						"adminOnly": true
+						"adminOnly": true,
+						"label": "View flow runs"
 					},
 					"send-digital-post": {
 						"label": "Message"
@@ -1329,6 +1274,7 @@
 								{
 									"widgetIds": [
 										"case-objection-grounds",
+										"case-objection-advice-card",
 										"case-request",
 										"case-details",
 										"case-priority-card",
@@ -2101,7 +2047,8 @@
 							"viewAllQuery": {
 								"case": "@objectId"
 							},
-							"emptyText": "No tasks for this case yet"
+							"emptyText": "No tasks for this case yet",
+							"mode": "table"
 						}
 					},
 					{
@@ -2488,6 +2435,45 @@
 								}
 							],
 							"emptyText": "No objection recorded on this case"
+						}
+					},
+					{
+						"id": "case-objection-advice-card",
+						"type": "facts",
+						"title": "Advice of the objections committee",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Bezwaar en beroep"
+							]
+						},
+						"_note": "DqBezwaar Advies van de bezwaarschriftencommissie: the latest advisoryReport of this case, under the grounds in the Overview stack. The Advice tab lists every report.",
+						"content": {
+							"source": {
+								"url": "/apps/openregister/api/objects/dossiq/advisoryReport?case=@objectId&_order[adviceDate]=desc&_limit=1"
+							},
+							"fields": [
+								{
+									"label": "Chair",
+									"path": "results.0.committeeChair",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "role",
+										"labelField": "name"
+									}
+								},
+								{
+									"label": "Advice",
+									"path": "results.0.recommendation"
+								},
+								{
+									"label": "Issued",
+									"path": "results.0.adviceDate",
+									"format": "date-long"
+								}
+							],
+							"emptyText": "No advice received yet"
 						}
 					},
 					{
@@ -3128,6 +3114,7 @@
 					},
 					{
 						"action": "actions-menu",
+						"items": ["export", "import", "refresh", "documentation"],
 						"label": "Actions"
 					},
 					{
@@ -3159,6 +3146,7 @@
 					},
 					{
 						"action": "actions-menu",
+						"items": ["export", "import", "refresh", "documentation"],
 						"label": "Actions"
 					},
 					{
@@ -3465,9 +3453,7 @@
 									"label": "Overview",
 									"widgetIds": [
 										"case-type-statuses",
-										"case-type-rights",
-										"case-type-privacy",
-										"case-type-translations"
+										"case-type-rights"
 									],
 									"layout": [
 										{
@@ -3492,6 +3478,7 @@
 									"label": "Fields",
 									"widgetIds": [
 										"case-type-fields",
+										"case-type-field-rules",
 										"case-type-core",
 										"case-type-list-layout"
 									],
@@ -3554,6 +3541,10 @@
 										"case-type-portal",
 										"case-type-party-kinds"
 									]
+								},
+								{
+									"widgetId": "case-type-history",
+									"label": "Record history"
 								}
 							]
 						}
@@ -3727,6 +3718,48 @@
 							],
 							"emptyText": "No rights declared for this case type yet"
 						}
+					},
+					{
+						"id": "case-type-field-rules",
+						"type": "field-list",
+						"title": "Who sees and fills what",
+						"description": "Hidden or read only, per group and status",
+						"_note": "DqZaaktypeVelden: the case type's field rights (fieldRoleRules), read only here; OpenRegister enforces them on every read path.",
+						"content": {
+							"field": "fieldRoleRules",
+							"readOnly": true,
+							"variant": "table",
+							"columns": [
+								{
+									"header": "Field",
+									"path": "field",
+									"strong": true
+								},
+								{
+									"header": "Rule",
+									"path": "rule"
+								},
+								{
+									"header": "Groups",
+									"path": "groups"
+								},
+								{
+									"header": "In status",
+									"path": "heldBy"
+								},
+								{
+									"header": "Reason",
+									"path": "reason"
+								}
+							],
+							"emptyText": "No field rights declared for this case type yet"
+						}
+					},
+					{
+						"id": "case-type-history",
+						"type": "audit-trail",
+						"title": "Record history",
+						"icon": "History"
 					}
 				]
 			},

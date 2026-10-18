@@ -1,0 +1,14 @@
+{
+  "schema": "decision_schema",
+  "rows": [
+    {
+      "id": "dbaadb0c-2acb-5142-8bd4-4644be691384",
+      "title": "Last onder dwangsom Molenweg 3",
+      "description": "Last onder dwangsom: de schuur zonder vergunning binnen zes weken verwijderen, op straffe van een dwangsom.",
+      "responsibleOrganisation": "Gemeente",
+      "governingBody": "Het college van burgemeester en wethouders",
+      "decisionDate": "{{date:-60}}",
+      "effectiveDate": "{{date:-58}}"
+    }
+  ]
+}

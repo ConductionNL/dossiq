@@ -1,6 +1,19 @@
 <template>
-	<div class="email-settings">
-		<NcNoteCard type="info">
+	<div class="email-settings" :class="{ 'email-settings--compact': !showHelp }">
+		<div class="email-settings__help-toggle">
+			<NcButton
+				variant="tertiary"
+				:aria-expanded="showHelp ? 'true' : 'false'"
+				data-testid="email-help-toggle"
+				@click="showHelp = !showHelp">
+				{{
+					showHelp
+						? t('dossiq', 'Hide the explanations')
+						: t('dossiq', 'Show the explanations')
+				}}
+			</NcButton>
+		</div>
+		<NcNoteCard type="info" class="email-settings__explanation">
 			{{
 				t(
 					'dossiq',
@@ -333,6 +346,9 @@ export default {
 
 	data() {
 		return {
+			// The long help under each field is folded away, as the board draws
+			// the section; one button shows every explanation again.
+			showHelp: false,
 			loading: true,
 			saving: false,
 			writable: true,
@@ -700,17 +716,34 @@ export default {
 </script>
 
 <style scoped>
+/* Two columns of fields, as board DqBeheerinstellingen draws the section;
+   notes, switches, long text and the actions take the whole width. */
 .email-settings {
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-	max-width: 600px;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px 16px;
+}
+
+.email-settings > :not(.setting-row),
+.setting-row:has(textarea),
+.setting-row:has(.checkbox-radio-switch) {
+	grid-column: 1 / -1;
 }
 
 .setting-row {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
+}
+
+.email-settings--compact .setting-help,
+.email-settings--compact .email-settings__explanation {
+	display: none;
+}
+
+.email-settings__help-toggle {
+	display: flex;
+	justify-content: flex-end;
 }
 
 .setting-help {
@@ -721,6 +754,7 @@ export default {
 
 .email-settings__actions {
 	display: flex;
+	justify-content: flex-end;
 	gap: 8px;
 }
 </style>

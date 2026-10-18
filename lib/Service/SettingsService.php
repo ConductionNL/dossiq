@@ -72,6 +72,19 @@ class SettingsService {
 	private const CONFIG_KEYS = ConfigKeys::ALL;
 
 	/**
+	 * Keys that are written and never read back, to anyone.
+	 *
+	 * A settings read answers `<key>Set` (whether one is stored) in their
+	 * place, so a form can say "ingesteld" without the key leaving the server.
+	 *
+	 * @var string[]
+	 */
+	private const WRITE_ONLY_KEYS = [
+		'integration.brk.apiKey',
+		'integration.woz.apiKey',
+	];
+
+	/**
 	 * Default values for KCC-werkplek bridge behaviour settings.
 	 *
 	 * Used by getKccConfigValue() so that an unset app-config key resolves to
@@ -323,7 +336,8 @@ class SettingsService {
 	/**
 	 * Get all current settings as an associative array.
 	 *
-	 * Returns full (unredacted) settings including secrets. Callers MUST
+	 * Returns full (unredacted) settings including secrets, except the
+	 * write-only keys, which read as `<key>Set`. Callers MUST
 	 * ensure only admin users receive this response.
 	 *
 	 * @return array
@@ -333,6 +347,11 @@ class SettingsService {
 	public function getSettings(): array {
 		$config = [];
 		foreach (self::CONFIG_KEYS as $key) {
+			if (in_array(needle: $key, haystack: self::WRITE_ONLY_KEYS, strict: true) === true) {
+				$config[$key.'Set'] = $this->appConfig->getValueString(Application::APP_ID, $key, '') !== '';
+				continue;
+			}
+
 			$config[$key] = $this->appConfig->getValueString(Application::APP_ID, $key, '');
 		}
 
