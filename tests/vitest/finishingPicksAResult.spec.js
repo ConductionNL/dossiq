@@ -33,7 +33,7 @@ const DIALOG_RENDERS_ITS_SLOT = {
 	CnChoiceCards: {
 		props: ['options', 'modelValue'],
 		template:
-			'<div><div v-for="option in options" :key="option.value"><slot name="option-actions" :option="option" :selected="option.value === modelValue" /></div></div>',
+			'<div><div v-for="option in options" :key="option.value"><slot v-if="option.value === modelValue" name="option-details" :option="option" /></div></div>',
 	},
 	NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 	CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
@@ -104,7 +104,7 @@ describe('Afronden in the lifecycle dialog', () => {
 		const wrapper = await formFor('finish', RESULTS)
 		const archive = wrapper.vm.choiceOptions.find((option) => option.value.endsWith(':archive'))
 
-		expect(archive).toMatchObject({ disabled: true, disabledReason: 'Not ended.', description: 'Not ended.' })
+		expect(archive).toMatchObject({ disabled: true, disabledReason: 'Not ended.', description: '', icon: 'ArchiveOutline' })
 		expect(wrapper.vm.chosenKey.endsWith(':finish')).toBe(true)
 		expect(wrapper.find('[data-testid="case-acts-confirm"]').text()).toBe('Finish')
 

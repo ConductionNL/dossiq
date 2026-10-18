@@ -199,6 +199,8 @@ export function refusalMessage(body, translate) {
 			return t('This case could not be found.')
 		case 'reason_required':
 			return t('Give a reason first.')
+		case 'pause_reason_not_declared':
+			return t('This case type has no such pause reason. Pick one of its reasons.')
 		// A gesture the server could not save answers this code with an
 		// English `error` beside it. The code is what is translated, so a
 		// Dutch handler does not read "The case could not be changed." in

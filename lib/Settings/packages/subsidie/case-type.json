@@ -12,6 +12,22 @@
     "extensionAllowed": true,
     "extensionPeriod": "P8W",
     "suspensionAllowed": true,
+    "pauseReasons": [
+      {
+        "key": "aanvulling-aanvrager",
+        "name": "Aanvulling gevraagd bij de aanvrager",
+        "category": "applicant",
+        "waitingOn": "applicant",
+        "legalBasis": "Awb 4:5, hersteltermijn"
+      },
+      {
+        "key": "uitstel-aanvrager",
+        "name": "Uitstel met instemming van de aanvrager",
+        "category": "applicant",
+        "waitingOn": "applicant",
+        "legalBasis": "Awb 4:15 lid 1 sub b"
+      }
+    ],
     "internalOrExternal": "extern",
     "publicationRequired": false,
     "isDraft": false,
