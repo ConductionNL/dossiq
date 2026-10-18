@@ -10,7 +10,10 @@
   @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 -->
 <template>
-	<div class="case-act-fields" :data-testid="'case-act-fields-' + act.id">
+	<div
+		class="case-act-fields"
+		:class="{ 'case-act-fields--paired': act.id === 'suspend' }"
+		:data-testid="'case-act-fields-' + act.id">
 	<template v-if="act.id === 'archive' && kase">
 		<div class="case-acts__case" data-testid="case-act-archive-case">
 			<FolderOutline :size="20" class="case-acts__case-icon" />
@@ -50,7 +53,18 @@
 		:label="t('dossiq', 'Result template')"
 		@apply="$emit('applyTemplate', $event)" />
 
-	<div v-if="inputs.reason" class="case-acts__field">
+	<NcSelect
+		v-if="inputs.reason && picksPauseReason"
+		:modelValue="selectedPauseReason"
+		:options="pauseReasonOptions"
+		label="name"
+		:inputLabel="t('dossiq', 'Reason')"
+		:clearable="false"
+		:disabled="busy"
+		data-testid="case-act-pause-reason-picker"
+		@update:modelValue="$emit('update:pauseReason', $event ? String($event.key) : '')" />
+
+	<div v-if="inputs.reason && asksText" class="case-acts__field">
 		<label class="case-acts__label" for="case-act-reason">{{ t('dossiq', 'Reason') }}</label>
 		<NcTextArea
 			id="case-act-reason"
@@ -103,7 +117,16 @@
 			type="number"
 		data-testid="case-act-days-input"
 		:label="t('dossiq', 'Days the applicant is given')"
+		:helperText="legalBasis"
 		@update:modelValue="$emit('update:days', $event)" />
+
+	<div v-if="inputs.days && comesBackOn" class="case-acts__field case-acts__field--wide" data-testid="case-act-comes-back">
+		<span class="case-acts__label">{{ t('dossiq', 'The case comes back on') }}</span>
+		<span data-testid="case-act-comes-back-date">{{ comesBackOn }}</span>
+		<span class="case-acts__muted">
+			{{ t('dossiq', 'You pick the case up earlier if the answer comes in earlier.') }}
+		</span>
+	</div>
 	</div>
 </template>
 
@@ -115,6 +138,13 @@ import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import TemplatePicker from '../TemplatePicker.vue'
+import { formatDate } from '../../utils/caseHelpers.js'
+import {
+	asksReasonText,
+	offersPauseReasons,
+	OTHER_PAUSE_REASON,
+	pickedPauseReason,
+} from '../../utils/pauseReasonChoice.js'
 
 export default {
 	name: 'CaseActFields',
@@ -151,11 +181,86 @@ export default {
 		until: { type: String, default: '' },
 		/** The days the applicant is given. */
 		days: { type: String, default: '' },
+		/** The pause reasons the case type declares: `{ key, name, legalBasis }`. */
+		pauseReasons: { type: Array, default: () => [] },
+		/** The picked pause reason key, OTHER_PAUSE_REASON, or ''. */
+		pauseReason: { type: String, default: '' },
 	},
 
-	emits: ['update:reason', 'update:resultTypeId', 'update:until', 'update:days', 'applyTemplate'],
+	emits: ['update:reason', 'update:resultTypeId', 'update:until', 'update:days', 'update:pauseReason', 'applyTemplate'],
 
 	computed: {
+		/**
+		 * Whether suspend offers the case type's pause reasons.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+		 */
+		picksPauseReason() {
+			return offersPauseReasons(this.act, this.pauseReasons)
+		},
+
+		/**
+		 * The picker's entries: the declared reasons, then Other for free text.
+		 *
+		 * @return {Array<{key: string, name: string}>}
+		 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+		 */
+		pauseReasonOptions() {
+			return [
+				...this.pauseReasons.map((reason) => ({ key: reason.key, name: reason.name || reason.key })),
+				{ key: OTHER_PAUSE_REASON, name: t('dossiq', 'Other') },
+			]
+		},
+
+		/**
+		 * The picker's current entry.
+		 *
+		 * @return {object|null}
+		 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+		 */
+		selectedPauseReason() {
+			return this.pauseReasonOptions.find((option) => option.key === this.pauseReason) ?? null
+		},
+
+		/**
+		 * Whether the free-text reason shows.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+		 */
+		asksText() {
+			return asksReasonText(this.act, this.pauseReasons, this.pauseReason)
+		},
+
+		/**
+		 * The ground the picked reason rests on, as the case type states it; '' without one.
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+		 */
+		legalBasis() {
+			return String(pickedPauseReason(this.pauseReasons, this.pauseReason)?.legalBasis ?? '')
+		},
+
+		/**
+		 * The day a suspended case comes back: today plus the days the
+		 * applicant is given. '' without days.
+		 *
+		 * @return {string} The date, or ''.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		comesBackOn() {
+			const days = Number.parseInt(this.days, 10)
+			if (!Number.isFinite(days) || days < 1) {
+				return ''
+			}
+			const date = new Date()
+			date.setDate(date.getDate() + days)
+
+			return formatDate(date.toISOString())
+		},
+
 		/**
 		 * The chosen result as its option.
 		 *
@@ -178,6 +283,17 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
+}
+
+/* Suspend sets the reason and the days side by side, as board DqVolgendeStap. */
+.case-act-fields--paired {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	align-items: start;
+}
+
+.case-acts__field--wide {
+	grid-column: 1 / -1;
 }
 
 .case-acts__case {

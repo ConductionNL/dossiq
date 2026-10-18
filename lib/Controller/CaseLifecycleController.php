@@ -85,6 +85,7 @@ class CaseLifecycleController extends Controller {
 		'not_suspended' => Http::STATUS_CONFLICT,
 		'case_not_closed' => Http::STATUS_CONFLICT,
 		'case_held' => Http::STATUS_CONFLICT,
+		'pause_reason_not_declared' => Http::STATUS_UNPROCESSABLE_ENTITY,
 		'openregister_unavailable' => Http::STATUS_SERVICE_UNAVAILABLE,
 	];
 
@@ -143,10 +144,16 @@ class CaseLifecycleController extends Controller {
 	public function suspend(string $caseId): JSONResponse {
 		$reason = (string)$this->request->getParam('reason', '');
 		$days = (int)$this->request->getParam('days', 0);
+		$pauseReason = (string)$this->request->getParam('pauseReason', '');
 
 		return $this->guarded(
 			caseId: $caseId,
-			run: fn (): array => $this->lifecycle->suspend(caseId: $caseId, reason: $reason, days: $days),
+			run: fn (): array => $this->lifecycle->suspend(
+				caseId: $caseId,
+				reason: $reason,
+				days: $days,
+				pauseReason: $pauseReason,
+			),
 		);
 	}//end suspend()
 

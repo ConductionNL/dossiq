@@ -35,6 +35,7 @@ import AlertOctagonOutline from 'vue-material-design-icons/AlertOctagonOutline.v
 import AlertOutline from 'vue-material-design-icons/AlertOutline.vue'
 import Archive from 'vue-material-design-icons/Archive.vue'
 import ArchiveOutline from 'vue-material-design-icons/ArchiveOutline.vue'
+import ArrowRight from 'vue-material-design-icons/ArrowRight.vue'
 import ArrowUpBoldCircle from 'vue-material-design-icons/ArrowUpBoldCircle.vue'
 import At from 'vue-material-design-icons/At.vue'
 import BadgeAccountOutline from 'vue-material-design-icons/BadgeAccountOutline.vue'
@@ -181,6 +182,7 @@ import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
 import PhoneLogOutline from 'vue-material-design-icons/PhoneLogOutline.vue'
 import PhonePlusOutline from 'vue-material-design-icons/PhonePlusOutline.vue'
 import PhoneReturn from 'vue-material-design-icons/PhoneReturn.vue'
+import Play from 'vue-material-design-icons/Play.vue'
 import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
@@ -189,6 +191,7 @@ import Publish from 'vue-material-design-icons/Publish.vue'
 import PublishOff from 'vue-material-design-icons/PublishOff.vue'
 import Receipt from 'vue-material-design-icons/Receipt.vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
+import Restore from 'vue-material-design-icons/Restore.vue'
 import RobotOutline from 'vue-material-design-icons/RobotOutline.vue'
 import RoutesClock from 'vue-material-design-icons/RoutesClock.vue'
 import ScaleBalance from 'vue-material-design-icons/ScaleBalance.vue'
@@ -207,6 +210,7 @@ import SourceBranch from 'vue-material-design-icons/SourceBranch.vue'
 import StairsUp from 'vue-material-design-icons/StairsUp.vue'
 import Star from 'vue-material-design-icons/Star.vue'
 import StarOutline from 'vue-material-design-icons/StarOutline.vue'
+import StopCircleOutline from 'vue-material-design-icons/StopCircleOutline.vue'
 import StoreOutline from 'vue-material-design-icons/StoreOutline.vue'
 import SwapHorizontal from 'vue-material-design-icons/SwapHorizontal.vue'
 import SwapVertical from 'vue-material-design-icons/SwapVertical.vue'
@@ -219,6 +223,7 @@ import TagOutline from 'vue-material-design-icons/TagOutline.vue'
 import TargetVariant from 'vue-material-design-icons/TargetVariant.vue'
 import Timeline from 'vue-material-design-icons/Timeline.vue'
 import TimerOutline from 'vue-material-design-icons/TimerOutline.vue'
+import TimerSandEmpty from 'vue-material-design-icons/TimerSandEmpty.vue'
 import TimerSandFull from 'vue-material-design-icons/TimerSandFull.vue'
 import Translate from 'vue-material-design-icons/Translate.vue'
 import TrayArrowDown from 'vue-material-design-icons/TrayArrowDown.vue'
@@ -253,6 +258,7 @@ export default {
 	AlertOutline,
 	Archive,
 	ArchiveOutline,
+	ArrowRight,
 	ArrowUpBoldCircle,
 	At,
 	BadgeAccountOutline,
@@ -399,6 +405,7 @@ export default {
 	PhoneLogOutline,
 	PhonePlusOutline,
 	PhoneReturn,
+	Play,
 	PlayCircleOutline,
 	Plus,
 	PowerPlugOutline,
@@ -407,6 +414,7 @@ export default {
 	PublishOff,
 	Receipt,
 	Refresh,
+	Restore,
 	RobotOutline,
 	RoutesClock,
 	ScaleBalance,
@@ -425,6 +433,7 @@ export default {
 	StairsUp,
 	Star,
 	StarOutline,
+	StopCircleOutline,
 	StoreOutline,
 	SwapHorizontal,
 	SwapVertical,
@@ -437,6 +446,7 @@ export default {
 	TargetVariant,
 	Timeline,
 	TimerOutline,
+	TimerSandEmpty,
 	TimerSandFull,
 	Translate,
 	TrayArrowDown,

@@ -8,6 +8,22 @@
       "description": "Omgevingsvergunning voor bouwactiviteiten onder de Omgevingswet. Reguliere procedure (8 weken) of uitgebreide procedure (26 weken).",
       "processingDeadline": "P56D",
       "suspensionAllowed": true,
+      "pauseReasons": [
+        {
+          "key": "aanvulling-aanvrager",
+          "name": "Aanvulling gevraagd bij de aanvrager",
+          "category": "applicant",
+          "waitingOn": "applicant",
+          "legalBasis": "Awb 4:5, hersteltermijn"
+        },
+        {
+          "key": "uitstel-aanvrager",
+          "name": "Uitstel met instemming van de aanvrager",
+          "category": "applicant",
+          "waitingOn": "applicant",
+          "legalBasis": "Awb 4:15 lid 1 sub b"
+        }
+      ],
       "extensionAllowed": true,
       "extensionPeriod": "P42D",
       "confidentiality": "openbaar",

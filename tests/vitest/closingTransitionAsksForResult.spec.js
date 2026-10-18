@@ -34,7 +34,7 @@ const DIALOG_RENDERS_ITS_SLOT = {
 	CnChoiceCards: {
 		props: ['options', 'modelValue'],
 		template:
-			'<div><div v-for="option in options" :key="option.value"><slot name="option-actions" :option="option" :selected="option.value === modelValue" /></div></div>',
+			'<div><div v-for="option in options" :key="option.value"><slot v-if="option.value === modelValue" name="option-details" :option="option" /></div></div>',
 	},
 	NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 	CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
