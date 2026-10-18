@@ -7,10 +7,10 @@
  * buildiq button, and the same for every reader (Ruben, 18 October 2026).
  *
  * So no dossiq page keeps a reader's own arrangement (`userLayout`): with it,
- * CnDashboardPage routes a buildiq drag into that arrangement, which only the
- * in-page Edit button saved, and the geometry never reaches the manifest
- * delta buildiq saves. Without it, the drag is written into the page's own
- * layout items, which is what buildiq's editor diffs.
+ * CnDashboardPage saves a reader's drag as that reader's own arrangement
+ * straight away, so the page differs per reader. Without it, the drag is
+ * written into the page's own layout items, which is what buildiq's editor
+ * diffs. While buildiq edits, a drag goes into the page layout either way.
  *
  * @spec openspec/specs/dashboard/spec.md
  */
@@ -67,19 +67,47 @@ describe('the layout is buildiq\'s', () => {
 		expect(context.$emit).toHaveBeenCalledWith('layout-change', layout)
 	})
 
-	it('would have kept the same drag out of the page layout with userLayout on', () => {
-		const layout = [{ id: '1', widgetId: 'w1', gridX: 0, gridY: 0, gridWidth: 6, gridHeight: 4 }]
+	/**
+	 * A CnDashboardPage call context with userLayout on.
+	 *
+	 * @param {Array<object>} layout The page's own layout items.
+	 * @param {boolean} editingBody Whether buildiq is editing the page.
+	 * @return {object} The context, with `showsUserLayout` taken from the component.
+	 */
+	function userLayoutContext(layout, editingBody) {
 		const context = {
 			userLayout: true,
+			editingBody,
+			isEditing: false,
+			userLayoutDirty: false,
 			userLayoutItems: layout.map((item) => ({ ...item })),
 			layout,
 			$emit: vi.fn(),
+			saveUserLayout: vi.fn(),
 			geometryFrom: (u) => ({ gridX: u.gridX, gridY: u.gridY, gridWidth: u.gridWidth, gridHeight: u.gridHeight }),
 		}
+		context.showsUserLayout = CnDashboardPage.computed.showsUserLayout.call(context)
+		return context
+	}
+
+	it('would have kept the same drag out of the page layout with userLayout on, saving it as the reader\'s own', () => {
+		const layout = [{ id: '1', widgetId: 'w1', gridX: 0, gridY: 0, gridWidth: 6, gridHeight: 4 }]
+		const context = userLayoutContext(layout, false)
 
 		CnDashboardPage.methods.onLayoutChange.call(context, [{ id: '1', widgetId: 'w1', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 3 }])
 
 		expect(layout[0]).toMatchObject({ gridX: 0, gridY: 0 })
 		expect(context.userLayoutItems[0]).toMatchObject({ gridX: 6, gridY: 2 })
+		expect(context.saveUserLayout).toHaveBeenCalled()
+	})
+
+	it('sends a drag into the page layout while buildiq edits, even with userLayout on', () => {
+		const layout = [{ id: '1', widgetId: 'w1', gridX: 0, gridY: 0, gridWidth: 6, gridHeight: 4 }]
+		const context = userLayoutContext(layout, true)
+
+		CnDashboardPage.methods.onLayoutChange.call(context, [{ id: '1', widgetId: 'w1', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 3 }])
+
+		expect(layout[0]).toMatchObject({ gridX: 6, gridY: 2 })
+		expect(context.saveUserLayout).not.toHaveBeenCalled()
 	})
 })
