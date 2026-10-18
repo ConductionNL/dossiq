@@ -10558,6 +10558,7 @@ OC.L10N.register(
         "{caseRef.title}": "{caseRef.title}",
         "{cases} cases, {tasks} tasks": "{cases} cases, {tasks} tasks",
         "{caseType}, phase {phase}": "{caseType}, phase {phase}",
+        "{case}, location": "{case}, location",
         "{competentCourt}": "{competentCourt}",
         "{count} / {max} characters": "{count} / {max} characters",
         "{count} case moved without all of its automatic actions. Its status record shows which.": "{count} case moved without all of its automatic actions. Its status record shows which.",

@@ -16,7 +16,7 @@
 <template>
 	<CnDialog
 		:name="t('dossiq', 'Add location')"
-		:eyebrow="t('dossiq', 'Location')"
+		:eyebrow="eyebrow"
 		data-testid="case-location-dialog"
 		@closing="$emit('close')">
 		<div class="case-location-dialog">
@@ -114,6 +114,7 @@ import MapMarkerOutline from 'vue-material-design-icons/MapMarkerOutline.vue'
 import AddressSearch from '../components/map/AddressSearch.vue'
 import { lookupParcel } from '../services/brkApi.js'
 import { caseLocationRecord, parcelOf, saveCaseLocation } from '../services/caseLocationApi.js'
+import { fetchCaseSummary } from '../services/caseSummary.js'
 import { lookupWozValueByNummeraanduiding } from '../services/wozApi.js'
 
 /** The centre of the Netherlands, before an address is chosen. */
@@ -156,6 +157,8 @@ export default {
 			parcel: null,
 			saving: false,
 			error: '',
+			/** The case, for the eyebrow. */
+			kase: null,
 		}
 	},
 
@@ -171,6 +174,19 @@ export default {
 				return given
 			}
 			return String(this.$route?.params?.id ?? '')
+		},
+
+		/**
+		 * "<case title>, locatie", as the board heads the dialog; just the act
+		 * while the case is not read yet.
+		 *
+		 * @return {string} The eyebrow.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
+		eyebrow() {
+			const title = String(this.kase?.title ?? '').trim()
+			return title === '' ? t('dossiq', 'Location') : t('dossiq', '{case}, location', { case: title })
 		},
 
 		/**
@@ -261,7 +277,12 @@ export default {
 	},
 
 	async mounted() {
-		await this.loadLayers()
+		await Promise.all([
+			this.loadLayers(),
+			fetchCaseSummary(this.targetCaseId).then((kase) => {
+				this.kase = kase
+			}),
+		])
 	},
 
 	methods: {
