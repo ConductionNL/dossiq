@@ -33,7 +33,12 @@
           "kind": "beroep",
           "termDays": 42,
           "body": "de rechtbank"
-        }
+        },
+        "sideCards": [
+          "case-tile-deadline",
+          "side-objection-appeal",
+          "case-banner-stack"
+        ]
       },
       {
         "@self": {

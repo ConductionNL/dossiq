@@ -16,7 +16,12 @@
     "publicationRequired": false,
     "isDraft": false,
     "confidentiality": "vertrouwelijk",
-    "initialStatus": "6ea508cb-3395-5603-98bc-38d4fd34b511"
+    "initialStatus": "6ea508cb-3395-5603-98bc-38d4fd34b511",
+    "sideCards": [
+      "case-banner-stack",
+      "side-social-consent",
+      "side-social-people"
+    ]
   },
   "statusTypes": [
     {
