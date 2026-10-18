@@ -6287,6 +6287,7 @@ OC.L10N.register(
         "Recovery Trigger": "Recovery Trigger",
         "Recovery window in days": "Recovery window in days",
         "Red": "Red",
+        "Redact": "Redact",
         "Redact documents": "Redact documents",
         "Redact: {title}": "Redact: {title}",
         "Redacted copy recorded": "Redacted copy recorded",
