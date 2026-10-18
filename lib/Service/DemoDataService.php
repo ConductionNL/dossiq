@@ -186,7 +186,10 @@ class DemoDataService {
 
 		$objects = $this->shippedObjectCount();
 		if ($objects !== null) {
-			$choices[] = [
+			// First, as the setup board (DqInstellen) offers it: looking around
+			// with example data is the suggested start, starting empty the
+			// alternative.
+			array_unshift($choices, [
 				'id'    => self::DEMO_DATASET,
 				'label' => 'Load example data',
 				// 🔴 NO NUMBER IN THIS SENTENCE. The wizard runs a card's
@@ -198,7 +201,7 @@ class DemoDataService {
 				'description' => 'Sample records for every list in the app, all fictional. You can delete them afterwards.',
 				'objectCount' => $objects,
 				'icon'        => 'DatabaseOutline',
-			];
+			]);
 		}
 
 		return $choices;

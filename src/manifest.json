@@ -57,29 +57,10 @@
 				"display": "cards",
 				"optionsSource": "datasets",
 				"configKey": "demo_dataset",
-				"loadAction": "load-demo-data",
 				"title": "Example data",
 				"required": false,
-				"body": "Want to look around with example cases first? Each card loads its own set. Pick \"None\" on a production install.",
+				"body": "Want to look around with example cases first? You can delete them afterwards.",
 				"note": "Example data uses fictional people and organisations only."
-			},
-			{
-				"id": "dwangsom-secret",
-				"type": "config-fields",
-				"title": "Dwangsom callback signing secret",
-				"body": "Enter the secret your payment provider signs dwangsom payout callbacks with. Without it, nobody can check that a callback is real. You can also set it later in the admin settings.",
-				"required": false,
-				"configKeys": ["dwangsom_callback_secret"],
-				"schema": {
-					"type": "object",
-					"properties": {
-						"dwangsom_callback_secret": {
-							"type": "string",
-							"title": "Callback signing secret",
-							"description": "Shared secret that payout callbacks are signed with, by the finance app and by the external payment provider. Until it is set, no callback can be verified and each one is refused. Only shown while the payout integration is configured."
-						}
-					}
-				}
 			},
 			{
 				"id": "done",

@@ -168,26 +168,13 @@ class SetupController extends Controller {
 		// OpenRegister is the manifest's dependency gate, not a wizard step.
 		$completed = true;
 
-		// Dwangsom callback signing secret. Only meaningful once the payout
-		// integration is configured at all: with no dwangsom schema there is
-		// no callback to sign, so the step is settled rather than outstanding.
-		//
-		// SETTLED, not "secret present". The step is optional, and the secret
-		// lives permanently under admin settings > Financial integration. While
-		// the step reported "not done" for as long as the secret was empty,
-		// CnAppRoot reopened the wizard at this step on every fresh browser
-		// profile (each Playwright context, every new device), because its
-		// dismissal is only a localStorage key. So the step is done once the
-		// wizard has been completed, which is what skipping it in the wizard
-		// means; a secret configured later settles it just the same. Read
-		// BEFORE the completion marker is written below, so the visit that
-		// finishes the wizard still offers the step once.
+		// The dwangsom secret is no wizard step: it is set under admin settings
+		// > Financial integration. Its go-live flag is reported below.
 		$dwangsomActive = $this->config(key: 'dwangsom_uitbetaling_schema') !== '';
 		$secretConfigured = $this->config(key: 'dwangsom_callback_secret') !== '';
+		// Read BEFORE the completion marker is written below, so the visit that
+		// finishes the wizard still offers the case types step once.
 		$wizardDoneBefore = $this->config(key: 'setup_completed_version') === (string)self::SETUP_VERSION;
-		$dwangsomSecretDone = $dwangsomActive === false
-			|| $secretConfigured === true
-			|| $wizardDoneBefore === true;
 
 		$this->appConfig->setValueString('dossiq', 'setup_completed_version', (string)self::SETUP_VERSION);
 
@@ -209,10 +196,6 @@ class SetupController extends Controller {
 				// A pick without a load still counts: a wizard that predates
 				// `loadAction` can only record the pick.
 				'demo-data' => ['done' => ($demoDecided === true || $pickedDataset !== '')],
-				// Reported unconditionally so the wizard can tell "configured"
-				// from "never mentioned" — an unreported step is UNKNOWN to
-				// CnAppRoot and never prompts.
-				'dwangsom-secret' => ['done' => $dwangsomSecretDone],
 				'done' => ['done' => true],
 			],
 		];
@@ -328,8 +311,34 @@ class SetupController extends Controller {
 			);
 		}
 
-		return new DataResponse(['success' => true]);
+		return $this->loadPostedDataset() ?? new DataResponse(['success' => true]);
 	}//end saveConfig()
+
+	/**
+	 * Act on the Example data pick the wizard posted with Next.
+	 *
+	 * The step loads on Next (DqInstellen), not from a button on each
+	 * choice, so the pick posted here is imported at once, or recorded as
+	 * declined. The import is idempotent, so a second Next reports the
+	 * objects as already present. A failure
+	 * answers 422 so the wizard stays on the step and shows the message.
+	 *
+	 * @return DataResponse|null The failure, or null when there was nothing to do or the load succeeded.
+	 *
+	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 */
+	private function loadPostedDataset(): ?DataResponse {
+		if ($this->request->getParam(self::DATASET_KEY) === null) {
+			return null;
+		}
+
+		$outcome = $this->loadDataset(actionId: 'load-demo-data');
+		if (($outcome->getData()['success'] ?? false) === true) {
+			return null;
+		}
+
+		return new DataResponse($outcome->getData(), Http::STATUS_UNPROCESSABLE_ENTITY);
+	}//end loadPostedDataset()
 
 	/**
 	 * Run a privileged server-side setup action.

@@ -7,13 +7,14 @@
 
 ### Requirement: The wizard follows the board's steps
 
-The setup wizard SHALL offer, in this order: Organisation, House style, Case types, Example data, the dwangsom callback secret, and Done. `GET /api/setup/status` SHALL report each of them.
+The setup wizard SHALL offer, in this order: Organisation, House style, Case types, Example data, and Done. It SHALL NOT ask for the dwangsom callback secret: that procedure-specific setting is set under admin settings > Financial integration. `GET /api/setup/status` SHALL report each of them.
 
 #### Scenario: The status names the board's steps
 @e2e exclude the step contract is the status payload; covered by `tests/Unit/Controller/SetupControllerStatusTest.php::testEveryActionableManifestStepIsReported` and `::testTheBoardStepsAreReported`
 
 - **WHEN** an administrator's wizard asks for the setup status
-- **THEN** `steps` holds `organisation-details`, `house-style`, `case-types`, `demo-data`, `dwangsom-secret` and `done`
+- **THEN** `steps` holds `organisation-details`, `house-style`, `case-types`, `demo-data` and `done`
+- **AND** it holds no `dwangsom-secret`
 
 ### Requirement: The organisation's name and logo live on the organisation
 
@@ -47,3 +48,20 @@ The Case types step SHALL offer a "None for now" card and one card per valid on-
 
 - **WHEN** the administrator presses Load on the Subsidie card
 - **THEN** the subsidie package is installed and the step is done
+
+### Requirement: Example data loads on Next
+
+The Example data step SHALL offer "Load example data" first and "Start empty" second. Nothing SHALL load until the administrator presses Next: the pick is posted with `POST /api/setup/config`, which imports the example set or records the decline. A failed import SHALL answer 422 and leave the step open.
+
+#### Scenario: Next loads the picked set
+@e2e exclude loading writes example data to the shared instance; covered by `tests/Unit/Controller/SetupControllerStatusTest.php::testAKnownDatasetIsStoredAlongsideTheOtherFields`, `::testNextOnStartEmptyRecordsTheDecline` and `::testAFailedLoadOnNextKeepsTheWizardOnTheStep`
+
+- **WHEN** the administrator keeps "Load example data" and presses Next
+- **THEN** the example set is imported and the step is done
+
+## REMOVED Requirements
+
+### Requirement: The dwangsom secret step explains itself
+
+**Reason**: the wizard follows the DqInstellen board, which has no dwangsom step; the secret is a procedure-specific setting.
+**Migration**: set it under admin settings > Financial integration, which already holds it.

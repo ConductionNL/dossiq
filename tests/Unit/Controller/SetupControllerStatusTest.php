@@ -96,8 +96,8 @@ class SetupControllerStatusTest extends TestCase {
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')
 			->willReturnCallback(
-				static function (string $app, string $key, string $default = '') use ($config): string {
-					return $config[$key] ?? $default;
+				static function (string $app, string $key, string $default = '') use ($config, &$written): string {
+					return $written[$key] ?? $config[$key] ?? $default;
 				}
 			);
 		$appConfig->method('setValueString')
@@ -298,124 +298,62 @@ class SetupControllerStatusTest extends TestCase {
 	}//end testTheRegisterIsNotReadyWhenOpenRegisterIsUnavailable()
 
 	/**
-	 * With the payout integration configured and no signing secret, the step
-	 * is outstanding.
-	 *
-	 * PayoutCallbackController cannot verify a callback's origin
-	 * without it, so this is the state the warning exists to catch.
+	 * The dwangsom secret is not a wizard step: it is a procedure-specific
+	 * setting, set under admin settings > Financial integration.
 	 *
 	 * @return void
 	 */
-	public function testDwangsomSecretIsOutstandingWhenThePayoutIntegrationIsConfigured(): void {
+	public function testTheDwangsomSecretIsNotAWizardStep(): void {
 		$config = $this->provisioned() + ['dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling'];
 		$data   = $this->controller($config)->status()->getData();
 
-		$this->assertFalse($data['steps']['dwangsom-secret']['done']);
-		$this->assertFalse($data['dwangsom_callback_secret_configured']);
+		$this->assertArrayNotHasKey('dwangsom-secret', $data['steps']);
 
-	}//end testDwangsomSecretIsOutstandingWhenThePayoutIntegrationIsConfigured()
+	}//end testTheDwangsomSecretIsNotAWizardStep()
 
 	/**
-	 * A configured secret settles the step.
+	 * The go-live flag still reports a missing secret while the payout
+	 * integration is configured, and a configured one once it is set.
 	 *
 	 * @return void
 	 */
-	public function testDwangsomSecretIsDoneOnceSet(): void {
-		$config = $this->provisioned() + [
-			'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
-			'dwangsom_callback_secret'    => 's3cret',
-		];
-		$data = $this->controller($config)->status()->getData();
+	public function testTheGoLiveFlagReportsTheSecret(): void {
+		$config = $this->provisioned() + ['dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling'];
+		$this->assertFalse($this->controller($config)->status()->getData()['dwangsom_callback_secret_configured']);
 
-		$this->assertTrue($data['steps']['dwangsom-secret']['done']);
-		$this->assertTrue($data['dwangsom_callback_secret_configured']);
+		$config['dwangsom_callback_secret'] = 's3cret';
+		$this->assertTrue($this->controller($config)->status()->getData()['dwangsom_callback_secret_configured']);
 
-	}//end testDwangsomSecretIsDoneOnceSet()
+	}//end testTheGoLiveFlagReportsTheSecret()
 
 	/**
-	 * With no payout integration there is no callback to sign, so the step is
-	 * settled rather than nagging.
+	 * With no payout integration the go-live flag stays absent.
 	 *
 	 * @return void
 	 */
-	public function testDwangsomSecretIsSettledWhenThePayoutIntegrationIsNotConfigured(): void {
+	public function testTheGoLiveFlagIsAbsentWithoutThePayoutIntegration(): void {
 		$data = $this->controller($this->provisioned())->status()->getData();
 
-		$this->assertTrue($data['steps']['dwangsom-secret']['done']);
-		$this->assertArrayNotHasKey(
-			'dwangsom_callback_secret_configured',
-			$data,
-			'the legacy flag stays absent when the capability is off'
-		);
+		$this->assertArrayNotHasKey('dwangsom_callback_secret_configured', $data);
 
-	}//end testDwangsomSecretIsSettledWhenThePayoutIntegrationIsNotConfigured()
+	}//end testTheGoLiveFlagIsAbsentWithoutThePayoutIntegration()
 
 	/**
-	 * Until the wizard has completed once, the step and the legacy flag agree.
-	 *
-	 * They were two representations of one fact and drifted; deriving both
-	 * from the secret keeps them together for as long as the wizard is still
-	 * the surface asking for it.
-	 *
-	 * @return void
-	 */
-	public function testTheStepAndTheLegacyFlagAgreeBeforeTheWizardCompletes(): void {
-		foreach ([['secret' => ''], ['secret' => 's3cret']] as $case) {
-			$config = $this->provisioned() + [
-				'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
-				'dwangsom_callback_secret'    => $case['secret'],
-			];
-			$data = $this->controller($config)->status()->getData();
-
-			$this->assertSame(
-				$data['steps']['dwangsom-secret']['done'],
-				$data['dwangsom_callback_secret_configured']
-			);
-		}
-
-	}//end testTheStepAndTheLegacyFlagAgreeBeforeTheWizardCompletes()
-
-	/**
-	 * Once the wizard has completed, the optional secret step is settled.
-	 *
-	 * The step is optional and the secret lives under admin settings, but as
-	 * long as it reported "not done" CnAppRoot reopened the wizard at this
-	 * step on every fresh browser profile, because dismissal is only a
-	 * localStorage key. Completing the wizard is the answer to the question;
-	 * the go-live flag keeps saying, truthfully, that no secret is set.
-	 *
-	 * @return void
-	 */
-	public function testDwangsomSecretIsSettledOnceTheWizardHasCompleted(): void {
-		$config = $this->provisioned() + [
-			'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
-			'setup_completed_version'     => '1',
-		];
-		$data = $this->controller($config)->status()->getData();
-
-		$this->assertTrue($data['completed']);
-		$this->assertTrue($data['steps']['dwangsom-secret']['done'], 'a completed wizard has answered the optional step');
-		$this->assertFalse($data['dwangsom_callback_secret_configured'], 'the go-live warning still reports the missing secret');
-
-	}//end testDwangsomSecretIsSettledOnceTheWizardHasCompleted()
-
-	/**
-	 * The completion marker written by THIS call does not settle the step yet.
+	 * The completion marker written by THIS call does not settle the case
+	 * types step yet.
 	 *
 	 * status() records completion as a side effect. If the step read that
-	 * marker after it was written, the very visit that finishes the required
-	 * steps would skip the optional one without ever offering it; the step
-	 * must read the marker from before the call.
+	 * marker after it was written, the very visit that finishes the wizard
+	 * would skip the step without ever offering it.
 	 *
 	 * @return void
 	 */
 	public function testTheMarkerWrittenByThisCallDoesNotSettleTheStepYet(): void {
-		$config = $this->provisioned() + ['dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling'];
-		$built  = $this->build(config: $config);
-		$data   = $built['controller']->status()->getData();
+		$built = $this->build(config: $this->provisioned());
+		$data  = $built['controller']->status()->getData();
 
 		$this->assertSame('1', $built['written']['setup_completed_version'] ?? null, 'the call records completion');
-		$this->assertFalse($data['steps']['dwangsom-secret']['done'], 'and still offers the step this once');
+		$this->assertFalse($data['steps']['case-types']['done'], 'and still offers the step this once');
 
 	}//end testTheMarkerWrittenByThisCallDoesNotSettleTheStepYet()
 	/**
@@ -694,6 +632,7 @@ class SetupControllerStatusTest extends TestCase {
 	public function testAKnownDatasetIsStoredAlongsideTheOtherFields(): void {
 		$built = $this->build(
 			config: $this->provisioned(),
+			demoResult: ['objects' => 4, 'requested' => 4, 'refused' => 0, 'unchanged' => 0],
 			requestParams: ['demo_dataset' => 'demo', 'some_field' => 'kept']
 		);
 
@@ -702,6 +641,7 @@ class SetupControllerStatusTest extends TestCase {
 		$this->assertTrue($response->getData()['success']);
 		$this->assertSame('demo', $built['written']['demo_dataset'] ?? null);
 		$this->assertSame('kept', $built['written']['some_field'] ?? null);
+		$this->assertSame('installed', $built['written']['demo_data_decided'] ?? null, 'Next on the step loads the picked set');
 
 	}//end testAKnownDatasetIsStoredAlongsideTheOtherFields()
 
@@ -716,6 +656,7 @@ class SetupControllerStatusTest extends TestCase {
 	public function testAListIsAcceptedBecauseTheWizardContractAllowsOne(): void {
 		$built = $this->build(
 			config: $this->provisioned(),
+			demoResult: ['objects' => 4, 'requested' => 4, 'refused' => 0, 'unchanged' => 0],
 			requestParams: ['demo_dataset' => ['demo']]
 		);
 
@@ -1136,4 +1077,36 @@ class SetupControllerStatusTest extends TestCase {
 		$this->assertTrue($built['controller']->saveConfig()->getData()['success']);
 
 	}//end testAPostedOrganisationIdIsNotPassedOn()
+	/**
+	 * Picking "Start empty" and pressing Next records the decline and imports nothing.
+	 *
+	 * @return void
+	 */
+	public function testNextOnStartEmptyRecordsTheDecline(): void {
+		$built = $this->build(config: $this->provisioned(), requestParams: ['demo_dataset' => 'none']);
+
+		$this->assertTrue($built['controller']->saveConfig()->getData()['success']);
+		$this->assertSame('skipped', $built['written']['demo_data_decided'] ?? null);
+
+	}//end testNextOnStartEmptyRecordsTheDecline()
+
+	/**
+	 * A failed load on Next answers 422, so the wizard stays on the step.
+	 *
+	 * @return void
+	 */
+	public function testAFailedLoadOnNextKeepsTheWizardOnTheStep(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			demoResult: new \RuntimeException('The register is not ready.'),
+			requestParams: ['demo_dataset' => 'demo']
+		);
+
+		$response = $built['controller']->saveConfig();
+
+		$this->assertSame(422, $response->getStatus());
+		$this->assertSame('The register is not ready.', $response->getData()['message']);
+		$this->assertArrayNotHasKey('demo_data_decided', $built['written']);
+
+	}//end testAFailedLoadOnNextKeepsTheWizardOnTheStep()
 }//end class
