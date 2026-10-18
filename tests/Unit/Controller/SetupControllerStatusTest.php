@@ -1084,4 +1084,56 @@ class SetupControllerStatusTest extends TestCase {
 		$this->assertArrayNotHasKey('case_type_package', $built['written']);
 
 	}//end testAnUnofferedCaseTypePackageIsRefused()
+	/**
+	 * Every setup endpoint is refused to anyone but an admin.
+	 *
+	 * saveConfig() writes the active OpenRegister organisation and app config,
+	 * runAction() installs case type packages. Neither has an in-method check:
+	 * the refusal is `#[AuthorizedAdminSetting]`, enforced by the framework
+	 * before the body runs, so a non-admin never reaches it. Dropping the
+	 * attribute, or adding one that opens the route, fails here.
+	 *
+	 * @return void
+	 */
+	public function testEverySetupEndpointRefusesEveryoneButAnAdmin(): void {
+		$opening = [
+			\OCP\AppFramework\Http\Attribute\NoAdminRequired::class,
+			\OCP\AppFramework\Http\Attribute\PublicPage::class,
+		];
+		foreach (['status', 'saveConfig', 'runAction'] as $endpoint) {
+			$method = new \ReflectionMethod(SetupController::class, $endpoint);
+			$names = array_map(static fn (\ReflectionAttribute $a): string => $a->getName(), $method->getAttributes());
+
+			$this->assertContains(\OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting::class, $names, $endpoint . '() must be admin-only');
+			$this->assertSame([], array_values(array_intersect($opening, $names)), $endpoint . '() must not be opened to non-admins');
+			$this->assertStringNotContainsString('@NoAdminRequired', (string)$method->getDocComment());
+			$this->assertStringNotContainsString('@PublicPage', (string)$method->getDocComment());
+		}
+
+	}//end testEverySetupEndpointRefusesEveryoneButAnAdmin()
+
+	/**
+	 * An organisation id in the request never reaches the organisation write.
+	 *
+	 * Only the name and logo fields are handed on; the profile writes the
+	 * active organisation, so a posted id cannot point the write elsewhere.
+	 *
+	 * @return void
+	 */
+	public function testAPostedOrganisationIdIsNotPassedOn(): void {
+		$profile = $this->createMock(ActiveOrganisationProfile::class);
+		$profile->expects($this->once())
+			->method('write')
+			->with(['organisation_name' => 'Gemeente Waterland'])
+			->willReturn(true);
+
+		$built = $this->build(
+			config: $this->provisioned(),
+			requestParams: ['organisation_name' => 'Gemeente Waterland', 'organisation' => 'another-uuid', 'uuid' => 'another-uuid'],
+			profile: $profile,
+		);
+
+		$this->assertTrue($built['controller']->saveConfig()->getData()['success']);
+
+	}//end testAPostedOrganisationIdIsNotPassedOn()
 }//end class

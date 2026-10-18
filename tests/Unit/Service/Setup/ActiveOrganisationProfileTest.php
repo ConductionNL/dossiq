@@ -200,4 +200,41 @@ class ActiveOrganisationProfileTest extends TestCase {
 		$this->assertTrue($this->profile($this->organisation(''), $updated, installed: false)->isSettled());
 
 	}//end testSettledByANameOrByNoOrganisation()
+	/**
+	 * Only an http(s) logo address is written; script and data addresses are refused.
+	 *
+	 * @return void
+	 */
+	public function testOnlyAWebAddressIsAcceptedAsLogo(): void {
+		foreach (['javascript:alert(1)', 'data:image/svg+xml;base64,PHN2Zz4=', 'ftp://example.org/logo.png', '//example.org/logo.png', 'logo.png'] as $logo) {
+			$updated = [];
+			$organisation = $this->organisation('Gemeente Waterland', 'https://example.org/old.svg');
+
+			$this->assertFalse($this->profile($organisation, $updated)->write(['organisation_logo' => $logo]), $logo . ' must be refused');
+			$this->assertSame([], $updated, $logo . ' must write nothing');
+			$this->assertSame('https://example.org/old.svg', $organisation->image);
+		}
+
+		$updated = [];
+		$organisation = $this->organisation('Gemeente Waterland');
+		$this->assertTrue($this->profile($organisation, $updated)->write(['organisation_logo' => 'https://example.org/logo.svg']));
+		$this->assertSame('https://example.org/logo.svg', $organisation->image);
+
+	}//end testOnlyAWebAddressIsAcceptedAsLogo()
+
+	/**
+	 * The write lands on the active organisation, whatever id the fields carry.
+	 *
+	 * @return void
+	 */
+	public function testTheWriteLandsOnTheActiveOrganisationOnly(): void {
+		$updated = [];
+		$active = $this->organisation('Default Organisation');
+
+		$this->profile($active, $updated)->write(['organisation_name' => 'Gemeente Waterland', 'uuid' => 'another-uuid', 'id' => 7]);
+
+		$this->assertCount(1, $updated);
+		$this->assertSame($active, $updated[0]);
+
+	}//end testTheWriteLandsOnTheActiveOrganisationOnly()
 }//end class

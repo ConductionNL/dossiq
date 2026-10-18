@@ -8457,7 +8457,7 @@
         "The OpenRegister Organisation this step belongs to. Its uuid is the tenant uuid.": "The OpenRegister Organisation this step belongs to. Its uuid is the tenant uuid.",
         "The order the documents of one set are numbered in, first key first. Documents that are equal on every key keep the order they were read in.": "The order the documents of one set are numbered in, first key first. Documents that are equal on every key keep the order they were read in.",
         "The organisation asked for advice, when this share carries an external consultation. It is what names the advice on the case once it comes back.": "The organisation asked for advice, when this share carries an external consultation. It is what names the advice on the case once it comes back.",
-        "The organisation name and logo could not be saved.": "The organisation name and logo could not be saved.",
+        "The organisation name and logo could not be saved. A logo address starts with http:// or https://.": "The organisation name and logo could not be saved. A logo address starts with http:// or https://.",
         "The organisation the person doing the lookup belongs to, the municipality or an external party": "The organisation the person doing the lookup belongs to, the municipality or an external party",
         "The organisation the term was resolved for.": "The organisation the term was resolved for.",
         "The organisation this one belongs to. OpenRegister vetoes a save whose parent would close a cycle or pass the declared depth, on the save rather than in one caller.": "The organisation this one belongs to. OpenRegister vetoes a save whose parent would close a cycle or pass the declared depth, on the save rather than in one caller.",

@@ -307,7 +307,7 @@ class SetupController extends Controller {
 		$organisationFields = [ActiveOrganisationProfile::NAME_FIELD, ActiveOrganisationProfile::LOGO_FIELD];
 		if ($this->organisationProfile->write(fields: array_intersect_key($params, array_flip($organisationFields))) === false) {
 			return new DataResponse(
-				['success' => false, 'message' => 'The organisation name and logo could not be saved.']
+				['success' => false, 'message' => 'The organisation name and logo could not be saved. A logo address starts with http:// or https://.']
 			);
 		}
 

@@ -118,7 +118,9 @@ class ActiveOrganisationProfile {
 	 *
 	 * The wizard posts every field of the step, a blank one included, and has
 	 * no current value to show in it. A blank field therefore keeps what the
-	 * organisation has rather than erasing it.
+	 * organisation has rather than erasing it. Only the active organisation is
+	 * written; no id from the request is read. A logo that is not an http(s)
+	 * URL is refused.
 	 *
 	 * @param array<string, mixed> $fields The posted fields, by wizard field name.
 	 *
@@ -131,6 +133,10 @@ class ActiveOrganisationProfile {
 		$logo = trim((string)($fields[self::LOGO_FIELD] ?? ''));
 		if ($name === '' && $logo === '') {
 			return true;
+		}
+
+		if ($logo !== '' && $this->isWebAddress(url: $logo) === false) {
+			return false;
 		}
 
 		try {
@@ -158,6 +164,25 @@ class ActiveOrganisationProfile {
 
 		return true;
 	}//end write()
+
+	/**
+	 * Whether a logo address is an http or https URL.
+	 *
+	 * The logo is drawn as an image source, so a `javascript:` or `data:`
+	 * address is refused.
+	 *
+	 * @param string $url The address.
+	 *
+	 * @return bool True for an http(s) URL with a host.
+	 */
+	private function isWebAddress(string $url): bool {
+		$scheme = strtolower((string)parse_url($url, PHP_URL_SCHEME));
+		$host = (string)parse_url($url, PHP_URL_HOST);
+
+		return in_array($scheme, ['http', 'https'], true) === true
+			&& $host !== ''
+			&& filter_var($url, FILTER_VALIDATE_URL) !== false;
+	}//end isWebAddress()
 
 	/**
 	 * The signed-in user's active organisation.
