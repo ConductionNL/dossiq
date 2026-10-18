@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.122.0",
+	"version": "2.123.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -97,6 +97,8 @@
 							"type": { "type": "string", "enum": ["info", "config-fields", "choice", "run-action", "summary", "component"], "description": "Built-in step renderer." },
 							"title": { "type": "string" },
 							"body": { "type": "string", "description": "info: explanatory copy." },
+							"note": { "type": "string", "minLength": 1, "description": "choice: a footnote under the options, translated like body." },
+							"footnote": { "type": "string", "minLength": 1, "description": "choice: the same footnote under another name; note wins when both are set." },
 							"required": { "type": "boolean", "default": false, "description": "When true the step gates the app until done." },
 							"schema": { "description": "config-fields: a JSON Schema ref (string) or inline object rendered via fieldsFromSchema." },
 							"configKey": { "type": "string", "description": "choice: app-config key the selection is written to." },
@@ -4024,6 +4026,14 @@
 									"type": "boolean",
 									"description": "false removes Request a feature, Report a bug and Documentation, for an app that offers them in its own help menu."
 								},
+								"showMarkUnread": {
+									"type": "boolean",
+									"description": "false removes the built-in Mark as unread entry."
+								},
+								"showOpenSidebar": {
+									"type": "boolean",
+									"description": "false removes the built-in Open sidebar entry of the board look."
+								},
 								"label": {
 									"type": "string",
 									"minLength": 1,
@@ -4332,6 +4342,20 @@
 							"type": "string",
 							"minLength": 1,
 							"description": "type='detail', board look: the meta line on row 2 of the header, after the breadcrumb and a middle dot (screens-detail-page-parity). A field template such as `\"via {channel}\"`: every `{path}` is read from the record, and a line with an empty value is dropped. Maps to CnDetailPage `headerMeta`. type='index' | 'dashboard' | 'settings' (page-header-breadcrumb): the note after the breadcrumb and a middle dot under the title; on an index page `{total}` and `{shown}` are the list's counts."
+						},
+						"headerMetaCounts": {
+							"type": "object",
+							"description": "type='index': the other lists headerMeta counts, by name. Each is read as one list total and fills `{count:<name>}` in headerMeta (\"{total} contracten bij {count:suppliers} leveranciers\"); while a count loads or when it fails, the note is left out.",
+							"additionalProperties": {
+								"type": "object",
+								"required": ["register", "schema"],
+								"additionalProperties": false,
+								"properties": {
+									"register": { "type": "string", "minLength": 1 },
+									"schema": { "type": "string", "minLength": 1 },
+									"filter": { "type": "object" }
+								}
+							}
 						},
 						"tabsLabel": {
 							"type": "string",
