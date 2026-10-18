@@ -8472,6 +8472,14 @@
 						"default": true
 					},
 					{
+						"label": "With an open case",
+						"showCount": true,
+						"_note": "Organisations that requested a case that is not closed: the case points at the organisation through `requester`, so this asks OpenRegister for the reverse reference (`_related`, query-related-schema-rows) rather than a column the organisation carries.",
+						"filter": {
+							"_related[case][requester][isFinalStatus]": false
+						}
+					},
+					{
 						"label": "Associations",
 						"showCount": true,
 						"filter": {
