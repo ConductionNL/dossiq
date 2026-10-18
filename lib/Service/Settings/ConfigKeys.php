@@ -187,6 +187,14 @@ class ConfigKeys {
 		// Outage banner copy (nl + en).
 		'pdok_outage_banner_nl',
 		'pdok_outage_banner_en',
+		// Kadaster (BRK) and WOZ bindings, read by IntegrationMode: the mode
+		// (log, test, live), the service address and its key.
+		'integration.brk.mode',
+		'integration.brk.baseUrl',
+		'integration.brk.apiKey',
+		'integration.woz.mode',
+		'integration.woz.baseUrl',
+		'integration.woz.apiKey',
 		// KCC-werkplek bridge schema config keys (kcc-werkplek-zaaksysteem-bridge).
 		'contactmoment_schema',
 		'kcc_quick_action_schema',
@@ -382,6 +390,10 @@ class ConfigKeys {
 		// Which structure the app shows: `simple` (the default) or `full`
 		// (simple-structure-profile). Read through MenuStructure::normalise().
 		'menu_structure',
+		// The name staff know the app by (board DqInstellingenAlgemeen, Huisstijl).
+		'staff_app_name',
+		// The organisation's text above Mijn zaken in the portal (CitizenManifest).
+		'portal_intro_text',
 		// The Woo review reports (woo-review-reports, decision D9): both off
 		// until an administrator says yes. WooReportSwitches reads them and
 		// refuses the throughput switch without an existing reader group.
