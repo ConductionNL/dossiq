@@ -49,14 +49,13 @@ function context(kindFilter = null) {
 }
 
 describe('the History tab kind chips', () => {
-	it('starts with All and lists every declared kind with its count, zero included', () => {
+	it('starts with All and lists only the kinds the case has, with counts', () => {
 		const chips = kindChips.call(context())
 		expect(chips.map((chip) => [chip.label, chip.count, chip.active])).toEqual([
 			['All', 4, true],
 			['Note', 1, false],
 			['Status', 2, false],
 			['Documents', 1, false],
-			['Tasks', 0, false],
 		])
 	})
 

@@ -48,7 +48,6 @@
 					{{ t('dossiq', 'Add a note') }}
 				</NcButton>
 				<NcButton
-					:disabled="entries.length === 0"
 					data-testid="case-timeline-export"
 					@click="exportEntries">
 					<template #icon>
@@ -351,9 +350,8 @@ export default {
 		},
 
 		/**
-		 * The kind chips over the list: All, then every declared kind with
-		 * its count on this case, zero included, so the filters stand where
-		 * they always stand.
+		 * The kind chips over the list: All, then every kind the case has
+		 * entries of, each with its count.
 		 *
 		 * @return {Array<{key: string, id: string|null, label: string, count: number, active: boolean}>} The chips.
 		 *
@@ -369,7 +367,9 @@ export default {
 			const chips = [{ key: 'all', id: null, label: t('dossiq', 'All'), count: this.allEntries.length, active: chosen === null }]
 			for (const option of this.kindOptions) {
 				const count = counts.get(option.id) || 0
-				chips.push({ key: option.id || 'note', id: option.id, label: option.label, count, active: chosen === option.id })
+				if (count > 0) {
+					chips.push({ key: option.id || 'note', id: option.id, label: option.label, count, active: chosen === option.id })
+				}
 			}
 			return chips
 		},
