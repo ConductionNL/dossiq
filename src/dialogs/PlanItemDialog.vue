@@ -27,6 +27,7 @@
 				v-model="template"
 				:options="templateOptions"
 				:inputLabel="t('dossiq', 'Template')"
+				:placeholder="t('dossiq', 'Choose a template (optional)')"
 				:clearable="true"
 				data-testid="plan-item-template"
 				@update:modelValue="applyTemplate" />
@@ -55,7 +56,7 @@
 				<template #icon>
 					<CalendarClockOutline :size="20" />
 				</template>
-				{{ t('dossiq', 'Plan it') }}
+				{{ t('dossiq', 'Schedule it') }}
 			</NcButton>
 		</template>
 	</CnDialog>

@@ -111,24 +111,6 @@ export default {
 	caseTypeName: (value) => lookupRelatedName('caseType', value),
 
 	/**
-	 * A number shown masked to its last four characters ("*****7609"), the
-	 * way the contact page shows a BSN before Show is pressed. A list never
-	 * reveals: the full number is on the record's own page, where showing it
-	 * is logged. Empty stays empty.
-	 *
-	 * @param {string|number} value The number.
-	 * @return {string} The masked number.
-	 * @spec openspec/changes/screens-round12-relations/specs/initiator-display/spec.md
-	 */
-	masked: (value) => {
-		const text = value === null || value === undefined ? '' : String(value).trim()
-		if (text === '') {
-			return ''
-		}
-		return text.length <= 4 ? text : '*'.repeat(Math.min(text.length - 4, 5)) + text.slice(-4)
-	},
-
-	/**
 	 * Human label for a case object's `case` UUID reference.
 	 *
 	 * The Objects index answers "which cases are on this building", so the

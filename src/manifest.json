@@ -2886,12 +2886,15 @@
 							"rowDataPath": "informatieobjecten",
 							"rowDataKey": "fileId",
 							"columns": [
-								"name",
+								{
+									"key": "name",
+									"label": "Document"
+								},
 								{
 									"id": "scan",
 									"key": "scanVerdict",
 									"source": "row",
-									"label": "Scan",
+									"label": "Scan result",
 									"property": "scanVerdict",
 									"formatter": "scanVerdict",
 									"widget": "badge",
@@ -8400,11 +8403,13 @@
 				"quickFilters": [
 					{
 						"label": "All",
+						"showCount": true,
 						"filter": {},
 						"default": true
 					},
 					{
 						"label": "With data protection",
+						"showCount": true,
 						"filter": {
 							"indicatieGeheim": true
 						}
@@ -8472,23 +8477,27 @@
 				"quickFilters": [
 					{
 						"label": "All",
+						"showCount": true,
 						"filter": {},
 						"default": true
 					},
 					{
 						"label": "Associations",
+						"showCount": true,
 						"filter": {
 							"legalForm": "Vereniging"
 						}
 					},
 					{
 						"label": "Foundations",
+						"showCount": true,
 						"filter": {
 							"legalForm": "Stichting"
 						}
 					},
 					{
 						"label": "Companies",
+						"showCount": true,
 						"filter": {
 							"legalForm": ["BV", "NV", "Eenmanszaak", "VoF", "Maatschap", "Coöperatie"]
 						}
@@ -8526,6 +8535,22 @@
 							}
 						},
 						"widget": "badge"
+					},
+					{
+						"key": "lastContact",
+						"label": "Last contact",
+						"sortable": false,
+						"formatter": "date",
+						"aggregate": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"op": "max",
+							"field": "startTime",
+							"where": {
+								"contact": "@self.id"
+							},
+							"zeroLabel": "No contact yet"
+						}
 					}
 				],
 				"actions": [

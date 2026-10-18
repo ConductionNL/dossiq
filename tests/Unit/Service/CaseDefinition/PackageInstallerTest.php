@@ -1623,4 +1623,25 @@ class PackageInstallerTest extends TestCase {
 	public static function decisionsThatAreNotAnOptIn(): array {
 		return ['never asked' => [null], 'none chosen' => ['skipped']];
 	}//end decisionsThatAreNotAnOptIn()
+
+	/**
+	 * The shipped bezwaar-beroep package installs with its example case on an
+	 * instance that opted into example data, and the case carries its status
+	 * history as the text the schema declares, not as an array.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples-encoding/specs/case-types/spec.md
+	 */
+	public function testTheShippedBezwaarPackageInstallsWithItsExampleCase(): void {
+		$this->appConfigValues[DemoDataService::DECIDED_KEY] = DemoDataService::DECIDED_INSTALLED;
+
+		$outcome = $this->installer(root: __DIR__ . '/../../../../lib/Settings/packages')->install(id: 'bezwaar-beroep');
+
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcome['status'], message: $outcome['message']);
+		$cases = $this->register->all('case');
+		$this->assertCount(expectedCount: 1, haystack: $cases);
+		$this->assertIsString(actual: $cases[0]['statusHistory']);
+		$this->assertCount(expectedCount: 4, haystack: (array)json_decode(json: $cases[0]['statusHistory'], associative: true));
+	}//end testTheShippedBezwaarPackageInstallsWithItsExampleCase()
 }//end class
