@@ -76,21 +76,20 @@ const action = caseDetail.config.headerActions.find(
 	(entry) => entry.id === 'generate-document',
 )
 
+const LIBRARY = [
+	{ id: 'woo-verzoek', title: 'WOO Verzoek', category: 'transparantie' },
+	{ id: 'ontvangstbevestiging', title: 'Ontvangstbevestiging', category: 'document' },
+	{ id: 'verdagingsbrief', title: 'Verdagingsbrief', category: 'document' },
+]
+
 /**
  * Mount the dialog over a stubbed library.
  *
  * @param {object} options Overrides for the mount.
  * @return {Promise<object>} The mounted wrapper.
  */
-async function mountDialog({ caseId = '@objectId', routeId = 'case-1' } = {}) {
-	axios.get.mockResolvedValue({
-		data: {
-			results: [
-				{ id: 'ontvangstbevestiging', title: 'Ontvangstbevestiging' },
-				{ id: 'verdagingsbrief', title: 'Verdagingsbrief' },
-			],
-		},
-	})
+async function mountDialog({ caseId = '@objectId', routeId = 'case-1', results = LIBRARY } = {}) {
+	axios.get.mockResolvedValue({ data: { results } })
 	axios.post.mockResolvedValue({ data: { informatieobject: 'inf-1' } })
 
 	const wrapper = mount(BeschikkingComposerDialog, {
@@ -136,7 +135,7 @@ describe('BeschikkingComposerDialog', () => {
 		vi.clearAllMocks()
 	})
 
-	it('lists the library templates by name', async () => {
+	it('lists the library document templates by name, not its case-type templates', async () => {
 		const wrapper = await mountDialog()
 
 		expect(axios.get).toHaveBeenCalledWith(
@@ -175,8 +174,14 @@ describe('BeschikkingComposerDialog', () => {
 		expect(wrapper.emitted('generated')).toBeTruthy()
 	})
 
-	it('generates nothing until a template is picked', async () => {
+	it('picks the first document template, so Generate works at once', async () => {
 		const wrapper = await mountDialog()
+
+		expect(wrapper.vm.templateId).toBe('ontvangstbevestiging')
+	})
+
+	it('generates nothing until a template is picked', async () => {
+		const wrapper = await mountDialog({ results: [] })
 
 		await wrapper.vm.onGenerate()
 

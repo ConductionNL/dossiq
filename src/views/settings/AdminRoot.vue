@@ -729,7 +729,6 @@ export default {
 					cellClass: 'cn-cell--strong',
 					secondary: '{description}',
 				},
-				{ key: 'statusMessage', label: this.t('dossiq', 'Source') },
 				{
 					key: 'status',
 					label: this.t('dossiq', 'Status'),

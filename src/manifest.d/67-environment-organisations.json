@@ -136,7 +136,8 @@
 							"fields": [
 								{
 									"label": "Owner",
-									"path": "owner"
+									"path": "owner",
+									"format": "user"
 								},
 								{
 									"label": "Email",
@@ -145,6 +146,41 @@
 								}
 							],
 							"emptyText": "No administrator named yet"
+						}
+					},
+					{
+						"id": "organisation-side-history",
+						"type": "facts",
+						"title": "History",
+						"content": {
+							"fields": [
+								{
+									"as": "text",
+									"parts": [
+										{
+											"text": "Last changed on"
+										},
+										{
+											"path": "updated",
+											"format": "date-long"
+										}
+									],
+									"separator": " "
+								},
+								{
+									"as": "text",
+									"parts": [
+										{
+											"text": "Created on"
+										},
+										{
+											"path": "created",
+											"format": "date-long"
+										}
+									],
+									"separator": " "
+								}
+							]
 						}
 					}
 				],
@@ -160,6 +196,7 @@
 								{
 									"label": "Overview",
 									"widgetIds": [
+										"organisation-onboarding",
 										"organisation-quota",
 										"organisation-mandates",
 										"organisation-billing"
@@ -181,6 +218,49 @@
 									"countFrom": "widget"
 								}
 							]
+						}
+					},
+					{
+						"id": "organisation-onboarding",
+						"type": "record-list",
+						"title": "Set up",
+						"icon": "ClipboardCheckOutline",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/saas/tenants/@objectId/onboarding/progress",
+								"responsePath": "progress.steps"
+							},
+							"limit": 7,
+							"presentation": "rows",
+							"title": "{step}",
+							"meta": "{completedAt|date}",
+							"valueLabels": {
+								"step": {
+									"contract": "Contract signed",
+									"mandate_import": "Mandates set",
+									"sso_setup": "Sign-in set up",
+									"branding": "House style chosen",
+									"zaaktype_selection": "Case types loaded",
+									"first_user": "Administrator invited",
+									"go_live": "Gone live"
+								}
+							},
+							"pill": {
+								"field": "status",
+								"labels": {
+									"pending": "To do",
+									"in_progress": "In progress",
+									"completed": "Done",
+									"skipped": "Skipped"
+								},
+								"colorMap": {
+									"pending": "default",
+									"in_progress": "info",
+									"completed": "success",
+									"skipped": "default"
+								}
+							},
+							"emptyText": "Onboarding has not started for this organisation"
 						}
 					},
 					{

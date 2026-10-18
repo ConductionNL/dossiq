@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
 use OCA\Dossiq\Service\CaseDefinition\PackageSchemaReferences;
 use OCA\Dossiq\Service\CaseDefinition\PackageValidator;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
+use OCA\Dossiq\Service\DemoDataService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
 use OCA\Dossiq\Service\Starter\ShippedFingerprint;
@@ -333,6 +334,11 @@ class PackageInstallerTest extends TestCase {
 	/** The fixture package's case type id. */
 	private const CASE_TYPE = '0f1c0000-0000-4000-8000-000000000001';
 
+	/**
+	 * The case the example fixture ships.
+	 */
+	private const EXAMPLE_CASE = '0f1c0000-0000-4000-8000-0000000000e1';
+
 	/** The fixture packages. */
 	private const FIXTURES = __DIR__ . '/../../../fixtures/packages';
 
@@ -428,6 +434,9 @@ class PackageInstallerTest extends TestCase {
 
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getKeys')->willReturnCallback(fn (): array => array_keys($this->appConfigValues));
+		$appConfig->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = ''): string => ($this->appConfigValues[$key] ?? $default)
+		);
 		$appConfig->method('setValueString')->willReturnCallback(
 			function (string $app, string $key, string $value): bool {
 				$this->appConfigValues[$key] = $value;
@@ -1524,4 +1533,94 @@ class PackageInstallerTest extends TestCase {
 		$this->assertSame('', $sets->versionOf(set: 'not-shipped'));
 		$this->assertSame('1.0.0', $sets->versionOf(set: ShippedSets::VTH));
 	}//end testShippedSetsReadsAPackagesVersionFromItsManifest()
+
+	/**
+	 * The fixture package with an `examples` part holding one case.
+	 *
+	 * @return string The root holding the variant.
+	 */
+	private function withAnExample(): string {
+		return $this->variant(
+			change: static function (string $dir): void {
+				self::editJson(
+					path: $dir . '/package.json',
+					change: static function (array $manifest): array {
+						$manifest['parts'][] = 'examples';
+						return $manifest;
+					}
+				);
+				mkdir($dir . '/examples');
+				file_put_contents(
+					$dir . '/examples/20-case.json',
+					json_encode(
+						[
+							'schema' => 'case_schema',
+							'rows' => [
+								[
+									'id' => self::EXAMPLE_CASE,
+									'title' => 'Example request',
+									'caseType' => self::CASE_TYPE,
+									'startDate' => '{{date:-3}}',
+								],
+							],
+						]
+					)
+				);
+			}
+		);
+	}//end withAnExample()
+
+	/**
+	 * On an instance that opted into example data, example rows install with
+	 * the package, each date token filled relative to the install day.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testExampleRowsInstallWhenTheInstanceOptedIntoExampleData(): void {
+		$this->appConfigValues[DemoDataService::DECIDED_KEY] = DemoDataService::DECIDED_INSTALLED;
+
+		$outcome = $this->installer(root: $this->withAnExample())->install(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcome['status'], message: $outcome['message']);
+		$this->assertSame(expected: 7, actual: $outcome['written']);
+		$case = $this->register->row('case', self::EXAMPLE_CASE);
+		$this->assertSame(expected: self::CASE_TYPE, actual: $case['caseType']);
+		$this->assertSame(expected: (new \DateTimeImmutable('today'))->modify('-3 days')->format('Y-m-d'), actual: $case['startDate']);
+	}//end testExampleRowsInstallWhenTheInstanceOptedIntoExampleData()
+
+	/**
+	 * Without the opt-in (never asked, or "None" chosen in the setup wizard),
+	 * the package installs and its example rows do not: a production install
+	 * never gets fake cases.
+	 *
+	 * @param string|null $decided The wizard's example data decision; null when never asked.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider decisionsThatAreNotAnOptIn
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testExampleRowsAreSkippedWithoutTheOptIn(?string $decided): void {
+		if ($decided !== null) {
+			$this->appConfigValues[DemoDataService::DECIDED_KEY] = $decided;
+		}
+
+		$outcome = $this->installer(root: $this->withAnExample())->install(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcome['status'], message: $outcome['message']);
+		$this->assertSame(expected: 6, actual: $outcome['written']);
+		$this->assertSame(expected: [], actual: $this->register->all('case'));
+	}//end testExampleRowsAreSkippedWithoutTheOptIn()
+
+	/**
+	 * Example data decisions that are not an opt-in.
+	 *
+	 * @return array<string, array{0: string|null}> The cases.
+	 */
+	public static function decisionsThatAreNotAnOptIn(): array {
+		return ['never asked' => [null], 'none chosen' => ['skipped']];
+	}//end decisionsThatAreNotAnOptIn()
 }//end class

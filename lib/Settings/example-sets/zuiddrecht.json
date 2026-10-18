@@ -299,6 +299,7 @@
 			],
 			"data": {
 				"title": "Bewonersvergunning Kerkplein",
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6612,51.8148]}",
 				"description": "Meneer Bakker belde het KCC voor een parkeervergunning voor zijn auto bij zijn huis aan het Kerkplein. Het KCC heeft de aanvraag voor hem ingevoerd.",
 				"caseType": "{{lookup:caseType}}",
 				"status": "{{lookup:status}}",
@@ -407,6 +408,7 @@
 			],
 			"data": {
 				"title": "Nieuw kenteken op de bewonersvergunning Kerkplein",
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6612,51.8148]}",
 				"description": "Linda Bakker vraagt namens haar vader Henk Bakker het kenteken van zijn nieuwe auto op zijn bewonersvergunning te zetten.",
 				"caseType": "{{lookup:caseType}}",
 				"status": "{{lookup:status}}",
@@ -486,6 +488,7 @@
 			],
 			"data": {
 				"title": "Kapotte bank en zwerfafval bij de speeltuin Havenstraat",
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6655,51.8121]}",
 				"description": "Mevrouw El-Amrani belde over een kapotte bank en veel afval bij de speeltuin aan de Havenstraat. Zij komt naar de balie om foto's te laten zien.",
 				"caseType": "{{lookup:caseType}}",
 				"status": "{{lookup:status}}",
@@ -580,6 +583,7 @@
 			],
 			"data": {
 				"title": "Terrasoverkapping Dorpsstraat 39",
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6589,51.816]}",
 				"description": "Slagerij Van der Berg wil een vaste overkapping boven het terras voor de winkel, voor de broodjes en soep die zij aan tafels verkoopt. Aangevraagd met eHerkenning.",
 				"caseType": "{{lookup:caseType}}",
 				"status": "{{lookup:status}}",
@@ -818,7 +822,7 @@
 				"severity": "ernstig",
 				"behaviour": "onverschillig",
 				"actorType": "burger",
-				"matrixVersion": 2,
+				"matrixVersion": 1,
 				"recommendedIntervention": "last_under_penaltypayment",
 				"finalIntervention": "last_under_penaltypayment",
 				"override": false,
@@ -874,6 +878,7 @@
 			],
 			"data": {
 				"title": "Verlichting fietspad Lindelaan",
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6541,51.8113]}",
 				"description": "Een bewoner vraagt alle stukken over de verlichting van het fietspad Lindelaan: de adviezen, het raadsvoorstel, de offerte en de interne notities over het budget.",
 				"caseType": "{{lookup:caseType}}",
 				"status": "{{lookup:status}}",
