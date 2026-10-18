@@ -41,8 +41,9 @@
 -->
 <template>
 	<section class="task-audit-leaf" data-testid="task-audit-leaf">
-		<details class="task-audit-leaf__disclosure">
+		<component :is="open ? 'div' : 'details'" class="task-audit-leaf__disclosure">
 			<summary
+				v-if="!open"
 				class="task-audit-leaf__summary"
 				data-testid="task-audit-leaf-toggle"
 				@click="loadOnce">
@@ -76,7 +77,7 @@
 				data-testid="task-audit-leaf-empty">
 				{{ t('dossiq', 'Nothing has happened to this task yet') }}
 			</p>
-		</details>
+		</component>
 	</section>
 </template>
 
@@ -91,6 +92,12 @@ export default {
 		taskId: {
 			type: String,
 			default: '',
+		},
+
+		/** Show the entries straight away, without the disclosure, read on mount. */
+		open: {
+			type: Boolean,
+			default: false,
 		},
 	},
 
@@ -121,21 +128,32 @@ export default {
 				this.entries = []
 				this.error = ''
 				this.loaded = false
-				if (wasLoaded === true) {
+				if (wasLoaded === true || this.open) {
 					this.load()
 				}
 			},
 		},
 	},
 
+	/**
+	 * Read the history at once when it is shown open.
+	 *
+	 * @return {void}
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	mounted() {
+		if (this.open) {
+			this.loadOnce()
+		}
+	},
+
 	methods: {
 		/**
 		 * Read the history the first time the reader opens the disclosure.
 		 *
-		 * Deferred on purpose. The history is the one part of this page a
-		 * handler finishing a task never looks at, and it is a second request
-		 * per task view; the notes and the appointments are not deferred
-		 * because both are open on the page.
+		 * Deferred on purpose when the leaf is a disclosure: it is a second
+		 * request per task view. Shown `open`, as the task page's side card
+		 * draws it, it is read on mount.
 		 *
 		 * @return {Promise<void>}
 		 * @spec openspec/specs/task-management/spec.md

@@ -28,17 +28,56 @@
 <template>
 	<div class="case-timeline" data-testid="case-timeline">
 
+		<div class="case-timeline__header">
+			<div>
+				<h3 class="case-timeline__title">
+					{{ t('dossiq', 'History of the case') }}
+				</h3>
+				<p class="case-timeline__subtitle">
+					{{ t('dossiq', 'What happened, who did it and when, newest first') }}
+				</p>
+			</div>
+			<div class="case-timeline__header-actions">
+				<NcButton
+					v-if="canManage"
+					data-testid="case-timeline-add-note"
+					@click="focusComposer">
+				<template #icon>
+					<Plus :size="20" />
+				</template>
+					{{ t('dossiq', 'Add a note') }}
+				</NcButton>
+				<NcButton
+					data-testid="case-timeline-export"
+					@click="exportEntries">
+					<template #icon>
+						<Download :size="20" />
+					</template>
+					{{ t('dossiq', 'Export') }}
+				</NcButton>
+			</div>
+		</div>
+
+		<div
+			class="case-timeline__chips"
+			role="group"
+			:aria-label="t('dossiq', 'Kind')"
+			data-testid="case-timeline-kind-filter">
+			<button
+				v-for="chip in kindChips"
+				:key="chip.key"
+				type="button"
+				class="case-timeline__chip"
+				:class="{ 'case-timeline__chip--active': chip.active }"
+				:aria-pressed="chip.active ? 'true' : 'false'"
+				:data-testid="'case-timeline-chip-' + chip.key"
+				@click="chooseKind(chip.id)">
+				{{ chip.label }}
+				<span class="case-timeline__chip-count">{{ chip.count }}</span>
+			</button>
+		</div>
+
 		<div class="case-timeline__controls">
-			<NcSelect
-				v-model="kindFilter"
-				class="case-timeline__filter"
-				:options="kindOptions"
-				:clearable="true"
-				label="label"
-				:inputLabel="t('dossiq', 'Kind')"
-				:placeholder="t('dossiq', 'Every kind')"
-				data-testid="case-timeline-kind-filter"
-				@input="load" />
 
 			<NcSelect
 				v-if="canManage"
@@ -141,8 +180,16 @@
 			</li>
 		</ul>
 
+		<p
+			v-if="!loading && !error && allEntries.length > 0"
+			class="case-timeline__count"
+			data-testid="case-timeline-count">
+			{{ t('dossiq', '{shown} of {total} events', { shown: entries.length, total: allEntries.length }) }}
+		</p>
+
 		<form
 			v-if="canManage"
+			ref="composer"
 			class="case-timeline__composer"
 			data-testid="case-timeline-composer"
 			@submit.prevent="submit">
@@ -209,6 +256,8 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import Download from 'vue-material-design-icons/Download.vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
 import PortalMessageDialog from '../../../dialogs/PortalMessageDialog.vue'
 
 /**
@@ -227,6 +276,8 @@ export default {
 		NcLoadingIcon,
 		NcNoteCard,
 		NcSelect,
+		Download,
+		Plus,
 		PortalMessageDialog,
 	},
 
@@ -258,6 +309,8 @@ export default {
 
 	data() {
 		return {
+			/** Every entry as read, before the kind filter. */
+			allEntries: [],
 			entries: [],
 			kinds: [],
 			loading: false,
@@ -294,6 +347,31 @@ export default {
 					label: kind.title || kind.slug,
 				})),
 			)
+		},
+
+		/**
+		 * The kind chips over the list: All, then every kind the case has
+		 * entries of, each with its count.
+		 *
+		 * @return {Array<{key: string, id: string|null, label: string, count: number, active: boolean}>} The chips.
+		 *
+		 * @spec openspec/specs/case-history-surface/spec.md
+		 */
+		kindChips() {
+			const chosen = this.kindFilter ? (this.kindFilter.id || '') : null
+			const counts = new Map()
+			for (const entry of this.allEntries) {
+				const kind = entry.kind || ''
+				counts.set(kind, (counts.get(kind) || 0) + 1)
+			}
+			const chips = [{ key: 'all', id: null, label: t('dossiq', 'All'), count: this.allEntries.length, active: chosen === null }]
+			for (const option of this.kindOptions) {
+				const count = counts.get(option.id) || 0
+				if (count > 0) {
+					chips.push({ key: option.id || 'note', id: option.id, label: option.label, count, active: chosen === option.id })
+				}
+			}
+			return chips
 		},
 
 		/**
@@ -485,8 +563,10 @@ export default {
 
 				const response = await axios.get(this.timelineUrl, { params })
 				this.canManage = response.data?.canManage === true
-				this.entries = this.applyKindFilter(response.data?.results || [])
+				this.allEntries = response.data?.results || []
+				this.entries = this.applyKindFilter(this.allEntries)
 			} catch {
+				this.allEntries = []
 				this.entries = []
 				this.error = t(
 					'dossiq',
@@ -495,6 +575,72 @@ export default {
 			} finally {
 				this.loading = false
 			}
+		},
+
+		/**
+		 * Show only one kind, or every kind for `null`, without reading again.
+		 *
+		 * @param {string|null} id The kind slug, '' for a note, or null for all.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/case-history-surface/spec.md
+		 */
+		chooseKind(id) {
+			this.kindFilter = id === null ? null : { id }
+			this.entries = this.applyKindFilter(this.allEntries)
+		},
+
+		/**
+		 * The entries the chips show, as a CSV the handler can keep or send on:
+		 * when, kind, who, visibility and what.
+		 *
+		 * @return {string} The CSV text.
+		 *
+		 * @spec openspec/specs/case-history-surface/spec.md
+		 */
+		entriesCsv() {
+			const cell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`
+			const rows = [[t('dossiq', 'When'), t('dossiq', 'Kind'), t('dossiq', 'Who'), t('dossiq', 'Visibility'), t('dossiq', 'Message')]]
+			for (const entry of this.entries) {
+				rows.push([entry.created, this.kindLabel(entry), entry.author, entry.visibility, entry.message])
+			}
+			return rows.map((row) => row.map(cell).join(',')).join('\r\n')
+		},
+
+		/**
+		 * Download the entries the chips show as a CSV file.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/case-history-surface/spec.md
+		 */
+		exportEntries() {
+			const blob = new Blob([this.entriesCsv()], { type: 'text/csv;charset=utf-8' })
+			const url = URL.createObjectURL(blob)
+			const link = document.createElement('a')
+			link.href = url
+			link.download = `case-history-${this.objectId || 'case'}.csv`
+			document.body.appendChild(link)
+			link.click()
+			link.remove()
+			URL.revokeObjectURL(url)
+		},
+
+		/**
+		 * Bring the note composer under the list into view and focus it.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/case-history-surface/spec.md
+		 */
+		focusComposer() {
+			const form = this.$refs.composer
+			if (!form) {
+				return
+			}
+			form.scrollIntoView?.({ behavior: 'smooth', block: 'center' })
+			form.querySelector('textarea')?.focus()
 		},
 
 		/**
@@ -642,6 +788,70 @@ export default {
 </script>
 
 <style scoped>
+.case-timeline__header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	margin-block-end: 12px;
+}
+
+.case-timeline__header-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.case-timeline__title {
+	margin: 0;
+	font-size: 16px;
+	font-weight: bold;
+}
+
+.case-timeline__subtitle {
+	margin: 0;
+	color: var(--color-text-maxcontrast);
+}
+
+.case-timeline__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-block-end: 12px;
+}
+
+.case-timeline__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 34px;
+	padding: 4px 12px;
+	border: 1px solid var(--color-border-dark);
+	border-radius: var(--border-radius-pill);
+	background: var(--color-main-background);
+	color: var(--color-main-text);
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.case-timeline__chip--active {
+	border-color: var(--color-main-text);
+	background: var(--color-main-text);
+	color: var(--color-main-background);
+}
+
+.case-timeline__chip-count {
+	padding: 0 6px;
+	border-radius: var(--border-radius-pill);
+	background: var(--color-background-dark);
+	color: var(--color-main-text);
+	font-size: 12px;
+}
+
+.case-timeline__count {
+	margin: 12px 0 0;
+	color: var(--color-text-maxcontrast);
+}
+
 .case-timeline__composer {
 	display: flex;
 	flex-direction: column;

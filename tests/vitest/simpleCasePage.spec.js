@@ -377,7 +377,11 @@ describe('the tabs', () => {
 		// Communication panels, whose sections became the Overview and Contact
 		// stacks' own cards.
 		const shown = widgetIds(strip)
-		const unfolded = ['case-data-panel', 'case-communication-panel', 'case-work-panel']
+		const unfolded = ['case-data-panel', 'case-communication-panel', 'case-work-panel', 'case-people-panel']
+		// The Betrokkenen tab holds the people panel's sections as cards (DqZaakBetrokkenen).
+		const peopleSections = find(original, 'case-people-panel').content.sections.map((section) => section.widget.id)
+		const peopleTab = strip.tabs.find((tab) => tab.label === 'People')
+		expect(peopleTab.widgetIds.map((id) => id.replace(/-card$/, '')).sort()).toEqual([...peopleSections].sort())
 		for (const id of widgetIds(tabsOf(original)).filter((id) => !unfolded.includes(id))) {
 			expect(shown, id).toContain(id)
 		}
@@ -451,7 +455,7 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-followers-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		expect(others(simple)).toEqual(others(original))
@@ -634,11 +638,10 @@ describe('the header and the side column', () => {
 		// the register does not hold.
 		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen)
 		expect(gated.map((card) => card.id)).toEqual([
-			'side-objection-hearing',
-			'side-objection-advice',
 			'side-objection-appeal',
 			'side-grant-application',
 			'side-social-consent',
+			'side-social-people',
 			'side-tender-bids',
 		])
 		for (const card of gated) {
@@ -659,6 +662,8 @@ describe('the header and the side column', () => {
 			'case-social-indications',
 			'case-social-meetings',
 			'case-tender-bids',
+			'case-grant-decisions',
+			'case-grant-advances',
 		])
 		expect(tabs[0].label).toBe('Overview')
 		// The objection's grounds open the Overview stack, gated by the card's own visibleWhen.
@@ -666,11 +671,19 @@ describe('the header and the side column', () => {
 		const grounds = find(simple, 'case-objection-grounds')
 		expect(JSON.stringify(grounds.visibleWhen)).toContain('Bezwaar en beroep')
 		expect(grounds.content.source.url).toContain('case=@objectId')
+		// The committee's advice follows the grounds, as DqBezwaar draws it; the Advice tab lists every report.
+		expect(tabs[0].widgetIds[1]).toBe('case-objection-advice-card')
+		const advice = find(simple, 'case-objection-advice-card')
+		expect(JSON.stringify(advice.visibleWhen)).toContain('Bezwaar en beroep')
+		expect(advice.content.source.url).toContain('advisoryReport?case=@objectId')
 		for (const tab of gated) {
 			const list = find(simple, tab.widgetId)
 			expect(list.type).toBe('object-list')
 			expect(Object.values(list.content.filter)).toEqual(['@objectId'])
 		}
+		// Subsidy records name the application, not the case: they are reached
+		// through it with a flat `_referenced` key, never a dotted path.
+		expect(Object.keys(find(simple, 'case-grant-decisions').content.filter)).toEqual(['_referenced[subsidieAanvraag][subsidieaanvraag][case]'])
 	})
 
 	it('draws the header as a card holding the stages, and the banners in the side column', () => {

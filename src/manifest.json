@@ -16,17 +16,6 @@
 				"body": "Dossiq handles cases from intake to archive. Load the demo data to see it work."
 			},
 			{
-				"id": "demo-data",
-				"type": "choice",
-				"display": "cards",
-				"optionsSource": "datasets",
-				"configKey": "demo_dataset",
-				"loadAction": "load-demo-data",
-				"title": "Load example data?",
-				"required": false,
-				"body": "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Each card has its own Load button. Pick \"None\" on a production install."
-			},
-			{
 				"id": "dwangsom-secret",
 				"type": "config-fields",
 				"title": "Dwangsom callback signing secret",
@@ -43,6 +32,17 @@
 						}
 					}
 				}
+			},
+			{
+				"id": "demo-data",
+				"type": "choice",
+				"display": "cards",
+				"optionsSource": "datasets",
+				"configKey": "demo_dataset",
+				"loadAction": "load-demo-data",
+				"title": "Example data",
+				"required": false,
+				"body": "Want to look around with example cases first? Each card loads its own set. Pick \"None\" on a production install."
 			},
 			{
 				"id": "done",
@@ -536,9 +536,8 @@
 			"type": "dashboard",
 			"title": "Dashboard",
 			"config": {
-				"_userLayoutNote": "a-dashboard-the-reader-arranges, rows 10.1 and 10.10. `userLayout` hands the GEOMETRY of this page to the reader and keeps MEMBERSHIP with the administrator: CnDashboardPage merges the stored arrangement over the manifest widgets, so a widget taken out of this file disappears for everybody whatever anybody dragged. A page without the key makes no layout request and renders as it always did. THE KEY IS NOT ENOUGH ON ITS OWN, and that is what this note used to get wrong. `loadUserLayout()` and `saveUserLayout()` both return early unless `appId` is set too, so a page declaring `userLayout` and nothing else reads and writes no arrangement at all, and a reader who never drags a widget cannot tell that apart from the feature working. CnPageRenderer binds this config onto the page component and passes no app id of its own, so the app id is declared here. `pageId` is declared beside it because the fallback slugifies the page TITLE, which would move every readers arrangement the day somebody edits the heading. Measured 2026-09-20 against the installed @conduction/nextcloud-vue 3.4.0, which carries `mergeUserLayout`, the dashboardLayouts store plugin and `userWidgetPresets` (#1209).",
-				"userLayout": true,
-				"allowEdit": true,
+				"_layoutNote": "No `userLayout` and no in-page Edit button on any dossiq page (Ruben, 18 Oct 2026): a page's layout is the administrator's, changed through buildiq under the buildiq button, and the same for every reader. With `userLayout` on, CnDashboardPage routed a buildiq drag into the reader's own arrangement, which only the in-page button saved, so buildiq geometry never reached the manifest delta. Arrangements readers saved before are no longer read.",
+				"allowEdit": false,
 				"appId": "dossiq",
 				"pageId": "Dashboard",
 				"userWidgets": [
@@ -1128,8 +1127,7 @@
 			"title": "My work",
 			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first. `slots.widget-my-work` moved here for the same reason `_note` on the old Dashboard page warned about: a `type: \"custom\"` widget resolves ONLY through the page's own top-level `slots` map, never through one nested under `config`.",
 			"config": {
-				"userLayout": true,
-				"allowEdit": true,
+				"allowEdit": false,
 				"appId": "dossiq",
 				"pageId": "MyWorkHome",
 				"description": "Your open tasks, deadlines and open cases",
@@ -1186,7 +1184,7 @@
 						}
 					}
 				],
-				"_viewsNote": "landing-views. The landing page holds two VIEWS behind one switch, My work and My team (nextcloud-vue 2.66.0 page views, `views` and `defaultView`). The chosen view is in the address (`?view=team`) and in the reader's preferences, so a team lead who reads My team opens on it next time. `mine` is what this page showed before, unchanged. `team` holds widgets the Dashboard page already declares, copied without their notes: the reader's team queue (the Dashboard's `your-teams-queue` preset: the Queue page's own filter narrowed to `assignedGroup: @myGroups`) and the team-wide counts and charts. tests/vitest/landingViews.spec.js fails when a copy drifts from the Dashboard's definition. The page's own grid is EMPTY on purpose: the library draws a view's grid below the page's own, and in the full structure the switch sits in the page header. The simple structure puts a greeting on the page grid and lets the greeting draw the switch. `userLayout` is back on this page (landing-view-layouts): since nextcloud-vue 2.69.0 a reader's arrangement is kept per view, under `dashboard-layout.MyWorkHome.view.<view>`, so My work and My team each remember their own layout while the manifest still decides which widgets they hold. `kpi-sla-compliance` stays on the Dashboard only: it is gated on roles and on a visibility endpoint, and a view is the wrong place to find out whether the library applies `roles` there.",
+				"_viewsNote": "landing-views. The landing page holds two VIEWS behind one switch, My work and My team (nextcloud-vue 2.66.0 page views, `views` and `defaultView`). The chosen view is in the address (`?view=team`) and in the reader's preferences, so a team lead who reads My team opens on it next time. `mine` is what this page showed before, unchanged. `team` holds widgets the Dashboard page already declares, copied without their notes: the reader's team queue (the Dashboard's `your-teams-queue` preset: the Queue page's own filter narrowed to `assignedGroup: @myGroups`) and the team-wide counts and charts. tests/vitest/landingViews.spec.js fails when a copy drifts from the Dashboard's definition. The page's own grid is EMPTY on purpose: the library draws a view's grid below the page's own, and in the full structure the switch sits in the page header. The simple structure puts a greeting on the page grid and lets the greeting draw the switch. There is no `userLayout` on this page: layout is the administrator's, through buildiq (see the Dashboard's `_layoutNote`). `kpi-sla-compliance` stays on the Dashboard only: it is gated on roles and on a visibility endpoint, and a view is the wrong place to find out whether the library applies `roles` there.",
 				"viewsLabel": "Whose work",
 				"defaultView": "mine",
 				"views": [
@@ -2886,12 +2884,15 @@
 							"rowDataPath": "informatieobjecten",
 							"rowDataKey": "fileId",
 							"columns": [
-								"name",
+								{
+									"key": "name",
+									"label": "Document"
+								},
 								{
 									"id": "scan",
 									"key": "scanVerdict",
 									"source": "row",
-									"label": "Scan",
+									"label": "Scan result",
 									"property": "scanVerdict",
 									"formatter": "scanVerdict",
 									"widget": "badge",
@@ -4220,30 +4221,10 @@
 					},
 					{
 						"id": "document-redact",
-						"type": "open-modal",
+						"type": "navigate",
 						"label": "Redact documents",
 						"icon": "FileDocumentEditOutline",
-						"target": "DocumentRedactionDialog",
-						"props": {
-							"caseId": "@objectId",
-							"listUrl": "/apps/dossiq/api/cases/{caseId}/redactions",
-							"detectUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/detect",
-							"checkUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/check",
-							"redactUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/redact",
-							"uploadUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/upload",
-							"typeLabels": {
-								"PERSON": "Name",
-								"PHONE": "Phone number",
-								"EMAIL": "Email address",
-								"BSN": "BSN",
-								"IBAN": "Bank account",
-								"ADDRESS": "Address",
-								"POSTCODE": "Postcode",
-								"AMOUNT": "Amount",
-								"ORGANIZATION": "Organisation",
-								"UNKNOWN": "Other passage"
-							}
-						},
+						"target": "/cases/{objectId}/redact",
 						"visibleWhen": {
 							"all": [
 								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
@@ -4376,6 +4357,33 @@
 			},
 			"slots": {
 				"widget-cmmn-case-plan": "CasePlanPanel"
+			}
+		},
+		{
+			"id": "CaseRedaction",
+			"route": "/cases/:id/redact",
+			"type": "custom",
+			"title": "Redact documents",
+			"component": "CaseRedactionView",
+			"_note": "The redaction page of a case (board DqLakken): the case's partly public documents one by one, the text with its passages marked and the proposal beside it. The case page's Redact documents action navigates here. The config carries the routes and the passage type labels the panel reads.",
+			"config": {
+				"listUrl": "/apps/dossiq/api/cases/{caseId}/redactions",
+				"detectUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/detect",
+				"checkUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/check",
+				"redactUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/redact",
+				"uploadUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/upload",
+				"typeLabels": {
+					"PERSON": "Name",
+					"PHONE": "Phone number",
+					"EMAIL": "Email address",
+					"BSN": "BSN",
+					"IBAN": "Bank account",
+					"ADDRESS": "Address",
+					"POSTCODE": "Postcode",
+					"AMOUNT": "Amount",
+					"ORGANIZATION": "Organisation",
+					"UNKNOWN": "Other passage"
+				}
 			}
 		},
 		{
@@ -5150,20 +5158,13 @@
 			"title": "Processing time",
 			"_note": "Processing time as drawn on the DqDoorlooptijd board: four figures, the average per month and the share within the norm per case type, read from /api/doorlooptijd/metrics (its `summary` block), then the compliance charts, the Woo deadlines, the cases at risk and the breakdown, which read the shared store (src/store/modules/doorlooptijd.js). The period and case type filters write the workspace, which both halves read.",
 			"config": {
-				"userLayout": true,
-				"allowEdit": true,
+				"_headerNote": "Board DqDoorlooptijd's header has no Actions menu and no way back to the dashboard beside the menu's own Dashboard entry. The case type filter stays: it is how this page narrows to one case type. There is no in-page Edit button: changing the layout is buildiq's, under the buildiq button (Ruben, 18 Oct).",
+				"allowEdit": false,
+				"showActionsMenu": false,
 				"appId": "dossiq",
 				"pageId": "Doorlooptijd",
+				"showWidgetActions": false,
 				"description": "All case types",
-				"headerActions": [
-					{
-						"id": "back-to-dashboard",
-						"label": "Dashboard",
-						"type": "navigate",
-						"route": "Dashboard",
-						"icon": "ViewDashboardOutline"
-					}
-				],
 				"widgets": [
 					{
 						"id": "dt-avg",
@@ -5476,8 +5477,9 @@
 					"control": "segmented",
 					"placement": "description",
 					"persistKey": "dossiq-doorlooptijd-range",
+					"_presetNote": "A preset id is what the widgets send as `period` (@workspace.datePreset), and the metrics endpoint reads only a month count such as 12m: an id like `year` is refused with a 400 and every widget on the page stays empty. So the ids are month counts and the label says the period.",
 					"default": {
-						"preset": "year"
+						"preset": "12m"
 					},
 					"presets": [
 						{
@@ -5491,7 +5493,7 @@
 							"period": "quarter"
 						},
 						{
-							"id": "year",
+							"id": "12m",
 							"label": "Year",
 							"period": "year"
 						}
@@ -5513,10 +5515,10 @@
 			"title": "Process analysis",
 			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from a dedicated ProcessMiningService aggregation endpoint, not a register query, so the widgets are type:custom and read one shared store (src/store/modules/processMining.js) rather than a register/schema binding. The page owns the heading, the period presets and the case-type filter; each widget renders content only — a widget that drew its own page heading would be the dashboard-in-dashboard antipattern (hydra#316).",
 			"config": {
-				"userLayout": true,
-				"allowEdit": true,
+				"allowEdit": false,
 				"appId": "dossiq",
 				"pageId": "ProcessMiningDashboard",
+				"showWidgetActions": false,
 				"description": "Bottleneck analysis from recorded case status history",
 				"pageFilters": [
 					{
@@ -5598,7 +5600,7 @@
 								"responsePath": "stuck"
 							},
 							"title": "{caseType}, phase {phase}",
-							"text": "Median {days} days, {visits} visits",
+							"meta": "Median {days} days, {visits} visits",
 							"pill": {
 								"field": "level",
 								"labels": {
@@ -6435,6 +6437,48 @@
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
+						"id": "lhs-violation",
+						"type": "facts",
+						"title": "The violation",
+						"icon": "AlertOutline",
+						"_note": "DqHandhaving De overtreding: what the inspection behind this advice established, read from that inspectieRapport (`inspection`). Behaviour and consequence are in the side card Violation class.",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "inspectieRapport",
+								"id": "@object.inspection"
+							},
+							"columns": 2,
+							"fields": [
+								{
+									"path": "remarks",
+									"label": "What"
+								},
+								{
+									"path": "location",
+									"label": "Where"
+								},
+								{
+									"key": "established",
+									"label": "Established",
+									"separator": " by ",
+									"parts": [
+										{
+											"path": "inspectionDate",
+											"format": "date-long"
+										},
+										"inspector"
+									]
+								},
+								{
+									"path": "result",
+									"label": "Result"
+								}
+							],
+							"emptyText": "No inspection linked to this advice"
+						}
+					},
+					{
 						"id": "lhs-matrix",
 						"type": "chart",
 						"title": "Advice under the national enforcement strategy",
@@ -6552,7 +6596,7 @@
 						"id": "1",
 						"widgetId": "lhsrecommendation-data",
 						"gridX": 0,
-						"gridY": 7,
+						"gridY": 12,
 						"gridWidth": 12,
 						"gridHeight": 5,
 						"showTitle": false
@@ -6561,9 +6605,17 @@
 						"id": "3",
 						"widgetId": "lhsrecommendation-override",
 						"gridX": 0,
-						"gridY": 12,
+						"gridY": 17,
 						"gridWidth": 12,
 						"gridHeight": 4
+					},
+					{
+						"id": "violation",
+						"widgetId": "lhs-violation",
+						"gridX": 0,
+						"gridY": 7,
+						"gridWidth": 12,
+						"gridHeight": 5
 					}
 				],
 				"sidebar": {
@@ -7325,7 +7377,6 @@
 				"categories": {
 					"cases": "Case handling",
 					"decisions": "Decisions and terms",
-					"connections": "Connections",
 					"roadmap": "On the roadmap"
 				},
 				"board": {
@@ -7356,10 +7407,12 @@
 			"title": "Deadline monitoring",
 			"_note": "Deadline monitoring as drawn on the DqTermijnen board: five figures, the share decided on time per case type, the notices of default, then the quarterly report and the annual penalty audit. The figures come from /api/termijn/dashboard/kpi, which counts the running terms and penalties server side; the notices are a register list.",
 			"config": {
-				"userLayout": true,
-				"allowEdit": true,
+				"_headerNote": "Board DqTermijnen's header row is Quarterly report, the buildiq square and Register notice of default, with no Actions menu. There is no in-page Edit button: changing the layout is buildiq's, under the buildiq button (Ruben, 18 Oct).",
+				"allowEdit": false,
+				"showActionsMenu": false,
 				"appId": "dossiq",
 				"pageId": "TermijnDashboard",
+				"showWidgetActions": false,
 				"description": "Running terms, all teams",
 				"widgets": [
 					{
@@ -8342,11 +8395,13 @@
 				"quickFilters": [
 					{
 						"label": "All",
+						"showCount": true,
 						"filter": {},
 						"default": true
 					},
 					{
 						"label": "With data protection",
+						"showCount": true,
 						"filter": {
 							"indicatieGeheim": true
 						}
@@ -8414,23 +8469,35 @@
 				"quickFilters": [
 					{
 						"label": "All",
+						"showCount": true,
 						"filter": {},
 						"default": true
 					},
 					{
+						"label": "With an open case",
+						"showCount": true,
+						"_note": "Organisations that requested a case that is not closed: the case points at the organisation through `requester`, so this asks OpenRegister for the reverse reference (`_related`, query-related-schema-rows) rather than a column the organisation carries.",
+						"filter": {
+							"_related[case][requester][isFinalStatus]": false
+						}
+					},
+					{
 						"label": "Associations",
+						"showCount": true,
 						"filter": {
 							"legalForm": "Vereniging"
 						}
 					},
 					{
 						"label": "Foundations",
+						"showCount": true,
 						"filter": {
 							"legalForm": "Stichting"
 						}
 					},
 					{
 						"label": "Companies",
+						"showCount": true,
 						"filter": {
 							"legalForm": ["BV", "NV", "Eenmanszaak", "VoF", "Maatschap", "Coöperatie"]
 						}
@@ -8468,6 +8535,22 @@
 							}
 						},
 						"widget": "badge"
+					},
+					{
+						"key": "lastContact",
+						"label": "Last contact",
+						"sortable": false,
+						"formatter": "date",
+						"aggregate": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"op": "max",
+							"field": "startTime",
+							"where": {
+								"contact": "@self.id"
+							},
+							"zeroLabel": "No contact yet"
+						}
 					}
 				],
 				"actions": [

@@ -126,7 +126,7 @@
 	],
 	"nav": {
 		"brand": {
-			"name": "Dossiq",
+			"name": "@theming.staffAppName|Dossiq",
 			"caption": "@theming.name",
 			"logo": "@theming.emblem|@theming.logo"
 		},
@@ -957,68 +957,6 @@
 						"_note": "DqZaak Werkinstructie: the case type's work instruction beside the case; the Knowledge tab keeps it with the linked pages."
 					},
 					{
-						"id": "side-objection-hearing",
-						"type": "record-list",
-						"title": "Hearing",
-						"visibleWhen": {
-							"field": "@context.caseType.category",
-							"op": "in",
-							"value": [
-								"Bezwaar en beroep"
-							]
-						},
-						"_note": "DqBezwaar: the hearing of this objection, read from hearingSession. Shown only for a case type in the objection category.",
-						"content": {
-							"register": "dossiq",
-							"schema": "hearingSession",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "scheduledDate",
-								"dir": "desc"
-							},
-							"limit": 1,
-							"presentation": "rows",
-							"title": "{scheduledDate|date}",
-							"meta": "{location}",
-							"pill": {
-								"field": "status"
-							},
-							"emptyText": "No hearing planned"
-						}
-					},
-					{
-						"id": "side-objection-advice",
-						"type": "record-list",
-						"title": "Advice of the committee",
-						"visibleWhen": {
-							"field": "@context.caseType.category",
-							"op": "in",
-							"value": [
-								"Bezwaar en beroep"
-							]
-						},
-						"_note": "DqBezwaar: the advice of the objections committee, read from advisoryReport.",
-						"content": {
-							"register": "dossiq",
-							"schema": "advisoryReport",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "adviceDate",
-								"dir": "desc"
-							},
-							"limit": 1,
-							"presentation": "rows",
-							"title": "{adviceType}",
-							"meta": "{adviceDate|date} · {committeeChair}",
-							"text": "{recommendation}",
-							"emptyText": "No advice received yet"
-						}
-					},
-					{
 						"id": "side-objection-appeal",
 						"type": "record-list",
 						"title": "Appeal",
@@ -1116,6 +1054,41 @@
 						}
 					},
 					{
+						"id": "side-social-people",
+						"type": "record-list",
+						"title": "Who",
+						"visibleWhen": {
+							"any": [
+								{
+									"field": "gezinsplanId",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@context.caseType.category",
+									"op": "in",
+									"value": [
+										"Sociaal domein",
+										"Jeugd",
+										"Jeugdhulp"
+									]
+								}
+							]
+						},
+						"_note": "DqSociaalDomein Wie: the people on this case and what they do on it (role.name and role.description), so a need-to-know case shows who may look.",
+						"content": {
+							"register": "dossiq",
+							"schema": "role",
+							"filter": {
+								"case": "@objectId"
+							},
+							"limit": 5,
+							"presentation": "rows",
+							"title": "{name}",
+							"meta": "{description}",
+							"emptyText": "Nobody is involved yet"
+						}
+					},
+					{
 						"id": "side-tender-bids",
 						"type": "record-list",
 						"title": "Bids",
@@ -1173,13 +1146,16 @@
 						"group": "Case"
 					},
 					"case-release": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Let the case go"
 					},
 					"case-hand-over": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Give to another team"
 					},
 					"add-party": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Add a party"
 					},
 					"message-applicant": {
 						"group": "Case"
@@ -1191,7 +1167,8 @@
 						"group": "Case"
 					},
 					"plan-follow-up": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Plan what follows"
 					},
 					"case-remind": {
 						"group": "Case"
@@ -1244,16 +1221,19 @@
 						"group": "Case"
 					},
 					"case-version-move": {
-						"group": "Case"
+						"group": "Case",
+						"label": "To another version"
 					},
 					"cross-domain-lookup": {
 						"group": "Case"
 					},
 					"case-inspect-raw": {
-						"adminOnly": true
+						"adminOnly": true,
+						"label": "View raw data"
 					},
 					"case-inspect-runs": {
-						"adminOnly": true
+						"adminOnly": true,
+						"label": "View flow runs"
 					},
 					"send-digital-post": {
 						"label": "Message"
@@ -1329,6 +1309,7 @@
 								{
 									"widgetIds": [
 										"case-objection-grounds",
+										"case-objection-advice-card",
 										"case-request",
 										"case-details",
 										"case-priority-card",
@@ -1472,6 +1453,44 @@
 									}
 								},
 								{
+									"widgetId": "case-grant-decisions",
+									"label": "Grant decisions",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Subsidies",
+											"Grants"
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "subsidieBeschikking",
+										"filter": {
+											"_referenced[subsidieAanvraag][subsidieaanvraag][case]": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "case-grant-advances",
+									"label": "Advances",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Subsidies",
+											"Grants"
+										]
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "subsidieUitvoering",
+										"filter": {
+											"_referenced[subsidieAanvraag][subsidieaanvraag][case]": "@objectId"
+										}
+									}
+								},
+								{
 									"widgetId": "case-files",
 									"label": "Documents"
 								},
@@ -1514,9 +1533,15 @@
 									"overflow": true
 								},
 								{
-									"widgetId": "case-people-panel",
 									"label": "People",
-									"overflow": true
+									"overflow": true,
+									"widgetIds": [
+										"case-parties-card",
+										"case-party-roles-card",
+										"case-seats-card",
+										"case-followers-card"
+									],
+									"_note": "DqZaakBetrokkenen: the people panel's sections as the board's cards, the parties first, then roles, seats and followers."
 								},
 								{
 									"widgetId": "case-email-panel",
@@ -2101,7 +2126,8 @@
 							"viewAllQuery": {
 								"case": "@objectId"
 							},
-							"emptyText": "No tasks for this case yet"
+							"emptyText": "No tasks for this case yet",
+							"mode": "table"
 						}
 					},
 					{
@@ -2491,6 +2517,124 @@
 						}
 					},
 					{
+						"id": "case-objection-advice-card",
+						"type": "facts",
+						"title": "Advice of the objections committee",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Bezwaar en beroep"
+							]
+						},
+						"_note": "DqBezwaar Advies van de bezwaarschriftencommissie: the latest advisoryReport of this case, under the grounds in the Overview stack. The Advice tab lists every report.",
+						"content": {
+							"source": {
+								"url": "/apps/openregister/api/objects/dossiq/advisoryReport?case=@objectId&_order[adviceDate]=desc&_limit=1"
+							},
+							"fields": [
+								{
+									"label": "Chair",
+									"path": "results.0.committeeChair",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "role",
+										"labelField": "name"
+									}
+								},
+								{
+									"label": "Advice",
+									"path": "results.0.recommendation"
+								},
+								{
+									"label": "Issued",
+									"path": "results.0.adviceDate",
+									"format": "date-long"
+								}
+							],
+							"emptyText": "No advice received yet"
+						}
+					},
+					{
+						"id": "case-grant-decisions",
+						"type": "object-list",
+						"title": "Grant decisions",
+						"icon": "FileSign",
+						"_note": "DqSubsidie: records of the subsidy application linked to this case, reached through that application (openregister `_referenced`, PR #4678).",
+						"content": {
+							"register": "dossiq",
+							"schema": "subsidieBeschikking",
+							"filter": {
+								"_referenced[subsidieAanvraag][subsidieaanvraag][case]": "@objectId"
+							},
+							"sort": {
+								"field": "termStart",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "termStart",
+									"label": "Year from",
+									"format": "date"
+								},
+								{
+									"key": "grantedAmount",
+									"label": "Granted",
+									"formatter": "currency"
+								},
+								{
+									"key": "verplichtingen",
+									"label": "Condition",
+									"sortable": false
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"widget": "badge"
+								}
+							],
+							"emptyText": "No grant decisions yet"
+						}
+					},
+					{
+						"id": "case-grant-advances",
+						"type": "object-list",
+						"title": "Advances",
+						"icon": "Cash",
+						"_note": "DqSubsidie: records of the subsidy application linked to this case, reached through that application (openregister `_referenced`, PR #4678).",
+						"content": {
+							"register": "dossiq",
+							"schema": "subsidieUitvoering",
+							"filter": {
+								"_referenced[subsidieAanvraag][subsidieaanvraag][case]": "@objectId"
+							},
+							"sort": {
+								"field": "status",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "betaaldeVoorschotten",
+									"label": "Paid advances",
+									"sortable": false
+								},
+								{
+									"key": "outstandingAdvances",
+									"label": "Open advances",
+									"sortable": false
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"widget": "badge"
+								}
+							],
+							"emptyText": "No advances yet"
+						}
+					},
+					{
 						"id": "case-resident-thread",
 						"type": "conversation",
 						"title": "Conversation with the resident",
@@ -2529,6 +2673,64 @@
 								}
 							}
 						}
+					},
+					{
+						"id": "case-parties-card",
+						"type": "integration",
+						"integrationId": "contacts",
+						"title": "Parties",
+						"icon": "AccountKeyOutline",
+						"_note": "people-on-the-case: everyone involved in THIS case, read as OpenRegister person links rather than raw `role` rows. A person is a Nextcloud user or a contact, linked in one of the case schema's declared role types (SyncCaseRoleVocabulary writes them from the instance's role types), and PersonLinkListener projects the link onto a `role` record, so the resolver, the mandate matrix and the routing rules read what they always read. The contacts integration renders the people grouped by role type with avatar, email, validity window and note, and its picker offers users and contacts; the object-list this replaced showed a roleType uuid and a participant string nobody could act on."
+					},
+					{
+						"id": "case-party-roles-card",
+						"type": "case-party-roles",
+						"title": "Roles",
+						"icon": "AccountKeyOutline",
+						"_note": "The party model OpenRegister shipped in #3761, which is the half the Parties section below cannot carry: a melder with no Nextcloud account, a gemachtigde acting for the applicant under Awb 2:1, an organisation naming a parent, and the indicators any of them hold. It reads GET /api/objects/{r}/{s}/{id}/parties, which answers the links grouped by role together with the kinds and roles the case schema declares, so a role renders under its label rather than under its key. The primary party is rendered first and its role group first, because the primary party is the one the case is filed against and a handler opening this tab is looking for that name before any other. TYPE names the registry key rather than \"custom\": a tab child renders through CnTabsWidget, which resolves cnRegistry[widget.type] and renders nothing at all, logging nothing, when no key answers. It sits BESIDE Parties and does not replace it: the contacts integration renders the person links people-on-the-case (#2683) writes, and a party with no account is invisible to it."
+					},
+					{
+						"id": "case-seats-card",
+						"type": "data",
+						"title": "Seats",
+						"icon": "AccountTieOutline",
+						"_note": "handing-a-case-over REQ-HAND-05. Two named seats: the handler doing the work and the coordinator answerable for it. The handler is `assignee` and stays so, because My Work, the queue and every lens already read it. The COORDINATOR IS NOT HERE, and that is the design rather than an omission: it is a role binding on the case (D-4), so it renders in Parties above with its role type beside every other person on the case. Putting a second copy of it here would be a second place to look and a second thing to keep in step. `hideEmpty` stays off: a case with no handler must show the row empty, because the absence is what a teamleider is looking for.",
+						"content": {
+							"title": "Seats",
+							"columns": 2,
+							"include": [
+								"assignee",
+								"assignedGroup",
+								"handoverPending",
+								"handoverTo"
+							],
+							"hideEmpty": false,
+							"overrides": {
+								"assignee": {
+									"label": "Handler"
+								},
+								"assignedGroup": {
+									"label": "Team"
+								},
+								"handoverPending": {
+									"readOnly": false,
+									"editable": false,
+									"label": "Waiting to be picked up"
+								},
+								"handoverTo": {
+									"readOnly": false,
+									"editable": false,
+									"label": "Handed on to"
+								}
+							}
+						}
+					},
+					{
+						"id": "case-followers-card",
+						"type": "case-followers",
+						"title": "Followers",
+						"icon": "AccountMultipleOutline",
+						"_note": "case-followers, row 13.18. Who is watching this case, over OpenRegister's GET /api/objects/{register}/{schema}/{id}/watchers (object-watchers). It sits LAST on this tab because the three sections above it say who the case is about and this one says who is reading over their shoulder: a teamleider following a sensitive case holds no role on it and appears here and nowhere else. TYPE names the registry key rather than \"custom\": a tab child resolves from cnRegistry[widget.type] and renders nothing at all, logging nothing, when no key answers. Reading the list needs `update` on the case, so a reader without it is told that in words rather than shown an empty list, which would be a claim about the audience nobody made to them. No remove button: taking off somebody else's subscription needs `manage`, and you stop following from the strip on the case page, which acts on your own row only."
 					}
 				],
 				"headerActions": [
@@ -2605,7 +2807,8 @@
 			"_note": "The dashboard in the simple structure. Since openspec/changes/landing-views it is the dashboard of the full structure: the greeting, First today and the counts of MY cases moved to the landing page (MyWorkHome), whose My work / My team switch now changes views on that page instead of opening this one. The one thing this overlay still adds is the link to Close out your day, because this profile takes that entry out of the menu.",
 			"config": {
 				"description": "How the team is doing",
-				"editLabel": "Edit layout",
+				"_actionsMenuNote": "Board DqDashboard draws no Actions menu in the header: the row is Close out your day, the buildiq square and New case. The board's Edit layout button is gone too; layout editing is buildiq's (Ruben, 18 Oct).",
+				"showActionsMenu": false,
 				"kpiRow": [
 					"kpi-open-cases",
 					"kpi-overdue",
@@ -2660,6 +2863,15 @@
 						"gridWidth": 4,
 						"gridHeight": 6,
 						"showTitle": true
+					},
+					{
+						"id": "16",
+						"widgetId": "layout-note",
+						"gridX": 0,
+						"gridY": 10,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
 					}
 				]
 			},
@@ -2772,6 +2984,19 @@
 				}
 			},
 			"configAppend": {
+				"widgets": [
+					{
+						"id": "layout-note",
+						"type": "banner",
+						"title": "About this layout",
+						"_note": "Board DqDashboard: the info line under the grid. The board's first two sentences describe the in-page Edit layout button, which is gone (layout editing is buildiq's, Ruben 18 Oct), so only the sentence on who sees Within deadline stays (kpi-sla-compliance carries roles controllers, beheerders and admin).",
+						"content": {
+							"variant": "info",
+							"icon": "ViewDashboardOutline",
+							"text": "Within deadline is only shown to those who monitor or manage."
+						}
+					}
+				],
 				"headerActions": [
 					{
 						"id": "open-end-of-day",
@@ -3128,6 +3353,7 @@
 					},
 					{
 						"action": "actions-menu",
+						"items": ["export", "import", "refresh", "documentation"],
 						"label": "Actions"
 					},
 					{
@@ -3159,6 +3385,7 @@
 					},
 					{
 						"action": "actions-menu",
+						"items": ["export", "import", "refresh", "documentation"],
 						"label": "Actions"
 					},
 					{
@@ -3337,6 +3564,19 @@
 							"isDraft": true
 						},
 						"showCount": true
+					},
+					{
+						"label": "Shipped",
+						"_note": "The case types dossiq delivered (imported by the app, owner __system__), as against those an organisation made itself (board DqZaaktypen, Meegeleverd).",
+						"filter": {
+							"supersededBy": {
+								"isnull": true
+							},
+							"@self": {
+								"owner": "__system__"
+							}
+						},
+						"showCount": true
 					}
 				]
 			}
@@ -3465,9 +3705,7 @@
 									"label": "Overview",
 									"widgetIds": [
 										"case-type-statuses",
-										"case-type-rights",
-										"case-type-privacy",
-										"case-type-translations"
+										"case-type-rights"
 									],
 									"layout": [
 										{
@@ -3492,6 +3730,7 @@
 									"label": "Fields",
 									"widgetIds": [
 										"case-type-fields",
+										"case-type-field-rules",
 										"case-type-core",
 										"case-type-list-layout"
 									],
@@ -3554,6 +3793,10 @@
 										"case-type-portal",
 										"case-type-party-kinds"
 									]
+								},
+								{
+									"widgetId": "case-type-history",
+									"label": "Record history"
 								}
 							]
 						}
@@ -3727,6 +3970,48 @@
 							],
 							"emptyText": "No rights declared for this case type yet"
 						}
+					},
+					{
+						"id": "case-type-field-rules",
+						"type": "field-list",
+						"title": "Who sees and fills what",
+						"description": "Hidden or read only, per group and status",
+						"_note": "DqZaaktypeVelden: the case type's field rights (fieldRoleRules), read only here; OpenRegister enforces them on every read path.",
+						"content": {
+							"field": "fieldRoleRules",
+							"readOnly": true,
+							"variant": "table",
+							"columns": [
+								{
+									"header": "Field",
+									"path": "field",
+									"strong": true
+								},
+								{
+									"header": "Rule",
+									"path": "rule"
+								},
+								{
+									"header": "Groups",
+									"path": "groups"
+								},
+								{
+									"header": "In status",
+									"path": "heldBy"
+								},
+								{
+									"header": "Reason",
+									"path": "reason"
+								}
+							],
+							"emptyText": "No field rights declared for this case type yet"
+						}
+					},
+					{
+						"id": "case-type-history",
+						"type": "audit-trail",
+						"title": "Record history",
+						"icon": "History"
 					}
 				]
 			},

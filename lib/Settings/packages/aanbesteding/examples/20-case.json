@@ -1,0 +1,38 @@
+{
+  "schema": "case_schema",
+  "rows": [
+    {
+      "id": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "title": "Aanbesteding jeugdzorg 2026",
+      "description": "Openbare procedure, verlicht regime, voor ambulante jeugdhulp van 2027 tot 2031. De geraamde waarde ligt boven de drempel voor sociale en specifieke diensten, dus Europees aanbesteden.",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "status": "f7d821cb-59f6-52b4-bc18-772734ad5336",
+      "intakeChannel": "manual",
+      "confidentiality": "zaakvertrouwelijk",
+      "startDate": "{{date:-70}}",
+      "receivedAt": "{{datetime:-70 09:00}}",
+      "currentStatusEnteredAt": "{{datetime:-11 12:05}}",
+      "statusHistory": [
+        {
+          "status": "775cbdfe-31e7-5ec8-8405-f2ff35d32fa4",
+          "enteredAt": "{{datetime:-70 09:00}}"
+        },
+        {
+          "status": "82c84a55-e40e-5860-9dbf-12cfdc7d5b90",
+          "enteredAt": "{{datetime:-35 08:00}}"
+        },
+        {
+          "status": "e533aa01-968c-5407-98af-c870c79a71df",
+          "enteredAt": "{{datetime:-35 08:05}}"
+        },
+        {
+          "status": "f7d821cb-59f6-52b4-bc18-772734ad5336",
+          "enteredAt": "{{datetime:-11 12:05}}"
+        }
+      ],
+      "tags": [
+        "voorbeeld"
+      ]
+    }
+  ]
+}

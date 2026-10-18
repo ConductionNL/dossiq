@@ -62,6 +62,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
 use OCA\Dossiq\Woo\WooReceivedAnswers;
@@ -376,6 +377,7 @@ class PortalContributionProvider {
 	 * @param WooRequestIntake|null          $wooRequests Opens the case for a Woo request a portal form sent, or null.
 	 * @param IntakeCaseTypes|null           $caseTypes  The case type each case-opening action opens, or
 	 *                                                   null, which leaves those actions out.
+	 * @param SettingsService|null           $settings   Reads the text shown above Mijn zaken.
 	 */
 	public function __construct(
 		private readonly ?CaseTimeline $timeline = null,
@@ -385,6 +387,7 @@ class PortalContributionProvider {
 		private readonly ?PortalCaseMessages $messages = null,
 		private readonly ?WooRequestIntake $wooRequests = null,
 		private readonly ?IntakeCaseTypes $caseTypes = null,
+		private readonly ?SettingsService $settings = null,
 	) {
 		$this->pages = new PortalPages();
 	}//end __construct()
@@ -788,7 +791,10 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 */
 	private function citizenContribution(string $group=self::CITIZEN_GROUP, array $labels=self::CITIZEN_PAGE_LABELS): array {
-		$manifest = new CitizenManifest(caseTypes: $this->filingCaseTypes());
+		$manifest = new CitizenManifest(
+			caseTypes: $this->filingCaseTypes(),
+			caseListIntro: ($this->settings?->getConfigValue(key: 'portal_intro_text') ?? ''),
+		);
 		$collections = $manifest->collections();
 		$actions = $manifest->actions();
 

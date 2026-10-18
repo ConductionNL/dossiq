@@ -2,19 +2,16 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * A reader arranges the dashboard they read, and is offered two lists they
- * could not have configured themselves.
+ * A dashboard's layout is the administrator's, through buildiq, and a reader
+ * is offered two lists they could not have configured themselves.
  *
- * Both declarations fail SILENTLY when they are wrong, which is the only
- * reason they are worth a test. `userLayout` on a page CnDashboardPage does
- * not read renders exactly the page that never mentioned it, and so does
- * `userLayout` on a page that reads it for a user who never dragged a widget:
- * those two states are indistinguishable on screen. A preset whose filter
+ * The preset declarations fail SILENTLY when they are wrong, which is the
+ * only reason they are worth a test. A preset whose filter
  * carries a token nothing resolves is sent as the literal string, matches no
  * row, and arrives as a card that is permanently empty rather than refused.
  *
  * So the assertions here are about the DECLARATION rather than the render:
- * every dashboard carries the key and nothing else does, every preset carries
+ * no page keeps a reader's own arrangement, every preset carries
  * its own register and schema so the reader is asked for neither, every filter
  * key is a property the case schema actually declares or a lens OpenRegister
  * reserves, and every sentinel token in a preset filter is one the manifest
@@ -102,29 +99,26 @@ const RESERVED_FILTER_KEYS = new Set([
 	'_archived',
 ])
 
-describe('a reader keeps their own arrangement of a dashboard', () => {
-	it.each(DASHBOARDS)('%s declares userLayout', (id) => {
-		expect(page(id).config.userLayout).toBe(true)
-	})
-
-	it('declares it on the dashboards and nowhere else', () => {
+describe('the layout of a dashboard is the administrator\'s, through buildiq', () => {
+	it('keeps no reader\'s own arrangement on any page', () => {
+		// Ruben, 18 October 2026: layout is buildiq's. See layoutIsBuildiqs.spec.js
+		// for why `userLayout` would keep buildiq's geometry out of the manifest.
 		const carrying = (manifest.pages || [])
-			.filter((p) => p.config && p.config.userLayout)
+			.filter((p) => p.config && 'userLayout' in p.config)
 			.map((p) => p.id)
-		expect(carrying.sort()).toEqual([...DASHBOARDS, 'MyWorkHome'].sort())
+		expect(carrying).toEqual([])
 	})
 
-	it('offers the Edit button wherever a reader may arrange the page', () => {
-		// CnDashboardPage draws its Edit toggle only with `allowEdit`. Every
-		// page here declared `userLayout` without it, so the arrangement was
-		// stored and loaded but no reader could ever start one (live check,
-		// 7 October 2026).
-		const carrying = (manifest.pages || []).filter(
-			(p) => p.config && p.config.userLayout,
-		)
-		for (const p of carrying) {
-			expect(p.config.allowEdit, `${p.id} has no Edit button`).toBe(true)
-		}
+	it('draws no in-page Edit button on any page: changing the layout is buildiq\'s', () => {
+		// Ruben, 18 October 2026: "indeling aanpassen needs to go everywhere,
+		// that's a buildiq functionality under the buildiq button".
+		// CnDashboardPage draws its Edit toggle only with `allowEdit`.
+		const editable = [
+			...(manifest.pages || []),
+			...(readJson('src', 'menu-layout.simple.json').pages || []),
+			...(readJson('src', 'menu-layout.json').pages || []),
+		].filter((p) => p.config && p.config.allowEdit === true)
+		expect(editable.map((p) => p.id)).toEqual([])
 	})
 
 	it('leaves membership with the manifest: every dashboard still ships widgets', () => {
@@ -135,13 +129,9 @@ describe('a reader keeps their own arrangement of a dashboard', () => {
 	})
 })
 
-describe('the landing page keeps an arrangement per view', () => {
-	// landing-view-layouts: since nextcloud-vue 2.69.0 a reader's arrangement
-	// is stored per view under dashboard-layout.<pageId>.view.<view>, so the
-	// key needs the views, the app id and a stable page id beside it.
-	it('declares userLayout with the ids its arrangements are stored under', () => {
+describe('the landing page keeps its views', () => {
+	it('declares its views, the app id and a stable page id', () => {
 		const home = page('MyWorkHome')
-		expect(home.config.userLayout).toBe(true)
 		expect(home.config.appId).toBe('dossiq')
 		expect(home.config.pageId).toBe('MyWorkHome')
 		expect(home.config.views.length).toBeGreaterThan(0)

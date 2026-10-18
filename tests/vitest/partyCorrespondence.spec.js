@@ -178,9 +178,10 @@ describe('the Files tab declares its columns', () => {
 		// shows the DqDocumentenBeheer columns: scanVerdict, which the dossier
 		// listing carries per row, and vertrouwelijkheidaanduiding, the row's
 		// own confidentiality.
+		// The name column is the library's own, relabelled, and binds no property.
 		expect(
 			props.columns
-				.filter((column) => typeof column === 'object')
+				.filter((column) => typeof column === 'object' && column.key !== 'name')
 				.map((column) => column.property),
 		).toEqual(['scanVerdict', 'vertrouwelijkheidaanduiding'])
 
@@ -200,7 +201,7 @@ describe('the Files tab declares its columns', () => {
 			...props.sideCards.flatMap((card) => card.fields.map((field) => field.label)),
 		]
 
-		expect(labels).toEqual(expect.arrayContaining(['Scan', 'Visible to', 'Sender', 'Recipients', 'Approval']))
+		expect(labels).toEqual(expect.arrayContaining(['Document', 'Scan result', 'Visible to', 'Sender', 'Recipients', 'Approval']))
 		for (const label of labels) {
 			expect(label).not.toMatch(/—|--/)
 		}
