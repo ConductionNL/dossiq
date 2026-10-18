@@ -11,7 +11,7 @@
 		tabStorageKey="dossiq.admin.activeTab"
 		tabsVariant="underline"
 		:compact="true"
-		:sectionColumns="activeTab === 'general' ? 2 : 1"
+		:sectionColumns="['general', 'vth'].includes(activeTab) ? 2 : 1"
 		:showSetup="true"
 		:setupSteps="setupSteps"
 		lazyTabs
@@ -427,6 +427,7 @@
 		<template #tab-vth>
 			<CnSettingsSection
 				id="section-intake-activities"
+				:wide="true"
 				:name="t('dossiq', 'Activities from the Omgevingsloket')"
 				:description="
 					t(
@@ -453,6 +454,7 @@
 
 			<CnSettingsSection
 				id="section-fee-schedules"
+				:wide="true"
 				:name="t('dossiq', 'Fee rules')"
 				:description="
 					t(
