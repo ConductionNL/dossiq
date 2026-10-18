@@ -3463,6 +3463,7 @@
 					}
 				],
 				"quickFilterMaxVisible": 4,
+				"quickFilterPlacement": "toolbar",
 				"quickFiltersFrom": {
 					"field": "caseType",
 					"register": "dossiq",
