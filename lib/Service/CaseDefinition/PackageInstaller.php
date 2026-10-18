@@ -330,7 +330,8 @@ class PackageInstaller {
 	 * The package's rows, grouped by the settings key of the schema they go to.
 	 *
 	 * Order matters for references: case type rows first, then flows that
-	 * name the case type, then seed rows, each seed file in name order.
+	 * name the case type, then seed rows, each seed file in name order, then
+	 * example rows (a case in flight, its dates relative to today) the same way.
 	 *
 	 * @param array<int, mixed>     $parts The declared parts.
 	 * @param array<string, string> $files The package files.
@@ -362,8 +363,33 @@ class PackageInstaller {
 			}
 		}
 
+		array_push($groups, ...$this->exampleGroups(parts: $parts, files: $files));
+
 		return array_values(array_filter($groups, static fn (array $group): bool => $group['rows'] !== []));
 	}//end groups()
+
+	/**
+	 * The groups of the example rows, their date tokens filled relative to today.
+	 *
+	 * @param array<int, mixed>     $parts The declared parts.
+	 * @param array<string, string> $files The package files.
+	 *
+	 * @return array<int, array<string, mixed>> The groups, as {@see self::groups()} returns them; none without an `examples` part.
+	 */
+	private function exampleGroups(array $parts, array $files): array {
+		if (in_array('examples', $parts, true) === false) {
+			return [];
+		}
+
+		$dates = new PackageExampleDates();
+		$groups = [];
+		foreach ($this->rowsUnder(files: $files, dir: 'examples/') as $example) {
+			$example['rows'] = $dates->fill(rows: (array)($example['rows'] ?? []));
+			$groups[] = $this->references->seedGroup(seed: $example);
+		}
+
+		return $groups;
+	}//end exampleGroups()
 
 	/**
 	 * The decoded .json files under one directory, in name order.

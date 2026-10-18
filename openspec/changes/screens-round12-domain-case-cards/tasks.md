@@ -8,5 +8,5 @@
 - [ ] 1.6 Subsidy decisions per year (Beschikkingen): needs a list filtered through the linked application (`subsidieaanvraag.case`), which a filter cannot express yet (filter syntax from L30)
 - [ ] 1.7 Mandate and need-to-know cards: wait on data that backs them
 - [x] 1.10 Case type packages `jeugdwet` (Melding Jeugdwet, Sociaal domein) and `aanbesteding` (Aanbesteding, Inkoop en leveranciers), installed on request
-- [x] 1.11 Zuiddrecht example set: a youth care report with consent and a case meeting, and a tender in evaluation; needs both packages on the instance
+- [x] 1.11 Example cases of both ship with their packages (`examples/`, see package-examples), not with the Zuiddrecht set
 - [ ] 1.12 Bids on the example tender: the bidders are organisations, and the Zuiddrecht cast (OpenRegister) has no youth care providers yet

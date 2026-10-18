@@ -1524,4 +1524,51 @@ class PackageInstallerTest extends TestCase {
 		$this->assertSame('', $sets->versionOf(set: 'not-shipped'));
 		$this->assertSame('1.0.0', $sets->versionOf(set: ShippedSets::VTH));
 	}//end testShippedSetsReadsAPackagesVersionFromItsManifest()
+
+	/**
+	 * Example rows install with the package, each date token filled relative
+	 * to the install day, after the case type they name.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testExampleRowsInstallWithThePackageWithTheirDatesFromToday(): void {
+		$root = $this->variant(
+			change: static function (string $dir): void {
+				self::editJson(
+					path: $dir . '/package.json',
+					change: static function (array $manifest): array {
+						$manifest['parts'][] = 'examples';
+						return $manifest;
+					}
+				);
+				mkdir($dir . '/examples');
+				file_put_contents(
+					$dir . '/examples/20-case.json',
+					json_encode(
+						[
+							'schema' => 'case_schema',
+							'rows' => [
+								[
+									'id' => '0f1c0000-0000-4000-8000-0000000000e1',
+									'title' => 'Example request',
+									'caseType' => self::CASE_TYPE,
+									'startDate' => '{{date:-3}}',
+								],
+							],
+						]
+					)
+				);
+			}
+		);
+
+		$outcome = $this->installer(root: $root)->install(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcome['status'], message: $outcome['message']);
+		$this->assertSame(expected: 7, actual: $outcome['written']);
+		$case = $this->register->row('case', '0f1c0000-0000-4000-8000-0000000000e1');
+		$this->assertSame(expected: self::CASE_TYPE, actual: $case['caseType']);
+		$this->assertSame(expected: (new \DateTimeImmutable('today'))->modify('-3 days')->format('Y-m-d'), actual: $case['startDate']);
+	}//end testExampleRowsInstallWithThePackageWithTheirDatesFromToday()
 }//end class
