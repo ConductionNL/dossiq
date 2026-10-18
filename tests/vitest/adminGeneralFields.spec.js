@@ -53,6 +53,17 @@ describe('the general admin sections', () => {
 		expect(byKey.logo.uploadUrl).toBe('/apps/theming/ajax/uploadImage')
 	})
 
+	it('reads and writes the organisation name through Nextcloud theming', () => {
+		const name = fields.find((field) => field.key === 'organisationName')
+		expect(name.url).toBe('/ocs/v2.php/cloud/capabilities?format=json')
+		expect(name.valuePath).toBe('ocs.data.capabilities.theming.name')
+		expect(name.saveUrl).toBe('/apps/theming/ajax/updateStylesheet')
+		expect(name.saveKey).toBe('value')
+		expect(name.saveParams).toEqual({ setting: 'name' })
+		const logo = fields.find((field) => field.key === 'logo')
+		expect(logo.initialsFrom).toBe('organisationName')
+	})
+
 	it('only points at the CORS setting, which the portal owns', () => {
 		const cors = fields.find((field) => field.key === 'allowedWebsites')
 		expect(cors.readOnly).toBe(true)
