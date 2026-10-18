@@ -9583,6 +9583,7 @@ OC.L10N.register(
         "Wall-clock duration in milliseconds.": "Wall-clock duration in milliseconds.",
         "Wall-clock hours": "Wall-clock hours",
         "Wanneer is deze route van toepassing?": "When does this route apply?",
+        "Want to look around with example cases first? Each card loads its own set. Pick \"None\" on a production install.": "Want to look around with example cases first? Each card loads its own set. Pick \"None\" on a production install.",
         "Warm Transfer Started": "Warm Transfer Started",
         "Warn on the planned end, days before": "Warn on the planned end, days before",
         "Warn on the statutory term, days before": "Warn on the statutory term, days before",
