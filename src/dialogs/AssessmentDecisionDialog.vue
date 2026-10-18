@@ -51,24 +51,11 @@
 					:modelValue="proposedOutcome"
 					:label="t('dossiq', 'Decision')"
 					:options="outcomeOptions"
-					:disabled="true"
+					:readonly="true"
 					:descriptionLines="1" />
 
 				<p
-					v-if="countsError === ''"
-					class="assessment-decision__hint"
-					data-testid="assessment-decision-counts">
-					{{ t('dossiq', 'From the assessment:') }}
-					<template v-for="(row, index) in counts" :key="row.value">
-						<span :data-testid="'assessment-decision-count-' + row.value">{{ row.count }}</span>
-						{{ row.label.toLowerCase() }}{{ index < counts.length - 1 ? ',' : '' }}
-					</template>
-					· {{ t('dossiq', 'not assessed yet') }}
-					<span data-testid="assessment-decision-count-outstanding">{{ outstanding.length }}</span>.
-					{{ t('dossiq', 'The decision follows the assessment; you change it per document.') }}
-				</p>
-				<p
-					v-else
+					v-if="countsError !== ''"
 					role="status"
 					data-testid="assessment-decision-counts-error">
 					{{ countsError }}
@@ -144,9 +131,44 @@
 							{{ t('dossiq', 'Goes into the decision and into the reason of this step.') }}
 						</span>
 					</div>
+
+					<div
+						v-if="letterPurpose && (letterDeclaration || letterReadError)"
+						class="assessment-decision__field"
+						data-testid="assessment-decision-letter">
+						<span class="assessment-decision__label">{{ t('dossiq', 'Letter of the decision') }}</span>
+						<div class="assessment-decision__letter">
+							<FileDocumentCheckOutline :size="20" class="assessment-decision__letter-icon" />
+							<div class="assessment-decision__letter-text">
+								<template v-if="letter">
+									<strong data-testid="assessment-decision-letter-title">{{ letter.title }}</strong>
+									<span class="assessment-decision__hint">{{ letterLine }}</span>
+								</template>
+								<span v-else-if="letterReadError" class="assessment-decision__hint" data-testid="assessment-decision-letter-unread">{{ t('dossiq', 'The letter of this case could not be read.') }}</span>
+								<span v-else class="assessment-decision__hint">{{ t('dossiq', 'No letter on this case yet.') }}</span>
+							</div>
+							<NcButton
+								v-if="letter"
+								data-testid="assessment-decision-letter-other"
+								@click="composing = true">
+								{{ t('dossiq', 'Other letter') }}
+							</NcButton>
+							<NcButton
+								v-else
+								data-testid="assessment-decision-letter-draft"
+								:disabled="drafting"
+								@click="draftLetter">
+								{{ t('dossiq', 'Draft the letter') }}
+							</NcButton>
+						</div>
+						<span v-if="letterError" class="assessment-decision__error" role="alert">{{ letterError }}</span>
+						<span class="assessment-decision__hint">
+							{{ t('dossiq', 'What now? Deciding asks two things: draft the decision and record it. The letter comes first.') }}
+						</span>
+					</div>
 				</template>
 
-				<NcNoteCard v-if="note" type="info">
+				<NcNoteCard v-if="note" type="info" :heading="noteHeading ? t('dossiq', noteHeading) : undefined">
 					{{ t('dossiq', note) }}
 				</NcNoteCard>
 
@@ -158,6 +180,12 @@
 					{{ error }}
 				</p>
 			</template>
+			<BeschikkingComposerDialog
+				v-if="composing"
+				:open="true"
+				:caseId="targetCaseId"
+				@close="composing = false"
+				@generated="loadLetter" />
 		</div>
 
 		<p v-else role="status" data-testid="assessment-decision-done">
@@ -194,7 +222,9 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
+import BeschikkingComposerDialog from './BeschikkingComposerDialog.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -215,7 +245,9 @@ export default {
 	name: 'AssessmentDecisionDialog',
 
 	components: {
+		BeschikkingComposerDialog,
 		CnChoiceCards,
+		FileDocumentCheckOutline,
 		CnDialog,
 		Gavel,
 		NcButton,
@@ -258,7 +290,11 @@ export default {
 			default: () => ({}),
 		},
 
-		/** The classifications: `{ value, label }`. */
+		/**
+		 * The classifications: `{ value, label, decisionLabel?, description? }`.
+		 * `label` names an assessment; `decisionLabel` names the decision
+		 * option and `description` says what it means (both i18n keys).
+		 */
 		classifications: {
 			type: Array,
 			default: () => [],
@@ -272,6 +308,21 @@ export default {
 
 		/** An i18n key shown as a note under the form: what follows the decision. */
 		note: {
+			type: String,
+			default: '',
+		},
+
+		/** An i18n key shown as the note's heading. */
+		noteHeading: {
+			type: String,
+			default: '',
+		},
+
+		/**
+		 * The case type's `documentDrafts` purpose the decision letter is drafted for.
+		 * Set, the dialog shows the case's letter and records the decision with it.
+		 */
+		letterPurpose: {
 			type: String,
 			default: '',
 		},
@@ -293,6 +344,12 @@ export default {
 			busy: false,
 			error: '',
 			decided: null,
+			letter: null,
+			letterDeclaration: null,
+			letterError: '',
+			letterReadError: false,
+			drafting: false,
+			composing: false,
 		}
 	},
 
@@ -312,9 +369,24 @@ export default {
 		outcomeOptions() {
 			return this.counts.map((row) => ({
 				value: row.value,
-				label: row.label,
-				description: n('dossiq', '%n document assessed this way', '%n documents assessed this way', row.count),
+				label: row.decisionLabel,
+				description: row.value === this.proposedOutcome && this.countsError === ''
+					? t('dossiq', 'Proposal from the assessment: {counts}', { counts: this.countsSummary })
+					: row.description,
 			}))
+		},
+
+		/**
+		 * The assessed documents per classification, e.g. "4 public, 2 disclosed in part".
+		 *
+		 * @return {string} The summary; classifications nobody chose are left out.
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
+		 */
+		countsSummary() {
+			return this.counts
+				.filter((row) => row.count > 0)
+				.map((row) => `${row.count} ${row.label.toLowerCase()}`)
+				.join(', ')
 		},
 
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
@@ -362,12 +434,28 @@ export default {
 		counts() {
 			return this.classifications.map((option) => {
 				const value = String(option?.value ?? '')
+				const label = t('dossiq', String(option?.label ?? value))
 				return {
 					value,
-					label: t('dossiq', String(option?.label ?? value)),
+					label,
+					decisionLabel: option?.decisionLabel ? t('dossiq', String(option.decisionLabel)) : label,
+					description: option?.description
+						? t('dossiq', String(option.description))
+						: n('dossiq', '%n document assessed this way', '%n documents assessed this way', this.tally[value] ?? 0),
 					count: this.tally[value] ?? 0,
 				}
 			})
+		},
+
+		/**
+		 * The line under the letter's title: its type and when it was made.
+		 *
+		 * @return {string} The line.
+		 * @spec openspec/specs/decision-document/spec.md
+		 */
+		letterLine() {
+			const date = this.letter?.creatiedatum ? this.formatDate(this.letter.creatiedatum) : ''
+			return [this.letterDeclaration?.documentType, date].filter(Boolean).join(' · ')
 		},
 
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
@@ -385,6 +473,7 @@ export default {
 
 	async mounted() {
 		this.load()
+		this.loadLetter()
 		this.kase = await fetchCaseSummary(this.targetCaseId)
 	},
 
@@ -507,6 +596,56 @@ export default {
 		},
 
 		/**
+		 * Read the case's letter for the configured purpose. A failure says so in the row and blocks nothing.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/decision-document/spec.md
+		 */
+		async loadLetter() {
+			if (this.letterPurpose === '') {
+				return
+			}
+			this.letterReadError = false
+			try {
+				const { data } = await axios.get(this.letterUrl())
+				this.letterDeclaration = data?.declaration || null
+				this.letter = data?.document || null
+			} catch {
+				this.letterDeclaration = null
+				this.letter = null
+				this.letterReadError = true
+			}
+		},
+
+		/**
+		 * Draft the case type's letter for the purpose and show it.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/decision-document/spec.md
+		 */
+		async draftLetter() {
+			this.drafting = true
+			this.letterError = ''
+			try {
+				const { data } = await axios.post(this.letterUrl())
+				this.letterDeclaration = data?.declaration || this.letterDeclaration
+				this.letter = data?.document || null
+			} catch {
+				this.letterError = t('dossiq', 'The letter could not be drafted.')
+			} finally {
+				this.drafting = false
+			}
+		},
+
+		/**
+		 * @return {string} The letter route of this case and purpose.
+		 * @spec openspec/specs/decision-document/spec.md
+		 */
+		letterUrl() {
+			return this.urlOf(`/apps/dossiq/api/cases/{caseId}/letters/${encodeURIComponent(this.letterPurpose)}`)
+		},
+
+		/**
 		 * Post the decision once and show what the server answered.
 		 *
 		 * @return {Promise<void>}
@@ -526,6 +665,7 @@ export default {
 			try {
 				const { data } = await axios.post(this.urlOf(this.decideUrl), {
 					decision,
+					...(this.letter?.id ? { letter: this.letter.id } : {}),
 				})
 				this.decided = data || {}
 				// The case changed: what the page offers next (publishing, for
@@ -581,6 +721,7 @@ export default {
 
 	&__date {
 		box-sizing: border-box;
+		width: 100%;
 		height: 40px;
 		padding: 0 12px;
 		border: 1px solid var(--color-border-dark);
@@ -593,6 +734,28 @@ export default {
 		align-items: center;
 		min-height: 40px;
 		font-size: 15px;
+	}
+
+	&__letter {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 12px 14px;
+		border: 1px solid var(--color-border);
+		border-radius: var(--border-radius-large);
+	}
+
+	&__letter-icon {
+		flex: none;
+		color: var(--color-success-text);
+	}
+
+	&__letter-text {
+		display: flex;
+		flex: 1 1 auto;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
 	}
 
 	&__chips {

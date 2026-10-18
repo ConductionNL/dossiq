@@ -3403,22 +3403,142 @@
 		{
 			"id": "Queue",
 			"title": "Team queue",
+			"_note": "DqTeamwachtrij: three counts above the list, a chip per case type, the list with how long each case has waited in front, and two cards beside it. The counts and the per-type card read the queue figures of /api/dashboard/kpis, which folds the open cases once. Team today reads the coordinator workload, so a reader who is not a coordinator sees its error text, never someone else's numbers. The chips are one per case type in the queue, with its count, drawn from the case type field (quickFiltersFrom).",
 			"config": {
 				"folderSidebar": null,
 				"searchPlaceholder": "Search by case, number or requester",
+				"statRow": [
+					{
+						"id": "queue-unassigned",
+						"type": "stat",
+						"title": "Without a handler",
+						"content": {
+							"label": "Without a handler",
+							"caption": "{queueNewToday} came in today",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/dashboard/kpis"
+							},
+							"valueField": "queueCount",
+							"layout": "stacked"
+						}
+					},
+					{
+						"id": "queue-oldest",
+						"type": "stat",
+						"title": "Waiting longest",
+						"content": {
+							"label": "Waiting longest",
+							"caption": "the oldest case in the queue",
+							"format": {
+								"style": "decimal",
+								"decimals": 0,
+								"suffix": " days"
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/dashboard/kpis"
+							},
+							"valueField": "queueOldestDays",
+							"layout": "stacked"
+						}
+					},
+					{
+						"id": "queue-due-soon",
+						"type": "stat",
+						"title": "Deadline within 7 days",
+						"content": {
+							"label": "Deadline within 7 days",
+							"caption": "pick these up first",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/dashboard/kpis"
+							},
+							"valueField": "queueDueSoon",
+							"layout": "stacked"
+						}
+					}
+				],
+				"quickFilterMaxVisible": 4,
+				"quickFilterPlacement": "toolbar",
+				"quickFiltersFrom": {
+					"field": "caseType",
+					"register": "dossiq",
+					"schema": "caseType",
+					"labelField": "title",
+					"allLabel": "All types"
+				},
+				"sidePanel": [
+					{
+						"id": "queue-team-today",
+						"type": "record-list",
+						"title": "Team today",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/work-queue/workload",
+								"responsePath": "handlers"
+							},
+							"presentation": "rows",
+							"avatar": "{displayName}",
+							"title": "{displayName}",
+							"bar": {
+								"valueField": "openCaseCount"
+							},
+							"trailing": [
+								"{openCaseCount} cases"
+							],
+							"limit": 5,
+							"emptyText": "Nobody in your teams has open cases",
+							"errorText": "Only a coordinator sees the team's workload"
+						}
+					},
+					{
+						"id": "queue-by-type",
+						"type": "record-list",
+						"title": "Work in stock per case type",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/dashboard/kpis",
+								"responsePath": "queueByType"
+							},
+							"presentation": "rows",
+							"title": "{title}",
+							"trailing": [
+								"{open} open · {waiting} waiting"
+							],
+							"emptyText": "No open cases"
+						}
+					}
+				],
 				"columns": [
+					{
+						"key": "startDate",
+						"width": "96px",
+						"label": "Waiting",
+						"widget": "age"
+					},
 					{
 						"key": "title",
 						"width": "328px",
 						"label": "Case",
+						"link": true,
 						"cellClass": "cn-cell--strong",
-						"secondary": "{identifier} · {initiatorDisplayName}"
+						"secondary": "{identifier} · {initiatorDisplayName} · {priority}"
 					},
 					{
 						"key": "caseType",
 						"width": "179px",
 						"label": "Type",
-						"formatter": "caseTypeName"
+						"formatter": "caseTypeName",
+						"widget": "badge",
+						"widgetProps": {
+							"variant": "info"
+						}
 					},
 					{
 						"key": "deadline",
@@ -3426,6 +3546,21 @@
 						"label": "Deadline",
 						"widget": "date",
 						"widgetProps": {
+							"due": {
+								"todayLabel": "Today",
+								"overdueLabel": {
+									"one": "{count} day overdue",
+									"other": "{count} days overdue"
+								},
+								"upcomingLabel": {
+									"one": "{count} day left",
+									"other": "{count} days left"
+								},
+								"upcomingWeeksLabel": {
+									"one": "{count} week left",
+									"other": "{count} weeks left"
+								}
+							},
 							"variantWhen": [
 								{
 									"op": "lt",
@@ -3442,7 +3577,7 @@
 					}
 				],
 				"showTitle": true,
-				"countText": "{shown} of {total} open cases without a handler, oldest first",
+				"countText": "{shown} of {total} open cases without a handler · oldest first",
 				"footerNote": "a case leaves the queue as soon as someone picks it up",
 				"headerButtons": [
 					{
@@ -3452,7 +3587,15 @@
 					},
 					{
 						"action": "actions-menu",
-						"label": "Actions"
+						"label": "Actions",
+						"items": [
+							"header-actions",
+							"import",
+							"refresh",
+							"copy-selected",
+							"delete-selected",
+							"documentation"
+						]
 					},
 					{
 						"action": "add",
