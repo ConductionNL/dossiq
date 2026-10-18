@@ -19,7 +19,7 @@
 					:loading="loadingTemplates"
 					:options="templateOptions"
 					:emptyText="t('dossiq', 'The template library has no templates yet.')"
-					:descriptionLines="2" />
+					:descriptionLines="1" />
 
 				<section v-if="kase" class="generate-document__fills">
 					<h3 class="generate-document__fills-title">
@@ -162,13 +162,16 @@ export default {
 		},
 
 		/**
-		 * The library templates, by name, for the picker.
+		 * The library templates that render a document, by name, for the picker.
+		 *
+		 * The library also holds case-type templates; only a `document`
+		 * template carries the body CaseDocumentGenerationService renders.
 		 *
 		 * @return {Array} The picker options.
 		 * @spec openspec/specs/template-library/spec.md
 		 */
 		templateOptions() {
-			return this.templates.map((template) => ({
+			return this.templates.filter((template) => template.category === 'document').map((template) => ({
 				value: template.id,
 				label: template.title || template.id,
 				description: [
@@ -223,6 +226,9 @@ export default {
 					generateUrl('/apps/dossiq/api/templates'),
 				)
 				this.templates = data.results || []
+				if (!this.templateId && this.templateOptions.length > 0) {
+					this.templateId = this.templateOptions[0].value
+				}
 			} catch {
 				this.templates = []
 				this.error = this.t('dossiq', 'The template library is unavailable.')
@@ -302,6 +308,21 @@ export default {
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 12px 24px;
 	margin: 0;
+}
+
+.generate-document__fills-grid > div {
+	padding-block-end: 10px;
+	border-block-end: 1px solid var(--color-border);
+}
+
+/* Core's apps.css draws every dt/dd inline-block with a fixed, end-aligned dt. */
+.generate-document__fills-grid dt,
+.generate-document__fills-grid dd {
+	display: block;
+	width: auto;
+	padding: 0;
+	text-align: start;
+	white-space: normal;
 }
 
 .generate-document__fills-grid dt {

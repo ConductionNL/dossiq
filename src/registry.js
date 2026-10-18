@@ -163,7 +163,6 @@ import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
 import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
-import DocumentRedactionDialog from './dialogs/DocumentRedactionDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
@@ -184,6 +183,7 @@ import DossierExportPanel from './modals/DossierExportPanel.vue'
 import FileRequestDialog from './modals/FileRequestDialog.vue'
 import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
+import CaseRedactionView from './views/cases/CaseRedactionView.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
 import AdviesPanel from './views/cases/components/AdviesPanel.vue'
@@ -615,11 +615,10 @@ const registry = {
 	},
 
 	// @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-follows-board-dqlakken-req-drd-005
-	DocumentRedactionDialog: {
-		kind: 'modal',
-		component: DocumentRedactionDialog,
-		propsSchema: {},
-		_note: "Redact the partly public documents of a case (document-redaction REQ-DRD-005), built to board DqLakken: the document text with the passages marked, and the proposal with a verdict per passage (Agreed, Adjust, Do not redact) and Add passage. Generic (decision 182): the header action carries the routes and the passage type labels in its props; the Woo request case type configures it as `document-redact`. Record redaction is enabled only when every passage has a verdict, and records the officer's check before it asks filinq for the copy. Upload redacted version records a version made elsewhere. A refusal shows the server's sentence. The manifest carries no _note because $defs/action refuses one.",
+	CaseRedactionView: {
+		kind: 'page',
+		component: CaseRedactionView,
+		_note: "Redact the partly public documents of a case (document-redaction REQ-DRD-005), built to board DqLakken as a page at /cases/:id/redact: the document text with the passages marked, and the proposal with a verdict per passage (Agreed, Adjust, Do not redact) and Add passage. It draws DocumentRedactionDialog in its page mode. Generic (decision 182): the CaseRedaction page config carries the routes and the passage type labels, and the case page's `document-redact` action navigates here. Record redaction is enabled only when every passage has a verdict, and records the officer's check before it asks filinq for the copy. Upload redacted version records a version made elsewhere. A refusal shows the server's sentence.",
 	},
 
 	// @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003

@@ -97,6 +97,16 @@ describe('blueprintSections', () => {
 		expect(section(sections, 'statuses').rows[0].badge).toBe('')
 	})
 
+	it('reads a language-tagged name in a language, never as [object Object]', () => {
+		const sections = blueprintSections({
+			statusTypes: [{ id: 's1', name: { nl: 'In behandeling', en: 'In progress' } }],
+		})
+
+		const name = section(sections, 'statuses').rows[0].name
+		expect(typeof name).toBe('string')
+		expect(['In behandeling', 'In progress']).toContain(name)
+	})
+
 	it('uses the labels it is handed, already translated', () => {
 		// The labels arrive translated rather than as keys through a callback:
 		// a string that lives in the helper and passes through a translate
