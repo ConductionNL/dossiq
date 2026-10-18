@@ -455,7 +455,7 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-followers-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-followers-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		expect(others(simple)).toEqual(others(original))
@@ -662,6 +662,8 @@ describe('the header and the side column', () => {
 			'case-social-indications',
 			'case-social-meetings',
 			'case-tender-bids',
+			'case-grant-decisions',
+			'case-grant-advances',
 		])
 		expect(tabs[0].label).toBe('Overview')
 		// The objection's grounds open the Overview stack, gated by the card's own visibleWhen.
@@ -679,6 +681,9 @@ describe('the header and the side column', () => {
 			expect(list.type).toBe('object-list')
 			expect(Object.values(list.content.filter)).toEqual(['@objectId'])
 		}
+		// Subsidy records name the application, not the case: they are reached
+		// through it with a flat `_referenced` key, never a dotted path.
+		expect(Object.keys(find(simple, 'case-grant-decisions').content.filter)).toEqual(['_referenced[subsidieAanvraag][subsidieaanvraag][case]'])
 	})
 
 	it('draws the header as a card holding the stages, and the banners in the side column', () => {
