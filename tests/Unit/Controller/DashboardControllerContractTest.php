@@ -160,7 +160,7 @@ class DashboardControllerContractTest extends TestCase {
 			$this->assertArrayHasKey('slug', $feature);
 			$this->assertArrayHasKey('title', $feature);
 			$this->assertArrayHasKey('status', $feature);
-			$this->assertContains($feature['category'] ?? null, ['cases', 'decisions', 'connections', 'roadmap'], $feature['slug']);
+			$this->assertContains($feature['category'] ?? null, ['cases', 'decisions', 'roadmap'], $feature['slug']);
 		}
 
 		$this->assertArrayHasKey('features_roadmap_app_version', $provided, 'the board header names the installed version');
