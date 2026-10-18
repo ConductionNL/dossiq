@@ -3498,6 +3498,7 @@
 									"label": "Fields",
 									"widgetIds": [
 										"case-type-fields",
+										"case-type-field-rules",
 										"case-type-core",
 										"case-type-list-layout"
 									],
@@ -3736,6 +3737,42 @@
 								}
 							],
 							"emptyText": "No rights declared for this case type yet"
+						}
+					},
+					{
+						"id": "case-type-field-rules",
+						"type": "field-list",
+						"title": "Who sees and fills what",
+						"description": "Hidden or read only, per group and status",
+						"_note": "DqZaaktypeVelden: the case type's field rights (fieldRoleRules), read only here; OpenRegister enforces them on every read path.",
+						"content": {
+							"field": "fieldRoleRules",
+							"readOnly": true,
+							"variant": "table",
+							"columns": [
+								{
+									"header": "Field",
+									"path": "field",
+									"strong": true
+								},
+								{
+									"header": "Rule",
+									"path": "rule"
+								},
+								{
+									"header": "Groups",
+									"path": "groups"
+								},
+								{
+									"header": "In status",
+									"path": "heldBy"
+								},
+								{
+									"header": "Reason",
+									"path": "reason"
+								}
+							],
+							"emptyText": "No field rights declared for this case type yet"
 						}
 					},
 					{
