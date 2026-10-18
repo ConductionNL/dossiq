@@ -10207,6 +10207,7 @@
         "Which seat moved: handler or coordinator.": "Welke stoel verplaatste: behandelaar of coördinator.",
         "Which seat was emptied.": "Welke stoel is leeggemaakt.",
         "Which version of this case type you are looking at. A case type is never edited once cases run on it: you make a new version, and the new version is a new object carrying its own statuses, results and properties. Version 1 is a case type nobody has versioned yet.": "Welke versie van dit zaaktype je voor je hebt. Een zaaktype pas je niet meer aan zodra er zaken op lopen: je maakt een nieuwe versie, en die nieuwe versie is een nieuw object met zijn eigen statussen, resultaten en eigenschappen. Versie 1 is een zaaktype dat nog nooit is geversioneerd.",
+        "Who": "Wie",
         "Who accepted or refused.": "Wie heeft aangenomen of geweigerd.",
         "Who called or was called": "Wie belde of werd gebeld",
         "Who can see this": "Wie mag dit zien",
