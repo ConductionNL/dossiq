@@ -2299,7 +2299,6 @@ OC.L10N.register(
         "Department Concerned": "Betrokken afdeling",
         "Department or advisory body being consulted": "Afdeling of adviesorgaan dat om advies wordt gevraagd",
         "Department to which this role belongs.": "Afdeling waar deze rol bij hoort.",
-        "Departments": "Afdelingen",
         "Departments and staff": "Afdelingen en medewerkers",
         "Depends On": "Hangt af van",
         "Deployed Trajectories": "Ingezette trajecten",

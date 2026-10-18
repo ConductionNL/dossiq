@@ -2299,7 +2299,6 @@ OC.L10N.register(
         "Department Concerned": "Department Concerned",
         "Department or advisory body being consulted": "Department or advisory body being consulted",
         "Department to which this role belongs.": "Department to which this role belongs.",
-        "Departments": "Departments",
         "Departments and staff": "Departments and staff",
         "Depends On": "Depends On",
         "Deployed Trajectories": "Deployed Trajectories",
