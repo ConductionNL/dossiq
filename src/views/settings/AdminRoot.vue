@@ -40,7 +40,7 @@
 			:description="
 				t(
 					'dossiq',
-					'Red: a holiday or closing day. Terms do not count these days. One calendar for the whole organisation.',
+					'Red: a holiday or closing day. Terms do not count these days. These days apply to every app that uses the national calendar.',
 				)
 			">
 			<CnWorkingCalendarWidget :content="workingCalendarContent" />
