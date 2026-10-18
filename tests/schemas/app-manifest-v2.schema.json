@@ -4168,6 +4168,11 @@
 								]
 							}
 						},
+						"sideColumnFrom": {
+							"type": "string",
+							"minLength": 1,
+							"description": "type='detail': a field path, read like a `visibleWhen` field, whose value picks the side column and its order for this record, e.g. `@context.caseType.sideCards` (a case type that names the cards its cases show). When the value is a non-empty list of widget ids, the side column is those of `sideColumn` in that order and the rest are left out; each still follows its own `visibleWhen`. Any other value, or no value, keeps `sideColumn` as declared. Maps to CnDetailPage `sideColumnFrom`."
+						},
 						"headerActions": {
 							"type": "array",
 							"description": "Page-level header actions rendered inside CnActionsBar's overflow dropdown (between the built-in Refresh action and the `#action-items` slot). On a `type:'detail'` page the same entries render in the header's Actions menu, above the Request-a-feature / Report-a-bug / Documentation trio. Same shape as the row-level `actions[]` ($ref action), but handlers receive NO row context — they are page-level. Reserved ids (`refresh`, `import`, `export`, `copy`, `delete`) are dropped at render time to avoid shadowing built-ins. See manifest-icons-and-page-actions for the dispatch semantics.",
