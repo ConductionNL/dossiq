@@ -29,6 +29,17 @@ describe('the processing-time period switch', () => {
 		expect(range.presets.map((preset) => preset.id)).toContain(range.default.preset)
 	})
 
+	it('carries a Dutch translation for every word suffix on its tiles', () => {
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
+		const suffixes = page.config.widgets
+			.map((widget) => widget.content?.format?.suffix)
+			.filter((suffix) => typeof suffix === 'string' && /[a-z]/i.test(suffix))
+		expect(suffixes.length).toBeGreaterThan(0)
+		for (const suffix of suffixes) {
+			expect(nl[suffix], `"${suffix}" reads English on a Dutch dashboard`).toBeTruthy()
+		}
+	})
+
 	it('draws no widget Actions menu, as board DqDoorlooptijd', () => {
 		expect(page.config.showWidgetActions).toBe(false)
 	})
