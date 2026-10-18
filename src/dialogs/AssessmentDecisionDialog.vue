@@ -51,7 +51,7 @@
 					:modelValue="proposedOutcome"
 					:label="t('dossiq', 'Decision')"
 					:options="outcomeOptions"
-					:disabled="true"
+					:readonly="true"
 					:descriptionLines="1" />
 
 				<p

@@ -136,6 +136,10 @@ describe('AssessmentDecisionDialog', () => {
 		expect(wrapper.vm.outcomeOptions[0].description).toBe(
 			'All requested documents become public',
 		)
+		// Read-only at full contrast: the decision follows the assessment.
+		const cards = wrapper.find('cn-choice-cards-stub')
+		expect(cards.attributes('readonly')).toBeDefined()
+		expect(cards.attributes('disabled')).toBeUndefined()
 	})
 
 	it('testOutstandingDocumentsBlockSubmit', async () => {
