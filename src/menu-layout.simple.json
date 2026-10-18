@@ -3564,6 +3564,19 @@
 							"isDraft": true
 						},
 						"showCount": true
+					},
+					{
+						"label": "Shipped",
+						"_note": "The case types dossiq delivered (imported by the app, owner __system__), as against those an organisation made itself (board DqZaaktypen, Meegeleverd).",
+						"filter": {
+							"supersededBy": {
+								"isnull": true
+							},
+							"@self": {
+								"owner": "__system__"
+							}
+						},
+						"showCount": true
 					}
 				]
 			}
