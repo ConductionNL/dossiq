@@ -117,6 +117,13 @@ describe('the one personal settings screen', () => {
 		expect(icons).toHaveLength(sections.length)
 	})
 
+	it('introduces the case types in my menu with the board sentence, which has a Dutch translation', () => {
+		const intro = 'These case types are in your dossiq menu, under My case types. One click opens their case list. Drag a handle to change the order.'
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8'))
+		expect(userSettings).toContain(intro)
+		expect(nl.translations[intro]).toMatch(/^Deze zaaktypen staan in je linkermenu van dossiq/)
+	})
+
 	it('opens on the hash the My case types pencil links to', () => {
 		expect(app).toContain("const USER_SETTINGS_HASH = '#user-settings'")
 		expect(app).toContain("addEventListener('hashchange'")
