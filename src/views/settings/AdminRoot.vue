@@ -11,214 +11,251 @@
 		tabStorageKey="dossiq.admin.activeTab"
 		tabsVariant="underline"
 		:compact="true"
-		:sectionColumns="1"
+		:sectionColumns="['general', 'vth'].includes(activeTab) ? 2 : 1"
 		:showSetup="true"
 		:setupSteps="setupSteps"
 		lazyTabs
 		@tabChange="onTabChange"
 		@reimported="onReimported">
-		<Settings />
+		<CnSettingsFieldsSection
+			id="section-house-style"
+			appId="dossiq"
+			:name="t('dossiq', 'House style')"
+			:columns="3"
+			:wide="true"
+			valuesPath="config"
+			:fields="houseStyleFields" />
+
+		<CnSettingsFieldsSection
+			id="section-texts-and-access"
+			appId="dossiq"
+			:name="t('dossiq', 'Texts and access')"
+			:columns="1"
+			valuesPath="config"
+			:fields="textsAndAccessFields">
+		</CnSettingsFieldsSection>
 
 		<CnSettingsSection
-			id="section-menu-structure"
-			:name="t('dossiq', 'Menu structure')"
-			:description="
-				t('dossiq', 'Choose how much the menu shows. Simple is the default.')
-			">
-			<MenuStructureTab />
-		</CnSettingsSection>
-
-		<CnSettingsSection
-			id="section-background-service-account"
-			:name="t('dossiq', 'Background service account')"
+			id="section-working-days"
+			:name="t('dossiq', 'Working days and holidays')"
 			:description="
 				t(
 					'dossiq',
-					'The account background jobs save as, with the access checks of OpenRegister on.',
+					'Red: a holiday or closing day. Terms do not count these days. These days apply to every app that uses the national calendar.',
 				)
 			">
-			<BackgroundServiceAccountSettings />
+			<CnWorkingCalendarWidget :content="workingCalendarContent" />
 		</CnSettingsSection>
 
-		<CnSettingsSection
-			id="section-mailbox"
-			:name="t('dossiq', 'Case email: shared mailbox')"
-			:description="
-				t(
-					'dossiq',
-					'Shared functional mailbox ingest (IMAP) and transport for case correspondence. Outbound mail and per-user accounts are owned by Nextcloud Mail.',
-				)
-			"
-			:loading="!storesReady">
-			<EmailSettings v-if="storesReady" />
-		</CnSettingsSection>
+		<template #tab-system>
+			<Settings />
 
-		<CnSettingsSection
-			:name="t('dossiq', 'AI-assisted processing')"
-			:description="
-				t(
-					'dossiq',
-					'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support',
-				)
-			"
-			:loading="!storesReady">
-			<AiSettingsTab v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				id="section-menu-structure"
+				:name="t('dossiq', 'Menu structure')"
+				:description="
+					t(
+						'dossiq',
+						'Choose how much the menu shows. Simple is the default.',
+					)
+				">
+				<MenuStructureTab />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			:name="t('dossiq', 'Consultation management')"
-			:description="
-				t(
-					'dossiq',
-					'Adviesaanvragen: advisory body registry, mandatory-gate config, n8n webhook contracts and external response settings.',
-				)
-			"
-			:loading="!storesReady">
-			<ConsultationSettingsTab v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				id="section-background-service-account"
+				:name="t('dossiq', 'Background service account')"
+				:description="
+					t(
+						'dossiq',
+						'The account background jobs save as, with the access checks of OpenRegister on.',
+					)
+				">
+				<BackgroundServiceAccountSettings />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			id="section-search-index"
-			:name="t('dossiq', 'Search index')"
-			:description="
-				t(
-					'dossiq',
-					'The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.',
-				)
-			"
-			:loading="!storesReady">
-			<SearchIndexTab v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				id="section-mailbox"
+				:name="t('dossiq', 'Case email: shared mailbox')"
+				:description="
+					t(
+						'dossiq',
+						'Shared functional mailbox ingest (IMAP) and transport for case correspondence. Outbound mail and per-user accounts are owned by Nextcloud Mail.',
+					)
+				"
+				:loading="!storesReady">
+				<EmailSettings v-if="storesReady" />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			id="section-first-run"
-			:name="t('dossiq', 'First run')"
-			:description="
-				t(
-					'dossiq',
-					'What this instance still needs before it can take a case. Reported, never required. Repair the register with the Re-import configuration button.',
-				)
-			"
-			:loading="!storesReady">
-			<FirstRunTab v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				:name="t('dossiq', 'AI-assisted processing')"
+				:description="
+					t(
+						'dossiq',
+						'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support',
+					)
+				"
+				:loading="!storesReady">
+				<AiSettingsTab v-if="storesReady" />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			id="section-prerequisites"
-			:name="t('dossiq', 'Prerequisites')"
-			:description="
-				t(
-					'dossiq',
-					'What dossiq needs to run, and what this instance has. Read live, every time you open this page.',
-				)
-			">
-			<PrerequisitesTab />
-		</CnSettingsSection>
+			<CnSettingsSection
+				:name="t('dossiq', 'Consultation management')"
+				:description="
+					t(
+						'dossiq',
+						'Adviesaanvragen: advisory body registry, mandatory-gate config, n8n webhook contracts and external response settings.',
+					)
+				"
+				:loading="!storesReady">
+				<ConsultationSettingsTab v-if="storesReady" />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			id="section-shipped-configuration"
-			:name="t('dossiq', 'What shipped with dossiq')"
-			:description="
-				t(
-					'dossiq',
-					'Every case type, status, result and role dossiq seeded, and whether you changed it since. A newer shipped version is offered per object and never overwrites a change you made.',
-				)
-			"
-			:loading="!storesReady">
-			<ShippedConfiguration v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				id="section-search-index"
+				:name="t('dossiq', 'Search index')"
+				:description="
+					t(
+						'dossiq',
+						'The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.',
+					)
+				"
+				:loading="!storesReady">
+				<SearchIndexTab v-if="storesReady" />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			:name="t('dossiq', 'Tenant onboarding')"
-			:description="
-				t(
-					'dossiq',
-					'Track a tenant through the seven onboarding steps, run the go-live readiness check and activate the tenant. One-time setup, so it belongs here rather than in the daily navigation.',
-				)
-			"
-			:loading="!storesReady">
-			<TenantOnboardingTab v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				id="section-first-run"
+				:name="t('dossiq', 'First run')"
+				:description="
+					t(
+						'dossiq',
+						'What this instance still needs before it can take a case. Reported, never required. Repair the register with the Re-import configuration button.',
+					)
+				"
+				:loading="!storesReady">
+				<FirstRunTab v-if="storesReady" />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			:name="t('dossiq', 'Case type management')"
-			:description="t('dossiq', 'Manage case types and their configurations')"
-			:loading="!storesReady">
-			<CaseTypeAdmin v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				id="section-prerequisites"
+				:name="t('dossiq', 'Prerequisites')"
+				:description="
+					t(
+						'dossiq',
+						'What dossiq needs to run, and what this instance has. Read live, every time you open this page.',
+					)
+				">
+				<PrerequisitesTab />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			:name="t('dossiq', 'AWB term definitions')"
-			:description="
-				t(
-					'dossiq',
-					'Configure statutory term definitions per zaaktype for AWB termijnbewaking (legal basis, duration, validity). Versioning is enforced on save.',
-				)
-			"
-			:loading="!storesReady">
-			<TermijnDefinitiesTab v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				id="section-shipped-configuration"
+				:name="t('dossiq', 'What shipped with dossiq')"
+				:description="
+					t(
+						'dossiq',
+						'Every case type, status, result and role dossiq seeded, and whether you changed it since. A newer shipped version is offered per object and never overwrites a change you made.',
+					)
+				"
+				:loading="!storesReady">
+				<ShippedConfiguration v-if="storesReady" />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			:name="t('dossiq', 'Queue urgency')"
-			:description="
-				t(
-					'dossiq',
-					'When a case counts as critical or almost due, and how much priority and time lying still weigh in the order.',
-				)
-			">
-			<QueueUrgencySettingsTab />
-		</CnSettingsSection>
+			<CnSettingsSection
+				:name="t('dossiq', 'Tenant onboarding')"
+				:description="
+					t(
+						'dossiq',
+						'Track a tenant through the seven onboarding steps, run the go-live readiness check and activate the tenant. One-time setup, so it belongs here rather than in the daily navigation.',
+					)
+				"
+				:loading="!storesReady">
+				<TenantOnboardingTab v-if="storesReady" />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			:name="t('dossiq', 'Mandate matrix: administration')"
-			:description="
-				t(
-					'dossiq',
-					'Configure mandate decisions, organisational roles, role assignments, and import legacy mandate exports',
-				)
-			"
-			:loading="!storesReady">
-			<MandaatMatrixTab v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				:name="t('dossiq', 'Case type management')"
+				:description="
+					t('dossiq', 'Manage case types and their configurations')
+				"
+				:loading="!storesReady">
+				<CaseTypeAdmin v-if="storesReady" />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			:name="t('dossiq', 'Mandate matrix: system settings')"
-			:description="
-				t(
-					'dossiq',
-					'Awb art. 10:3 mandate administration: Decidiq import, role hierarchy, waarnemer assignments.',
-				)
-			"
-			:loading="!storesReady">
-			<MandaatMatrixSettingsTab v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				:name="t('dossiq', 'AWB term definitions')"
+				:description="
+					t(
+						'dossiq',
+						'Configure statutory term definitions per zaaktype for AWB termijnbewaking (legal basis, duration, validity). Versioning is enforced on save.',
+					)
+				"
+				:loading="!storesReady">
+				<TermijnDefinitiesTab v-if="storesReady" />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			id="section-archival"
-			:name="t('dossiq', 'Archiving')"
-			:description="
-				t(
-					'dossiq',
-					'How often a reviewer is reminded of the archival decisions they hold. The setting lives in OpenRegister, which runs the archiving process; dossiq keeps no copy of it.',
-				)
-			"
-			:loading="!storesReady">
-			<ArchivalSettingsTab v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				:name="t('dossiq', 'Queue urgency')"
+				:description="
+					t(
+						'dossiq',
+						'When a case counts as critical or almost due, and how much priority and time lying still weigh in the order.',
+					)
+				">
+				<QueueUrgencySettingsTab />
+			</CnSettingsSection>
 
-		<CnSettingsSection
-			id="section-woo-reports"
-			:name="t('dossiq', 'Woo review reports')"
-			:description="
-				t(
-					'dossiq',
-					'Choose which Woo review reports your organisation uses, and who may read the throughput per reviewer.',
-				)
-			"
-			:loading="!storesReady">
-			<WooReportsSettingsTab v-if="storesReady" />
-		</CnSettingsSection>
+			<CnSettingsSection
+				:name="t('dossiq', 'Mandate matrix: administration')"
+				:description="
+					t(
+						'dossiq',
+						'Configure mandate decisions, organisational roles, role assignments, and import legacy mandate exports',
+					)
+				"
+				:loading="!storesReady">
+				<MandaatMatrixTab v-if="storesReady" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
+				:name="t('dossiq', 'Mandate matrix: system settings')"
+				:description="
+					t(
+						'dossiq',
+						'Awb art. 10:3 mandate administration: Decidiq import, role hierarchy, waarnemer assignments.',
+					)
+				"
+				:loading="!storesReady">
+				<MandaatMatrixSettingsTab v-if="storesReady" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
+				id="section-archival"
+				:name="t('dossiq', 'Archiving')"
+				:description="
+					t(
+						'dossiq',
+						'How often a reviewer is reminded of the archival decisions they hold. The setting lives in OpenRegister, which runs the archiving process; dossiq keeps no copy of it.',
+					)
+				"
+				:loading="!storesReady">
+				<ArchivalSettingsTab v-if="storesReady" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
+				id="section-woo-reports"
+				:name="t('dossiq', 'Woo review reports')"
+				:description="
+					t(
+						'dossiq',
+						'Choose which Woo review reports your organisation uses, and who may read the throughput per reviewer.',
+					)
+				"
+				:loading="!storesReady">
+				<WooReportsSettingsTab v-if="storesReady" />
+			</CnSettingsSection>
+		</template>
 
 		<template #tab-integrations>
 			<CnSettingsSection
@@ -251,6 +288,20 @@
 						)
 					" />
 			</CnSettingsSection>
+
+			<CnSettingsFieldsSection
+				id="section-kadaster"
+				appId="dossiq"
+				:name="t('dossiq', 'Kadaster (BRK) and WOZ')"
+				:description="
+					t(
+						'dossiq',
+						'Off until you choose a source. Off means: no request goes outside.',
+					)
+				"
+				:columns="3"
+				valuesPath="config"
+				:fields="kadasterFields" />
 
 			<CnSettingsSection
 				id="section-zgw"
@@ -376,6 +427,7 @@
 		<template #tab-vth>
 			<CnSettingsSection
 				id="section-intake-activities"
+				:wide="true"
 				:name="t('dossiq', 'Activities from the Omgevingsloket')"
 				:description="
 					t(
@@ -402,6 +454,7 @@
 
 			<CnSettingsSection
 				id="section-fee-schedules"
+				:wide="true"
 				:name="t('dossiq', 'Fee rules')"
 				:description="
 					t(
@@ -474,8 +527,10 @@
 <script>
 import {
 	CnAdminSettingsShell,
+	CnSettingsFieldsSection,
 	CnSettingsSection,
 	CnWidgetObjectTable,
+	CnWorkingCalendarWidget,
 } from '@conduction/nextcloud-vue'
 import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
@@ -508,6 +563,11 @@ import WooReportsSettingsTab from './tabs/WooReportsSettingsTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import manifest from '../../manifest.json'
 import { initializeStores } from '../../store/store.js'
+import {
+	houseStyleFields,
+	kadasterFields,
+	textsAndAccessFields,
+} from './adminFields.js'
 
 export default {
 	name: 'AdminRoot',
@@ -517,8 +577,10 @@ export default {
 		PrerequisitesTab,
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
+		CnSettingsFieldsSection,
 		CnSettingsSection,
 		CnWidgetObjectTable,
+		CnWorkingCalendarWidget,
 		Settings,
 		CaseTypeAdmin,
 		ZgwMappingSettings,
@@ -581,6 +643,7 @@ export default {
 		adminTabs() {
 			return [
 				{ id: 'general', label: this.t('dossiq', 'General') },
+				{ id: 'system', label: this.t('dossiq', 'System') },
 				{
 					id: 'integrations',
 					label: this.t('dossiq', 'Integration settings'),
@@ -695,7 +758,6 @@ export default {
 					cellClass: 'cn-cell--strong',
 					secondary: '{description}',
 				},
-				{ key: 'statusMessage', label: this.t('dossiq', 'Source') },
 				{
 					key: 'status',
 					label: this.t('dossiq', 'Status'),
@@ -774,6 +836,59 @@ export default {
 				{ key: 'amount', label: this.t('dossiq', 'Amount') },
 				{ key: 'validFrom', label: this.t('dossiq', 'Valid from') },
 			]
+		},
+
+		/**
+		 * The Kadaster (BRK) and WOZ bindings IntegrationMode reads: the
+		 * source, the service address and the key, which is written and never
+		 * read back.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		kadasterFields() {
+			return kadasterFields(this.t.bind(this))
+		},
+
+		/**
+		 * Huisstijl: the organisation's name and logo are Nextcloud theming's,
+		 * the theme is thematiq's brand for dossiq, and only the name staff know
+		 * the app by is dossiq's own setting.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		houseStyleFields() {
+			return houseStyleFields(this.t.bind(this))
+		},
+
+		/**
+		 * Teksten en toegang: the sender of dossiq's messages and the text above
+		 * Mijn zaken in the portal; which websites may call the portal is
+		 * configured where the portal runs, so it is a pointer here.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		textsAndAccessFields() {
+			return textsAndAccessFields(this.t.bind(this))
+		},
+
+		/**
+		 * The organisation's working calendar in OpenRegister: the default
+		 * calendar dossiq's terms count on (`nl-national`).
+		 *
+		 * @return {object} The widget content.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		workingCalendarContent() {
+			return {
+				calendar: {
+					register: 'flow-timers',
+					schema: 'working-calendar',
+					filter: { slug: 'nl-national' },
+				},
+			}
 		},
 
 		/**

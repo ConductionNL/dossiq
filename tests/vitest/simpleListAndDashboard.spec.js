@@ -497,7 +497,9 @@ describe('the landing page', () => {
 				}
 				return item
 			})
-		expect(dashboard.config.widgets).toEqual(sameButBars(before.config.widgets))
+		// Plus the board's info line under the grid (DqDashboard), which only the simple structure draws.
+		expect(dashboard.config.widgets.filter((item) => item.id !== 'layout-note')).toEqual(sameButBars(before.config.widgets))
+		expect(dashboard.config.widgets.map((item) => item.id)).toContain('layout-note')
 		expect(dashboard.config.kpiRow).toEqual([
 			'kpi-open-cases',
 			'kpi-overdue',
@@ -511,6 +513,7 @@ describe('the landing page', () => {
 			'stalled-cases',
 			'favourite-cases',
 			'recent-cases',
+			'layout-note',
 		])
 		expect(dashboard.config.showHeader).toBeUndefined()
 		expect(dashboard.slots).toEqual(before.slots)

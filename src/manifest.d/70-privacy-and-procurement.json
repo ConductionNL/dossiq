@@ -48,6 +48,19 @@
 				],
 				"headerMeta": "{total} open · term one month, extendable by two",
 				"addLabel": "New data subject request",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "add",
+						"label": "New data subject request",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
 				"searchPlaceholder": "Search by case or person involved",
 				"footerNote": "20 per page",
 				"notice": {
@@ -57,23 +70,27 @@
 				"quickFilters": [
 					{
 						"label": "All",
+						"showCount": true,
 						"filter": {},
 						"default": true
 					},
 					{
 						"label": "Subject access",
+						"showCount": true,
 						"filter": {
 							"dataSubjectRequestType": "inzage"
 						}
 					},
 					{
 						"label": "Correction",
+						"showCount": true,
 						"filter": {
 							"dataSubjectRequestType": "correctie"
 						}
 					},
 					{
 						"label": "Erasure",
+						"showCount": true,
 						"filter": {
 							"dataSubjectRequestType": "verwijdering"
 						}
@@ -176,6 +193,19 @@
 				],
 				"headerMeta": "{total} contracts",
 				"addLabel": "New contract",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "add",
+						"label": "New contract",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
 				"searchPlaceholder": "Search a contract or supplier",
 				"footerNote": "20 per page",
 				"notice": {
@@ -185,23 +215,27 @@
 				"quickFilters": [
 					{
 						"label": "All",
+						"showCount": true,
 						"filter": {},
 						"default": true
 					},
 					{
 						"label": "Active",
+						"showCount": true,
 						"filter": {
 							"status": "active"
 						}
 					},
 					{
 						"label": "Expires within 6 months",
+						"showCount": true,
 						"filter": {
 							"renewalWarning": true
 						}
 					},
 					{
 						"label": "Decision needed",
+						"showCount": true,
 						"filter": {
 							"status": ["renewal-decision", "termination-decision"]
 						}
@@ -296,6 +330,19 @@
 				],
 				"headerMeta": "{total} suppliers",
 				"addLabel": "New supplier",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "add",
+						"label": "New supplier",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
 				"rowIcon": "OfficeBuildingOutline",
 				"columns": [
 					{

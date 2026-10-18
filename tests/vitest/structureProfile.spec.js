@@ -221,7 +221,7 @@ describe('the simple profile', () => {
 		// The profile asks the instance's theming for the name and the logo;
 		// the app only puts its own name there.
 		expect(simpleFile.nav.brand).toEqual({
-			name: 'Dossiq',
+			name: '@theming.staffAppName|Dossiq',
 			caption: '@theming.name',
 			logo: '@theming.emblem|@theming.logo',
 		})
@@ -259,6 +259,15 @@ describe('the simple profile', () => {
 		// An instance that answers nothing gets no caption and no logo: the
 		// profile invents no municipality.
 		expect(built.nav.brand).toEqual({ name: 'Dossiq', caption: '', logo: '' })
+		// The name an administrator gives the app for staff replaces Dossiq.
+		const named = buildProfiledManifest(
+			buildManifest,
+			manifest(),
+			fragments,
+			simpleFile,
+			{ theming: { staffAppName: 'Zaken' } },
+		)
+		expect(named.nav.brand.name).toBe('Zaken')
 		// The full profile declares no brand and gets none.
 		expect(build(fullFile).nav).toBeUndefined()
 		// main.js hands the theming capabilities over.
@@ -443,7 +452,9 @@ describe('the simple profile', () => {
 		// Each link names a page that exists and an icon the app registers.
 		const pageIds = new Set(built.pages.map((page) => page.id))
 		for (const overlay of simpleFile.pages) {
-			const links = (overlay.configAppend?.headerActions ?? []).filter((action) => action.type === 'open-page')
+			const links = (overlay.configAppend?.headerActions ?? []).filter(
+				(action) => action.type === 'open-page',
+			)
 			for (const action of links) {
 				expect(pageIds.has(action.target), action.id).toBe(true)
 				expect(iconsSource).toContain(`\n\t${action.icon},\n`)
@@ -461,10 +472,11 @@ describe('the simple profile', () => {
 	// 73 -> 74: search results over cases, objects and documents (DqZoekresultaten).
 	// 74 -> 76: the organisations on this environment get a list and a page (DqTenant).
 	// 76 -> 77: the departments and staff get a page (DqAfdelingen).
-	it('builds the same 77 pages as the full profile, so every route stays', () => {
+	// 77 -> 78: the redaction page of a case (DqLakken).
+	it('builds the same 78 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(77)
+		expect(built.pages).toHaveLength(78)
 	})
 })
 

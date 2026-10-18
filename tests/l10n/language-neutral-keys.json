@@ -22,6 +22,8 @@
         "Cloud",
         "Quota",
         "Code",
+        "WOZ",
+        "Kadaster (BRK)",
         "Matrix",
         "Privacy",
         "Schema",
@@ -104,6 +106,8 @@
         "{competentCourt}",
         "{scheduledDate|date}",
         "{tedoel}",
-        "Agenda"
+        "{step}",
+        "Agenda",
+        "In status"
     ]
 }

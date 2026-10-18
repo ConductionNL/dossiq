@@ -163,7 +163,6 @@ import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
 import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
-import DocumentRedactionDialog from './dialogs/DocumentRedactionDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
@@ -184,6 +183,7 @@ import DossierExportPanel from './modals/DossierExportPanel.vue'
 import FileRequestDialog from './modals/FileRequestDialog.vue'
 import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
+import CaseRedactionView from './views/cases/CaseRedactionView.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
 import AdviesPanel from './views/cases/components/AdviesPanel.vue'
@@ -615,11 +615,10 @@ const registry = {
 	},
 
 	// @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-follows-board-dqlakken-req-drd-005
-	DocumentRedactionDialog: {
-		kind: 'modal',
-		component: DocumentRedactionDialog,
-		propsSchema: {},
-		_note: "Redact the partly public documents of a case (document-redaction REQ-DRD-005), built to board DqLakken: the document text with the passages marked, and the proposal with a verdict per passage (Agreed, Adjust, Do not redact) and Add passage. Generic (decision 182): the header action carries the routes and the passage type labels in its props; the Woo request case type configures it as `document-redact`. Record redaction is enabled only when every passage has a verdict, and records the officer's check before it asks filinq for the copy. Upload redacted version records a version made elsewhere. A refusal shows the server's sentence. The manifest carries no _note because $defs/action refuses one.",
+	CaseRedactionView: {
+		kind: 'page',
+		component: CaseRedactionView,
+		_note: "Redact the partly public documents of a case (document-redaction REQ-DRD-005), built to board DqLakken as a page at /cases/:id/redact: the document text with the passages marked, and the proposal with a verdict per passage (Agreed, Adjust, Do not redact) and Add passage. It draws DocumentRedactionDialog in its page mode. Generic (decision 182): the CaseRedaction page config carries the routes and the passage type labels, and the case page's `document-redact` action navigates here. Record redaction is enabled only when every passage has a verdict, and records the officer's check before it asks filinq for the copy. Upload redacted version records a version made elsewhere. A refusal shows the server's sentence.",
 	},
 
 	// @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
@@ -1253,6 +1252,8 @@ const registry = {
 	'case-followers': {
 		// @custom-widget-ratchet exclude a subscription is not an OpenRegister OBJECT and every built-in list widget takes a register and a schema: the rows come from `/api/objects/{r}/{s}/{id}/watchers`, a sub-resource that takes no register-and-schema pair of its own, and there is no `integration` id that reaches it. The 403 a reader without `update` gets has to be drawn APART from an empty list, which a declarative list cannot do: both would render as no rows. Deleted the day nextcloud-vue ships a watchers widget type over that listing
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseFollowersPanel,
 		...PANEL_WIDGET_META,
 		_note: "CaseDetail People tab, the Followers section: who is watching this case, as against the Parties, Roles and Seats sections beside it, which say who the case is about. Reading the list needs `update` on the case, so a reader without it is told that rather than shown an empty list, which would be a claim about the audience nobody made to them. No remove button: taking off somebody else's subscription needs `manage`, and you stop following from the button on the case page, which acts on your own row only.",
@@ -1267,6 +1268,8 @@ const registry = {
 	'case-party-roles': {
 		// @custom-widget-ratchet exclude a party link is not an OpenRegister OBJECT and every built-in list widget takes a register and a schema: the rows come from `/api/objects/{r}/{s}/{id}/parties`, which answers contact-link rows grouped by role together with the schema's own kinds and roles, and the indicators come from `/api/parties/{uuid}`. There is no `integration` id that resolves the party model either; `contacts` renders the person links beside this and cannot see a party with no account. Deleted the day nextcloud-vue ships a parties widget type over that listing
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CasePartiesWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail People tab, the Roles section: the parties of the case grouped by role with the primary party first, which on a case is the initiator. It is the half the contacts integration beside it cannot carry -- a melder with no Nextcloud account, a gemachtigde acting for the applicant, and the indicators a party holds. An indicator renders WITH its verdict (warn, refuse publication, refuse send) because an indicator that only renders is one somebody misses; the two refusals are enforced again where the act happens, in BesluitPublicatiePanel and FileRequestService, and once more inside OpenRegister. A failed read says so in words rather than drawing an empty party list, which would read as a case whose parties had been removed.',

@@ -31,9 +31,15 @@
 					<span>{{ t('dossiq', 'Your queue') }}</span>
 				</p>
 			</div>
-			<NcButton variant="secondary" @click="openPlanner">
-				{{ t('dossiq', 'Plan an item') }}
-			</NcButton>
+			<div class="personal-queue__actions">
+				<NcButton variant="secondary" @click="openPlanner">
+					<template #icon>
+						<CalendarClockOutline :size="20" />
+					</template>
+					{{ t('dossiq', 'Plan an item') }}
+				</NcButton>
+				<CnBuildiqEditButton />
+			</div>
 		</div>
 
 		<NcNoteCard
@@ -155,8 +161,10 @@
 </template>
 
 <script>
+import { CnBuildiqEditButton } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import CalendarClockOutline from 'vue-material-design-icons/CalendarClockOutline.vue'
 import PlanItemDialog from '../../dialogs/PlanItemDialog.vue'
 import {
 	fetchQueue,
@@ -169,6 +177,8 @@ export default {
 	name: 'PersonalQueueView',
 
 	components: {
+		CalendarClockOutline,
+		CnBuildiqEditButton,
 		NcButton,
 		NcLoadingIcon,
 		NcNoteCard,
@@ -324,6 +334,12 @@ export default {
 	justify-content: space-between;
 	gap: 12px;
 	flex-wrap: wrap;
+}
+
+.personal-queue__actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
 .personal-queue__title {

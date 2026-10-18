@@ -1,0 +1,12 @@
+{
+  "id": "jeugdwet",
+  "title": "Jeugdwet",
+  "version": "1.1.0",
+  "requires": [],
+  "parts": [
+    "case-type",
+    "examples"
+  ],
+  "install": "on-request",
+  "description": "The Melding Jeugdwet case type (Jeugdwet artikel 2.3): a report about a child, the investigation, the indication and the case meeting, with its statuses and roles. Category 'Sociaal domein', which is what the case page's social domain cards and tabs gate on. Installed on request: POST /api/packages/jeugdwet/install, or occ dossiq:package:install jeugdwet. Ships an example case in flight (`examples/`), written with the package, its dates relative to the install day."
+}

@@ -33,6 +33,7 @@ describe('the Files tab columns as the library reads them', () => {
 		)
 
 		expect(keys).toEqual(['name', 'scanVerdict', 'vertrouwelijkheidaanduiding'])
+		expect(normaliseFileColumns(filesProps().columns)[0].label, 'board DqDocumentenBeheer heads the name column Document').toBe('Document')
 
 		// The rest of the row moved into the selected file's cards (DqDocumentenBeheer).
 		const cardKeys = filesProps().sideCards.flatMap((card) => card.fields.map((field) => field.key))

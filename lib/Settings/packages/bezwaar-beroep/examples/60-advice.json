@@ -1,0 +1,20 @@
+{
+  "schema": "advisory_report_schema",
+  "rows": [
+    {
+      "id": "723d4f06-db68-589d-947b-de1b600d2ef1",
+      "case": "b081ad8b-807e-5d5c-afcd-7fa5884428df",
+      "hearingSession": "1b3898e4-94ab-55f9-a35a-0e40f27b0739",
+      "committeeChair": "cc42d564-b499-5628-a65c-a42104ab7239",
+      "committeeMembers": [
+        "cc42d564-b499-5628-a65c-a42104ab7239"
+      ],
+      "adviceDate": "{{date:-11}}",
+      "adviceType": "dismissed",
+      "summary": "Het bezwaar is ongegrond. De last is evenredig, maar de begunstigingstermijn mag langer.",
+      "grounds": "De schuur staat er zonder vergunning en legalisatie is niet mogelijk. Een tijdelijk karakter maakt de overtreding niet kleiner.",
+      "recommendation": "Ongegrond, het besluit in stand laten; de begunstigingstermijn verlengen naar 10 weken",
+      "deviationFromPrimaryDecision": false
+    }
+  ]
+}

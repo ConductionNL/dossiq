@@ -232,9 +232,9 @@
 					class="task-detail-page__card"
 					data-testid="task-history-card">
 					<h3 class="task-detail-page__section-title">
-						{{ t('dossiq', 'History') }}
+						{{ t('dossiq', 'Task history') }}
 					</h3>
-					<TaskAuditLeaf :taskId="taskId" />
+					<TaskAuditLeaf :taskId="taskId" open />
 				</section>
 			</aside>
 		</div>
