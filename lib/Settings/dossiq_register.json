@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.50"
+        "version": "0.20.52"
     },
     "x-openregister": {
         "type": "application",
@@ -13113,7 +13113,7 @@
                     "schema": "adviesAanvraag",
                     "slug": "advies-welstand-2026-0042"
                 },
-                "case": "zaak-omgevingsvergunning-0042",
+                "case": "@ref:case:case-bp-dormer-lindenlaan",
                 "advisor": "welstandscommissie",
                 "type": "intern",
                 "subject": "Welstandstoets gevelwijziging Keizersgracht 123",
@@ -13128,7 +13128,7 @@
                     "schema": "adviesAanvraag",
                     "slug": "advies-veiligheidsregio-2026-0038"
                 },
-                "case": "zaak-evenementenvergunning-0038",
+                "case": "@ref:case:case-grant-festival-oranjewijk",
                 "advisor": "Veiligheidsregio Amsterdam-Amstelland",
                 "type": "extern",
                 "subject": "Veiligheidsadvies evenement Museumplein 500+ bezoekers",
@@ -13143,7 +13143,7 @@
                     "schema": "adviesAanvraag",
                     "slug": "advies-rud-2026-0031"
                 },
-                "case": "zaak-milieumelding-0031",
+                "case": "@ref:case:case-complaint-noise-marktplein",
                 "advisor": "Regionale Uitvoeringsdienst Noord-Holland",
                 "type": "extern",
                 "subject": "Milieukundig advies lozing grondwater bouwproject",
@@ -13158,7 +13158,7 @@
                     "schema": "adviesAanvraag",
                     "slug": "advies-juridisch-2026-0055"
                 },
-                "case": "zaak-bezwaar-0055",
+                "case": "@ref:case:case-complaint-slow-permit",
                 "advisor": "juridische-dienst",
                 "type": "intern",
                 "subject": "Juridische toets ontvankelijkheid bezwaarschrift",
@@ -13174,7 +13174,7 @@
                     "schema": "adviesAanvraag",
                     "slug": "advies-brandweer-2026-0047"
                 },
-                "case": "zaak-bouwvergunning-0047",
+                "case": "@ref:case:case-bp-extension-2025",
                 "advisor": "Brandweer Amsterdam-Amstelland",
                 "type": "extern",
                 "subject": "Brandveiligheidsadvies transformatie kantoorpand naar woningen",

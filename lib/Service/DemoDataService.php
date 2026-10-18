@@ -127,6 +127,22 @@ class DemoDataService {
 	}//end isAvailable()
 
 	/**
+	 * App-config key recording the setup wizard's example data decision:
+	 * `installed` when the operator loaded example data, `skipped` when they
+	 * chose none. Anything that plants example rows reads this switch.
+	 *
+	 * @var string
+	 */
+	public const DECIDED_KEY = 'demo_data_decided';
+
+	/**
+	 * The decision that opts this instance into example data.
+	 *
+	 * @var string
+	 */
+	public const DECIDED_INSTALLED = 'installed';
+
+	/**
 	 * The answer that means "plant nothing".
 	 *
 	 * 🔴 NOT THE ABSENCE OF AN ANSWER. An operator who declines has FINISHED the

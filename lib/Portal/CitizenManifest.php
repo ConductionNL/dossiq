@@ -104,11 +104,14 @@ class CitizenManifest {
 	 *                                         resolved from the app settings by
 	 *                                         {@see \OCA\Dossiq\Service\Intake\IntakeCaseTypes}. An action
 	 *                                         whose case type is unknown is left out.
+	 * @param string                $caseListIntro The text an organisation shows above Mijn zaken
+	 *                                             (app setting `portal_intro_text`); empty shows none.
 	 *
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
 	 */
 	public function __construct(
 		private readonly array $caseTypes = [],
+		private readonly string $caseListIntro = '',
 	) {
 	}//end __construct()
 
@@ -646,7 +649,14 @@ class CitizenManifest {
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-says-who-must-act-req-srpd-002
 	 */
 	public function caseCollection(): array {
-		return array_merge($this->caseDetailKeys(), $this->caseListKeys());
+		$collection = array_merge($this->caseDetailKeys(), $this->caseListKeys());
+		// The organisation's own words above the list; portaliq draws a
+		// contributed collection's `intro` above it.
+		if (trim($this->caseListIntro) !== '') {
+			$collection['intro'] = trim($this->caseListIntro);
+		}
+
+		return $collection;
 	}//end caseCollection()
 
 	/**
