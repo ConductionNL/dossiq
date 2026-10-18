@@ -113,7 +113,7 @@ class ShippedCaseTypePublicStepsTest extends TestCase {
 				// A seed reference (`@ref:caseType:<slug>`) is the case type's
 				// slug once the importer resolves it, which is the key here.
 				$caseType = (string)($object['caseType'] ?? '');
-				$caseType = (string)preg_replace('/^@ref:(?:caseType:)?/', '', $caseType);
+				$caseType = (string)preg_replace('/^@ref:caseType:/', '', $caseType);
 				$grouped[$caseType][] = $object;
 			}//end foreach
 		}//end foreach
