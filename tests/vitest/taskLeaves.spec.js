@@ -241,6 +241,18 @@ describe('TaskAuditLeaf', () => {
 		expect(reads).toEqual([])
 	})
 
+	it('shows the entries at once, with no disclosure, when the page asks for it open (DqTaak)', async () => {
+		leaves.audit = {
+			results: [{ id: 1, action: 'claim', stateAfter: 'active', actor: 'hbakker', authorized: true, created: '2026-09-09T10:00:00+00:00' }],
+		}
+		const wrapper = mount(TaskAuditLeaf, { props: { taskId: 'task-1', open: true } })
+		await flushPromises()
+
+		expect(reads).toEqual([{ uuid: 'task-1', leaf: 'audit' }])
+		expect(wrapper.find('[data-testid="task-audit-leaf-toggle"]').exists()).toBe(false)
+		expect(wrapper.findAll('[data-testid="task-audit-leaf-entry"]')).toHaveLength(1)
+	})
+
 	it('reads the engine audit endpoint when opened, once', async () => {
 		const wrapper = await mountLeaf(TaskAuditLeaf)
 
