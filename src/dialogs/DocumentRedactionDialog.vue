@@ -19,12 +19,56 @@
 	@spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-follows-board-dqlakken-req-drd-005
 -->
 <template>
-	<NcDialog
-		:name="dialogName"
-		size="full"
-		data-testid="document-redaction-dialog"
+	<component
+		:is="asPage ? 'section' : 'NcDialog'"
+		v-bind="rootAttrs"
 		@closing="$emit('close')">
-		<div class="document-redaction">
+		<div class="document-redaction" :class="{ 'document-redaction--page': asPage }">
+			<header v-if="asPage" class="document-redaction__head">
+				<div class="document-redaction__heading">
+					<h1 class="document-redaction__title">
+						{{ dialogName }}
+					</h1>
+					<nav
+						class="document-redaction__crumbs"
+						:aria-label="t('dossiq', 'Breadcrumb')"
+						data-testid="document-redaction-crumbs">
+						<router-link :to="{ name: 'Cases' }">
+							{{ t('dossiq', 'All cases') }}
+						</router-link>
+						<span aria-hidden="true">/</span>
+						<router-link :to="{ name: 'CaseDetail', params: { id: targetCaseId } }">
+							{{ (kase && kase.identifier) || t('dossiq', 'Case') }}
+						</router-link>
+						<span aria-hidden="true">/</span>
+						<span>{{ t('dossiq', 'Redact') }}</span>
+					</nav>
+				</div>
+				<div v-if="documents.length > 0" class="document-redaction__buttons">
+					<NcButton
+						data-testid="document-redaction-previous"
+						:disabled="index === 0 || busy"
+						@click="open(index - 1)">
+						{{ t('dossiq', 'Previous document') }}
+					</NcButton>
+					<NcButton
+						data-testid="document-redaction-next"
+						:disabled="index >= documents.length - 1 || busy"
+						@click="open(index + 1)">
+						{{ t('dossiq', 'Next document') }}
+					</NcButton>
+					<NcButton
+						variant="primary"
+						data-testid="document-redaction-redact"
+						:disabled="!canRedact"
+						@click="redact">
+						<template #icon>
+							<Check :size="20" />
+						</template>
+						{{ t('dossiq', 'Record redaction') }}
+					</NcButton>
+				</div>
+			</header>
 			<p
 				v-if="loadError"
 				class="document-redaction__error"
@@ -41,6 +85,7 @@
 			<p
 				v-else-if="documents.length === 0"
 				role="status"
+				class="document-redaction__empty"
 				data-testid="document-redaction-empty">
 				{{
 					t(
@@ -70,18 +115,20 @@
 						</template>
 					</span>
 					<div class="document-redaction__buttons">
-						<NcButton
-							data-testid="document-redaction-previous"
-							:disabled="index === 0 || busy"
-							@click="open(index - 1)">
-							{{ t('dossiq', 'Previous document') }}
-						</NcButton>
-						<NcButton
-							data-testid="document-redaction-next"
-							:disabled="index >= documents.length - 1 || busy"
-							@click="open(index + 1)">
-							{{ t('dossiq', 'Next document') }}
-						</NcButton>
+						<template v-if="!asPage">
+							<NcButton
+								data-testid="document-redaction-previous"
+								:disabled="index === 0 || busy"
+								@click="open(index - 1)">
+								{{ t('dossiq', 'Previous document') }}
+							</NcButton>
+							<NcButton
+								data-testid="document-redaction-next"
+								:disabled="index >= documents.length - 1 || busy"
+								@click="open(index + 1)">
+								{{ t('dossiq', 'Next document') }}
+							</NcButton>
+						</template>
 						<NcButton
 							data-testid="document-redaction-upload"
 							:disabled="busy"
@@ -96,6 +143,7 @@
 							:aria-label="t('dossiq', 'Upload redacted version')"
 							@change="upload($event.target.files)" />
 						<NcButton
+							v-if="!asPage"
 							variant="primary"
 							data-testid="document-redaction-redact"
 							:disabled="!canRedact"
@@ -254,7 +302,7 @@
 				{{ t('dossiq', 'Close') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</component>
 </template>
 
 <script>
@@ -266,6 +314,8 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import Check from 'vue-material-design-icons/Check.vue'
+import { fetchCaseSummary } from '../services/caseSummary.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 const VERDICTS = ['accept', 'adjust', 'skip']
@@ -329,6 +379,7 @@ export default {
 	name: 'DocumentRedactionDialog',
 
 	components: {
+		Check,
 		NcButton,
 		NcDialog,
 		NcSelect,
@@ -381,6 +432,12 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
+
+		/** Draw as the case's redaction page (route `/cases/:id/redact`) instead of a dialog. */
+		asPage: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
 	emits: ['close'],
@@ -398,6 +455,7 @@ export default {
 			busy: false,
 			error: '',
 			notice: '',
+			kase: null,
 		}
 	},
 
@@ -410,6 +468,19 @@ export default {
 			}
 
 			return String(this.$route?.params?.id ?? '')
+		},
+
+		/**
+		 * The root's attributes: a full-size dialog, or a plain page section.
+		 *
+		 * @return {object} The attributes.
+		 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-follows-board-dqlakken-req-drd-005
+		 */
+		rootAttrs() {
+			if (this.asPage) {
+				return { 'data-testid': 'document-redaction-page' }
+			}
+			return { name: this.dialogName, size: 'full', 'data-testid': 'document-redaction-dialog' }
 		},
 
 		/** @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-follows-board-dqlakken-req-drd-005 */
@@ -470,8 +541,11 @@ export default {
 		},
 	},
 
-	mounted() {
+	async mounted() {
 		this.load()
+		if (this.asPage) {
+			this.kase = await fetchCaseSummary(this.targetCaseId)
+		}
 	},
 
 	methods: {
@@ -766,6 +840,52 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+
+	&--page {
+		padding: 20px 28px 28px;
+	}
+
+	&__head {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 12px 24px;
+	}
+
+	&__heading {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		min-width: 0;
+	}
+
+	&__title {
+		margin: 0;
+		font-size: 28px;
+		font-weight: 700;
+		line-height: 1.25;
+	}
+
+	&__crumbs {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+		font-size: 14px;
+
+		a {
+			color: var(--color-primary-element);
+			text-decoration: underline;
+		}
+	}
+
+	&__empty {
+		padding: 20px 22px;
+		background: var(--color-main-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--border-radius-large);
+	}
 
 	&__bar {
 		display: flex;

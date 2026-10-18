@@ -30,6 +30,7 @@ const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
 const action = caseDetail.config.headerActions.find(
 	(entry) => entry.id === 'document-redact',
 )
+const page = manifest.pages.find((entry) => entry.id === 'CaseRedaction')
 
 vi.mock('@nextcloud/axios', () => ({
 	default: { get: vi.fn(), post: vi.fn() },
@@ -45,10 +46,11 @@ const ENTITIES = [
 ]
 
 /**
- * Mount the dialog as the manifest action configures it.
+ * Mount the panel as the CaseRedaction page configures it.
  *
  * @param {object} answers What the requests answer.
  * @param {Array<object>} answers.documents The partly public documents.
+ * @param {boolean} answers.asPage Draw it as the page instead of the dialog.
  * @return {Promise<{wrapper: object, axios: object}>} The mounted dialog and the axios double.
  */
 async function mountDialog({
@@ -60,6 +62,7 @@ async function mountDialog({
 			redactedDocumentRef: '',
 		},
 	],
+	asPage = false,
 } = {}) {
 	const axios = (await import('@nextcloud/axios')).default
 	axios.get.mockImplementation((url) => {
@@ -78,7 +81,7 @@ async function mountDialog({
 	})
 
 	const wrapper = mount(DocumentRedactionDialog, {
-		props: { ...action.props, caseId: CASE_ID },
+		props: { ...page.config, caseId: CASE_ID, asPage },
 		global: {
 			stubs: {
 				NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
@@ -90,6 +93,7 @@ async function mountDialog({
 				},
 				NcSelect: true,
 				NcTextField: true,
+				RouterLink: { props: ['to'], template: '<a><slot /></a>' },
 			},
 		},
 	})
@@ -120,8 +124,11 @@ describe('DocumentRedactionDialog', () => {
 		;(await import('@nextcloud/event-bus')).emit.mockReset()
 	})
 
-	it('is a header action whose routes exist', () => {
-		expect(action.target).toBe('DocumentRedactionDialog')
+	it('is a page the case header navigates to, whose routes exist', () => {
+		expect(action.type).toBe('navigate')
+		expect(action.target).toBe('/cases/{objectId}/redact')
+		expect(page.route).toBe('/cases/:id/redact')
+		expect(page.component).toBe('CaseRedactionView')
 		for (const name of ['index', 'detect', 'check', 'redact', 'upload']) {
 			expect(routes).toContain(`'documentRedaction#${name}'`)
 		}
@@ -145,6 +152,19 @@ describe('DocumentRedactionDialog', () => {
 		expect(
 			wrapper.find('[data-testid="document-redaction-passage-0"]').text(),
 		).toContain('5.1.2e')
+	})
+
+	it('draws the page with its title, breadcrumb and buttons in the header', async () => {
+		const { wrapper } = await mountDialog({ asPage: true })
+
+		expect(wrapper.find('[data-testid="document-redaction-page"]').exists()).toBe(true)
+		expect(wrapper.find('.document-redaction__title').text()).toBe('Redact: Offerte verlichting.pdf')
+		expect(wrapper.find('[data-testid="document-redaction-crumbs"]').text()).toContain('All cases')
+		const head = wrapper.find('.document-redaction__head')
+		expect(head.find('[data-testid="document-redaction-previous"]').exists()).toBe(true)
+		expect(head.find('[data-testid="document-redaction-redact"]').exists()).toBe(true)
+		expect(wrapper.findAll('[data-testid="document-redaction-redact"]')).toHaveLength(1)
+		expect(wrapper.find('[data-testid="document-redaction-close"]').exists()).toBe(false)
 	})
 
 	it('records nothing until every passage has a verdict', async () => {

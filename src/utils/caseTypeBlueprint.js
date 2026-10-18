@@ -17,6 +17,8 @@
 // @spec openspec/specs/case-types/spec.md
 // @spec openspec/specs/property-definition-management/spec.md
 
+import { getUserLocale, resolveTranslatable } from './i18nResolver.js'
+
 /**
  * The blueprint key, section id and label keys of each list, in reading order.
  *
@@ -27,6 +29,7 @@
  * would never reach l10n/en.json, never reach a translator, and render in
  * English to a Dutch reader with every check green.
  */
+
 const SECTIONS = [
 	{ key: 'statusTypes', id: 'statuses' },
 	{ key: 'resultTypes', id: 'results' },
@@ -53,13 +56,15 @@ const DEFAULT_LABELS = {
 }
 
 /**
- * The row's display name.
+ * The row's display name. A language-tagged name (`{ nl, en }`) reads in the
+ * user's language, as every other register text does.
  *
  * @param {object} row A blueprint row.
  * @return {string} Its name, its title, or '' when it has neither.
  */
 function nameOf(row) {
-	return String(row?.name ?? row?.title ?? '')
+	const value = row?.name ?? row?.title ?? ''
+	return resolveTranslatable(value, getUserLocale()).text
 }
 
 /**

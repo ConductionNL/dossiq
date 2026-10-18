@@ -1,0 +1,112 @@
+{
+  "caseType": {
+    "id": "ec042744-0941-59d9-96bc-1abac7f36d71",
+    "identifier": "melding-jeugdwet",
+    "title": "Melding Jeugdwet",
+    "category": "Sociaal domein",
+    "description": "Melding over een kind of gezin onder de Jeugdwet: onderzoek, indicatie en overleg tot een besluit over jeugdhulp.",
+    "purpose": "Vaststellen of en welke jeugdhulp een kind of gezin nodig heeft (Jeugdwet artikel 2.3).",
+    "trigger": "Melding van een verwijzer, zoals de huisarts, of een hulpvraag van ouders of jeugdige.",
+    "subject": "Jeugdhulp",
+    "processingDeadline": "P8W",
+    "extensionAllowed": true,
+    "extensionPeriod": "P4W",
+    "suspensionAllowed": true,
+    "internalOrExternal": "extern",
+    "publicationRequired": false,
+    "isDraft": false,
+    "confidentiality": "vertrouwelijk",
+    "initialStatus": "6ea508cb-3395-5603-98bc-38d4fd34b511"
+  },
+  "statusTypes": [
+    {
+      "id": "6ea508cb-3395-5603-98bc-38d4fd34b511",
+      "name": "Melding ontvangen",
+      "description": "De melding is binnen en geregistreerd.",
+      "order": 1,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "role": "intake"
+    },
+    {
+      "id": "cea85ff4-c209-5d71-8a3b-c835c46ea3f1",
+      "name": "Onderzoek",
+      "description": "Het jeugdteam onderzoekt met het gezin wat er nodig is.",
+      "order": 2,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "role": "in-progress"
+    },
+    {
+      "id": "7f5bc6ef-3623-5fcf-a9b1-dd0091fbae30",
+      "name": "Indicatie",
+      "description": "De indicatie voor jeugdhulp wordt opgesteld.",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    },
+    {
+      "id": "c868dd79-7253-5f14-82ca-ef591d2fac19",
+      "name": "Overleg",
+      "description": "Het multidisciplinair overleg bespreekt de indicatie en het gezinsplan.",
+      "order": 4,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    },
+    {
+      "id": "4543667e-c21a-54fa-a323-b3e81292e5a7",
+      "name": "Besluit",
+      "description": "Het besluit over de jeugdhulp is genomen en verzonden.",
+      "order": 5,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    },
+    {
+      "id": "79596e50-469e-577f-a661-fc5fb5c48d93",
+      "name": "Afgehandeld",
+      "description": "De melding is afgehandeld.",
+      "order": 6,
+      "isFinal": true,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "role": "closed"
+    },
+    {
+      "id": "189ed7f4-456a-5f45-b2df-fd2371ef389b",
+      "name": "Ingetrokken",
+      "description": "De melding of hulpvraag is ingetrokken.",
+      "order": 90,
+      "isFinal": true,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    }
+  ],
+  "roleTypes": [
+    {
+      "id": "05c6d972-32f2-5979-80e1-5ed1fa1c3096",
+      "name": "Melder",
+      "description": "Wie de melding doet, zoals de huisarts",
+      "genericRole": "initiator",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    },
+    {
+      "id": "1eda6c52-f71f-574e-bf79-3d0532f19ab6",
+      "name": "Regisseur",
+      "description": "De regisseur van het jeugdteam",
+      "genericRole": "handler",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    },
+    {
+      "id": "defa6e47-0b6f-50ad-8250-0bcce4e07b4d",
+      "name": "Consulent",
+      "description": "Een consulent die meekijkt vanuit een ander domein",
+      "genericRole": "advisor",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    },
+    {
+      "id": "539d8603-5537-5eb9-b837-b88c5c9600df",
+      "name": "Teamleider jeugd",
+      "description": "Neemt het besluit over de jeugdhulp",
+      "genericRole": "decision_maker",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    }
+  ]
+}
