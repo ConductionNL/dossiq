@@ -8405,6 +8405,7 @@ OC.L10N.register(
         "The legal term has run out. Decide on this request now.": "The legal term has run out. Decide on this request now.",
         "The letter (onderdeel) of the paragraph, empty when the paragraph has none.": "The letter (onderdeel) of the paragraph, empty when the paragraph has none.",
         "The letter could not be drafted.": "The letter could not be drafted.",
+        "The letter of this case could not be read.": "The letter of this case could not be read.",
         "The licence plate the permit is for, stored without dashes.": "The licence plate the permit is for, stored without dashes.",
         "The line under the heading. {shown} and {total} are filled in.": "The line under the heading. {shown} and {total} are filled in.",
         "The link is ready: {url}": "The link is ready: {url}",

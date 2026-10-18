@@ -133,7 +133,7 @@
 					</div>
 
 					<div
-						v-if="letterPurpose && letterDeclaration"
+						v-if="letterPurpose && (letterDeclaration || letterReadError)"
 						class="assessment-decision__field"
 						data-testid="assessment-decision-letter">
 						<span class="assessment-decision__label">{{ t('dossiq', 'Letter of the decision') }}</span>
@@ -144,6 +144,7 @@
 									<strong data-testid="assessment-decision-letter-title">{{ letter.title }}</strong>
 									<span class="assessment-decision__hint">{{ letterLine }}</span>
 								</template>
+								<span v-else-if="letterReadError" class="assessment-decision__hint" data-testid="assessment-decision-letter-unread">{{ t('dossiq', 'The letter of this case could not be read.') }}</span>
 								<span v-else class="assessment-decision__hint">{{ t('dossiq', 'No letter on this case yet.') }}</span>
 							</div>
 							<NcButton
@@ -346,6 +347,7 @@ export default {
 			letter: null,
 			letterDeclaration: null,
 			letterError: '',
+			letterReadError: false,
 			drafting: false,
 			composing: false,
 		}
@@ -594,7 +596,7 @@ export default {
 		},
 
 		/**
-		 * Read the case's letter for the configured purpose. A failure hides the row and blocks nothing.
+		 * Read the case's letter for the configured purpose. A failure says so in the row and blocks nothing.
 		 *
 		 * @return {Promise<void>}
 		 * @spec openspec/specs/decision-document/spec.md
@@ -603,6 +605,7 @@ export default {
 			if (this.letterPurpose === '') {
 				return
 			}
+			this.letterReadError = false
 			try {
 				const { data } = await axios.get(this.letterUrl())
 				this.letterDeclaration = data?.declaration || null
@@ -610,6 +613,7 @@ export default {
 			} catch {
 				this.letterDeclaration = null
 				this.letter = null
+				this.letterReadError = true
 			}
 		},
 

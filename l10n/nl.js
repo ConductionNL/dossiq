@@ -8405,6 +8405,7 @@ OC.L10N.register(
         "The legal term has run out. Decide on this request now.": "De wettelijke termijn is verstreken. Beslis nu op dit verzoek.",
         "The letter (onderdeel) of the paragraph, empty when the paragraph has none.": "Het onderdeel van het lid, leeg als het lid geen onderdelen heeft.",
         "The letter could not be drafted.": "De brief kon niet worden opgesteld.",
+        "The letter of this case could not be read.": "De brief van deze zaak kon niet worden gelezen.",
         "The licence plate the permit is for, stored without dashes.": "Het kenteken waarvoor de vergunning geldt, zonder streepjes opgeslagen.",
         "The line under the heading. {shown} and {total} are filled in.": "De regel onder de kop. {shown} en {total} worden ingevuld.",
         "The link is ready: {url}": "De link is klaar: {url}",

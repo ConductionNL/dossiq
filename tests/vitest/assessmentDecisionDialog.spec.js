@@ -79,6 +79,9 @@ async function mountDialog({ outstanding = [], assessed = ASSESSED, letter = nul
 				: Promise.resolve({ data: { results: assessed } })
 		}
 		if (String(url).includes(`/apps/dossiq/api/cases/${CASE_ID}/letters/decision`)) {
+			if (letter instanceof Error) {
+				return Promise.reject(letter)
+			}
 			return Promise.resolve({
 				data: {
 					declaration: { title: 'Woo-besluit', documentType: 'Besluit' },
@@ -241,6 +244,13 @@ describe('AssessmentDecisionDialog', () => {
 		await flushPromises()
 
 		expect(axios.post.mock.calls[0][1]).toEqual({ decision: {}, letter: 'io-9' })
+	})
+
+	it('says the letter could not be read instead of hiding the row', async () => {
+		const { wrapper } = await mountDialog({ letter: new Error('404') })
+
+		expect(wrapper.find('[data-testid="assessment-decision-letter"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="assessment-decision-letter-unread"]').exists()).toBe(true)
 	})
 
 	it('offers to draft the letter when the case has none', async () => {
