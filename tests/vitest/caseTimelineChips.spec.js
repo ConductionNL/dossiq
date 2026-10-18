@@ -49,14 +49,26 @@ function context(kindFilter = null) {
 }
 
 describe('the History tab kind chips', () => {
-	it('starts with All and lists only the kinds the case has, with counts', () => {
+	it('starts with All and lists every declared kind with its count, zero included', () => {
 		const chips = kindChips.call(context())
 		expect(chips.map((chip) => [chip.label, chip.count, chip.active])).toEqual([
 			['All', 4, true],
 			['Note', 1, false],
 			['Status', 2, false],
 			['Documents', 1, false],
+			['Tasks', 0, false],
 		])
+	})
+
+	it('exports the entries the chips show as CSV, quotes escaped', () => {
+		const ctx = {
+			entries: [{ created: '2026-10-04T10:24:00Z', kind: 'status', author: 'Pieter "PJ" Jansen', visibility: 'public', message: 'Status gewijzigd' }],
+			kindLabel: () => 'Status',
+		}
+		const csv = CaseTimelineTab.methods.entriesCsv.call(ctx)
+		const [head, row] = csv.split('\r\n')
+		expect(head).toBe('"When","Kind","Who","Visibility","Message"')
+		expect(row).toBe('"2026-10-04T10:24:00Z","Status","Pieter ""PJ"" Jansen","public","Status gewijzigd"')
 	})
 
 	it('marks the chosen kind', () => {

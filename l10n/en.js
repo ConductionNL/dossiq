@@ -10186,6 +10186,7 @@ OC.L10N.register(
         "Which seat moved: handler or coordinator.": "Which seat moved: handler or coordinator.",
         "Which seat was emptied.": "Which seat was emptied.",
         "Which version of this case type you are looking at. A case type is never edited once cases run on it: you make a new version, and the new version is a new object carrying its own statuses, results and properties. Version 1 is a case type nobody has versioned yet.": "Which version of this case type you are looking at. A case type is never edited once cases run on it: you make a new version, and the new version is a new object carrying its own statuses, results and properties. Version 1 is a case type nobody has versioned yet.",
+        "Who": "Who",
         "Who accepted or refused.": "Who accepted or refused.",
         "Who called or was called": "Who called or was called",
         "Who can see this": "Who can see this",
