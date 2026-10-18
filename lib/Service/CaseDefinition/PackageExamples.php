@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Service\CaseDefinition;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\DemoDataService;
+use OCA\Dossiq\Service\Settings\SchemaSlugMap;
+use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
@@ -81,9 +83,41 @@ final class PackageExamples {
 
 		$dates = new PackageExampleDates();
 		foreach ($examples as $index => $example) {
-			$examples[$index]['rows'] = $dates->fill(rows: (array)($example['rows'] ?? []));
+			$rows = $dates->fill(rows: (array)($example['rows'] ?? []));
+			$examples[$index]['rows'] = $this->encoded(rows: $rows, schema: ($example['schema'] ?? null));
 		}
 
 		return $examples;
 	}//end toWrite()
+
+	/**
+	 * The rows with every property the register declares as a JSON-encoded
+	 * string encoded, as {@see JsonEncodedStringProperties} lists them for the
+	 * schema the file names. An example file writes `statusHistory` or
+	 * `geometry` as readable JSON; the schema takes them as text.
+	 *
+	 * @param array<int|string, mixed> $rows   The rows.
+	 * @param mixed                    $schema The file's `schema`: a settings key of this app, or another app's schema.
+	 *
+	 * @return array<int|string, mixed> The rows as the schema takes them.
+	 *
+	 * @spec openspec/changes/package-examples-encoding/specs/case-types/spec.md
+	 */
+	private function encoded(array $rows, mixed $schema): array {
+		if (is_string($schema) === false) {
+			return $rows;
+		}
+
+		$encoder = new JsonEncodedStringProperties();
+		$slugs = array_keys(SchemaSlugMap::SLUG_TO_CONFIG_KEY, $schema, true);
+		foreach ($rows as $index => $row) {
+			foreach ($slugs as $slug) {
+				$row = $encoder->reencode(object: (array)$row, schemaSlug: (string)$slug);
+			}
+
+			$rows[$index] = $row;
+		}
+
+		return $rows;
+	}//end encoded()
 }//end class
