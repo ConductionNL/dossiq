@@ -4880,6 +4880,7 @@ OC.L10N.register(
         "No contact logged on this case yet": "No contact logged on this case yet",
         "No contact moments in the customer record for this case yet": "No contact moments in the customer record for this case yet",
         "No contact moments yet": "No contact moments yet",
+        "No contact yet": "No contact yet",
         "No contacts found": "No contacts found",
         "No conversations yet": "No conversations yet",
         "No cost activity recorded for this quarter.": "No cost activity recorded for this quarter.",

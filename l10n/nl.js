@@ -4880,6 +4880,7 @@ OC.L10N.register(
         "No contact logged on this case yet": "Nog geen contact vastgelegd op deze zaak",
         "No contact moments in the customer record for this case yet": "Nog geen contactmomenten in het klantbeeld voor deze zaak",
         "No contact moments yet": "Nog geen contactmomenten",
+        "No contact yet": "Nog geen contact",
         "No contacts found": "Geen contacten gevonden",
         "No conversations yet": "Nog geen gesprekken",
         "No cost activity recorded for this quarter.": "Geen kostenactiviteit geregistreerd voor dit kwartaal.",
