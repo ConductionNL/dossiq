@@ -98,6 +98,8 @@ export default {
 		open: { type: Boolean, default: false },
 		/** The subject of the message being answered, or '' for a new message. */
 		subject: { type: String, default: '' },
+		/** A reply already written elsewhere (the case's conversation thread), to start the message with. */
+		text: { type: String, default: '' },
 	},
 
 	emits: ['close', 'sent'],
@@ -105,7 +107,7 @@ export default {
 		return {
 			form: {
 				subject: this.subject ? `Re: ${this.subject}` : '',
-				content: '',
+				content: this.text,
 			},
 
 			kase: null,

@@ -184,28 +184,23 @@ test.describe('app chrome (ADR-114)', () => {
 	// and tests/vitest/capabilityComparison.spec.js; this test pins the two
 	// things only a browser can: the tab is gone, and the link to its new home
 	// is on the page.
-	test('FeaturesRoadmapView links to the comparison instead of carrying it', async ({
+	test('the features page links to the comparison from its notice instead of carrying it', async ({
 		page,
 	}) => {
 		await page.goto(`${APP_BASE}/features-roadmap`, {
 			...PAGE_LOAD,
 			waitUntil: 'domcontentloaded',
 		})
-		await expect(page.locator('.cn-features-and-roadmap-view')).toBeVisible({
-			timeout: 30_000,
-		})
+		const notice = page.locator('.cn-features-board__notice')
+		await expect(notice).toBeVisible({ timeout: 30_000 })
 
-		const link = page.getByRole('link', {
-			name: 'How dossiq compares to other case systems',
-		})
-		await expect(link).toBeVisible()
+		const link = notice.getByRole('link', { name: 'conduction.nl' })
 		await expect(link).toHaveAttribute('href', /\/compare$/)
 		await expect(link).toHaveAttribute('target', '_blank')
 
 		await expect(
 			page.getByRole('tab', { name: 'How dossiq compares' }),
 		).toHaveCount(0)
-		await expect(page.locator('.features-roadmap__comparison')).toHaveCount(0)
 		await expect(page.getByText('Before you use this table')).toHaveCount(0)
 	})
 

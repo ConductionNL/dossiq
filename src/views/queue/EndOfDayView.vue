@@ -92,13 +92,16 @@
 						</div>
 
 						<div class="end-of-day__fields">
-							<NcTextField
-								v-model="updates[item.id]"
-								class="end-of-day__what"
-								:label="t('dossiq', 'What happened')"
-								:labelOutside="true"
-								:placeholder="t('dossiq', 'For example: called the resident, waiting for documents')"
-								:data-testid="`end-of-day-update-${item.id}`" />
+							<div class="end-of-day__what">
+								<label class="end-of-day__label" :for="`end-of-day-what-${item.id}`">{{ t('dossiq', 'What happened') }}</label>
+								<NcTextField
+									:id="`end-of-day-what-${item.id}`"
+									v-model="updates[item.id]"
+									:label="t('dossiq', 'What happened')"
+									:labelOutside="true"
+									:placeholder="t('dossiq', 'For example: called the resident, waiting for documents')"
+									:data-testid="`end-of-day-update-${item.id}`" />
+							</div>
 
 							<!-- The time box, and only when humaniq can hold it. -->
 							<div
@@ -739,8 +742,16 @@ export default {
 	gap: 12px;
 }
 
+.end-of-day__label {
+	font-size: 14px;
+	font-weight: 600;
+}
+
 .end-of-day__what {
+	display: flex;
 	flex: 1 1 360px;
+	flex-direction: column;
+	gap: 6px;
 }
 
 .end-of-day__hours {

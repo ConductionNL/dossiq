@@ -1,0 +1,196 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"change": "screens-round12-field-inspection",
+		"board": "DqInspectie",
+		"why": "What an inspector sees on the phone, shown as three device frames over records the register already has: today's field inspections (fieldInspection), the checklist run in execution (inspectionChecklistRun) and the device's outbox (syncQueue). The frames are nextcloud-vue's device-frames widget (L32, nextcloud-vue #1733); until that release the page shows only its header, since the three lists are placed through the frames. The middle frame is the checklist-run widget over the reader's run in execution, writing answers and photos into that run."
+	},
+	"pages": [
+		{
+			"id": "FieldInspection",
+			"route": "/field-inspection",
+			"type": "dashboard",
+			"title": "Inspection in the field",
+			"config": {
+				"description": "What an inspector sees on the phone: the day offline, a checklist with photos and the queue to synchronise",
+				"allowEdit": false,
+				"showActionsMenu": false,
+				"widgets": [
+					{
+						"id": "inspection-frames",
+						"type": "device-frames",
+						"title": "Inspection in the field",
+						"content": {
+							"width": 350,
+							"status": {
+								"followConnection": true,
+								"offlineText": "Offline · synchronised earlier",
+								"onlineText": "Online"
+							},
+							"frames": [
+								{
+									"key": "today",
+									"title": "Today",
+									"widgetIds": ["inspections-today", "inspections-offline-note"]
+								},
+								{
+									"key": "checklist",
+									"title": "Checklist",
+									"widgetIds": ["checklist-run"]
+								},
+								{
+									"key": "sync",
+									"title": "Synchronise",
+									"widgetIds": ["inspection-sync-queue"]
+								}
+							]
+						}
+					},
+					{
+						"id": "inspections-today",
+						"type": "record-list",
+						"title": "Today",
+						"content": {
+							"register": "dossiq",
+							"schema": "fieldInspection",
+							"filter": {
+								"inspectorRef": "@me",
+								"scheduledAt": {
+									"gte": "@today",
+									"lt": "@today+1d"
+								}
+							},
+							"extend": ["caseRef"],
+							"sort": {
+								"field": "scheduledAt",
+								"dir": "asc"
+							},
+							"limit": 8,
+							"presentation": "rows",
+							"title": "{caseRef.title}",
+							"meta": "{scheduledAt|datetime}",
+							"pill": {
+								"field": "status"
+							},
+							"emptyText": "No inspections planned for today"
+						}
+					},
+					{
+						"id": "inspections-offline-note",
+						"type": "banner",
+						"title": "Offline",
+						"content": {
+							"variant": "info",
+							"text": "Everything for today is on this device: cases, checklists, history and the map. You can work without a connection."
+						}
+					},
+					{
+						"id": "checklist-run",
+						"type": "checklist-run",
+						"title": "Checklist",
+						"_note": "DqInspectie middle frame: the reader's checklist run in execution, question by question with photos, answers written into the run's responses (nextcloud-vue #1764/#1766).",
+						"content": {
+							"record": {
+								"register": "dossiq",
+								"schema": "inspectionChecklistRun",
+								"filter": {
+									"inspector": "@me",
+									"status": "in_execution"
+								},
+								"sort": {
+									"field": "startedAt",
+									"dir": "desc"
+								}
+							},
+							"emptyText": "No inspection is running now",
+							"questionsPath": "templateSnapshot.sections",
+							"itemsKey": "items",
+							"groupLabelField": "name",
+							"orderField": "order",
+							"fields": {
+								"id": "id",
+								"text": "label",
+								"type": "responseType",
+								"options": "choices",
+								"required": "required",
+								"help": "helpText",
+								"photoRequired": "photoRequired"
+							},
+							"typeMap": {
+								"yes_no_na": "yes_no_na",
+								"text": "text",
+								"getal": "number",
+								"meerkeuze": "choice",
+								"photo": "photo",
+								"meting": "number"
+							},
+							"choiceValues": {
+								"yes": "ja",
+								"no": "nee",
+								"na": "nvt"
+							},
+							"photoRequiredValues": {
+								"nooit": "never",
+								"altijd": "always",
+								"if_no": {
+									"whenAnswer": "nee"
+								}
+							},
+							"answersPath": "responses",
+							"answerKey": "itemId",
+							"answerFields": {
+								"value": "value",
+								"number": "numericValue",
+								"choice": "choice",
+								"note": "comment",
+								"photos": "photos",
+								"at": "respondedAt"
+							},
+							"recordPhotosField": "photos",
+							"pageSize": 2,
+							"caption": "{templateSnapshot.name} version {templateVersion}"
+						}
+					},
+					{
+						"id": "inspection-sync-queue",
+						"type": "record-list",
+						"title": "Synchronise",
+						"content": {
+							"register": "dossiq",
+							"schema": "syncQueue",
+							"filter": {
+								"status": ["pending", "conflict", "failed"]
+							},
+							"sort": {
+								"field": "queuedAt",
+								"dir": "desc"
+							},
+							"limit": 6,
+							"presentation": "rows",
+							"title": "{targetEntity}",
+							"meta": "{operationType} · {queuedAt|datetime}",
+							"pill": {
+								"field": "status"
+							},
+							"emptyText": "Nothing waits to be synchronised"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "inspection-frames",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": false,
+						"borderless": true
+					}
+				],
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		}
+	]
+}
