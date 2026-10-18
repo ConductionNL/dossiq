@@ -4262,6 +4262,7 @@
 							"title": "Next step",
 							"mixedOutcome": "deels_openbaar",
 							"noteHeading": "Publishing comes afterwards",
+							"letterPurpose": "decision",
 							"note": "Once the decision is recorded the publication is ready. Publish (Woo) under More sends the public and partly public documents to the reading room. What is not public never goes along.",
 							"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
 							"decideUrl": "/apps/dossiq/api/cases/{caseId}/woo/decision",

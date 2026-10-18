@@ -256,6 +256,7 @@ class WOOAssessmentController extends Controller {
 			$result = $this->decisionService->assembleDecision(
 				caseId: $id,
 				decisionData: $decisionData,
+				letter: trim((string)$this->request->getParam('letter', '')),
 			);
 			return new JSONResponse($result);
 		} catch (\InvalidArgumentException $e) {

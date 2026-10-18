@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver;
 use OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler;
 use OCA\Filinq\Event\DocumentGenerationRequestedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -149,6 +150,20 @@ class CaseDocumentDrafts {
 	}//end declarationFor()
 
 	/**
+	 * The declaration for one purpose on a case's case type, read by case id.
+	 *
+	 * @param string $caseId  The case uuid.
+	 * @param string $purpose The purpose.
+	 *
+	 * @return array<string, mixed> The declaration, or [] when the case type declares none.
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-a-case-type-names-the-template-it-drafts-a-document-from-req-cdd-001
+	 */
+	public function declarationForCase(string $caseId, string $purpose): array {
+		return $this->declarationFor(case: $this->caseRow(caseId: $caseId), purpose: $purpose);
+	}//end declarationForCase()
+
+	/**
 	 * The request filinq's published contract takes.
 	 *
 	 * @param string               $caseId      The case uuid.
@@ -242,7 +257,7 @@ class CaseDocumentDrafts {
 	 */
 	private function metadata(array $declaration): array {
 		return [
-			GeneratedDocumentFiler::TYPE => (string)($declaration['documentType'] ?? ''),
+			GeneratedDocumentFiler::TYPE => (new DocumentTypeResolver(settingsService: $this->settingsService))->resolve(name: (string)($declaration['documentType'] ?? '')),
 			'direction' => 'outgoing',
 			'status' => 'draft',
 			GeneratedDocumentFiler::FILED_BY_CALLER => true,
