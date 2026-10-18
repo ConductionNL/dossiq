@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.124.0",
+	"version": "2.125.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -2221,7 +2221,8 @@
 									},
 									"emptyLabel": { "type": "string", "description": "Empty-state message rendered instead of the chart when the resolved series contain no data points." },
 									"barMax": { "type": "number", "exclusiveMinimum": 0, "description": "chartKind 'bar-list': the value a full track stands for (100 for percentages). Omitted = the largest value." },
-									"footnote": { "type": "string", "description": "chartKind 'bar-list' or 'matrix': a line under the rows, through the host's translate." },
+									"footnote": { "type": "string", "description": "A line under the chart, through the host's translate: under the rows of a bar-list or matrix, and under the plot of a line, area or bar chart." },
+									"emptyCellLabel": { "type": "string", "description": "chartKind 'matrix': the text of a cell without a value (\"geen\"), through the host's translate. Empty leaves the cell blank. Passed through to CnChartWidget." },
 									"highlight": {
 										"type": "object",
 										"additionalProperties": false,
@@ -3738,7 +3739,58 @@
 							"enum": ["flows", "flowRuns", "tasks", "endpoint", "search", "users", "organisations"],
 							"description": "Name a registered NON-OBJECT entity collection for a type='index' page, instead of register+schema. Deliberately NOT called `source`: that key is already taken on page config and is polymorphic (a URL string in some manifests, an object with `params` in others), so reusing it would give one key two meanings and break six deployed shillinq pages. A flow definition is deliberately not an OpenRegister object, so an index had nothing to bind to and such lists became bespoke type='custom' pages. With a source the index loads the list itself. Takes precedence over register/schema; non-empty `objects` still wins over both. Registered sources live in src/composables/indexSources.js. `tasks` lists the viewer's task inbox from OpenRegister's flow-tasks read (cn-tasks-entity-source). `organisations` lists the OpenRegister organisations the viewer belongs to. On a type='detail' page a source that reads one record (today `organisations`) loads the record whose id is the route's objectId, instead of register+schema, and feeds the header, pills, widgets and @objectId / @object.* tokens like a fetched object (organisations-entity-source)."
 						},
-						"sourceConfig": { "type": "object", "additionalProperties": true, "description": "type='index' with `entitySource`: what the named source loads with. `endpoint`: `url` (an app path, required) and `rowsPath` (default `results`); its other keys go along as query parameters. `search`: `kinds` (`{ id, label, register, schema, titleField?, subtitleField?, statusField?, href?, limit? }` or `{ id, label, files: true }`), `term` and `termQuery` (default `q`). `users`: `defaultGroup`, `functionField`, `rolesField`. `flows` / `tasks`: `app`, `scope`. Maps to CnIndexPage `sourceConfig`.", "properties": { "url": { "type": "string", "minLength": 1 }, "rowsPath": { "type": "string", "minLength": 1 }, "kinds": { "type": "array", "items": { "type": "object", "required": ["id"], "additionalProperties": true, "properties": { "id": { "type": "string", "minLength": 1 }, "label": { "type": "string" }, "register": { "type": "string" }, "schema": { "type": "string" }, "files": { "type": "boolean" } } } }, "term": { "type": "string" }, "termQuery": { "type": "string", "minLength": 1 }, "defaultGroup": { "type": "string", "minLength": 1 } } },
+						"bulkBandAlways": { "type": "boolean", "default": false, "description": "type='index', board look: draw the bulk band (its actions and hint) before a selection too, its buttons disabled until rows are selected (DqZaken, DqWerkbord). Maps to CnIndexPage `bulkBandAlways`." },
+						"quickFilterPlacement": { "type": "string", "enum": ["", "toolbar"], "default": "", "description": "type='index': where the quick-filter chips sit. `toolbar` keeps them on one row with the Filter button and the view switch beside a side panel, the chips that do not fit behind the overflow chip (DqTeamwachtrij). Maps to CnIndexPage `quickFilterPlacement`." },
+						"rowClass": {
+							"type": "array",
+							"description": "type='index': per-row CSS class rules, compiled into the table's rowClass function as on the object-table widget. Each rule { when: { field, op?, value }, class } adds `class` to a row whose `field` (a dot-path) compares to `value` with `op` (default eq; the visibleWhen operators and tokens such as `@today`, with two dates compared as moments), e.g. an overdue task `{ when: { field: \"dueAt\", op: \"lt\", value: \"@today\" }, class: \"cn-row--overdue\" }`. Maps to CnIndexPage `rowClass`.",
+							"items": {
+								"type": "object",
+								"additionalProperties": false,
+								"required": [
+									"when",
+									"class"
+								],
+								"properties": {
+									"when": {
+										"type": "object",
+										"additionalProperties": false,
+										"required": [
+											"field",
+											"value"
+										],
+										"description": "The predicate evaluated against the row (shared visibleWhen grammar, LOCAL form).",
+										"properties": {
+											"field": {
+												"type": "string",
+												"description": "Dot-path into the row."
+											},
+											"op": {
+												"type": "string",
+												"enum": [
+													"eq",
+													"neq",
+													"gt",
+													"gte",
+													"lt",
+													"lte"
+												],
+												"default": "eq",
+												"description": "Comparison operator (default eq)."
+											},
+											"value": {
+												"description": "Literal right-hand side of the comparison."
+											}
+										}
+									},
+									"class": {
+										"type": "string",
+										"description": "CSS class added to the row when `when` holds."
+									}
+								}
+							}
+						},
+						"sourceConfig": { "type": "object", "additionalProperties": true, "description": "type='index' with `entitySource`: what the named source loads with. `endpoint`: `url` (an app path, required) and `rowsPath` (default `results`); its other keys go along as query parameters. `search`: `kinds` (`{ id, label, register, schema, titleField?, subtitleField?, statusField?, href?, limit? }` or `{ id, label, files: true }`), `term` and `termQuery` (default `q`). `users`: `defaultGroup`, `functionField`, `rolesField`. `flows` / `tasks`: `app`, `scope`. Maps to CnIndexPage `sourceConfig`.", "properties": { "url": { "type": "string", "minLength": 1 }, "rowsPath": { "type": "string", "minLength": 1 }, "kinds": { "type": "array", "items": { "type": "object", "required": ["id"], "additionalProperties": true, "properties": { "id": { "type": "string", "minLength": 1 }, "label": { "type": "string" }, "register": { "type": "string" }, "schema": { "type": "string" }, "files": { "type": "boolean" } } } }, "term": { "type": "string" }, "termQuery": { "type": "string", "minLength": 1 }, "defaultGroup": { "type": "string", "minLength": 1 }, "limit": { "type": "integer", "minimum": 1, "description": "A paging source: rows per page (20 by default); the pager moves through the pages." } } },
 						"app": {
 							"type": "string",
 							"description": "Scopes a named `entitySource` to one app (e.g. entitySource='flows' with app='dossiq' lists that app's flows)."
