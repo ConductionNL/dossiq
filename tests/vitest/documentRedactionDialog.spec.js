@@ -167,6 +167,17 @@ describe('DocumentRedactionDialog', () => {
 		expect(wrapper.find('[data-testid="document-redaction-close"]').exists()).toBe(false)
 	})
 
+	it('keeps the header buttons on the page when no document waits, disabled', async () => {
+		const { wrapper } = await mountDialog({ asPage: true, documents: [] })
+
+		expect(wrapper.find('[data-testid="document-redaction-empty"]').exists()).toBe(true)
+		for (const id of ['previous', 'next', 'redact']) {
+			const button = wrapper.find(`.document-redaction__head [data-testid="document-redaction-${id}"]`)
+			expect(button.exists()).toBe(true)
+			expect(button.attributes('disabled')).toBeDefined()
+		}
+	})
+
 	it('records nothing until every passage has a verdict', async () => {
 		const { wrapper, axios } = await mountDialog()
 		await judge(wrapper, 0, 'accept')

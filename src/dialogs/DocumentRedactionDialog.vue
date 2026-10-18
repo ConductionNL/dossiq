@@ -44,7 +44,7 @@
 						<span>{{ t('dossiq', 'Redact') }}</span>
 					</nav>
 				</div>
-				<div v-if="documents.length > 0" class="document-redaction__buttons">
+				<div class="document-redaction__buttons">
 					<NcButton
 						data-testid="document-redaction-previous"
 						:disabled="index === 0 || busy"
