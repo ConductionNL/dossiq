@@ -90,14 +90,14 @@ describe('the full profile', () => {
 		expect(build(fullFile)).toEqual(before)
 	})
 
-	it('still counts 37 entries: 13 main, 5 footer, 16 settings, 3 integrations', () => {
+	it('still counts 39 entries: 13 main, 5 footer, 18 settings, 3 integrations', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
-		expect(flat(menu)).toHaveLength(37)
+		expect(flat(menu)).toHaveLength(39)
 		expect(count('main')).toBe(13)
 		expect(count('footer')).toBe(5)
-		expect(count('settings')).toBe(16)
+		expect(count('settings')).toBe(18)
 		expect(count('integrations')).toBe(3)
 	})
 })
@@ -458,10 +458,13 @@ describe('the simple profile', () => {
 	// 70 -> 71: the Postvak (board DqPostvak) adds one page.
 	// 71 -> 72: the catalogue gets a page (DqCatalogus).
 	// 72 -> 73: the field inspection view (DqInspectie).
-	it('builds the same 73 pages as the full profile, so every route stays', () => {
+	// 73 -> 74: search results over cases, objects and documents (DqZoekresultaten).
+	// 74 -> 76: the organisations on this environment get a list and a page (DqTenant).
+	// 76 -> 77: the departments and staff get a page (DqAfdelingen).
+	it('builds the same 77 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(73)
+		expect(built.pages).toHaveLength(77)
 	})
 })
 

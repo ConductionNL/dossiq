@@ -927,18 +927,27 @@
 					},
 					{
 						"id": "side-handling",
-						"type": "data",
+						"type": "facts",
 						"title": "Handling",
+						"_note": "DqZaak Behandeling: who handles the case, in which team and since when, as label and value rows; the handler reads as the user's display name (facts format user).",
 						"content": {
-							"title": "Handling",
-							"columns": 1,
-							"include": [
-								"assignee",
-								"assignedGroupPublicName",
-								"startDate"
+							"fields": [
+								{
+									"path": "assignee",
+									"label": "Handler",
+									"format": "user"
+								},
+								{
+									"path": "assignedGroupPublicName",
+									"label": "Team"
+								},
+								{
+									"path": "startDate",
+									"label": "Started",
+									"format": "date"
+								}
 							],
-							"hideEmpty": true,
-							"editable": false
+							"emptyText": "Nobody handles this case yet"
 						}
 					},
 					{
@@ -1148,7 +1157,15 @@
 					"separator": "/"
 				},
 				"headerCard": true,
-				"headerWidget": "case-stages"
+				"headerWidget": "case-stages",
+				"typePill": {
+					"field": "caseType",
+					"resolve": {
+						"register": "dossiq",
+						"schema": "caseType",
+						"labelField": "title"
+					}
+				}
 			},
 			"configPatch": {
 				"headerActions": {
@@ -1468,6 +1485,7 @@
 										}
 									},
 									"widgetIds": [
+										"case-resident-thread",
 										"case-contact-moments-card",
 										"case-acknowledgement-card",
 										"case-conversations-card",
@@ -2471,6 +2489,46 @@
 							],
 							"emptyText": "No objection recorded on this case"
 						}
+					},
+					{
+						"id": "case-resident-thread",
+						"type": "conversation",
+						"title": "Conversation with the resident",
+						"_note": "DqZaakContact \"Gesprek met de inwoner\": the contact moments on the case as a thread, oldest first, ours on the right, with the channel on each. Answering opens the portal message dialog with the reply already written, so the answer goes to the resident through the berichtenbox.",
+						"content": {
+							"title": "Conversation with the resident",
+							"source": {
+								"register": "dossiq",
+								"schema": "contactmoment",
+								"filter": {
+									"case": "@objectId"
+								}
+							},
+							"directionField": "direction",
+							"outValue": "outbound",
+							"channelField": "notificationChannel",
+							"channelMap": {
+								"phone": "Phone",
+								"email": "Email",
+								"webformulier": "Web form",
+								"chat": "Chat",
+								"social_media": "Social media",
+								"balie": "Desk"
+							},
+							"senderField": "callerIdentification",
+							"timestampField": "startTime",
+							"bodyField": "summary",
+							"emptyText": "No messages with the resident yet.",
+							"replyLabel": "Answer to the resident",
+							"replyAction": {
+								"type": "open-modal",
+								"target": "PortalMessageDialog",
+								"props": {
+									"caseId": "@objectId",
+									"open": true
+								}
+							}
+						}
 					}
 				],
 				"headerActions": [
@@ -2657,8 +2715,8 @@
 					},
 					"cases-by-status": {
 						"content": {
-							"chartKind": "bar",
-							"horizontal": true,
+							"chartKind": "bar-list",
+							"footnote": "Click a bar to see the cases",
 							"dataSource": {
 								"register": "dossiq",
 								"schema": "case",
@@ -2670,6 +2728,7 @@
 								"aggregate": {
 									"groupBy": "status",
 									"metric": "count",
+									"topN": 5,
 									"labelResolve": {
 										"schema": "statusType",
 										"labelField": "name"
@@ -2684,8 +2743,8 @@
 					},
 					"cases-by-type": {
 						"content": {
-							"chartKind": "bar",
-							"horizontal": true,
+							"chartKind": "bar-list",
+							"footnote": "Click a bar to see the cases",
 							"dataSource": {
 								"register": "dossiq",
 								"schema": "case",
@@ -2697,6 +2756,7 @@
 								"aggregate": {
 									"groupBy": "caseType",
 									"metric": "count",
+									"topN": 5,
 									"labelResolve": {
 										"schema": "caseType",
 										"labelField": "title"

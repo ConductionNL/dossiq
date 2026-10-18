@@ -205,12 +205,25 @@ class ConnectionsDeclarationTest extends TestCase {
 			}
 
 			$url = (string)$connection['settingsUrl'];
-			$this->assertStringStartsWith(prefix: '/settings/admin/dossiq#section-', string: $url, message: $connection['key']);
+			$this->assertMatchesRegularExpression(
+				pattern: '#^/settings/admin/dossiq\\?tab=[a-z-]+\\#section-[a-z-]+$#',
+				string: $url,
+				message: $connection['key']
+			);
+			$tab    = substr($url, strpos($url, '=') + 1, strpos($url, '#') - strpos($url, '=') - 1);
 			$anchor = substr($url, strpos($url, '#') + 1);
+			// The first tab's panel is the shell's default slot: everything before the first named tab.
+			if ($tab === 'general') {
+				$panel = substr($adminRoot, 0, (int)strpos($adminRoot, '<template #tab-'));
+			} else {
+				$start = strpos($adminRoot, '<template #tab-' . $tab . '>');
+				$this->assertNotFalse(condition: $start, message: $connection['key'] . ' links to a missing tab');
+				$panel = substr($adminRoot, (int)$start, strpos($adminRoot, "\n\t\t</template>", (int)$start) - (int)$start);
+			}
 			$this->assertStringContainsString(
 				needle: 'id="' . $anchor . '"',
-				haystack: $adminRoot,
-				message: $connection['key'] . ' links to a missing section'
+				haystack: $panel,
+				message: $connection['key'] . ' links to a section that is not on its tab'
 			);
 			$linked++;
 		}

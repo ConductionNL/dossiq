@@ -95,9 +95,12 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  * Moved 15 -> 14 by the retirement of the WorkflowBoard page, which gives a
  * unit back: the workflow board is the Cases index page in board view. Both
  * numbers drop, for the same reason as above.
+ *
+ * Moved 14 -> 13 when FeaturesRoadmap became the library's `type: "roadmap"`
+ * page. Both numbers drop, for the same reason as above.
  */
-const CUSTOM_PAGE_COUNT_BEFORE = 13
-const CUSTOM_PAGE_COUNT_AFTER = 14
+const CUSTOM_PAGE_COUNT_BEFORE = 12
+const CUSTOM_PAGE_COUNT_AFTER = 13
 
 /**
  * One page as the manifest declares it.
