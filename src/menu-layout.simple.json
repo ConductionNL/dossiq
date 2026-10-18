@@ -2592,6 +2592,8 @@
 			"config": {
 				"description": "How the team is doing",
 				"editLabel": "Edit layout",
+				"_actionsMenuNote": "Board DqDashboard draws no Actions menu in the header: the row is Close out your day, Edit layout, the buildiq square and New case.",
+				"showActionsMenu": false,
 				"kpiRow": [
 					"kpi-open-cases",
 					"kpi-overdue",
@@ -2646,6 +2648,15 @@
 						"gridWidth": 4,
 						"gridHeight": 6,
 						"showTitle": true
+					},
+					{
+						"id": "16",
+						"widgetId": "layout-note",
+						"gridX": 0,
+						"gridY": 10,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
 					}
 				]
 			},
@@ -2758,6 +2769,19 @@
 				}
 			},
 			"configAppend": {
+				"widgets": [
+					{
+						"id": "layout-note",
+						"type": "banner",
+						"title": "About this layout",
+						"_note": "Board DqDashboard: the info line under the grid saying what Edit layout does, whose layout it is, and who sees Within deadline (kpi-sla-compliance carries roles controllers, beheerders and admin).",
+						"content": {
+							"variant": "info",
+							"icon": "ViewDashboardOutline",
+							"text": "With Edit layout you put tiles in another order or add one, such as your team's queue. The layout is yours alone. Within deadline is only shown to those who monitor or manage."
+						}
+					}
+				],
 				"headerActions": [
 					{
 						"id": "open-end-of-day",

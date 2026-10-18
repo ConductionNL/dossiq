@@ -5159,20 +5159,13 @@
 			"_note": "Processing time as drawn on the DqDoorlooptijd board: four figures, the average per month and the share within the norm per case type, read from /api/doorlooptijd/metrics (its `summary` block), then the compliance charts, the Woo deadlines, the cases at risk and the breakdown, which read the shared store (src/store/modules/doorlooptijd.js). The period and case type filters write the workspace, which both halves read.",
 			"config": {
 				"userLayout": true,
+				"_headerNote": "Board DqDoorlooptijd's header has no Actions menu and no way back to the dashboard beside the menu's own Dashboard entry. The case type filter stays: it is how this page narrows to one case type. The Edit button stays although the board draws none: it is how a reader arranges this page (userLayout), and dropping it would take that away.",
 				"allowEdit": true,
+				"showActionsMenu": false,
 				"appId": "dossiq",
 				"pageId": "Doorlooptijd",
 				"showWidgetActions": false,
 				"description": "All case types",
-				"headerActions": [
-					{
-						"id": "back-to-dashboard",
-						"label": "Dashboard",
-						"type": "navigate",
-						"route": "Dashboard",
-						"icon": "ViewDashboardOutline"
-					}
-				],
 				"widgets": [
 					{
 						"id": "dt-avg",
@@ -7417,7 +7410,9 @@
 			"_note": "Deadline monitoring as drawn on the DqTermijnen board: five figures, the share decided on time per case type, the notices of default, then the quarterly report and the annual penalty audit. The figures come from /api/termijn/dashboard/kpi, which counts the running terms and penalties server side; the notices are a register list.",
 			"config": {
 				"userLayout": true,
+				"_headerNote": "Board DqTermijnen's header row is Quarterly report, the buildiq square and Register notice of default, with no Actions menu. The Edit button stays although the board draws none: it is how a reader arranges this page (userLayout), and dropping it would take that away.",
 				"allowEdit": true,
+				"showActionsMenu": false,
 				"appId": "dossiq",
 				"pageId": "TermijnDashboard",
 				"showWidgetActions": false,

@@ -1,0 +1,64 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * The dashboard headers as boards DqDashboard, DqTermijnen and DqDoorlooptijd
+ * draw them: no page Actions menu, no way back to the dashboard on the
+ * processing-time page, and the Dashboard's info line about its layout.
+ *
+ * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+ */
+
+import fs from 'fs'
+import path from 'path'
+import { describe, expect, it } from 'vitest'
+
+const ROOT = path.resolve(__dirname, '../..')
+
+/**
+ * Read a JSON file from the repository.
+ *
+ * @param {string} file Path under the repository root.
+ * @return {object} The parsed document.
+ */
+function readJson(file) {
+	return JSON.parse(fs.readFileSync(path.join(ROOT, file), 'utf8'))
+}
+
+const manifest = readJson('src/manifest.json')
+const simple = readJson('src/menu-layout.simple.json')
+
+/**
+ * One page of the shipped manifest.
+ *
+ * @param {string} id The page id.
+ * @return {object} The page entry.
+ */
+function page(id) {
+	return manifest.pages.find((entry) => entry.id === id)
+}
+
+describe('the dashboard headers', () => {
+	it.each(['TermijnDashboard', 'Doorlooptijd'])('%s draws no page Actions menu and keeps its Edit button', (id) => {
+		expect(page(id).config.showActionsMenu).toBe(false)
+		expect(page(id).config.allowEdit).toBe(true)
+	})
+
+	it('leaves the way back to the dashboard to the menu on the processing-time page', () => {
+		const ids = (page('Doorlooptijd').config.headerActions || []).map((action) => action.id)
+		expect(ids).not.toContain('back-to-dashboard')
+	})
+
+	it('draws the Dashboard without a page Actions menu, with the layout note under the grid', () => {
+		const overlay = simple.pages.find((entry) => entry.id === 'Dashboard')
+		expect(overlay.config.showActionsMenu).toBe(false)
+
+		const note = overlay.configAppend.widgets.find((widget) => widget.id === 'layout-note')
+		expect(note).toMatchObject({ type: 'banner', content: { variant: 'info' } })
+
+		const placed = overlay.config.layout.find((item) => item.widgetId === 'layout-note')
+		const lowest = Math.max(...overlay.config.layout.filter((item) => item !== placed).map((item) => item.gridY + item.gridHeight))
+		expect(placed.gridY).toBeGreaterThanOrEqual(lowest)
+		expect(placed.gridWidth).toBe(12)
+	})
+})
