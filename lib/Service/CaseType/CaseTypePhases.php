@@ -81,6 +81,42 @@ class CaseTypePhases {
 			return null;
 		}
 
+		$phases   = $this->phasesOf(caseTypeId: $caseTypeId);
+		$unplaced = [];
+		$count    = 0;
+		foreach ($this->stepsOf(caseTypeId: $caseTypeId) as $step) {
+			$task = $this->taskOf(step: $step);
+			if ($task === null) {
+				continue;
+			}
+
+			$count++;
+			$status = $this->declarations->statusOf(step: $step);
+			if (isset($phases[$status]) === true) {
+				$phases[$status]['tasks'][] = $task;
+				continue;
+			}
+
+			$unplaced[] = $task;
+		}
+
+		return [
+			'caseTypeId'      => $caseTypeId,
+			'phases'          => $this->ordered(phases: $phases),
+			'unplaced'        => $unplaced,
+			'alwaysAvailable' => $this->alwaysAvailable(caseType: $caseType),
+			'taskCount'       => $count,
+		];
+	}//end phasesFor()
+
+	/**
+	 * The case type's statuses as empty phases, keyed by status id.
+	 *
+	 * @param string $caseTypeId The case type id.
+	 *
+	 * @return array<string, array<string, mixed>> The phases.
+	 */
+	private function phasesOf(string $caseTypeId): array {
 		$phases = [];
 		foreach ($this->resolver->statusTypesFor(caseTypeId: $caseTypeId) as $statusType) {
 			$id = (string) ($statusType['id'] ?? ($statusType['@self']['id'] ?? ''));
@@ -97,45 +133,56 @@ class CaseTypePhases {
 			];
 		}
 
-		$unplaced = [];
-		$count    = 0;
+		return $phases;
+	}//end phasesOf()
+
+	/**
+	 * The decoded steps of the case type's active workflow definition.
+	 *
+	 * @param string $caseTypeId The case type id.
+	 *
+	 * @return array<int, array<string, mixed>> The steps that are objects.
+	 */
+	private function stepsOf(string $caseTypeId): array {
 		$template = $this->templates->getActiveTemplate(caseTypeId: $caseTypeId);
-		$steps    = (is_array($template['steps'] ?? null) === true) ? $template['steps'] : [];
-		foreach ($steps as $step) {
-			if (is_array($step) === false) {
-				continue;
-			}
-
-			$task = $this->taskOf(step: $step);
-			if ($task === null) {
-				continue;
-			}
-
-			$count++;
-			$status = $this->declarations->statusOf(step: $step);
-			if (isset($phases[$status]) === true) {
-				$phases[$status]['tasks'][] = $task;
-				continue;
-			}
-
-			$unplaced[] = $task;
+		$steps    = ($template['steps'] ?? []);
+		if (is_array($steps) === false) {
+			return [];
 		}
 
+		return array_values(array_filter($steps, 'is_array'));
+	}//end stepsOf()
+
+	/**
+	 * The phases in status order, each with its tasks in step order.
+	 *
+	 * @param array<string, array<string, mixed>> $phases The phases, keyed by id.
+	 *
+	 * @return array<int, array<string, mixed>> The ordered phases.
+	 */
+	private function ordered(array $phases): array {
 		$phases = array_values($phases);
-		usort($phases, static fn (array $a, array $b): int => ($a['order'] <=> $b['order']));
+		usort($phases, static fn (array $left, array $right): int => ($left['order'] <=> $right['order']));
 		foreach ($phases as $index => $phase) {
-			usort($phase['tasks'], static fn (array $a, array $b): int => ($a['order'] <=> $b['order']));
+			usort($phase['tasks'], static fn (array $left, array $right): int => ($left['order'] <=> $right['order']));
 			$phases[$index] = $phase;
 		}
 
-		return [
-			'caseTypeId'      => $caseTypeId,
-			'phases'          => $phases,
-			'unplaced'        => $unplaced,
-			'alwaysAvailable' => AlwaysAvailableActs::declaredOn(caseType: $caseType),
-			'taskCount'       => $count,
-		];
-	}//end phasesFor()
+		return $phases;
+	}//end ordered()
+
+	/**
+	 * The acts available in every phase, as the case type declares them.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type.
+	 *
+	 * @return array<int, array<string, mixed>> The acts.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) declaredOn() is the one normaliser of the declaration, a pure function.
+	 */
+	private function alwaysAvailable(array $caseType): array {
+		return AlwaysAvailableActs::declaredOn(caseType: $caseType);
+	}//end alwaysAvailable()
 
 	/**
 	 * One step as the task card a phase lists, or null when it runs no task.
@@ -150,7 +197,10 @@ class CaseTypePhases {
 			return null;
 		}
 
-		$routing = (is_array($step['routingRule'] ?? null) === true) ? $step['routingRule'] : [];
+		$routing = ($step['routingRule'] ?? []);
+		if (is_array($routing) === false) {
+			$routing = [];
+		}
 
 		return [
 			'id'              => (string) ($step['id'] ?? ''),
