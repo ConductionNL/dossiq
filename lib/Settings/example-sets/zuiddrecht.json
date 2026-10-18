@@ -818,7 +818,7 @@
 				"severity": "ernstig",
 				"behaviour": "onverschillig",
 				"actorType": "burger",
-				"matrixVersion": 2,
+				"matrixVersion": 1,
 				"recommendedIntervention": "last_under_penaltypayment",
 				"finalIntervention": "last_under_penaltypayment",
 				"override": false,
