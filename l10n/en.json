@@ -10,6 +10,8 @@
         "%1$s of %2$s documents are still waiting for an assessment": "%1$s of %2$s documents are still waiting for an assessment",
         "%1$s of %2$s partly public documents are still waiting for a redacted version": "%1$s of %2$s partly public documents are still waiting for a redacted version",
         "%1$s, due %2$s": "%1$s, due %2$s",
+        "%n case": "%n case",
+        "%n cases": "%n cases",
         "%n checklist item": "%n checklist item",
         "%n checklist items": "%n checklist items",
         "%n day late": "%n day late",
@@ -97,6 +99,10 @@
         "8 weeks": "8 weeks",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source",
         "> 90 dagen": "> 90 dagen",
+        "_%n case_::_%n cases_": [
+            "%n case",
+            "%n cases"
+        ],
         "_%n day late_::_%n days late_": [
             "%n day late",
             "%n days late"
@@ -5023,7 +5029,6 @@
         "No notice of default has been received": "No notice of default has been received",
         "No notifications to set": "No notifications to set",
         "No number yet": "No number yet",
-        "No object types yet": "No object types yet",
         "No objection recorded on this case": "No objection recorded on this case",
         "No objects linked to this case yet": "No objects linked to this case yet",
         "No omgevingsvergunningen found.": "No omgevingsvergunningen found.",
@@ -5292,6 +5297,7 @@
         "Object status": "Object status",
         "Object type": "Object type",
         "Object types": "Object types",
+        "Object types appear here once cases link objects.": "Object types appear here once cases link objects.",
         "Object URL": "Object URL",
         "Objection": "Objection",
         "Objection & Appeal": "Objection & Appeal",
@@ -5316,7 +5322,7 @@
         "Objections & Appeals": "Objections & Appeals",
         "Objects": "Objects",
         "Objects and locations": "Objects and locations",
-        "Objects you link to cases; you manage their properties here": "Objects you link to cases; you manage their properties here",
+        "Objects you link to cases, by type": "Objects you link to cases, by type",
         "Obligation": "Obligation",
         "Obligation kinds": "Obligation kinds",
         "Obligations": "Obligations",
@@ -9459,6 +9465,7 @@
         "Use the setting from my team": "Use the setting from my team",
         "Use this account": "Use this account",
         "Used as a hint when a waarnemer assignment is created without an explicit end date.": "Used as a hint when a waarnemer assignment is created without an explicit end date.",
+        "Used in": "Used in",
         "Used when an advisory body has no explicit defaultDeadlineDays configured.": "Used when an advisory body has no explicit defaultDeadlineDays configured.",
         "Used with own. The field on the record that holds its reviewer's user id.": "Used with own. The field on the record that holds its reviewer's user id.",
         "Used with own. The field on the record that points at a record naming its reviewers.": "Used with own. The field on the record that points at a record naming its reviewers.",

@@ -134,6 +134,14 @@ describe('the case type list formatters', () => {
 		expect(formatters.versionLabel(null)).toBe('')
 	})
 
+	it('caseCount writes a number of cases as a phrase and nothing for a non-count', () => {
+		// The l10n stub picks the form and leaves `%n` to the real library.
+		expect(formatters.caseCount(1)).toBe('%n case')
+		expect(formatters.caseCount(2)).toBe('%n cases')
+		expect(formatters.caseCount(null)).toBe('%n cases')
+		expect(formatters.caseCount('x')).toBe('')
+	})
+
 	it('draftState says Draft only for a draft, and Published for everything else', () => {
 		expect(formatters.draftState(true)).toBe('Draft')
 		expect(formatters.draftState(false)).toBe('Published')

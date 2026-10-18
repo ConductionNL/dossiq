@@ -13,7 +13,7 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
-import { translate as t } from '@nextcloud/l10n'
+import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
@@ -109,6 +109,17 @@ export default {
 	 * @return {string}
 	 */
 	caseTypeName: (value) => lookupRelatedName('caseType', value),
+
+	/**
+	 * A number of cases as a phrase ("2 cases").
+	 *
+	 * @param {unknown} value The count.
+	 * @return {string} The phrase, or '' when the value is not a count.
+	 */
+	caseCount: (value) => {
+		const count = Number(value)
+		return Number.isInteger(count) && count >= 0 ? n('dossiq', '%n case', '%n cases', count) : ''
+	},
 
 	/**
 	 * Human label for a case object's `case` UUID reference.

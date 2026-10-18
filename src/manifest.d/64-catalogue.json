@@ -23,7 +23,6 @@
 			"type": "dashboard",
 			"title": "Catalogue",
 			"config": {
-				"description": "case types, attributes, templates and object types in folders",
 				"breadcrumb": { "label": "Settings", "href": "/index.php/settings/admin/dossiq" },
 				"headerMeta": "case types, attributes, templates and object types in folders",
 				"allowEdit": false,
@@ -59,21 +58,19 @@
 					},
 					{
 						"id": "catalogue-object-types",
-						"type": "table",
+						"type": "object-table",
 						"title": "Object types",
-						"description": "Objects you link to cases; you manage their properties here",
+						"description": "Objects you link to cases, by type",
 						"content": {
 							"endpointSource": {
-								"url": "/apps/openregister/api/schemas",
-								"params": { "_limit": 20 },
+								"url": "/apps/dossiq/api/catalogue/object-types",
 								"responsePath": "results"
 							},
 							"columns": [
-								{ "key": "title", "label": "Object type", "secondary": "{description}" },
-								{ "key": "version", "label": "Schema" },
-								{ "key": "slug", "label": "Name" }
+								{ "key": "title", "label": "Object type", "cellClass": "cn-cell--strong" },
+								{ "key": "cases", "label": "Used in", "formatter": "caseCount" }
 							],
-							"emptyText": "No object types yet"
+							"emptyText": "Object types appear here once cases link objects."
 						}
 					},
 					{
