@@ -187,6 +187,14 @@ class ConfigKeys {
 		// Outage banner copy (nl + en).
 		'pdok_outage_banner_nl',
 		'pdok_outage_banner_en',
+		// Kadaster (BRK) and WOZ bindings, read by IntegrationMode: the mode
+		// (log, test, live), the service address and its key.
+		'integration.brk.mode',
+		'integration.brk.baseUrl',
+		'integration.brk.apiKey',
+		'integration.woz.mode',
+		'integration.woz.baseUrl',
+		'integration.woz.apiKey',
 		// KCC-werkplek bridge schema config keys (kcc-werkplek-zaaksysteem-bridge).
 		'contactmoment_schema',
 		'kcc_quick_action_schema',

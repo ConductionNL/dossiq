@@ -252,6 +252,20 @@
 					" />
 			</CnSettingsSection>
 
+			<CnSettingsFieldsSection
+				id="section-kadaster"
+				appId="dossiq"
+				:name="t('dossiq', 'Kadaster (BRK) and WOZ')"
+				:description="
+					t(
+						'dossiq',
+						'Off until you choose a source. Off means: no request goes outside.',
+					)
+				"
+				:columns="3"
+				valuesPath="config"
+				:fields="kadasterFields" />
+
 			<CnSettingsSection
 				id="section-zgw"
 				:name="t('dossiq', 'ZGW API mapping')"
@@ -474,6 +488,7 @@
 <script>
 import {
 	CnAdminSettingsShell,
+	CnSettingsFieldsSection,
 	CnSettingsSection,
 	CnWidgetObjectTable,
 } from '@conduction/nextcloud-vue'
@@ -508,6 +523,7 @@ import WooReportsSettingsTab from './tabs/WooReportsSettingsTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import manifest from '../../manifest.json'
 import { initializeStores } from '../../store/store.js'
+import { kadasterFields } from './adminFields.js'
 
 export default {
 	name: 'AdminRoot',
@@ -517,6 +533,7 @@ export default {
 		PrerequisitesTab,
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
+		CnSettingsFieldsSection,
 		CnSettingsSection,
 		CnWidgetObjectTable,
 		Settings,
@@ -774,6 +791,18 @@ export default {
 				{ key: 'amount', label: this.t('dossiq', 'Amount') },
 				{ key: 'validFrom', label: this.t('dossiq', 'Valid from') },
 			]
+		},
+
+		/**
+		 * The Kadaster (BRK) and WOZ bindings IntegrationMode reads: the
+		 * source, the service address and the key, which is written and never
+		 * read back.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		kadasterFields() {
+			return kadasterFields(this.t.bind(this))
 		},
 
 		/**
