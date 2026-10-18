@@ -3937,8 +3937,8 @@
 						},
 						"visibleWhen": {
 							"field": "initiatorType",
-							"op": "eq",
-							"value": "person"
+							"op": "neq",
+							"value": "company"
 						}
 					},
 					{

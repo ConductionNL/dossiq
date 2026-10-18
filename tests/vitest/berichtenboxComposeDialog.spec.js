@@ -124,17 +124,19 @@ describe('a case can reach the compose dialog at all', () => {
 		expect(action.props.open).toBe(true)
 	})
 
-	it('offers it only where a digital post box can exist', () => {
+	it('offers it everywhere but on a company case', () => {
 		const page = manifest.pages.find((p) => p.id === 'CaseDetail')
 		const action = page.config.headerActions.find(
 			(a) => a.id === 'send-digital-post',
 		)
 
 		// A company has a KvK number, not a BSN, and a letter cannot go to one.
+		// A case without a requester, or with a contact, keeps it: the handler
+		// types the BSN, as board DqBerichtVersturen draws the field.
 		expect(action.visibleWhen).toEqual({
 			field: 'initiatorType',
-			op: 'eq',
-			value: 'person',
+			op: 'neq',
+			value: 'company',
 		})
 	})
 })
