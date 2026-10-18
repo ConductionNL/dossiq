@@ -170,13 +170,13 @@ class DemoDataServiceTest extends TestCase {
 
 		$choices = $this->service->listChoices();
 
-		$this->assertSame(['none', 'demo'], array_column($choices, 'id'));
-		$this->assertSame(3, $choices[1]['objectCount']);
-		$this->assertNotSame('', $choices[1]['label']);
+		$this->assertSame(['demo', 'none'], array_column($choices, 'id'), 'the example data comes first, as on the setup board');
+		$this->assertSame(3, $choices[0]['objectCount']);
+		$this->assertNotSame('', $choices[0]['label']);
 		// 🔴 NO NUMBER IN THE SENTENCE. The wizard translates a card's
 		// description by literal lookup, so an interpolated count would leave a
 		// Dutch operator reading English.
-		$this->assertDoesNotMatchRegularExpression('/\d/', $choices[1]['description']);
+		$this->assertDoesNotMatchRegularExpression('/\d/', $choices[0]['description']);
 
 	}//end testTheShippedDatasetIsOfferedWithItsRealCount()
 

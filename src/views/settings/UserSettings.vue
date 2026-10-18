@@ -31,7 +31,7 @@
 			{{
 				t(
 					'dossiq',
-					'These case types are in your menu under My case types, in this order. Drag a row or use the arrow keys.',
+					'These case types are in your dossiq menu, under My case types. One click opens their case list. Drag a handle to change the order.',
 				)
 			}}
 		</p>

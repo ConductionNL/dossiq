@@ -53,7 +53,7 @@ The dashboard MUST display a row of five KPI cards at the top, providing headlin
 #### Scenario DASH-001b: Overdue cases count with action indicator
 - GIVEN there are 3 cases where `deadline < today` and status is not final
 - WHEN the user views the dashboard
-- THEN the system MUST display a KPI card titled "Overdue"
+- THEN the system MUST display a KPI card titled "Late" ("Te laat" in Dutch, as boards DqDashboard and DqMijnTeam name it)
 - AND the card MUST show the count "3"
 - AND the card MUST show a warning sub-label "action needed" to indicate urgency
 - AND clicking the card MUST navigate to the Cases view filtered by `overdue=true`
@@ -457,7 +457,7 @@ The dashboard MUST follow a configurable grid layout using `CnDashboardPage` fro
 - GIVEN the user views the dashboard for the first time
 - THEN the page MUST display the following sections in the default layout:
   1. Header with quick action buttons (New Case, New Task, Refresh)
-  2. KPI cards row (4 cards: Open Cases, Overdue, Completed This Month, My Tasks) each spanning 3 grid columns
+  2. KPI cards row (4 cards: Open Cases, Late, Completed This Month, My Tasks) each spanning 3 grid columns
   3. Two-column layout below the KPI row:
      - Left column (6 cols): Cases by Status chart, My Work preview
      - Right column (6 cols): Overdue Cases panel, Recent Activity feed

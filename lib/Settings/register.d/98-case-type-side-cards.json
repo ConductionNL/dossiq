@@ -1,0 +1,24 @@
+{
+  "_note": "Side cards per case type (Ruben, 18 October 2026). Which cards a case shows beside its body, and in what order, is configuration of its case type: `sideCards` lists the ids of the case page's side cards. The case page reads it through nextcloud-vue `sideColumnFrom` (detail-side-column-from); a case type that lists nothing shows the generic cards (deadline, requester, handling, work instruction) as before. A domain case type such as Melding Jeugdwet lists its own cards first and the generic ones only where its board draws them. Declared here because OpenRegister stores only declared keys. caseType moves to 1.24.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.24.0",
+        "properties": {
+          "sideCards": {
+            "type": "array",
+            "title": "Side cards",
+            "description": "The cards beside a case of this type, in order, by the id of the case page's side card. Empty shows the default cards.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

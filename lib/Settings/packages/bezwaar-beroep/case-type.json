@@ -16,7 +16,12 @@
       "internalOrExternal": "extern",
       "publicationRequired": false,
       "isDraft": false,
-      "confidentiality": "zaakvertrouwelijk"
+      "confidentiality": "zaakvertrouwelijk",
+      "sideCards": [
+        "case-tile-deadline",
+        "side-objection-appeal",
+        "case-banner-stack"
+      ]
     },
     {
       "id": "b3c1a000-0000-4000-a000-00000000be30",
