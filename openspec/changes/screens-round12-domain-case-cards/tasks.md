@@ -11,4 +11,4 @@
 - [x] 1.9 The objection example case ships with the bezwaar-beroep package (`examples/`), not with the Zuiddrecht set, so the set never depends on an on-request package
 - [x] 1.10 Case type packages `jeugdwet` (Melding Jeugdwet, Sociaal domein) and `aanbesteding` (Aanbesteding, Inkoop en leveranciers), installed on request
 - [x] 1.11 Example cases of both ship with their packages (`examples/`, see package-examples), not with the Zuiddrecht set
-- [ ] 1.12 Bids on the example tender: the bidders are organisations, and the Zuiddrecht cast (OpenRegister) has no youth care providers yet
+- [x] 1.12 Bids on the example tender: four bidders with their scores ship with the aanbesteding package (1.1.0, `examples/`)
