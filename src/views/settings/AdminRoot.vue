@@ -754,11 +754,6 @@ export default {
 					formatter: 'translated',
 				},
 				{
-					key: 'description',
-					label: this.t('dossiq', 'Description'),
-					formatter: 'translated',
-				},
-				{
 					key: 'status',
 					label: this.t('dossiq', 'Status'),
 					widget: 'badge',
