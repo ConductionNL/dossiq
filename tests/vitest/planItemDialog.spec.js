@@ -40,6 +40,19 @@ describe('PlanItemDialog', () => {
 		expect(dialog.props('subtitle')).toBe('This goes on your own calendar and on your queue. It is not a case.')
 	})
 
+	it('draws the title and date fields with their own labels, which the board-look dialog renders', () => {
+		const wrapper = shallowMount(PlanItemDialog, { global: { stubs: { CnDialog: false } } })
+		const fields = wrapper.findAllComponents({ name: 'NcTextField' })
+		const title = fields.find((field) => field.attributes('data-testid') === 'plan-item-title')
+
+		expect(title.exists()).toBe(true)
+		expect(title.props('label')).toBe('What is it')
+		// An outside label leaves the field an empty band in the board look.
+		for (const field of fields) {
+			expect(field.props('labelOutside')).toBeFalsy()
+		}
+	})
+
 	it('closes on Cancel without planning anything', async () => {
 		const wrapper = shallowMount(PlanItemDialog, {
 			global: {
