@@ -35,14 +35,12 @@
 			<NcTextField
 				v-model="title"
 				:label="t('dossiq', 'What is it')"
-				:labelOutside="true"
 				data-testid="plan-item-title" />
 
 			<NcTextField
 				v-model="startsAt"
 				type="datetime-local"
 				:label="t('dossiq', 'When')"
-				:labelOutside="true"
 				data-testid="plan-item-when" />
 
 			<NcNoteCard v-if="failure" type="error" data-testid="plan-item-error">
