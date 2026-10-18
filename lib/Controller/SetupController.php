@@ -75,7 +75,7 @@ class SetupController extends Controller {
 	 *
 	 * @var string
 	 */
-	private const DEMO_DATA_DECIDED_KEY = 'demo_data_decided';
+	private const DEMO_DATA_DECIDED_KEY = DemoDataService::DECIDED_KEY;
 
 	/**
 	 * App-config key holding the dataset the operator picked.
@@ -457,7 +457,7 @@ class SetupController extends Controller {
 		// that stored nothing now throws above rather than returning zeroes.
 		// Loading IS choosing the set, so the pick is recorded too.
 		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, $picked);
-		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'installed');
+		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, DemoDataService::DECIDED_INSTALLED);
 
 		// 🔴 THE COUNTS, ALWAYS, AND BOTH OF THEM. "Demo data installed" with no
 		// numbers cannot be told apart from an import that wrote nothing — and
