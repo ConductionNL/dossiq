@@ -9,8 +9,9 @@
  */
 
 /**
- * Huisstijl: the logo is Nextcloud theming's, the theme is thematiq's brand
- * for dossiq, and only the name staff know the app by is dossiq's own setting.
+ * Huisstijl: the organisation's name and logo are Nextcloud theming's, the
+ * theme is thematiq's brand for dossiq, and only the name staff know the app by
+ * is dossiq's own setting. Both theming writes are admin only on the server.
  *
  * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
  * @return {Array<object>} The fields.
@@ -18,6 +19,17 @@
  */
 export function houseStyleFields(t) {
 	return [
+		{
+			// Nextcloud theming's own name, read from the capabilities and
+			// written through theming's admin-only updateStylesheet.
+			key: 'organisationName',
+			label: t('dossiq', 'Name of the organisation'),
+			url: '/ocs/v2.php/cloud/capabilities?format=json',
+			valuePath: 'ocs.data.capabilities.theming.name',
+			saveUrl: '/apps/theming/ajax/updateStylesheet',
+			saveKey: 'value',
+			saveParams: { setting: 'name' },
+		},
 		{
 			key: 'staff_app_name',
 			label: t('dossiq', 'Name of the app for staff'),
@@ -42,6 +54,7 @@ export function houseStyleFields(t) {
 			type: 'image',
 			url: '/apps/thematiq/settings/theming',
 			valuePath: 'logo_url',
+			initialsFrom: 'organisationName',
 			uploadUrl: '/apps/theming/ajax/uploadImage',
 			uploadParams: { key: 'logo' },
 			uploadValuePath: 'data.url',

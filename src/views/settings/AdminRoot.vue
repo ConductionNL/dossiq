@@ -840,10 +840,9 @@ export default {
 		},
 
 		/**
-		 * Huisstijl: the logo is Nextcloud theming's, the theme is thematiq's
-		 * brand for dossiq, and only the name staff know the app by is dossiq's
-		 * own setting. The organisation's name is Nextcloud theming's too and
-		 * joins once the fields section can write it.
+		 * Huisstijl: the organisation's name and logo are Nextcloud theming's,
+		 * the theme is thematiq's brand for dossiq, and only the name staff know
+		 * the app by is dossiq's own setting.
 		 *
 		 * @return {Array<object>} The fields.
 		 * @spec openspec/specs/admin-settings/spec.md
