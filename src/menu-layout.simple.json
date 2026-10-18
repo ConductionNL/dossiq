@@ -2908,12 +2908,15 @@
 						"fieldOverrides": {
 							"description": {
 								"widget": "textarea",
-								"order": 5
+								"order": 5,
+								"description": ""
 							},
 							"requester": {
 								"widget": "InitiatorPicker",
 								"label": "Requester",
-								"order": 3
+								"order": 3,
+								"description": "",
+								"descriptionLong": ""
 							},
 							"confidentiality": {
 								"enumLabels": {
@@ -2926,28 +2929,38 @@
 									"geheim": "Secret",
 									"zeer_geheim": "Top secret"
 								},
-								"order": 8
+								"order": 8,
+								"description": ""
 							},
 							"caseType": {
-								"order": 1
+								"order": 1,
+								"description": "Determines the statuses, the term and the documents"
 							},
 							"title": {
-								"order": 2
+								"order": 2,
+								"description": ""
 							},
 							"intakeChannel": {
-								"order": 4
+								"order": 4,
+								"description": "How the request came in"
 							},
 							"plannedEndDate": {
-								"order": 6
+								"order": 6,
+								"description": "From the term of the case type"
 							},
 							"assignee": {
-								"order": 7
+								"order": 7,
+								"description": ""
 							},
 							"impact": {
-								"order": 9
+								"order": 9,
+								"description": "How much it matters if it goes wrong",
+								"descriptionLong": ""
 							},
 							"urgency": {
-								"order": 10
+								"order": 10,
+								"description": "How quickly the case matters",
+								"descriptionLong": ""
 							}
 						},
 						"register": "dossiq",
