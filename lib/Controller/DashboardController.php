@@ -182,6 +182,10 @@ class DashboardController extends Controller {
 		$this->initialState->provideInitialState(MenuStructure::KEY, $this->menuStructure());
 		$this->initialState->provideInitialState('version', $this->installedVersion());
 		$this->initialState->provideInitialState('features_roadmap_app_version', $this->installedVersion());
+		$this->initialState->provideInitialState(
+			'staff_app_name',
+			$this->appConfig->getValueString(app: Application::APP_ID, key: 'staff_app_name', default: '')
+		);
 
 		return new TemplateResponse($this->appName, 'index');
 	}//end renderIndex()
