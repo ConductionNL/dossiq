@@ -536,8 +536,7 @@
 			"type": "dashboard",
 			"title": "Dashboard",
 			"config": {
-				"_userLayoutNote": "a-dashboard-the-reader-arranges, rows 10.1 and 10.10. `userLayout` hands the GEOMETRY of this page to the reader and keeps MEMBERSHIP with the administrator: CnDashboardPage merges the stored arrangement over the manifest widgets, so a widget taken out of this file disappears for everybody whatever anybody dragged. A page without the key makes no layout request and renders as it always did. THE KEY IS NOT ENOUGH ON ITS OWN, and that is what this note used to get wrong. `loadUserLayout()` and `saveUserLayout()` both return early unless `appId` is set too, so a page declaring `userLayout` and nothing else reads and writes no arrangement at all, and a reader who never drags a widget cannot tell that apart from the feature working. CnPageRenderer binds this config onto the page component and passes no app id of its own, so the app id is declared here. `pageId` is declared beside it because the fallback slugifies the page TITLE, which would move every readers arrangement the day somebody edits the heading. Measured 2026-09-20 against the installed @conduction/nextcloud-vue 3.4.0, which carries `mergeUserLayout`, the dashboardLayouts store plugin and `userWidgetPresets` (#1209).",
-				"userLayout": true,
+				"_layoutNote": "No `userLayout` and no in-page Edit button on any dossiq page (Ruben, 18 Oct 2026): a page's layout is the administrator's, changed through buildiq under the buildiq button, and the same for every reader. With `userLayout` on, CnDashboardPage routed a buildiq drag into the reader's own arrangement, which only the in-page button saved, so buildiq geometry never reached the manifest delta. Arrangements readers saved before are no longer read.",
 				"allowEdit": false,
 				"appId": "dossiq",
 				"pageId": "Dashboard",
@@ -1128,7 +1127,6 @@
 			"title": "My work",
 			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first. `slots.widget-my-work` moved here for the same reason `_note` on the old Dashboard page warned about: a `type: \"custom\"` widget resolves ONLY through the page's own top-level `slots` map, never through one nested under `config`.",
 			"config": {
-				"userLayout": true,
 				"allowEdit": false,
 				"appId": "dossiq",
 				"pageId": "MyWorkHome",
@@ -1186,7 +1184,7 @@
 						}
 					}
 				],
-				"_viewsNote": "landing-views. The landing page holds two VIEWS behind one switch, My work and My team (nextcloud-vue 2.66.0 page views, `views` and `defaultView`). The chosen view is in the address (`?view=team`) and in the reader's preferences, so a team lead who reads My team opens on it next time. `mine` is what this page showed before, unchanged. `team` holds widgets the Dashboard page already declares, copied without their notes: the reader's team queue (the Dashboard's `your-teams-queue` preset: the Queue page's own filter narrowed to `assignedGroup: @myGroups`) and the team-wide counts and charts. tests/vitest/landingViews.spec.js fails when a copy drifts from the Dashboard's definition. The page's own grid is EMPTY on purpose: the library draws a view's grid below the page's own, and in the full structure the switch sits in the page header. The simple structure puts a greeting on the page grid and lets the greeting draw the switch. `userLayout` is back on this page (landing-view-layouts): since nextcloud-vue 2.69.0 a reader's arrangement is kept per view, under `dashboard-layout.MyWorkHome.view.<view>`, so My work and My team each remember their own layout while the manifest still decides which widgets they hold. `kpi-sla-compliance` stays on the Dashboard only: it is gated on roles and on a visibility endpoint, and a view is the wrong place to find out whether the library applies `roles` there.",
+				"_viewsNote": "landing-views. The landing page holds two VIEWS behind one switch, My work and My team (nextcloud-vue 2.66.0 page views, `views` and `defaultView`). The chosen view is in the address (`?view=team`) and in the reader's preferences, so a team lead who reads My team opens on it next time. `mine` is what this page showed before, unchanged. `team` holds widgets the Dashboard page already declares, copied without their notes: the reader's team queue (the Dashboard's `your-teams-queue` preset: the Queue page's own filter narrowed to `assignedGroup: @myGroups`) and the team-wide counts and charts. tests/vitest/landingViews.spec.js fails when a copy drifts from the Dashboard's definition. The page's own grid is EMPTY on purpose: the library draws a view's grid below the page's own, and in the full structure the switch sits in the page header. The simple structure puts a greeting on the page grid and lets the greeting draw the switch. There is no `userLayout` on this page: layout is the administrator's, through buildiq (see the Dashboard's `_layoutNote`). `kpi-sla-compliance` stays on the Dashboard only: it is gated on roles and on a visibility endpoint, and a view is the wrong place to find out whether the library applies `roles` there.",
 				"viewsLabel": "Whose work",
 				"defaultView": "mine",
 				"views": [
@@ -5158,7 +5156,6 @@
 			"title": "Processing time",
 			"_note": "Processing time as drawn on the DqDoorlooptijd board: four figures, the average per month and the share within the norm per case type, read from /api/doorlooptijd/metrics (its `summary` block), then the compliance charts, the Woo deadlines, the cases at risk and the breakdown, which read the shared store (src/store/modules/doorlooptijd.js). The period and case type filters write the workspace, which both halves read.",
 			"config": {
-				"userLayout": true,
 				"_headerNote": "Board DqDoorlooptijd's header has no Actions menu and no way back to the dashboard beside the menu's own Dashboard entry. The case type filter stays: it is how this page narrows to one case type. There is no in-page Edit button: changing the layout is buildiq's, under the buildiq button (Ruben, 18 Oct).",
 				"allowEdit": false,
 				"showActionsMenu": false,
@@ -5516,7 +5513,6 @@
 			"title": "Process analysis",
 			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from a dedicated ProcessMiningService aggregation endpoint, not a register query, so the widgets are type:custom and read one shared store (src/store/modules/processMining.js) rather than a register/schema binding. The page owns the heading, the period presets and the case-type filter; each widget renders content only — a widget that drew its own page heading would be the dashboard-in-dashboard antipattern (hydra#316).",
 			"config": {
-				"userLayout": true,
 				"allowEdit": false,
 				"appId": "dossiq",
 				"pageId": "ProcessMiningDashboard",
@@ -7409,7 +7405,6 @@
 			"title": "Deadline monitoring",
 			"_note": "Deadline monitoring as drawn on the DqTermijnen board: five figures, the share decided on time per case type, the notices of default, then the quarterly report and the annual penalty audit. The figures come from /api/termijn/dashboard/kpi, which counts the running terms and penalties server side; the notices are a register list.",
 			"config": {
-				"userLayout": true,
 				"_headerNote": "Board DqTermijnen's header row is Quarterly report, the buildiq square and Register notice of default, with no Actions menu. There is no in-page Edit button: changing the layout is buildiq's, under the buildiq button (Ruben, 18 Oct).",
 				"allowEdit": false,
 				"showActionsMenu": false,
