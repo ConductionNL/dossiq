@@ -114,17 +114,16 @@ describe('a reader keeps their own arrangement of a dashboard', () => {
 		expect(carrying.sort()).toEqual([...DASHBOARDS, 'MyWorkHome'].sort())
 	})
 
-	it('offers the Edit button wherever a reader may arrange the page', () => {
-		// CnDashboardPage draws its Edit toggle only with `allowEdit`. Every
-		// page here declared `userLayout` without it, so the arrangement was
-		// stored and loaded but no reader could ever start one (live check,
-		// 7 October 2026).
-		const carrying = (manifest.pages || []).filter(
-			(p) => p.config && p.config.userLayout,
-		)
-		for (const p of carrying) {
-			expect(p.config.allowEdit, `${p.id} has no Edit button`).toBe(true)
-		}
+	it('draws no in-page Edit button on any page: changing the layout is buildiq\'s', () => {
+		// Ruben, 18 October 2026: "indeling aanpassen needs to go everywhere,
+		// that's a buildiq functionality under the buildiq button".
+		// CnDashboardPage draws its Edit toggle only with `allowEdit`.
+		const editable = [
+			...(manifest.pages || []),
+			...(readJson('src', 'menu-layout.simple.json').pages || []),
+			...(readJson('src', 'menu-layout.json').pages || []),
+		].filter((p) => p.config && p.config.allowEdit === true)
+		expect(editable.map((p) => p.id)).toEqual([])
 	})
 
 	it('leaves membership with the manifest: every dashboard still ships widgets', () => {

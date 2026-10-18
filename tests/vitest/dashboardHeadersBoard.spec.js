@@ -39,9 +39,9 @@ function page(id) {
 }
 
 describe('the dashboard headers', () => {
-	it.each(['TermijnDashboard', 'Doorlooptijd'])('%s draws no page Actions menu and keeps its Edit button', (id) => {
+	it.each(['TermijnDashboard', 'Doorlooptijd'])('%s draws no page Actions menu and no Edit button', (id) => {
 		expect(page(id).config.showActionsMenu).toBe(false)
-		expect(page(id).config.allowEdit).toBe(true)
+		expect(page(id).config.allowEdit).toBe(false)
 	})
 
 	it('leaves the way back to the dashboard to the menu on the processing-time page', () => {
@@ -55,6 +55,9 @@ describe('the dashboard headers', () => {
 
 		const note = overlay.configAppend.widgets.find((widget) => widget.id === 'layout-note')
 		expect(note).toMatchObject({ type: 'banner', content: { variant: 'info' } })
+		// The board's sentences about the in-page Edit layout button are gone with the button.
+		expect(note.content.text).not.toMatch(/Edit layout/)
+		expect(overlay.config.editLabel).toBeUndefined()
 
 		const placed = overlay.config.layout.find((item) => item.widgetId === 'layout-note')
 		const lowest = Math.max(...overlay.config.layout.filter((item) => item !== placed).map((item) => item.gridY + item.gridHeight))

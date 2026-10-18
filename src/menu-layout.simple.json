@@ -2591,8 +2591,7 @@
 			"_note": "The dashboard in the simple structure. Since openspec/changes/landing-views it is the dashboard of the full structure: the greeting, First today and the counts of MY cases moved to the landing page (MyWorkHome), whose My work / My team switch now changes views on that page instead of opening this one. The one thing this overlay still adds is the link to Close out your day, because this profile takes that entry out of the menu.",
 			"config": {
 				"description": "How the team is doing",
-				"editLabel": "Edit layout",
-				"_actionsMenuNote": "Board DqDashboard draws no Actions menu in the header: the row is Close out your day, Edit layout, the buildiq square and New case.",
+				"_actionsMenuNote": "Board DqDashboard draws no Actions menu in the header: the row is Close out your day, the buildiq square and New case. The board's Edit layout button is gone too; layout editing is buildiq's (Ruben, 18 Oct).",
 				"showActionsMenu": false,
 				"kpiRow": [
 					"kpi-open-cases",
@@ -2774,11 +2773,11 @@
 						"id": "layout-note",
 						"type": "banner",
 						"title": "About this layout",
-						"_note": "Board DqDashboard: the info line under the grid saying what Edit layout does, whose layout it is, and who sees Within deadline (kpi-sla-compliance carries roles controllers, beheerders and admin).",
+						"_note": "Board DqDashboard: the info line under the grid. The board's first two sentences describe the in-page Edit layout button, which is gone (layout editing is buildiq's, Ruben 18 Oct), so only the sentence on who sees Within deadline stays (kpi-sla-compliance carries roles controllers, beheerders and admin).",
 						"content": {
 							"variant": "info",
 							"icon": "ViewDashboardOutline",
-							"text": "With Edit layout you put tiles in another order or add one, such as your team's queue. The layout is yours alone. Within deadline is only shown to those who monitor or manage."
+							"text": "Within deadline is only shown to those who monitor or manage."
 						}
 					}
 				],
