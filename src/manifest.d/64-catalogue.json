@@ -23,7 +23,6 @@
 			"type": "dashboard",
 			"title": "Catalogue",
 			"config": {
-				"description": "case types, attributes, templates and object types in folders",
 				"breadcrumb": { "label": "Settings", "href": "/index.php/settings/admin/dossiq" },
 				"headerMeta": "case types, attributes, templates and object types in folders",
 				"allowEdit": false,
@@ -59,7 +58,7 @@
 					},
 					{
 						"id": "catalogue-object-types",
-						"type": "table",
+						"type": "object-table",
 						"title": "Object types",
 						"description": "Objects you link to cases; you manage their properties here",
 						"content": {
