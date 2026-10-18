@@ -77,9 +77,19 @@ class ActiveOrganisationProfile {
 	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
 	 */
 	public function read(): array {
-		$organisation = $this->active();
+		$unavailable = ['available' => false, 'name' => '', 'logo' => ''];
+		try {
+			$organisation = $this->active();
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the setup wizard could not read the active organisation from OpenRegister',
+				['exception' => $e->getMessage()],
+			);
+			return $unavailable;
+		}
+
 		if ($organisation === null) {
-			return ['available' => false, 'name' => '', 'logo' => ''];
+			return $unavailable;
 		}
 
 		return [
@@ -88,6 +98,20 @@ class ActiveOrganisationProfile {
 			'logo' => (string)($organisation->getImage() ?? ''),
 		];
 	}//end read()
+
+	/**
+	 * Whether the wizard's Organisation step is settled: the active
+	 * organisation has a name, or there is no organisation to name.
+	 *
+	 * @return bool True when settled.
+	 *
+	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 */
+	public function isSettled(): bool {
+		$profile = $this->read();
+
+		return $profile['available'] === false || $profile['name'] !== '';
+	}//end isSettled()
 
 	/**
 	 * Write the fields the wizard posted onto the active organisation.
@@ -109,22 +133,21 @@ class ActiveOrganisationProfile {
 			return true;
 		}
 
-		$organisation = $this->active();
-		$mapper = $this->service(class: 'OCA\\OpenRegister\\Db\\OrganisationMapper');
-		if ($organisation === null || $mapper === null) {
-			return false;
-		}
-
-		if ($name !== '') {
-			$organisation->setName($name);
-		}
-
-		if ($logo !== '') {
-			$organisation->setImage($logo);
-		}
-
 		try {
-			$mapper->update($organisation);
+			$organisation = $this->active();
+			if ($organisation === null) {
+				return false;
+			}
+
+			if ($name !== '') {
+				$organisation->setName($name);
+			}
+
+			if ($logo !== '') {
+				$organisation->setImage($logo);
+			}
+
+			$this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper')->update($organisation);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not save the organisation name or logo from the setup wizard',
@@ -137,47 +160,17 @@ class ActiveOrganisationProfile {
 	}//end write()
 
 	/**
-	 * The signed-in user's active organisation, or null.
+	 * The signed-in user's active organisation.
 	 *
-	 * @return object|null The OpenRegister Organisation entity.
+	 * @return object|null The OpenRegister Organisation entity, or null when OpenRegister is not installed or there is none.
+	 *
+	 * @throws \Throwable When OpenRegister cannot be asked.
 	 */
 	private function active(): ?object {
-		$service = $this->service(class: 'OCA\\OpenRegister\\Service\\OrganisationService');
-		if ($service === null) {
-			return null;
-		}
-
-		try {
-			return $service->getActiveOrganisation();
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: could not read the active organisation for the setup wizard',
-				['exception' => $e->getMessage()],
-			);
-			return null;
-		}
-	}//end active()
-
-	/**
-	 * Resolve an OpenRegister service when the app is installed.
-	 *
-	 * @param string $class The class name.
-	 *
-	 * @return object|null The service, or null when OpenRegister is unavailable.
-	 */
-	private function service(string $class): ?object {
 		if (in_array('openregister', (array)$this->appManager->getInstalledApps(), true) === false) {
 			return null;
 		}
 
-		try {
-			return $this->container->get($class);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: could not resolve an OpenRegister organisation service',
-				['class' => $class, 'exception' => $e->getMessage()],
-			);
-			return null;
-		}
-	}//end service()
+		return $this->container->get('OCA\\OpenRegister\\Service\\OrganisationService')->getActiveOrganisation();
+	}//end active()
 }//end class

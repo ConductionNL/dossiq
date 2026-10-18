@@ -188,4 +188,16 @@ class ActiveOrganisationProfileTest extends TestCase {
 		$this->assertSame([], $updated);
 
 	}//end testAValueWithNoOrganisationFails()
+	/**
+	 * The step is settled by a name, or by there being nothing to name.
+	 *
+	 * @return void
+	 */
+	public function testSettledByANameOrByNoOrganisation(): void {
+		$updated = [];
+		$this->assertTrue($this->profile($this->organisation('Gemeente Zuiddrecht'), $updated)->isSettled());
+		$this->assertFalse($this->profile($this->organisation(''), $updated)->isSettled());
+		$this->assertTrue($this->profile($this->organisation(''), $updated, installed: false)->isSettled());
+
+	}//end testSettledByANameOrByNoOrganisation()
 }//end class

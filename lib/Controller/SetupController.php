@@ -199,15 +199,11 @@ class SetupController extends Controller {
 			// `optionsSource: datasets` and no options of its own, so a dataset
 			// missing from this list is a dataset nobody can pick.
 			'datasets' => $this->demoDataService->listChoices(),
-			// The Case types step's cards, read the same way.
 			'caseTypePackages' => $this->caseTypes->options(),
 			// Exactly the ids of `manifest.setup.steps`: a step the server
 			// never reports stays open and reopens the wizard.
 			'steps' => [
-				// Optional, so settled once there is a name to show; an
-				// instance without OpenRegister has nothing to name.
-				'organisation-details' => ['done' => $this->organisationNamed()],
-				// A hand-off to the theming app, never outstanding.
+				'organisation-details' => ['done' => $this->organisationProfile->isSettled()],
 				'house-style' => ['done' => true],
 				'case-types' => ['done' => ($this->caseTypes->isDecided() === true || $wizardDoneBefore === true)],
 				// A pick without a load still counts: a wizard that predates
@@ -300,24 +296,9 @@ class SetupController extends Controller {
 		// different: the load step reads it back and hands it to the importer,
 		// so an unknown value would surface one step later as a failed import
 		// with no clue why.
-		$dataset = $this->request->getParam(self::DATASET_KEY);
-		if ($dataset !== null) {
-			$submitted = $dataset;
-			if (is_array($dataset) === true) {
-				$submitted = ($dataset[0] ?? null);
-			}
-
-			$named = 'that';
-			if (is_scalar($submitted) === true) {
-				$named = (string)$submitted;
-			}
-
-			$known = array_column($this->demoDataService->listChoices(), 'id');
-			if (is_scalar($submitted) === false || in_array($named, $known, true) === false) {
-				return new DataResponse(
-					['success' => false, 'message' => 'No dataset is called "' . $named . '".']
-				);
-			}
+		$refusal = $this->refuseUnknownDataset();
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// The organisation's name and logo live on the OpenRegister
@@ -353,7 +334,8 @@ class SetupController extends Controller {
 	/**
 	 * Run a privileged server-side setup action.
 	 *
-	 * @param string $actionId One of `load-demo-data` | `install-demo-data` | `skip-demo-data` | `dismiss-setup` | `init-register` | `seed` | `install-case-types`.
+	 * @param string $actionId One of `load-demo-data` | `install-demo-data` | `skip-demo-data` | `dismiss-setup` |
+	 *                         `init-register` | `seed` | `install-case-types`.
 	 *
 	 * @return DataResponse `{ success, message, detail }`.
 	 *
@@ -569,16 +551,33 @@ class SetupController extends Controller {
 	}//end skipDemoData()
 
 	/**
-	 * Whether the Organisation step is settled: the active organisation has a
-	 * name, or there is no organisation to name.
+	 * Refuse a posted dataset the demo data service does not offer.
 	 *
-	 * @return bool True when settled.
+	 * @return DataResponse|null The refusal, or null when no dataset was posted or it is known.
 	 */
-	private function organisationNamed(): bool {
-		$profile = $this->organisationProfile->read();
+	private function refuseUnknownDataset(): ?DataResponse {
+		$dataset = $this->request->getParam(self::DATASET_KEY);
+		if ($dataset !== null) {
+			$submitted = $dataset;
+			if (is_array($dataset) === true) {
+				$submitted = ($dataset[0] ?? null);
+			}
 
-		return $profile['available'] === false || $profile['name'] !== '';
-	}//end organisationNamed()
+			$named = 'that';
+			if (is_scalar($submitted) === true) {
+				$named = (string)$submitted;
+			}
+
+			$known = array_column($this->demoDataService->listChoices(), 'id');
+			if (is_scalar($submitted) === false || in_array($named, $known, true) === false) {
+				return new DataResponse(
+					['success' => false, 'message' => 'No dataset is called "' . $named . '".']
+				);
+			}
+		}
+
+		return null;
+	}//end refuseUnknownDataset()
 
 	/**
 	 * Read a dossiq app-config string value.

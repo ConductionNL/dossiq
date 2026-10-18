@@ -179,7 +179,7 @@ class SetupControllerStatusTest extends TestCase {
 	 */
 	private function namedOrganisation(): ActiveOrganisationProfile {
 		$profile = $this->createMock(ActiveOrganisationProfile::class);
-		$profile->method('read')->willReturn(['available' => true, 'name' => 'Gemeente Zuiddrecht', 'logo' => '']);
+		$profile->method('isSettled')->willReturn(true);
 		$profile->method('write')->willReturn(true);
 
 		return $profile;
@@ -969,13 +969,13 @@ class SetupControllerStatusTest extends TestCase {
 	}//end testTheBoardStepsAreReported()
 
 	/**
-	 * An organisation without a name leaves the Organisation step open.
+	 * An unsettled organisation leaves the Organisation step open.
 	 *
 	 * @return void
 	 */
 	public function testAnUnnamedOrganisationLeavesTheStepOpen(): void {
 		$profile = $this->createMock(ActiveOrganisationProfile::class);
-		$profile->method('read')->willReturn(['available' => true, 'name' => '', 'logo' => '']);
+		$profile->method('isSettled')->willReturn(false);
 
 		$data = $this->build(config: $this->provisioned(), profile: $profile)['controller']->status()->getData();
 
