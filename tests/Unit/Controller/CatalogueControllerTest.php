@@ -47,7 +47,7 @@ final class CatalogueControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnswersTheRowsUnderResults(): void {
-		$rows = [['id' => '165', 'slug' => 'boom', 'title' => 'Boom', 'description' => '', 'version' => '', 'properties' => 1]];
+		$rows = [['id' => 'building', 'title' => 'building', 'cases' => 2]];
 		$catalogue = $this->createMock(ObjectTypeCatalogue::class);
 		$catalogue->expects($this->once())->method('list')->willReturn($rows);
 

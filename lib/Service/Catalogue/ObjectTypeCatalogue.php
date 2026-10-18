@@ -3,10 +3,10 @@
 /**
  * Dossiq Object Type Catalogue
  *
- * The object types the catalogue page lists: the schemas in dossiq's own
- * register, and nothing else. Other apps' schemas and OpenRegister's nc-*
- * virtual schemas are never listed, because the list reads the register's
- * own schema references rather than every schema on the instance.
+ * The object types the catalogue page lists: the distinct `objectType`
+ * values of the objects cases actually link (`caseObject`), each with the
+ * number of cases that link one. Schemas are not listed: a register holds
+ * case, task and the other record schemas, which are not object types.
  *
  * A case type does not reference an object type, so no "used in N case types"
  * count is derived here.
@@ -32,98 +32,126 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Catalogue;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCP\IAppConfig;
-use Psr\Container\ContainerInterface;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use RuntimeException;
 
 /**
- * Lists the schemas in dossiq's own register as catalogue rows.
+ * Lists the object types cases link, with the number of cases per type.
  *
  * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
  */
 class ObjectTypeCatalogue {
 
+	use SearchesObjects;
+
+	/**
+	 * Case-object links read per page.
+	 *
+	 * @var int
+	 */
+	private const PAGE_SIZE = 500;
+
+	/**
+	 * Pages read at most, so a runaway store cannot hold the request.
+	 *
+	 * @var int
+	 */
+	private const MAX_PAGES = 100;
+
 	/**
 	 * Constructor.
 	 *
-	 * @param IAppConfig         $appConfig App config holding dossiq's register id.
-	 * @param ContainerInterface $container The DI container, used to reach
-	 *                                      OpenRegister's mappers.
+	 * @param SettingsService $settingsService Config and OpenRegister's ObjectService.
 	 */
 	public function __construct(
-		private readonly IAppConfig $appConfig,
-		private readonly ContainerInterface $container,
+		private readonly SettingsService $settingsService,
 	) {
 	}//end __construct()
 
 	/**
-	 * The object types in dossiq's register, sorted by title.
+	 * The object types cases link, most used first, then by name.
 	 *
-	 * Returns an empty list when no register is configured. A register or
-	 * schema OpenRegister cannot read throws, so the caller can say the list
-	 * could not be read instead of showing it as empty.
+	 * Returns an empty list when the register or the case-object schema is not
+	 * configured, or when no case links an object. A read OpenRegister refuses
+	 * throws, so the caller can tell a failed read from an empty catalogue.
 	 *
-	 * @return array<int, array{id: string, slug: string, title: string, description: string, version: string, properties: int}> The rows.
+	 * @return array<int, array{id: string, title: string, cases: int}> The rows.
 	 *
-	 * @throws \Throwable When OpenRegister is absent or cannot read the register or its schemas.
+	 * @throws RuntimeException When OpenRegister is not available.
 	 *
 	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
 	 */
 	public function list(): array {
-		$registerId = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		if ($registerId === '') {
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'case_object_schema');
+		if ($register === '' || $schema === '') {
 			return [];
 		}
 
-		$registerMapper = $this->container->get('OCA\OpenRegister\Db\RegisterMapper');
-		$schemaMapper = $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
-		$register = $registerMapper->find($registerId, false, false);
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
 
-		$ids = [];
-		foreach ((array)$register->getSchemas() as $candidate) {
-			if (is_numeric($candidate) === true && (int)$candidate > 0) {
-				$ids[] = (int)$candidate;
+		$casesByType = [];
+		for ($page = 1; $page <= self::MAX_PAGES; $page++) {
+			$links = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['_limit' => self::PAGE_SIZE, '_offset' => (($page - 1) * self::PAGE_SIZE)]
+			);
+			$casesByType = $this->collect(casesByType: $casesByType, links: $links);
+			if (count($links) < self::PAGE_SIZE) {
+				break;
 			}
 		}
 
-		if ($ids === []) {
-			return [];
-		}
-
 		$rows = [];
-		foreach ($schemaMapper->findMultiple($ids, false, false) as $schema) {
-			$rows[] = $this->row(schema: $schema);
+		foreach ($casesByType as $type => $cases) {
+			$rows[] = ['id' => (string)$type, 'title' => (string)$type, 'cases' => count($cases)];
 		}
 
-		usort(
-			$rows,
-			static fn (array $a, array $b): int => strcasecmp($a['title'], $b['title'])
-		);
+		usort($rows, static fn (array $left, array $right): int => self::compareRows(left: $left, right: $right));
 
 		return $rows;
 	}//end list()
 
 	/**
-	 * One catalogue row for a schema. An untitled schema reads as its slug.
+	 * Add one page of case-object links to the cases seen per object type.
+	 * A link without a type or a case is left out.
 	 *
-	 * @param object $schema An OpenRegister schema.
+	 * @param array<string, array<string, true>> $casesByType The cases seen so far, by type.
+	 * @param array<int, array<string, mixed>>   $links       One page of links.
 	 *
-	 * @return array{id: string, slug: string, title: string, description: string, version: string, properties: int} The row.
+	 * @return array<string, array<string, true>> The cases seen, by type.
 	 */
-	private function row(object $schema): array {
-		$slug = (string)($schema->getSlug() ?? '');
-		$title = (string)($schema->getTitle() ?? '');
-		if ($title === '') {
-			$title = $slug;
+	private function collect(array $casesByType, array $links): array {
+		foreach ($links as $link) {
+			$type = trim((string)($link['objectType'] ?? ''));
+			$case = (string)($link['case'] ?? '');
+			if ($type !== '' && $case !== '') {
+				$casesByType[$type][$case] = true;
+			}
 		}
 
-		return [
-			'id' => (string)$schema->getId(),
-			'slug' => $slug,
-			'title' => $title,
-			'description' => (string)($schema->getDescription() ?? ''),
-			'version' => (string)($schema->getVersion() ?? ''),
-			'properties' => count((array)($schema->getProperties() ?? [])),
-		];
-	}//end row()
+		return $casesByType;
+	}//end collect()
+
+	/**
+	 * Order rows by the number of cases, most first, then by name.
+	 *
+	 * @param array{id: string, title: string, cases: int} $left  One row.
+	 * @param array{id: string, title: string, cases: int} $right The other row.
+	 *
+	 * @return int The comparison.
+	 */
+	private static function compareRows(array $left, array $right): int {
+		if ($left['cases'] !== $right['cases']) {
+			return ($right['cases'] <=> $left['cases']);
+		}
+
+		return strcasecmp($left['title'], $right['title']);
+	}//end compareRows()
 }//end class

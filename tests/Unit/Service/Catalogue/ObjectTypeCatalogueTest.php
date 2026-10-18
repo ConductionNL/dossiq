@@ -3,8 +3,8 @@
 /**
  * Dossiq Object Type Catalogue Test
  *
- * The catalogue lists the schemas dossiq's own register references, sorted
- * by title, and nothing from elsewhere on the instance.
+ * The catalogue lists the object types cases link through `caseObject`, with
+ * the number of distinct cases per type, and nothing else.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests
@@ -26,251 +26,152 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Catalogue;
 
 use OCA\Dossiq\Service\Catalogue\ObjectTypeCatalogue;
-use OCP\IAppConfig;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 use RuntimeException;
 
 /**
- * Object types from dossiq's own register.
+ * Object types from what cases link.
  */
 final class ObjectTypeCatalogueTest extends TestCase {
 	/**
-	 * The ids the fake SchemaMapper was asked for.
-	 *
-	 * @var int[]|null
-	 */
-	private ?array $requestedIds = null;
-
-	/**
-	 * Only the schemas the register references are asked for, and each becomes
-	 * a row with its property count, sorted by title.
+	 * Each object type is counted once per case that links it, most used
+	 * first, and links without a type or a case are left out.
 	 *
 	 * @return void
 	 */
-	public function testListsTheSchemasOfOurRegisterSortedByTitle(): void {
-		$catalogue = $this->catalogue(
-			registerId: '23',
-			registerSchemaIds: [173, '165', 'not-an-id', 0],
-			schemas: [
-				173 => ['slug' => 'caseTask', 'title' => 'Taak', 'description' => 'Werk binnen een zaak', 'version' => '1.2.0', 'properties' => ['a' => [], 'b' => []]],
-				165 => ['slug' => 'boom', 'title' => 'Boom', 'description' => null, 'version' => null, 'properties' => ['a' => []]],
-				52 => ['slug' => 'nc-user', 'title' => 'nc-user', 'description' => '', 'version' => '0.0.1', 'properties' => []],
-			],
-		);
+	public function testCountsTheCasesPerObjectType(): void {
+		$service = $this->objectService(links: [
+			['case' => 'c1', 'objectType' => 'building'],
+			['case' => 'c1', 'objectType' => 'building'],
+			['case' => 'c2', 'objectType' => 'building'],
+			['case' => 'c3', 'objectType' => 'vehicle'],
+			['case' => 'c4', 'objectType' => 'Boom'],
+			['case' => 'c5', 'objectType' => ' '],
+			['case' => '', 'objectType' => 'vehicle'],
+		]);
 
-		$rows = $catalogue->list();
+		$rows = $this->catalogue(register: '23', schema: '41', objectService: $service)->list();
 
-		$this->assertSame([173, 165], $this->requestedIds, 'Only the register\'s own numeric schema references are read.');
 		$this->assertSame(
 			[
-				['id' => '165', 'slug' => 'boom', 'title' => 'Boom', 'description' => '', 'version' => '', 'properties' => 1],
-				['id' => '173', 'slug' => 'caseTask', 'title' => 'Taak', 'description' => 'Werk binnen een zaak', 'version' => '1.2.0', 'properties' => 2],
+				['id' => 'building', 'title' => 'building', 'cases' => 2],
+				['id' => 'Boom', 'title' => 'Boom', 'cases' => 1],
+				['id' => 'vehicle', 'title' => 'vehicle', 'cases' => 1],
 			],
 			$rows
 		);
+		$this->assertSame(['register' => 23, 'schema' => 41], $service->queries[0]['@self']);
 	}
 
 	/**
-	 * A schema without a title is listed by its slug.
+	 * Links are read page by page until a page comes back short.
 	 *
 	 * @return void
 	 */
-	public function testAnUntitledSchemaReadsAsItsSlug(): void {
-		$catalogue = $this->catalogue(
-			registerId: '23',
-			registerSchemaIds: [7],
-			schemas: [7 => ['slug' => 'lantaarnpaal', 'title' => '', 'description' => '', 'version' => '', 'properties' => []]],
-		);
+	public function testReadsEveryPage(): void {
+		$links = [];
+		for ($i = 0; $i < 501; $i++) {
+			$links[] = ['case' => 'c' . $i, 'objectType' => 'building'];
+		}
 
-		$this->assertSame('lantaarnpaal', $catalogue->list()[0]['title']);
+		$service = $this->objectService(links: $links);
+		$rows = $this->catalogue(register: '23', schema: '41', objectService: $service)->list();
+
+		$this->assertSame(501, $rows[0]['cases']);
+		$this->assertSame([0, 500], array_column($service->queries, '_offset'));
 	}
 
 	/**
-	 * With no register configured nothing is read and nothing is listed.
+	 * No case links an object: the catalogue is empty, not filled with schemas.
 	 *
 	 * @return void
 	 */
-	public function testNoRegisterListsNothing(): void {
-		$catalogue = $this->catalogue(registerId: '', registerSchemaIds: [173], schemas: []);
-
-		$this->assertSame([], $catalogue->list());
-		$this->assertNull($this->requestedIds);
+	public function testNoLinksListsNothing(): void {
+		$this->assertSame([], $this->catalogue(register: '23', schema: '41', objectService: $this->objectService(links: []))->list());
 	}
 
 	/**
-	 * A register OpenRegister cannot find throws, so the caller can tell a
-	 * failed read from an empty register.
+	 * Without a configured case-object schema nothing is read.
 	 *
 	 * @return void
 	 */
-	public function testAnUnreachableRegisterThrows(): void {
-		$catalogue = $this->catalogue(registerId: '99', registerSchemaIds: null, schemas: []);
+	public function testUnconfiguredListsNothing(): void {
+		$service = $this->objectService(links: [['case' => 'c1', 'objectType' => 'building']]);
 
+		$this->assertSame([], $this->catalogue(register: '23', schema: '', objectService: $service)->list());
+		$this->assertSame([], $service->queries);
+	}
+
+	/**
+	 * Without OpenRegister the read fails loudly, so the endpoint answers 503.
+	 *
+	 * @return void
+	 */
+	public function testMissingOpenRegisterThrows(): void {
 		$this->expectException(RuntimeException::class);
-		$catalogue->list();
+		$this->catalogue(register: '23', schema: '41', objectService: null)->list();
 	}
 
 	/**
-	 * Build the catalogue against fake OpenRegister mappers.
+	 * Build the catalogue over a fake configuration.
 	 *
-	 * @param string                           $registerId        The configured register id, '' when unset.
-	 * @param array<int, int|string>|null      $registerSchemaIds The register's schema references, null when the register is missing.
-	 * @param array<int, array<string, mixed>> $schemas           The schemas on the instance, by id.
+	 * @param string      $register      The register id.
+	 * @param string      $schema        The case-object schema id.
+	 * @param object|null $objectService The fake ObjectService, null when absent.
 	 *
 	 * @return ObjectTypeCatalogue The catalogue under test.
 	 */
-	private function catalogue(string $registerId, ?array $registerSchemaIds, array $schemas): ObjectTypeCatalogue {
-		$registerMapper = new class($registerSchemaIds) {
-			/**
-			 * @param array<int, int|string>|null $schemaIds The register's schema references.
-			 */
-			public function __construct(private ?array $schemaIds) {
+	private function catalogue(string $register, string $schema, ?object $objectService): ObjectTypeCatalogue {
+		$settings = $this->getMockBuilder(SettingsService::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['getConfigValue', 'getObjectService'])
+			->getMock();
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => match ($key) {
+				'register' => $register,
+				'case_object_schema' => $schema,
+				default => $default,
 			}
-
-			/**
-			 * @param string  $id           The register id.
-			 * @param boolean $rbac         Unused.
-			 * @param boolean $multitenancy Unused.
-			 *
-			 * @return object The register-like object.
-			 *
-			 * @throws RuntimeException When the register is missing, as the real mapper does.
-			 */
-			public function find(string $id, bool $rbac = true, bool $multitenancy = true): object {
-				if ($this->schemaIds === null) {
-					throw new RuntimeException('no such register: ' . $id);
-				}
-
-				return new class($this->schemaIds) {
-					/**
-					 * @param array<int, int|string> $schemaIds The schema references.
-					 */
-					public function __construct(private array $schemaIds) {
-					}
-
-					/**
-					 * @return array<int, int|string> The schema references.
-					 */
-					public function getSchemas(): array {
-						return $this->schemaIds;
-					}
-				};
-			}
-		};
-
-		$test = $this;
-		$schemaMapper = new class($schemas, $test) {
-			/**
-			 * @param array<int, array<string, mixed>> $schemas The schemas by id.
-			 * @param ObjectTypeCatalogueTest          $test    The test, told which ids were asked for.
-			 */
-			public function __construct(private array $schemas, private ObjectTypeCatalogueTest $test) {
-			}
-
-			/**
-			 * Mirrors SchemaMapper::findMultiple().
-			 *
-			 * @param int[]   $ids          The schema ids.
-			 * @param boolean $rbac         Unused.
-			 * @param boolean $multitenancy Unused.
-			 *
-			 * @return object[] The schema-like objects that exist.
-			 */
-			public function findMultiple(array $ids, bool $rbac = true, bool $multitenancy = true): array {
-				$this->test->recordRequestedIds($ids);
-				$found = [];
-				foreach ($ids as $id) {
-					if (isset($this->schemas[$id]) === true) {
-						$found[] = ObjectTypeCatalogueTest::schema($id, $this->schemas[$id]);
-					}
-				}
-
-				return $found;
-			}
-		};
-
-		$container = $this->createMock(ContainerInterface::class);
-		$container->method('get')->willReturnCallback(
-			static fn (string $id): object => ($id === 'OCA\OpenRegister\Db\RegisterMapper' ? $registerMapper : $schemaMapper)
 		);
+		$settings->method('getObjectService')->willReturn($objectService);
 
-		$appConfig = $this->createMock(IAppConfig::class);
-		$appConfig->method('getValueString')->willReturnCallback(
-			static fn (string $app, string $key, string $default = '', bool $lazy = false): string => ($key === 'register' ? $registerId : $default)
-		);
-
-		return new ObjectTypeCatalogue($appConfig, $container);
+		return new ObjectTypeCatalogue(settingsService: $settings);
 	}
 
 	/**
-	 * Note the ids the fake SchemaMapper was asked for.
+	 * A fake ObjectService that pages through the given links.
 	 *
-	 * @param int[] $ids The ids.
+	 * @param array<int, array<string, string>> $links The case-object links.
 	 *
-	 * @return void
+	 * @return object The fake, with the queries it was asked in `queries`.
 	 */
-	public function recordRequestedIds(array $ids): void {
-		$this->requestedIds = $ids;
-	}
-
-	/**
-	 * A schema-like object with the getters the catalogue reads.
-	 *
-	 * @param integer              $id     The schema id.
-	 * @param array<string, mixed> $fields The slug, title, description, version and properties.
-	 *
-	 * @return object The schema-like object.
-	 */
-	public static function schema(int $id, array $fields): object {
-		return new class($id, $fields) {
+	private function objectService(array $links): object {
+		return new class($links) {
 			/**
-			 * @param integer              $id     The schema id.
-			 * @param array<string, mixed> $fields The schema fields.
+			 * The queries asked, in order.
+			 *
+			 * @var array<int, array<string, mixed>>
 			 */
-			public function __construct(private int $id, private array $fields) {
+			public array $queries = [];
+
+			/**
+			 * @param array<int, array<string, string>> $links The links.
+			 */
+			public function __construct(private array $links) {
 			}
 
 			/**
-			 * @return integer The id.
+			 * Mirrors ObjectService::searchObjects() with `_limit` and `_offset`.
+			 *
+			 * @param array<string, mixed> $query The query.
+			 *
+			 * @return array<int, array<string, string>> The page.
 			 */
-			public function getId(): int {
-				return $this->id;
-			}
+			public function searchObjects(array $query): array {
+				$this->queries[] = $query;
 
-			/**
-			 * @return string|null The slug.
-			 */
-			public function getSlug(): ?string {
-				return $this->fields['slug'];
-			}
-
-			/**
-			 * @return string|null The title.
-			 */
-			public function getTitle(): ?string {
-				return $this->fields['title'];
-			}
-
-			/**
-			 * @return string|null The description.
-			 */
-			public function getDescription(): ?string {
-				return $this->fields['description'];
-			}
-
-			/**
-			 * @return string|null The version.
-			 */
-			public function getVersion(): ?string {
-				return $this->fields['version'];
-			}
-
-			/**
-			 * @return array<string, mixed> The properties.
-			 */
-			public function getProperties(): array {
-				return $this->fields['properties'];
+				return array_slice($this->links, (int)$query['_offset'], (int)$query['_limit']);
 			}
 		};
 	}

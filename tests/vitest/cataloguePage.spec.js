@@ -24,7 +24,7 @@ describe('the catalogue page', () => {
 		expect(page.config.description).toBeUndefined()
 	})
 
-	it('lists dossiq\'s own object types with the table widget that reads an endpoint', () => {
+	it('lists the object types cases link, with the table widget that reads an endpoint', () => {
 		// The legacy `table` type renders the OpenRegister object list, which
 		// ignores `endpointSource` and so always read empty.
 		const objectTypes = widget('catalogue-object-types')
@@ -33,5 +33,8 @@ describe('the catalogue page', () => {
 			url: '/apps/dossiq/api/catalogue/object-types',
 			responsePath: 'results',
 		})
+		expect(objectTypes.content.columns.map((column) => column.key)).toEqual(['title', 'cases'])
+		expect(objectTypes.content.columns[1]).toMatchObject({ label: 'Used in', formatter: 'caseCount' })
+		expect(objectTypes.content.emptyText).toBe('Object types appear here once cases link objects.')
 	})
 })
