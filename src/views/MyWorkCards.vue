@@ -47,7 +47,11 @@
 		:createSuccessRoute="caseForm.createSuccessRoute"
 		:createSuccessMessage="caseForm.createSuccessMessage"
 		editOpensDetail
+		:showSortSelect="true"
+		:sortSelectOptions="sortOptions"
+		:sortSelectValue="sortMode"
 		@view="openCase"
+		@sortChange="setSortMode"
 		@rowClick="openCase"
 		@editOpen="openCase"
 		@search="onRankedSearch"
@@ -69,23 +73,6 @@
 			</p>
 		</template>
 		<!-- The sort sits beside the search, so the board's toolbar keeps one row. -->
-		<template #after-search>
-			<div
-				class="mywork-sort-toggle"
-				role="group"
-				:aria-label="t('dossiq', 'Sort My Work')">
-				<NcButton
-					:variant="sortMode === 'urgency' ? 'primary' : 'tertiary'"
-					@click="setSortMode('urgency')">
-					{{ t('dossiq', 'Urgency') }}
-				</NcButton>
-				<NcButton
-					:variant="sortMode === 'newest' ? 'primary' : 'tertiary'"
-					@click="setSortMode('newest')">
-					{{ t('dossiq', 'Newest') }}
-				</NcButton>
-			</div>
-		</template>
 		<!-- Work routed here by an active substitution, above the reader's own
 		     list and marked with whose it is. It is a group of its own because
 		     the list below is self-fetched by CnIndexPage from OpenRegister:
@@ -223,6 +210,19 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The two orders the list offers, in the actions bar's sort select.
+		 *
+		 * @return {Array<{value: string, label: string}>} The options.
+		 * @spec openspec/specs/my-work/spec.md
+		 */
+		sortOptions() {
+			return [
+				{ value: 'urgency', label: this.t('dossiq', 'Urgency') },
+				{ value: 'newest', label: this.t('dossiq', 'Newest') },
+			]
+		},
+
 		/**
 		 * The header buttons of the board: Download, Actions, New case.
 		 *
@@ -708,12 +708,6 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.mywork-sort-toggle {
-	display: flex;
-	gap: 4px;
-	margin-inline-start: auto;
-}
-
 .mywork-fallback {
 	margin: 0 0 8px;
 	color: var(--color-text-maxcontrast);
