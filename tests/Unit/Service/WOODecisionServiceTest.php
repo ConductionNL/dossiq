@@ -22,7 +22,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Dossiq\Service\DecisionDocument\DecisionLetter;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
@@ -147,28 +146,6 @@ class WOODecisionServiceTest extends TestCase {
 
 		$this->service->assembleDecision('case-uuid-001');
 	}//end testAssembleDecisionThrowsWhenDocumentsOutstanding()
-
-	/**
-	 * A letter from another case is refused before anything is written: no decision, no link.
-	 *
-	 * @return void
-	 */
-	public function testALetterOfAnotherCaseIsRefusedBeforeTheDecisionIsWritten(): void {
-		$this->assessmentService->method('getOutstanding')->willReturn(['count' => 0, 'documents' => []]);
-		$objectService = $this->createMock(WOODecisionObjectServiceStub::class);
-		$objectService->expects($this->never())->method('saveObject');
-		$this->settingsService->method('getObjectService')->willReturn($objectService);
-		$letters = $this->createMock(DecisionLetter::class);
-		$letters->expects($this->once())->method('assertOnCase')->with('case-a', 'io-of-case-b')
-			->willThrowException(new \InvalidArgumentException('The letter is not a document of this case.'));
-		$letters->expects($this->never())->method('link');
-		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, letters: $letters);
-
-		$this->expectException(\InvalidArgumentException::class);
-		$this->expectExceptionMessage('The letter is not a document of this case.');
-
-		$service->assembleDecision(caseId: 'case-a', letter: 'io-of-case-b');
-	}//end testALetterOfAnotherCaseIsRefusedBeforeTheDecisionIsWritten()
 
 	/**
 	 * The decision waits for the last page: page 7 of one in-scope document unseen answers 409 and writes nothing.

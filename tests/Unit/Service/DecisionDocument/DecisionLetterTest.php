@@ -106,4 +106,13 @@ class DecisionLetterTest extends TestCase {
 		$this->assertSame('io-by-id', $links[0]['informatieobject']);
 		$this->assertNotSame('', $links[0]['registrationDate']);
 	}//end testADocumentOfTheCaseIsLinkedToTheDecision()
+
+	public function testWithoutAChosenLetterTheDraftedOneIsLinked(): void {
+		$this->letters->assertOnCase(caseId: self::CASE_ID, documentId: '');
+
+		$linked = $this->letters->linkDecision(result: ['decisionId' => 'decision-2', 'draft' => ['status' => 'drafted', 'informatieobject' => 'io-by-id']], letter: '');
+
+		$this->assertSame('io-by-id', $linked);
+		$this->assertSame('decision-2', array_values($this->register->all('besluitinformatieobject'))[0]['decision']);
+	}//end testWithoutAChosenLetterTheDraftedOneIsLinked()
 }//end class

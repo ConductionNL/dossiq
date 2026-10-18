@@ -39,7 +39,6 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver;
 use OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler;
 use OCA\Filinq\Event\DocumentGenerationRequestedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -257,7 +256,7 @@ class CaseDocumentDrafts {
 	 */
 	private function metadata(array $declaration): array {
 		return [
-			GeneratedDocumentFiler::TYPE => (new DocumentTypeResolver(settingsService: $this->settingsService))->resolve(name: (string)($declaration['documentType'] ?? '')),
+			GeneratedDocumentFiler::TYPE => (string)($declaration['documentType'] ?? ''),
 			'direction' => 'outgoing',
 			'status' => 'draft',
 			GeneratedDocumentFiler::FILED_BY_CALLER => true,

@@ -29,7 +29,6 @@ namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\DecisionDocument\DecisionLetter;
 use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
 use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
@@ -96,7 +95,6 @@ class WOODecisionService {
 	 * @param CaseDocumentDrafts|null $drafts Drafts the decision document from the case type's
 	 *        `documentDrafts.decision` template through filinq (case-document-drafts).
 	 * @param PagesSeen|null $pagesSeen The pages seen per document; the decision waits for the required ones.
-	 * @param DecisionLetter|null $letters Checks the chosen letter is on the case and links it to the decision.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -105,7 +103,6 @@ class WOODecisionService {
 		private readonly LoggerInterface $logger,
 		private readonly ?CaseDocumentDrafts $drafts = null,
 		private readonly ?PagesSeen $pagesSeen = null,
-		private readonly ?DecisionLetter $letters = null,
 	) {
 		$this->composer  = new DecisionRecordComposer(settingsService: $settingsService, logger: $logger);
 		$this->readiness = new PublicationReadiness(settingsService: $settingsService, logger: $logger);
@@ -121,8 +118,8 @@ class WOODecisionService {
 	 *
 	 * @param string $caseId The case UUID
 	 * @param array<string, mixed> $decisionData Optional override data (besluitdatum, samenvatting)
-	 * @param string $letter The informatieobject the decision goes out with; empty drafts one
-	 *                       from the case type's `documentDrafts.decision`. It must be on the case.
+	 * @param string $letter The letter the caller chose for the decision; empty drafts one
+	 *                       from the case type's `documentDrafts.decision`.
 	 *
 	 * @return array<string, mixed> Created decision with ID and assessment summary
 	 *
@@ -139,15 +136,6 @@ class WOODecisionService {
 
 		// Guard: every required page of every in-scope document has been seen (REQ-WRT-005).
 		$this->pagesSeen?->assertAllSeen(caseId: $caseId);
-
-		// Guard: a chosen letter is a document of this case, checked before anything is written.
-		if ($letter !== '') {
-			if ($this->letters === null) {
-				throw new InvalidArgumentException('The letter cannot be checked against this case.');
-			}
-
-			$this->letters->assertOnCase(caseId: $caseId, documentId: $letter);
-		}
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -200,11 +188,6 @@ class WOODecisionService {
 		$draft = null;
 		if ($letter === '') {
 			$draft = $this->drafts?->draft(caseId: $caseId, purpose: self::DRAFT_PURPOSE);
-			$letter = (string)($draft['informatieobject'] ?? '');
-		}
-
-		if ($letter !== '') {
-			$this->letters?->link(decisionId: (string)$decision->getUuid(), documentId: $letter);
 		}
 
 		return [
@@ -213,7 +196,6 @@ class WOODecisionService {
 			'summary' => $summary,
 			'weigeringsgronden' => $weigeringsgronden,
 			'assessmentCount' => $record['assessmentCount'],
-			'letter' => $letter,
 			'draft' => $draft,
 			'inventoryDraft' => $this->drafts?->draft(caseId: $caseId, purpose: self::INVENTORY_PURPOSE),
 		];

@@ -26,6 +26,7 @@ use OCA\Dossiq\Controller\WOOAssessmentController;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Cases\HandlerActsAsSystem;
+use OCA\Dossiq\Service\DecisionDocument\DecisionLetter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
@@ -468,6 +469,92 @@ class WOOAssessmentControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
 	}//end testCreateDecisionReturns422WhenDocumentsOutstanding()
+
+	/**
+	 * A letter from another case is refused with 422 before the decision is written, and nothing is linked.
+	 *
+	 * @return void
+	 */
+	public function testALetterOfAnotherCaseIsRefusedBeforeTheDecisionIsWritten(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([
+			['decision', [], []],
+			['letter', '', 'io-of-case-b'],
+		]);
+
+		$letters = $this->createMock(DecisionLetter::class);
+		$letters->expects($this->once())->method('assertOnCase')->with('case-a', 'io-of-case-b')
+			->willThrowException(new \InvalidArgumentException('The letter is not a document of this case.'));
+		$letters->expects($this->never())->method('linkDecision');
+		$this->decisionService->expects($this->never())->method('assembleDecision');
+		$controller = new WOOAssessmentController(
+			'dossiq',
+			$this->request,
+			$this->assessmentService,
+			$this->deadlineService,
+			$this->decisionService,
+			$this->publicationService,
+			$this->anonymisationAssist,
+			$this->userSession,
+			$this->caseAccessGuard,
+			$this->logger,
+			$this->untranslated(),
+			$this->handlerActs(),
+			null,
+			$letters,
+		);
+
+		$response = $controller->createDecision('case-a');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertSame('The letter is not a document of this case.', $response->getData()['error']);
+	}//end testALetterOfAnotherCaseIsRefusedBeforeTheDecisionIsWritten()
+
+	/**
+	 * A letter of the case is passed on, so no second letter is drafted, and the decision is linked to it.
+	 *
+	 * @return void
+	 */
+	public function testALetterOfTheCaseIsLinkedToTheDecision(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([
+			['decision', [], []],
+			['letter', '', 'io-9'],
+		]);
+
+		$letters = $this->createMock(DecisionLetter::class);
+		$letters->expects($this->once())->method('assertOnCase')->with('case-a', 'io-9');
+		$letters->expects($this->once())->method('linkDecision')
+			->with(['decisionId' => 'dec-1', 'draft' => null], 'io-9')->willReturn('io-9');
+		$this->decisionService->expects($this->once())->method('assembleDecision')
+			->with('case-a', [], 'io-9')->willReturn(['decisionId' => 'dec-1', 'draft' => null]);
+		$controller = new WOOAssessmentController(
+			'dossiq',
+			$this->request,
+			$this->assessmentService,
+			$this->deadlineService,
+			$this->decisionService,
+			$this->publicationService,
+			$this->anonymisationAssist,
+			$this->userSession,
+			$this->caseAccessGuard,
+			$this->logger,
+			$this->untranslated(),
+			$this->handlerActs(),
+			null,
+			$letters,
+		);
+
+		$response = $controller->createDecision('case-a');
+
+		$this->assertSame('io-9', $response->getData()['letter']);
+	}//end testALetterOfTheCaseIsLinkedToTheDecision()
 
 	/**
 	 * A decision that waits for unseen pages answers 409 naming the documents and pages; publish does the same.

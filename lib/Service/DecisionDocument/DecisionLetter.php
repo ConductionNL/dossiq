@@ -94,18 +94,23 @@ class DecisionLetter {
 			}
 		}
 
-		return [
-			'declaration' => [
-				'title' => trim((string)($declared['title'] ?? '')),
-				'documentType' => $typeName,
-			],
-			'document' => $newest === null ? null : [
+		$document = null;
+		if ($newest !== null) {
+			$document = [
 				'id' => (string)($newest['id'] ?? ''),
 				'title' => (string)($newest['title'] ?? ($newest['fileName'] ?? '')),
 				'fileName' => (string)($newest['fileName'] ?? ''),
 				'creatiedatum' => (string)($newest['creatiedatum'] ?? ''),
 				'status' => (string)($newest['status'] ?? ''),
+			];
+		}
+
+		return [
+			'declaration' => [
+				'title' => trim((string)($declared['title'] ?? '')),
+				'documentType' => $typeName,
 			],
+			'document' => $document,
 		];
 	}//end forCase()
 
@@ -113,7 +118,7 @@ class DecisionLetter {
 	 * Refuse a letter that is not a document of the case.
 	 *
 	 * @param string $caseId     The case uuid.
-	 * @param string $documentId The informatieobject uuid.
+	 * @param string $documentId The informatieobject uuid; empty means no letter was chosen.
 	 *
 	 * @return void
 	 *
@@ -122,6 +127,10 @@ class DecisionLetter {
 	 * @spec openspec/specs/decision-document/spec.md
 	 */
 	public function assertOnCase(string $caseId, string $documentId): void {
+		if ($documentId === '') {
+			return;
+		}
+
 		$joins = $this->search(
 			schemaKey: 'dossier_zaakinformatieobject_schema',
 			filters: ['case' => $caseId, 'informatieobject' => $documentId, '_limit' => 1],
@@ -130,6 +139,32 @@ class DecisionLetter {
 			throw new InvalidArgumentException('The letter is not a document of this case.');
 		}
 	}//end assertOnCase()
+
+	/**
+	 * Link a recorded decision to its letter: the chosen one, else the one drafted with it.
+	 *
+	 * The chosen letter was checked with {@see assertOnCase()} before the
+	 * decision was written; a drafted one was filed on the case by the draft.
+	 *
+	 * @param array<string, mixed> $result The assembled decision (`decisionId`, `draft`).
+	 * @param string               $letter The chosen informatieobject uuid, or empty.
+	 *
+	 * @return string The linked letter, or empty when there is none.
+	 *
+	 * @spec openspec/specs/decision-document/spec.md
+	 */
+	public function linkDecision(array $result, string $letter): string {
+		if ($letter === '') {
+			$letter = (string)($result['draft']['informatieobject'] ?? '');
+		}
+
+		$decisionId = (string)($result['decisionId'] ?? '');
+		if ($letter !== '' && $decisionId !== '') {
+			$this->link(decisionId: $decisionId, documentId: $letter);
+		}
+
+		return $letter;
+	}//end linkDecision()
 
 	/**
 	 * Link a letter to a recorded decision.
@@ -179,7 +214,11 @@ class DecisionLetter {
 		$documents = [];
 		foreach ($this->search(schemaKey: 'dossier_zaakinformatieobject_schema', filters: ['case' => $caseId, '_limit' => 500]) as $join) {
 			$infoId = (string)($join['informatieobject'] ?? '');
-			$document = $infoId === '' ? null : $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $infoSchema, id: $infoId);
+			if ($infoId === '') {
+				continue;
+			}
+
+			$document = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $infoSchema, id: $infoId);
 			if ($document !== null) {
 				$document['id'] = (string)($document['id'] ?? $infoId);
 				$documents[] = $document;

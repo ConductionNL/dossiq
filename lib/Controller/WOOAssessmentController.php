@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\DecisionDocument\DecisionLetter;
 use OCA\Dossiq\Service\Cases\HandlerActsAsSystem;
 use OCA\Dossiq\Service\Termijn\ExtensionNotice;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
@@ -83,6 +84,8 @@ class WOOAssessmentController extends Controller {
 	 *        case's handler at the publication step.
 	 * @param ExtensionNotice|null $extensionNotice Tells the requester about an extension, with the
 	 *        reason and the new end. Absent, the answer says the requester was not told.
+	 * @param DecisionLetter|null $letters Checks a chosen letter is on the case and links the
+	 *        decision to its letter. Absent, no letter is checked and none is linked.
 	 */
 	public function __construct(
 		string $appName,
@@ -98,6 +101,7 @@ class WOOAssessmentController extends Controller {
 		private readonly IL10N $l10n,
 		private readonly HandlerActsAsSystem $handlerActs,
 		private readonly ?ExtensionNotice $extensionNotice = null,
+		private readonly ?DecisionLetter $letters = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -252,12 +256,19 @@ class WOOAssessmentController extends Controller {
 			$decisionData = json_decode($decisionData, true) ?? [];
 		}
 
+		// A chosen letter must be a document of this case, checked before anything is written.
+		$letter = trim((string)$this->request->getParam('letter', ''));
 		try {
+			$this->letters?->assertOnCase(caseId: $id, documentId: $letter);
 			$result = $this->decisionService->assembleDecision(
 				caseId: $id,
 				decisionData: $decisionData,
-				letter: trim((string)$this->request->getParam('letter', '')),
+				letter: $letter,
 			);
+			if ($this->letters !== null) {
+				$result['letter'] = $this->letters->linkDecision(result: $result, letter: $letter);
+			}
+
 			return new JSONResponse($result);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
@@ -554,4 +565,5 @@ class WOOAssessmentController extends Controller {
 	private function requireCaseMutationAccess(string $caseId, IUser $user): void {
 		$this->caseAccessGuard->assertCaseMutationAccess(caseId: $caseId, user: $user);
 	}//end requireCaseMutationAccess()
+
 }//end class

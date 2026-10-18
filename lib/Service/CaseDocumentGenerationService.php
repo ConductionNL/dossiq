@@ -46,7 +46,6 @@ use OCA\Dossiq\Service\Actions\ActionResult;
 use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
 use OCA\Dossiq\Service\Flow\UnmappableStep;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
-use OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver;
 use OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler;
 use OCA\Filinq\Event\DocumentGenerationRequestedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -127,7 +126,7 @@ class CaseDocumentGenerationService {
 			return new ActionResult(succeeded: false, error: 'missing_template_field:' . $missing[0]);
 		}
 
-		$documentType = (new DocumentTypeResolver(settingsService: $this->settingsService))->resolve(name: (string)($template['documentType'] ?? ''));
+		$documentType = trim((string)($template['documentType'] ?? ''));
 		if ($documentType === '') {
 			return new ActionResult(succeeded: false, error: 'missing_document_type');
 		}
