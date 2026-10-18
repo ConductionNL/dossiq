@@ -8925,7 +8925,6 @@
         "There is no customer record here. The contact moments dossiq logs itself are in the Communication list.": "Hier is geen klantbeeld. De contactmomenten die dossiq zelf vastlegt staan in de lijst Communicatie.",
         "There is no other published case type to move this case to.": "Er is geen ander gepubliceerd zaaktype om deze zaak naar te verplaatsen.",
         "These case types are in your dossiq menu, under My case types. One click opens their case list. Drag a handle to change the order.": "Deze zaaktypen staan in je linkermenu van dossiq, onder Mijn zaaktypen. Eén klik opent hun zaaklijst. Sleep aan de greep om de volgorde te wijzigen.",
-        "These case types are in your menu under My case types, in this order. Drag a row or use the arrow keys.": "Deze zaaktypen staan in je menu onder Mijn zaaktypen, in deze volgorde. Sleep een regel of gebruik de pijltjestoetsen.",
         "These cases are already linked through the main/sub-case hierarchy.": "Deze zaken zijn al gekoppeld via de hoofdzaak/deelzaak-hiërarchie.",
         "These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again.": "Deze zaken lopen op versies {versions} van {caseType}. Een veld betekent per versie iets anders, dus kies één versie en probeer opnieuw.",
         "These cases were not merged.": "Deze zaken zijn niet samengevoegd.",
