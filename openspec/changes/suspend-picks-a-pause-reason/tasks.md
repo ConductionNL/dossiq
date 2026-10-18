@@ -14,6 +14,12 @@
   - Files: src/utils/pauseReasonChoice.js, src/components/case/CaseActFields.vue, src/dialogs/CaseLifecycleMenuDialog.vue, src/utils/caseLifecycleHelpers.js, l10n
   - Test: tests/vitest/suspendPicksAPauseReason.spec.js
 
-## 3. Open
+## 3. Shipped pause reasons
 
-- [ ] 3.1 A default number of days per pause reason (case type schema), then prefill Dagen
+- [x] 3.1 The Awb 4:5 and 4:15 lid 1 sub b grounds on the vth Omgevingsvergunning Bouwactiviteit and the subsidie case type, packages to 1.1.0
+  - Files: lib/Settings/packages/vth/case-type.json, lib/Settings/packages/vth/package.json, lib/Settings/packages/subsidie/case-type.json, lib/Settings/packages/subsidie/package.json
+  - Test: tests/Unit/Settings/ShippedPackagesAreValidTest.php, tests/Unit/Settings/PackageExampleRowsMatchTheirSchemasTest.php
+
+## 4. Open
+
+- [ ] 4.1 A default number of days per pause reason (case type schema), then prefill Dagen
