@@ -215,7 +215,7 @@ const menuLayout =
  * The theming values the simple profile's nav placeholders read.
  *
  * @param {object|null} capabilities `getCapabilities()`.
- * @return {object} Nextcloud's theming block plus `emblem` from thematiq's
+ * @return {object} Nextcloud's theming block, `staffAppName`, and `emblem` from thematiq's
  *   `nldesign.logos.emblem`, or '' when the set ships none.
  *
  * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
@@ -223,7 +223,12 @@ const menuLayout =
 function navTheming(capabilities) {
 	const theming = capabilities?.theming ?? {}
 	const emblem = capabilities?.nldesign?.logos?.emblem
-	return { ...theming, emblem: typeof emblem === 'string' ? emblem : '' }
+	return {
+		...theming,
+		emblem: typeof emblem === 'string' ? emblem : '',
+		// The name staff know the app by (admin setting `staff_app_name`).
+		staffAppName: String(loadState('dossiq', 'staff_app_name', '') || ''),
+	}
 }
 
 const profiledManifest = {

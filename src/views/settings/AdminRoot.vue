@@ -17,6 +17,35 @@
 		lazyTabs
 		@tabChange="onTabChange"
 		@reimported="onReimported">
+		<CnSettingsFieldsSection
+			id="section-house-style"
+			appId="dossiq"
+			:name="t('dossiq', 'House style')"
+			:columns="3"
+			valuesPath="config"
+			:fields="houseStyleFields" />
+
+		<CnSettingsFieldsSection
+			id="section-texts-and-access"
+			appId="dossiq"
+			:name="t('dossiq', 'Texts and access')"
+			:columns="1"
+			valuesPath="config"
+			:fields="textsAndAccessFields">
+		</CnSettingsFieldsSection>
+
+		<CnSettingsSection
+			id="section-working-days"
+			:name="t('dossiq', 'Working days and holidays')"
+			:description="
+				t(
+					'dossiq',
+					'Red: a holiday or closing day. Terms do not count these days. One calendar for the whole organisation.',
+				)
+			">
+			<CnWorkingCalendarWidget :content="workingCalendarContent" />
+		</CnSettingsSection>
+
 		<Settings />
 
 		<CnSettingsSection
@@ -474,8 +503,10 @@
 <script>
 import {
 	CnAdminSettingsShell,
+	CnSettingsFieldsSection,
 	CnSettingsSection,
 	CnWidgetObjectTable,
+	CnWorkingCalendarWidget,
 } from '@conduction/nextcloud-vue'
 import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
@@ -508,6 +539,7 @@ import WooReportsSettingsTab from './tabs/WooReportsSettingsTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import manifest from '../../manifest.json'
 import { initializeStores } from '../../store/store.js'
+import { houseStyleFields, textsAndAccessFields } from './adminFields.js'
 
 export default {
 	name: 'AdminRoot',
@@ -517,8 +549,10 @@ export default {
 		PrerequisitesTab,
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
+		CnSettingsFieldsSection,
 		CnSettingsSection,
 		CnWidgetObjectTable,
+		CnWorkingCalendarWidget,
 		Settings,
 		CaseTypeAdmin,
 		ZgwMappingSettings,
@@ -774,6 +808,48 @@ export default {
 				{ key: 'amount', label: this.t('dossiq', 'Amount') },
 				{ key: 'validFrom', label: this.t('dossiq', 'Valid from') },
 			]
+		},
+
+		/**
+		 * Huisstijl: the logo is Nextcloud theming's, the theme is thematiq's
+		 * brand for dossiq, and only the name staff know the app by is dossiq's
+		 * own setting. The organisation's name is Nextcloud theming's too and
+		 * joins once the fields section can write it.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		houseStyleFields() {
+			return houseStyleFields(this.t.bind(this))
+		},
+
+		/**
+		 * Teksten en toegang: the sender of dossiq's messages and the text above
+		 * Mijn zaken in the portal; which websites may call the portal is
+		 * configured where the portal runs, so it is a pointer here.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		textsAndAccessFields() {
+			return textsAndAccessFields(this.t.bind(this))
+		},
+
+		/**
+		 * The organisation's working calendar in OpenRegister: the default
+		 * calendar dossiq's terms count on (`nl-national`).
+		 *
+		 * @return {object} The widget content.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		workingCalendarContent() {
+			return {
+				calendar: {
+					register: 'flow-timers',
+					schema: 'working-calendar',
+					filter: { slug: 'nl-national' },
+				},
+			}
 		},
 
 		/**
