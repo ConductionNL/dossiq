@@ -95,9 +95,9 @@
 				:options="choiceOptions"
 				data-testid="case-acts-list"
 				@update:modelValue="chooseByKey">
-				<template #option-actions="{ option, selected }">
+				<template #option-details="{ option }">
 					<CaseActFields
-						v-if="selected && chosen !== null && option.value === entryKey(chosen)"
+						v-if="chosen !== null && option.value === entryKey(chosen)"
 						v-bind="fieldProps"
 						v-on="fieldEvents" />
 				</template>
