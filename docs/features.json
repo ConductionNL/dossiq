@@ -118,7 +118,7 @@
     "docsUrl": "openspec/specs/zgw-api-mapping/spec.md",
     "title_nl": "ZGW API-koppeling",
     "summary_nl": "Je koppelt direct aan de Zaken-, Catalogi-, Besluiten- en Documenten-API's.",
-    "category": "connections"
+    "category": "cases"
   },
   {
     "slug": "doorlooptijd-dashboard",
@@ -168,7 +168,7 @@
     "docsUrl": "openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md",
     "title_nl": "KCC-werkplek",
     "summary_nl": "Medewerkers leggen contactmomenten vast, routeren gesprekken en lezen zaken vanuit het klantcontactcentrum.",
-    "category": "connections"
+    "category": "cases"
   },
   {
     "slug": "case-email-integration",
@@ -178,7 +178,7 @@
     "docsUrl": "openspec/specs/case-email-integration/spec.md",
     "title_nl": "Zaakgericht mailen",
     "summary_nl": "Je koppelt binnenkomende mail aan de juiste zaak, en opent een zaak vanuit een bericht.",
-    "category": "connections"
+    "category": "cases"
   },
   {
     "slug": "zaakportaal-mijngemeente",
@@ -188,7 +188,7 @@
     "docsUrl": "openspec/specs/zaakportaal-mijngemeente/spec.md",
     "title_nl": "Burgerportaal Mijn Zaken",
     "summary_nl": "Inwoners volgen hun zaakstatus en krijgen Berichtenbox-meldingen.",
-    "category": "connections"
+    "category": "cases"
   },
   {
     "slug": "stuf-zkn-outbound",
@@ -198,7 +198,7 @@
     "docsUrl": "openspec/specs/stuf-zkn-outbound/spec.md",
     "title_nl": "StUF-ZKN-koppeling",
     "summary_nl": "Je wisselt zaakberichten uit met systemen die nog StUF spreken.",
-    "category": "connections"
+    "category": "cases"
   },
   {
     "slug": "berichtenbox-integration",
@@ -208,7 +208,7 @@
     "docsUrl": "openspec/specs/berichtenbox-integration/spec.md",
     "title_nl": "Digitale post aan inwoners",
     "summary_nl": "Je stuurt een brief naar de Berichtenbox en ziet of die is aangekomen.",
-    "category": "connections"
+    "category": "cases"
   },
   {
     "slug": "dso-omgevingsloket",
@@ -218,7 +218,7 @@
     "docsUrl": "openspec/specs/dso-omgevingsloket/spec.md",
     "title_nl": "DSO / Omgevingsloket",
     "summary_nl": "Je ontvangt Omgevingswet-aanvragen en bewaakt hun termijnen.",
-    "category": "connections"
+    "category": "cases"
   },
   {
     "slug": "case-map-overview",
@@ -228,7 +228,7 @@
     "docsUrl": "openspec/specs/case-map-overview/spec.md",
     "title_nl": "Kaartweergave met PDOK",
     "summary_nl": "Je plot locatiegebonden zaken op een kaart met PDOK en WMS/WFS-lagen.",
-    "category": "connections"
+    "category": "cases"
   },
   {
     "slug": "appointment-booking",
@@ -238,7 +238,7 @@
     "docsUrl": "openspec/specs/appointment-booking/spec.md",
     "title_nl": "Afspraken maken",
     "summary_nl": "Inwoners maken een afspraak via een openbare link.",
-    "category": "connections"
+    "category": "cases"
   },
   {
     "slug": "ai-assistance",
@@ -249,13 +249,13 @@
     "providedBy": "openregister",
     "title_nl": "AI-assistentie",
     "summary_nl": "Je classificeert, vat samen en routeert documenten met je eigen AI-model.",
-    "category": "connections"
+    "category": "cases"
   },
   {
     "slug": "dossiq-sociaal-domein-wmo",
     "title": "Sociaal domein (Wmo, Jeugdwet, Participatiewet)",
     "summary": "You handle social-domain cases on a shared data model.",
-    "status": "soon",
+    "status": "planned",
     "docsUrl": "openspec/specs/dossiq-sociaal-domein-wmo/spec.md",
     "title_nl": "Sociaal domein (Wmo, Jeugdwet, Participatiewet)",
     "summary_nl": "Je behandelt sociaal-domeinzaken op een gedeeld datamodel.",
@@ -269,7 +269,7 @@
     "docsUrl": "openspec/specs/zaakportaal-mijngemeente/spec.md",
     "title_nl": "DigiD en eHerkenning",
     "summary_nl": "Inwoners en bedrijven loggen in met DigiD en eHerkenning.",
-    "category": "connections"
+    "category": "cases"
   },
   {
     "slug": "brp-integration",
@@ -279,7 +279,7 @@
     "docsUrl": "docs/admin/integrations.md",
     "title_nl": "BRP-koppeling (Haal Centraal)",
     "summary_nl": "Je zoekt een BSN op tot een persoon via de BRP Personen-API.",
-    "category": "connections"
+    "category": "cases"
   },
   {
     "slug": "kvk-integration",
@@ -289,6 +289,6 @@
     "docsUrl": "docs/admin/integrations.md",
     "title_nl": "KvK-koppeling (Handelsregister)",
     "summary_nl": "Je zoekt een KvK-nummer op tot een bedrijf via de Handelsregister Zoeken-API.",
-    "category": "connections"
+    "category": "cases"
   }
 ]
