@@ -133,6 +133,7 @@ import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
 import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
+import CaseArchiveDialog from './dialogs/CaseArchiveDialog.vue'
 // The Actions menu's non-lifecycle gestures: copy this case, start a flow
 // its type allows, and plan a follow-up case for a later date.
 // @spec openspec/specs/case-management/spec.md
@@ -586,6 +587,14 @@ const registry = {
 
 	// @spec openspec/specs/status-transition-engine/spec.md
 	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	CaseArchiveDialog: {
+		kind: 'modal',
+		component: CaseArchiveDialog,
+		propsSchema: {},
+		_note: 'Archive a case on its own (board DqArchiveren): the case, what the case type keeps, a checklist read off the stored case through GET /api/case/{caseId}/archive/readiness, a reason and what archiving means. It posts the same archive act as the Lifecycle dialog, which keeps offering it, and the server checks the same role and refuses an open case the same way. Only the ended item decides; the others inform. Opened by the case-archive header action and the closed stage card.',
+	},
+
 	CaseLifecycleMenuDialog: {
 		kind: 'modal',
 		component: CaseLifecycleMenuDialog,

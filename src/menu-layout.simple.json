@@ -782,13 +782,12 @@
 					},
 					"closed": {
 						"type": "open-modal",
-						"target": "CaseLifecycleMenuDialog",
+						"target": "CaseArchiveDialog",
 						"label": "Archive it",
 						"icon": "ArchiveOutline",
 						"id": "stage-archive",
 						"props": {
-							"caseId": "@objectId",
-							"act": "archive"
+							"caseId": "@objectId"
 						}
 					}
 				},
@@ -1245,6 +1244,9 @@
 					},
 					"case-lifecycle-menu": {
 						"label": "Lifecycle: what this case can do"
+					},
+					"case-archive": {
+						"group": "Case"
 					}
 				},
 				"widgets": {

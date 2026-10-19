@@ -165,7 +165,9 @@ describe('the stage', () => {
 			expect(entry, `${stage} shows a card and no button`).toBeTruthy()
 			if (typeof entry === 'object') {
 				expect(entry.visibleWhen, stage).toBeUndefined()
-				expect(entry.target, stage).toBe('CaseLifecycleMenuDialog')
+				// The closed stage opens the archive dialog (board DqArchiveren);
+				// every other stage opens the Lifecycle dialog.
+				expect(entry.target, stage).toBe(stage === 'closed' ? 'CaseArchiveDialog' : 'CaseLifecycleMenuDialog')
 				continue
 			}
 			const action = original.headerActions.find((item) => item.id === entry)
@@ -244,7 +246,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 34 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 35 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -262,10 +264,10 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(34)
+		expect(placed).toHaveLength(35)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(19)
+		expect(count('Case')).toBe(20)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)

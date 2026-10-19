@@ -3943,6 +3943,22 @@
 						"target": "CaseLifecycleMenuDialog"
 					},
 					{
+						"id": "case-archive",
+						"type": "open-modal",
+						"label": "Archive this case",
+						"icon": "ArchiveOutline",
+						"target": "CaseArchiveDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"all": [
+								{ "field": "endingAct", "op": "notEmpty" },
+								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
 						"id": "send-digital-post",
 						"type": "open-modal",
 						"target": "BerichtenboxComposeDialog",
