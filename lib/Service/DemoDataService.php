@@ -50,6 +50,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Setup\ExampleDataFragments;
 use OCP\App\IAppManager;
+use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -101,12 +102,22 @@ class DemoDataService {
 	private const CONFIG_APP_ID = Application::APP_ID . '.demo';
 
 	/**
+	 * App-config key listing the slugs of the curated example objects an
+	 * earlier load created. A re-run leaves those alone, so it does not
+	 * reassign them to whoever clicked or move their dates.
+	 *
+	 * @var string
+	 */
+	public const FRAGMENTS_LOADED_KEY = 'example_fragments_loaded';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IAppManager        $appManager Resolves this app's path and version.
 	 * @param ContainerInterface $container  Resolves OpenRegister's importer.
 	 * @param LoggerInterface    $logger     Records what was imported.
 	 * @param ExampleDataFragments|null $fragments The curated example objects loaded with the generated set.
+	 * @param IAppConfig|null           $appConfig Records which curated objects a load created.
 	 *
 	 * @return void
 	 */
@@ -115,6 +126,7 @@ class DemoDataService {
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly ?ExampleDataFragments $fragments = null,
+		private readonly ?IAppConfig $appConfig = null,
 	) {
 	}//end __construct()
 
@@ -298,10 +310,10 @@ class DemoDataService {
 			throw new RuntimeException('The demo dataset is not valid JSON: ' . $path);
 		}
 
-		// The ASK: how many objects the shipped descriptor carries. Kept, but
-		// as one half of a comparison rather than as the answer.
 		$data = $this->withFragments(data: $data);
 
+		// The ASK: how many objects the shipped descriptor carries. Kept, but
+		// as one half of a comparison rather than as the answer.
 		$requested = 0;
 		$components = ($data['components'] ?? []);
 		if (is_array($components) === true && is_array(($components['objects'] ?? null)) === true) {
@@ -346,6 +358,7 @@ class DemoDataService {
 		}
 
 		$this->reportLanding(imported: $imported, requested: $requested);
+		$this->recordFragments();
 
 		return $imported;
 	}//end install()
@@ -483,10 +496,42 @@ class DemoDataService {
 		}
 
 		$objects = (array)($data['components']['objects'] ?? []);
-		$data['components']['objects'] = array_merge(array_values($objects), $this->fragments->objects());
+		$data['components']['objects'] = array_merge(
+			array_values($objects),
+			$this->fragments->objects(skipSlugs: $this->loadedFragments())
+		);
 
 		return $data;
 	}//end withFragments()
+
+	/**
+	 * The slugs of the curated objects an earlier load created.
+	 *
+	 * @return array<int, string> The slugs.
+	 */
+	private function loadedFragments(): array {
+		if ($this->appConfig === null) {
+			return [];
+		}
+
+		$loaded = json_decode($this->appConfig->getValueString(Application::APP_ID, self::FRAGMENTS_LOADED_KEY, '[]'), true);
+
+		return array_values(array_filter((array)$loaded, 'is_string'));
+	}//end loadedFragments()
+
+	/**
+	 * Record every curated object as created, after an import that landed.
+	 *
+	 * @return void
+	 */
+	private function recordFragments(): void {
+		if ($this->appConfig === null || $this->fragments === null) {
+			return;
+		}
+
+		$slugs = array_values(array_unique(array_merge($this->loadedFragments(), $this->fragments->slugs())));
+		$this->appConfig->setValueString(Application::APP_ID, self::FRAGMENTS_LOADED_KEY, (string)json_encode($slugs));
+	}//end recordFragments()
 
 	/**
 	 * Absolute path to the shipped descriptor.
