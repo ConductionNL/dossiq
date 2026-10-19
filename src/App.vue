@@ -25,7 +25,7 @@
 			(shared with this slot via CnAppRoot's ancestor-aware
 			provide); we bind those tabs straight through.
 			`:use-registry="false"` keeps the manifest `component:`-based
-			tabs (CaseTasksTab / CaseEmailTab / …) instead of the
+			tabs (CaseTasksTab / CaseTimelineTab / …) instead of the
 			integration-registry tabs.
 
 			`objectSchema` and `objectData` are the RESOLVED schema and record,

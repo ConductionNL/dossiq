@@ -3244,10 +3244,18 @@
 					},
 					{
 						"id": "case-email-panel",
-						"type": "case-email-pane",
+						"type": "mail",
 						"title": "Email",
 						"icon": "EmailOutline",
-						"_note": "The Email tab: correspondence linked to the case, through the mail leaf. A sidebar tab until the sidebar copies of Notes, Email and Besluitvorming were retired, so this is the only place it reads now. Rendered by TYPE (case-email-pane in registry.js): a tab child resolves from the widget registry, and CaseEmailTab was registered only as a sidebar component:, which draws an empty panel and logs nothing."
+						"content": {
+							"hint": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.",
+							"templates": { "url": "/apps/dossiq/api/casetypes/@object.caseType/email-templates", "responsePath": "results", "labelField": "name", "idField": "id" },
+							"noTemplatesText": "No templates for this case type yet",
+							"draft": { "url": "/apps/dossiq/api/cases/@objectId/email-templates/{templateId}/draft", "blankTemplateId": "blank" },
+							"closedWhen": { "field": "endDate", "op": "notEmpty" },
+							"linkedMail": true
+						},
+						"_note": "The Email tab: a draft in Nextcloud Mail from one of the case type's templates or empty, above the mail linked to the case. The library mail widget; dossiq owns the two endpoints (EmailTemplateService::prefillDraft creates the draft, dossiq never sends mail). A closed case drafts nothing."
 					},
 					{
 						"id": "case-decisions-panel",

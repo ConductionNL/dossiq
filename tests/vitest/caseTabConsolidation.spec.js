@@ -348,7 +348,6 @@ describe('the container type this change depends on', () => {
 		// components were registered only as sidebar `component:` entries.
 		const PANES = {
 			'case-notes-panel': 'case-notes-pane',
-			'case-email-panel': 'case-email-pane',
 			'case-decisions-panel': 'case-decisions-pane',
 			// Timeline arrived with #2846: every note, call and message on the
 			// case in one order. A single surface, keyed by TYPE like the three
@@ -389,6 +388,11 @@ describe('the container type this change depends on', () => {
 			'case-change-proposals': 'portaliq-change-proposal-queue',
 		}
 
+		// The tabs a library widget type draws from the manifest alone.
+		const LIBRARY_TYPES = {
+			'case-email-panel': 'mail',
+		}
+
 		// A leaf that lives inside a group, as `{ widgetId: [sectionWidgetId,
 		// integrationId] }`. Same failure it guards against, one level down.
 		const NESTED_LEAVES = {
@@ -400,6 +404,10 @@ describe('the container type this change depends on', () => {
 			if (LEAVES[widgetId]) {
 				expect(widget(widgetId).type).toBe('integration')
 				expect(widget(widgetId).integrationId).toBe(LEAVES[widgetId])
+				continue
+			}
+			if (LIBRARY_TYPES[widgetId]) {
+				expect(widget(widgetId).type).toBe(LIBRARY_TYPES[widgetId])
 				continue
 			}
 			if (PANES[widgetId]) {
