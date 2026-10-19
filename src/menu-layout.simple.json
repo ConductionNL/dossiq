@@ -10,7 +10,6 @@
 	},
 	"removals": [
 		"SubsidiesGroup",
-		"CaseMap",
 		"Analytics",
 		"TermijnDashboardMenu",
 		"ProcessMiningDashboardMenu",
@@ -23,7 +22,6 @@
 	],
 	"removalsReplacedBy": {
 		"SubsidiesGroup": "Cases",
-		"CaseMap": "Cases",
 		"Analytics": "Reports",
 		"TermijnDashboardMenu": "Reports",
 		"ProcessMiningDashboardMenu": "Reports",
@@ -3371,7 +3369,7 @@
 				"searchPlaceholder": "Search by case, number or requester",
 				"quickFilterMaxVisible": 5,
 				"folderSidebar": null,
-				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The board's address line under each title needs an address text the case does not carry, so the line is the case number.",
+				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The board's address line under each title needs an address text the case does not carry, so the line is the case number. Markers take their status type's colour and a line counts the located cases, as in the full profile. `plotAll` is left out on purpose: the map shows the current page, so the numbered list stays a page long.",
 				"mapConfig": {
 					"geoField": "geometry",
 					"popupField": "title",
@@ -3379,6 +3377,28 @@
 						52.1326,
 						5.2913
 					],
+					"count": "Showing {located} of {total} located cases",
+					"markerColor": {
+						"field": "status",
+						"source": {
+							"schema": "statusType",
+							"colorField": "colour"
+						},
+						"colorMap": {
+							"blue": "var(--nl-color-blue, #0b71ab)",
+							"blue-light": "var(--nl-color-blue-light, #e5f1f8)",
+							"green": "var(--nl-color-green, #39870c)",
+							"green-light": "var(--nl-color-green-light, #eaf5e4)",
+							"orange": "var(--nl-color-orange, #e17000)",
+							"orange-light": "var(--nl-color-orange-light, #fdf2e5)",
+							"red": "var(--nl-color-red, #d52b1e)",
+							"red-light": "var(--nl-color-red-light, #fbe9e8)",
+							"purple": "var(--nl-color-purple, #762f8e)",
+							"purple-light": "var(--nl-color-purple-light, #f2eaf5)",
+							"grey": "var(--nl-color-grey, #696969)",
+							"grey-light": "var(--nl-color-grey-light, #f0f0f0)"
+						}
+					},
 					"basemaps": [
 						{
 							"name": "Standard",
