@@ -1784,9 +1784,10 @@
 				"formColumns": 1,
 				"viewModes": ["table", "cards", "board", "map"],
 				"cardLayout": {
+					"headPill": { "field": "deadline", "due": { "soonWithin": 7 }, "labels": { "overdue": "Late", "soon": "Almost due" } },
 					"number": "identifier",
 					"title": "title",
-					"meta": ["initiatorDisplayName"],
+					"meta": ["caseType", "initiatorDisplayName"],
 					"footerPill": { "field": "statusPublicLabel", "variant": "info" },
 					"footerDate": { "field": "deadline", "label": "Deadline" }
 				},
