@@ -31,17 +31,17 @@
 				<label class="case-handover-dialog__label" for="case-handover-team">
 					{{ t('dossiq', 'New team') }}
 				</label>
-				<NcSelect
-					v-model="teamOption"
+				<CnSearchSelect
+					:modelValue="teamOption"
 					inputId="case-handover-team"
 					:inputLabel="t('dossiq', 'New team')"
 					:labelOutside="true"
 					:options="teamOptions"
 					:loading="searching"
 					:filterable="false"
-					:taggable="true"
 					:placeholder="t('dossiq', 'The group that handles it from here')"
 					data-testid="case-handover-team"
+					@update:modelValue="teamOption = $event"
 					@search="searchTeams" />
 				<span class="case-handover-dialog__hint">
 					{{ currentTeam ? t('dossiq', 'Now with {team}. The new team picks its own handler.', { team: currentTeam }) : t('dossiq', 'The new team picks its own handler.') }}
@@ -104,14 +104,13 @@
 </template>
 
 <script>
-import { CnDialog } from '@conduction/nextcloud-vue'
+import { CnDialog, CnSearchSelect } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import SwapHorizontal from 'vue-material-design-icons/SwapHorizontal.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
@@ -124,9 +123,9 @@ export default {
 
 	components: {
 		CnDialog,
+		CnSearchSelect,
 		NcButton,
 		NcCheckboxRadioSwitch,
-		NcSelect,
 		NcTextArea,
 		SwapHorizontal,
 	},
@@ -218,7 +217,7 @@ export default {
 		async searchTeams(query) {
 			this.searching = true
 			try {
-				this.teamOptions = await searchTeams(query)
+				this.teamOptions = (await searchTeams(query)).map((team) => ({ ...team, icon: 'AccountGroupOutline' }))
 			} catch {
 				this.teamOptions = []
 			} finally {
