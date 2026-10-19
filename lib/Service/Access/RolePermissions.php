@@ -68,7 +68,7 @@ class RolePermissions {
 	 *
 	 * @var array<string, string>
 	 */
-	public const PERMISSION_BY_GROUP = [
+	public const ROLE_PERMISSIONS = [
 		self::PRIVACY_GROUP => 'privacy',
 		self::SOCIAL_DOMAIN_GROUP => 'sociaal-domein',
 	];
@@ -105,7 +105,7 @@ class RolePermissions {
 		);
 
 		$held = [];
-		foreach (self::PERMISSION_BY_GROUP as $group => $permission) {
+		foreach (self::ROLE_PERMISSIONS as $group => $permission) {
 			if ($all === true || $this->groupManager->isInGroup($uid, $group) === true) {
 				$held[] = $permission;
 			}

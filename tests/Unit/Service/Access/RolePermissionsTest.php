@@ -87,7 +87,7 @@ final class RolePermissionsTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheRoleGroupsAreProvisioned(): void {
-		foreach (array_keys(RolePermissions::PERMISSION_BY_GROUP) as $group) {
+		foreach (array_keys(RolePermissions::ROLE_PERMISSIONS) as $group) {
 			$this->assertContains($group, ProvisionAssignedGroups::ASSIGNED_GROUPS);
 		}
 	}//end testTheRoleGroupsAreProvisioned()

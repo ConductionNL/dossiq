@@ -47,7 +47,7 @@ import { loadState } from '@nextcloud/initial-state'
 /**
  * Every role permission. An administrator holds them all, as OpenRegister
  * grants `admin` every schema; the list matches
- * `RolePermissions::PERMISSION_BY_GROUP`.
+ * `RolePermissions::ROLE_PERMISSIONS`.
  */
 export const ROLE_PERMISSIONS = ['privacy', 'sociaal-domein']
 
