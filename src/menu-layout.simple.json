@@ -4527,7 +4527,8 @@
 							"register": "dossiq",
 							"schema": "emailTemplate",
 							"filter": {
-								"caseType": "@objectId"
+								"caseType": "@objectId",
+								"isActive": true
 							},
 							"limit": 25,
 							"columns": [

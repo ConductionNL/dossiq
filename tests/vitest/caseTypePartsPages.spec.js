@@ -59,6 +59,10 @@ describe('the parts of a case type', () => {
 		}
 	})
 
+	it('lists only the active wording of each message, not the kept earlier versions', () => {
+		expect(appended('case-type-messages').content.filter).toEqual({ caseType: '@objectId', isActive: true })
+	})
+
 	it('groups the fields by category', () => {
 		expect(appended('case-type-fields').content.groupBy).toBe('category')
 	})
