@@ -60,62 +60,118 @@ class ObjectTypeSchemaResolverTest extends TestCase {
 	}//end testAGeoPropertyAddsTheMapView()
 
 	/**
-	 * The schema is read once and shaped; an unreadable schema answers null.
+	 * The schema is read once per register and schema, and shaped.
 	 *
 	 * @return void
 	 */
-	public function testDescribesAReadableSchemaAndNotAnUnreadableOne(): void {
-		$schema = new class {
-			/**
-			 * @return string The title.
-			 */
-			public function getTitle(): string {
-				return 'Bomenregister';
-			}
-
-			/**
-			 * @return array<string, array<string, string>> The properties.
-			 */
-			public function getProperties(): array {
-				return ['location' => ['type' => 'geo'], 'species' => ['type' => 'string']];
-			}
-		};
-		$mapper = new class($schema) {
-			/** @var int */
-			public int $reads = 0;
-
-			/**
-			 * @param object $schema The schema to answer.
-			 */
-			public function __construct(private object $schema) {
-			}
-
-			/**
-			 * @param array<int, string|int> $ids The schema ids or slugs.
-			 *
-			 * @return array<int, object> The schemas found; a missing one is left out.
-			 */
-			public function findMultiple(array $ids): array {
-				$this->reads++;
-				if ($ids === ['gone']) {
-					return [];
-				}
-
-				return [$this->schema];
-			}
-		};
-		$container = $this->createMock(ContainerInterface::class);
-		$container->method('has')->willReturn(true);
-		$container->method('get')->willReturn($mapper);
-		$resolver = new ObjectTypeSchemaResolver(container: $container, logger: $this->createMock(LoggerInterface::class));
+	public function testDescribesAReadableSchemaOncePerRegisterAndSchema(): void {
+		$openRegister = $this->openRegister();
+		$resolver     = $this->resolverOver(openRegister: $openRegister);
 
 		$expected = ['title' => 'Bomenregister', 'properties' => 2, 'views' => ['map', 'table']];
 		$this->assertSame($expected, $resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/a'));
 		$this->assertSame($expected, $resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/b'));
-		$this->assertSame(1, $mapper->reads);
-		$this->assertNull($resolver->describe(objectUrl: '/apps/openregister/api/objects/7/gone/a'));
+		$this->assertSame([['7', 'trees']], $openRegister->asked);
 		$this->assertNull($resolver->describe(objectUrl: 'https://elsewhere.example/tree/1'));
-	}//end testDescribesAReadableSchemaAndNotAnUnreadableOne()
+	}//end testDescribesAReadableSchemaOncePerRegisterAndSchema()
+
+	/**
+	 * The same slug in another register is that register's schema, read on its own.
+	 *
+	 * @return void
+	 */
+	public function testResolvesTheSchemaWithinTheRegisterTheUrlNames(): void {
+		$openRegister = $this->openRegister();
+		$resolver     = $this->resolverOver(openRegister: $openRegister);
+
+		$this->assertSame('Bomenregister', $resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/a')['title']);
+		$this->assertSame('Parkbomen', $resolver->describe(objectUrl: '/apps/openregister/api/objects/9/trees/a')['title']);
+		$this->assertSame([['7', 'trees'], ['9', 'trees']], $openRegister->asked);
+	}//end testResolvesTheSchemaWithinTheRegisterTheUrlNames()
+
+	/**
+	 * A schema OpenRegister refuses leaves that row empty and does not stop the next one.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableSchemaAnswersNullWithoutThrowing(): void {
+		$openRegister = $this->openRegister();
+		$resolver     = $this->resolverOver(openRegister: $openRegister);
+
+		$this->assertNull($resolver->describe(objectUrl: '/apps/openregister/api/objects/7/secret/a'));
+		$this->assertNull($resolver->describe(objectUrl: '/apps/openregister/api/objects/7/secret/b'));
+		$this->assertSame('Bomenregister', $resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/a')['title']);
+		$this->assertSame([['7', 'secret'], ['7', 'trees']], $openRegister->asked);
+	}//end testAnUnreadableSchemaAnswersNullWithoutThrowing()
+
+	/**
+	 * The resolver under test, over a container that holds the given OpenRegister double.
+	 *
+	 * @param object $openRegister The register-scoped schema resolver double.
+	 *
+	 * @return ObjectTypeSchemaResolver The resolver.
+	 */
+	private function resolverOver(object $openRegister): ObjectTypeSchemaResolver {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('has')->willReturn(true);
+		$container->method('get')->willReturn($openRegister);
+
+		return new ObjectTypeSchemaResolver(container: $container, logger: $this->createMock(LoggerInterface::class));
+	}//end resolverOver()
+
+	/**
+	 * A double of OpenRegister's register-scoped schema resolver. Register 7
+	 * carries "trees" (Bomenregister), register 9 its own "trees" (Parkbomen),
+	 * and "secret" is refused the way a read without permission is.
+	 *
+	 * @return object The double; `asked` lists every register and schema it was asked for.
+	 */
+	private function openRegister(): object {
+		return new class {
+			/** @var array<int, array{0: string, 1: string}> */
+			public array $asked = [];
+
+			/**
+			 * @param string|int $registerRef The register.
+			 * @param string|int $schemaRef   The schema.
+			 *
+			 * @return array{schema: object} The resolved schema.
+			 */
+			public function resolvePair(string|int $registerRef, string|int $schemaRef): array {
+				$this->asked[] = [(string)$registerRef, (string)$schemaRef];
+				if ($schemaRef === 'secret') {
+					throw new \Exception('Permission denied');
+				}
+
+				$title = 'Bomenregister';
+				if ($registerRef === '9') {
+					$title = 'Parkbomen';
+				}
+
+				return ['schema' => new class($title) {
+					/**
+					 * @param string $title The title.
+					 */
+					public function __construct(private string $title) {
+					}
+
+					/**
+					 * @return string The title.
+					 */
+					public function getTitle(): string {
+						return $this->title;
+					}
+
+					/**
+					 * @return array<string, array<string, string>> The properties.
+					 */
+					public function getProperties(): array {
+						return ['location' => ['type' => 'geo'], 'species' => ['type' => 'string']];
+					}
+				}];
+			}
+		};
+	}//end openRegister()
 
 	/**
 	 * Without OpenRegister nothing is read and every link stays empty.
