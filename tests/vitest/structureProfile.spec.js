@@ -85,9 +85,26 @@ function section(menu, section) {
 }
 
 describe('the full profile', () => {
-	it('is exactly what buildManifest made before profiles existed', () => {
+	it('is exactly what buildManifest made before profiles existed, but for the team queue view', () => {
 		const before = buildManifest(manifest(), fragments, fullFile)
-		expect(build(fullFile)).toEqual(before)
+		const built = build(fullFile)
+		const others = (result) => ({ ...result, pages: result.pages.filter((page) => page.id !== 'Cases') })
+		expect(others(built)).toEqual(others(before))
+		const views = (result) => result.pages.find((page) => page.id === 'Cases').config.defaultSavedViews
+		expect(views(built).filter((view) => view.slug !== 'team-queue')).toEqual(views(before).filter((view) => view.slug !== 'team-queue'))
+	})
+
+	it('keeps the Queue page it had as the team queue view: title, unread and priority columns, case type folders', () => {
+		const views = build(fullFile).pages.find((page) => page.id === 'Cases').config.defaultSavedViews
+		const overrides = views.find((view) => view.slug === 'team-queue').overrides
+		expect(overrides.title).toBe('Queue')
+		expect(overrides.columns.map((column) => (typeof column === 'string' ? column : column.key))).toEqual(
+			['@self.unread', 'identifier', 'title', 'caseType', 'status', 'priorityOrder', 'deadline'],
+		)
+		expect(overrides.folderSidebar).toMatchObject({ schema: 'caseType', filterField: 'caseType' })
+		// The deep merge keeps what the patch does not name.
+		expect(overrides.statRow).toHaveLength(3)
+		expect(overrides.sidePanel).toHaveLength(2)
 	})
 
 	it('still counts 39 entries: 13 main, 5 footer, 18 settings, 3 integrations', () => {
@@ -540,7 +557,7 @@ describe('a page overlay', () => {
 		expect(page.config.list).toHaveLength(3)
 	})
 
-	it('names a list item by id, then key, then label, and a bare string by itself', () => {
+	it('names a list item by id, then key, then slug, then label, and a bare string by itself', () => {
 		const page = {
 			id: 'P',
 			config: {
@@ -568,6 +585,29 @@ describe('a page overlay', () => {
 			{ label: 'All' },
 			{ label: 'Closed' },
 		])
+	})
+
+	it('names a default view by its slug and merges a patch into it deeply, arrays replaced', () => {
+		const page = {
+			id: 'P',
+			config: {
+				defaultSavedViews: [
+					{ slug: 'queue', name: 'Queue', filters: { a: 1 }, overrides: { title: 'Team', columns: ['x', 'y'], header: { meta: 'm', notice: 'n' } } },
+					{ slug: 'other', name: 'Other', filters: {} },
+				],
+			},
+		}
+		const out = applyPageOverlay(page, {
+			id: 'P',
+			configPatch: {
+				defaultSavedViews: { queue: { overrides: { title: 'Queue', columns: ['z'], header: { meta: 'M' } } } },
+			},
+		})
+		expect(out.config.defaultSavedViews).toEqual([
+			{ slug: 'queue', name: 'Queue', filters: { a: 1 }, overrides: { title: 'Queue', columns: ['z'], header: { meta: 'M', notice: 'n' } } },
+			{ slug: 'other', name: 'Other', filters: {} },
+		])
+		expect(page.config.defaultSavedViews[0].overrides.title).toBe('Team')
 	})
 
 	it('adds slots to the page and leaves a page without the key as it was', () => {

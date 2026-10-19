@@ -48,9 +48,11 @@ Open in nextcloud-vue (coordinator, 19 October 2026):
 
 - A view's filter is a saved view's filters, which the reader can change or
   leave; the Queue and MyWork pages had a base filter nobody could clear.
-- The overrides are one per view, not per profile: the full profile gets the
-  simple team queue (four columns, no unread or priority column, no case
-  type folders) where it had its own.
+- The full profile patches the team queue view back to its Queue page
+  (`src/menu-layout.json` `pages`, a `configPatch` on the view by slug that
+  merges into its overrides): the title "Queue", the unread and priority
+  columns and the case type folders. It also keeps the simple look's counts,
+  case type chips and side cards, which its Queue page did not have.
 - The Assigned to me card has no description line, and case type and status
   are text in the meta line rather than chips; the deadline is a plain date,
   not red when overdue.

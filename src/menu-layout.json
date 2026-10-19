@@ -14,6 +14,56 @@
 		"SubstitutionAdminMenu": "Cases",
 		"BezwaarCommitteesMenu": "decidiq:GovernanceBodies"
 	},
+	"pagesNote": "Page overlays, applied by src/utils/structureProfile.js as in the simple profile. The team queue is a view of the Cases page (`team-queue`) whose overrides are the simple profile's DqTeamwachtrij look; the full profile keeps the Queue page it had: that title, the unread and priority columns, and the case type folders. `configPatch` addresses the view by slug and merges into its `overrides` deeply, so everything else the view carries stays.",
+	"pages": [
+		{
+			"id": "Cases",
+			"configPatch": {
+				"defaultSavedViews": {
+					"team-queue": {
+						"overrides": {
+							"title": "Queue",
+							"columns": [
+								{
+									"key": "@self.unread",
+									"label": "Unread",
+									"widget": "unreadIndicator",
+									"sortable": false
+								},
+								"identifier",
+								"title",
+								{
+									"key": "caseType",
+									"label": "Case type",
+									"formatter": "caseTypeName"
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"formatter": "statusTypeName"
+								},
+								{
+									"key": "priorityOrder",
+									"label": "Priority",
+									"widget": "priorityBadge"
+								},
+								"deadline"
+							],
+							"folderSidebar": {
+								"source": "register",
+								"register": "dossiq",
+								"schema": "caseType",
+								"idField": "@self.id",
+								"nameField": "title",
+								"filterField": "caseType",
+								"allLabel": "All types"
+							}
+						}
+					}
+				}
+			}
+		}
+	],
 	"relocations": {
 		"OrganisationsMenu": "Contacts",
 		"Queue": "WorkGroup",
