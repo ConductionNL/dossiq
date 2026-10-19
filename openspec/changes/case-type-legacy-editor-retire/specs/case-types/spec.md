@@ -15,3 +15,8 @@ editor of their own.
 - GIVEN a case type with a status
 - WHEN the administrator opens the case type's Statuses tab
 - THEN the statuses editor offers the status's checklist and field rules
+
+#### Scenario: edit or reorder a status that has a capacity
+- GIVEN a status with capacity 12 and a phase term
+- WHEN the administrator renames it, or drags it to another position
+- THEN the saved status still has capacity 12 and its phase term
