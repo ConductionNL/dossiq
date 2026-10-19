@@ -162,10 +162,14 @@ describe('the cases list', () => {
 	})
 
 	it('shows five columns, the number and the requester under the title, each a field the case carries', () => {
-		const keys = simple.columns.map((column) =>
-			typeof column === 'string' ? column : column.key,
-		)
+		const keys = simple.columns
+			.filter((column) => column.hidden !== true)
+			.map((column) => (typeof column === 'string' ? column : column.key))
 		expect(keys).toEqual(['title', 'caseType', 'status', 'assignee', 'deadline'])
+		// Two more start hidden: a case type's own list picks them
+		// (Verzoeker, Ontvangen on DqWooVerzoeken).
+		expect(simple.columns.filter((column) => column.hidden === true).map((column) => column.key))
+			.toEqual(['initiatorDisplayName', 'startDate'])
 		for (const key of keys) {
 			expect(caseFields.has(key), key).toBe(true)
 		}
@@ -203,13 +207,15 @@ describe('the cases list', () => {
 		])
 	})
 
-	it('drops the case type pane the design has none of, and keeps the case type a column', () => {
+	it('draws no case type pane, but a list narrowed to one case type takes that case type\'s look (DqWooVerzoeken, DqKlachten)', () => {
 		// The full list opens with a folder pane of case types on the left.
-		// The design draws the list without it: the case type is a column, a
-		// view (Woo requests) and the `?caseType=` the menu entry carries,
-		// which the library merges into the fetch with or without a pane.
+		// The design draws the list without it: the case type is a column and
+		// the `?caseType=` the menu entry carries. With `pane: false` the
+		// folder still comes from that address, so the case type record's
+		// `x-index` (title, count line, columns, quick filters, cards under
+		// the list) shapes the list without a pane.
 		expect(before.folderSidebar.filterField).toBe('caseType')
-		expect(simple.folderSidebar).toBeUndefined()
+		expect(simple.folderSidebar).toEqual({ ...before.folderSidebar, allLabel: undefined, pane: false })
 		expect(page(builtFull, 'Cases').config.folderSidebar).toEqual(
 			before.folderSidebar,
 		)
@@ -238,7 +244,7 @@ describe('the cases list', () => {
 		// or a column sets `filterable: false`, so neither may appear here.
 		expect(simple.headerFilters).not.toBe(false)
 		expect(before.headerFilters).not.toBe(false)
-		expect(simple.columns.map((column) => column.label)).toEqual([
+		expect(simple.columns.filter((column) => column.hidden !== true).map((column) => column.label)).toEqual([
 			'Case',
 			'Type',
 			'Status',
