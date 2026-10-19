@@ -85,7 +85,7 @@
 				<div class="deelzaak-detail__row">
 					<dt>{{ t('dossiq', 'Status') }}</dt>
 					<dd>
-						<span class="status-badge" :class="statusClass">
+						<span class="status-badge cn-status-badge cn-status-badge--default" :class="statusClass">
 							{{ statusName }}
 						</span>
 					</dd>
@@ -546,19 +546,17 @@ export default {
 
 .status-badge {
 	display: inline-block;
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 12px;
-	font-weight: 500;
 }
 
 .status-badge--active {
 	background: var(--color-primary-light);
-	color: var(--color-primary-text);
+	--cn-status-badge-ink: var(--color-primary-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .status-badge--final {
 	background: var(--color-success);
-	color: white;
+	--cn-status-badge-ink: white;
+	color: var(--cn-status-badge-ink);
 }
 </style>

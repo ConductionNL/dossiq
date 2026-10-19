@@ -33,7 +33,7 @@
 							}">
 							<template v-if="editingId !== pd.id">
 								<span class="property-row__name">{{ pd.name }}</span>
-								<span class="property-row__format">{{
+								<span class="property-row__format cn-status-badge cn-status-badge--default">{{
 									typeSummary(pd)
 								}}</span>
 								<span v-if="pd.maxLength" class="property-row__max">
@@ -612,10 +612,6 @@ export default {
 }
 
 .property-row__format {
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 11px;
-	font-weight: 500;
 	background: var(--color-background-dark);
 }
 
@@ -638,7 +634,7 @@ export default {
 .property-row__actions {
 	display: flex;
 	gap: 2px;
-	margin-left: auto;
+	margin-inline-start: auto;
 }
 
 .property-row__edit-form {

@@ -20,7 +20,7 @@
 						:class="{ 'role-type-row--editing': editingId === rt.id }">
 						<template v-if="editingId !== rt.id">
 							<span class="role-type-row__name">{{ rt.name }}</span>
-							<span class="role-type-row__generic">{{
+							<span class="role-type-row__generic cn-status-badge cn-status-badge--primary">{{
 								genericRoleLabel(rt.genericRole)
 							}}</span>
 							<div class="role-type-row__actions">
@@ -387,18 +387,15 @@ export default {
 }
 
 .role-type-row__generic {
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 11px;
-	font-weight: 500;
 	background: var(--color-primary-light);
-	color: var(--color-primary-text);
+	--cn-status-badge-ink: var(--color-primary-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .role-type-row__actions {
 	display: flex;
 	gap: 2px;
-	margin-left: auto;
+	margin-inline-start: auto;
 }
 
 .role-type-row__edit-form {

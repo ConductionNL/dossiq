@@ -153,8 +153,8 @@ export default {
 		 */
 		markClass(present) {
 			return present === true
-				? 'prerequisites__mark prerequisites__mark--present'
-				: 'prerequisites__mark prerequisites__mark--missing'
+				? 'prerequisites__mark cn-status-badge cn-status-badge--default prerequisites__mark--present'
+				: 'prerequisites__mark cn-status-badge cn-status-badge--default prerequisites__mark--missing'
 		},
 	},
 }
@@ -182,20 +182,19 @@ export default {
 	box-sizing: border-box;
 	min-width: 72px;
 	margin-inline-end: 8px;
-	padding: 0 8px;
-	border-radius: var(--border-radius-pill, 999px);
-	font-weight: bold;
 	text-align: center;
 }
 
 .prerequisites__mark--present {
 	background: var(--color-success);
-	color: var(--color-success-text);
+	--cn-status-badge-ink: var(--color-success-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .prerequisites__mark--missing {
 	background: var(--color-error);
-	color: var(--color-error-text);
+	--cn-status-badge-ink: var(--color-error-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .prerequisites__detail {

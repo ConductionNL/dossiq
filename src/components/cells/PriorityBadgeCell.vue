@@ -27,7 +27,7 @@
 -->
 <template>
 	<span
-		class="priority-badge"
+		class="priority-badge cn-status-badge cn-status-badge--default"
 		:style="style"
 		:data-colour="colour"
 		:data-priority="priority"
@@ -103,7 +103,8 @@ export default {
 		 * @spec openspec/specs/case-priority/spec.md
 		 */
 		style() {
-			return statusColourStyle(this.colour)
+			const style = statusColourStyle(this.colour)
+			return { ...style, '--cn-status-badge-ink': style.color }
 		},
 
 		/**
@@ -145,10 +146,6 @@ export default {
 	display: inline-block;
 	max-width: 100%;
 	overflow: hidden;
-	padding: 2px 10px;
-	border-radius: var(--border-radius-pill, 100px);
-	font-size: 0.9em;
-	line-height: 1.4;
 	white-space: nowrap;
 	text-overflow: ellipsis;
 }

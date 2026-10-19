@@ -29,12 +29,12 @@
 					<div v-for="item in items" :key="item.id" class="sub-entity-row">
 						<template v-if="editingId !== item.id">
 							<span class="sub-entity-row__name">{{ item.name }}</span>
-							<span v-if="item.isDraft" class="sub-entity-row__badge">
+							<span v-if="item.isDraft" class="sub-entity-row__badge cn-status-badge cn-status-badge--default">
 								{{ t('dossiq', 'Draft') }}
 							</span>
 							<span
 								v-if="item.publicationRequired"
-								class="sub-entity-row__badge">
+								class="sub-entity-row__badge cn-status-badge cn-status-badge--default">
 								{{ t('dossiq', 'Publication required') }}
 							</span>
 							<span v-if="item.validFrom" class="sub-entity-row__meta">

@@ -195,7 +195,7 @@
 							})
 						}}</strong>
 						<span
-							class="document-review__pill"
+							class="document-review__pill cn-status-badge cn-status-badge--default"
 							data-testid="document-review-sample-state"
 							>{{ sampleState(sample) }}</span
 						>
@@ -304,7 +304,7 @@
 								>{{ conditionLine(triageRule.conditions) }}</span
 							>
 						</span>
-						<span class="document-review__pill">{{
+						<span class="document-review__pill cn-status-badge cn-status-badge--default">{{
 							triageRule.effect === 'in-scope'
 								? t('dossiq', 'Relevant')
 								: t('dossiq', 'Not relevant')
@@ -1187,10 +1187,7 @@ export default {
 
 .document-review__pill {
 	align-self: flex-start;
-	padding: 0 calc(var(--default-grid-baseline) * 2);
-	border-radius: var(--border-radius-pill);
 	background: var(--color-background-dark);
-	font-weight: 600;
 }
 
 .document-review__buttons {
