@@ -4380,9 +4380,9 @@
 							"type": "string",
 							"description": "type='index': which pages share this page's saved views. By default a view is shared by every page over the same register and schema and by no other, because a view is filters over one schema's fields. Set this to share views across pages over different sources, or to keep two pages over one source apart. Written into the saved view's `query.scope`; views saved before scoping stay visible everywhere. Maps to CnIndexPage `savedViewsScope`."
 						},
-						"defaultFilters": {
+						"defaultSavedFilters": {
 							"type": "array",
-							"description": "type='index': filters the app ships for this page. Listed read-only above each user's own saved filters, under Default filters, and never stored: a new app version updates them for everybody and no user can delete one. A user may apply a default or save a copy, which they then own. `@`-tokens in `filters` (`@me`, `@today`, `@today+7d`) resolve when the default is applied; a copy keeps them. Maps to CnIndexPage `defaultFilters`.",
+							"description": "type='index': filters the app ships for this page. Listed read-only above each user's own saved filters, under Default filters, and never stored: a new app version updates them for everybody and no user can delete one. A user may apply a default or save a copy, which they then own. `@`-tokens in `filters` (`@me`, `@today`, `@today+7d`) resolve when the default is applied; a copy keeps them. Maps to CnIndexPage `defaultSavedFilters`.",
 							"items": {
 								"type": "object",
 								"additionalProperties": false,

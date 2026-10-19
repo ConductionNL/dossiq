@@ -14,11 +14,11 @@ deadline window of the matching chip. Every name SHALL have a Dutch translation.
 - **GIVEN** the Cases manifest
 - **WHEN** the `mine-overdue` default is read
 - **THEN** its filters equal the Mine chip's filter merged with the Overdue chip's filter
-- @e2e exclude {manifest declaration, asserted in tests/vitest/defaultFilters.spec.js}
+- @e2e exclude {manifest declaration, asserted in tests/vitest/defaultSavedFilters.spec.js}
 
 #### Scenario: Dutch names
 
 - **GIVEN** the Dutch locale
 - **WHEN** the saved-filter menu opens on Cases
 - **THEN** it lists "Mijn zaken, te laat", "Mijn zaken, deze week" and "Niet toegewezen, te laat" under Default filters
-- @e2e exclude {rendering is nextcloud-vue's, covered there; names asserted in tests/vitest/defaultFilters.spec.js}
+- @e2e exclude {rendering is nextcloud-vue's, covered there; names asserted in tests/vitest/defaultSavedFilters.spec.js}

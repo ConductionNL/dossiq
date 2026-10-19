@@ -21,14 +21,14 @@ const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/nl.json'), 'utf8')).
 
 const page = (id) => manifest.pages.find((p) => p.id === id)
 const chip = (label) => page('Cases').config.quickFilters.find((q) => q.label === label).filter
-const byslug = (id) => Object.fromEntries(page(id).config.defaultFilters.map((d) => [d.slug, d.filters]))
+const byslug = (id) => Object.fromEntries(page(id).config.defaultSavedFilters.map((d) => [d.slug, d.filters]))
 
 describe('default filters on Cases', () => {
 	const defaults = byslug('Cases')
 
 	it('ships three, each with a Dutch name', () => {
 		expect(Object.keys(defaults)).toEqual(['mine-overdue', 'mine-due-this-week', 'unclaimed-overdue'])
-		for (const d of page('Cases').config.defaultFilters) {
+		for (const d of page('Cases').config.defaultSavedFilters) {
 			expect(nl[d.name]).toBeTruthy()
 		}
 	})

@@ -1769,8 +1769,8 @@
 					"isTemplate": false
 				},
 				"allowSavedViews": true,
-				"_defaultFiltersNote": "saved-filters-manage-and-defaults: the Queue's base filter already keeps it to open, unclaimed cases, so its defaults only add the deadline window, with the same flat keys and tokens as the Cases chips.",
-				"defaultFilters": [
+				"_defaultSavedFiltersNote": "saved-filters-manage-and-defaults: the Queue's base filter already keeps it to open, unclaimed cases, so its defaults only add the deadline window, with the same flat keys and tokens as the Cases chips.",
+				"defaultSavedFilters": [
 					{ "slug": "late", "name": "Late", "filters": { "deadline[lt]": "@today" } },
 					{ "slug": "this-week", "name": "This week", "filters": { "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } }
 				],
@@ -1941,8 +1941,8 @@
 					"isTemplate": false
 				},
 				"allowSavedViews": true,
-				"_defaultFiltersNote": "saved-filters-manage-and-defaults: filters dossiq ships for every user, read-only, listed under Default filters above the user's own saved filters. A user applies one, or saves a copy to edit and share. They combine conditions the quick-filter chips offer one at a time (Mine and Overdue), so they add a lens instead of repeating a chip. The conditions are the chips' own: the same flat `deadline[lt]` / `deadline[gte]` keys with `@today` tokens, the same working-list rule `statusHiddenInLists: false`.",
-				"defaultFilters": [
+				"_defaultSavedFiltersNote": "saved-filters-manage-and-defaults: filters dossiq ships for every user, read-only, listed under Default filters above the user's own saved filters. A user applies one, or saves a copy to edit and share. They combine conditions the quick-filter chips offer one at a time (Mine and Overdue), so they add a lens instead of repeating a chip. The conditions are the chips' own: the same flat `deadline[lt]` / `deadline[gte]` keys with `@today` tokens, the same working-list rule `statusHiddenInLists: false`.",
+				"defaultSavedFilters": [
 					{ "slug": "mine-overdue", "name": "Mine, overdue", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
 					{ "slug": "mine-due-this-week", "name": "Mine, due this week", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
 					{ "slug": "unclaimed-overdue", "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } }

@@ -7,7 +7,7 @@ kind: code
 ## Summary
 
 nextcloud-vue's `saved-filters-manage-and-defaults` lets an index page ship
-default filters (`config.defaultFilters`), read-only for users and copyable.
+default filters (`config.defaultSavedFilters`), read-only for users and copyable.
 dossiq declares them on its two case lists. Generic by what they filter, not
 by procedure:
 
@@ -18,6 +18,6 @@ by procedure:
 
 ## Depends on
 
-nextcloud-vue `saved-filters-manage-and-defaults` (the `defaultFilters` key).
+nextcloud-vue `saved-filters-manage-and-defaults` (the `defaultSavedFilters` key).
 Until a release carries it the installed schema lags and `validate-manifest`
 reports the key as a library lag, not an error; the vendored schema carries it.
