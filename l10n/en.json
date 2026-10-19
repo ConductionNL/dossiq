@@ -9129,6 +9129,7 @@
         "This transfer link is invalid, expired or already resolved.": "This transfer link is invalid, expired or already resolved.",
         "This value does not fit this field.": "This value does not fit this field.",
         "This value is not shown.": "This value is not shown.",
+        "This version is already published": "This version is already published",
         "This version of the case type has been replaced. Cases already running on it continue. New cases go on the current version.": "This version of the case type has been replaced. Cases already running on it continue. New cases go on the current version.",
         "This was delivered for publication on %1$s, so it cannot be changed. Publish again to deliver a new set.": "This was delivered for publication on %1$s, so it cannot be changed. Publish again to deliver a new set.",
         "This week": "This week",

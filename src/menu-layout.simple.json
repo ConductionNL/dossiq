@@ -3790,7 +3790,19 @@
 								}
 							},
 							"rowRoute": "CaseTypeDetail",
-							"emptyText": "This case type has only this version"
+							"emptyText": "This case type has only this version",
+							"footerAction": {
+								"label": "Publish",
+								"icon": "Publish",
+								"type": "open-modal",
+								"target": "CaseTypePublishDialog",
+								"disabledWhen": {
+									"field": "isDraft",
+									"op": "neq",
+									"value": true
+								},
+								"disabledReason": "This version is already published"
+							}
 						}
 					},
 					{
