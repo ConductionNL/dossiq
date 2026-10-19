@@ -7407,7 +7407,7 @@
 						"all": "All",
 						"available": "Stable"
 					},
-					"subtitle": "version {appVersion} · updated with every release",
+					"subtitle": "Features and roadmap · version {appVersion} · updated with every release",
 					"notice": "How dossiq compares to other case systems is not here but in the comparison on conduction.nl. This page only says what dossiq can do and how stable it is.",
 					"noticeLink": {
 						"text": "conduction.nl",
