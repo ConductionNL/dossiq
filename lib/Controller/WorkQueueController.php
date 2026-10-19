@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Controller;
 
 use DateTime;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Queue\TeamAvailability;
 use OCA\Dossiq\Service\WorkQueueService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -55,6 +56,7 @@ class WorkQueueController extends Controller {
 	 * @param WorkQueueService $workQueueService The work queue scoring/aggregation service.
 	 * @param LoggerInterface $logger Logger.
 	 * @param IUserManager $userManager Resolves a handler's display name.
+	 * @param TeamAvailability $teamAvailability Adds each handler's availability from the user status.
 	 *
 	 * @return void
 	 */
@@ -65,6 +67,7 @@ class WorkQueueController extends Controller {
 		private WorkQueueService $workQueueService,
 		private LoggerInterface $logger,
 		private IUserManager $userManager,
+		private TeamAvailability $teamAvailability,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -120,7 +123,9 @@ class WorkQueueController extends Controller {
 		}
 
 		try {
-			$handlers = $this->withDisplayNames(handlers: $this->workQueueService->computeWorkload());
+			$handlers = $this->teamAvailability->annotate(
+				handlers: $this->withDisplayNames(handlers: $this->workQueueService->computeWorkload())
+			);
 			return new JSONResponse(['handlers' => $handlers]);
 		} catch (\Throwable $e) {
 			$this->logger->error('WorkQueue: workload failed', ['error' => $e->getMessage()]);

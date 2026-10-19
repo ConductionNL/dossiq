@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\WorkQueueController;
+use OCA\Dossiq\Service\Queue\TeamAvailability;
 use OCA\Dossiq\Service\WorkQueueService;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -85,6 +86,8 @@ class WorkQueueControllerTest extends TestCase {
 		$this->workQueueService = $this->createMock(WorkQueueService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->userManager = $this->createMock(IUserManager::class);
+		$teamAvailability = $this->createMock(TeamAvailability::class);
+		$teamAvailability->method('annotate')->willReturnArgument(0);
 
 		$this->controller = new WorkQueueController(
 			$this->request,
@@ -93,6 +96,7 @@ class WorkQueueControllerTest extends TestCase {
 			$this->workQueueService,
 			$this->logger,
 			$this->userManager,
+			$teamAvailability,
 		);
 	}//end setUp()
 

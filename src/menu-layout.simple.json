@@ -3465,7 +3465,6 @@
 					}
 				],
 				"quickFilterMaxVisible": 4,
-				"quickFilterPlacement": "toolbar",
 				"quickFiltersFrom": {
 					"field": "caseType",
 					"register": "dossiq",
@@ -3486,6 +3485,8 @@
 							"presentation": "rows",
 							"avatar": "{displayName}",
 							"title": "{displayName}",
+							"meta": "{availability}",
+							"headerNote": "{count:present=true} of {total} present",
 							"bar": {
 								"valueField": "openCaseCount"
 							},
@@ -3506,11 +3507,25 @@
 								"url": "/apps/dossiq/api/dashboard/kpis",
 								"responsePath": "queueByType"
 							},
-							"presentation": "rows",
-							"title": "{title}",
-							"trailing": [
-								"{open} open · {waiting} waiting"
+							"presentation": "table",
+							"columns": [
+								{
+									"label": "Case type",
+									"value": "{title}"
+								},
+								{
+									"label": "Open now",
+									"value": "{open}",
+									"align": "end"
+								},
+								{
+									"label": "Queued",
+									"value": "{waiting}",
+									"align": "end",
+									"alertAbove": 0
+								}
 							],
+							"footnote": "Open with the team, and how many of those have no handler yet",
 							"emptyText": "No open cases"
 						}
 					}
@@ -3569,11 +3584,28 @@
 								},
 								{
 									"op": "lte",
-									"value": 5,
+									"value": 7,
 									"variant": "warning"
 								}
 							]
 						}
+					}
+				],
+				"hideTableHeader": true,
+				"defaultOrder": "startDate",
+				"showSortSelect": true,
+				"sortSelectOptions": [
+					{
+						"value": "startDate",
+						"label": "Oldest first"
+					},
+					{
+						"value": "-startDate",
+						"label": "Newest first"
+					},
+					{
+						"value": "deadline",
+						"label": "Deadline first"
 					}
 				],
 				"showTitle": true,
