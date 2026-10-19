@@ -22,4 +22,10 @@ describe('the check card of a case type', () => {
 		expect(card.content.presentation).toBe('notice')
 		expect(card.content.variant).toBe('warning')
 	})
+
+	it('stays one compact box: one warning drawn, the count in a plural-free lead', () => {
+		const card = page.config.sideColumn.find((c) => c.id === 'side-case-type-check')
+		expect(card.content.limit).toBe(1)
+		expect(card.content.lead).toBe('Warnings ({total}):')
+	})
 })

@@ -3805,7 +3805,8 @@
 							},
 							"presentation": "notice",
 							"variant": "warning",
-							"lead": "{total} warnings:",
+							"lead": "Warnings ({total}):",
+							"limit": 1,
 							"emptyText": "No warnings"
 						}
 					},
