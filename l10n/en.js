@@ -9512,6 +9512,7 @@ OC.L10N.register(
         "Usage Rights Indication": "Usage Rights Indication",
         "Usage type": "Usage type",
         "Use": "Use",
+        "Use \"{name}\"": "Use \"{name}\"",
         "Use as initiator": "Use as initiator",
         "use default": "use default",
         "Use my version": "Use my version",
