@@ -107,7 +107,9 @@ describe('the handover gesture', () => {
 
 		expect(hand).toBeDefined()
 		expect(hand.type).toBe('open-modal')
-		expect(hand.target).toBe('CaseHandoverDialog')
+		expect(hand.target).toBe('CnAssignDialog')
+		expect(hand.props.config.note.field).toBe('reason')
+		expect(hand.props.config.confirm.request.url).toBe('/apps/dossiq/api/case/@objectId/handover')
 	})
 
 	it('is not offered on a closed case', () => {
@@ -118,18 +120,12 @@ describe('the handover gesture', () => {
 		})
 	})
 
-	it('is registered, so the button opens something', () => {
+	it('opens a dialog the library registers, so the button opens something', async () => {
 		// A target nothing declares renders no modal and no error, which is
 		// the silent-modal trap: the gesture would be a button that does
 		// nothing on a page that looks finished.
-		const registry = fs.readFileSync(
-			path.resolve(__dirname, '../../src/registry.js'),
-			'utf8',
-		)
+		const { BUILT_IN_MODALS } = await import('@conduction/nextcloud-vue/src/utils/builtInModals.js')
 
-		expect(registry).toContain('CaseHandoverDialog: {')
-		expect(registry).toContain(
-			"import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'",
-		)
+		expect(BUILT_IN_MODALS.CnAssignDialog).toMatchObject({ kind: 'modal' })
 	})
 })

@@ -3944,9 +3944,96 @@
 						"type": "open-modal",
 						"label": "Archive this case",
 						"icon": "ArchiveOutline",
-						"target": "CaseArchiveDialog",
+						"target": "CnActionDialog",
 						"props": {
-							"caseId": "@objectId"
+							"objectId": "@objectId",
+							"config": {
+								"title": "Archive this case",
+								"eyebrow": "Close off",
+								"subtitle": "The case goes to the archive and is only read afterwards.",
+								"summary": {
+									"source": {
+										"url": "/apps/openregister/api/objects/dossiq/case/@objectId"
+									},
+									"title": "{title}",
+									"meta": "{identifier} · {initiatorDisplayName}",
+									"badge": "{resultPublicLabel}"
+								},
+								"facts": [
+									{
+										"title": "Retention under the case type",
+										"items": [
+											{
+												"label": "Archive nomination",
+												"value": "{archiveNomination}"
+											},
+											{
+												"label": "Destruction date",
+												"value": "{archiveActionDate}"
+											}
+										]
+									}
+								],
+								"checklist": {
+									"title": "Ready to archive",
+									"source": {
+										"url": "/apps/dossiq/api/case/@objectId/archive/readiness"
+									},
+									"itemsPath": "checklist",
+									"labels": {
+										"ended": {
+											"label": "Case ended",
+											"unmetDetail": "Finish or abort the case first"
+										},
+										"result": {
+											"label": "Result recorded"
+										},
+										"decision": {
+											"label": "Decision made",
+											"unmetDetail": "No decision on this case"
+										},
+										"documents": {
+											"label": "Documents final",
+											"detail": "{count} of {total} final"
+										},
+										"openTasks": {
+											"label": "Open tasks: {count}"
+										}
+									},
+									"required": [
+										"ended"
+									]
+								},
+								"permission": {
+									"source": {
+										"url": "/apps/dossiq/api/case/@objectId/acts"
+									},
+									"listPath": "acts",
+									"match": {
+										"act": "archive"
+									},
+									"allowedPath": "allowed",
+									"reasonPath": "reason"
+								},
+								"reason": {
+									"label": "Reason",
+									"hint": "Goes into the history of the case."
+								},
+								"note": {
+									"variant": "info",
+									"title": "Read only afterwards",
+									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
+								},
+								"confirm": {
+									"label": "Archive it",
+									"icon": "ArchiveOutline",
+									"request": {
+										"method": "POST",
+										"url": "/apps/dossiq/api/case/@objectId/archive"
+									}
+								},
+								"doneText": "The case is archived."
+							}
 						},
 						"visibleWhen": {
 							"all": [
@@ -4090,7 +4177,51 @@
 						"type": "open-modal",
 						"label": "Hand to another team",
 						"icon": "SwapHorizontal",
-						"target": "CaseHandoverDialog",
+						"target": "CnAssignDialog",
+						"props": {
+							"objectId": "@objectId",
+							"config": {
+								"title": "Hand this case to another team",
+								"eyebrow": "Hand over",
+								"subtitle": "The case keeps its number, its history and its term. Only the team changes.",
+								"source": {
+									"url": "/apps/openregister/api/objects/dossiq/case/@objectId"
+								},
+								"assignee": {
+									"kinds": [
+										"group"
+									],
+									"label": "New team",
+									"placeholder": "The group that handles it from here",
+									"currentPath": "assignedGroupPublicName",
+									"currentHint": "Now with {team}. The new team picks its own handler.",
+									"currentAs": "team",
+									"hint": "The new team picks its own handler.",
+									"allowTyped": true,
+									"field": "team"
+								},
+								"note": {
+									"label": "Why it is moving",
+									"hint": "Required. The receiving team reads this before it accepts the case or sends it back.",
+									"field": "reason"
+								},
+								"toggles": [
+									{
+										"field": "doorzending",
+										"label": "Tell the applicant, this is a doorzending (Awb 2:3)",
+										"note": "The applicant then gets a message that the case moves to another team, and to which. Leave it off for a move inside the organisation."
+									}
+								],
+								"confirm": {
+									"label": "Hand it over",
+									"icon": "SwapHorizontal",
+									"request": {
+										"method": "POST",
+										"url": "/apps/dossiq/api/case/@objectId/handover"
+									}
+								}
+							}
+						},
 						"visibleWhen": {
 							"field": "isFinalStatus",
 							"op": "neq",
