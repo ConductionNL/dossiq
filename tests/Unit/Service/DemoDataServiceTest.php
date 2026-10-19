@@ -474,4 +474,25 @@ class DemoDataServiceTest extends TestCase {
 		$this->shipDescriptor();
 		$this->assertTrue($this->service->isAvailable());
 	}
+
+	/**
+	 * The curated fragments go in with the generated set, and the offer counts them.
+	 *
+	 * @return void
+	 */
+	public function testTheCuratedFragmentsAreImportedWithTheGeneratedSet(): void {
+		$this->shipDescriptor(objects: 2);
+		$fragments = $this->createMock(\OCA\Dossiq\Service\Setup\ExampleDataFragments::class);
+		$fragments->method('rawObjects')->willReturn([['@self' => ['schema' => 'case']]]);
+		$fragments->method('objects')->willReturn([['@self' => ['schema' => 'case'], 'assignee' => 'pieter']]);
+		$spy = $this->importerSpy(landed: 3);
+		$this->container->method('get')->willReturn($spy);
+		$service = new DemoDataService($this->appManager, $this->container, $this->createMock(LoggerInterface::class), $fragments);
+
+		$result = $service->install();
+
+		$this->assertSame(3, $result['requested'], 'two generated objects and one curated one');
+		$this->assertSame('pieter', $spy->seen['data']['components']['objects'][2]['assignee'] ?? null, 'the tokens are filled in before the import');
+		$this->assertSame(3, $service->listChoices()[0]['objectCount']);
+	}
 }
