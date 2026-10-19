@@ -115,7 +115,6 @@ describe('the simple profile', () => {
 			'Cases',
 			'WorkflowBoard',
 			'Tasks',
-			'MyCaseTypesCaption',
 			'RelationsCaption',
 			'Contacts',
 			'OrganisationsMenu',
@@ -123,7 +122,6 @@ describe('the simple profile', () => {
 		const captions = main.filter((entry) => entry.type === 'caption')
 		expect(captions.map((entry) => entry.label)).toEqual([
 			'Cases',
-			'My case types',
 			'Relations',
 		])
 		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(8)
@@ -144,7 +142,7 @@ describe('the simple profile', () => {
 			withRelocations.menu
 				.filter((entry) => entry.type === 'caption')
 				.map((entry) => entry.id),
-		).toEqual(['CasesCaption', 'MyCaseTypesCaption', 'RelationsCaption'])
+		).toEqual(['CasesCaption', 'RelationsCaption'])
 	})
 
 	it('gives every entry a label, an icon the app registers and a page that exists', () => {
@@ -191,15 +189,12 @@ describe('the simple profile', () => {
 		})
 	})
 
-	it('names no case type itself: My case types holds what each user chose', () => {
-		// The fixed Woo requests entry is gone. The entries under My case types
-		// come from the /api/manifest delta at orders 31 to 60, so the caption
-		// sits at 30 and Relations starts at 80, leaving room for all thirty.
+	it('names no case type itself: a pinned case type is a view, listed under My views', () => {
+		// No Woo requests entry and no My case types heading: the case types a
+		// user pins are views of the case list (case-type-pins-are-views), which
+		// the library's My views section lists at the bottom of the menu.
 		expect(main.some((entry) => entry.query?.caseType)).toBe(false)
-		const caption = main.find((entry) => entry.id === 'MyCaseTypesCaption')
-		expect(caption).toMatchObject({ type: 'caption', order: 30 })
-		const relations = main.find((entry) => entry.id === 'RelationsCaption')
-		expect(relations.order).toBeGreaterThan(60)
+		expect(main.some((entry) => entry.id === 'MyCaseTypesCaption')).toBe(false)
 
 		// And the list reads `?caseType=` from the address: the library merges
 		// the query into the fetch (useSelfFetchList.resolveQueryFilters), with
