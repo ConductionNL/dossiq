@@ -153,7 +153,7 @@ export default {
 		},
 	},
 
-	emits: ['select'],
+	emits: ['select', 'update:modelValue'],
 
 	data() {
 		return {
@@ -386,7 +386,11 @@ export default {
 		 * @spec openspec/specs/initiator-selection/spec.md
 		 */
 		async select(result) {
-			this.$emit('select', requesterPayload(await this.deduplicated(result)))
+			const payload = requesterPayload(await this.deduplicated(result))
+			this.$emit('select', payload)
+			// A form field (CnFormDialog mounts it for `widget: "InitiatorPicker"`)
+			// writes the uuid `case.requester` holds.
+			this.$emit('update:modelValue', payload.requester || null)
 		},
 
 		/**

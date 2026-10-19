@@ -113,6 +113,7 @@ import FileSetItems from './components/fileSet/FileSetItems.vue'
 // @spec openspec/specs/initiator-selection/spec.md
 import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
 import RequesterProjection from './components/initiator/RequesterProjection.vue'
+import RequesterSearchField from './components/initiator/RequesterSearchField.vue'
 // A search openregister refused, said where the term was typed.
 // @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
 import CaseSearchRefusal from './components/search/CaseSearchRefusal.vue'
@@ -827,6 +828,13 @@ const registry = {
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---
 	// @spec openspec/specs/initiator-selection/spec.md
+	// @spec openspec/specs/initiator-selection/spec.md
+	RequesterSearchField: {
+		kind: 'form-field',
+		component: RequesterSearchField,
+		appliesTo: ['case.requester'],
+		_note: 'The requester of a new case as one search field over the person and company register sets, with rows of initials, name and a second line (board DqNieuweZaak, Aanvrager). It writes the chosen row uuid, which case.requester holds; RequesterProjection fills the display projection when the case is first opened. Named by the New case form on All cases through fieldOverrides.requester.widget.',
+	},
 	InitiatorPicker: {
 		kind: 'form-field',
 		component: InitiatorPicker,
