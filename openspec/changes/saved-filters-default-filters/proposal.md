@@ -1,0 +1,23 @@
+---
+kind: code
+---
+
+# Proposal: saved-filters-default-filters
+
+## Summary
+
+nextcloud-vue's `saved-filters-manage-and-defaults` lets an index page ship
+default filters (`config.defaultFilters`), read-only for users and copyable.
+dossiq declares them on its two case lists. Generic by what they filter, not
+by procedure:
+
+- Cases: "Mine, overdue", "Mine, due this week", "Unclaimed, overdue". Each is
+  two existing quick-filter chips combined, which a chip alone cannot do.
+- Queue: "Late", "This week". The Queue's base filter is already open and
+  unclaimed; the defaults add the deadline window.
+
+## Depends on
+
+nextcloud-vue `saved-filters-manage-and-defaults` (the `defaultFilters` key).
+Until a release carries it the installed schema lags and `validate-manifest`
+reports the key as a library lag, not an error; the vendored schema carries it.
