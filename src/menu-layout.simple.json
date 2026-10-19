@@ -135,6 +135,7 @@
 			"icon": "Plus",
 			"action": {
 				"id": "nav-new-case",
+				"variant": "primary",
 				"label": "New case",
 				"icon": "Plus",
 				"type": "open-form",
@@ -3101,6 +3102,7 @@
 				"headerActions": [
 					{
 						"id": "new-case",
+						"variant": "primary",
 						"type": "open-form",
 						"label": "New case",
 						"icon": "Plus",
