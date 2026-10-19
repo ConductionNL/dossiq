@@ -1784,7 +1784,57 @@
 				"createSuccessMessage": "Case created.",
 				"formSize": "normal",
 				"formColumns": 1,
-				"viewModes": ["table", "cards"],
+				"viewModes": ["table", "cards", "board", "map"],
+				"cardLayout": {
+					"headPill": { "field": "deadline", "due": { "soonWithin": 7 }, "labels": { "overdue": "Late", "soon": "Almost due" } },
+					"number": "identifier",
+					"title": "title",
+					"meta": [{ "field": "caseType", "formatter": "caseTypeName" }, "initiatorDisplayName"],
+					"footerPill": { "field": "statusPublicLabel", "variant": "info" },
+					"footerDate": { "field": "deadline", "label": "Deadline" }
+				},
+				"board": {
+					"statusField": "status",
+					"wrap": true,
+					"columnLimit": 3,
+					"columnSwitchLabel": "Columns",
+					"hint": "One column per value of the property. Drag a card to change its status.",
+					"moveHandler": "moveCaseStatus",
+					"moveTargetsHandler": "caseStatusTargets",
+					"narrow": { "field": "caseType", "label": "Case type", "allLabel": "All case types", "source": { "schema": "caseType", "labelField": "title", "filter": { "isDraft": false } } },
+					"card": { "title": "title", "sub": ["identifier", "initiatorDisplayName"], "pill": "caseType", "due": "deadline", "owner": "assignee", "formatters": { "caseType": "caseTypeName" } },
+					"columnFields": [
+						{ "field": "status", "label": "status", "source": { "schema": "statusType", "labelField": "name", "orderField": "order", "colorField": "colour", "neutralColor": "grey", "colorMap": {"blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)"}, "capacityField": "capacity", "mergeBy": "name", "filter": { "isFinal": false }, "narrowBy": { "field": "caseType", "rowField": "caseType" } } },
+						{ "field": "caseType", "label": "type", "source": { "schema": "caseType", "labelField": "title", "filter": { "isDraft": false } }, "readOnly": true },
+						{ "field": "assignee", "label": "assignee", "kind": "values", "emptyLabel": "Nobody", "readOnly": true }
+					]
+				},
+				"mapConfig": {
+					"geoField": "geometry",
+					"popupField": "title",
+					"center": [52.1326, 5.2913],
+					"_basemapNote": "EVERY ENTRY CARRIES `options.referrerPolicy` AND MUST KEEP IT. Nextcloud sends `Referrer-Policy: no-referrer` on every page (server/lib/OC.php), Leaflet draws a tile as a plain `<img>`, and OpenStreetMap's CDN answers a refererless tile request with an \"App is not following the tile usage policy\" image carrying `x-blocked: Access denied` — a grey map rather than an error, which is why it reads as working-but-empty. An `<img>`-level policy overrides the document's, and `strict-origin-when-cross-origin` sends the instance origin but never the path, which is where a case id would be. nextcloud-vue's CnMapWidget defaults the same value, so this is belt-and-braces for as long as dossiq resolves a library release that predates that default. THE `{s}` SUBDOMAIN FORM IS ALSO LOAD-BEARING: MapCspRegistrar allowlists `https://*.tile.openstreetmap.org`, and a CSP wildcard does NOT match the bare host, so rewriting these to OSM's modern `tile.openstreetmap.org` would trade a policy block for a CSP block.",
+					"basemaps": [
+						{
+							"name": "Standard",
+							"url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+							"attribution": "© OpenStreetMap contributors",
+							"options": { "referrerPolicy": "strict-origin-when-cross-origin" }
+						},
+						{
+							"name": "Humanitarian",
+							"url": "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+							"attribution": "© OpenStreetMap contributors, tiles by HOT",
+							"options": { "referrerPolicy": "strict-origin-when-cross-origin" }
+						},
+						{
+							"name": "Terrain",
+							"url": "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+							"attribution": "© OpenStreetMap contributors, SRTM | © OpenTopoMap",
+							"options": { "referrerPolicy": "strict-origin-when-cross-origin" }
+						}
+					]
+				},
 				"showViewAction": false,
 				"_claimNote": "The Claim row action (case-claim-action, row 2.4) takes the case without opening it. It is a FUNCTION handler out of registry.js (a `kind: 'handler'` entry), because an index row action can only be `navigate`, `open-page` or a handler name: `api-call` is not in the row dispatcher's vocabulary at all, and `object-op` writes `action.values` VERBATIM, so a declared assignee of `@me` would store that literal string on the case. The handler posts the same endpoint the case page's Claim button does, so one rule refuses a claim on a case that is already somebody's, whichever surface the gesture came from.",
 				"actions": [

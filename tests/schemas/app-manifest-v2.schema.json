@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.127.0",
+	"version": "2.129.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -120,6 +120,7 @@
 							"optionsByParent": { "type": "object", "description": "choice: map of parent-choice value → options[] for a dependent (dependsOn) choice. Same option item shape as `options`.", "additionalProperties": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["value", "label"], "properties": { "value": {}, "label": { "type": "string" } } } } },
 							"suggestFrom": { "type": "string", "description": "choice: the configKey of an earlier choice this step pre-fills a suggestion from. When that value is set and the user has not yet picked here, the option matching suggestMap[parentValue] is auto-selected (still user-overridable)." },
 							"default": { "description": "choice: the option value chosen when the step opens (an array of values with `multiple`). Not applied to a step the server already completed." },
+							"noteStyle": { "type": "string", "enum": ["line", "card"], "default": "line", "description": "choice: how `note` is drawn: a muted line under the options (`line`) or an info note card (`card`)." },
 							"suggestMap": { "type": "object", "description": "choice: map of suggestFrom value → suggested option value. Used to auto-suggest a default (e.g. RGS template suggested from organisation type).", "additionalProperties": { "type": "string" } },
 							"multiple": { "type": "boolean", "default": false, "description": "choice: allow multi-select." },
 							"loadAction": { "type": "string", "minLength": 1, "description": "choice with display cards: an actionId each option card loads itself with. Every card except the one whose value is `none` gets its own Load button, which POSTs { dataset: <value> } to /api/setup/action/{loadAction}, spins while it runs and shows the result on that card. A successful load also selects the card. With loadAction the separate run-action step that loaded the picked dataset is no longer needed; manifests that keep it still work." },
@@ -2177,7 +2178,7 @@
 					}
 				},
 				{
-					"description": "record-list built-in widget (CnRecordListWidget): the action under the list, `props.content.footerAction` (2.126.0). Other content keys stay free-form.",
+					"description": "record-list built-in widget (CnRecordListWidget): the action under the list, `props.content.footerAction` (2.126.0), and a row's colour `dot` and `flags` (2.129.0). Other content keys stay free-form.",
 					"if": {
 						"properties": { "widgetKey": { "const": "record-list" } },
 						"required": ["widgetKey"]
@@ -2201,7 +2202,81 @@
 													"disabledWhen": { "$ref": "#/$defs/visibleWhen" },
 													"disabledReason": { "type": "string" }
 												}
-											}
+											},
+											"dot": { "description": "A colour dot before the title: a field name, or `{ field, colorMap? }` (2.129.0).", "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "required": ["field"], "additionalProperties": false, "properties": { "field": { "type": "string", "minLength": 1 }, "colorMap": { "type": "object", "additionalProperties": { "type": "string" } } } }] },
+											"flags": { "type": "array", "description": "The labels of the flags a row has, at its end (\"Start\", \"End\"): `[{ field, label, value? }]` (DqZaaktypeOverzicht, 2.129.0).", "items": { "type": "object", "required": ["field", "label"], "additionalProperties": false, "properties": { "field": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 }, "value": {} } } }
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					"description": "notice built-in widget (CnNoticeWidget): one toned box with an icon, a bold title and a text, through the host's translate, in the side column or the grid (DqSociaalDomein, 2.128.0).",
+					"if": {
+						"properties": { "widgetKey": { "const": "notice" } },
+						"required": ["widgetKey"]
+					},
+					"then": {
+						"properties": {
+							"props": {
+								"type": "object",
+								"properties": {
+									"content": {
+										"type": "object",
+										"properties": {
+											"variant": { "type": "string", "enum": ["info", "warning", "error", "success"], "default": "info" },
+											"title": { "type": "string" },
+											"text": { "type": "string" },
+											"icon": { "type": "string", "minLength": 1 }
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					"description": "related built-in widget (CnRelatedObjectsWidget): grouping by relation (2.129.0). Other content keys stay free-form.",
+					"if": {
+						"properties": { "widgetKey": { "const": "related" } },
+						"required": ["widgetKey"]
+					},
+					"then": {
+						"properties": {
+							"props": {
+								"type": "object",
+								"properties": {
+									"content": {
+										"type": "object",
+										"properties": {
+											"groupByRelation": { "type": "boolean", "description": "Split the Objects group by the relation label OpenRegister answers per direction." },
+											"layout": { "type": "string", "enum": ["tabs", "list", "sections"], "description": "`sections` draws every group under its own heading in one list." },
+											"groupActions": { "type": "object", "additionalProperties": { "type": "object" }, "description": "An action on a group's heading in `layout: \"sections\"`, keyed by the group's key (DqZaakGerelateerd \"Vervolg plannen\")." }
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					"description": "nc-widget built-in widget (CnNcWidgetWidget): leaving items out (2.129.0). Other content keys stay free-form.",
+					"if": {
+						"properties": { "widgetKey": { "const": "nc-widget" } },
+						"required": ["widgetKey"]
+					},
+					"then": {
+						"properties": {
+							"props": {
+								"type": "object",
+								"properties": {
+									"content": {
+										"type": "object",
+										"properties": {
+											"excludeApps": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Apps whose items are left out (an item's app is its own app field, else the /apps/<app>/ part of its link or icon), e.g. [\"systemtags\"]." },
+											"excludeTypes": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Item types that are left out." }
 										}
 									}
 								}
@@ -2269,6 +2344,8 @@
 									"emptyLabel": { "type": "string", "description": "Empty-state message rendered instead of the chart when the resolved series contain no data points." },
 									"barMax": { "type": "number", "exclusiveMinimum": 0, "description": "chartKind 'bar-list': the value a full track stands for (100 for percentages). Omitted = the largest value." },
 									"footnote": { "type": "string", "description": "A line under the chart, through the host's translate: under the rows of a bar-list or matrix, and under the plot of a line, area or bar chart." },
+									"referenceLines": { "type": "array", "description": "line, area and bar charts: dashed horizontal reference lines on the value axis, such as a norm. Each `{ value, label?, color? }`; the label goes through the host's translate, the colour defaults to the theme's error colour.", "items": { "type": "object", "required": ["value"], "properties": { "value": { "type": "number" }, "label": { "type": "string" }, "color": { "type": "string" } } } },
+									"categoryFormat": { "type": "string", "enum": ["", "month", "month-year"], "description": "How date categories read on the x-axis: `month` (\"jan\") or `month-year` (\"jan 2026\"), in the user's language. Categories that are not dates are left as is." },
 									"emptyCellLabel": { "type": "string", "description": "chartKind 'matrix': the text of a cell without a value (\"geen\"), through the host's translate. Empty leaves the cell blank. Passed through to CnChartWidget." },
 									"highlight": {
 										"type": "object",
@@ -3248,9 +3325,9 @@
 				},
 				"op": {
 					"type": "string",
-					"enum": ["eq", "neq", "gt", "gte", "lt", "lte", "empty", "notEmpty", "in", "anyOf"],
+					"enum": ["eq", "neq", "gt", "gte", "lt", "lte", "empty", "notEmpty", "in", "anyOf", "contains"],
 					"default": "eq",
-					"description": "Comparison operator (default eq). eq/neq compare loosely-normalised primitives; ordering operators coerce both sides to Number. `in` holds when the value is one of the listed `value` array (2.87.0). `anyOf` holds when the value, or any entry of a list value, is one of the listed `value` array: a record whose `dataCategories` holds \"health\" among others matches `anyOf [\"health\", \"ethnicity\"]` (2.126.0). `empty` / `notEmpty` take no `value` and treat undefined, null, '' and an empty array alike — the one question eq cannot ask, because an unset field arrives in a shape that depends on the store and String(null) is the word 'null' rather than blank."
+					"description": "Comparison operator (default eq). eq/neq compare loosely-normalised primitives; ordering operators coerce both sides to Number. `in` holds when the value is one of the listed `value` array (2.87.0). `anyOf` holds when the value, or any entry of a list value, is one of the listed `value` array: a record whose `dataCategories` holds \"health\" among others matches `anyOf [\"health\", \"ethnicity\"]` (2.126.0). `contains` holds when a list value holds the given `value`, e.g. a case type's overviewCards switching a card on (2.128.0). `empty` / `notEmpty` take no `value` and treat undefined, null, '' and an empty array alike — the one question eq cannot ask, because an unset field arrives in a shape that depends on the store and String(null) is the word 'null' rather than blank."
 				},
 				"value": {
 					"description": "The right-hand side of the comparison, resolved through the shared @-token grammar so `@me` names the signed-in reader rather than a literal only the server knows. Omitted for `empty` / `notEmpty`."
@@ -3787,7 +3864,7 @@
 							"description": "Name a registered NON-OBJECT entity collection for a type='index' page, instead of register+schema. Deliberately NOT called `source`: that key is already taken on page config and is polymorphic (a URL string in some manifests, an object with `params` in others), so reusing it would give one key two meanings and break six deployed shillinq pages. A flow definition is deliberately not an OpenRegister object, so an index had nothing to bind to and such lists became bespoke type='custom' pages. With a source the index loads the list itself. Takes precedence over register/schema; non-empty `objects` still wins over both. Registered sources live in src/composables/indexSources.js. `tasks` lists the viewer's task inbox from OpenRegister's flow-tasks read (cn-tasks-entity-source). `organisations` lists the OpenRegister organisations the viewer belongs to. On a type='detail' page a source that reads one record (today `organisations`) loads the record whose id is the route's objectId, instead of register+schema, and feeds the header, pills, widgets and @objectId / @object.* tokens like a fetched object (organisations-entity-source)."
 						},
 						"bulkBandAlways": { "type": "boolean", "default": false, "description": "type='index', board look: draw the bulk band (its actions and hint) before a selection too, its buttons disabled until rows are selected (DqZaken, DqWerkbord). Maps to CnIndexPage `bulkBandAlways`." },
-						"quickFilterPlacement": { "type": "string", "enum": ["", "toolbar"], "default": "", "description": "type='index': where the quick-filter chips sit. `toolbar` keeps them on one row with the Filter button and the view switch beside a side panel, the chips that do not fit behind the overflow chip (DqTeamwachtrij). Maps to CnIndexPage `quickFilterPlacement`." },
+						"quickFilterPlacement": { "type": "string", "enum": ["", "toolbar", "row"], "default": "", "description": "type='index': where the quick-filter chips sit. `toolbar` keeps them on one row with the Filter button and the view switch beside a side panel, the chips that do not fit behind the overflow chip (DqTeamwachtrij). `row` puts them on a row of their own above the toolbar, wrapping onto more lines. Maps to CnIndexPage `quickFilterPlacement`." },
 						"rowClass": {
 							"type": "array",
 							"description": "type='index': per-row CSS class rules, compiled into the table's rowClass function as on the object-table widget. Each rule { when: { field, op?, value }, class } adds `class` to a row whose `field` (a dot-path) compares to `value` with `op` (default eq; the visibleWhen operators and tokens such as `@today`, with two dates compared as moments), e.g. an overdue task `{ when: { field: \"dueAt\", op: \"lt\", value: \"@today\" }, class: \"cn-row--overdue\" }`. Maps to CnIndexPage `rowClass`.",
@@ -4053,6 +4130,7 @@
 							"additionalProperties": true,
 							"description": "type='index': the opt-in folder navigation pane (CnFolderSidebar) rendered left of the list. Selecting a folder filters the list by `filterField` (or `field`); \"All\" clears it. Only the per-scope list-layout keys are typed here; the pane's own keys (source, register, schema, idField, nameField, folders, allLabel, title, allowCreate, ...) stay free-form. Maps to CnIndexPage `folderSidebar`.",
 							"properties": {
+								"scopeViews": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "description": "The view modes (`table`, `list`, `cards`, `board`, ...) a scope's look applies in; in the others the page keeps its generic look while the scope still filters (DqWerkbord, 2.129.0)." },
 								"heading": { "type": "boolean", "description": "true heads the list with the selected folder's name, its parent folder and its count (always on a `groups` pane, 2.127.0)." },
 								"countText": { "type": "string", "minLength": 1, "description": "The count in that heading, `{count}` filled in, through the app's translate; a groups pane defaults to \"{count} members\" (2.127.0)." },
 								"pane": { "type": "boolean", "default": true, "description": "false keeps the folder scope (a deep link such as `?caseType=<uuid>` still applies the scope's look and filter) without drawing the pane (dossiq's simple profile, 2.126.0)." },
@@ -4147,13 +4225,18 @@
 						"nextStep": {
 							"type": "object",
 							"additionalProperties": false,
-							"required": ["stages"],
+							"anyOf": [{ "required": ["stages"] }, { "required": ["stagesFrom"] }],
 							"description": "type='detail': the 'what now' card above the body. For the record's stage it shows a short checklist next to the primary button. A stage without an entry shows no card. Rendered by CnNextStepCard.",
 							"properties": {
 								"field": {
 									"type": "string",
 									"minLength": 1,
 									"description": "Dot-path to the stage, when it differs from `stageField`."
+								},
+								"stagesFrom": {
+									"type": "string",
+									"minLength": 1,
+									"description": "A field path, read like a `visibleWhen` field, whose value holds the stages in the `stages` shape, e.g. `@context.caseType.nextStep`, so each case type keeps its own stage texts and checklist. The declared `stages` apply otherwise (2.129.0)."
 								},
 								"title": {
 									"type": "string",
@@ -4212,11 +4295,17 @@
 											"id": { "type": "string" },
 											"type": { "type": "string", "minLength": 1 },
 											"title": { "type": "string" },
-											"content": { "type": "object", "additionalProperties": true }
+											"content": { "type": "object", "additionalProperties": true },
+											"tabs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "description": "The body tab ids this card shows beside; it is hidden while another tab is open (DqZaaktypeVelden, 2.129.0)." }
 										}
 									}
 								]
 							}
+						},
+						"tabsFrom": {
+							"type": "string",
+							"minLength": 1,
+							"description": "type='detail': a field path, read like a `visibleWhen` field, whose value picks the tabs of the page's tabs widgets and their order for this record, e.g. `@context.caseType.tabs` (DqAanbesteding). A non-empty list of tab ids keeps those tabs in that order; otherwise the declared tabs stay, and edit mode shows them all (2.128.0)."
 						},
 						"sideColumnFrom": {
 							"type": "string",
@@ -4674,6 +4763,19 @@
 							"type": "array",
 							"description": "type='index': the property keys the cards view shows as the facts list of each card, in order; defaults to the first four list columns under the board look (screens-card-parity). Maps to CnIndexPage `cardFields`.",
 							"items": { "type": "string", "minLength": 1 }
+						},
+						"cardLayout": {
+							"type": "object",
+							"additionalProperties": false,
+							"description": "type='index', board look: the record layout of each card in the cards view (board-record-card-layout): a pill and the number on the head row, the title, a meta line, and a footer with a pill and a date. Each part names a field (a dot path) and is left out while it is empty; a pill maps values to a badge variant (`colorMap`, ignoring case) and to shown text (`labels`). Maps to CnIndexPage `cardLayout`.",
+							"properties": {
+								"headPill": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "due": { "type": "object", "description": "Read the field as a due date: overdue gives the error variant, within `soonWithin` days the warning one; any other date draws no pill.", "properties": { "soonWithin": { "type": "number", "minimum": 0 } } }, "variantWhen": { "type": "array", "description": "Rules on the days left until the field's date, `{ op, value, variant }`; the first match gives the variant, no match draws no pill.", "items": { "type": "object", "required": ["op", "value", "variant"], "properties": { "op": { "type": "string" }, "value": { "type": "number" }, "variant": { "type": "string" } } } } } },
+								"number": { "type": "string", "minLength": 1 },
+								"title": { "type": "string", "minLength": 1 },
+								"meta": { "type": "array", "description": "The meta line's parts: a field name reads through the page column it names; `{ field, formatter?, formatterOptions? }` reads as plain text through its own formatter (card-layout-part-formatter).", "items": { "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" } } } ] } },
+								"footerPill": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "due": { "type": "object", "description": "Read the field as a due date: overdue gives the error variant, within `soonWithin` days the warning one; any other date draws no pill.", "properties": { "soonWithin": { "type": "number", "minimum": 0 } } }, "variantWhen": { "type": "array", "description": "Rules on the days left until the field's date, `{ op, value, variant }`; the first match gives the variant, no match draws no pill.", "items": { "type": "object", "required": ["op", "value", "variant"], "properties": { "op": { "type": "string" }, "value": { "type": "number" }, "variant": { "type": "string" } } } } } },
+								"footerDate": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 } } }
+							}
 						},
 						"afterList": { "type": "array", "description": "type='index': cards after the list, stacked full width in the listed order, the counterpart of statRow above it (index-scope-presentation). Each entry is a widget definition resolved like statRow's. A query preset or a folder scope can set its own. Maps to CnIndexPage `afterList`.", "items": { "type": "object", "required": ["id", "type"], "properties": { "id": { "type": "string", "minLength": 1 }, "type": { "type": "string", "minLength": 1 }, "title": { "type": "string" }, "subtitle": { "type": "string" }, "content": { "type": "object" }, "headerLink": { "type": "object" } } } },
 						"statRow": {

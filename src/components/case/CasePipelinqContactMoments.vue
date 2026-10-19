@@ -72,17 +72,17 @@
 					<span class="case-pipelinq-moments__chips">
 						<span
 							v-if="moment.channel"
-							class="case-pipelinq-moments__chip"
+							class="case-pipelinq-moments__chip cn-status-badge cn-status-badge--default"
 							>{{ moment.channel }}</span
 						>
 						<span
 							v-if="moment.direction"
-							class="case-pipelinq-moments__chip"
+							class="case-pipelinq-moments__chip cn-status-badge cn-status-badge--default"
 							>{{ directionOf(moment) }}</span
 						>
 						<span
 							v-if="sharedLine(moment)"
-							class="case-pipelinq-moments__chip case-pipelinq-moments__chip--shared"
+							class="case-pipelinq-moments__chip cn-status-badge cn-status-badge--default case-pipelinq-moments__chip--shared"
 							data-testid="case-pipelinq-moment-shared"
 							>{{ sharedLine(moment) }}</span
 						>
@@ -396,15 +396,13 @@ export default {
 	}
 
 	&__chip {
-		padding: 2px 10px;
-		border-radius: var(--border-radius-pill);
 		background: var(--color-background-dark);
-		font-weight: 600;
 	}
 
 	&__chip--shared {
 		background: var(--color-primary-element-light);
-		color: var(--color-primary-element-light-text);
+		--cn-status-badge-ink: var(--color-primary-element-light-text);
+		color: var(--cn-status-badge-ink);
 	}
 
 	&__also {

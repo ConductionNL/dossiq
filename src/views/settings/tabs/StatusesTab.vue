@@ -50,7 +50,7 @@
 							<span v-if="st.role" class="status-type-row__role">
 								{{ roleLabel(st.role) }}
 							</span>
-							<span v-if="st.isFinal" class="status-type-row__final">
+							<span v-if="st.isFinal" class="status-type-row__final cn-status-badge cn-status-badge--success">
 								{{ t('dossiq', 'Final') }}
 							</span>
 							<span
@@ -60,7 +60,7 @@
 							</span>
 							<span
 								v-if="checklistCount(st) > 0"
-								class="status-type-row__checklist">
+								class="status-type-row__checklist cn-status-badge cn-status-badge--default">
 								{{
 									n(
 										'dossiq',
@@ -661,30 +661,24 @@ export default {
 }
 
 .status-type-row__final {
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 11px;
-	font-weight: 500;
 	background: var(--color-success);
-	color: var(--color-success-text);
+	--cn-status-badge-ink: var(--color-success-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .status-type-row__role,
 .status-type-row__hidden,
 .status-type-row__checklist {
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 11px;
-	font-weight: 500;
 	background: var(--color-background-dark);
-	color: var(--color-text-maxcontrast);
+	--cn-status-badge-ink: var(--color-text-maxcontrast);
+	color: var(--cn-status-badge-ink);
 	white-space: nowrap;
 }
 
 .status-type-row__actions {
 	display: flex;
 	gap: 2px;
-	margin-left: auto;
+	margin-inline-start: auto;
 }
 
 .status-type-row__edit-form {

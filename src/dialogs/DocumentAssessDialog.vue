@@ -112,7 +112,7 @@
 								</span>
 							</td>
 							<td>
-								<span class="document-assess__pill">{{
+								<span class="document-assess__pill cn-status-badge cn-status-badge--default">{{
 									t('dossiq', 'No assessment yet')
 								}}</span>
 							</td>
@@ -673,10 +673,9 @@ export default {
 
 	&__pill {
 		display: inline-block;
-		padding: 2px 10px;
-		border-radius: var(--border-radius-pill);
 		background: var(--color-background-dark);
-		color: var(--color-main-text);
+		--cn-status-badge-ink: var(--color-main-text);
+		color: var(--cn-status-badge-ink);
 		white-space: nowrap;
 	}
 

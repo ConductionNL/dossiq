@@ -3861,7 +3861,6 @@
 					}
 				],
 				"quickFilterMaxVisible": 4,
-				"quickFilterPlacement": "toolbar",
 				"quickFiltersFrom": {
 					"field": "caseType",
 					"register": "dossiq",
@@ -3872,25 +3871,21 @@
 				"sidePanel": [
 					{
 						"id": "queue-team-today",
-						"type": "record-list",
+						"type": "team-workload",
 						"title": "Team today",
+						"_note": "The library's team workload card (CnTeamWorkloadWidget, nextcloud-vue 2.106). The workload endpoint answers coordinators only; anyone else gets a 403 and the card shows no handlers.",
 						"content": {
-							"endpointSource": {
+							"source": {
 								"url": "/apps/dossiq/api/work-queue/workload",
-								"responsePath": "handlers"
+								"responsePath": "handlers",
+								"userField": "handler",
+								"countField": "openCaseCount"
 							},
-							"presentation": "rows",
-							"avatar": "{displayName}",
-							"title": "{displayName}",
-							"bar": {
-								"valueField": "openCaseCount"
-							},
-							"trailing": [
-								"{openCaseCount} cases"
-							],
-							"limit": 5,
-							"emptyText": "Nobody in your teams has open cases",
-							"errorText": "Only a coordinator sees the team's workload"
+							"capacity": 12,
+							"countLabel": {
+								"one": "{count} case",
+								"other": "{count} cases"
+							}
 						}
 					},
 					{
@@ -3902,11 +3897,25 @@
 								"url": "/apps/dossiq/api/dashboard/kpis",
 								"responsePath": "queueByType"
 							},
-							"presentation": "rows",
-							"title": "{title}",
-							"trailing": [
-								"{open} open · {waiting} waiting"
+							"presentation": "table",
+							"columns": [
+								{
+									"label": "Case type",
+									"value": "{title}"
+								},
+								{
+									"label": "Open now",
+									"value": "{open}",
+									"align": "end"
+								},
+								{
+									"label": "Queued",
+									"value": "{waiting}",
+									"align": "end",
+									"alertAbove": 0
+								}
 							],
+							"footnote": "Open with the team, and how many of those have no handler yet",
 							"emptyText": "No open cases"
 						}
 					}
@@ -3965,13 +3974,76 @@
 								},
 								{
 									"op": "lte",
-									"value": 5,
+									"value": 7,
 									"variant": "warning"
 								}
 							]
 						}
 					}
 				],
+				"viewModes": [
+					"list",
+					"table",
+					"cards",
+					"board",
+					"map"
+				],
+				"viewMode": "list",
+				"listConfig": {
+					"titleField": "title",
+					"subtitleTemplate": "{identifier} · {initiatorDisplayName} · {priority}",
+					"leading": {
+						"key": "startDate",
+						"widget": "age",
+						"width": "96px"
+					},
+					"trailing": [
+						{
+							"key": "caseType",
+							"formatter": "caseTypeName",
+							"widget": "badge",
+							"widgetProps": {
+								"variant": "info"
+							},
+							"width": "200px"
+						},
+						{
+							"key": "deadline",
+							"widget": "date",
+							"width": "140px",
+							"widgetProps": {
+								"due": {
+									"todayLabel": "Today",
+									"overdueLabel": {
+										"one": "{count} day overdue",
+										"other": "{count} days overdue"
+									},
+									"upcomingLabel": {
+										"one": "{count} day left",
+										"other": "{count} days left"
+									},
+									"upcomingWeeksLabel": {
+										"one": "{count} week left",
+										"other": "{count} weeks left"
+									}
+								},
+								"variantWhen": [
+									{
+										"op": "lt",
+										"value": 0,
+										"variant": "error"
+									},
+									{
+										"op": "lte",
+										"value": 7,
+										"variant": "warning"
+									}
+								]
+							}
+						}
+					]
+				},
+				"defaultOrder": "startDate",
 				"showTitle": true,
 				"countText": "{shown} of {total} open cases without a handler · oldest first",
 				"footerNote": "a case leaves the queue as soon as someone picks it up",

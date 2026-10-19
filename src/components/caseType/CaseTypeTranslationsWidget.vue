@@ -54,7 +54,7 @@
 				<li
 					v-for="chip in chips"
 					:key="chip.language"
-					class="case-type-translations__chip"
+					class="case-type-translations__chip cn-status-badge cn-status-badge--default"
 					:class="{
 						'case-type-translations__chip--complete': chip.complete,
 					}"
@@ -456,15 +456,14 @@ export default {
 .case-type-translations__chip {
 	align-items: center;
 	background: var(--color-background-dark);
-	border-radius: var(--border-radius-pill);
 	display: flex;
 	gap: 6px;
-	padding: 2px 10px;
 }
 
 .case-type-translations__chip--complete {
 	background: var(--color-success, var(--color-background-dark));
-	color: var(--color-primary-text);
+	--cn-status-badge-ink: var(--color-primary-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .case-type-translations__chip-count {

@@ -63,7 +63,7 @@
 					<td>{{ sub.startDate }} → {{ sub.endDate }}</td>
 					<td>{{ sub.scope }}</td>
 					<td>
-						<span :class="`status status--${sub.status}`">{{
+						<span :class="`status cn-status-badge cn-status-badge--default status--${sub.status}`">{{
 							sub.status
 						}}</span>
 					</td>
@@ -266,7 +266,7 @@ export default {
 
 .substitution-admin__table th,
 .substitution-admin__table td {
-	text-align: left;
+	text-align: start;
 	padding: 8px 10px;
 	border-bottom: 1px solid var(--color-border);
 }
@@ -282,20 +282,17 @@ export default {
 	border-top: 1px solid var(--color-border);
 }
 
-.status {
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 0.8rem;
-}
 
 .status--active {
 	background: var(--color-success);
-	color: var(--color-primary-element-text);
+	--cn-status-badge-ink: var(--color-primary-element-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .status--ended,
 .status--revoked {
 	background: var(--color-background-dark);
-	color: var(--color-text-maxcontrast);
+	--cn-status-badge-ink: var(--color-text-maxcontrast);
+	color: var(--cn-status-badge-ink);
 }
 </style>
