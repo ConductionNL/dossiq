@@ -288,9 +288,6 @@
     }
   },
   "src/views/cases/components/CaseEmailTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
     "no-console": {
       "count": 2
     }

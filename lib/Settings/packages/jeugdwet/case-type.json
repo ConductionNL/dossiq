@@ -21,6 +21,9 @@
       "case-banner-stack",
       "side-social-consent",
       "side-social-people"
+    ],
+    "overviewCards": [
+      "case-summary"
     ]
   },
   "statusTypes": [

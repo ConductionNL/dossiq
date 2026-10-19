@@ -122,6 +122,34 @@ export default {
 	},
 
 	/**
+	 * A schema's number of properties as a phrase ("9 properties"), empty
+	 * when the object type names no schema.
+	 *
+	 * @param {unknown} value The count.
+	 * @return {string} The phrase, or ''.
+	 * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
+	 */
+	propertyCount: (value) => {
+		if (value === null || value === undefined || value === '') {
+			return ''
+		}
+		const count = Number(value)
+		return Number.isInteger(count) && count >= 0 ? n('dossiq', '%n property', '%n properties', count) : ''
+	},
+
+	/**
+	 * The views an object type supports, in words ("Map, Table").
+	 *
+	 * @param {unknown} value The view keys, `map` and `table`.
+	 * @return {string} The views, or '' for none.
+	 * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
+	 */
+	objectViews: (value) => {
+		const labels = { map: t('dossiq', 'Map'), table: t('dossiq', 'Table') }
+		return (Array.isArray(value) ? value : []).map((view) => labels[view]).filter(Boolean).join(', ')
+	},
+
+	/**
 	 * Human label for a case object's `case` UUID reference.
 	 *
 	 * The Objects index answers "which cases are on this building", so the

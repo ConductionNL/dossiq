@@ -26,6 +26,15 @@
 -->
 <template>
 	<div class="case-archival" data-testid="case-archival">
+		<header class="case-archival__head">
+			<h3 class="case-archival__title">
+				{{ t('dossiq', 'Archiving') }}
+			</h3>
+			<p class="case-archival__subtitle">
+				{{ t('dossiq', 'What happens to this case once it is closed') }}
+			</p>
+		</header>
+
 		<NcLoadingIcon v-if="loading" :size="24" />
 
 		<NcEmptyContent
@@ -71,17 +80,22 @@
 				{{ unnominatableReason }}
 			</NcNoteCard>
 
-			<NcEmptyContent
+			<div
 				v-else-if="hasNoNomination"
-				data-testid="case-archival-none"
-				:name="t('dossiq', 'This case has not been closed yet')"
-				:description="
-					t('dossiq', 'Its archival future is decided when it closes.')
-				">
-				<template #icon>
-					<ArchiveOutline :size="20" />
-				</template>
-			</NcEmptyContent>
+				data-testid="case-archival-none">
+				<dl class="case-archival__facts">
+					<div
+						v-for="fact in pendingFacts"
+						:key="fact.key"
+						class="case-archival__fact">
+						<dt>{{ fact.label }}</dt>
+						<dd>{{ fact.value }}</dd>
+					</div>
+				</dl>
+				<NcNoteCard type="info">
+					{{ t('dossiq', 'This case has not been closed yet. Its archival future is recorded when it closes. Recomputing asks for the archivist role and a reason.') }}
+				</NcNoteCard>
+			</div>
 
 			<dl
 				v-else
@@ -153,7 +167,6 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
-import ArchiveOutline from 'vue-material-design-icons/ArchiveOutline.vue'
 import { caseRetention, recomputeNomination } from '../../services/archivalApi.js'
 
 export default {
@@ -161,7 +174,6 @@ export default {
 
 	components: {
 		AlertCircleOutline,
-		ArchiveOutline,
 		NcButton,
 		NcEmptyContent,
 		NcLoadingIcon,
@@ -312,6 +324,26 @@ export default {
 			)
 		},
 
+		/**
+		 * The facts of a case nobody has closed yet: none of them is decided,
+		 * and each says when it will be. Nothing is derived ahead of closure.
+		 *
+		 * @return {Array<object>} Label, value and a key per fact.
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
+		 */
+		pendingFacts() {
+			const atClosure = this.t('dossiq', 'Decided when it closes')
+
+			return [
+				{ key: 'appraisal', label: this.t('dossiq', 'Appraisal'), value: atClosure },
+				{ key: 'retention-period', label: this.t('dossiq', 'Retention period'), value: atClosure },
+				{ key: 'selection-list-row', label: this.t('dossiq', 'Selectielijst row'), value: atClosure },
+				{ key: 'disposal-date', label: this.t('dossiq', 'Disposal date'), value: atClosure },
+				{ key: 'rule', label: this.t('dossiq', 'Decided by'), value: this.t('dossiq', 'The case type, when it closes') },
+				{ key: 'decided-at', label: this.t('dossiq', 'Written on'), value: this.t('dossiq', 'Not yet') },
+			]
+		},
+
 		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		outcomeSentence() {
 			const o = this.outcome ?? {}
@@ -418,9 +450,63 @@ export default {
 </script>
 
 <style scoped>
+.case-archival {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.case-archival__head {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.case-archival__title {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+}
+
+.case-archival__subtitle {
+	margin: 0;
+	color: var(--color-text-maxcontrast);
+}
+
+.case-archival__facts {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 12px 24px;
+	margin: 0 0 16px;
+}
+
+/* Core's apps.css draws every dt/dd inline-block with a fixed, end-aligned dt. */
+.case-archival__fact dt,
+.case-archival__fact dd {
+	display: block;
+	width: auto;
+	padding: 0;
+	margin: 0;
+	text-align: start;
+	white-space: normal;
+}
+
 .case-archival__fact {
 	display: flex;
-	gap: var(--default-grid-baseline, 4px);
+	flex-direction: column;
+	gap: 2px;
+	padding-block-end: 10px;
+	border-block-end: 1px solid var(--color-border);
+}
+
+.case-archival__fact dt {
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+}
+
+.case-archival__fact dd {
+	font-size: 15px;
+	font-weight: 600;
 }
 
 .case-archival__attribution {

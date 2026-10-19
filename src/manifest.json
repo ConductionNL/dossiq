@@ -3943,6 +3943,22 @@
 						"target": "CaseLifecycleMenuDialog"
 					},
 					{
+						"id": "case-archive",
+						"type": "open-modal",
+						"label": "Archive this case",
+						"icon": "ArchiveOutline",
+						"target": "CaseArchiveDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"all": [
+								{ "field": "endingAct", "op": "notEmpty" },
+								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
 						"id": "send-digital-post",
 						"type": "open-modal",
 						"target": "BerichtenboxComposeDialog",
@@ -5539,7 +5555,25 @@
 				"pageId": "ProcessMiningDashboard",
 				"showWidgetActions": false,
 				"description": "Bottleneck analysis from recorded case status history",
+				"_statisticNote": "Board DqProcesanalyse: the description line carries the Gemiddeld / Mediaan switch. The report answers both (`phaseDays.mean` and `phaseDays.median`), and the days-per-phase matrix reads the one the switch names through `@workspace.statistic` in its responsePath.",
 				"pageFilters": [
+					{
+						"key": "statistic",
+						"label": "Statistic",
+						"control": "segmented",
+						"placement": "description",
+						"default": "mean",
+						"options": [
+							{
+								"value": "mean",
+								"label": "Mean"
+							},
+							{
+								"value": "median",
+								"label": "Median"
+							}
+						]
+					},
 					{
 						"key": "period",
 						"label": "Period",
@@ -5590,7 +5624,7 @@
 								"params": {
 									"caseType": "@workspace.caseType?"
 								},
-								"responsePath": "phaseDays.mean",
+								"responsePath": "phaseDays.@workspace.statistic",
 								"labelsPath": "columns",
 								"rowsPath": "rows",
 								"rowLabelPath": "label",
@@ -6358,6 +6392,102 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "lhsRecommendation",
+				"_nextStepNote": "DqHandhaving Wat nu?: the next act follows from the intervention the advice settles on (finalIntervention). A penalty order or administrative enforcement starts with a pre-announcement and a two-week period for a view; a warning or remedial action starts with the letter.",
+				"nextStep": {
+					"field": "finalIntervention",
+					"stages": {
+						"warning": {
+							"title": "What now? Warning",
+							"after": "Then: check that the violation has ended",
+							"checklist": [
+								{
+									"label": "Violation established and classified",
+									"doneField": "behaviour"
+								},
+								{
+									"label": "Send the warning"
+								}
+							]
+						},
+						"herstelactie": {
+							"title": "What now? Remedial action",
+							"after": "Then: check that the violation has ended",
+							"checklist": [
+								{
+									"label": "Violation established and classified",
+									"doneField": "behaviour"
+								},
+								{
+									"label": "Send the warning"
+								}
+							]
+						},
+						"last_under_penaltypayment": {
+							"title": "What now? Pre-announcement",
+							"after": "Then: a two-week period for a view",
+							"checklist": [
+								{
+									"label": "Violation established and classified",
+									"doneField": "behaviour"
+								},
+								{
+									"label": "Send the pre-announcement of the intended measure"
+								},
+								{
+									"label": "Wait for the view, two weeks"
+								}
+							]
+						},
+						"last_plus_pv": {
+							"title": "What now? Pre-announcement",
+							"after": "Then: a two-week period for a view",
+							"checklist": [
+								{
+									"label": "Violation established and classified",
+									"doneField": "behaviour"
+								},
+								{
+									"label": "Send the pre-announcement of the intended measure"
+								},
+								{
+									"label": "Wait for the view, two weeks"
+								}
+							]
+						},
+						"bestuursdwang": {
+							"title": "What now? Pre-announcement",
+							"after": "Then: a two-week period for a view",
+							"checklist": [
+								{
+									"label": "Violation established and classified",
+									"doneField": "behaviour"
+								},
+								{
+									"label": "Send the pre-announcement of the intended measure"
+								},
+								{
+									"label": "Wait for the view, two weeks"
+								}
+							]
+						},
+						"pv_plus_bestuursdwang": {
+							"title": "What now? Pre-announcement",
+							"after": "Then: a two-week period for a view",
+							"checklist": [
+								{
+									"label": "Violation established and classified",
+									"doneField": "behaviour"
+								},
+								{
+									"label": "Send the pre-announcement of the intended measure"
+								},
+								{
+									"label": "Wait for the view, two weeks"
+								}
+							]
+						}
+					}
+				},
 				"_note": "ASSESSMENT-RECORD archetype (a per-case LHS intervention recommendation derived from an lhsMatrix), ADR-062 round 2. No comms/documents, no child schemas. The 13-field schema splits into two genuinely distinct groups: 'Recommendation' (the matrix inputs and outcome — case, inspection, ernst, gedrag, actorType, matrixVersion, recommendedInterventie, recommendedBy) paired with the Related panel (parent case and inspection), and 'Override & final' (the accountability-bearing deviation fields — finalIntervention, override, overrideJustification, overrideBy, overrideAuthority) full-width below. No status lifecycle field and no content leaves. Audit history is a sidebar tab.",
 				"typePill": {
 					"field": "finalIntervention",
@@ -6502,9 +6632,11 @@
 						"type": "chart",
 						"title": "Advice under the national enforcement strategy",
 						"icon": "TableLarge",
+						"_typeNote": "A detail page passes the chart its content keys as props, and the chart takes its kind as `type`; `chartKind` is the dashboard dispatcher's name for it. Without `type` the chart drew an empty area chart.",
 						"_note": "DqHandhaving: the LHS matrix the advice was calculated with, read from the lhsMatrix record of the advice's matrixVersion and no other (no matrix rather than one the advice was not calculated with), sliced to the advice's actor type, with the advised cell outlined. The matrix is register data each municipality keeps, never a fixed table in this manifest (nextcloud-vue #1747).",
 						"content": {
 							"chartKind": "matrix",
+							"type": "matrix",
 							"cellSource": {
 								"register": "dossiq",
 								"schema": "lhsMatrix",
@@ -7407,7 +7539,7 @@
 						"all": "All",
 						"available": "Stable"
 					},
-					"subtitle": "version {appVersion} · updated with every release",
+					"subtitle": "Features and roadmap · version {appVersion} · updated with every release",
 					"notice": "How dossiq compares to other case systems is not here but in the comparison on conduction.nl. This page only says what dossiq can do and how stable it is.",
 					"noticeLink": {
 						"text": "conduction.nl",
@@ -8420,6 +8552,7 @@
 					},
 					{
 						"label": "With data protection",
+						"activeLabel": "Data protection: yes",
 						"showCount": true,
 						"filter": {
 							"indicatieGeheim": true
@@ -8494,6 +8627,7 @@
 					},
 					{
 						"label": "With an open case",
+						"activeLabel": "With an open case",
 						"showCount": true,
 						"_note": "Organisations that requested a case that is not closed: the case points at the organisation through `requester`, so this asks OpenRegister for the reverse reference (`_related`, query-related-schema-rows) rather than a column the organisation carries.",
 						"filter": {
@@ -8502,6 +8636,7 @@
 					},
 					{
 						"label": "Associations",
+						"activeLabel": "Legal form: association",
 						"showCount": true,
 						"filter": {
 							"legalForm": "Vereniging"
@@ -8509,6 +8644,7 @@
 					},
 					{
 						"label": "Foundations",
+						"activeLabel": "Legal form: foundation",
 						"showCount": true,
 						"filter": {
 							"legalForm": "Stichting"
@@ -8516,6 +8652,7 @@
 					},
 					{
 						"label": "Companies",
+						"activeLabel": "Legal form: company",
 						"showCount": true,
 						"filter": {
 							"legalForm": ["BV", "NV", "Eenmanszaak", "VoF", "Maatschap", "Coöperatie"]
@@ -9093,7 +9230,13 @@
 							"emptyText": "No address on file",
 							"link": {
 								"label": "Cases on the map",
-								"route": "CaseMap"
+								"route": {
+									"name": "Cases",
+									"query": {
+										"_view": "map",
+										"requester": "@objectId"
+									}
+								}
 							}
 						}
 					},
@@ -9633,7 +9776,13 @@
 							],
 							"link": {
 								"label": "Cases on the map",
-								"route": "CaseMap"
+								"route": {
+									"name": "Cases",
+									"query": {
+										"_view": "map",
+										"requester": "@objectId"
+									}
+								}
 							}
 						}
 					},
