@@ -29,6 +29,19 @@ export const RETIRED_ROUTES = [
 		path: '/workflow-board',
 		redirect: { name: 'Cases', query: { _view: 'board' } },
 	},
+	// Lists that became views of the case list (Ruben, 19 October 2026).
+	{
+		path: '/my-work',
+		redirect: { name: 'Cases', query: { savedView: 'default:my-work' } },
+	},
+	{
+		path: '/queue',
+		redirect: { name: 'Cases', query: { savedView: 'default:team-queue' } },
+	},
+	{
+		path: '/privacy/requests',
+		redirect: { name: 'Cases', query: { savedView: 'default:data-subject-requests' } },
+	},
 ]
 
 /**

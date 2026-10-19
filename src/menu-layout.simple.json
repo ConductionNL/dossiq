@@ -3,7 +3,7 @@
 		"spdx-license": "EUPL-1.2",
 		"spdx-copyright": "2026 Conduction B.V.",
 		"description": "The SIMPLE structure profile, and the default one (openspec/changes/archive/2026-10-10-simple-structure-profile). `menu-layout.json` is the FULL profile and is untouched: an administrator brings it back with the setting `menu_structure`. Both profiles are built from the same manifest and the same fragments, so nothing is deleted and every page stays routable; this file only decides what the navigation offers first. THE FOUR STANDARD KEYS (`relocations`, `removals`, `settingsSection`, `integrationsSection`) go to the library's buildManifest exactly as the full file's do. `relocations` is absent because nothing moves: the simple menu is flat, eight entries, the first group without a caption and the others under one each, as DqZijbalk draws them, plus the case types each user chose under My case types. The library's relocation step keeps a caption unless the relocations emptied it, so adding the key would not cost the captions. THE TWO PROFILE KEYS are read by src/utils/structureProfile.js, because buildManifest's layout has no word for either. `menu` is merged BEFORE the manifest's own menu. buildManifest merges entries by id and the FIRST definition of a key wins, so an entry here that carries only `id` and `order` takes its label, icon and route from the manifest and keeps the order written here, and an entry the manifest does not know (the three captions) is simply added. `pages` holds page overlays: `configAppend` appends items to a list in the page's config, by key. It is how My work and the dashboard gain the links that replace the three entries this profile takes out of the menu. A link, not a waiver: tests/vitest/structureProfile.spec.js fails when an entry is removed here and no reachable page links to its route.",
-		"removalsNote": "The first eight are the full profile's own removals, repeated because buildManifest takes ONE list; the spec fails when the two drift. The last three are this profile's: `PersonalQueueMenu` (Your queue) and `MyWork` (Assigned to me) are reached from the My work page, and `EndOfDayMenu` (Close out your day) from My work and from the dashboard. `SettingsGroup` is an empty shell in the manifest (a label and no route). The full profile loses it to the relocation step's clean-up; this profile has no relocation step, so it is removed by name.",
+		"removalsNote": "The first eight are the full profile's own removals, repeated because buildManifest takes ONE list; the spec fails when the two drift. The last two are this profile's: `PersonalQueueMenu` (Your queue) is reached from the My work page, and `EndOfDayMenu` (Close out your day) from My work and from the dashboard. `SettingsGroup` is an empty shell in the manifest (a label and no route). The full profile loses it to the relocation step's clean-up; this profile has no relocation step, so it is removed by name. Assigned to me and the team queue are views of the Cases page now (`my-work`, `team-queue`), reached from My views and from the My work page.",
 		"settingsNote": "The first six are the full profile's. `CasesDeletedMenu`, `CaseObjectsMenu`, `MailIntakeLogMenu` and `WooReportsMenu` join them here: a recycle bin, an object register, an intake log and the Woo review reports are set-up and inspection, not daily work. `WooReportsMenu` shows only to the throughput reader group.",
 		"myCaseTypesNote": "The case types a user pins are views of the case list (case-type-pins-are-views): the library's My views section at the bottom of the menu lists them, so this profile has no My case types heading of its own. The backend `/api/manifest` delta adds one view per pinned case type to the Cases page.",
 		"footerNote": "The footer keeps Reports, Documentation, Store and Features & roadmap. The library's navigation has no help menu to move them under (nextcloud-vue development, 2026-10-05: CnAppNav renders main, footer and settings, and `actionsMenu.showHelpLinks` belongs to a detail page)."
@@ -17,7 +17,6 @@
 		"SubstitutionAdminMenu",
 		"BezwaarCommitteesMenu",
 		"PersonalQueueMenu",
-		"MyWork",
 		"EndOfDayMenu",
 		"SettingsGroup"
 	],
@@ -59,23 +58,6 @@
 					"isFinalStatus": false,
 					"statusHiddenInLists": false,
 					"isDraft": false
-				}
-			}
-		},
-		{
-			"id": "Queue",
-			"label": "Team queue",
-			"order": 14,
-			"counterVariant": "attention",
-			"count": {
-				"register": "dossiq",
-				"schema": "case",
-				"filter": {
-					"assignee": "IS NULL",
-					"isFinalStatus": false,
-					"statusHiddenInLists": false,
-					"isDraft": false,
-					"isTemplate": false
 				}
 			}
 		},
@@ -199,7 +181,12 @@
 					},
 					{
 						"label": "Assigned to me",
-						"route": "MyWork"
+						"route": {
+							"name": "Cases",
+							"query": {
+								"savedView": "default:my-work"
+							}
+						}
 					},
 					{
 						"label": "Close out your day",
@@ -3788,212 +3775,6 @@
 					}
 				],
 				"footerNote": "click a column header to sort"
-			}
-		},
-		{
-			"id": "Queue",
-			"title": "Team queue",
-			"_note": "DqTeamwachtrij: three counts above the list, a chip per case type, the list with how long each case has waited in front, and two cards beside it. The counts and the per-type card read the queue figures of /api/dashboard/kpis, which folds the open cases once. Team today reads the coordinator workload, so a reader who is not a coordinator sees its error text, never someone else's numbers. The chips are one per case type in the queue, with its count, drawn from the case type field (quickFiltersFrom).",
-			"config": {
-				"folderSidebar": null,
-				"searchPlaceholder": "Search by case, number or requester",
-				"statRow": [
-					{
-						"id": "queue-unassigned",
-						"type": "stat",
-						"title": "Without a handler",
-						"content": {
-							"label": "Without a handler",
-							"caption": "{queueNewToday} came in today",
-							"format": {
-								"style": "decimal",
-								"decimals": 0
-							},
-							"endpointSource": {
-								"url": "/apps/dossiq/api/dashboard/kpis"
-							},
-							"valueField": "queueCount",
-							"layout": "stacked"
-						}
-					},
-					{
-						"id": "queue-oldest",
-						"type": "stat",
-						"title": "Waiting longest",
-						"content": {
-							"label": "Waiting longest",
-							"caption": "the oldest case in the queue",
-							"format": {
-								"style": "decimal",
-								"decimals": 0,
-								"suffix": " days"
-							},
-							"endpointSource": {
-								"url": "/apps/dossiq/api/dashboard/kpis"
-							},
-							"valueField": "queueOldestDays",
-							"layout": "stacked"
-						}
-					},
-					{
-						"id": "queue-due-soon",
-						"type": "stat",
-						"title": "Deadline within 7 days",
-						"content": {
-							"label": "Deadline within 7 days",
-							"caption": "pick these up first",
-							"format": {
-								"style": "decimal",
-								"decimals": 0
-							},
-							"endpointSource": {
-								"url": "/apps/dossiq/api/dashboard/kpis"
-							},
-							"valueField": "queueDueSoon",
-							"layout": "stacked"
-						}
-					}
-				],
-				"quickFilterMaxVisible": 4,
-				"quickFilterPlacement": "toolbar",
-				"quickFiltersFrom": {
-					"field": "caseType",
-					"register": "dossiq",
-					"schema": "caseType",
-					"labelField": "title",
-					"allLabel": "All types"
-				},
-				"sidePanel": [
-					{
-						"id": "queue-team-today",
-						"type": "record-list",
-						"title": "Team today",
-						"content": {
-							"endpointSource": {
-								"url": "/apps/dossiq/api/work-queue/workload",
-								"responsePath": "handlers"
-							},
-							"presentation": "rows",
-							"avatar": "{displayName}",
-							"title": "{displayName}",
-							"bar": {
-								"valueField": "openCaseCount"
-							},
-							"trailing": [
-								"{openCaseCount} cases"
-							],
-							"limit": 5,
-							"emptyText": "Nobody in your teams has open cases",
-							"errorText": "Only a coordinator sees the team's workload"
-						}
-					},
-					{
-						"id": "queue-by-type",
-						"type": "record-list",
-						"title": "Work in stock per case type",
-						"content": {
-							"endpointSource": {
-								"url": "/apps/dossiq/api/dashboard/kpis",
-								"responsePath": "queueByType"
-							},
-							"presentation": "rows",
-							"title": "{title}",
-							"trailing": [
-								"{open} open · {waiting} waiting"
-							],
-							"emptyText": "No open cases"
-						}
-					}
-				],
-				"columns": [
-					{
-						"key": "startDate",
-						"width": "96px",
-						"label": "Waiting",
-						"widget": "age"
-					},
-					{
-						"key": "title",
-						"width": "328px",
-						"label": "Case",
-						"link": true,
-						"cellClass": "cn-cell--strong",
-						"secondary": "{identifier} · {initiatorDisplayName} · {priority}"
-					},
-					{
-						"key": "caseType",
-						"width": "179px",
-						"label": "Type",
-						"formatter": "caseTypeName",
-						"widget": "badge",
-						"widgetProps": {
-							"variant": "info"
-						}
-					},
-					{
-						"key": "deadline",
-						"width": "141px",
-						"label": "Deadline",
-						"widget": "date",
-						"widgetProps": {
-							"due": {
-								"todayLabel": "Today",
-								"overdueLabel": {
-									"one": "{count} day overdue",
-									"other": "{count} days overdue"
-								},
-								"upcomingLabel": {
-									"one": "{count} day left",
-									"other": "{count} days left"
-								},
-								"upcomingWeeksLabel": {
-									"one": "{count} week left",
-									"other": "{count} weeks left"
-								}
-							},
-							"variantWhen": [
-								{
-									"op": "lt",
-									"value": 0,
-									"variant": "error"
-								},
-								{
-									"op": "lte",
-									"value": 5,
-									"variant": "warning"
-								}
-							]
-						}
-					}
-				],
-				"showTitle": true,
-				"countText": "{shown} of {total} open cases without a handler · oldest first",
-				"footerNote": "a case leaves the queue as soon as someone picks it up",
-				"headerButtons": [
-					{
-						"action": "export",
-						"label": "Download",
-						"icon": "TrayArrowDown"
-					},
-					{
-						"action": "actions-menu",
-						"label": "Actions",
-						"items": [
-							"header-actions",
-							"import",
-							"refresh",
-							"copy-selected",
-							"delete-selected",
-							"documentation"
-						]
-					},
-					{
-						"action": "add",
-						"label": "New case",
-						"variant": "primary",
-						"icon": "Plus"
-					}
-				]
 			}
 		},
 		{

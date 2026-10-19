@@ -5,7 +5,7 @@
  * A saved view is a lens applied onto the page's own address, not a place.
  *
  * WHAT THIS REPLACES, because the reversal is the point. `savedViewPlaces`
- * gave every view of the Cases and Queue pages a route of its own,
+ * gave every view of the Cases and Queue pages (Queue is a view of Cases now) a route of its own,
  * `/cases/views/9`. It worked. What it wrote into that address was a sort
  * spelled `_sortKey`/`_sortOrder`, which nothing in the stack reads: not
  * `parseSortKeysFromQuery`, which seeds the list's sort on load, and not
@@ -42,7 +42,7 @@ const schema = JSON.parse(
 const pageById = (id) => manifest.pages.find((page) => page.id === id)
 
 describe('no page declares that its saved views are places', () => {
-	it.each(['Cases', 'Queue'])(
+	it.each(['Cases'])(
 		'%s keeps its saved views and drops the route',
 		(id) => {
 			const page = pageById(id)
@@ -85,8 +85,8 @@ describe('a fresh install has the navigation it had before views were places', (
 		).toEqual([])
 	})
 
-	it('keeps both page entries top level, with no children added', () => {
-		for (const id of ['Cases', 'Queue']) {
+	it('keeps the Cases entry top level, with no children added', () => {
+		for (const id of ['Cases']) {
 			const entry = manifest.menu.find((item) => item.route === id)
 			expect(entry, `${id} has no menu entry`).toBeTruthy()
 			expect(entry.children ?? []).toEqual([])

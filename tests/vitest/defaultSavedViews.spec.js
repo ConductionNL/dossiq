@@ -23,11 +23,21 @@ const page = (id) => manifest.pages.find((p) => p.id === id)
 const chip = (label) => page('Cases').config.quickFilters.find((q) => q.label === label).filter
 const byslug = (id) => Object.fromEntries(page(id).config.defaultSavedViews.map((d) => [d.slug, d.filters]))
 
-describe('default views on Cases', () => {
-	const defaults = byslug('Cases')
+const defaults = byslug('Cases')
 
-	it('ships four, each with a Dutch name', () => {
-		expect(Object.keys(defaults)).toEqual(['mine-overdue', 'mine-due-this-week', 'unclaimed-overdue', 'woo-requests'])
+describe('default views on Cases', () => {
+
+	it('ships eight, each with a Dutch name', () => {
+		expect(Object.keys(defaults)).toEqual([
+			'mine-overdue',
+			'mine-due-this-week',
+			'unclaimed-overdue',
+			'woo-requests',
+			'my-work',
+			'team-queue',
+			'unclaimed-due-this-week',
+			'data-subject-requests',
+		])
 		for (const d of page('Cases').config.defaultSavedViews) {
 			expect(nl[d.name]).toBeTruthy()
 		}
@@ -48,11 +58,22 @@ describe('Woo requests as a view of Cases', () => {
 	})
 })
 
-describe('default views on Queue', () => {
-	it('narrow the queue by the Overdue and Due this week windows only', () => {
-		const defaults = byslug('Queue')
-		const window = (f) => Object.fromEntries(Object.entries(f).filter(([k]) => k.startsWith('deadline[')))
-		expect(defaults.late).toEqual(window(chip('Overdue')))
-		expect(defaults['this-week']).toEqual(window(chip('Due this week')))
+describe('lists that were pages, as views of Cases', () => {
+	it('keeps the team queue equal to the Unclaimed chip, with its late and this-week windows', () => {
+		expect(defaults['team-queue']).toEqual(chip('Unclaimed'))
+		expect(defaults['unclaimed-overdue']).toEqual({ ...chip('Unclaimed'), ...chip('Overdue') })
+		expect(defaults['unclaimed-due-this-week']).toEqual({ ...chip('Unclaimed'), ...chip('Due this week') })
+	})
+
+	it('opens Assigned to me on the urgency order, which the Cases sort offers from the work queue', () => {
+		const view = page('Cases').config.defaultSavedViews.find((d) => d.slug === 'my-work')
+		expect(view.filters.assignee).toBe('@me')
+		expect(view.sortOption).toBe('urgency')
+		const option = page('Cases').config.sortSelectOptions.find((o) => o.value === view.sortOption)
+		expect(option.source.url).toBe('/apps/dossiq/api/work-queue')
+	})
+
+	it('keeps the data subject requests on the request kind', () => {
+		expect(defaults['data-subject-requests']).toEqual({ dataSubjectRequestType: ['inzage', 'correctie', 'verwijdering'] })
 	})
 })

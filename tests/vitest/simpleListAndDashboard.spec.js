@@ -478,7 +478,7 @@ describe('the landing page', () => {
 		// They are pills on the switch row now (`viewLinks`).
 		expect(simple.config.viewLinks.map((link) => link.route)).toEqual([
 			'PersonalQueue',
-			'MyWork',
+			{ name: 'Cases', query: { savedView: 'default:my-work' } },
 			'EndOfDay',
 		])
 	})

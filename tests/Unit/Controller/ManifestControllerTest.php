@@ -212,6 +212,29 @@ class ManifestControllerTest extends TestCase {
 	}//end testManifestReturnsAViewPerPinnedCaseTypeAndNoMenuEntries()
 
 	/**
+	 * manifest: a list the instance names by case type identifier (Complaints)
+	 * is a view for every user, ahead of the user's own pinned case types.
+	 *
+	 * @return void
+	 */
+	public function testManifestAddsTheComplaintsViewWhenTheInstanceHasThatCaseType(): void {
+		$this->withCaseTypes(
+			rows: [
+				['id' => 'uuid-k', 'title' => 'Klacht behandeling', 'identifier' => 'klacht-behandeling'],
+				['id' => 'uuid-b', 'title' => 'Bezwaar'],
+			]
+		);
+
+		$views = self::views(data: $this->controller(stored: '["uuid-b"]')->manifest()->getData());
+
+		$this->assertSame(expected: ['complaints', 'case-type-uuid-b'], actual: array_column($views, 'slug'));
+		$this->assertSame(
+			expected: ['caseType' => 'uuid-k', 'statusHiddenInLists' => false, 'isDraft' => false],
+			actual: $views[0]['filters']
+		);
+	}//end testManifestAddsTheComplaintsViewWhenTheInstanceHasThatCaseType()
+
+	/**
 	 * manifest: a pinned case type the user's team does not handle gets no view.
 	 *
 	 * @return void

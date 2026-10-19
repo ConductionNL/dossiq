@@ -209,7 +209,7 @@
 		"landingPage": "MyWorkHome",
 		"dateDisplay": "absolute",
 		"rememberLastView": true,
-		"pinnedMenu": ["Queue", "MyWork", "Cases"]
+		"pinnedMenu": ["Cases"]
 	},
 	"menu": [
 		{
@@ -225,20 +225,6 @@
 			"icon": "ClipboardListOutline",
 			"route": "PersonalQueue",
 			"order": 12
-		},
-		{
-			"id": "Queue",
-			"label": "Queue",
-			"icon": "TrayFull",
-			"route": "Queue",
-			"order": 15
-		},
-		{
-			"id": "MyWork",
-			"label": "Assigned to me",
-			"icon": "ClipboardAccountOutline",
-			"route": "MyWork",
-			"order": 20
 		},
 		{
 			"id": "WorkGroup",
@@ -1754,142 +1740,6 @@
 			}
 		},
 		{
-			"id": "Queue",
-			"route": "/queue",
-			"type": "index",
-			"title": "Queue",
-			"_note": "The one queue: every case that is open and that nobody has picked up. It is a FILTER over `case`, not a collection of its own, so this is a plain type:index rather than a bespoke view. `assignee: \"IS NULL\"` is the literal sentinel every OpenRegister condition builder matches by value. The suffix spelling `assignee_isnull=true` was dead when this page shipped: the only code that mentioned it had no callers, and `isnull` was missing from MagicSearchHandler::COMPARISON_OPERATORS, so the filter contributed no condition at all. Fixed in openregister `isnull-filter-operator`; the sentinel is kept because it also works on instances that do not yet carry that change. `isFinalStatus: false` keeps closed cases out; it is a real boolean on every case row, not a derived one, so plain equality reaches it. `statusHiddenInLists: false` is the third condition, added by lifecycle-acts-on-the-case REQ-LIFE-01, and it is kept LITERALLY EQUAL to the Cases page Unclaimed chip for the reason that note gives: the two lists answer the same question and a drift between them is invisible. Assigning a case removes it from here and puts it on that person's Assigned to me; All cases shows it either way. The caseType folder sidebar is the same control the Cases index uses, so the queue narrows by case type without a second page. WHY THIS IS A PAGE AND NOT A `menu[].query` PRESET, which is what gate-68 (ADR-097 Decision 5) proposes for a second index over an already-indexed schema: a preset is only a link into the target page, where the query filters and the reader's own facet filters share one map, so a facet interaction can widen the queue back to every case. A base filter on the page itself cannot be cleared by the person reading it, and that is the property that makes the queue trustworthy. Assigned to me is a page for the same reason.",
-			"config": {
-				"register": "dossiq",
-				"schema": "case",
-				"_templateNote": "A case template is a case row marked `isTemplate`, so it is in this store like any other case and every list has to take it out (starter-content-and-templates, D-5). The filter sits on the PAGE and not on each chip, so a lens added later cannot forget it: a template turning up in an open-cases count reads as work nobody is doing, which is the same complaint hidden statuses were introduced to fix.",
-				"filter": {
-					"assignee": "IS NULL",
-					"isFinalStatus": false,
-					"statusHiddenInLists": false,
-					"isDraft": false,
-					"isTemplate": false
-				},
-				"allowSavedViews": true,
-				"_defaultSavedViewsNote": "saved-views-manage-and-defaults: the Queue's base filter already keeps it to open, unclaimed cases, so its defaults only add the deadline window, with the same flat keys and tokens as the Cases chips.",
-				"defaultSavedViews": [
-					{ "slug": "late", "name": "Late", "filters": { "deadline[lt]": "@today" } },
-					{ "slug": "this-week", "name": "This week", "filters": { "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } }
-				],
-				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
-				"_formNote": "The one case create form, mirrored from the Dashboard `new-case` header action (friendly-case-create-form) so filing a case asks the same questions wherever it starts. src/utils/caseCreateForm.js carries the same shape for the surfaces configured from JS; keep the two in step.",
-				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
-				"fieldOverrides": {
-					"description": { "widget": "textarea" },
-					"requester": { "widget": "InitiatorPicker", "label": "Requester" },
-					"confidentiality": { "enumLabels": { "openbaar": "Public", "beperkt_openbaar": "Restricted public", "intern": "Internal", "zaakvertrouwelijk": "Case confidential", "vertrouwelijk": "Confidential", "confidentieel": "Classified confidential", "geheim": "Secret", "zeer_geheim": "Top secret" } }
-				},
-				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
-				"createSuccessRoute": "CaseDetail",
-				"createSuccessMessage": "Case created.",
-				"formSize": "normal",
-				"formColumns": 1,
-				"viewModes": ["table", "cards"],
-				"showViewAction": false,
-				"_claimNote": "The Claim row action (case-claim-action, row 2.4) takes the case without opening it. It is a FUNCTION handler out of registry.js (a `kind: 'handler'` entry), because an index row action can only be `navigate`, `open-page` or a handler name: `api-call` is not in the row dispatcher's vocabulary at all, and `object-op` writes `action.values` VERBATIM, so a declared assignee of `@me` would store that literal string on the case. The handler posts the same endpoint the case page's Claim button does, so one rule refuses a claim on a case that is already somebody's, whichever surface the gesture came from.",
-				"actions": [
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "CaseDetail",
-						"type": "handler"
-					},
-					{
-						"id": "claim",
-						"label": "Claim",
-						"icon": "AccountCheckOutline",
-						"handler": "claimCase",
-						"type": "handler",
-						"visibleWhen": { "field": "assignee", "op": "empty" }
-					},
-					{
-						"id": "mark-unread",
-						"label": "Mark unread",
-						"icon": "EmailMarkAsUnread",
-						"handler": "markCaseUnread",
-						"type": "handler"
-					},
-					{
-						"id": "mark-read",
-						"label": "Mark read",
-						"icon": "EmailOpenOutline",
-						"handler": "markCaseRead",
-						"type": "handler"
-					},
-					{
-						"id": "follow",
-						"label": "Follow or stop following",
-						"icon": "EyeOutline",
-						"handler": "toggleCaseFollow",
-						"type": "handler"
-					}
-				],
-				"columns": [
-					{
-						"key": "@self.unread",
-						"label": "Unread",
-						"widget": "unreadIndicator",
-						"sortable": false,
-						"_note": "unread-state-on-the-case, task 1.1. `@self.unread` is NOT a stored field: OpenRegister attaches it per reader on the render path and memoises it per request, so four hundred rows cost one query rather than four hundred. It is therefore `sortable: false`: the server has no column to order by, so a sortable header would send an `_order` the mapper answers by ignoring, which reads as a broken sort rather than as an absent one. Narrowing the list to what is unread is the Unread chip, whose `_unread=true` is resolved INSIDE the query so the page, the total and the facets cannot disagree; a column-side filter would be a post-filter over one page and would give a first page of 25 against a total of 120. A cell WIDGET and not a formatter, for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a dot. An absent flag reads as READ, because `@self.unread` is omitted entirely for an anonymous read and treating absence as unread would paint every row on a public page."
-					},
-					"identifier",
-					"title",
-					{
-						"key": "caseType",
-						"label": "Case type",
-						"formatter": "caseTypeName"
-					},
-					{
-						"key": "status",
-						"label": "Status",
-						"formatter": "statusTypeName"
-					},
-					{
-						"key": "priorityOrder",
-						"label": "Priority",
-						"widget": "priorityBadge",
-						"_note": "Keyed on `priorityOrder`, not on `priority`, and that is not a typo. CnDataTable sorts on the server, on the stored value of the column's key, and the stored value of `priority` is a word: sorting by it gives high, low, normal, urgent. `priorityOrder` is the order the schema declares (x-enum-order on the priority property) stored as an integer, so the server sorts it right, and the `priorityBadge` cell reads the word back off the row so the reader still sees a priority. A cell WIDGET rather than a formatter for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a colour."
-					},
-					"deadline"
-				],
-				"emptyText": "Nothing is waiting. Every open case has someone on it.",
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"folderSidebar": {
-					"source": "register",
-					"register": "dossiq",
-					"schema": "caseType",
-					"idField": "@self.id",
-					"nameField": "title",
-					"filterField": "caseType",
-					"allLabel": "All types"
-				},
-				"documentationUrl": "https://dossiq.conduction.nl"
-			}
-		},
-		{
-			"id": "MyWork",
-			"route": "/my-work",
-			"type": "custom",
-			"title": "My work",
-			"component": "MyWorkView",
-			"_note": "Case index scoped to the current user (assignee = current uid) in card view. A thin CnIndexPage wrapper because the stock index base-filter does not resolve the @me current-user token; the wrapper injects the resolved uid.",
-			"config": {
-				"_note": "BOTH halves of the pair, not `register` alone: CnPageRenderer auto-registers a custom page's object type from `register` + `schema` and skips it with a warning when only one is declared, so a lone register was a page that named its data and registered nothing. `dossiq` is the OpenRegister register SLUG rather than this app's id (see MyWorkCards.vue), and `case` is what the wrapper's CnIndexPage mounts with.",
-				"register": "dossiq",
-				"schema": "case"
-			}
-		},
-		{
 			"id": "Cases",
 			"route": "/cases",
 			"type": "index",
@@ -1949,7 +1799,34 @@
 					{ "slug": "mine-overdue", "name": "Mine, overdue", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
 					{ "slug": "mine-due-this-week", "name": "Mine, due this week", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
 					{ "slug": "unclaimed-overdue", "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
-					{ "slug": "woo-requests", "name": "Woo requests", "filters": { "caseType": "3c0f5a00-0000-4000-a000-00000000a001", "statusHiddenInLists": false, "isDraft": false } }
+					{ "slug": "woo-requests", "name": "Woo requests", "filters": { "caseType": "3c0f5a00-0000-4000-a000-00000000a001", "statusHiddenInLists": false, "isDraft": false } },
+					{ "slug": "my-work", "name": "Assigned to me", "filters": { "assignee": "@me", "statusHiddenInLists": false, "isDraft": false }, "sortOption": "urgency" },
+					{ "slug": "team-queue", "name": "Team queue", "filters": { "assignee": "IS NULL", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "isTemplate": false } },
+					{ "slug": "unclaimed-due-this-week", "name": "Unclaimed, due this week", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
+					{ "slug": "data-subject-requests", "name": "Data subject requests", "filters": { "dataSubjectRequestType": ["inzage", "correctie", "verwijdering"] } }
+				],
+				"_listsAsViewsNote": "Lists that were pages of their own are views of this list (Ruben, 19 October 2026): Assigned to me (`my-work`, was /my-work), the team queue (`team-queue`, was /queue; its late window is `unclaimed-overdue`, its week window `unclaimed-due-this-week`) and the data subject requests (`data-subject-requests`, was /privacy/requests). The old addresses redirect here with `?savedView=default:<slug>` (RETIRED_ROUTES). Complaints is a view per instance, added by the /api/manifest delta, because the complaint case type has no fixed id. `sortOption` names the sort option a view opens on; the urgency order is the `urgency` option below, the server's ranking from GET /api/work-queue.",
+				"showSortSelect": true,
+				"sortSelectOptions": [
+					{
+						"value": "urgency",
+						"label": "Urgency",
+						"order": "deadline",
+						"source": {
+							"url": "/apps/dossiq/api/work-queue",
+							"rowsPath": "items",
+							"rowPath": "case",
+							"carry": ["deadlineTier", "score"],
+							"annotate": true,
+							"searchFields": ["title", "identifier", "description"],
+							"failedNote": "Ordered by deadline: the urgency could not be computed."
+						}
+					},
+					{
+						"value": "newest",
+						"label": "Newest",
+						"order": "-startDate"
+					}
 				],
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "Same create form as the Queue page; see its `_formNote`.",

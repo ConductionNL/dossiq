@@ -135,12 +135,14 @@ describe('the page is a page, and not a second case index', () => {
 		expect(page('PersonalQueue').config.register).toBeUndefined()
 	})
 
-	it('the unclaimed pool keeps its own page and its own meaning', () => {
-		// Two pages, two different questions. `Queue` is every open case nobody
-		// has picked up, a team surface; `PersonalQueue` is one person's own.
-		expect(page('Queue').type).toBe('index')
-		expect(page('Queue').config.filter.assignee).toBe('IS NULL')
-		expect(page('PersonalQueue').route).not.toBe(page('Queue').route)
+	it('the unclaimed pool keeps its own meaning, as a view of the case list', () => {
+		// Two different questions. The team queue is every open case nobody has
+		// picked up, a team surface and a view of Cases now; `PersonalQueue` is
+		// one person's own, across stores, and stays a page.
+		const teamQueue = page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue')
+		expect(teamQueue.filters.assignee).toBe('IS NULL')
+		expect(page('Queue')).toBeUndefined()
+		expect(page('PersonalQueue').type).toBe('custom')
 	})
 
 	it('both new entries live under the existing My work group', () => {

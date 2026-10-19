@@ -28,12 +28,9 @@ const ROOT = resolve(HERE, '../..')
 
 /** What the stubbed `/api/substitutions/work` answers, replaced per test. */
 let substituted = { cases: [], tasks: [] }
-/** How many times the views asked for it. */
-let fetchCalls = 0
 
 vi.mock('../../src/services/substitutionApi.js', () => ({
 	fetchSubstitutedWork: async () => {
-		fetchCalls += 1
 		if (substituted instanceof Error) {
 			throw substituted
 		}
@@ -150,45 +147,8 @@ vi.mock('@nextcloud/vue', () => ({
 	}),
 }))
 
-const { default: MyWorkCards } = await import('../../src/views/MyWorkCards.vue')
 const { default: MyWorkWidget } =
 	await import('../../src/views/widgets/MyWorkWidget.vue')
-
-/**
- * One substituted case, as `/api/substitutions/work` answers it.
- *
- * @param {object} over Fields to override.
- * @return {object} The row.
- */
-function substitutedCase(over = {}) {
-	return {
-		id: 'c-1',
-		title: 'Bezwaar Jansen',
-		identifier: 'ZAAK-2026-0001',
-		_substituted: {
-			absentee: 'anna',
-			substitutionId: 'sub-1',
-			until: '2026-07-21',
-		},
-		...over,
-	}
-}
-
-/**
- * Mount the My work index.
- *
- * @return {Promise<object>} The mounted wrapper, after its loads settle.
- */
-async function mountIndex() {
-	const wrapper = mount(MyWorkCards, {
-		global: {
-			mocks: { $router: { push: vi.fn() } },
-			stubs: { WorkloadSummaryBar: true },
-		},
-	})
-	await flushPromises()
-	return wrapper
-}
 
 /**
  * Mount the My work tile.
@@ -210,64 +170,11 @@ async function mountTile() {
 beforeEach(() => {
 	substituted = { cases: [], tasks: [] }
 	ownTasks = []
-	fetchCalls = 0
 	try {
 		window.localStorage.clear()
 	} catch {
 		// jsdom always has it; a profile that does not simply keeps the default.
 	}
-})
-
-describe('the My work index', () => {
-	it('asks the resolver for the work an active substitution routes here', async () => {
-		await mountIndex()
-		expect(fetchCalls).toBe(1)
-	})
-
-	it('lists a substituted case marked with the absentee and the end date', async () => {
-		substituted = { cases: [substitutedCase()], tasks: [] }
-		const wrapper = await mountIndex()
-
-		const marker = wrapper.find('[data-testid="substituted-marker"]')
-		expect(marker.exists()).toBe(true)
-		// The absentee by name, not merely "something non-empty": the
-		// requirement names whose work it is, and a marker reading anything
-		// else is the wrong marker on the right row.
-		expect(marker.text()).toContain('anna')
-		expect(marker.text()).toContain('2026-07-21')
-	})
-
-	it('removes the substituted rows when they are hidden, and keeps the way back', async () => {
-		substituted = { cases: [substitutedCase()], tasks: [] }
-		const wrapper = await mountIndex()
-		expect(wrapper.findAll('[data-testid="substituted-marker"]')).toHaveLength(1)
-
-		await wrapper.find('[data-testid="substituted-toggle"]').trigger('click')
-		await flushPromises()
-
-		expect(wrapper.findAll('[data-testid="substituted-marker"]')).toHaveLength(0)
-		// The toggle itself must survive being used, or hiding is one-way.
-		expect(wrapper.find('[data-testid="substituted-toggle"]').exists()).toBe(
-			true,
-		)
-		expect(window.localStorage.getItem('dossiq:my-work:show-substituted')).toBe(
-			'false',
-		)
-	})
-
-	it('shows no group at all when nothing is routed here', async () => {
-		const wrapper = await mountIndex()
-		expect(wrapper.find('[data-testid="substituted-work"]').exists()).toBe(false)
-	})
-
-	it('renders the reader own list when the resolver refuses', async () => {
-		// A 403 or a 500 on the substituted read must not take My work with it:
-		// the group is work ADDED to the page, never work the page depends on.
-		substituted = new Error('resolver unavailable')
-		const wrapper = await mountIndex()
-		expect(wrapper.find('.cn-index-page-stub').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="substituted-work"]').exists()).toBe(false)
-	})
 })
 
 describe('the My work tile', () => {
@@ -392,13 +299,10 @@ describe('the helper module', () => {
 		)
 		expect(exports.length).toBeGreaterThan(0)
 
-		const callers = [
-			readFileSync(resolve(ROOT, 'src/views/MyWorkCards.vue'), 'utf8'),
-			readFileSync(
-				resolve(ROOT, 'src/views/widgets/MyWorkWidget.vue'),
-				'utf8',
-			),
-		].join('\n')
+		const callers = readFileSync(
+			resolve(ROOT, 'src/views/widgets/MyWorkWidget.vue'),
+			'utf8',
+		)
 
 		const orphans = exports.filter(
 			(name) => new RegExp(`\\b${name}\\b`).test(callers) === false,

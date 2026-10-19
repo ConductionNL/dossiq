@@ -13,7 +13,7 @@
  * first paint to their own rows, and an empty result reads as an empty
  * register rather than as a filter. The default assertion is the guard.
  *
- * The Unclaimed chip and the Queue page's base filter are the same two
+ * The Unclaimed chip and the team queue view's filter are the same two
  * conditions written twice. Nothing at runtime compares them, so they drift
  * the moment one side is edited; the deep-equal here is what makes "the two
  * lists agree" a fact rather than an intention.
@@ -276,9 +276,9 @@ describe('Cases index lenses', () => {
 		expect(chip('Cases', 'Closed').filter).toEqual({ isFinalStatus: true })
 	})
 
-	it('gives Unclaimed the same filter as the Queue page', () => {
+	it('gives Unclaimed the same filter as the team queue view', () => {
 		expect(chip('Cases', 'Unclaimed').filter).toEqual(
-			page('Queue').config.filter,
+			page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').filters,
 		)
 	})
 
@@ -328,7 +328,7 @@ describe('Cases index lenses', () => {
 				JSON.stringify(entry.config?.filter ?? {}).includes('_drafts'),
 			)
 		expect(asking).toEqual([])
-		expect('_drafts' in page('Queue').config.filter).toBe(false)
+		expect('_drafts' in page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').filters).toBe(false)
 	})
 
 	it('is not the default lens, so the archive is never the first paint', () => {
@@ -361,12 +361,12 @@ describe('Cases index lenses', () => {
 		expect(spelled).toEqual([])
 	})
 
-	it('keeps the archive out of the Queue by the same default', () => {
-		// The Queue's base filter carries no archive condition either, and it
+	it('keeps the archive out of the team queue by the same default', () => {
+		// The team queue view's filter carries no archive condition either, and it
 		// does not need one twice over: the platform excludes archived objects
 		// from every list, and a case can only be archived after it has ended,
 		// which `isFinalStatus: false` already keeps out.
-		const queue = page('Queue').config.filter
+		const queue = page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').filters
 		expect('_archived' in queue).toBe(false)
 		expect(queue.isFinalStatus).toBe(false)
 	})
@@ -727,9 +727,12 @@ describe('bulk actions on the Cases index', () => {
 })
 
 describe('what this change does NOT move', () => {
-	it('leaves the Queue page and the My Work page in place', () => {
-		expect(page('Queue')).toBeTruthy()
-		expect(page('MyWork')).toBeTruthy()
+	it('keeps the team queue and Assigned to me as views of the case list', () => {
+		// They were pages; they are views of Cases now (Ruben, 19 October 2026).
+		const slugs = page('Cases').config.defaultSavedViews.map((view) => view.slug)
+		expect(slugs).toEqual(expect.arrayContaining(['team-queue', 'my-work']))
+		expect(page('Queue')).toBeUndefined()
+		expect(page('MyWork')).toBeUndefined()
 	})
 
 	it('changes no menu entry', () => {
@@ -758,8 +761,6 @@ describe('what this change does NOT move', () => {
 			// everything waiting on the reader across four stores, and the
 			// screen that closes the day against what they opened in it.
 			'Your queue',
-			'Queue',
-			'Assigned to me',
 			'My work',
 			'Contacts',
 			'Organisations',

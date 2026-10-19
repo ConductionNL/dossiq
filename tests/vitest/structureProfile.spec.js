@@ -90,12 +90,12 @@ describe('the full profile', () => {
 		expect(build(fullFile)).toEqual(before)
 	})
 
-	it('still counts 39 entries: 13 main, 5 footer, 18 settings, 3 integrations', () => {
+	it('counts 37 entries: 11 main, 5 footer, 18 settings, 3 integrations (Queue and Assigned to me are views now)', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
-		expect(flat(menu)).toHaveLength(39)
-		expect(count('main')).toBe(13)
+		expect(flat(menu)).toHaveLength(37)
+		expect(count('main')).toBe(11)
 		expect(count('footer')).toBe(5)
 		expect(count('settings')).toBe(18)
 		expect(count('integrations')).toBe(3)
@@ -106,11 +106,10 @@ describe('the simple profile', () => {
 	const built = build(simpleFile)
 	const main = section(built.menu, 'main')
 
-	it('shows eight fixed entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
+	it('shows seven fixed entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
 		expect(main.map((entry) => entry.id)).toEqual([
 			'Dashboard',
 			'WorkGroup',
-			'Queue',
 			'CasesCaption',
 			'Cases',
 			'WorkflowBoard',
@@ -124,7 +123,7 @@ describe('the simple profile', () => {
 			'Cases',
 			'Relations',
 		])
-		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(8)
+		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(7)
 	})
 
 	it('is flat: no entry holds another', () => {
@@ -176,11 +175,9 @@ describe('the simple profile', () => {
 			expect(shown.icon).toBe(original.icon)
 			expect(shown.route).toBe(original.route)
 		}
-		// Two entries are worded for the simple menu. Their page is the same.
-		expect(main.find((entry) => entry.id === 'Queue')).toMatchObject({
-			label: 'Team queue',
-			route: 'Queue',
-		})
+		// The team queue is a view of Cases now (`team-queue`), listed under
+		// My views rather than as an entry here.
+		expect(main.find((entry) => entry.id === 'Queue')).toBeUndefined()
 		// The Werkbord is the Cases list in its board view (board DqWerkbord).
 		expect(main.find((entry) => entry.id === 'WorkflowBoard')).toMatchObject({
 			label: 'Board',
@@ -300,12 +297,6 @@ describe('the simple profile', () => {
 		// beside an entry is the number of rows behind it.
 		const entry = (entryId) =>
 			flat(built.menu).find((item) => item.id === entryId)
-		const queuePage = built.pages.find((page) => page.id === 'Queue')
-		expect(entry('Queue').count).toEqual({
-			register: 'dossiq',
-			schema: 'case',
-			filter: queuePage.config.filter,
-		})
 		expect(entry('WorkGroup').count).toEqual({
 			register: 'dossiq',
 			schema: 'case',
@@ -405,7 +396,7 @@ describe('the simple profile', () => {
 			// The My work page draws its links as pills on the view-switch
 			// row (`viewLinks`, nextcloud-vue 2.79.0), as DqMijnWerk does.
 			for (const link of page.config?.viewLinks ?? []) {
-				linked.add(link.route)
+				linked.add(typeof link.route === 'string' ? link.route : link.route?.name)
 			}
 		}
 		const lost = flat(build(fullFile).menu)
@@ -416,10 +407,10 @@ describe('the simple profile', () => {
 
 		// The control: the three entries this profile takes out are really out,
 		// so the check above is passing on the links and not on the menu.
-		for (const id of ['PersonalQueueMenu', 'MyWork', 'EndOfDayMenu']) {
+		for (const id of ['PersonalQueueMenu', 'EndOfDayMenu']) {
 			expect(shown.has(id), id).toBe(false)
 		}
-		expect([...linked].sort()).toEqual(['EndOfDay', 'MyWork', 'PersonalQueue'])
+		expect([...linked].sort()).toEqual(['Cases', 'EndOfDay', 'PersonalQueue'])
 	})
 
 	it('adds the links to My work and the dashboard without changing the manifest or the full profile', () => {
@@ -435,7 +426,7 @@ describe('the simple profile', () => {
 			built.pages
 				.find((page) => page.id === 'MyWorkHome')
 				.config.viewLinks.map((link) => link.route),
-		).toEqual(['PersonalQueue', 'MyWork', 'EndOfDay'])
+		).toEqual(['PersonalQueue', { name: 'Cases', query: { savedView: 'default:my-work' } }, 'EndOfDay'])
 		// DqDashboard: Close out your day leads, the primary New case ends the row.
 		expect(actionIds(built, 'Dashboard')).toEqual([
 			'open-end-of-day',
@@ -468,10 +459,11 @@ describe('the simple profile', () => {
 	// 74 -> 76: the organisations on this environment get a list and a page (DqTenant).
 	// 76 -> 77: the departments and staff get a page (DqAfdelingen).
 	// 77 -> 78: the redaction page of a case (DqLakken).
-	it('builds the same 78 pages as the full profile, so every route stays', () => {
+	// 78 -> 75: Queue, MyWork and PrivacyRequests became views of Cases.
+	it('builds the same 75 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(78)
+		expect(built.pages).toHaveLength(75)
 	})
 })
 
