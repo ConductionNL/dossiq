@@ -6502,9 +6502,11 @@
 						"type": "chart",
 						"title": "Advice under the national enforcement strategy",
 						"icon": "TableLarge",
+						"_typeNote": "A detail page passes the chart its content keys as props, and the chart takes its kind as `type`; `chartKind` is the dashboard dispatcher's name for it. Without `type` the chart drew an empty area chart.",
 						"_note": "DqHandhaving: the LHS matrix the advice was calculated with, read from the lhsMatrix record of the advice's matrixVersion and no other (no matrix rather than one the advice was not calculated with), sliced to the advice's actor type, with the advised cell outlined. The matrix is register data each municipality keeps, never a fixed table in this manifest (nextcloud-vue #1747).",
 						"content": {
 							"chartKind": "matrix",
+							"type": "matrix",
 							"cellSource": {
 								"register": "dossiq",
 								"schema": "lhsMatrix",
