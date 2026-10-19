@@ -92,14 +92,12 @@ import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
-import CaseTypeFieldsEditorWidget from './components/caseType/CaseTypeFieldsEditorWidget.vue'
 import CaseTypeMessagesEditorWidget from './components/caseType/CaseTypeMessagesEditorWidget.vue'
 // The party kinds a case type accepts, declared into pipelinq
 // (parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype).
 import CaseTypePartyKindsWidget from './components/caseType/CaseTypePartyKindsWidget.vue'
 import CaseTypePortalWidget from './components/caseType/CaseTypePortalWidget.vue'
 import CaseTypeRulesWidget from './components/caseType/CaseTypeRulesWidget.vue'
-import CaseTypeStatusesEditorWidget from './components/caseType/CaseTypeStatusesEditorWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
 // @spec openspec/specs/case-configuration-i18n/spec.md
@@ -488,22 +486,6 @@ const registry = {
 		component: CaseTypeWorkflowEditorWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail Phases and tasks: the workflow canvas, kept by decision when the admin-settings editor was retired.',
-	},
-	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
-	CaseTypeStatusesEditorWidget: {
-		// @custom-widget-ratchet exclude a status carries a checklist and field rules (arrays of objects with a field picker over the type's own fields) and the list reorders by drag; the generic form edits neither
-		kind: 'widget',
-		component: CaseTypeStatusesEditorWidget,
-		...PANEL_WIDGET_META,
-		_note: 'CaseTypeDetail Statuses: add, edit, delete and drag statuses into order, with the checklist and field rules editors.',
-	},
-	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
-	CaseTypeFieldsEditorWidget: {
-		// @custom-widget-ratchet exclude a field is typed against OpenRegister's property vocabulary, with a choice-list editor, concept schemes and requiredAtStatus limited to the type's own statuses; a declared form offers free text for all of them
-		kind: 'widget',
-		component: CaseTypeFieldsEditorWidget,
-		...PANEL_WIDGET_META,
-		_note: 'CaseTypeDetail Fields: the type\'s own fields, grouped by category, edited against the property vocabulary.',
 	},
 	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
 	CaseTypeMessagesEditorWidget: {
