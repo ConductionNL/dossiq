@@ -1639,6 +1639,26 @@
         "version": "",
         "digest": "5210193e6f6cf3560ecbc363cbb26c8d0d26d2b5c5bd744b734b662e9bc87f91"
     },
+    "lib/Settings/register.d/92-admin-data-access.json::avgIncident": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/92-admin-data-access.json::supplierUser": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/92-admin-data-access.json::tenantBillingEvent": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/92-admin-data-access.json::tenantMandate": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/92-admin-data-access.json::tenantUser": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/95-dmn-decision-tables.json::decisionTable": {
         "version": "1.0.1",
         "digest": "19b2d7d234140944ff68df3c04c963449ac62f50f43c0e1a9fa3fa1e45b5fe83"
