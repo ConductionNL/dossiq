@@ -4229,23 +4229,6 @@
 						}
 					},
 					{
-						"id": "side-case-type-check",
-						"type": "record-list",
-						"title": "Check",
-						"_note": "DqZaaktypeOverzicht Controle: the warnings publishing would give for this case type (GET /api/case-types/{id}/publish/validate answers warnings as plain strings), as one warning notice.",
-						"content": {
-							"endpointSource": {
-								"url": "/apps/dossiq/api/case-types/@objectId/publish/validate",
-								"responsePath": "warnings"
-							},
-							"presentation": "notice",
-							"variant": "warning",
-							"lead": "Warnings ({total}):",
-							"limit": 1,
-							"emptyText": "No warnings"
-						}
-					},
-					{
 						"id": "side-case-type-facts",
 						"type": "facts",
 						"title": "Data",
@@ -4301,10 +4284,15 @@
 								{
 									"label": "Overview",
 									"widgetIds": [
+										"case-type-check",
 										"case-type-statuses",
 										"case-type-rights"
 									],
 									"layout": [
+										{
+											"widgetId": "case-type-check",
+											"gridWidth": 12
+										},
 										{
 											"widgetId": "case-type-statuses",
 											"gridWidth": 12
@@ -4640,6 +4628,23 @@
 							},
 							"emptyText": "This case type has no phases yet",
 							"groupEmptyText": "No tasks in this phase"
+						}
+					},
+					{
+						"id": "case-type-check",
+						"type": "record-list",
+						"title": "Check",
+						"_note": "DqZaaktypeOverzicht Controle, on the Overview tab only (a side card would show on every tab): the warnings publishing would give for this case type (GET /api/case-types/{id}/publish/validate answers warnings as plain strings), as one warning notice.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/publish/validate",
+								"responsePath": "warnings"
+							},
+							"presentation": "notice",
+							"variant": "warning",
+							"lead": "Warnings ({total}):",
+							"limit": 1,
+							"emptyText": "No warnings"
 						}
 					}
 				]
