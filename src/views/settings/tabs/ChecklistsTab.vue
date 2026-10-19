@@ -6,8 +6,8 @@
 -->
 <template>
 	<div class="checklists-tab">
-		<div class="checklists-tab__header">
-			<NcButton type="primary" @click="openEditor(null)">
+		<div v-if="!hideAddButton" class="checklists-tab__header">
+			<NcButton variant="primary" @click="openEditor(null)">
 				{{ t('dossiq', 'New checklist') }}
 			</NcButton>
 		</div>
@@ -55,7 +55,7 @@
 					<NcButton @click="openEditor(checklist)">
 						{{ t('dossiq', 'Edit') }}
 					</NcButton>
-					<NcButton type="error" @click="confirmDelete(checklist)">
+					<NcButton variant="error" @click="confirmDelete(checklist)">
 						{{ t('dossiq', 'Delete') }}
 					</NcButton>
 				</div>
@@ -156,6 +156,17 @@ export default {
 		NcIconSvgWrapper,
 		InspectionChecklistEditor,
 		CnConfirmDialog,
+	},
+
+	props: {
+		/**
+		 * Leave out the tab's own New checklist button. The admin page puts
+		 * that action in the section header and calls `openEditor(null)`.
+		 */
+		hideAddButton: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
 	data() {
