@@ -1771,6 +1771,11 @@
 					"isTemplate": false
 				},
 				"allowSavedViews": true,
+				"_defaultSavedViewsNote": "saved-views-manage-and-defaults: the Queue's base filter already keeps it to open, unclaimed cases, so its defaults only add the deadline window, with the same flat keys and tokens as the Cases chips.",
+				"defaultSavedViews": [
+					{ "slug": "late", "name": "Late", "filters": { "deadline[lt]": "@today" } },
+					{ "slug": "this-week", "name": "This week", "filters": { "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } }
+				],
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "The one case create form, mirrored from the Dashboard `new-case` header action (friendly-case-create-form) so filing a case asks the same questions wherever it starts. src/utils/caseCreateForm.js carries the same shape for the surfaces configured from JS; keep the two in step.",
 				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
@@ -1988,6 +1993,12 @@
 					"isTemplate": false
 				},
 				"allowSavedViews": true,
+				"_defaultSavedViewsNote": "saved-views-manage-and-defaults: views dossiq ships for every user, read-only, listed under Default views above the user's own saved views. A user applies one, or saves a copy to edit and share. They combine conditions the quick-filter chips offer one at a time (Mine and Overdue), so they add a lens instead of repeating a chip. The conditions are the chips' own: the same flat `deadline[lt]` / `deadline[gte]` keys with `@today` tokens, the same working-list rule `statusHiddenInLists: false`.",
+				"defaultSavedViews": [
+					{ "slug": "mine-overdue", "name": "Mine, overdue", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
+					{ "slug": "mine-due-this-week", "name": "Mine, due this week", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
+					{ "slug": "unclaimed-overdue", "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } }
+				],
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "Same create form as the Queue page; see its `_formNote`.",
 				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
