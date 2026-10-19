@@ -1295,6 +1295,7 @@ OC.L10N.register(
         "Case Object": "Zaakobject",
         "Case object": "Zaakobject",
         "Case panels": "Zaakpanelen",
+        "Case parties": "Partijen",
         "Case plan": "Zaakplan",
         "Case Plan State": "Toestand van het zaakplan",
         "Case priority, derived and never typed. The case type's matrix answers for this case's impact and urgency, a declared rule may raise it as the statutory term approaches, and a person may override it on the record. The field, its values and its facet are unchanged, so everything written before the derivation keeps reading it.": "Prioriteit van de zaak, afgeleid en nooit getypt. De matrix van het zaaktype antwoordt voor de impact en urgentie van deze zaak, een vastgelegde regel mag hem verhogen als de wettelijke termijn nadert, en een persoon mag hem op het dossier overschrijven. Het veld, de waarden en de facet zijn onveranderd, zodat alles wat voor de afleiding is geschreven het blijft lezen.",
