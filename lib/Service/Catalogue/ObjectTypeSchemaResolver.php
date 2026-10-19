@@ -8,8 +8,11 @@
  * is OpenRegister's objects endpoint (`/apps/openregister/api/objects/<register>/
  * <schema>/<id>`) the schema is named in it, so the catalogue can show the
  * schema's title, how many properties it has and whether its objects go on a
- * map. A free-text object type, or a URL of another system, names no schema
- * and is answered with null: nothing is guessed.
+ * map. The schema is resolved within the register the URL names, never
+ * across registers, because a slug is only unique inside its register. A
+ * free-text object type, a URL of another system, or a schema that cannot be
+ * read is answered with null: nothing is guessed, and one unreadable schema
+ * never fails the catalogue.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Catalogue
@@ -32,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Catalogue;
 
+use Exception;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -57,16 +61,25 @@ class ObjectTypeSchemaResolver {
 	private const GEO_TYPE = 'geo';
 
 	/**
-	 * The OpenRegister service that reads schemas.
+	 * The OpenRegister service that resolves a schema within a register.
 	 *
 	 * @var string
 	 */
-	private const MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+	private const RESOLVER = 'OCA\\OpenRegister\\Service\\RegisterScopedSchemaResolver';
 
 	/**
-	 * Schemas already read in this request, by the name in the URL.
+	 * What {@see self::read()} answers for a schema OpenRegister would not
+	 * give: a register that does not resolve, a schema the register does not
+	 * carry, or a read that was refused.
 	 *
-	 * @var array<string, array{title: string, properties: int, views: array<int, string>}|null>
+	 * @var array{unreadable: true}
+	 */
+	private const UNREADABLE = ['unreadable' => true];
+
+	/**
+	 * Schemas already read in this request, by register and schema as the URL names them.
+	 *
+	 * @var array<string, array{title: string, properties: int, views: array<int, string>}|array{unreadable: true}|null>
 	 */
 	private array $seen = [];
 
@@ -95,16 +108,22 @@ class ObjectTypeSchemaResolver {
 	 * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
 	 */
 	public function describe(string $objectUrl): ?array {
-		$schema = self::schemaNamedIn(objectUrl: $objectUrl);
-		if ($schema === '') {
+		$named = self::segmentsOf(objectUrl: $objectUrl);
+		if ($named === null) {
 			return null;
 		}
 
-		if (array_key_exists($schema, $this->seen) === false) {
-			$this->seen[$schema] = $this->read(schema: $schema);
+		$key = $named['register'] . '/' . $named['schema'];
+		if (array_key_exists($key, $this->seen) === false) {
+			$this->seen[$key] = $this->read(register: $named['register'], schema: $named['schema']);
 		}
 
-		return $this->seen[$schema];
+		$described = $this->seen[$key];
+		if ($described === null || isset($described['unreadable']) === true) {
+			return null;
+		}
+
+		return $described;
 	}//end describe()
 
 	/**
@@ -126,30 +145,51 @@ class ObjectTypeSchemaResolver {
 	 * @return string The schema id or slug.
 	 */
 	public static function schemaNamedIn(string $objectUrl): string {
-		if (preg_match(self::OBJECTS_PATH, $objectUrl, $match) !== 1) {
-			return '';
-		}
-
-		return rawurldecode($match[2]);
+		return (self::segmentsOf(objectUrl: $objectUrl)['schema'] ?? '');
 	}//end schemaNamedIn()
 
 	/**
-	 * Read one schema and shape what the catalogue shows of it.
+	 * The register and schema an OpenRegister objects URL names, or null.
 	 *
-	 * @param string $schema The schema id or slug.
+	 * @param string $objectUrl The URL.
 	 *
-	 * @return array{title: string, properties: int, views: array<int, string>}|null The schema, or null.
+	 * @return array{register: string, schema: string}|null The two segments, decoded.
 	 */
-	private function read(string $schema): ?array {
-		if ($this->container->has(self::MAPPER) === false) {
+	private static function segmentsOf(string $objectUrl): ?array {
+		if (preg_match(self::OBJECTS_PATH, $objectUrl, $match) !== 1) {
 			return null;
 		}
 
-		$found  = $this->container->get(self::MAPPER)->findMultiple([$schema]);
-		$entity = $found[0] ?? null;
-		if ($entity === null) {
-			$this->logger->info('Dossiq: the schema a linked object names could not be read', ['schema' => $schema]);
+		return ['register' => rawurldecode($match[1]), 'schema' => rawurldecode($match[2])];
+	}//end segmentsOf()
+
+	/**
+	 * Read one schema within its register and shape what the catalogue shows
+	 * of it.
+	 *
+	 * A schema OpenRegister will not give answers {@see self::UNREADABLE}
+	 * rather than an exception, so the one row stays empty and the rest of
+	 * the catalogue still loads.
+	 *
+	 * @param string $register The register id or slug the URL names.
+	 * @param string $schema   The schema id or slug the URL names.
+	 *
+	 * @return array{title: string, properties: int, views: array<int, string>}|array{unreadable: true}|null The schema,
+	 *                                                                                                     UNREADABLE, or null without OpenRegister.
+	 */
+	private function read(string $register, string $schema): ?array {
+		if ($this->container->has(self::RESOLVER) === false) {
 			return null;
+		}
+
+		try {
+			$entity = $this->container->get(self::RESOLVER)->resolvePair(registerRef: $register, schemaRef: $schema)['schema'];
+		} catch (Exception $e) {
+			$this->logger->info(
+				'Dossiq: the schema a linked object names could not be read',
+				['register' => $register, 'schema' => $schema, 'reason' => $e->getMessage()]
+			);
+			return self::UNREADABLE;
 		}
 
 		$properties = (array)$entity->getProperties();
