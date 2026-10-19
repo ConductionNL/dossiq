@@ -8420,6 +8420,7 @@
 					},
 					{
 						"label": "With data protection",
+						"activeLabel": "Data protection: yes",
 						"showCount": true,
 						"filter": {
 							"indicatieGeheim": true
@@ -8494,6 +8495,7 @@
 					},
 					{
 						"label": "With an open case",
+						"activeLabel": "With an open case",
 						"showCount": true,
 						"_note": "Organisations that requested a case that is not closed: the case points at the organisation through `requester`, so this asks OpenRegister for the reverse reference (`_related`, query-related-schema-rows) rather than a column the organisation carries.",
 						"filter": {
@@ -8502,6 +8504,7 @@
 					},
 					{
 						"label": "Associations",
+						"activeLabel": "Legal form: association",
 						"showCount": true,
 						"filter": {
 							"legalForm": "Vereniging"
@@ -8509,6 +8512,7 @@
 					},
 					{
 						"label": "Foundations",
+						"activeLabel": "Legal form: foundation",
 						"showCount": true,
 						"filter": {
 							"legalForm": "Stichting"
@@ -8516,6 +8520,7 @@
 					},
 					{
 						"label": "Companies",
+						"activeLabel": "Legal form: company",
 						"showCount": true,
 						"filter": {
 							"legalForm": ["BV", "NV", "Eenmanszaak", "VoF", "Maatschap", "Coöperatie"]
