@@ -382,6 +382,9 @@ describe('the tabs', () => {
 		const peopleSections = find(original, 'case-people-panel').content.sections.map((section) => section.widget.id)
 		const peopleTab = strip.tabs.find((tab) => tab.label === 'People')
 		expect(peopleTab.widgetIds.map((id) => id.replace(/-card$/, '')).sort()).toEqual([...peopleSections].sort())
+		// The parties by role lead, as Partijen; the linked contacts follow (DqZaakBetrokkenen).
+		expect(peopleTab.widgetIds[0]).toBe('case-party-roles-card')
+		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Case parties')
 		for (const id of widgetIds(tabsOf(original)).filter((id) => !unfolded.includes(id))) {
 			expect(shown, id).toContain(id)
 		}
