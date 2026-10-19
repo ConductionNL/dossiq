@@ -811,6 +811,9 @@ $extra = [
     ['name' => 'wOOAssessment#bulkAssess',      'url' => '/api/cases/{id}/woo/assessment',     'verb' => 'POST'],
     ['name' => 'wOOAssessment#extendDeadline',  'url' => '/api/cases/{id}/woo/extend-deadline','verb' => 'POST'],
     ['name' => 'wOOAssessment#createDecision',  'url' => '/api/cases/{id}/woo/decision',       'verb' => 'POST'],
+    // The letter a case type declares for a purpose (documentDrafts.<purpose>): the decision dialog's letter row.
+    ['name' => 'caseLetter#show',  'url' => '/api/cases/{id}/letters/{purpose}', 'verb' => 'GET'],
+    ['name' => 'caseLetter#draft', 'url' => '/api/cases/{id}/letters/{purpose}', 'verb' => 'POST'],
     ['name' => 'wOOAssessment#publishDecision', 'url' => '/api/cases/{id}/woo/publish',        'verb' => 'POST'],
     ['name' => 'wOOAssessment#withdrawPublication', 'url' => '/api/cases/{id}/woo/withdraw',   'verb' => 'POST'],
     // Lodge a remedy (bezwaar, ...) against a decided case; the case type's remedy declaration names the case type it opens (woo-case-screens-and-objections REQ-RML-001, generic per decision 182).
@@ -1205,6 +1208,9 @@ $extra = [
         // Deliberately no proxy and no redirect — a feed that silently answers
         // from a different app is worse than one that stops, because a
         // subscriber cannot tell it has moved.
+
+        // The catalogue page's object types: the schemas in dossiq's own register.
+    ['name' => 'catalogue#objectTypes', 'url' => '/api/catalogue/object-types', 'verb' => 'GET'],
 
         // Case-configuration store (ADR-080). Consume-only: dossiq browses a
         // remote OpenRegister registry through AppHost's GenericStoreService and

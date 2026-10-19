@@ -58,7 +58,7 @@ const ASSESSED = [
  * @param {Array<object>|Error} answers.assessed The stored assessments, or the failure.
  * @return {Promise<{wrapper: object, axios: object}>} The mounted dialog and the axios double.
  */
-async function mountDialog({ outstanding = [], assessed = ASSESSED } = {}) {
+async function mountDialog({ outstanding = [], assessed = ASSESSED, letter = null } = {}) {
 	const axios = (await import('@nextcloud/axios')).default
 	axios.get.mockImplementation((url, config) => {
 		if (String(url).includes('/document-assessments/outstanding')) {
@@ -78,6 +78,17 @@ async function mountDialog({ outstanding = [], assessed = ASSESSED } = {}) {
 				? Promise.reject(assessed)
 				: Promise.resolve({ data: { results: assessed } })
 		}
+		if (String(url).includes(`/apps/dossiq/api/cases/${CASE_ID}/letters/decision`)) {
+			if (letter instanceof Error) {
+				return Promise.reject(letter)
+			}
+			return Promise.resolve({
+				data: {
+					declaration: { title: 'Woo-besluit', documentType: 'Besluit' },
+					document: letter,
+				},
+			})
+		}
 		return Promise.reject(new Error('unexpected GET ' + url))
 	})
 
@@ -88,6 +99,7 @@ async function mountDialog({ outstanding = [], assessed = ASSESSED } = {}) {
 				NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 				CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 				CnChoiceCards: true,
+				BeschikkingComposerDialog: true,
 				NcNoteCard: { template: '<div><slot /></div>' },
 				NcButton: {
 					props: ['disabled'],
@@ -112,29 +124,25 @@ describe('AssessmentDecisionDialog', () => {
 		;(await import('@nextcloud/event-bus')).emit.mockReset()
 	})
 
-	it('counts the documents per classification', async () => {
+	it('proposes the mixed outcome and counts the documents in its description', async () => {
 		const { wrapper } = await mountDialog()
 
-		expect(
-			wrapper
-				.find('[data-testid="assessment-decision-count-openbaar"]')
-				.text(),
-		).toBe('2')
-		expect(
-			wrapper
-				.find('[data-testid="assessment-decision-count-deels_openbaar"]')
-				.text(),
-		).toBe('1')
-		expect(
-			wrapper
-				.find('[data-testid="assessment-decision-count-niet_openbaar"]')
-				.text(),
-		).toBe('0')
-		expect(
-			wrapper
-				.find('[data-testid="assessment-decision-count-outstanding"]')
-				.text(),
-		).toBe('0')
+		expect(wrapper.vm.proposedOutcome).toBe('deels_openbaar')
+		expect(wrapper.vm.outcomeOptions.map((option) => option.label)).toEqual([
+			'Made public',
+			'Made public in part',
+			'Not made public',
+		])
+		expect(wrapper.vm.outcomeOptions[1].description).toBe(
+			'Proposal from the assessment: 2 public, 1 disclosed in part',
+		)
+		expect(wrapper.vm.outcomeOptions[0].description).toBe(
+			'All requested documents become public',
+		)
+		// Read-only at full contrast: the decision follows the assessment.
+		const cards = wrapper.find('cn-choice-cards-stub')
+		expect(cards.attributes('readonly')).toBeDefined()
+		expect(cards.attributes('disabled')).toBeUndefined()
 	})
 
 	it('testOutstandingDocumentsBlockSubmit', async () => {
@@ -179,9 +187,9 @@ describe('AssessmentDecisionDialog', () => {
 	it('still decides when only the counts cannot be read', async () => {
 		const { wrapper } = await mountDialog({ assessed: new Error('403') })
 
-		expect(
-			wrapper.find('[data-testid="assessment-decision-counts"]').exists(),
-		).toBe(false)
+		expect(wrapper.vm.outcomeOptions[1].description).toBe(
+			'Some of the documents become public, in full or in part',
+		)
 		expect(
 			wrapper
 				.find('[data-testid="assessment-decision-counts-error"]')
@@ -222,6 +230,43 @@ describe('AssessmentDecisionDialog', () => {
 			'cn:page:refresh',
 			{},
 		)
+	})
+
+	it('shows the case\'s letter and records the decision with it', async () => {
+		const { wrapper, axios } = await mountDialog({
+			letter: { id: 'io-9', title: 'Besluit Woo-verzoek.docx', creatiedatum: '2026-10-28' },
+		})
+		axios.post.mockResolvedValue({ data: { decisionId: 'dec-1' } })
+
+		expect(wrapper.find('[data-testid="assessment-decision-letter-title"]').text()).toBe('Besluit Woo-verzoek.docx')
+		expect(wrapper.find('[data-testid="assessment-decision-letter-other"]').exists()).toBe(true)
+		await wrapper.find('[data-testid="assessment-decision-save"]').trigger('click')
+		await flushPromises()
+
+		expect(axios.post.mock.calls[0][1]).toEqual({ decision: {}, letter: 'io-9' })
+	})
+
+	it('says the letter could not be read instead of hiding the row', async () => {
+		const { wrapper } = await mountDialog({ letter: new Error('404') })
+
+		expect(wrapper.find('[data-testid="assessment-decision-letter"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="assessment-decision-letter-unread"]').exists()).toBe(true)
+	})
+
+	it('offers to draft the letter when the case has none', async () => {
+		const { wrapper, axios } = await mountDialog()
+		axios.post.mockResolvedValue({
+			data: {
+				declaration: { title: 'Woo-besluit', documentType: 'Besluit' },
+				document: { id: 'io-10', title: 'Woo-besluit.docx', creatiedatum: '2026-10-28' },
+			},
+		})
+
+		await wrapper.find('[data-testid="assessment-decision-letter-draft"]').trigger('click')
+		await flushPromises()
+
+		expect(axios.post.mock.calls[0][0]).toContain(`/apps/dossiq/api/cases/${CASE_ID}/letters/decision`)
+		expect(wrapper.find('[data-testid="assessment-decision-letter-title"]').text()).toBe('Woo-besluit.docx')
 	})
 
 	it('posts an empty decision when no summary is given, so the server writes its own', async () => {

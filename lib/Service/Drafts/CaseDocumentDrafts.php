@@ -149,6 +149,20 @@ class CaseDocumentDrafts {
 	}//end declarationFor()
 
 	/**
+	 * The declaration for one purpose on a case's case type, read by case id.
+	 *
+	 * @param string $caseId  The case uuid.
+	 * @param string $purpose The purpose.
+	 *
+	 * @return array<string, mixed> The declaration, or [] when the case type declares none.
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-a-case-type-names-the-template-it-drafts-a-document-from-req-cdd-001
+	 */
+	public function declarationForCase(string $caseId, string $purpose): array {
+		return $this->declarationFor(case: $this->caseRow(caseId: $caseId), purpose: $purpose);
+	}//end declarationForCase()
+
+	/**
 	 * The request filinq's published contract takes.
 	 *
 	 * @param string               $caseId      The case uuid.

@@ -95,9 +95,9 @@
 				:options="choiceOptions"
 				data-testid="case-acts-list"
 				@update:modelValue="chooseByKey">
-				<template #option-actions="{ option, selected }">
+				<template #option-details="{ option }">
 					<CaseActFields
-						v-if="selected && chosen !== null && option.value === entryKey(chosen)"
+						v-if="chosen !== null && option.value === entryKey(chosen)"
 						v-bind="fieldProps"
 						v-on="fieldEvents" />
 				</template>
@@ -161,7 +161,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import ArchiveOutline from 'vue-material-design-icons/ArchiveOutline.vue'
 import CaseActFields from '../components/case/CaseActFields.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
-import { buildActsMenu, endpointFor, inputsFor } from '../utils/caseActsMenu.js'
+import { buildActsMenu, endpointFor, iconFor, inputsFor } from '../utils/caseActsMenu.js'
 import {
 	approvalHeading,
 	approversLine,
@@ -172,6 +172,11 @@ import {
 	extensionNotice,
 	refusalMessage,
 } from '../utils/caseLifecycleHelpers.js'
+import {
+	asksReasonText,
+	offersPauseReasons,
+	pauseReasonToSend,
+} from '../utils/pauseReasonChoice.js'
 import { failedActionsWarning } from '../utils/transitionOutcome.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -218,6 +223,8 @@ export default {
 			resultTypeId: '',
 			until: '',
 			days: '14',
+			pauseReasons: [],
+			pauseReason: '',
 			caseType: '',
 			error: '',
 			busy: false,
@@ -268,6 +275,7 @@ export default {
 
 		/**
 		 * The acts as choice cards: what each does, or why the case does not allow it now.
+		 * A refused act carries its reason once, as the card's disabled reason.
 		 *
 		 * @return {Array<object>} CnChoiceCards options.
 		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
@@ -276,7 +284,8 @@ export default {
 			return this.entries.map((entry) => ({
 				value: this.entryKey(entry),
 				label: this.label(entry),
-				description: entry.disabled ? this.refusalOn(entry) : this.explainer(entry),
+				icon: iconFor(entry),
+				description: entry.disabled ? '' : this.explainer(entry),
 				disabled: Boolean(entry.disabled),
 				disabledReason: this.refusalOn(entry),
 			}))
@@ -311,6 +320,8 @@ export default {
 				resultTypeId: this.resultTypeId,
 				until: this.until,
 				days: this.days,
+				pauseReasons: this.pauseReasons,
+				pauseReason: this.pauseReason,
 			}
 		},
 
@@ -326,6 +337,7 @@ export default {
 				'update:resultTypeId': (value) => { this.resultTypeId = value },
 				'update:until': (value) => { this.until = value },
 				'update:days': (value) => { this.days = value },
+				'update:pauseReason': (value) => { this.pauseReason = value },
 				applyTemplate: (chosen) => this.applyTemplate(chosen),
 			}
 		},
@@ -335,8 +347,15 @@ export default {
 			if (this.busy || this.chosen === null) {
 				return false
 			}
-			if (this.inputs.reason && this.reason.trim().length === 0) {
-				return false
+			if (this.inputs.reason) {
+				// A picker of the case type's pause reasons needs a pick; the
+				// free text is asked for without one, and after Other.
+				if (offersPauseReasons(this.chosen, this.pauseReasons) && this.pauseReason === '') {
+					return false
+				}
+				if (asksReasonText(this.chosen, this.pauseReasons, this.pauseReason) && this.reason.trim().length === 0) {
+					return false
+				}
 			}
 			// A closing move with results to pick from waits for one: the
 			// engine refuses the close without it.
@@ -395,9 +414,9 @@ export default {
 				case 'finish':
 					return t('dossiq', 'Finish')
 				case 'abort':
-					return t('dossiq', 'Abort')
+					return t('dossiq', 'Break off')
 				case 'archive':
-					return t('dossiq', 'Archive')
+					return t('dossiq', 'Archive it')
 				case 'unarchive':
 					return t('dossiq', 'Restore from the archive')
 				case 'hold':
@@ -419,16 +438,24 @@ export default {
 		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 		 */
 		explainer(entry) {
+			if (entry?.kind === 'transition') {
+				return t(
+					'dossiq',
+					'The next status of the case type. Statuses that cannot follow from here are greyed out.',
+				)
+			}
 			switch (String(entry?.id ?? '')) {
 				case 'finish':
 					return t(
 						'dossiq',
-						'The case reached its result. The result decides what is kept.',
+						'Choose the result type. The end date and the archive outcome are recorded.',
 					)
+				case 'suspend':
+					return t('dossiq', 'The term stands still until the answer is in.')
 				case 'abort':
 					return t(
 						'dossiq',
-						'An intrekking. There is a result, and it is not a besluit.',
+						'The case stops without a decision. Asks for a reason.',
 					)
 				case 'archive':
 					return t(
@@ -441,10 +468,7 @@ export default {
 						'The case comes back into the working lists and can be edited again.',
 					)
 				case 'hold':
-					return t(
-						'dossiq',
-						'You park the case until a date. The statutory term keeps running.',
-					)
+					return t('dossiq', 'Park it internally, the term keeps running.')
 				case 'release-hold':
 					return t('dossiq', 'You pick the case up again before its date.')
 				case 'promote':
@@ -542,6 +566,10 @@ export default {
 				state.status === 'fulfilled'
 					? String(state.value?.data?.caseType ?? '')
 					: ''
+			this.pauseReasons =
+				state.status === 'fulfilled' && Array.isArray(state.value?.data?.pauseReasons)
+					? state.value.data.pauseReasons
+					: []
 			this.loading = false
 		},
 
@@ -647,8 +675,9 @@ export default {
 			}
 			this.chosen = entry
 			this.error = ''
-			// A result picked for one act is not an answer for another.
+			// A result or a pause reason picked for one act is not an answer for another.
 			this.resultTypeId = ''
+			this.pauseReason = ''
 		},
 
 		/**
@@ -724,6 +753,7 @@ export default {
 							resultTypeId: this.resultTypeId,
 							until: this.until,
 							days: Number(this.days) || 0,
+							pauseReason: pauseReasonToSend(this.pauseReason),
 						},
 					)
 					this.sayWhetherTheRequesterWasTold(data)
