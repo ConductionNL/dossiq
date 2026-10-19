@@ -5821,6 +5821,7 @@ OC.L10N.register(
         "Person is required": "Persoon is verplicht",
         "Person or department responsible for implementing this measure": "Persoon of afdeling die deze maatregel uitvoert",
         "Person or function": "Persoon of functie",
+        "Person or organisation": "Persoon of organisatie",
         "Personal data": "Persoonsgegevens",
         "Personal data categories": "Categorieen persoonsgegevens",
         "Personal info": "Persoonlijke info",
