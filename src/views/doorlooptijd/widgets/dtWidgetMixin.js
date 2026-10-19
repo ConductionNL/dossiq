@@ -7,8 +7,8 @@
  * Each widget is a thin wrapper: it reads the page's filters out of the reactive
  * `cnWorkspaceContext` CnDashboardPage provides, asks the shared store for the
  * derived block it needs, and hands that to the existing presentational
- * component unchanged. The sub-components (DeadlineKpiRow, ComplianceCharts,
- * DeadlineCaseTable, CaseTypeBreakdown, WooDeadlinePanel) are untouched by this
+ * component unchanged. The sub-components (ComplianceCharts, DeadlineCaseTable,
+ * CaseTypeBreakdown, WooDeadlinePanel) are untouched by this
  * change — they were already well factored; only their host was wrong.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md

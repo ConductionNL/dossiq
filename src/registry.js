@@ -224,7 +224,6 @@ import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
 import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
 import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
 import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
-import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
 //     customComponents map, plus the handlers a manifest names by string. ---
@@ -1568,12 +1567,6 @@ const registry = {
 		kind: 'actions',
 		component: DtCaseTypeFilter,
 		_note: 'header-actions slot: SLA-bearing case types only. A component rather than a declarative pageFilter because the options are fetched.',
-	},
-	DtKpiWidget: {
-		kind: 'widget',
-		component: DtKpiWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'KPI row + the three guidance states.',
 	},
 	DtChartsWidget: {
 		kind: 'widget',
