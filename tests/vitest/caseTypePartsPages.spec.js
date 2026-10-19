@@ -22,8 +22,6 @@ const baseWidget = (id) => manifest.pages.find((p) => p.id === 'CaseTypeDetail')
 
 describe('the parts of a case type', () => {
 	it.each([
-		['case-type-statuses-list', 'StatusTypeDetail', 'statusType'],
-		['case-type-fields', 'PropertyDefinitionDetail', 'propertyDefinition'],
 		['case-type-results', 'ResultTypeDetail', 'resultType'],
 		['case-type-roles', 'RoleTypeDetail', 'roleType'],
 		['case-type-document-types', 'DocumentTypeDetail', 'documentType'],
@@ -39,7 +37,7 @@ describe('the parts of a case type', () => {
 	it('places results under statuses, roles under rights, document and decision types under phases', () => {
 		const tabs = appended('case-type-panels').content.tabs
 		const holds = (label) => tabs.find((tab) => tab.label === label).widgetIds
-		expect(holds('Statuses')).toEqual(['case-type-statuses-list', 'case-type-results'])
+		expect(holds('Statuses')).toEqual(['case-type-statuses-editor', 'case-type-results'])
 		expect(holds('Rights')).toEqual(['case-type-rights', 'case-type-roles'])
 		expect(holds('Phases and tasks')).toEqual(expect.arrayContaining(['case-type-document-types', 'case-type-decision-types']))
 	})
@@ -59,12 +57,17 @@ describe('the parts of a case type', () => {
 		}
 	})
 
-	it('lists only the active wording of each message, not the kept earlier versions', () => {
-		expect(appended('case-type-messages').content.filter).toEqual({ caseType: '@objectId', isActive: true })
-	})
-
-	it('groups the fields by category', () => {
-		expect(appended('case-type-fields').content.groupBy).toBe('category')
+	it('edits statuses, fields, messages, the workflow and the rules in their rehosted editors', () => {
+		const tabs = appended('case-type-panels').content.tabs
+		const holds = (label) => tabs.find((tab) => tab.label === label).widgetIds
+		expect(holds('Fields')).toEqual(expect.arrayContaining(['case-type-fields-editor', 'case-type-rules']))
+		expect(holds('Phases and tasks')).toEqual(expect.arrayContaining(['case-type-workflow-editor', 'case-type-messages-editor']))
+		const types = overlay.configPatch.widgets
+		expect(types['case-type-statuses-editor'].type).toBe('CaseTypeStatusesEditorWidget')
+		expect(types['case-type-fields-editor'].type).toBe('CaseTypeFieldsEditorWidget')
+		expect(types['case-type-messages-editor'].type).toBe('CaseTypeMessagesEditorWidget')
+		expect(types['case-type-workflow-editor'].type).toBe('CaseTypeWorkflowEditorWidget')
+		expect(types['case-type-rules'].type).toBe('CaseTypeRulesWidget')
 	})
 
 	it('edits the general fields the old editor had on the case type cards', () => {

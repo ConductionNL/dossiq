@@ -251,7 +251,7 @@ class SettingsServiceTest extends TestCase {
 		$this->assertArrayHasKey('result_schema', $settings);
 		$this->assertArrayHasKey('decision_schema', $settings);
 		$this->assertArrayHasKey('case_type_schema', $settings);
-		$this->assertArrayHasKey('default_case_type', $settings);
+		$this->assertArrayNotHasKey('default_case_type', $settings);
 
 		$this->assertSame('42', $settings['register']);
 		$this->assertSame('101', $settings['case_schema']);

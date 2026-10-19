@@ -4309,8 +4309,9 @@
 								{
 									"label": "Fields",
 									"widgetIds": [
-										"case-type-fields",
+										"case-type-fields-editor",
 										"case-type-field-rules",
+										"case-type-rules",
 										"case-type-core",
 										"case-type-list-layout"
 									],
@@ -4325,7 +4326,7 @@
 								{
 									"label": "Statuses",
 									"widgetIds": [
-										"case-type-statuses-list",
+										"case-type-statuses-editor",
 										"case-type-results"
 									],
 									"countFrom": {
@@ -4341,7 +4342,8 @@
 									"widgetIds": [
 										"case-type-phase-board",
 										"case-type-terms",
-										"case-type-messages",
+										"case-type-workflow-editor",
+										"case-type-messages-editor",
 										"case-type-blueprint",
 										"case-type-document-types",
 										"case-type-decision-types"
@@ -4418,134 +4420,6 @@
 								"variant": "neutral"
 							},
 							"emptyText": "This case type has no statuses yet"
-						}
-					},
-					{
-						"id": "case-type-statuses-list",
-						"type": "object-list",
-						"title": "Statuses",
-						"content": {
-							"register": "dossiq",
-							"schema": "statusType",
-							"filter": {
-								"caseType": "@objectId"
-							},
-							"sort": {
-								"field": "order",
-								"dir": "asc"
-							},
-							"limit": 50,
-							"columns": [
-								{
-									"key": "order",
-									"label": "Order"
-								},
-								{
-									"key": "name",
-									"label": "Status"
-								},
-								{
-									"key": "publicLabel",
-									"label": "Public label"
-								},
-								{
-									"key": "isFinal",
-									"label": "Final"
-								}
-							],
-							"emptyText": "This case type has no statuses yet",
-							"rowRoute": "StatusTypeDetail",
-							"rowActions": [
-								{
-									"id": "status-type-delete",
-									"label": "Delete",
-									"icon": "Delete",
-									"type": "object-op",
-									"op": "delete",
-									"destructive": true
-								}
-							]
-						}
-					},
-					{
-						"id": "case-type-fields",
-						"type": "object-list",
-						"title": "Fields",
-						"content": {
-							"register": "dossiq",
-							"schema": "propertyDefinition",
-							"filter": {
-								"caseType": "@objectId"
-							},
-							"sort": {
-								"field": "name",
-								"dir": "asc"
-							},
-							"limit": 50,
-							"columns": [
-								{
-									"key": "name",
-									"label": "Field"
-								},
-								{
-									"key": "propertyType",
-									"label": "Type"
-								},
-								{
-									"key": "isRequired",
-									"label": "Required"
-								},
-								{
-									"key": "propertySource",
-									"label": "Origin"
-								},
-								{
-									"key": "filterable",
-									"label": "In the list"
-								}
-							],
-							"emptyText": "This case type has no fields of its own yet",
-							"groupBy": "category",
-							"rowRoute": "PropertyDefinitionDetail",
-							"rowActions": [
-								{
-									"id": "property-definition-delete",
-									"label": "Delete",
-									"icon": "Delete",
-									"type": "object-op",
-									"op": "delete",
-									"destructive": true
-								}
-							]
-						}
-					},
-					{
-						"id": "case-type-messages",
-						"type": "object-list",
-						"title": "Messages to the applicant",
-						"content": {
-							"register": "dossiq",
-							"schema": "emailTemplate",
-							"filter": {
-								"caseType": "@objectId",
-								"isActive": true
-							},
-							"limit": 25,
-							"columns": [
-								{
-									"key": "messageCategory",
-									"label": "Moment"
-								},
-								{
-									"key": "name",
-									"label": "Message"
-								},
-								{
-									"key": "subject",
-									"label": "Subject"
-								}
-							],
-							"emptyText": "This case type sends no messages of its own"
 						}
 					},
 					{
@@ -4857,6 +4731,21 @@
 					},
 					"case-type-party-kinds": {
 						"type": "CaseTypePartyKindsWidget"
+					},
+					"case-type-workflow-editor": {
+						"type": "CaseTypeWorkflowEditorWidget"
+					},
+					"case-type-statuses-editor": {
+						"type": "CaseTypeStatusesEditorWidget"
+					},
+					"case-type-fields-editor": {
+						"type": "CaseTypeFieldsEditorWidget"
+					},
+					"case-type-messages-editor": {
+						"type": "CaseTypeMessagesEditorWidget"
+					},
+					"case-type-rules": {
+						"type": "CaseTypeRulesWidget"
 					}
 				}
 			}
