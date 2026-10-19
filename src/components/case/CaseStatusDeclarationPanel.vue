@@ -94,7 +94,7 @@
 			:class="{ 'is-breached': breached }"
 			data-testid="case-status-dwell">
 			{{ dwellText }}
-			<span v-if="breached" class="case-status-declaration__chip">{{
+			<span v-if="breached" class="case-status-declaration__chip cn-status-badge cn-status-badge--warning">{{
 				t('dossiq', 'longer than this status allows')
 			}}</span>
 		</p>
@@ -420,11 +420,8 @@ export default {
 
 .case-status-declaration__chip {
 	margin-inline-start: 4px;
-	padding: 0 6px;
-	border-radius: var(--border-radius-pill, 100px);
 	background-color: var(--color-warning);
-	color: var(--color-warning-text);
-	font-size: 0.85em;
-	font-weight: normal;
+	--cn-status-badge-ink: var(--color-warning-text);
+	color: var(--cn-status-badge-ink);
 }
 </style>

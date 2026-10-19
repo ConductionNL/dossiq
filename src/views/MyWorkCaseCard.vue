@@ -16,24 +16,24 @@
 			<span v-if="identifier" class="mywork-card__ref">{{ identifier }}</span>
 			<span
 				v-if="caseTypeLabel"
-				class="mywork-card__chip"
+				class="mywork-card__chip cn-status-badge cn-status-badge--default"
 				:title="caseTypeLabel"
 				>{{ caseTypeLabel }}</span
 			>
 			<span
 				v-if="statusLabel"
-				class="mywork-card__chip mywork-card__chip--status"
+				class="mywork-card__chip cn-status-badge cn-status-badge--default mywork-card__chip--status"
 				>{{ statusLabel }}</span
 			>
 			<span
 				v-if="substitutedMarker"
-				class="mywork-card__chip mywork-card__chip--substituted"
+				class="mywork-card__chip cn-status-badge cn-status-badge--default mywork-card__chip--substituted"
 				data-testid="substituted-marker">
 				{{ substitutedMarker }}
 			</span>
 			<span
 				v-if="tierPillLabel"
-				class="mywork-card__chip mywork-card__tier-pill"
+				class="mywork-card__chip cn-status-badge cn-status-badge--default mywork-card__tier-pill"
 				:class="tierPillClassName"
 				data-testid="deadline-tier-pill">
 				{{ tierPillLabel }}
@@ -302,16 +302,14 @@ export default {
 	max-width: 100%;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	padding: 1px 8px;
-	border-radius: var(--border-radius-pill, 16px);
 	background: var(--color-background-dark);
 	color: var(--color-main-text);
-	font-size: 0.8rem;
 	white-space: nowrap;
 
 	&--status {
+		--cn-status-badge-ink: var(--color-primary-element-text-dark, var(--color-main-text));
 		background: var(--color-primary-element-light);
-		color: var(--color-primary-element-text-dark, var(--color-main-text));
+		color: var(--cn-status-badge-ink);
 	}
 
 	// The substitution marker reads as a note about the row, not as a status

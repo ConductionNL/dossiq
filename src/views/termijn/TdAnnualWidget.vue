@@ -22,12 +22,12 @@
 				t('dossiq', 'Total dwangsom in {y}:', { y: annual.jaar })
 			}}</strong>
 			{{ euro(totalEuros) }}
-			<span class="td-annual-widget__pill">
+			<span class="td-annual-widget__pill cn-status-badge cn-status-badge--default">
 				{{ t('dossiq', '{n} payments', { n: annual.summary?.count || 0 }) }}
 			</span>
 			<span
 				v-if="(annual.warnings || []).length > 0"
-				class="td-annual-widget__pill td-annual-widget__pill--warn">
+				class="td-annual-widget__pill cn-status-badge cn-status-badge--default td-annual-widget__pill--warn">
 				{{ t('dossiq', '{n} data warnings', { n: annual.warnings.length }) }}
 			</span>
 		</div>
@@ -110,15 +110,14 @@ export default {
 
 .td-annual-widget__pill {
 	display: inline-block;
-	margin-left: 8px;
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill, 100px);
+	margin-inline-start: 8px;
 	background: var(--color-background-dark);
 }
 
 .td-annual-widget__pill--warn {
 	background: var(--color-warning);
-	color: var(--color-primary-text);
+	--cn-status-badge-ink: var(--color-primary-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .td-annual-widget__empty {

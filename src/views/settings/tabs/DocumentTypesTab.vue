@@ -24,7 +24,7 @@
 							</span>
 							<span
 								v-if="item.isRequired"
-								class="sub-entity-row__badge">
+								class="sub-entity-row__badge cn-status-badge cn-status-badge--default">
 								{{ t('dossiq', 'Required') }}
 							</span>
 							<span

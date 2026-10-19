@@ -85,7 +85,7 @@
 
 			<template #column-isDraft="{ row }">
 				<span
-					class="ct-badge"
+					class="ct-badge cn-status-badge cn-status-badge--default"
 					:class="row.isDraft ? 'ct-badge--draft' : 'ct-badge--published'">
 					{{
 						row.isDraft ? t('dossiq', 'Draft') : t('dossiq', 'Published')
@@ -484,20 +484,18 @@ export default {
 
 .ct-badge {
 	display: inline-block;
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 12px;
-	font-weight: 500;
 }
 
 .ct-badge--published {
 	background: var(--color-success);
-	color: var(--color-success-text);
+	--cn-status-badge-ink: var(--color-success-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .ct-badge--draft {
 	background: var(--color-warning);
-	color: var(--color-warning-text);
+	--cn-status-badge-ink: var(--color-warning-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .validity--expired {
