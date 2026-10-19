@@ -472,6 +472,7 @@ $extra = [
         // perform, with the sentence naming the role, because an act that is
         // simply absent teaches nobody why.
     ['name' => 'caseActs#acts',           'url' => '/api/case/{caseId}/acts',           'verb' => 'GET'],
+    ['name' => 'caseActs#archiveReadiness', 'url' => '/api/case/{caseId}/archive/readiness', 'verb' => 'GET'],
         // Decision outcomes on the case: start the decidiq walk a gated act
         // waits for, and link its decision id to the case.
     ['name' => 'caseApproval#raise',      'url' => '/api/case/{caseId}/approvals/{act}', 'verb' => 'POST'],
