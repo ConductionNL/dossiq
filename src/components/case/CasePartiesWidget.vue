@@ -21,8 +21,8 @@
 	indicator that only renders is an indicator somebody misses. Each one says
 	what it does: warn the reader, refuse publishing a file on the case, or
 	refuse a message to that party. The refusals are ALSO enforced where the
-	act happens — the publication in `BesluitPublicatiePanel`, the send in
-	`FileRequestService`, and both again inside OpenRegister — because a
+	act happens — the send in `FileRequestService`, and both again inside
+	OpenRegister — because a
 	verdict drawn in a widget is a verdict a second caller does not have.
 
 	WHY A FAILED READ SAYS SO. A case with nobody on it is a real answer and
