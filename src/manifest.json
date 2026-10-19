@@ -5539,7 +5539,25 @@
 				"pageId": "ProcessMiningDashboard",
 				"showWidgetActions": false,
 				"description": "Bottleneck analysis from recorded case status history",
+				"_statisticNote": "Board DqProcesanalyse: the description line carries the Gemiddeld / Mediaan switch. The report answers both (`phaseDays.mean` and `phaseDays.median`), and the days-per-phase matrix reads the one the switch names through `@workspace.statistic` in its responsePath.",
 				"pageFilters": [
+					{
+						"key": "statistic",
+						"label": "Statistic",
+						"control": "segmented",
+						"placement": "description",
+						"default": "mean",
+						"options": [
+							{
+								"value": "mean",
+								"label": "Mean"
+							},
+							{
+								"value": "median",
+								"label": "Median"
+							}
+						]
+					},
 					{
 						"key": "period",
 						"label": "Period",
@@ -5590,7 +5608,7 @@
 								"params": {
 									"caseType": "@workspace.caseType?"
 								},
-								"responsePath": "phaseDays.mean",
+								"responsePath": "phaseDays.@workspace.statistic",
 								"labelsPath": "columns",
 								"rowsPath": "rows",
 								"rowLabelPath": "label",
