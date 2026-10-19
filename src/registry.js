@@ -92,14 +92,19 @@ import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
+import CaseTypeFieldsEditorWidget from './components/caseType/CaseTypeFieldsEditorWidget.vue'
+import CaseTypeMessagesEditorWidget from './components/caseType/CaseTypeMessagesEditorWidget.vue'
 // The party kinds a case type accepts, declared into pipelinq
 // (parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype).
 import CaseTypePartyKindsWidget from './components/caseType/CaseTypePartyKindsWidget.vue'
 import CaseTypePortalWidget from './components/caseType/CaseTypePortalWidget.vue'
+import CaseTypeRulesWidget from './components/caseType/CaseTypeRulesWidget.vue'
+import CaseTypeStatusesEditorWidget from './components/caseType/CaseTypeStatusesEditorWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
 // @spec openspec/specs/case-configuration-i18n/spec.md
 import CaseTypeTranslationsWidget from './components/caseType/CaseTypeTranslationsWidget.vue'
+import CaseTypeWorkflowEditorWidget from './components/caseType/CaseTypeWorkflowEditorWidget.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
 // export-leaf URL client-side; no dossiq-side serialization (ADR-022).
@@ -473,6 +478,48 @@ const registry = {
 		component: CaseTypePortalWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail: the Portal section. Reads the case type and its blueprint statuses, writes portalWritable, both windows and portalWithdrawal in one PATCH, and shows the sentence CaseTypePortalWithdrawalListener refuses an unreachable withdrawal with.',
+	},
+	// --- The editors of the retired admin-settings case type editor, rehosted
+	// on CaseTypeDetail while their forms have no declarative equivalent. ---
+	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+	CaseTypeWorkflowEditorWidget: {
+		// @custom-widget-ratchet exclude a visual canvas of statuses, transitions, steps and guards with a version selector and publish; no declared widget draws or edits a graph
+		kind: 'widget',
+		component: CaseTypeWorkflowEditorWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail Phases and tasks: the workflow canvas, kept by decision when the admin-settings editor was retired.',
+	},
+	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+	CaseTypeStatusesEditorWidget: {
+		// @custom-widget-ratchet exclude a status carries a checklist and field rules (arrays of objects with a field picker over the type's own fields) and the list reorders by drag; the generic form edits neither
+		kind: 'widget',
+		component: CaseTypeStatusesEditorWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail Statuses: add, edit, delete and drag statuses into order, with the checklist and field rules editors.',
+	},
+	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+	CaseTypeFieldsEditorWidget: {
+		// @custom-widget-ratchet exclude a field is typed against OpenRegister's property vocabulary, with a choice-list editor, concept schemes and requiredAtStatus limited to the type's own statuses; a declared form offers free text for all of them
+		kind: 'widget',
+		component: CaseTypeFieldsEditorWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail Fields: the type\'s own fields, grouped by category, edited against the property vocabulary.',
+	},
+	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+	CaseTypeMessagesEditorWidget: {
+		// @custom-widget-ratchet exclude a message is edited with the case variables to insert and a live preview that flags an unresolved variable; no declared form offers either
+		kind: 'widget',
+		component: CaseTypeMessagesEditorWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail Phases and tasks: the messages to the applicant through the email template endpoints, so each change is a new version (EmailTemplateVersionListener keeps that on the object API too).',
+	},
+	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+	CaseTypeRulesWidget: {
+		// @custom-widget-ratchet exclude the rules are read from OpenRegister's rules vocabulary and evaluated against a pasted case; no declared widget evaluates a rule
+		kind: 'widget',
+		component: CaseTypeRulesWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail Fields: the OpenRegister rules of the case schema with a try-it. They belong to the case schema rather than to one case type, so this is a candidate to move to OpenRegister\'s schema page.',
 	},
 	// @spec openspec/specs/zaaktype-versioning/spec.md
 	CaseTypePublishDialog: {

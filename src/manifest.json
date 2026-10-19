@@ -6166,32 +6166,39 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "workflowTemplate",
-				"_note": "CASE-TYPE / WORKFLOW-DEFINITION archetype (the state machine that drives cases of a caseType), ADR-062 round 2. No comms. The schema splits into two genuinely distinct groups: 'Definition' (identity + versioning — title, description, caseType, version, lifecycleStatus, isActive, isDraft, parentWorkflow) and 'State machine' (the two defining graph payloads — steps[] with stages/roles/SLAs/checklists, transitions[] with from/to/guards/actions, plus editor nodePositions). Cases driven by this workflow are reached through their caseType index rather than a direct FK (case.workflowTemplate stores a version reference, not this object's id), so no object-list is scoped here. Publish/Deprecate/Clone admin actions are preserved as page actions and lifecycleActions drive the lifecycleStatus. Audit history (version changes) is a sidebar tab.",
-				"actions": [
+				"_note": "CASE-TYPE / WORKFLOW-DEFINITION archetype (the state machine that drives cases of a caseType), ADR-062 round 2. No comms. The schema splits into two genuinely distinct groups: 'Definition' (identity + versioning — title, description, caseType, version, lifecycleStatus, isActive, isDraft, parentWorkflow) and 'State machine' (the two defining graph payloads — steps[] with stages/roles/SLAs/checklists, transitions[] with from/to/guards/actions, plus editor nodePositions). Cases driven by this workflow are reached through their caseType index rather than a direct FK (case.workflowTemplate stores a version reference, not this object's id), so no object-list is scoped here. Publish, Deprecate and Clone are header api-calls on POST /api/workflow-definitions/{id}/publish|deprecate|clone, each behind AuthorizedAdminSetting; lifecycleActions drive the lifecycleStatus. Audit history (version changes) is a sidebar tab.",
+				"headerActions": [
 					{
-						"id": "publish",
+						"id": "workflow-publish",
+						"type": "api-call",
 						"label": "Publish",
 						"icon": "CloudUploadOutline",
-						"permission": "admin",
-						"primary": true,
-						"handler": "emit",
-						"type": "handler"
+						"url": "/apps/dossiq/api/workflow-definitions/@objectId/publish",
+						"method": "POST",
+						"confirm": true,
+						"successMessage": "The workflow is published.",
+						"errorMessage": "The workflow was not published."
 					},
 					{
-						"id": "deprecate",
+						"id": "workflow-deprecate",
+						"type": "api-call",
 						"label": "Deprecate",
 						"icon": "Close",
-						"permission": "admin",
-						"handler": "emit",
-						"type": "handler"
+						"url": "/apps/dossiq/api/workflow-definitions/@objectId/deprecate",
+						"method": "POST",
+						"confirm": true,
+						"successMessage": "The workflow is deprecated.",
+						"errorMessage": "The workflow was not deprecated."
 					},
 					{
-						"id": "clone",
+						"id": "workflow-clone",
+						"type": "api-call",
 						"label": "Clone",
 						"icon": "Plus",
-						"permission": "admin",
-						"handler": "emit",
-						"type": "handler"
+						"url": "/apps/dossiq/api/workflow-definitions/@objectId/clone",
+						"method": "POST",
+						"successMessage": "A draft copy of the workflow was made.",
+						"errorMessage": "The workflow was not copied."
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
@@ -7948,7 +7955,12 @@
 					"parentCaseType",
 					"description",
 					"purpose",
-					"trigger"
+					"trigger",
+					"subject",
+					"origin",
+					"responsibleUnit",
+					"serviceTarget",
+					"notificationDomain"
 				],
 				"_includeFieldsNote": "Twelve of the forty-one, and every one of them is also on CaseTypeDetail, so nothing here becomes unreachable by being left off the create form. The cut follows the detail page's own grouping: this is `case-type-core` (title, identifier, description, category, parentCaseType, purpose, trigger, handlingModel, confidentiality, isDraft) plus the two facts from `case-type-terms` that a type cannot sensibly start life without, its statutory `processingDeadline` and the `validFrom` it takes effect on. What is deliberately NOT here: the versioning trio (version, previousVersion, supersededBy) is written by the publish action, not typed; the relation lists (subCaseTypes, decisionTypes, relatedCaseTypes, startableFlows) are built up on the detail page once the thing they point at exists; the AVG block (case-type-privacy) is a data protection officer's pass over an existing type rather than an author's first screen; and the remaining specialist codings (layerIds, iv3TaskField, selectionListProcessType, referenceProcess, verwerkingsactiviteit) are lookups nobody has to hand while naming a new type. `initialStatus` is excluded for a HARDER reason, the same one the CaseTypes-adjacent `case` form records for `status`: it is a $ref to a statusType filtered by `caseType`, and at create time this case type has no id and therefore no statuses, so the picker would fetch unfiltered and offer every OTHER type's statuses. Half of those are called `Received` or `In progress`, which makes them both indistinguishable and wrong. A type's statuses are authored on its detail page, after it exists.",
 				"fieldOverrides": {
@@ -7958,12 +7970,17 @@
 					"handlingModel": { "order": 4 },
 					"confidentiality": { "order": 5 },
 					"processingDeadline": { "order": 6 },
+					"serviceTarget": { "order": 6.5 },
 					"validFrom": { "order": 7 },
 					"isDraft": { "order": 8 },
 					"parentCaseType": { "order": 9 },
 					"description": { "order": 10, "widget": "textarea" },
 					"purpose": { "order": 11, "widget": "textarea" },
-					"trigger": { "order": 12, "widget": "textarea" }
+					"trigger": { "order": 12, "widget": "textarea" },
+					"subject": { "order": 13 },
+					"origin": { "order": 14 },
+					"responsibleUnit": { "order": 15 },
+					"notificationDomain": { "order": 16 }
 				},
 				"_fieldOverridesNote": "`order` is set here rather than on the register because fieldsFromSchema resolves an override's `order` AHEAD of the property's own, so one manifest map orders every schema-driven surface without a data-model change. It is not cosmetic: not one of caseType's 41 properties carries an `order`, so the sort falls through to alphabetical and a form that opens on `Category` puts `Title` TENTH. The three prose fields are declared `textarea` because caseType leaves them as plain strings with no maxLength, so resolveWidget renders a single-line input for what is a paragraph. That also decides the layout: CnFormDialog spans a textarea across BOTH columns (WIDE_WIDGETS), so the nine single-line fields pair up into rows first and the three prose fields follow full width, which is why the order puts them last. Interleaved, each one would leave the column beside it empty.",
 				"_folderSidebarNote": "`source: \"field\"` and not `source: \"facet\"`. CnIndexPage still resolves exactly four sources, register, field, custom and files, and CnFolderSidebar's own validator takes only custom, field and files, so a sidebar declared as a facet falls through to `custom`, finds the (absent) `folders` array and renders an empty pane. THE SECOND HALF OF THIS NOTE WAS TRUE UNTIL nextcloud-vue 2.42.0 AND IS NOT ANY MORE: `field` no longer derives the folders from the distinct `category` values of the loaded rows. Since #1036 it prefers the FACET for `field`, which is computed over the whole query with pagination stripped, and only groups the rows when no facet arrives. That is what makes a category reachable when every row carrying it sits on a later page, and it is why no manifest change is wanted here: `facetable: true` on the property plus `source: \"field\"` is the whole contract, and the object store adds `_facets=extend` on its own once the fetched schema has any facetable property. `x-openregister-facet` is still read by nothing. ⚠️ The facet ARRIVES an hour stale, because OpenRegister caches the response and no object write invalidates it, so a category added today gets no folder today: OpenRegister#3560, and the reason the folder e2e test is parked.",
@@ -8064,11 +8081,20 @@
 								"parentCaseType",
 								"purpose",
 								"trigger",
+								"origin",
+								"initiatorAction",
+								"responsibleUnit",
+								"referenceProcess",
+								"keywords",
+								"publicationText",
 								"handlingModel",
 								"confidentiality",
+								"notificationDomain",
 								"coordinatorRequiredBeforeSigning",
-								"isDraft",
-								"knowledgeBasePage"
+								"knowledgeBasePage",
+								"subject",
+								"handlerAction",
+								"publicationRequired"
 							],
 							"hideEmpty": false
 						}
@@ -8083,11 +8109,15 @@
 							"columns": 2,
 							"include": [
 								"processingDeadline",
+								"serviceTarget",
 								"suspensionAllowed",
 								"extensionAllowed",
 								"extensionPeriod",
+								"maxExtensions",
 								"validFrom",
-								"validUntil"
+								"validUntil",
+								"queueWarningDays",
+								"queueCriticalDays"
 							],
 							"hideEmpty": false
 						}
@@ -8231,6 +8261,41 @@
 						"title": "Party kinds",
 						"icon": "AccountGroupOutline",
 						"_note": "parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype (Partijsoorten): which kinds of party a case of this type accepts, in the order handlers see them, declared into pipelinq as `dossiq:case:<case type uuid>` through PipelinqCaseController and PartyKindConsumer (a re-declaration patches pipelinq's row, never replaces it). Custom because the vocabulary is pipelinq's and the write is a declaration in another app's register, which no declared form can make; without pipelinq it lists dossiq's own three kinds read only and says nothing can be saved."
+					},
+					{
+						"id": "case-type-workflow-editor",
+						"type": "custom",
+						"title": "Workflow",
+						"icon": "Sitemap",
+						"_note": "The workflow canvas, rehosted from the retired admin-settings editor (CaseTypeWorkflowEditorWidget)."
+					},
+					{
+						"id": "case-type-statuses-editor",
+						"type": "custom",
+						"title": "Statuses",
+						"icon": "ListStatus",
+						"_note": "The statuses with their checklist and field rules, rehosted from the retired admin-settings editor (CaseTypeStatusesEditorWidget)."
+					},
+					{
+						"id": "case-type-fields-editor",
+						"type": "custom",
+						"title": "Fields",
+						"icon": "FormatListBulletedType",
+						"_note": "The type's own fields against the property vocabulary, rehosted from the retired admin-settings editor (CaseTypeFieldsEditorWidget)."
+					},
+					{
+						"id": "case-type-messages-editor",
+						"type": "custom",
+						"title": "Messages to the applicant",
+						"icon": "EmailOutline",
+						"_note": "The messages through the email template endpoints with variables and preview, rehosted from the retired admin-settings editor (CaseTypeMessagesEditorWidget)."
+					},
+					{
+						"id": "case-type-rules",
+						"type": "custom",
+						"title": "Rules",
+						"icon": "ScaleBalance",
+						"_note": "The OpenRegister rules of the case schema with a try-it, rehosted from the retired admin-settings editor (CaseTypeRulesWidget); a candidate to move to OpenRegister's schema page."
 					}
 				],
 				"layout": [
@@ -8323,6 +8388,51 @@
 						"gridWidth": 12,
 						"gridHeight": 6,
 						"showTitle": true
+					},
+					{
+						"id": "11",
+						"widgetId": "case-type-workflow-editor",
+						"gridX": 0,
+						"gridY": 47,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": true
+					},
+					{
+						"id": "12",
+						"widgetId": "case-type-statuses-editor",
+						"gridX": 0,
+						"gridY": 59,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": true
+					},
+					{
+						"id": "13",
+						"widgetId": "case-type-fields-editor",
+						"gridX": 0,
+						"gridY": 71,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": true
+					},
+					{
+						"id": "14",
+						"widgetId": "case-type-messages-editor",
+						"gridX": 0,
+						"gridY": 83,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": true
+					},
+					{
+						"id": "15",
+						"widgetId": "case-type-rules",
+						"gridX": 0,
+						"gridY": 95,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": true
 					}
 				],
 				"_headerActionsNote": "There is no `run-action` header-action type. The manifest schema enumerates handler, open-modal, open-page, navigate, object-op, export, open-form, refresh, api-call, agent and toggle, and CnActionButtons resolves exactly those; the design's `run-action` would have been refused by `npm run check:manifest` and, had it slipped through, rendered a button that dispatches nothing. Export is an `api-call` with `download: true`, which is the shape that asks for the response as a blob and hands it to the browser -- the endpoint already answers a DataDownloadResponse. The other three are dialogs, each for a reason a declarative action cannot meet: Import takes a FILE (a confirm gate has no fields and an api-call sends JSON), Publish must show the validation findings BEFORE asking for a change note, and Duplicate must land on the copy rather than refresh the page you are already on. Every icon here is registered in src/icons.js (gate-60); a name that is not renders no icon at all. The three dialogs read the case type off the ROUTE and not off their props: `open-modal` forwards props verbatim, so a `@objectId` token would arrive as that literal string. case-type-version-chain adds two. NEW VERSION is a dialog and not the api-call its tasks named, for the reason Duplicate is one: an api-call refreshes the page you are already on, so the person who asked for a new version would be left on the old one with the draft nowhere in sight. It also says what a version IS before making one, because the gesture beside it is Duplicate: a duplicate is a second case type, a version is this one later on, same name, same identifier, and today's running cases stay where they are. DEPRECATE is an api-call to a dossiq endpoint and NOT the `object-op` the design named. An object-op merges its `values` into the row verbatim: `validUntil: \"@today\"` is not token-resolved for that action type, so the literal string `@today` would have been written into a date field and stored without complaint. The day comes from the server's clock instead, and the server also refuses to close a version nothing has replaced. Its `visibleWhen` is a SOURCE query rather than a local field test, because the local operator set is eq/neq/gt/gte/lt/lte with no is-set, and `supersededBy neq null` reads TRUE on an unset field, which is the opposite of what it means. Counting the published rows whose `previousVersion` is this one asks the same question and can answer it.",
@@ -8413,7 +8523,12 @@
 				"widget-case-type-blueprint": "CaseTypeBlueprintWidget",
 				"widget-case-type-translations": "CaseTypeTranslationsWidget",
 				"widget-case-type-portal": "CaseTypePortalWidget",
-				"widget-case-type-party-kinds": "CaseTypePartyKindsWidget"
+				"widget-case-type-party-kinds": "CaseTypePartyKindsWidget",
+				"widget-case-type-workflow-editor": "CaseTypeWorkflowEditorWidget",
+				"widget-case-type-statuses-editor": "CaseTypeStatusesEditorWidget",
+				"widget-case-type-fields-editor": "CaseTypeFieldsEditorWidget",
+				"widget-case-type-messages-editor": "CaseTypeMessagesEditorWidget",
+				"widget-case-type-rules": "CaseTypeRulesWidget"
 			},
 			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here. `case-type-authoring-extras` put the type's own content on the page: what it inherits from a parent, what it actually offers, the personal data it processes, and the four gestures that were API-only. NO TAB STRIP: `case-type-one-authoring-surface` owns that, and building one here would be the second strip the moment it lands. These are layout cells, and they become that strip's children when it arrives -- except `case-type-blueprint`, which cannot be a tab child while it is `type: \"custom\"`."
 		},

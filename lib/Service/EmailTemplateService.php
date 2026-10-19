@@ -67,30 +67,6 @@ class EmailTemplateService {
 		'behandelaar' => 'handler',
 	];
 
-	private const DEFAULT_TEMPLATES = [
-		[
-			'slug' => 'ontvangstbevestiging',
-			'name' => 'Ontvangstbevestiging',
-			'subject' => 'Bevestiging ontvangst zaak {{zaakNummer}}',
-			'body' => 'Geachte {{contactNaam}},\n\nWij hebben uw aanvraag {{zaakNummer}} ontvangen op {{startDate}}.'
-				. '\n\nMet vriendelijke groet,\n{{handler}}',
-		],
-		[
-			'slug' => 'informatieverzoek',
-			'name' => 'Informatieverzoek',
-			'subject' => 'Aanvullende informatie nodig voor zaak {{zaakNummer}}',
-			'body' => 'Geachte {{contactNaam}},\n\nVoor de behandeling van zaak {{zaakNummer}} hebben wij aanvullende informatie nodig.'
-				. '\n\nMet vriendelijke groet,\n{{handler}}',
-		],
-		[
-			'slug' => 'decision',
-			'name' => 'Besluit',
-			'subject' => 'Besluit zaak {{zaakNummer}}',
-			'body' => 'Geachte {{contactNaam}},\n\nWij hebben besloten in uw zaak {{zaakNummer}}. Het besluit is op {{endDate}} genomen.'
-				. '\n\nMet vriendelijke groet,\n{{handler}}',
-		],
-	];
-
 	/**
 	 * Constructor.
 	 *
@@ -297,45 +273,6 @@ class EmailTemplateService {
 		];
 	}//end prefillDraft()
 
-	/**
-	 * Seed the three Dutch defaults for a caseType (idempotent by slug).
-	 *
-	 * @param string $caseTypeId CaseType id/slug.
-	 *
-	 * @return int Number of templates created on this run.
-	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
-	 */
-	public function seedDefaultTemplates(string $caseTypeId): int {
-		$existing = $this->listTemplates(caseTypeId: $caseTypeId);
-		$existingNames = array_column($existing, 'name');
-
-		$created = 0;
-		foreach (self::DEFAULT_TEMPLATES as $default) {
-			if (in_array($default['name'], $existingNames, true) === true) {
-				continue;
-			}
-
-			try {
-				$this->createTemplate(
-					caseTypeId: $caseTypeId,
-					data: [
-						'name' => $default['name'],
-						'subject' => $default['subject'],
-						'body' => $default['body'],
-					]
-				);
-				$created++;
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Failed to seed default email template',
-					['caseType' => $caseTypeId, 'template' => $default['name'], 'error' => $e->getMessage()]
-				);
-			}
-		}//end foreach
-
-		return $created;
-	}//end seedDefaultTemplates()
 
 	/**
 	 * Resolve `{{name}}` placeholders against the variable map.

@@ -35,6 +35,7 @@ import {
 	RUN_PREFIX,
 	trackCreatedObject,
 } from './helpers/fixtures.ts'
+import { openCaseTypeTab } from './helpers/nav.ts'
 
 /**
  * The Name input of the Add property definition form.
@@ -49,7 +50,6 @@ function nameField(tab: Locator): Locator {
 	return tab.locator('.pd-fields').getByLabel('Name', { exact: true })
 }
 
-const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 const CASE_TYPE_TITLE = `${RUN_PREFIX} Wijkmelding`
 const SCHEME = 'wijken'
 
@@ -80,17 +80,7 @@ test.describe('code lists from concepts', () => {
 	 * @return The Properties tab root.
 	 */
 	async function openProperties(page) {
-		await page.goto(ADMIN_SETTINGS_URL)
-		const admin = page.locator('.case-type-admin')
-		await admin
-			.locator('[data-testid="cn-object-row"]', { hasText: CASE_TYPE_TITLE })
-			.first()
-			.click()
-		const detail = page.locator('.case-type-detail')
-		await expect(detail).toBeVisible({ timeout: 30_000 })
-		await detail
-			.locator('.case-type-detail__tab', { hasText: /^Properties$/ })
-			.click()
+		await openCaseTypeTab(page, CASE_TYPE_TITLE, /^(Fields|Velden)/)
 		const tab = page.locator('.properties-tab')
 		await expect(tab).toBeVisible({ timeout: 30_000 })
 		return tab
