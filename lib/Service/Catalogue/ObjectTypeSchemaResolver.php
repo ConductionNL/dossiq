@@ -34,7 +34,6 @@ namespace OCA\Dossiq\Service\Catalogue;
 
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Resolves the schema an OpenRegister object URL names.
@@ -56,6 +55,13 @@ class ObjectTypeSchemaResolver {
 	 * @var string
 	 */
 	private const GEO_TYPE = 'geo';
+
+	/**
+	 * The OpenRegister service that reads schemas.
+	 *
+	 * @var string
+	 */
+	private const MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
 
 	/**
 	 * Schemas already read in this request, by the name in the URL.
@@ -135,13 +141,14 @@ class ObjectTypeSchemaResolver {
 	 * @return array{title: string, properties: int, views: array<int, string>}|null The schema, or null.
 	 */
 	private function read(string $schema): ?array {
-		try {
-			$entity = $this->container->get('OCA\OpenRegister\Db\SchemaMapper')->find($schema);
-		} catch (Throwable $e) {
-			$this->logger->info(
-				'Dossiq: the schema a linked object names could not be read',
-				['schema' => $schema, 'exception' => $e->getMessage()]
-			);
+		if ($this->container->has(self::MAPPER) === false) {
+			return null;
+		}
+
+		$found  = $this->container->get(self::MAPPER)->findMultiple([$schema]);
+		$entity = $found[0] ?? null;
+		if ($entity === null) {
+			$this->logger->info('Dossiq: the schema a linked object names could not be read', ['schema' => $schema]);
 			return null;
 		}
 

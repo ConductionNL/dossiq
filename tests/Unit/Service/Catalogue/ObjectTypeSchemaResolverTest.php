@@ -29,7 +29,6 @@ use OCA\Dossiq\Service\Catalogue\ObjectTypeSchemaResolver;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * Unit tests for the schema a linked object's URL names.
@@ -92,20 +91,21 @@ class ObjectTypeSchemaResolverTest extends TestCase {
 			}
 
 			/**
-			 * @param string|int $id The schema id or slug.
+			 * @param array<int, string|int> $ids The schema ids or slugs.
 			 *
-			 * @return object The schema.
+			 * @return array<int, object> The schemas found; a missing one is left out.
 			 */
-			public function find(string|int $id): object {
+			public function findMultiple(array $ids): array {
 				$this->reads++;
-				if ($id === 'gone') {
-					throw new RuntimeException('not found');
+				if ($ids === ['gone']) {
+					return [];
 				}
 
-				return $this->schema;
+				return [$this->schema];
 			}
 		};
 		$container = $this->createMock(ContainerInterface::class);
+		$container->method('has')->willReturn(true);
 		$container->method('get')->willReturn($mapper);
 		$resolver = new ObjectTypeSchemaResolver(container: $container, logger: $this->createMock(LoggerInterface::class));
 
@@ -116,4 +116,18 @@ class ObjectTypeSchemaResolverTest extends TestCase {
 		$this->assertNull($resolver->describe(objectUrl: '/apps/openregister/api/objects/7/gone/a'));
 		$this->assertNull($resolver->describe(objectUrl: 'https://elsewhere.example/tree/1'));
 	}//end testDescribesAReadableSchemaAndNotAnUnreadableOne()
+
+	/**
+	 * Without OpenRegister nothing is read and every link stays empty.
+	 *
+	 * @return void
+	 */
+	public function testDescribesNothingWithoutOpenRegister(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('has')->willReturn(false);
+		$container->expects($this->never())->method('get');
+		$resolver = new ObjectTypeSchemaResolver(container: $container, logger: $this->createMock(LoggerInterface::class));
+
+		$this->assertNull($resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/a'));
+	}//end testDescribesNothingWithoutOpenRegister()
 }//end class
