@@ -204,12 +204,12 @@ describe('the simple profile', () => {
 		// And the list reads `?caseType=` from the address: the library merges
 		// the query into the fetch (useSelfFetchList.resolveQueryFilters), with
 		// or without a pane. The full profile's folder pane filters on the same
-		// key; the simple profile draws no pane (the design has none), keeps
-		// the same scope from the address, and the case type stays a column.
+		// key; the simple profile has no pane (the design has none) and the
+		// case type stays a column of the list.
 		const fullCases = build(fullFile).pages.find((page) => page.id === 'Cases')
 		expect(fullCases.config.folderSidebar.filterField).toBe('caseType')
 		const cases = built.pages.find((page) => page.id === 'Cases')
-		expect(cases.config.folderSidebar).toMatchObject({ filterField: 'caseType', pane: false })
+		expect(cases.config.folderSidebar).toBeUndefined()
 		expect(
 			cases.config.columns.some(
 				(column) => overlayItemName(column) === 'caseType',

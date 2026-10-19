@@ -3444,6 +3444,7 @@
 						"due": "{deadline|date}"
 					}
 				},
+				"folderSidebar": null,
 				"columns": [
 					{
 						"key": "title",
@@ -3473,17 +3474,6 @@
 						"widgetProps": {
 							"user": true
 						}
-					},
-					{
-						"key": "initiatorDisplayName",
-						"label": "Requester",
-						"hidden": true
-					},
-					{
-						"key": "startDate",
-						"label": "Received",
-						"widget": "date",
-						"hidden": true
 					},
 					{
 						"key": "deadline",
