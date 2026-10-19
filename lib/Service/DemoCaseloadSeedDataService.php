@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -65,6 +66,7 @@ class DemoCaseloadSeedDataService {
 	 * @param EngineTaskGateway $engineTask The engine's task writer.
 	 * @param IUserSession $userSession The identity the seed command set.
 	 * @param LoggerInterface $logger The logger interface.
+	 * @param LanguageMapText $text Reads a translatable status name as text.
 	 *
 	 * @return void
 	 */
@@ -73,6 +75,7 @@ class DemoCaseloadSeedDataService {
 		private EngineTaskGateway $engineTask,
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
+		private LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -472,7 +475,7 @@ class DemoCaseloadSeedDataService {
 
 		foreach ($statusTypes as $statusType) {
 			$row = $this->gateway->toArray(object: $statusType);
-			$name = (string)($row['name'] ?? '');
+			$name = $this->text->textOf(value: ($row['name'] ?? ''));
 			$caseType = (string)($row['caseType'] ?? '');
 			if ($name === '' || $caseType === '') {
 				continue;

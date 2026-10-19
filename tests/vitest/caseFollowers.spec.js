@@ -61,7 +61,6 @@ const register = JSON.parse(
 	),
 )
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
-const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 
 const page = (id) => manifest.pages.find((p) => p.id === id)
 const caseDetail = page('CaseDetail')
@@ -270,7 +269,8 @@ describe('following is declared on the case page', () => {
 		expect(section.widget.type).toBe('case-followers')
 		expect(registrySource).toContain("'case-followers': {")
 		expect(registrySource).toContain('component: CaseFollowersPanel,')
-		expect(iconsSource).toContain(`\n\t${section.widget.icon},\n`)
+		// The boards draw no icon on a card title.
+		expect(section.widget.icon).toBeUndefined()
 	})
 
 	it('carries the reason gate 29 asks a custom widget for', () => {

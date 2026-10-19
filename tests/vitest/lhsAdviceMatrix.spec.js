@@ -19,6 +19,8 @@ const matrix = page.config.widgets.find((w) => w.id === 'lhs-matrix')
 describe('the LHS matrix on the enforcement advice', () => {
 	it('reads the cells from the matrix record the advice names', () => {
 		expect(matrix.content.chartKind).toBe('matrix')
+		// A detail page hands the chart its content keys as props; the chart's kind prop is `type`.
+		expect(matrix.content.type).toBe('matrix')
 		const source = matrix.content.cellSource
 		expect(source.schema).toBe('lhsMatrix')
 		expect(source.filter).toEqual({ version: '@object.matrixVersion' })

@@ -164,8 +164,13 @@ describe('the stage', () => {
 			const entry = stageEntry(simple.primaryActionByStage, stage)
 			expect(entry, `${stage} shows a card and no button`).toBeTruthy()
 			if (typeof entry === 'object') {
-				expect(entry.visibleWhen, stage).toBeUndefined()
-				expect(entry.target, stage).toBe('CaseLifecycleMenuDialog')
+				// The one condition a working case always passes: not archived yet.
+				if (entry.visibleWhen !== undefined) {
+					expect(entry.visibleWhen, stage).toEqual({ field: '@self.archived', op: 'empty' })
+				}
+				// The closed stage opens the archive dialog (board DqArchiveren);
+				// every other stage opens the Lifecycle dialog.
+				expect(entry.target, stage).toBe(stage === 'closed' ? 'CaseArchiveDialog' : 'CaseLifecycleMenuDialog')
 				continue
 			}
 			const action = original.headerActions.find((item) => item.id === entry)
@@ -244,7 +249,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 34 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 35 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -262,10 +267,10 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(34)
+		expect(placed).toHaveLength(35)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(19)
+		expect(count('Case')).toBe(20)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)
@@ -377,11 +382,23 @@ describe('the tabs', () => {
 		// Communication panels, whose sections became the Overview and Contact
 		// stacks' own cards.
 		const shown = widgetIds(strip)
-		const unfolded = ['case-data-panel', 'case-communication-panel', 'case-work-panel', 'case-people-panel']
+		const unfolded = ['case-data-panel', 'case-communication-panel', 'case-work-panel', 'case-people-panel', 'case-related-panel']
+		// The Gerelateerd tab holds the related panel's sections as cards (DqZaakGerelateerd).
+		const relatedSections = find(original, 'case-related-panel').content.sections.map((section) => section.widget.id)
+		const relatedTab = strip.tabs.find((tab) => tab.label === 'Related')
+		expect(relatedTab.widgetIds.map((id) => id.replace(/-card$/, ''))).toEqual(['case-related', 'case-sub-cases', 'case-objects', 'case-programme', 'case-object-types-link'])
+		expect(relatedTab.widgetIds.map((id) => id.replace(/-card$/, '')).sort()).toEqual([...relatedSections].sort())
+		// The Besluiten tab: the decisions, then the decision letter and the advice on the case (DqZaakBesluiten).
+		expect(strip.tabs.find((tab) => tab.label === 'Decisions').widgetIds).toEqual(['case-decisions-panel', 'case-decision-letter', 'case-advice-requests'])
+		const advice = simple.widgets.find((widget) => widget.id === 'case-advice-requests')
+		expect(advice.content).toMatchObject({ register: 'dossiq', schema: 'adviesAanvraag', filter: { case: '@objectId' } })
 		// The Betrokkenen tab holds the people panel's sections as cards (DqZaakBetrokkenen).
 		const peopleSections = find(original, 'case-people-panel').content.sections.map((section) => section.widget.id)
 		const peopleTab = strip.tabs.find((tab) => tab.label === 'People')
 		expect(peopleTab.widgetIds.map((id) => id.replace(/-card$/, '')).sort()).toEqual([...peopleSections].sort())
+		// The parties by role lead, as Partijen; the linked contacts follow (DqZaakBetrokkenen).
+		expect(peopleTab.widgetIds[0]).toBe('case-party-roles-card')
+		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Case parties')
 		for (const id of widgetIds(tabsOf(original)).filter((id) => !unfolded.includes(id))) {
 			expect(shown, id).toContain(id)
 		}
@@ -454,10 +471,12 @@ describe('the tabs', () => {
 		// the card title already heads it (casePageLabelsHistoryAndTourFirst).
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
-		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-followers-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances']
+		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-followers-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
+		added.push('case-summary')
+		added.push('case-grant-decisions-card')
 		expect(others(simple)).toEqual(others(original))
 		// The Tasks tab holds the work panel's sections as cards, in DqZaakTaken's order.
 		const workSections = find(original, 'case-work-panel').content.sections.map((section) => section.widget.id)

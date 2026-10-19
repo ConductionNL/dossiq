@@ -474,4 +474,67 @@ class DemoDataServiceTest extends TestCase {
 		$this->shipDescriptor();
 		$this->assertTrue($this->service->isAvailable());
 	}
+
+	/**
+	 * The curated fragments go in with the generated set, and the offer counts them.
+	 *
+	 * @return void
+	 */
+	public function testTheCuratedFragmentsAreImportedWithTheGeneratedSet(): void {
+		$this->shipDescriptor(objects: 2);
+		$fragments = $this->createMock(\OCA\Dossiq\Service\Setup\ExampleDataFragments::class);
+		$fragments->method('rawObjects')->willReturn([['@self' => ['schema' => 'case']]]);
+		$fragments->method('objects')->willReturn([['@self' => ['schema' => 'case'], 'assignee' => 'pieter']]);
+		$spy = $this->importerSpy(landed: 3);
+		$this->container->method('get')->willReturn($spy);
+		$service = new DemoDataService($this->appManager, $this->container, $this->createMock(LoggerInterface::class), $fragments);
+
+		$result = $service->install();
+
+		$this->assertSame(3, $result['requested'], 'two generated objects and one curated one');
+		$this->assertSame('pieter', $spy->seen['data']['components']['objects'][2]['assignee'] ?? null, 'the tokens are filled in before the import');
+		$this->assertSame(3, $service->listChoices()[0]['objectCount']);
+	}
+
+	/**
+	 * A second load leaves the curated objects of the first alone: it does not
+	 * reassign them to whoever clicked or move their dates.
+	 *
+	 * @return void
+	 */
+	public function testASecondLoadLeavesTheCuratedObjectsAlone(): void {
+		$this->shipDescriptor(objects: 2);
+		$stored = [];
+		$appConfig = $this->createMock(\OCP\IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			static function (string $app, string $key, string $default = '') use (&$stored): string {
+				return $stored[$key] ?? $default;
+			}
+		);
+		$appConfig->method('setValueString')->willReturnCallback(
+			static function (string $app, string $key, string $value) use (&$stored): bool {
+				$stored[$key] = $value;
+				return true;
+			}
+		);
+
+		$asked = [];
+		$fragments = $this->createMock(\OCA\Dossiq\Service\Setup\ExampleDataFragments::class);
+		$fragments->method('slugs')->willReturn(['voorbeeld-a']);
+		$fragments->method('objects')->willReturnCallback(
+			static function (array $skipSlugs = []) use (&$asked): array {
+				$asked[] = $skipSlugs;
+				return in_array('voorbeeld-a', $skipSlugs, true) === true ? [] : [['@self' => ['schema' => 'case', 'slug' => 'voorbeeld-a']]];
+			}
+		);
+		$this->container->method('get')->willReturn($this->importerSpy(landed: 3));
+		$service = new DemoDataService($this->appManager, $this->container, $this->createMock(LoggerInterface::class), $fragments, $appConfig);
+
+		$first = $service->install();
+		$second = $service->install();
+
+		$this->assertSame([[], ['voorbeeld-a']], $asked, 'the second load skips what the first created');
+		$this->assertSame(3, $first['requested']);
+		$this->assertSame(2, $second['requested'], 'only the generated set is asked for again');
+	}
 }

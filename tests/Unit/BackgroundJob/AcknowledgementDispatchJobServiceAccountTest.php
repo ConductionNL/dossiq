@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\AnonymousRefusingRegister;
 use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
 use OCA\Dossiq\Tests\Support\MakesRealTermNoticeSender;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use PHPUnit\Framework\TestCase;
@@ -240,7 +241,7 @@ class AcknowledgementDispatchJobServiceAccountTest extends TestCase {
 			settingsService: $settings,
 			caseTypeResolver: $resolver,
 			store: $store,
-			declaration: new CaseTypeAcknowledgement(),
+			declaration: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
 			termService: $terms,
 			notifications: new TermijnNotificationService(
 				termService: $terms,

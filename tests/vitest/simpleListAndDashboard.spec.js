@@ -278,6 +278,13 @@ describe('the cases list', () => {
 		expect(simple.headerButtons.find((entry) => entry.action === 'actions-menu').items).toContain('import')
 	})
 
+	it('draws the map with its numbered list and keeps the full profile\'s map (DqZakenKaart)', () => {
+		expect(simple.mapConfig.list).toMatchObject({ title: '{title}', sub: '{identifier}' })
+		const { list, ...rest } = simple.mapConfig
+		const { _basemapNote, ...fullMap } = before.mapConfig
+		expect(rest).toEqual(fullMap)
+	})
+
 	it('touches nothing else on the list', () => {
 		const rest = ({
 			quickFilters,
@@ -291,6 +298,8 @@ describe('the cases list', () => {
 			bulkHint,
 			headerButtons,
 			headerActions,
+			mapConfig,
+			_mapConfigNote,
 			showAdd,
 			showViewToggle,
 			headerFilters,

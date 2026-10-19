@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -10,6 +11,7 @@
  * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/specs/process-mining-bottlenecks/spec.md
  */
 
+import { resolveEndpointRequest } from '@conduction/nextcloud-vue/src/composables/useEndpointSource.js'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
@@ -28,5 +30,21 @@ describe('where cases get stuck', () => {
 
 	it('draws no widget Actions menu, as board DqProcesanalyse', () => {
 		expect(page.config.showWidgetActions).toBe(false)
+	})
+})
+
+describe('the Gemiddeld / Mediaan switch', () => {
+	const matrix = page.config.widgets.find((widget) => widget.id === 'pm-phase-days')
+	const statistic = page.config.pageFilters.find((filter) => filter.key === 'statistic')
+
+	it('sits on the description line as a segmented control, opening on the mean', () => {
+		expect(statistic).toMatchObject({ control: 'segmented', placement: 'description', default: 'mean' })
+		expect(statistic.options.map((option) => option.value)).toEqual(['mean', 'median'])
+	})
+
+	it('makes the matrix read the statistic the switch names, through the library', () => {
+		const source = matrix.content.endpointSource
+		expect(resolveEndpointRequest(source, { workspace: { statistic: 'median' } }).responsePath).toBe('phaseDays.median')
+		expect(resolveEndpointRequest(source, { workspace: { statistic: 'mean' } }).responsePath).toBe('phaseDays.mean')
 	})
 })

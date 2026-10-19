@@ -61,6 +61,13 @@ class InMemoryRegister {
 	public bool $pages = false;
 
 	/**
+	 * Schemas whose saves fail, as an OpenRegister write that throws.
+	 *
+	 * @var array<int, string>
+	 */
+	public array $refusedSchemas = [];
+
+	/**
 	 * How many times a row was saved, so a test can say a write happened once.
 	 *
 	 * @var int
@@ -188,6 +195,10 @@ class InMemoryRegister {
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		if (in_array((string)$schema, $this->refusedSchemas, true) === true) {
+			throw new \RuntimeException('Save refused for ' . (string)$schema);
+		}
+
 		$id = ($uuid ?? ('generated-' . (count($this->rows[(string)$schema] ?? []) + 1)));
 		$object['id'] = $id;
 		$this->rows[(string)$schema][$id] = $object;
@@ -226,6 +237,13 @@ class InMemoryRegister {
 	 * @return bool True when it matches.
 	 */
 	private function matches(array $row, array $filters): bool {
+		// `_ids` is OpenRegister's batched id restriction (MagicSearchHandler).
+		if (array_key_exists('_ids', $filters) === true
+			&& in_array((string)($row['id'] ?? ''), array_map('strval', (array)$filters['_ids']), true) === false
+		) {
+			return false;
+		}
+
 		foreach ($filters as $key => $value) {
 			if (str_starts_with((string)$key, '_') === true || $key === '@self') {
 				continue;

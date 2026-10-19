@@ -54,7 +54,8 @@
       "description": "De inschrijvingen worden beoordeeld op prijs en kwaliteit.",
       "order": 4,
       "isFinal": false,
-      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932"
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "role": "review"
     },
     {
       "id": "c6314335-bd99-5577-af9a-4520bf3bfa15",
