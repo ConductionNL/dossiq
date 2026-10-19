@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use OCA\Dossiq\Woo\WooReceivedAnswers;
 use OCA\Dossiq\Woo\WooRequestForm;
 use OCA\Dossiq\Tests\Support\MakesRealTermNoticeSender;
@@ -217,7 +218,7 @@ class AcknowledgementDutyTest extends TestCase {
 			settingsService: $settings,
 			caseTypeResolver: $resolver,
 			store: $store,
-			declaration: new CaseTypeAcknowledgement(),
+			declaration: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
 			termService: $terms,
 			notifications: new TermijnNotificationService(
 				termService: $noticeTerms,

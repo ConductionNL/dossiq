@@ -51,6 +51,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Notification\ApplicantMessage;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -127,6 +128,7 @@ class AdmissibilityJudgement {
 	 * @param CaseEndingActs           $endings   The ordinary close act.
 	 * @param ApplicantMessage         $letters   Sends the message the declared moment owes the applicant.
 	 * @param LoggerInterface          $logger    Says why a verdict could not be recorded.
+	 * @param IL10N                    $l10n      Words the publication warnings in the reader's language.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $caseTypes,
@@ -134,6 +136,7 @@ class AdmissibilityJudgement {
 		private readonly CaseEndingActs $endings,
 		private readonly ApplicantMessage $letters,
 		private readonly LoggerInterface $logger,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -228,13 +231,15 @@ class AdmissibilityJudgement {
 		$warnings = [];
 
 		if ($declaration['inadmissibleResultType'] === '') {
-			$warnings[] = 'This case type judges admissibility at intake and names no result '
-				. 'for an inadmissible aanvraag. Name one, or the close has no outcome to record.';
+			$warnings[] = $this->l10n->t('This case type judges admissibility at intake and names no result for an inadmissible '
+				. 'aanvraag. Name one, or the close has no outcome to record.');
 		}
 
 		if ($this->tellsTheApplicant(caseType: $caseType) === false) {
-			$warnings[] = 'This case type closes an inadmissible aanvraag without telling the '
-				. 'applicant. Add the moment ' . $declaration['moment'] . ' to its automatic messages.';
+			$warnings[] = $this->l10n->t(
+				'This case type closes an inadmissible aanvraag without telling the applicant. Add the moment %s to its automatic messages.',
+				[$declaration['moment']]
+			);
 		}
 
 		return $warnings;
