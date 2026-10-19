@@ -761,6 +761,7 @@ describe('what this change does NOT move', () => {
 			// everything waiting on the reader across four stores, and the
 			// screen that closes the day against what they opened in it.
 			'Your queue',
+			'Queue',
 			'My work',
 			'Contacts',
 			'Organisations',

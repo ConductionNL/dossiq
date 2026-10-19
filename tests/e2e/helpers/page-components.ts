@@ -54,11 +54,11 @@ export function CasesSavedView(slug: string): string {
 
 /**
  * Whether nextcloud-vue renders a view's page config `overrides` (card
- * layout, columns, slots, header, tabs). Until it does, the tests that read
- * what a view restores (openspec/changes/lists-are-views/restore.md) are
- * marked fixme; flip this when restore.md is applied.
+ * layout, columns, slots, header, tabs; library batch 17b). The tests that
+ * read what a view restores (openspec/changes/lists-are-views/restore.md)
+ * are fixme while this is false.
  */
-export const VIEW_OVERRIDES_APPLIED = false
+export const VIEW_OVERRIDES_APPLIED = true
 
 /**
  * `src/views/settings/SubstitutionSettings.vue` — self-service vervanging.

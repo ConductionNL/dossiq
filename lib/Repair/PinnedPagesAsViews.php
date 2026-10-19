@@ -3,13 +3,14 @@
 /**
  * Dossiq Repair: menu pins of list pages that became views point at the views.
  *
- * The team queue and Assigned to me were pages with a menu entry a user could
- * pin; they are views of the case list now (lists-are-views). A pin of a page
- * that no longer exists points at nothing, so this step adds the view each pin
- * stood for to the user's menu views preference, in the order of their pins,
- * after the views they added themselves, and takes the retired id out of their
- * pins. A user who never set pins saw the old default pins, so for them the
- * old default stands in.
+ * Assigned to me was a page with a menu entry a user could pin; it is a view
+ * of the case list now (lists-are-views). A pin of a menu entry that no longer
+ * exists points at nothing, so this step adds the view the pin stood for to
+ * the user's menu views preference, after the views they added themselves,
+ * and takes the retired id out of their pins. A user who never set pins saw
+ * the old default pins, so for them the old default stands in. The team
+ * queue keeps its menu id (`Queue`, now leading to its view), so its pins
+ * need nothing.
  *
  * ONCE PER USER, MARKED. A view a user takes out of their menu later must stay
  * out, so the step records that it ran for a user and never adds again.
@@ -44,7 +45,7 @@ use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 
 /**
- * Maps each user's pins of retired list pages onto their menu views, once.
+ * Maps each user's pins of retired menu entries onto their menu views, once.
  *
  * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
  */
@@ -79,7 +80,6 @@ class PinnedPagesAsViews implements IRepairStep {
 	 * @var array<string, array{slug: string, name: string}>
 	 */
 	public const RETIRED_PAGES = [
-		'Queue'  => ['slug' => 'team-queue', 'name' => 'Team queue'],
 		'MyWork' => ['slug' => 'my-work', 'name' => 'Assigned to me'],
 	];
 
@@ -110,7 +110,7 @@ class PinnedPagesAsViews implements IRepairStep {
 	 * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
 	 */
 	public function getName(): string {
-		return 'Point menu pins of the team queue and Assigned to me at their views';
+		return 'Point menu pins of Assigned to me at its view';
 	}//end getName()
 
 	/**

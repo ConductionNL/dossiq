@@ -510,8 +510,8 @@ test.describe('Assigned to me view', () => {
 	//
 	// The scenario: the list MUST default to card view and offer a card/table
 	// toggle, AND the table view MUST show identifier, title, case type,
-	// status, deadline. Both halves are view overrides (cardLayout, views,
-	// columns), so this waits on restore.md.
+	// status, deadline. Both halves are the view's overrides (cardLayout,
+	// viewModes, columns).
 	test('renders as a card index scoped to the current user', async ({ page }) => {
 		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs view overrides: openspec/changes/lists-are-views/restore.md section 2')
 		test.setTimeout(120_000)
@@ -535,7 +535,7 @@ test.describe('Assigned to me view', () => {
 		await expect(tableToggle).toHaveAttribute('aria-pressed', 'false')
 
 		await expect(
-			page.getByText(TITLE).first(),
+			page.locator('.cn-object-card', { hasText: TITLE }),
 			'the list has answered, so an absent column is a decision',
 		).toBeVisible({ timeout: 30_000 })
 		await tableToggle.click()

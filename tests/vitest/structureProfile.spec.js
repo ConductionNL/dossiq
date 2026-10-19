@@ -90,12 +90,12 @@ describe('the full profile', () => {
 		expect(build(fullFile)).toEqual(before)
 	})
 
-	it('counts 37 entries: 11 main, 5 footer, 18 settings, 3 integrations (Queue and Assigned to me are views now)', () => {
+	it('counts 38 entries: 12 main, 5 footer, 18 settings, 3 integrations (Assigned to me is a view now)', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
-		expect(flat(menu)).toHaveLength(37)
-		expect(count('main')).toBe(11)
+		expect(flat(menu)).toHaveLength(38)
+		expect(count('main')).toBe(12)
 		expect(count('footer')).toBe(5)
 		expect(count('settings')).toBe(18)
 		expect(count('integrations')).toBe(3)
@@ -106,10 +106,11 @@ describe('the simple profile', () => {
 	const built = build(simpleFile)
 	const main = section(built.menu, 'main')
 
-	it('shows seven fixed entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
+	it('shows eight fixed entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
 		expect(main.map((entry) => entry.id)).toEqual([
 			'Dashboard',
 			'WorkGroup',
+			'Queue',
 			'CasesCaption',
 			'Cases',
 			'WorkflowBoard',
@@ -123,7 +124,7 @@ describe('the simple profile', () => {
 			'Cases',
 			'Relations',
 		])
-		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(7)
+		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(8)
 	})
 
 	it('is flat: no entry holds another', () => {
@@ -175,9 +176,12 @@ describe('the simple profile', () => {
 			expect(shown.icon).toBe(original.icon)
 			expect(shown.route).toBe(original.route)
 		}
-		// The team queue is a view of Cases now (`team-queue`), listed under
-		// My views rather than as an entry here.
-		expect(main.find((entry) => entry.id === 'Queue')).toBeUndefined()
+		// The team queue is worded for the simple menu; it opens its view of Cases.
+		expect(main.find((entry) => entry.id === 'Queue')).toMatchObject({
+			label: 'Team queue',
+			route: 'Cases',
+			query: { savedView: 'default:team-queue' },
+		})
 		// The Werkbord is the Cases list in its board view (board DqWerkbord).
 		expect(main.find((entry) => entry.id === 'WorkflowBoard')).toMatchObject({
 			label: 'Board',
@@ -297,6 +301,12 @@ describe('the simple profile', () => {
 		// beside an entry is the number of rows behind it.
 		const entry = (entryId) =>
 			flat(built.menu).find((item) => item.id === entryId)
+		const teamQueue = built.pages.find((page) => page.id === 'Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue')
+		expect(entry('Queue').count).toEqual({
+			register: 'dossiq',
+			schema: 'case',
+			filter: teamQueue.filters,
+		})
 		expect(entry('WorkGroup').count).toEqual({
 			register: 'dossiq',
 			schema: 'case',

@@ -18,6 +18,41 @@ Profiles: the default profile is SIMPLE (`menu-layout.simple.json`). Its overlay
 replaced the Queue page config whole, so the team queue values below are the
 simple ones; the FULL profile's differences are listed after them.
 
+## Applied (nextcloud-vue saved-view-overrides, batch 17b)
+
+The blocks below are the inventory as first written. What landed in
+`src/manifest.json` (Cases `defaultSavedViews[].overrides`) differs where the
+library's API does:
+
+- Routes are `route: "Cases", query: { savedView: "default:<slug>" }` (the
+  data subject requests' breadcrumb and first tab), not `{ name, query }`.
+- `my-work`'s card is the library's record card, `cardLayout: { headPill,
+  number, title, meta, footerDate }`: the tier pill is `headPill` on
+  `deadlineTier` (`data-testid="cn-object-card-head-pill"`), not a pill with
+  its own testid and `data-tier`.
+- The slots are `WorkloadSummaryBar` and `SubstitutedWork` (registered in
+  `src/registry.js`, each reading its own endpoint).
+- The data subject requests open on the view's own `sort` (deadline
+  ascending), not an override `defaultSort`.
+- The team queue's menu entry is back under its old id `Queue`, opening
+  `default:team-queue`: label "Queue" at order 15 in the full profile
+  (relocated under My work), "Team queue" at order 14 with the attention
+  badge in the simple one, and pinned by default again. So its pins keep
+  working and `PinnedPagesAsViews` only maps `MyWork` pins.
+
+What still differs from the pages:
+
+- A view's filter is a saved view's filters, which the reader can change or
+  leave; the Queue and MyWork pages had a base filter nobody could clear.
+- The overrides are one per view, not per profile: the full profile gets the
+  simple team queue (four columns, no unread or priority column, no case
+  type folders) where it had its own.
+- The Assigned to me card has no description line, and case type and status
+  are text in the meta line rather than chips; the deadline is a plain date,
+  not red when overdue.
+- Assigned to me has no menu entry in the full profile any more; it is
+  reached from My work and, for whoever pinned it, from My views.
+
 ## 1. `team-queue` (was /queue, page `Queue`)
 
 Filter stays as built (`assignee IS NULL`, `isFinalStatus`, `statusHiddenInLists`,
@@ -599,11 +634,11 @@ this branch, and complaints never had a page.
 
 ## 5. Pins
 
-Done in this branch, not waiting on the library: `lib/Repair/PinnedPagesAsViews.php`
-maps a user's pins of `Queue` and `MyWork` (`pref_cn_pinned_menu`, or the old
-default `["Queue","MyWork","Cases"]` for a user who never set any) to
-`{id: 'default:team-queue' | 'default:my-work', page: 'Cases', name}` in
-`pref_cn_saved_view_menu`, takes the retired ids out of the pins, once per user.
+`lib/Repair/PinnedPagesAsViews.php` maps a user's pins of `MyWork`
+(`pref_cn_pinned_menu`, or the old default `["Queue","MyWork","Cases"]` for a
+user who never set any) to `{id: 'default:my-work', page: 'Cases', name}` in
+`pref_cn_saved_view_menu` and takes `MyWork` out of the pins, once per user.
+`Queue` pins need nothing: the menu entry kept its id.
 
 ## 6. Other references to the old routes (not rewritten here)
 

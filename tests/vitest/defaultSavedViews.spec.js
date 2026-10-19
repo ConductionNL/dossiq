@@ -68,8 +68,8 @@ describe('lists that were pages, as views of Cases', () => {
 	it('opens Assigned to me on the urgency order, which the Cases sort offers from the work queue', () => {
 		const view = page('Cases').config.defaultSavedViews.find((d) => d.slug === 'my-work')
 		expect(view.filters.assignee).toBe('@me')
-		expect(view.sortOption).toBe('urgency')
-		const option = page('Cases').config.sortSelectOptions.find((o) => o.value === view.sortOption)
+		expect(view.overrides.sortOption).toBe('urgency')
+		const option = page('Cases').config.sortSelectOptions.find((o) => o.value === view.overrides.sortOption)
 		expect(option.source.url).toBe('/apps/dossiq/api/work-queue')
 	})
 

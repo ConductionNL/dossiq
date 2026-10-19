@@ -33,13 +33,11 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Pins of the team queue and Assigned to me become menu views, once.
+ * Pins of Assigned to me become its menu view, once; the team queue keeps its menu id.
  *
  * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
  */
 class PinnedPagesAsViewsTest extends TestCase {
-
-	private const QUEUE = ['id' => 'default:team-queue', 'page' => 'Cases', 'name' => 'Team queue'];
 
 	private const MY_WORK = ['id' => 'default:my-work', 'page' => 'Cases', 'name' => 'Assigned to me'];
 
@@ -110,8 +108,8 @@ class PinnedPagesAsViewsTest extends TestCase {
 	}//end stored()
 
 	/**
-	 * Pins of the retired pages land after the user's own views, in pin
-	 * order, and leave the pinned list; other pins stay.
+	 * A pin of Assigned to me lands after the user's own views and leaves
+	 * the pinned list; other pins, the team queue's included, stay.
 	 *
 	 * @return void
 	 *
@@ -124,12 +122,12 @@ class PinnedPagesAsViewsTest extends TestCase {
 
 		$this->runStep(users: ['anna']);
 
-		$this->assertSame(expected: [$own, self::MY_WORK, self::QUEUE], actual: $this->stored(user: 'anna', key: CaseTypeViews::MENU_PREFERENCE));
-		$this->assertSame(expected: ['Tasks'], actual: $this->stored(user: 'anna', key: PinnedPagesAsViews::PINNED_PREFERENCE));
+		$this->assertSame(expected: [$own, self::MY_WORK], actual: $this->stored(user: 'anna', key: CaseTypeViews::MENU_PREFERENCE));
+		$this->assertSame(expected: ['Tasks', 'Queue'], actual: $this->stored(user: 'anna', key: PinnedPagesAsViews::PINNED_PREFERENCE));
 	}//end testPinsBecomeViewsAfterTheUsersOwn()
 
 	/**
-	 * A user who never set pins saw the former default, so both views are
+	 * A user who never set pins saw the former default, so Assigned to me is
 	 * added and no pinned list is written for them.
 	 *
 	 * @return void
@@ -139,12 +137,12 @@ class PinnedPagesAsViewsTest extends TestCase {
 	public function testAUserWithoutPinsGetsTheFormerDefault(): void {
 		$this->runStep(users: ['bert']);
 
-		$this->assertSame(expected: [self::QUEUE, self::MY_WORK], actual: $this->stored(user: 'bert', key: CaseTypeViews::MENU_PREFERENCE));
+		$this->assertSame(expected: [self::MY_WORK], actual: $this->stored(user: 'bert', key: CaseTypeViews::MENU_PREFERENCE));
 		$this->assertNull(actual: $this->stored(user: 'bert', key: PinnedPagesAsViews::PINNED_PREFERENCE));
 	}//end testAUserWithoutPinsGetsTheFormerDefault()
 
 	/**
-	 * A user who unpinned both pages gets no views, and nothing is written
+	 * A user who unpinned Assigned to me gets no view, and nothing is written
 	 * but the marker.
 	 *
 	 * @return void
@@ -169,12 +167,12 @@ class PinnedPagesAsViewsTest extends TestCase {
 	 * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
 	 */
 	public function testAViewAlreadyInTheMenuIsNotDuplicated(): void {
-		$this->values['dirk'][CaseTypeViews::MENU_PREFERENCE] = (string)json_encode([self::QUEUE]);
-		$this->values['dirk'][PinnedPagesAsViews::PINNED_PREFERENCE] = (string)json_encode(['Queue']);
+		$this->values['dirk'][CaseTypeViews::MENU_PREFERENCE] = (string)json_encode([self::MY_WORK]);
+		$this->values['dirk'][PinnedPagesAsViews::PINNED_PREFERENCE] = (string)json_encode(['MyWork']);
 
 		$this->runStep(users: ['dirk']);
 
-		$this->assertSame(expected: [self::QUEUE], actual: $this->stored(user: 'dirk', key: CaseTypeViews::MENU_PREFERENCE));
+		$this->assertSame(expected: [self::MY_WORK], actual: $this->stored(user: 'dirk', key: CaseTypeViews::MENU_PREFERENCE));
 		$this->assertSame(expected: [], actual: $this->stored(user: 'dirk', key: PinnedPagesAsViews::PINNED_PREFERENCE));
 	}//end testAViewAlreadyInTheMenuIsNotDuplicated()
 

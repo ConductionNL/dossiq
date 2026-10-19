@@ -16,6 +16,7 @@
 	},
 	"relocations": {
 		"OrganisationsMenu": "Contacts",
+		"Queue": "WorkGroup",
 		"PersonalQueueMenu": "WorkGroup",
 		"EndOfDayMenu": "WorkGroup",
 		"Cases": "WorkGroup",

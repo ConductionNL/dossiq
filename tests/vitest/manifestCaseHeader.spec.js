@@ -93,12 +93,14 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// 62 -> 63: `woo-delivered-set-is-a-record` adds one page.
 		// 63 -> 62: the WorkflowBoard page retires; the board is the Cases list.
 		// 62 -> 63: the redaction page of a case (DqLakken).
-		expect(manifest.pages).toHaveLength(63)
-		// Two entries open Cases: the list, and the Werkbord, which is the
-		// same list in its board view (`query: { _view: 'board' }`).
+		// 63 -> 61: `lists-are-views` retires Queue and MyWork; they are views of Cases.
+		expect(manifest.pages).toHaveLength(61)
+		// Two entries open Cases as a place: the list, and the Werkbord, which is the
+		// same list in its board view (`query: { _view: 'board' }`). The
+		// team queue opens a view of it (`savedView`), which is not a page.
 		expect(
 			manifest.menu
-				.filter((entry) => entry.route === 'Cases')
+				.filter((entry) => entry.route === 'Cases' && !entry.query?.savedView)
 				.map((entry) => entry.query?._view ?? ''),
 		).toEqual(['', 'board'])
 	})

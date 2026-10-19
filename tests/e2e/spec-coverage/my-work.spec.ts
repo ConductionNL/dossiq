@@ -7,9 +7,8 @@
  * Assigned to me is the `my-work` default view of the Cases index
  * (`/cases?savedView=default:my-work`), scoped to the current user
  * (assignee = @me). Its card layout and five table columns are view
- * overrides (openspec/changes/lists-are-views/restore.md, section 2), so
- * both tests are fixme until those land. Each test is tagged with the
- * scenario it covers.
+ * overrides (`viewMode`, `cardLayout`, `columns`). Each test is tagged
+ * with the scenario it covers.
  *
  * ⚠️ THE LIST NEEDS A ROW OF ITS OWN, SO THIS FILE SEEDS ONE
  * ---------------------------------------------------------
@@ -102,7 +101,7 @@ test.describe('My Work spec coverage', () => {
 		// page: a list that opened in table view renders the same case as a
 		// row instead.
 		await expect(
-			page.getByText(TITLE).first(),
+			page.locator('.cn-object-card', { hasText: TITLE }),
 			'Assigned to me must open in card view, so the seeded case renders as a card',
 		).toBeVisible({ timeout: 60_000 })
 		await expect(page.locator('table')).toHaveCount(0)
@@ -124,7 +123,7 @@ test.describe('My Work spec coverage', () => {
 		// Wait for the list to answer before switching: the toggle paints with
 		// the shell, and switching before the rows exist leaves a table view
 		// with no `<table>` to read.
-		await expect(page.getByText(TITLE).first()).toBeVisible({
+		await expect(page.locator('.cn-object-card', { hasText: TITLE })).toBeVisible({
 			timeout: 60_000,
 		})
 

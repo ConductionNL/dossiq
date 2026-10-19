@@ -834,9 +834,10 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * fixture and nothing here writes one.
 	 *
 	 * Assigned to me is the `my-work` default view of the Cases index, and
-	 * the substituted group is a slot of that view
-	 * (openspec/changes/lists-are-views/restore.md, section 2), so this test
-	 * is fixme until view overrides land.
+	 * the substituted group is that view's `before-collection` slot
+	 * (`SubstitutedWork.vue`). Dropping `this.load()` from its `mounted()`
+	 * reds the marker assertion below and the vitest cases in
+	 * `tests/vitest/substitutedWorkOnMyWork.spec.js`.
 	 */
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#waarnemer-sees-substituted-work-in-my-work
 	test('the absentee in-scope case is on the waarnemer My work, marked and hideable', async ({

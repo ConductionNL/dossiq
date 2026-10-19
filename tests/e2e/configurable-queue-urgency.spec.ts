@@ -5,9 +5,8 @@
  * configurable-queue-urgency: the Urgency sort is the server's score, every
  * card carries a deadline tier pill, and the admin settings carry the queue
  * urgency section. The list is the `my-work` default view of the Cases index;
- * opening on Urgency and the tier pill are view overrides
- * (openspec/changes/lists-are-views/restore.md, section 2), so those two
- * tests are fixme until the overrides land.
+ * opening on Urgency and the tier pill are that view's overrides
+ * (`sortOption`, `cardLayout.headPill`).
  *
  * Two cases are seeded on the signed-in user, from the same case type. The
  * high one started a day earlier, so its deadline is no later, and its
@@ -76,27 +75,25 @@ async function openMyWork(page: Page): Promise<void> {
 	await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
 		timeout: 60_000,
 	})
-	await expect(page.getByText(HIGH, { exact: true }).first()).toBeVisible({
+	await expect(page.locator('.cn-object-card', { hasText: HIGH })).toBeVisible({
 		timeout: 60_000,
 	})
-	await expect(page.getByText(LOW, { exact: true }).first()).toBeVisible({
+	await expect(page.locator('.cn-object-card', { hasText: LOW })).toBeVisible({
 		timeout: 60_000,
 	})
 }
 
 /**
- * The order of the two seeded cases on the page, as cards or as rows.
+ * The order of the two seeded cards on the page.
  *
  * @param page The page.
- * @return The two titles, in the order they appear.
+ * @return The two titles, in the order the cards appear.
  */
 async function seededOrder(page: Page): Promise<string[]> {
-	const titles = await page
-		.getByText(new RegExp(`^(${HIGH}|${LOW})$`))
-		.allInnerTexts()
+	const titles = await page.locator('.cn-object-card__title').allInnerTexts()
 	return titles
 		.map((title) => title.trim())
-		.filter((title, index, all) => all.indexOf(title) === index)
+		.filter((title) => title === HIGH || title === LOW)
 }
 
 test.describe('configurable-queue-urgency', () => {
@@ -152,7 +149,7 @@ test.describe('configurable-queue-urgency', () => {
 		await openMyWork(page)
 
 		await page.getByRole('button', { name: 'Newest' }).click()
-		await expect(page.getByText(LOW, { exact: true }).first()).toBeVisible({
+		await expect(page.locator('.cn-object-card', { hasText: LOW })).toBeVisible({
 			timeout: 60_000,
 		})
 		await expect
@@ -171,12 +168,12 @@ test.describe('configurable-queue-urgency', () => {
 		// rather than assumed; what the scenario fixes is that a pill is there,
 		// and that a normal-tier pill is the neutral one.
 		const pill = page
-			.getByRole('button', { name: new RegExp(LOW) })
-			.locator('[data-testid="deadline-tier-pill"]')
+			.locator('.cn-object-card', { hasText: LOW })
+			.getByTestId('cn-object-card-head-pill')
 		await expect(pill).toBeVisible({ timeout: 60_000 })
 		const text = (await pill.innerText()).trim()
 		if (text === 'Normal' || text === 'Normaal') {
-			await expect(pill).toHaveAttribute('data-tier', 'normal')
+			await expect(pill).toHaveClass(/cn-status-badge--default/)
 		}
 	})
 
