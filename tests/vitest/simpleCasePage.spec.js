@@ -459,6 +459,7 @@ describe('the tabs', () => {
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
+		added.push('case-grant-decisions-card')
 		expect(others(simple)).toEqual(others(original))
 		// The Tasks tab holds the work panel's sections as cards, in DqZaakTaken's order.
 		const workSections = find(original, 'case-work-panel').content.sections.map((section) => section.widget.id)

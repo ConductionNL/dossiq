@@ -78,5 +78,8 @@ describe('overview cards per case type', () => {
 		for (const caseType of packageCaseTypes('vth')) {
 			expect(caseType.overviewCards).toBeUndefined()
 		}
+		const grant = packageCaseTypes('subsidie')[0]
+		expect(grant.overviewCards).toEqual(['case-grant-decisions-card'])
+		expect(overview).toContain('case-grant-decisions-card')
 	})
 })
