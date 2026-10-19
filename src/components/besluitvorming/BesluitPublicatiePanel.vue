@@ -13,7 +13,7 @@
 
 		<div v-if="state === 'success'" class="besluit-publicatie-panel__success">
 			<span
-				class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--success">
+				class="cn-status-badge cn-status-badge--success besluit-publicatie-panel__badge">
 				{{ t('dossiq', 'Gepubliceerd') }}
 			</span>
 			<a
@@ -27,7 +27,7 @@
 
 		<div v-else-if="state === 'failed'" class="besluit-publicatie-panel__failed">
 			<span
-				class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--failed">
+				class="cn-status-badge cn-status-badge--error besluit-publicatie-panel__badge">
 				{{ t('dossiq', 'Publicatie mislukt') }}
 			</span>
 			<p>
@@ -41,7 +41,7 @@
 		</div>
 
 		<div v-else class="besluit-publicatie-panel__pending">
-			<span class="besluit-publicatie-panel__badge">
+			<span class="cn-status-badge cn-status-badge--default besluit-publicatie-panel__badge">
 				{{ t('dossiq', 'Publicatie in behandeling') }}
 			</span>
 			<NcButton type="secondary" :disabled="busy || !!refusal" @click="retry">
@@ -240,21 +240,7 @@ export default {
 	margin-bottom: 8px;
 }
 
-.decision-publicatie-panel__badge {
-	display: inline-block;
-	padding: 2px 10px;
-	border-radius: var(--border-radius-pill);
-	background: var(--color-background-dark);
+.besluit-publicatie-panel__badge {
 	margin-bottom: 8px;
-}
-
-.decision-publicatie-panel__badge--success {
-	background: var(--color-success);
-	color: var(--color-primary-element-text);
-}
-
-.decision-publicatie-panel__badge--failed {
-	background: var(--color-error);
-	color: var(--color-primary-element-text);
 }
 </style>

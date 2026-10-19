@@ -26,7 +26,7 @@
 						<template v-if="editingId !== rt.id">
 							<span class="result-type-row__name">{{ rt.name }}</span>
 							<span
-								class="result-type-row__badge"
+								class="result-type-row__badge cn-status-badge cn-status-badge--default"
 								:class="'badge--' + rt.archivalAction">
 								{{
 									rt.archivalAction === 'retain'
@@ -444,12 +444,6 @@ export default {
 	font-weight: 500;
 }
 
-.result-type-row__badge {
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 11px;
-	font-weight: 500;
-}
 
 .badge--retain {
 	background: var(--color-success);
@@ -469,7 +463,7 @@ export default {
 .result-type-row__actions {
 	display: flex;
 	gap: 2px;
-	margin-left: auto;
+	margin-inline-start: auto;
 }
 
 .result-type-row__edit-form {

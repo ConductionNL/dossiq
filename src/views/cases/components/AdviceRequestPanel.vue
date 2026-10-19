@@ -16,7 +16,7 @@
 						req.department
 					}}</span>
 					<span
-						class="advice-request__status"
+						class="advice-request__status cn-status-badge cn-status-badge--default"
 						:class="'advice-request__status--' + req.status">
 						{{ getStatusLabel(req.status) }}
 					</span>
@@ -258,11 +258,6 @@ export default {
 	font-weight: 600;
 }
 
-.advice-request__status {
-	font-size: 0.75rem;
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-}
 
 .advice-request__status--open {
 	background: var(--color-background-dark);
@@ -270,17 +265,20 @@ export default {
 
 .advice-request__status--in_behandeling {
 	background: var(--color-primary-element-light);
-	color: var(--color-primary-element);
+	--cn-status-badge-ink: var(--color-primary-element);
+	color: var(--cn-status-badge-ink);
 }
 
 .advice-request__status--advies_uitgebracht {
 	background: var(--color-success-light, #e8f5e9);
-	color: var(--color-success, #2e7d32);
+	--cn-status-badge-ink: var(--color-success, #2e7d32);
+	color: var(--cn-status-badge-ink);
 }
 
 .advice-request__status--afgesloten {
 	background: var(--color-background-dark);
-	color: var(--color-text-maxcontrast);
+	--cn-status-badge-ink: var(--color-text-maxcontrast);
+	color: var(--cn-status-badge-ink);
 }
 
 .advice-request__subject {

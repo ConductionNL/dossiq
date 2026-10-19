@@ -36,10 +36,6 @@
 
 .sub-entity-row__badge {
 	display: inline-block;
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 11px;
-	font-weight: 500;
 	background: var(--color-background-dark);
 	color: var(--color-text-maxcontrast);
 }
@@ -52,7 +48,7 @@
 .sub-entity-row__actions {
 	display: flex;
 	gap: 4px;
-	margin-left: auto;
+	margin-inline-start: auto;
 }
 
 .sub-entity-row__edit-form {

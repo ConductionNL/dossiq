@@ -58,7 +58,7 @@
 					<td>{{ sub.scope }}</td>
 					<td>{{ sub.reason }}</td>
 					<td>
-						<span :class="`status status--${sub.status}`">{{
+						<span :class="`status cn-status-badge cn-status-badge--default status--${sub.status}`">{{
 							sub.status
 						}}</span>
 					</td>
@@ -188,25 +188,22 @@ export default {
 
 .substitution-settings__table th,
 .substitution-settings__table td {
-	text-align: left;
+	text-align: start;
 	padding: 8px 10px;
 	border-bottom: 1px solid var(--color-border);
 }
 
-.status {
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 0.8rem;
-}
 
 .status--active {
 	background: var(--color-success);
-	color: var(--color-success-text);
+	--cn-status-badge-ink: var(--color-success-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .status--ended,
 .status--revoked {
 	background: var(--color-background-dark);
-	color: var(--color-text-maxcontrast);
+	--cn-status-badge-ink: var(--color-text-maxcontrast);
+	color: var(--cn-status-badge-ink);
 }
 </style>

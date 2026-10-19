@@ -107,7 +107,7 @@
 						<td>{{ subCase.title || '—' }}</td>
 						<td>
 							<span
-								class="status-badge"
+								class="status-badge cn-status-badge cn-status-badge--default"
 								:class="getStatusClass(subCase)">
 								{{ getStatusName(subCase) }}
 							</span>
@@ -480,7 +480,7 @@ export default {
 }
 
 .deelzaak-list__rollup {
-	margin-left: 8px;
+	margin-inline-start: 8px;
 	color: var(--color-text-lighter);
 }
 
@@ -501,7 +501,7 @@ export default {
 .viewTable th,
 .viewTable td {
 	padding: 12px;
-	text-align: left;
+	text-align: start;
 	border-bottom: 1px solid var(--color-border);
 	vertical-align: middle;
 }
@@ -523,20 +523,18 @@ export default {
 
 .status-badge {
 	display: inline-block;
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 12px;
-	font-weight: 500;
 }
 
 .status-badge--active {
 	background: var(--color-primary-light);
-	color: var(--color-primary-text);
+	--cn-status-badge-ink: var(--color-primary-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .status-badge--final {
 	background: var(--color-success);
-	color: white;
+	--cn-status-badge-ink: white;
+	color: var(--cn-status-badge-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {
