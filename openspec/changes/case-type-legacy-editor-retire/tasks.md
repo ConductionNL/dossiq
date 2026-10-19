@@ -1,0 +1,5 @@
+- [x] Rehost widgets for workflow, statuses, fields, messages and rules
+- [x] Remove the legacy editor, its admin section, legacy-only endpoints, config key, translations and tests
+- [x] Workflow definition actions call their endpoints
+- [x] e2e specs that reached the editor through admin settings open the Case types page instead
+- [x] Status edits and reorders keep the properties the form does not edit

@@ -4373,8 +4373,9 @@
 								{
 									"label": "Fields",
 									"widgetIds": [
-										"case-type-fields",
+										"case-type-fields-editor",
 										"case-type-field-rules",
+										"case-type-rules",
 										"case-type-core",
 										"case-type-list-layout"
 									],
@@ -4388,7 +4389,10 @@
 								},
 								{
 									"label": "Statuses",
-									"widgetId": "case-type-statuses-list",
+									"widgetIds": [
+										"case-type-statuses-editor",
+										"case-type-results"
+									],
 									"countFrom": {
 										"register": "dossiq",
 										"schema": "statusType",
@@ -4402,13 +4406,19 @@
 									"widgetIds": [
 										"case-type-phase-board",
 										"case-type-terms",
-										"case-type-messages",
-										"case-type-blueprint"
+										"case-type-workflow-editor",
+										"case-type-messages-editor",
+										"case-type-blueprint",
+										"case-type-document-types",
+										"case-type-decision-types"
 									]
 								},
 								{
 									"label": "Rights",
-									"widgetId": "case-type-rights"
+									"widgetIds": [
+										"case-type-rights",
+										"case-type-roles"
+									]
 								},
 								{
 									"label": "Privacy",
@@ -4474,110 +4484,6 @@
 								"variant": "neutral"
 							},
 							"emptyText": "This case type has no statuses yet"
-						}
-					},
-					{
-						"id": "case-type-statuses-list",
-						"type": "object-list",
-						"title": "Statuses",
-						"content": {
-							"register": "dossiq",
-							"schema": "statusType",
-							"filter": {
-								"caseType": "@objectId"
-							},
-							"sort": {
-								"field": "order",
-								"dir": "asc"
-							},
-							"limit": 50,
-							"columns": [
-								{
-									"key": "order",
-									"label": "Order"
-								},
-								{
-									"key": "name",
-									"label": "Status"
-								},
-								{
-									"key": "publicLabel",
-									"label": "Public label"
-								},
-								{
-									"key": "isFinal",
-									"label": "Final"
-								}
-							],
-							"emptyText": "This case type has no statuses yet"
-						}
-					},
-					{
-						"id": "case-type-fields",
-						"type": "object-list",
-						"title": "Fields",
-						"content": {
-							"register": "dossiq",
-							"schema": "propertyDefinition",
-							"filter": {
-								"caseType": "@objectId"
-							},
-							"sort": {
-								"field": "name",
-								"dir": "asc"
-							},
-							"limit": 50,
-							"columns": [
-								{
-									"key": "name",
-									"label": "Field"
-								},
-								{
-									"key": "propertyType",
-									"label": "Type"
-								},
-								{
-									"key": "isRequired",
-									"label": "Required"
-								},
-								{
-									"key": "propertySource",
-									"label": "Origin"
-								},
-								{
-									"key": "filterable",
-									"label": "In the list"
-								}
-							],
-							"emptyText": "This case type has no fields of its own yet"
-						}
-					},
-					{
-						"id": "case-type-messages",
-						"type": "object-list",
-						"title": "Messages to the applicant",
-						"content": {
-							"register": "dossiq",
-							"schema": "emailTemplate",
-							"filter": {
-								"caseType": "@objectId"
-							},
-							"limit": 25,
-							"columns": [
-								{
-									"key": "messageCategory",
-									"label": "Moment"
-								},
-								{
-									"key": "name",
-									"label": "Message"
-								},
-								{
-									"key": "subject",
-									"label": "Subject"
-								}
-							],
-							"emptyText": "This case type sends no messages of its own"
 						}
 					},
 					{
@@ -4705,6 +4611,174 @@
 							"limit": 1,
 							"emptyText": "No warnings"
 						}
+					},
+					{
+						"id": "case-type-results",
+						"type": "object-list",
+						"title": "Results",
+						"content": {
+							"register": "dossiq",
+							"schema": "resultType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Result"
+								},
+								{
+									"key": "archivalAction",
+									"label": "Archival action"
+								},
+								{
+									"key": "archivalPeriod",
+									"label": "Archival period"
+								}
+							],
+							"emptyText": "This case type has no results yet",
+							"rowRoute": "ResultTypeDetail",
+							"rowActions": [
+								{
+									"id": "case-type-results-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-roles",
+						"type": "object-list",
+						"title": "Roles",
+						"content": {
+							"register": "dossiq",
+							"schema": "roleType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Role"
+								},
+								{
+									"key": "genericRole",
+									"label": "Generic role"
+								}
+							],
+							"emptyText": "This case type has no roles yet",
+							"rowRoute": "RoleTypeDetail",
+							"rowActions": [
+								{
+									"id": "case-type-roles-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-document-types",
+						"type": "object-list",
+						"title": "Document types",
+						"content": {
+							"register": "dossiq",
+							"schema": "documentType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Document type"
+								},
+								{
+									"key": "category",
+									"label": "Category"
+								},
+								{
+									"key": "confidentiality",
+									"label": "Confidentiality"
+								},
+								{
+									"key": "isRequired",
+									"label": "Required"
+								}
+							],
+							"emptyText": "This case type has no document types yet",
+							"rowRoute": "DocumentTypeDetail",
+							"rowActions": [
+								{
+									"id": "case-type-document-types-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-decision-types",
+						"type": "object-list",
+						"title": "Decision types",
+						"content": {
+							"register": "dossiq",
+							"schema": "decisionType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Decision type"
+								},
+								{
+									"key": "publicationRequired",
+									"label": "Publication required"
+								}
+							],
+							"emptyText": "This case type has no decision types yet",
+							"rowRoute": "DecisionTypeDetail",
+							"rowActions": [
+								{
+									"id": "case-type-decision-types-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
 					}
 				]
 			},
@@ -4721,6 +4795,21 @@
 					},
 					"case-type-party-kinds": {
 						"type": "CaseTypePartyKindsWidget"
+					},
+					"case-type-workflow-editor": {
+						"type": "CaseTypeWorkflowEditorWidget"
+					},
+					"case-type-statuses-editor": {
+						"type": "CaseTypeStatusesEditorWidget"
+					},
+					"case-type-fields-editor": {
+						"type": "CaseTypeFieldsEditorWidget"
+					},
+					"case-type-messages-editor": {
+						"type": "CaseTypeMessagesEditorWidget"
+					},
+					"case-type-rules": {
+						"type": "CaseTypeRulesWidget"
 					}
 				}
 			}

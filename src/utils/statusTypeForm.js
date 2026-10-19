@@ -250,3 +250,26 @@ export function formToStatusType(form) {
 
 	return payload
 }
+
+/**
+ * The object an edit of a stored status saves as: the stored row with the
+ * edited keys laid over it.
+ *
+ * The store saves with a PUT, which replaces the row. Writing only what the
+ * form builds would drop every schema property the form does not edit, such
+ * as `capacity`, `phaseTermDays` and `phaseTermShare`. OpenRegister's own
+ * `@self` metadata is left off; the server owns it.
+ *
+ * @param {object} stored  The row as it was fetched.
+ * @param {object} changes The keys to write over it.
+ * @return {object} The object to save.
+ *
+ * @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+ */
+export function mergeOntoStored(stored, changes) {
+	const kept = Object.fromEntries(
+		Object.entries(stored || {}).filter(([key]) => !key.startsWith('@')),
+	)
+
+	return { ...kept, ...changes }
+}
