@@ -250,7 +250,7 @@ class DomainCopyServiceTest extends TestCase {
 		foreach ($this->harness->register->all(schema: 'contentTemplate') as $template) {
 			$this->harness->register->seed(schema: 'contentTemplate', uuid: (string)$template['id'], row: (['name' => ['nl' => 'Vooraankondiging handhaving']] + $template));
 		}
-		$this->harness->register->refuseSaves = ['contentTemplate'];
+		$this->harness->register->refusedSchemas = ['contentTemplate'];
 
 		$result = $this->service()->copy(domainId: 'dom-vth', name: 'VTH Bommelerwaard');
 
