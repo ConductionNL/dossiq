@@ -4190,9 +4190,10 @@
 								{
 									"label": "Phases and tasks",
 									"widgetIds": [
-										"case-type-blueprint",
+										"case-type-phase-board",
 										"case-type-terms",
-										"case-type-messages"
+										"case-type-messages",
+										"case-type-blueprint"
 									]
 								},
 								{
@@ -4446,6 +4447,37 @@
 						"type": "audit-trail",
 						"title": "Record history",
 						"icon": "History"
+					},
+					{
+						"id": "case-type-phase-board",
+						"type": "grouped-cards",
+						"title": "Phases and tasks",
+						"_note": "DqZaaktype Fasen en taken: the case type's statuses as phases, each with the tasks its active workflow runs, and the acts available in every phase, from GET /api/case-types/{id}/phases (the steps are a JSON string no declarative widget can group).",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/phases"
+							},
+							"groupsPath": "phases",
+							"itemsKey": "tasks",
+							"groupTitle": "Phase {order}: {name}",
+							"groupCount": {
+								"one": "{count} task",
+								"other": "{count} tasks"
+							},
+							"itemTitle": "{title}",
+							"itemMeta": [
+								"{candidateGroups}",
+								"{leadTimeDays} working days"
+							],
+							"columns": 2,
+							"extraGroup": {
+								"title": "Available in every phase",
+								"path": "alwaysAvailable",
+								"itemText": "{label}"
+							},
+							"emptyText": "This case type has no phases yet",
+							"groupEmptyText": "No tasks in this phase"
+						}
 					}
 				]
 			},
