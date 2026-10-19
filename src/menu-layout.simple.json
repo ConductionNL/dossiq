@@ -1555,9 +1555,14 @@
 									]
 								},
 								{
-									"widgetId": "case-decisions-panel",
 									"label": "Decisions",
-									"overflow": true
+									"overflow": true,
+									"widgetIds": [
+										"case-decisions-panel",
+										"case-decision-letter",
+										"case-advice-requests"
+									],
+									"_note": "DqZaakBesluiten: the decisions from decidiq, then the decision letter and the advice on the case as cards."
 								},
 								{
 									"label": "Related",
@@ -2881,6 +2886,82 @@
 									}
 								}
 							]
+						}
+					},
+					{
+						"id": "case-decision-letter",
+						"type": "facts",
+						"title": "Decision letter",
+						"icon": "FileDocumentOutline",
+						"_note": "DqZaakBesluiten Beschikking: the decision document the case's document step writes, with Document genereren as the card's action.",
+						"content": {
+							"fields": [
+								{
+									"as": "text",
+									"path": "besluitDocument"
+								}
+							],
+							"emptyText": "No decision letter written yet",
+							"headerAction": {
+								"label": "Generate document",
+								"icon": "FileDocumentPlusOutline",
+								"type": "open-modal",
+								"target": "BeschikkingComposerDialog",
+								"props": {
+									"caseId": "@objectId",
+									"open": true
+								}
+							}
+						}
+					},
+					{
+						"id": "case-advice-requests",
+						"type": "object-list",
+						"title": "Advice on the case",
+						"icon": "CommentQuestionOutline",
+						"_note": "DqZaakBesluiten Adviezen: the internal and external advice requested on this case; Toevoegen asks a new one with the case filled in.",
+						"content": {
+							"register": "dossiq",
+							"schema": "adviesAanvraag",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "requestedAt",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "subject",
+									"label": "Subject"
+								},
+								{
+									"key": "advisor",
+									"label": "Advisor"
+								},
+								{
+									"key": "deadline",
+									"label": "Answer by",
+									"format": "date"
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"enum": [
+										"requested",
+										"received",
+										"expired"
+									],
+									"enumLabels": {
+										"requested": "Waiting for answer",
+										"received": "Received",
+										"expired": "Expired"
+									}
+								}
+							],
+							"rowRoute": "AdviceDetail",
+							"emptyText": "No advice requested on this case yet"
 						}
 					}
 				],
