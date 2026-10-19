@@ -39,15 +39,12 @@
 			</template>
 		</NcEmptyContent>
 
-		<NcEmptyContent
+		<p
 			v-else-if="entries.length === 0"
-			data-testid="archival-reviews-empty"
-			:name="t('dossiq', 'Nothing to sign off')"
-			:description="t('dossiq', 'You hold no archival decisions right now.')">
-			<template #icon>
-				<ArchiveOutline :size="20" />
-			</template>
-		</NcEmptyContent>
+			class="archival-reviews__empty"
+			data-testid="archival-reviews-empty">
+			{{ t('dossiq', 'You hold no archival decisions right now.') }}
+		</p>
 
 		<ul v-else class="archival-reviews__list">
 			<li
@@ -103,7 +100,6 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
-import ArchiveOutline from 'vue-material-design-icons/ArchiveOutline.vue'
 import { ANSWERS, decide, pendingReviews } from '../../services/archivalApi.js'
 
 export default {
@@ -111,7 +107,6 @@ export default {
 
 	components: {
 		AlertCircleOutline,
-		ArchiveOutline,
 		NcButton,
 		NcDateTimePickerNative,
 		NcEmptyContent,
@@ -309,6 +304,12 @@ export default {
 </script>
 
 <style scoped>
+.archival-reviews__empty {
+	margin: 0;
+	text-align: start;
+	color: var(--color-text-maxcontrast);
+}
+
 .archival-reviews__entry {
 	border-block-end: 1px solid var(--color-border);
 	padding-block: var(--default-grid-baseline, 4px);

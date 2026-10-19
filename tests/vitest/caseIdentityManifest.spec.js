@@ -222,8 +222,9 @@ describe('CaseDetail: terms and archive', () => {
 		}
 	})
 
-	it('registers its icon, and takes a cell of its own', () => {
-		expect(iconIsRegistered(widget('case-terms').icon)).toBe(true)
+	it('draws no title icon, and takes a cell of its own', () => {
+		// The boards draw no icon on a card title.
+		expect(widget('case-terms').icon).toBeUndefined()
 
 		const cell = caseDetail().config.layout.find(
 			(entry) => entry.widgetId === 'case-terms',
