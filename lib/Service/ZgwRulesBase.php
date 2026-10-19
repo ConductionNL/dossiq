@@ -104,6 +104,7 @@ abstract class ZgwRulesBase {
 	 * @param LoggerInterface $logger The logger
 	 * @param SettingsService $settingsService The settings service
 	 * @param FieldValidator $fieldValidator The stateless field-format validator
+	 * @param LanguageMapText $text Reads a translatable field of a stored type row as text
 	 *
 	 * @return void
 	 */
@@ -111,6 +112,7 @@ abstract class ZgwRulesBase {
 		protected readonly LoggerInterface $logger,
 		protected readonly SettingsService $settingsService,
 		protected readonly FieldValidator $fieldValidator,
+		protected readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 		$this->results = new ZgwRuleResults(logger: $logger);
 		$this->lookups = new ZgwRuleLookups(settingsService: $settingsService);
@@ -589,7 +591,7 @@ abstract class ZgwRulesBase {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	protected function textOf(mixed $value): string {
-		return (new LanguageMapText())->textOf(value: $value);
+		return $this->text->textOf(value: $value);
 	}//end textOf()
 
 	/**
