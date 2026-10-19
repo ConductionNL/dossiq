@@ -63,10 +63,15 @@ class TeamAvailability {
 	 * @param array<int, array<string, mixed>> $handlers Rows with a `handler` user id.
 	 *
 	 * @return array<int, array<string, mixed>> The rows with `availability` and `present`.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function annotate(array $handlers): array {
 		$userIds  = array_values(array_filter(array_map(static fn (array $row): string => (string) ($row['handler'] ?? ''), $handlers)));
-		$statuses = $userIds === [] ? [] : $this->userStatusManager->getUserStatuses($userIds);
+		$statuses = [];
+		if ($userIds !== []) {
+			$statuses = $this->userStatusManager->getUserStatuses($userIds);
+		}
 
 		foreach ($handlers as $index => $row) {
 			$status = ($statuses[(string) ($row['handler'] ?? '')] ?? null);
@@ -97,7 +102,7 @@ class TeamAvailability {
 				return $message;
 			}
 
-			return $this->l10n->t('%1$s until %2$s', [$message, $this->dateTimeFormatter->formatTime($clearAt, 'short')]);
+			return $this->l10n->t('%1$s until %2$s', [$message, $this->dateTimeFormatter->formatTime($clearAt->getTimestamp(), 'short')]);
 		}
 
 		return match ($status->getStatus()) {

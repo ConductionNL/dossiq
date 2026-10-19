@@ -45,7 +45,7 @@ class TeamAvailabilityTest extends TestCase {
 	 *
 	 * @return IUserStatus
 	 */
-	private function status(string $status, ?string $message=null, ?DateTimeImmutable $clearAt=null): IUserStatus {
+	private function userStatus(string $status, ?string $message=null, ?DateTimeImmutable $clearAt=null): IUserStatus {
 		$double = $this->createMock(IUserStatus::class);
 		$double->method('getStatus')->willReturn($status);
 		$double->method('getMessage')->willReturn($message);
@@ -60,9 +60,9 @@ class TeamAvailabilityTest extends TestCase {
 		$manager = $this->createMock(IUserStatusManager::class);
 		$manager->expects($this->once())->method('getUserStatuses')->with(['jan', 'fatma', 'tim', 'eva'])->willReturn(
 			[
-				'jan'   => $this->status(status: IUserStatus::ONLINE),
-				'fatma' => $this->status(status: IUserStatus::DND, message: 'In a meeting', clearAt: new DateTimeImmutable('2026-10-19 14:00')),
-				'tim'   => $this->status(status: IUserStatus::OFFLINE),
+				'jan'   => $this->userStatus(status: IUserStatus::ONLINE),
+				'fatma' => $this->userStatus(status: IUserStatus::DND, message: 'In a meeting', clearAt: new DateTimeImmutable('2026-10-19 14:00')),
+				'tim'   => $this->userStatus(status: IUserStatus::OFFLINE),
 			]
 		);
 		$l10n = $this->createMock(IL10N::class);
