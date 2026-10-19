@@ -33,8 +33,8 @@ describe('the catalogue page', () => {
 			url: '/apps/dossiq/api/catalogue/object-types',
 			responsePath: 'results',
 		})
-		expect(objectTypes.content.columns.map((column) => column.key)).toEqual(['title', 'cases'])
-		expect(objectTypes.content.columns[1]).toMatchObject({ label: 'Used in', formatter: 'caseCount' })
+		expect(objectTypes.content.columns.map((column) => column.key)).toEqual(['title', 'properties', 'views', 'cases'])
+		expect(objectTypes.content.columns.find((column) => column.key === 'cases')).toMatchObject({ label: 'Used in', formatter: 'caseCount' })
 		expect(objectTypes.content.emptyText).toBe('Object types appear here once cases link objects.')
 	})
 })
