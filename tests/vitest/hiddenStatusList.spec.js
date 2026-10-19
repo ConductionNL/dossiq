@@ -90,7 +90,7 @@ describe('a hidden status leaves every working lens', () => {
 		// The two lists that were pages are views of Cases now. The team
 		// queue stays equal to the Unclaimed chip: both answer the same
 		// question and nothing at runtime compares them.
-		const view = (slug) => page('Cases').config.defaultSavedViews.find((v) => v.slug === slug).filters
+		const view = (slug) => page('Cases').config.defaultSavedViews.find((v) => v.slug === slug).overrides.lockedFilters
 		expect(view('team-queue')[FLAG]).toBe(false)
 		expect(view('team-queue')).toEqual(chip('Cases', 'Unclaimed').filter)
 		expect(view('my-work')[FLAG]).toBe(false)

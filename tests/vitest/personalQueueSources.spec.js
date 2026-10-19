@@ -140,7 +140,7 @@ describe('the page is a page, and not a second case index', () => {
 		// picked up, a team surface and a view of Cases now; `PersonalQueue` is
 		// one person's own, across stores, and stays a page.
 		const teamQueue = page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue')
-		expect(teamQueue.filters.assignee).toBe('IS NULL')
+		expect(teamQueue.overrides.lockedFilters.assignee).toBe('IS NULL')
 		expect(page('Queue')).toBeUndefined()
 		expect(page('PersonalQueue').type).toBe('custom')
 	})

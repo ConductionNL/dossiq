@@ -21,7 +21,8 @@ const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/nl.json'), 'utf8')).
 
 const page = (id) => manifest.pages.find((p) => p.id === id)
 const chip = (label) => page('Cases').config.quickFilters.find((q) => q.label === label).filter
-const byslug = (id) => Object.fromEntries(page(id).config.defaultSavedViews.map((d) => [d.slug, d.filters]))
+// A view's base conditions: its own filters, plus the ones it locks.
+const byslug = (id) => Object.fromEntries(page(id).config.defaultSavedViews.map((d) => [d.slug, { ...d.filters, ...d.overrides?.lockedFilters }]))
 
 const defaults = byslug('Cases')
 
@@ -67,7 +68,7 @@ describe('lists that were pages, as views of Cases', () => {
 
 	it('opens Assigned to me on the urgency order, which the Cases sort offers from the work queue', () => {
 		const view = page('Cases').config.defaultSavedViews.find((d) => d.slug === 'my-work')
-		expect(view.filters.assignee).toBe('@me')
+		expect(view.overrides.lockedFilters.assignee).toBe('@me')
 		expect(view.overrides.sortOption).toBe('urgency')
 		const option = page('Cases').config.sortSelectOptions.find((o) => o.value === view.overrides.sortOption)
 		expect(option.source.url).toBe('/apps/dossiq/api/work-queue')

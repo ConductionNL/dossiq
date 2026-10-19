@@ -54,7 +54,7 @@ export function CasesSavedView(slug: string): string {
 
 /**
  * Whether nextcloud-vue renders a view's page config `overrides` (card
- * layout, columns, slots, header, tabs; library batch 17b). The tests that
+ * layout, columns, slots, header, tabs; library batch 18). The tests that
  * read what a view restores (openspec/changes/lists-are-views/restore.md)
  * are fixme while this is false.
  */

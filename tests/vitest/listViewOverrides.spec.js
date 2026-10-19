@@ -27,6 +27,11 @@ const view = (slug) => cases.defaultSavedViews.find((entry) => entry.slug === sl
 describe('the team-queue view', () => {
 	const overrides = view('team-queue').overrides
 
+	it('locks the queue to open cases nobody picked up, which the reader cannot clear', () => {
+		expect(view('team-queue').filters).toEqual({})
+		expect(overrides.lockedFilters).toEqual({ assignee: 'IS NULL', isFinalStatus: false, statusHiddenInLists: false, isDraft: false, isTemplate: false })
+	})
+
 	it('has the three counts, the chip per case type and the two side cards', () => {
 		expect(overrides.statRow.map((tile) => tile.content.valueField)).toEqual(['queueCount', 'queueOldestDays', 'queueDueSoon'])
 		expect(overrides.quickFiltersFrom).toMatchObject({ field: 'caseType', schema: 'caseType', allLabel: 'All types' })
@@ -45,7 +50,7 @@ describe('the team-queue view', () => {
 		expect(full.relocations.Queue).toBe('WorkGroup')
 		const badge = simple.menu.find((item) => item.id === 'Queue')
 		expect(badge).toMatchObject({ label: 'Team queue', counterVariant: 'attention' })
-		expect(badge.count.filter).toEqual(view('team-queue').filters)
+		expect(badge.count.filter).toEqual(view('team-queue').overrides.lockedFilters)
 	})
 })
 
@@ -59,12 +64,26 @@ describe('the my-work view', () => {
 		expect(overrides.viewModes).toEqual(['cards', 'table'])
 	})
 
+	it('locks the reader to their own cases, as the page did', () => {
+		expect(view('my-work').filters).toEqual({})
+		expect(overrides.lockedFilters).toEqual({ assignee: '@me', statusHiddenInLists: false, isDraft: false })
+	})
+
+	it('draws the description, the case type and status chips and the overdue deadline', () => {
+		expect(overrides.cardLayout.description).toEqual({ field: 'description', maxLength: 140 })
+		expect(overrides.cardLayout.chips).toEqual([
+			{ field: 'caseType', formatter: 'caseTypeName' },
+			{ field: 'status', formatter: 'statusTypeName' },
+		])
+		expect(overrides.cardLayout.footerDate).toEqual({ field: 'deadline', label: 'Deadline', overdueVariant: 'error' })
+	})
+
 	it('draws the deadline tier as each card\'s head pill', () => {
 		expect(overrides.cardLayout.headPill).toMatchObject({
 			field: 'deadlineTier',
 			labels: { overdue: 'Late', critical: 'Critical', warning: 'Soon', normal: 'Normal' },
 		})
-		expect(overrides.cardLayout).toMatchObject({ number: 'identifier', title: 'title', footerDate: { field: 'deadline' } })
+		expect(overrides.cardLayout).toMatchObject({ number: 'identifier', title: 'title' })
 	})
 
 	it('is a menu entry that keeps the MyWork id, so its pins still lead somewhere', () => {
@@ -99,6 +118,11 @@ describe('the data-subject-requests view', () => {
 		expect(overrides.columns.map((column) => (typeof column === 'string' ? column : column.key))).toEqual(
 			['title', 'dataSubjectRequestType', 'startDate', 'deadline', 'status', 'assignee'],
 		)
+	})
+
+	it('locks the list to the request kinds', () => {
+		expect(entry.filters).toEqual({})
+		expect(overrides.lockedFilters).toEqual({ dataSubjectRequestType: ['inzage', 'correctie', 'verwijdering'] })
 	})
 
 	it('opens ordered by deadline, soonest first', () => {

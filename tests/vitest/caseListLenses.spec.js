@@ -278,7 +278,7 @@ describe('Cases index lenses', () => {
 
 	it('gives Unclaimed the same filter as the team queue view', () => {
 		expect(chip('Cases', 'Unclaimed').filter).toEqual(
-			page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').filters,
+			page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters,
 		)
 	})
 
@@ -328,7 +328,7 @@ describe('Cases index lenses', () => {
 				JSON.stringify(entry.config?.filter ?? {}).includes('_drafts'),
 			)
 		expect(asking).toEqual([])
-		expect('_drafts' in page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').filters).toBe(false)
+		expect('_drafts' in page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters).toBe(false)
 	})
 
 	it('is not the default lens, so the archive is never the first paint', () => {
@@ -366,7 +366,7 @@ describe('Cases index lenses', () => {
 		// does not need one twice over: the platform excludes archived objects
 		// from every list, and a case can only be archived after it has ended,
 		// which `isFinalStatus: false` already keeps out.
-		const queue = page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').filters
+		const queue = page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters
 		expect('_archived' in queue).toBe(false)
 		expect(queue.isFinalStatus).toBe(false)
 	})

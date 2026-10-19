@@ -18,7 +18,7 @@ Profiles: the default profile is SIMPLE (`menu-layout.simple.json`). Its overlay
 replaced the Queue page config whole, so the team queue values below are the
 simple ones; the FULL profile's differences are listed after them.
 
-## Applied (nextcloud-vue saved-view-overrides, batch 17b)
+## Applied (nextcloud-vue saved-view-overrides, library batch 18)
 
 The blocks below are the inventory as first written. What landed in
 `src/manifest.json` (Cases `defaultSavedViews[].overrides`) differs where the
@@ -42,20 +42,33 @@ library's API does:
   removed from the simple one as before. Both are pinned by default again,
   so every pin keeps working and no repair step is needed.
 
+Closed with nextcloud-vue saved-view-overrides v2 (library batch 18, schema
+2.132.0):
+
+- Base filters: the conditions each page applied as its base filter are the
+  view's `overrides.lockedFilters`, which the reader cannot clear (team queue:
+  `assignee IS NULL`, not final, not hidden, not a draft, not a template;
+  Assigned to me: `assignee @me`, not hidden, not a draft; data subject
+  requests: the three request kinds). The views' own `filters` are empty.
+- Per profile: the full profile patches the team queue view back to its Queue
+  page (`src/menu-layout.json` `pages`, a `configPatch` on the view by slug
+  that merges into its overrides): the title "Queue", the unread and priority
+  columns and the case type folders.
+- The Assigned to me card: `description` cut at 140 characters, case type and
+  status as `chips` through their formatters, and `footerDate` with
+  `overdueVariant: error`.
+- The urgency order: `sortOption: urgency` selects the sidebar sort entry.
+
 What still differs from the pages:
 
-Open in nextcloud-vue (coordinator, 19 October 2026):
-
-- A view's filter is a saved view's filters, which the reader can change or
-  leave; the Queue and MyWork pages had a base filter nobody could clear.
-- The full profile patches the team queue view back to its Queue page
-  (`src/menu-layout.json` `pages`, a `configPatch` on the view by slug that
-  merges into its overrides): the title "Queue", the unread and priority
-  columns and the case type folders. It also keeps the simple look's counts,
-  case type chips and side cards, which its Queue page did not have.
-- The Assigned to me card has no description line, and case type and status
-  are text in the meta line rather than chips; the deadline is a plain date,
-  not red when overdue.
+- The full profile's team queue also shows the simple look's counts, case
+  type chips and side cards, which its Queue page did not have. That adds
+  to what a user had; nothing is taken away.
+- The deadline tier pill reads `deadlineTier`, which the urgency source
+  copies onto the rows (`annotate`). The old card read the work queue map
+  whatever the order, so a row the work queue does not rank shows no pill.
+- Nobody has looked at the restored views in a browser: the e2e specs that
+  read them are type-checked against the library's record card, not run.
 
 ## 1. `team-queue` (was /queue, page `Queue`)
 

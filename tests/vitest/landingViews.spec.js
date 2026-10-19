@@ -122,7 +122,7 @@ describe('the landing page in the full structure', () => {
 		)
 		expect(team[0]).toEqual({ id: preset.id, ...preset.widget })
 		expect(team[0].content.filter).toEqual({
-			...page(manifest.pages, 'Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').filters,
+			...page(manifest.pages, 'Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters,
 			assignedGroup: '@myGroups',
 		})
 		// The deadline reads as a date, not as the stored ISO string

@@ -322,7 +322,7 @@ describe('the simple profile', () => {
 		expect(entry('Queue').count).toEqual({
 			register: 'dossiq',
 			schema: 'case',
-			filter: teamQueue.filters,
+			filter: teamQueue.overrides.lockedFilters,
 		})
 		expect(entry('WorkGroup').count).toEqual({
 			register: 'dossiq',
