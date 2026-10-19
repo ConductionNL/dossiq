@@ -3260,6 +3260,46 @@
 					"filterField": "caseType",
 					"pane": false
 				},
+				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The board's address line under each title needs an address text the case does not carry, so the line is the case number.",
+				"mapConfig": {
+					"geoField": "geometry",
+					"popupField": "title",
+					"center": [
+						52.1326,
+						5.2913
+					],
+					"basemaps": [
+						{
+							"name": "Standard",
+							"url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+							"attribution": "© OpenStreetMap contributors",
+							"options": {
+								"referrerPolicy": "strict-origin-when-cross-origin"
+							}
+						},
+						{
+							"name": "Humanitarian",
+							"url": "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+							"attribution": "© OpenStreetMap contributors, tiles by HOT",
+							"options": {
+								"referrerPolicy": "strict-origin-when-cross-origin"
+							}
+						},
+						{
+							"name": "Terrain",
+							"url": "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+							"attribution": "© OpenStreetMap contributors, SRTM | © OpenTopoMap",
+							"options": {
+								"referrerPolicy": "strict-origin-when-cross-origin"
+							}
+						}
+					],
+					"list": {
+						"title": "{title}",
+						"sub": "{identifier}",
+						"due": "{deadline|date}"
+					}
+				},
 				"columns": [
 					{
 						"key": "title",
