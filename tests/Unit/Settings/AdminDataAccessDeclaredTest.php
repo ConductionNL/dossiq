@@ -204,6 +204,6 @@ final class AdminDataAccessDeclaredTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheRegisterVersionMoves(): void {
-		$this->assertTrue(version_compare((string)$this->config['info']['version'], '0.20.54', '>'));
+		$this->assertTrue(version_compare((string)$this->config['info']['version'], '0.20.55', '>'));
 	}//end testTheRegisterVersionMoves()
 }//end class

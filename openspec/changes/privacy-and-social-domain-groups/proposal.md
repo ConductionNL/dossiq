@@ -17,7 +17,7 @@ The admin data fix (#4091) left two open questions. Data breaches (`avgIncident`
   - the data breach register;
   - the Privacy page's Data breaches tab;
   - the three social-domain pages.
-- The register moves to 0.20.55.
+- The register moves to 0.20.56.
 
 ## Open
 

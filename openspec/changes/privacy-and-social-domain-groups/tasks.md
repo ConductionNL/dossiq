@@ -3,7 +3,7 @@
 - [x] 1.1 Provision `dossiq-privacy` and `dossiq-sociaal-domein`
   - Files: lib/Repair/ProvisionAssignedGroups.php
   - Test: tests/Unit/Service/Access/RolePermissionsTest.php, tests/Unit/Settings/AdminDataAccessDeclaredTest.php
-- [x] 1.2 Schema blocks for avgIncident and the three social-domain schemas, register 0.20.55
+- [x] 1.2 Schema blocks for avgIncident and the three social-domain schemas, register 0.20.56
   - Files: lib/Settings/register.d/92-admin-data-access.json, lib/Settings/dossiq_register.json, tests/schemas/schema-version-digests.json
   - Test: tests/Unit/Settings/AdminDataAccessDeclaredTest.php
 - [x] 1.3 Role permissions from the groups, provided as initial state and read by the menu, page tabs and route guard
