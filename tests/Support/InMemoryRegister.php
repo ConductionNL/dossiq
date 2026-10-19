@@ -65,7 +65,7 @@ class InMemoryRegister {
 	 *
 	 * @var array<int, string>
 	 */
-	public array $refuseSaves = [];
+	public array $refusedSchemas = [];
 
 	/**
 	 * How many times a row was saved, so a test can say a write happened once.
@@ -195,7 +195,7 @@ class InMemoryRegister {
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
-		if (in_array((string)$schema, $this->refuseSaves, true) === true) {
+		if (in_array((string)$schema, $this->refusedSchemas, true) === true) {
 			throw new \RuntimeException('Save refused for ' . (string)$schema);
 		}
 
