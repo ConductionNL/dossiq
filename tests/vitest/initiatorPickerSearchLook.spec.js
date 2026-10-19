@@ -20,11 +20,17 @@ const ROWS = {
 	kvkCompany: [{ id: 'c-1', tradeName: 'Visser Bouw B.V.', kvkNumber: '24157431' }],
 }
 
+const storeErrors = {}
+const fetchObjectCalls = []
+
 vi.mock('../../src/store/modules/object.js', () => ({
 	useObjectStore: () => ({
-		fetchCollection: async (schema) => ROWS[schema],
-		fetchObject: async (schema, id) => ROWS[schema].find((row) => row.id === id) || null,
-		errors: {},
+		fetchCollection: async (schema) => (storeErrors[schema] ? [] : ROWS[schema]),
+		fetchObject: async (schema, id) => {
+			fetchObjectCalls.push([schema, id])
+			return ROWS[schema].find((row) => row.id === id) || null
+		},
+		errors: storeErrors,
 	}),
 }))
 
@@ -85,6 +91,47 @@ describe('InitiatorPicker as a form field', () => {
 		const select = wrapper.findComponent({ name: 'CnSearchSelect' })
 		expect(select.props('modelValue')).toBe('c-1')
 		expect(select.props('options')[0].label).toBe('Visser Bouw B.V.')
+	})
+
+	it('says a refused term instead of showing no rows', async () => {
+		vi.useFakeTimers()
+		storeErrors.brpPerson = { status: 400, message: 'Unbalanced bracket' }
+		const wrapper = mountField()
+
+		wrapper.findComponent({ name: 'CnSearchSelect' }).vm.$emit('search', 'Visser (')
+		await vi.runAllTimersAsync()
+		await flushPromises()
+
+		expect(wrapper.find('[data-testid="initiator-picker-refusal"]').exists()).toBe(true)
+		expect(wrapper.findComponent({ name: 'CnSearchSelect' }).props('options')).toEqual([])
+		delete storeErrors.brpPerson
+		vi.useRealTimers()
+	})
+
+	it('lets only the latest query write its rows', async () => {
+		const wrapper = mountField()
+		const slow = wrapper.vm.runLookSearch('Henk')
+		const fast = wrapper.vm.runLookSearch('Visser')
+		await Promise.all([slow, fast])
+
+		expect(wrapper.vm.lookSeq).toBe(2)
+		expect(wrapper.vm.searching).toBe(false)
+	})
+
+	it('does not read the picked row again', async () => {
+		vi.useFakeTimers()
+		fetchObjectCalls.length = 0
+		const wrapper = mountField()
+		wrapper.findComponent({ name: 'CnSearchSelect' }).vm.$emit('search', 'Visser')
+		await vi.runAllTimersAsync()
+		await flushPromises()
+
+		wrapper.findComponent({ name: 'CnSearchSelect' }).vm.$emit('update:modelValue', 'c-1')
+		await wrapper.setProps({ modelValue: 'c-1' })
+		await flushPromises()
+
+		expect(fetchObjectCalls).toEqual([])
+		vi.useRealTimers()
 	})
 
 	it('keeps the tabbed picker when it is not a form field', () => {

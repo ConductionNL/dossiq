@@ -23,25 +23,36 @@
   and `modelValue`; it then draws CnSearchSelect over the person and company
   register sets together, rows with initials, the name and a second line
   ("Inwoner · Beukenlaan 3", "Organisatie · KvK 24157431"), and writes the
-  chosen row's uuid back through `update:modelValue`. A Nextcloud contact has
-  no register row and so no uuid to store; contacts stay in the tabbed picker.
+  chosen row's uuid back through `update:modelValue`. It writes the uuid only:
+  the case page's RequesterProjection derives initiatorType, initiatorSourceId
+  and initiatorDisplayName from it, so there is one place that projection is
+  made. A Nextcloud contact has no register row and so no uuid to store;
+  contacts stay in the tabbed picker.
 
   @spec openspec/specs/initiator-selection/spec.md
 -->
 <template>
-	<CnSearchSelect
-		v-if="field"
-		:modelValue="boundUuid"
-		:options="lookOptions"
-		:inputLabel="String(field.label || t('dossiq', 'Requester'))"
-		:labelOutside="true"
-		:loading="searching"
-		:filterable="false"
-		:disabled="disabled"
-		:placeholder="t('dossiq', 'Name, BSN, trade name or KvK number')"
-		data-testid="initiator-picker-search"
-		@search="onLookSearch"
-		@update:modelValue="onLookPick" />
+	<div v-if="field" class="initiator-picker-look">
+		<CnSearchSelect
+			:modelValue="boundUuid"
+			:options="lookOptions"
+			:inputLabel="String(field.label || t('dossiq', 'Person or organisation'))"
+			:labelOutside="true"
+			:loading="searching"
+			:filterable="false"
+			:disabled="disabled"
+			:placeholder="t('dossiq', 'Name, BSN, trade name or KvK number')"
+			data-testid="initiator-picker-search"
+			@search="onLookSearch"
+			@update:modelValue="onLookPick" />
+		<p
+			v-if="refusal"
+			class="initiator-picker-look__refusal"
+			role="alert"
+			data-testid="initiator-picker-refusal">
+			{{ refusalHeadline }} {{ refusal.message }}
+		</p>
+	</div>
 	<div v-else class="initiator-picker" data-testid="initiator-picker">
 		<div
 			v-if="currentChoice"
@@ -236,6 +247,10 @@ export default {
 			searchTimer: null,
 			/** The search look's rows: `{ id, label, secondary, avatar }`. */
 			lookRows: [],
+			/** Which search look query may still write its answer. */
+			lookSeq: 0,
+			/** The row just picked in the search look, so its name needs no second read. */
+			pickedName: null,
 			/**
 			 * The refusal the register answered the typed term with, or null.
 			 *
@@ -472,15 +487,25 @@ export default {
 				this.lookRows = []
 				return
 			}
+			// Only the latest query may write: an older answer arriving late
+			// would otherwise replace the rows of what is typed now.
+			const seq = ++this.lookSeq
 			this.searching = true
-			try {
-				const sets = await Promise.all(['brpPerson', 'kvkCompany'].map((schema) => this.objectStore.fetchCollection(schema, { _search: term, _limit: 10 })
-					.then((rows) => (rows || []).map((row) => searchLookRow(schema, row)))
-					.catch(() => [])))
-				this.lookRows = sets.flat().filter(Boolean)
-			} finally {
-				this.searching = false
+			const sets = await Promise.all(['brpPerson', 'kvkCompany'].map((schema) => this.objectStore.fetchCollection(schema, { _search: term, _limit: 10 })
+				.then((rows) => ({ schema, rows: rows || [] }))
+				.catch(() => ({ schema, rows: [] }))))
+			if (seq !== this.lookSeq) {
+				return
 			}
+			this.searching = false
+			// fetchCollection does not throw on a 400: the refusal of the typed
+			// term sits on the store, and is said rather than shown as no rows.
+			this.refusal = sets
+				.map(({ schema }) => readSearchRefusal({ error: this.objectStore?.errors?.[schema] ?? null, term }))
+				.find((refusal) => refusal !== null) ?? null
+			this.lookRows = this.refusal === null
+				? sets.flatMap(({ schema, rows }) => rows.map((row) => searchLookRow(schema, row))).filter(Boolean)
+				: []
 		},
 
 		/**
@@ -491,6 +516,10 @@ export default {
 		 * @spec openspec/specs/initiator-selection/spec.md
 		 */
 		onLookPick(id) {
+			const row = this.lookRows.find((option) => option.id === id)
+			// The row already names the choice; reading it again by uuid would
+			// ask the register for what is on screen.
+			this.pickedName = row ? { objectId: id, displayName: row.label } : null
 			this.$emit('update:modelValue', id || null)
 		},
 
@@ -521,6 +550,10 @@ export default {
 				return
 			}
 			const uuid = this.bound
+			if (this.pickedName && this.pickedName.objectId === uuid) {
+				this.resolvedValue = this.pickedName
+				return
+			}
 			for (const [schema, shape] of [
 				['brpPerson', personResult],
 				['kvkCompany', companyResult],
@@ -549,8 +582,6 @@ export default {
 		async select(result) {
 			const payload = requesterPayload(await this.deduplicated(result))
 			this.$emit('select', payload)
-			// Mounted as a form field, the form keeps the uuid `case.requester` holds.
-			this.$emit('update:modelValue', payload.requester || null)
 		},
 
 		/**
@@ -613,6 +644,12 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.initiator-picker-look__refusal {
+	margin: 4px 0 0;
+	color: var(--color-error-text);
+	font-size: 13px;
+}
+
 .initiator-picker {
 	display: flex;
 	flex-direction: column;
