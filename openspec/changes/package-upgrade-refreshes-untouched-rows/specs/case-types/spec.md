@@ -31,3 +31,20 @@ The installer SHALL record every row it writes in the shipped-set ledger, with t
 - **THEN** the case type and the status SHALL hold what the newer version ships
 - **AND** their ledger rows SHALL name the newer version
 - **AND** a row the newer version did not change SHALL not be written
+
+### Requirement: A row the store filled in is still untouched
+
+A package upgrade SHALL refresh a row whose keys the package ships are as the
+package shipped them, whatever properties the store filled in on save, and
+SHALL keep the values of keys the package does not ship. A row with a shipped
+key edited here SHALL be kept.
+
+#### Scenario: Properties filled in on save
+- GIVEN a case type the store saved with properties the package never named
+- WHEN a newer version of the package is installed
+- THEN the case type takes the newer version
+
+#### Scenario: A field filled in here
+- GIVEN a case type with a field set here that the package does not ship
+- WHEN a newer version of the package is installed
+- THEN the case type takes the newer version and keeps that field's value

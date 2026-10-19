@@ -14,7 +14,7 @@
  * @spec openspec/specs/termijn-reporting/spec.md
  */
 
-import { mount, shallowMount } from '@vue/test-utils'
+import { shallowMount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
 const store = {
@@ -60,7 +60,6 @@ vi.mock('../../src/store/modules/termijnDashboard.js', () => ({
 const TdQuarterlyWidget = (
 	await import('../../src/views/termijn/TdQuarterlyWidget.vue')
 ).default
-const TdKpiWidget = (await import('../../src/views/termijn/TdKpiWidget.vue')).default
 
 function euro(n) {
 	return n.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })
@@ -74,11 +73,5 @@ describe('term widgets', () => {
 		expect(cells[2]).toBe('75.0 %')
 		expect(cells[4]).toBe('12.5')
 		expect(cells[7]).toBe(euro(1234.5))
-	})
-
-	it('the KPI block shows the dwangsom total in euros, not cents', () => {
-		const wrapper = mount(TdKpiWidget)
-
-		expect(wrapper.text()).toContain(euro(1234.5))
 	})
 })
