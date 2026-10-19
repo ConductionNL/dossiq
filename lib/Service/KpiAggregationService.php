@@ -47,6 +47,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Queue\QueueFigures;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -113,6 +114,7 @@ class KpiAggregationService {
 	 * @param QueueFigures $queueFigures Folds the team queue's figures.
 	 * @param IL10N $l10n The app's translator, for the month names.
 	 * @param LoggerInterface $logger The logger interface.
+	 * @param LanguageMapText $text Reads a translatable case type title as text.
 	 *
 	 * @return void
 	 */
@@ -124,6 +126,7 @@ class KpiAggregationService {
 		private QueueFigures $queueFigures,
 		private IL10N $l10n,
 		private LoggerInterface $logger,
+		private LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -211,7 +214,7 @@ class KpiAggregationService {
 		foreach ($this->rows(ids: $ids, schema: $schema, filters: []) as $row) {
 			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
 			if ($id !== '') {
-				$titles[$id] = (string)($row['title'] ?? $id);
+				$titles[$id] = $this->text->textOr(value: ($row['title'] ?? ''), fallback: $id, language: $this->l10n->getLanguageCode());
 			}
 		}
 

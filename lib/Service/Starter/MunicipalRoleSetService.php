@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -112,6 +113,7 @@ class MunicipalRoleSetService {
 	 * @param ShippedSets                 $sets    The sets dossiq ships, and their versions.
 	 * @param IUserSession                $session Who is acting.
 	 * @param LoggerInterface             $logger  Logger.
+	 * @param LanguageMapText             $text    Reads a translatable role type name as text.
 	 */
 	public function __construct(
 		private readonly StarterStore $store,
@@ -119,6 +121,7 @@ class MunicipalRoleSetService {
 		private readonly ShippedSets $sets,
 		private readonly IUserSession $session,
 		private readonly LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -141,7 +144,7 @@ class MunicipalRoleSetService {
 
 		$byName = [];
 		foreach ($existing as $role) {
-			$byName[(string)($role['name'] ?? '')] = true;
+			$byName[$this->text->textOf(value: ($role['name'] ?? ''))] = true;
 		}
 
 		$tally = ['seeded' => 0, 'skipped' => 0];
@@ -195,8 +198,8 @@ class MunicipalRoleSetService {
 			'roles' => array_map(
 				fn (array $role): array => [
 					'id' => $this->store->idOf(row: $role),
-					'name' => (string)($role['name'] ?? ''),
-					'description' => (string)($role['description'] ?? ''),
+					'name' => $this->text->textOf(value: ($role['name'] ?? '')),
+					'description' => $this->text->textOf(value: ($role['description'] ?? '')),
 					'dormant' => (($role['dormant'] ?? false) === true),
 				],
 				$roles
@@ -381,7 +384,7 @@ class MunicipalRoleSetService {
 			// schema is unconfigured would let an undo strip access nobody
 			// checked for.
 			if ($grants === null || $grants !== []) {
-				$inUse[] = (string)($role['name'] ?? '');
+				$inUse[] = $this->text->textOf(value: ($role['name'] ?? ''));
 			}
 		}
 

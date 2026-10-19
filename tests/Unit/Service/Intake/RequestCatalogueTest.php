@@ -94,4 +94,21 @@ class RequestCatalogueTest extends TestCase {
 	public function testNothingDeclaredIsAnEmptyCatalogue(): void {
 		self::assertSame([], $this->catalogue([['id' => 'ct-1', 'identifier' => 'x', 'title' => 'X']])->entries());
 	}//end testNothingDeclaredIsAnEmptyCatalogue()
+	/**
+	 * A case type's title and description are translatable, so a stored row
+	 * carries them as a language map; the catalogue reads them as text.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	public function testATranslatableTitleAndDescriptionAreReadAsText(): void {
+		$entries = $this->catalogue(
+			[
+				['id' => 'ct-1', 'identifier' => 'melding', 'title' => ['nl' => 'Melding openbare ruimte'], 'description' => ['nl' => 'Iets kapot op straat'], 'aiFeatures' => ['conversational-intake' => 'intake']],
+			]
+		)->entries();
+
+		self::assertSame([['type' => 'melding', 'title' => 'Melding openbare ruimte', 'description' => 'Iets kapot op straat']], $entries);
+	}//end testATranslatableTitleAndDescriptionAreReadAsText()
 }//end class
