@@ -14,3 +14,8 @@ become a check at publication instead.
 - PublicationChecks refuses to publish a case type while any of the eight
   fields is empty, with one finding per field.
 - The schema's `required` stays `["title"]`; drafts can be saved incomplete.
+- caseType gains `serviceTarget` (string, no `format`). `notificationDomain`
+  and `handling.teams` were already declared by register.d fragments 66 and
+  48. The service target goes on the Terms card, the notification domain on
+  the Case type card, and both go on the create form. The handling teams
+  wait on a library field that reaches into an object property.

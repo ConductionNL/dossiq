@@ -503,6 +503,11 @@
                         "description": "Action performed by the handler",
                         "title": "Handler action"
                     },
+                    "serviceTarget": {
+                        "type": "string",
+                        "description": "ISO 8601 duration the organisation aims to finish a case of this type within, shorter than the statutory processing deadline (e.g. P42D)",
+                        "title": "Service target"
+                    },
                     "initiatorAction": {
                         "type": "string",
                         "description": "Action performed by the initiator (e.g. submitting, applying)",
