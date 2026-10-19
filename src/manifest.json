@@ -6358,6 +6358,102 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "lhsRecommendation",
+				"_nextStepNote": "DqHandhaving Wat nu?: the next act follows from the intervention the advice settles on (finalIntervention). A penalty order or administrative enforcement starts with a pre-announcement and a two-week period for a view; a warning or remedial action starts with the letter.",
+				"nextStep": {
+					"field": "finalIntervention",
+					"stages": {
+						"warning": {
+							"title": "What now? Warning",
+							"after": "Then: check that the violation has ended",
+							"checklist": [
+								{
+									"label": "Violation established and classified",
+									"doneField": "behaviour"
+								},
+								{
+									"label": "Send the warning"
+								}
+							]
+						},
+						"herstelactie": {
+							"title": "What now? Remedial action",
+							"after": "Then: check that the violation has ended",
+							"checklist": [
+								{
+									"label": "Violation established and classified",
+									"doneField": "behaviour"
+								},
+								{
+									"label": "Send the warning"
+								}
+							]
+						},
+						"last_under_penaltypayment": {
+							"title": "What now? Pre-announcement",
+							"after": "Then: a two-week period for a view",
+							"checklist": [
+								{
+									"label": "Violation established and classified",
+									"doneField": "behaviour"
+								},
+								{
+									"label": "Send the pre-announcement of the intended measure"
+								},
+								{
+									"label": "Wait for the view, two weeks"
+								}
+							]
+						},
+						"last_plus_pv": {
+							"title": "What now? Pre-announcement",
+							"after": "Then: a two-week period for a view",
+							"checklist": [
+								{
+									"label": "Violation established and classified",
+									"doneField": "behaviour"
+								},
+								{
+									"label": "Send the pre-announcement of the intended measure"
+								},
+								{
+									"label": "Wait for the view, two weeks"
+								}
+							]
+						},
+						"bestuursdwang": {
+							"title": "What now? Pre-announcement",
+							"after": "Then: a two-week period for a view",
+							"checklist": [
+								{
+									"label": "Violation established and classified",
+									"doneField": "behaviour"
+								},
+								{
+									"label": "Send the pre-announcement of the intended measure"
+								},
+								{
+									"label": "Wait for the view, two weeks"
+								}
+							]
+						},
+						"pv_plus_bestuursdwang": {
+							"title": "What now? Pre-announcement",
+							"after": "Then: a two-week period for a view",
+							"checklist": [
+								{
+									"label": "Violation established and classified",
+									"doneField": "behaviour"
+								},
+								{
+									"label": "Send the pre-announcement of the intended measure"
+								},
+								{
+									"label": "Wait for the view, two weeks"
+								}
+							]
+						}
+					}
+				},
 				"_note": "ASSESSMENT-RECORD archetype (a per-case LHS intervention recommendation derived from an lhsMatrix), ADR-062 round 2. No comms/documents, no child schemas. The 13-field schema splits into two genuinely distinct groups: 'Recommendation' (the matrix inputs and outcome — case, inspection, ernst, gedrag, actorType, matrixVersion, recommendedInterventie, recommendedBy) paired with the Related panel (parent case and inspection), and 'Override & final' (the accountability-bearing deviation fields — finalIntervention, override, overrideJustification, overrideBy, overrideAuthority) full-width below. No status lifecycle field and no content leaves. Audit history is a sidebar tab.",
 				"typePill": {
 					"field": "finalIntervention",

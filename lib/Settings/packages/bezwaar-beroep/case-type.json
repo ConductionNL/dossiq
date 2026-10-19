@@ -174,7 +174,8 @@
       "description": "Bezwaarschriftencommissie heeft advies uitgebracht (Awb art. 7:13)",
       "order": 6,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "role": "review"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a07",
