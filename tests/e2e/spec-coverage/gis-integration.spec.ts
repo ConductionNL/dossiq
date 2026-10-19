@@ -75,7 +75,7 @@ test.describe('GIS integration spec coverage', () => {
 	// A cold app page can take 20s on a loaded rig; the goto alone has 60s.
 	test.slow()
 
-	// @e2e openspec/specs/gis-integration/spec.md#cases-on-map-view-renders-the-map-dashboard
+	// @e2e openspec/specs/gis-integration/spec.md#the-case-map-renders-the-cases-index-in-map-view
 	test('the cases map renders the map and draws only the located cases', async ({
 		page,
 	}) => {
@@ -97,7 +97,7 @@ test.describe('GIS integration spec coverage', () => {
 		).toHaveCount(2, { timeout: 15_000 })
 	})
 
-	// @e2e openspec/specs/gis-integration/spec.md#cases-on-map-view-renders-the-map-dashboard
+	// @e2e openspec/specs/gis-integration/spec.md#the-case-map-renders-the-cases-index-in-map-view
 	test('an unreachable case backend leaves the map page usable', async ({
 		page,
 	}) => {

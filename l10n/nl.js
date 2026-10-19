@@ -7309,6 +7309,7 @@ OC.L10N.register(
         "Show the settings as they apply to": "Toon de instellingen zoals ze gelden voor",
         "Show {group} again": "Toon {group} weer",
         "Showing {filtered} of {total} located cases": "{filtered} van {total} gelokaliseerde zaken worden getoond",
+        "Showing {located} of {total} located cases": "{located} van {total} gelokaliseerde zaken worden getoond",
         "Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there.": "Wordt bij deze stap getoond terwijl de behandelaar kiest. Dat is het enige moment waarop uitleg helpt: een notitie bij de status wordt pas gelezen als de zaak er al staat.",
         "Side cards": "Zijkaarten",
         "Sign in again and retry.": "Log opnieuw in en probeer het nog eens.",
