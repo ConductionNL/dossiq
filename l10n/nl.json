@@ -42,6 +42,8 @@
         "%n passages found. Review each passage; the ground goes into the decision.": "%n passages gevonden. Beoordeel elke passage; de grond komt in het besluit.",
         "%n processing is not attributed to a catalogued activity and landed in the flagged fallback. Review the attribution mappings.": "%n verwerking is niet toegeschreven aan een gecatalogiseerde activiteit en is in de gemarkeerde terugvalcategorie beland. Controleer de attributiekoppelingen.",
         "%n processings are not attributed to a catalogued activity and landed in the flagged fallback. Review the attribution mappings.": "%n verwerkingen zijn niet toegeschreven aan een gecatalogiseerde activiteit en zijn in de gemarkeerde terugvalcategorie beland. Controleer de attributiekoppelingen.",
+        "%n properties": "%n eigenschappen",
+        "%n property": "%n eigenschap",
         "%n working day overdue": "%n werkdag te laat",
         "%n working day remaining": "%n werkdag resterend",
         "%n working days overdue": "%n werkdagen te laat",
@@ -110,6 +112,10 @@
         "_%n more in My work_::_%n more in My work_": [
             "%n meer in Mijn werk",
             "%n meer in Mijn werk"
+        ],
+        "_%n property_::_%n properties_": [
+            "%n eigenschap",
+            "%n eigenschappen"
         ],
         "_You moved the case, but {count} automatic action did not run. Its status record shows which._::_You moved the case, but {count} automatic actions did not run. Its status record shows which._": [
             "U hebt de zaak verplaatst, maar {count} automatische actie is niet uitgevoerd. De statusregistratie laat zien welke.",
@@ -2423,6 +2429,7 @@
         "Dispatch": "Verzending",
         "Dispatch Channel": "Verzendkanaal",
         "Dispatched Actions": "Verstuurde acties",
+        "Display": "Weergave",
         "Display date format": "Datumnotatie voor weergave",
         "Display Name": "Weergavenaam",
         "Display name": "Weergavenaam",
@@ -7785,6 +7792,7 @@
         "Systems": "Systemen",
         "Taak": "Taak",
         "Taakveld": "Taakveld",
+        "Table": "Tabel",
         "Tables in scope": "Tabellen in bereik",
         "Tags": "Labels",
         "Tags for specialization-weighted search (e.g. brandveiligheid, milieu)": "Labels voor zoeken met gewicht op specialisatie (bijvoorbeeld brandveiligheid, milieu)",
