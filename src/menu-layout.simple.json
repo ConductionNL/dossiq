@@ -3591,23 +3591,69 @@
 						}
 					}
 				],
-				"hideTableHeader": true,
-				"defaultOrder": "startDate",
-				"showSortSelect": true,
-				"sortSelectOptions": [
-					{
-						"value": "startDate",
-						"label": "Oldest first"
-					},
-					{
-						"value": "-startDate",
-						"label": "Newest first"
-					},
-					{
-						"value": "deadline",
-						"label": "Deadline first"
-					}
+				"viewModes": [
+					"list",
+					"table",
+					"cards",
+					"board",
+					"map"
 				],
+				"viewMode": "list",
+				"listConfig": {
+					"titleField": "title",
+					"subtitleTemplate": "{identifier} · {initiatorDisplayName} · {priority}",
+					"leading": {
+						"key": "startDate",
+						"widget": "age",
+						"width": "96px"
+					},
+					"trailing": [
+						{
+							"key": "caseType",
+							"formatter": "caseTypeName",
+							"widget": "badge",
+							"widgetProps": {
+								"variant": "info"
+							},
+							"width": "200px"
+						},
+						{
+							"key": "deadline",
+							"widget": "date",
+							"width": "140px",
+							"widgetProps": {
+								"due": {
+									"todayLabel": "Today",
+									"overdueLabel": {
+										"one": "{count} day overdue",
+										"other": "{count} days overdue"
+									},
+									"upcomingLabel": {
+										"one": "{count} day left",
+										"other": "{count} days left"
+									},
+									"upcomingWeeksLabel": {
+										"one": "{count} week left",
+										"other": "{count} weeks left"
+									}
+								},
+								"variantWhen": [
+									{
+										"op": "lt",
+										"value": 0,
+										"variant": "error"
+									},
+									{
+										"op": "lte",
+										"value": 7,
+										"variant": "warning"
+									}
+								]
+							}
+						}
+					]
+				},
+				"defaultOrder": "startDate",
 				"showTitle": true,
 				"countText": "{shown} of {total} open cases without a handler · oldest first",
 				"footerNote": "a case leaves the queue as soon as someone picks it up",
