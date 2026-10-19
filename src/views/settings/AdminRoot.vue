@@ -177,10 +177,11 @@
 			<CnSettingsSection
 				:name="t('dossiq', 'Case type management')"
 				:description="
-					t('dossiq', 'Manage case types and their configurations')
-				"
-				:loading="!storesReady">
-				<CaseTypeAdmin v-if="storesReady" />
+					t('dossiq', 'Case types, with their statuses, fields, messages and workflow, are managed on the Case types page.')
+				">
+				<NcButton :href="caseTypesUrl" variant="secondary">
+					{{ t('dossiq', 'Open the case types') }}
+				</NcButton>
 			</CnSettingsSection>
 
 			<CnSettingsSection
@@ -562,7 +563,6 @@ import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
 import BackgroundServiceAccountSettings from './BackgroundServiceAccountSettings.vue'
-import CaseTypeAdmin from './CaseTypeAdmin.vue'
 import EmailSettings from './EmailSettings.vue'
 import KccIntegrationSettings from './KccIntegrationSettings.vue'
 import Settings from './Settings.vue'
@@ -609,7 +609,6 @@ export default {
 		CnWidgetObjectTable,
 		CnWorkingCalendarWidget,
 		Settings,
-		CaseTypeAdmin,
 		ZgwMappingSettings,
 		AiSettingsTab,
 		ArchivalSettingsTab,
@@ -1022,6 +1021,11 @@ export default {
 		 */
 		mapLayersUrl() {
 			return generateUrl('/apps/dossiq/settings/wms-layers')
+		},
+
+		/** @return {string} The Case types page, where case types are managed. */
+		caseTypesUrl() {
+			return generateUrl('/apps/dossiq/settings/case-types')
 		},
 	},
 

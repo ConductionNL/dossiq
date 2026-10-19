@@ -166,6 +166,7 @@ import { statusColourStyle } from '../../../utils/statusColour.js'
 import {
 	emptyStatusTypeForm,
 	formToStatusType,
+	mergeOntoStored,
 	pruneChecklist,
 	statusTypeToForm,
 } from '../../../utils/statusTypeForm.js'
@@ -456,9 +457,10 @@ export default {
 			}
 
 			this.editSaving = true
+			const stored = this.statusTypes.find((st) => st.id === this.editingId)
 			const result = await this.objectStore.saveObject(
 				'statusType',
-				formToStatusType(this.editForm),
+				mergeOntoStored(stored, formToStatusType(this.editForm)),
 			)
 			this.editSaving = false
 
@@ -570,14 +572,10 @@ export default {
 			this.dragOverIndex = null
 			this.dragIndex = null
 
-			// Persist changes. Reordering writes the WHOLE row back, so it goes
-			// through the same mapping the edit form does: a partial save here
-			// would drop the colour, role and checklist off every row it moved.
+			// The save is a PUT of the whole row, so each moved row is written
+			// back as stored with only its new order.
 			for (const st of updates) {
-				await this.objectStore.saveObject(
-					'statusType',
-					formToStatusType(statusTypeToForm(st)),
-				)
+				await this.objectStore.saveObject('statusType', mergeOntoStored(st, { order: st.order }))
 			}
 		},
 

@@ -473,10 +473,11 @@ describe('the simple profile', () => {
 	// 74 -> 76: the organisations on this environment get a list and a page (DqTenant).
 	// 76 -> 77: the departments and staff get a page (DqAfdelingen).
 	// 77 -> 78: the redaction page of a case (DqLakken).
-	it('builds the same 78 pages as the full profile, so every route stays', () => {
+	// 78 -> 82: the parts of a case type without an editor of their own (result, role, document and decision type) get a page each.
+	it('builds the same 82 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(78)
+		expect(built.pages).toHaveLength(82)
 	})
 })
 
