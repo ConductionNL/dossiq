@@ -30,7 +30,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { chooseSort, dismissSupportDialog, expectSort } from './helpers/nav.ts'
 import { CasesSavedView, VIEW_OVERRIDES_APPLIED } from './helpers/page-components.ts'
 
 const ME = process.env.ADMIN_USER ?? process.env.NC_ADMIN_USER ?? 'admin'
@@ -72,9 +72,6 @@ async function writeSettings(values: Record<string, string>): Promise<void> {
 async function openMyWork(page: Page): Promise<void> {
 	await page.goto(`/index.php/apps/dossiq${CasesSavedView('my-work')}`)
 	await dismissSupportDialog(page)
-	await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
-		timeout: 60_000,
-	})
 	await expect(page.locator('.cn-object-card', { hasText: HIGH })).toBeVisible({
 		timeout: 60_000,
 	})
@@ -136,6 +133,7 @@ test.describe('configurable-queue-urgency', () => {
 	test('Urgency is the default, and it ranks by the score', async ({ page }) => {
 		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs the view to select its sort option: openspec/changes/lists-are-views/restore.md section 2')
 		await openMyWork(page)
+		await expectSort(page, 'Urgency')
 
 		await expect(page.locator('[data-testid="urgency-fallback"]')).toHaveCount(0)
 		expect(
@@ -148,7 +146,7 @@ test.describe('configurable-queue-urgency', () => {
 	test('Newest re-sorts by start date', async ({ page }) => {
 		await openMyWork(page)
 
-		await page.getByRole('button', { name: 'Newest' }).click()
+		await chooseSort(page, 'Newest')
 		await expect(page.locator('.cn-object-card', { hasText: LOW })).toBeVisible({
 			timeout: 60_000,
 		})

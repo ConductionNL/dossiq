@@ -14,9 +14,11 @@ import {
 } from './helpers/fixtures.ts'
 import {
 	dismissSupportDialog,
+	expectSort,
 	loadAllAdminSections,
 	navTo,
 	navToRoute,
+	openSortSection,
 } from './helpers/nav.ts'
 import { CasesSavedView, VIEW_OVERRIDES_APPLIED } from './helpers/page-components.ts'
 
@@ -516,10 +518,11 @@ test.describe('Assigned to me view', () => {
 		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs view overrides: openspec/changes/lists-are-views/restore.md section 2')
 		test.setTimeout(120_000)
 		await navToRoute(page, CasesSavedView('my-work'))
-		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
-			timeout: 15000,
-		})
-		await expect(page.getByRole('button', { name: 'Newest' })).toBeVisible()
+		// The sidebar's Sort section opens on Urgency and offers Newest.
+		await expectSort(page, 'Urgency')
+		await openSortSection(page).then((section) => section.getByRole('combobox').click())
+		await expect(page.getByRole('option', { name: 'Newest', exact: true })).toBeVisible()
+		await page.keyboard.press('Escape')
 
 		// Both view buttons carry `aria-pressed`, so the pressed one IS the
 		// current view; "no table on screen" would also be satisfied by a list

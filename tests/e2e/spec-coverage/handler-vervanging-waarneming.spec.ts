@@ -35,7 +35,7 @@ import {
 	RUN_PREFIX,
 	showObject,
 } from '../helpers/fixtures.ts'
-import { dismissSupportDialog } from '../helpers/nav.ts'
+import { dismissSupportDialog, expectSort } from '../helpers/nav.ts'
 import {
 	// WHY THESE TESTS USED TO SKIP ON EVERY RUN, diagnosed by #2480 and kept here
 	// because the reason was not what the skip said. The old guards waited for a
@@ -846,9 +846,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs the view slot: openspec/changes/lists-are-views/restore.md section 2')
 		await page.goto(`/index.php/apps/dossiq${CasesSavedView('my-work')}`)
 		await dismissSupportDialog(page)
-		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
-			timeout: 15000,
-		})
+		await expectSort(page, 'Urgency')
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 
 		const group = page.getByTestId('substituted-work')

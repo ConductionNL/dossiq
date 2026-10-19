@@ -42,7 +42,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from '../helpers/fixtures.ts'
-import { dismissSupportDialog } from '../helpers/nav.ts'
+import { dismissSupportDialog, expectSort } from '../helpers/nav.ts'
 import { CasesSavedView, VIEW_OVERRIDES_APPLIED } from '../helpers/page-components.ts'
 
 /** The seeded case. Assigned to the signed-in user, found by its title. */
@@ -85,10 +85,8 @@ test.describe('My Work spec coverage', () => {
 			`/index.php/apps/dossiq${CasesSavedView('my-work')}&title=${encodeURIComponent(TITLE)}`,
 		)
 		await dismissSupportDialog(page)
-		// The view offers Urgency in the sort select.
-		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
-			timeout: 60_000,
-		})
+		// The view opens on the Urgency order, named in the sidebar's Sort section.
+		await expectSort(page, 'Urgency')
 	}
 
 	// @e2e openspec/specs/my-work/spec.md#card-and-table-view
