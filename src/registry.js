@@ -562,6 +562,8 @@ const registry = {
 	'case-programme': {
 		// @custom-widget-ratchet exclude the programme and its work items are pipelinq's objects, found by a `dossiq:case` reference only pipelinq's ProgrammePortfolioService resolves, and the progress figure needs the mode that produced it, which no declared widget renders
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseProgrammeSection,
 		...PANEL_WIDGET_META,
 		_note: "CaseDetail Related tab, the Programme section (board DqZaakPartijen): the pipelinq programme the case hangs under, its progress with the mode, an uncomputable figure said rather than drawn as zero, and the link dialog with pipelinq's refusal naming the holder.",
@@ -709,6 +711,8 @@ const registry = {
 	'case-related-planned': {
 		// @custom-widget-ratchet exclude a planned follow-up is a SCHEDULED FLOW and not a case, so the `related` widget cannot list it: it reads related OBJECTS. The widget wraps the library's own CnRelatedObjectsWidget and only adds an extraSections group, so the built-in related content is unchanged. Deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3)
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CasePlannedWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Related cases tab: what is related to this case, and what is about to be. The planned rows come from /api/case/{id}/planned, which lists the scheduled flows for this case that have not fired; once one fires its case is an ordinary related case and the row is gone. The Plan follow-up button sits here as well as in the Actions menu, because the tab is where a handler is already looking at what this case is connected to.',
