@@ -26,8 +26,8 @@ const byslug = (id) => Object.fromEntries(page(id).config.defaultSavedViews.map(
 describe('default views on Cases', () => {
 	const defaults = byslug('Cases')
 
-	it('ships three, each with a Dutch name', () => {
-		expect(Object.keys(defaults)).toEqual(['mine-overdue', 'mine-due-this-week', 'unclaimed-overdue'])
+	it('ships four, each with a Dutch name', () => {
+		expect(Object.keys(defaults)).toEqual(['mine-overdue', 'mine-due-this-week', 'unclaimed-overdue', 'woo-requests'])
 		for (const d of page('Cases').config.defaultSavedViews) {
 			expect(nl[d.name]).toBeTruthy()
 		}
@@ -37,6 +37,14 @@ describe('default views on Cases', () => {
 		expect(defaults['mine-overdue']).toEqual({ ...chip('Mine'), ...chip('Overdue') })
 		expect(defaults['mine-due-this-week']).toEqual({ ...chip('Mine'), ...chip('Due this week') })
 		expect(defaults['unclaimed-overdue']).toEqual({ ...chip('Unclaimed'), ...chip('Overdue') })
+	})
+})
+
+describe('Woo requests as a view of Cases', () => {
+	it('is a default view equal to the Woo chip of the case list', () => {
+		const simple = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/menu-layout.simple.json'), 'utf8'))
+		const wooChip = simple.pages.find((p) => p.id === 'Cases').configAppend.quickFilters.find((q) => q.label === 'Woo requests').filter
+		expect(byslug('Cases')['woo-requests']).toEqual(wooChip)
 	})
 })
 
