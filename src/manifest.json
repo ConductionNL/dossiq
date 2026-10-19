@@ -1783,6 +1783,13 @@
 				"formSize": "normal",
 				"formColumns": 1,
 				"viewModes": ["table", "cards", "board", "map"],
+				"cardLayout": {
+					"number": "identifier",
+					"title": "title",
+					"meta": ["initiatorDisplayName"],
+					"footerPill": { "field": "statusPublicLabel", "variant": "info" },
+					"footerDate": { "field": "deadline", "label": "Deadline" }
+				},
 				"board": {
 					"statusField": "status",
 					"wrap": true,
