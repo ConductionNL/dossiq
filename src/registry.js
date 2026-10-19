@@ -582,8 +582,6 @@ const registry = {
 		_note: 'CaseDetail Actions menu: hand this case to another team. A modal rather than an api-call because the act takes a team, a reason and the Awb 2:3 declaration, and an api-call carries a fixed body. The declaration is the field that cannot be defaulted: on, the applicant is told the case moved and to whom; off, nothing is sent, because an internal move between two teams of one bestuursorgaan is our arrangement and not their news.',
 	},
 
-	// @spec openspec/specs/status-transition-engine/spec.md
-	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	CaseArchiveDialog: {
 		kind: 'modal',
@@ -592,6 +590,8 @@ const registry = {
 		_note: 'Archive a case on its own (board DqArchiveren): the case, what the case type keeps, a checklist read off the stored case through GET /api/case/{caseId}/archive/readiness, a reason and what archiving means. It posts the same archive act as the Lifecycle dialog, which keeps offering it, and the server checks the same role and refuses an open case the same way. Only the ended item decides; the others inform. Opened by the case-archive header action and the closed stage card.',
 	},
 
+	// @spec openspec/specs/status-transition-engine/spec.md
+	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	CaseLifecycleMenuDialog: {
 		kind: 'modal',
 		component: CaseLifecycleMenuDialog,

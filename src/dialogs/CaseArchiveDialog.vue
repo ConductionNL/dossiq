@@ -90,7 +90,10 @@
 				{{ t('dossiq', 'Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.') }}
 			</NcNoteCard>
 
-			<p v-if="refusal" class="case-archive__error" role="alert" data-testid="case-archive-refusal">
+			<p v-if="archived" class="case-archive__error" role="status" data-testid="case-archive-already">
+				{{ t('dossiq', 'This case is already archived.') }}
+			</p>
+			<p v-else-if="refusal" class="case-archive__error" role="alert" data-testid="case-archive-refusal">
 				{{ refusal }}
 			</p>
 		</div>
@@ -199,7 +202,7 @@ export default {
 			items: [],
 			readinessError: '',
 			allowed: false,
-			refusalOfRole: '',
+			archived: false,
 			reason: '',
 			busy: false,
 			refusal: '',
@@ -242,13 +245,13 @@ export default {
 
 		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
 		canArchive() {
-			return this.busy === false && this.allowed && this.ended && this.reason.trim() !== ''
+			return this.busy === false && this.allowed && !this.archived && this.ended && this.reason.trim() !== ''
 		},
 	},
 
 	async mounted() {
-		await Promise.all([this.loadReadiness(), this.loadPermission()])
-		this.kase = await fetchCaseSummary(this.targetCaseId)
+		const [kase] = await Promise.all([fetchCaseSummary(this.targetCaseId), this.loadReadiness(), this.loadPermission()])
+		this.kase = kase
 	},
 
 	methods: {
@@ -289,6 +292,7 @@ export default {
 			try {
 				const { data } = await axios.get(this.urlFor('acts'))
 				const verdict = (data?.acts || []).find((act) => act.act === 'archive')
+				this.archived = data?.archived === true
 				this.allowed = verdict?.allowed === true
 				this.refusal = this.allowed ? '' : String(verdict?.reason || '')
 			} catch {

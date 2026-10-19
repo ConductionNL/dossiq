@@ -9024,6 +9024,7 @@
         "This case has {count} linked tasks. Are you sure you want to delete it?": "This case has {count} linked tasks. Are you sure you want to delete it?",
         "This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?": "This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?",
         "This case holds nothing of the kinds a split may divide here.": "This case holds nothing of the kinds a split may divide here.",
+        "This case is already archived.": "This case is already archived.",
         "This case is already flagged as needing attention.": "This case is already flagged as needing attention.",
         "This case is already suspended.": "This case is already suspended.",
         "This case is archived. You can read it, and changes are refused.": "This case is archived. You can read it, and changes are refused.",

@@ -788,6 +788,10 @@
 						"id": "stage-archive",
 						"props": {
 							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "empty"
 						}
 					}
 				},

@@ -35,12 +35,12 @@ const simple = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'menu-layout.si
  * @param {object} answers What the reads answer.
  * @return {Promise<object>} The wrapper.
  */
-async function mountDialog({ ended = true, allowed = true, checks = [] } = {}) {
+async function mountDialog({ ended = true, allowed = true, archived = false, checks = [] } = {}) {
 	axios.get.mockImplementation((url) => {
 		if (url.endsWith('/archive/readiness')) {
 			return Promise.resolve({ data: { checklist: [{ id: 'ended', met: ended }, { id: 'documents', met: false, count: 6, total: 7 }, { id: 'openTasks', met: null }] } })
 		}
-		return Promise.resolve({ data: { acts: [{ act: 'archive', allowed, reason: allowed ? '' : 'Archiving needs the archivist role.' }] } })
+		return Promise.resolve({ data: { archived, acts: [{ act: 'archive', allowed, reason: allowed ? '' : 'Archiving needs the archivist role.' }] } })
 	})
 	const wrapper = mount(CaseArchiveDialog, {
 		props: { caseId: 'case-1', checks },
@@ -97,6 +97,14 @@ describe('CaseArchiveDialog', () => {
 		expect(wrapper.find('[data-testid="case-archive-confirm"]').attributes('disabled')).toBeDefined()
 	})
 
+	it('offers nothing on a case that is already archived, and says so', async () => {
+		const wrapper = await mountDialog({ archived: true })
+		await wrapper.find('textarea').setValue('Nog eens.')
+
+		expect(wrapper.find('[data-testid="case-archive-already"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="case-archive-confirm"]').attributes('disabled')).toBeDefined()
+	})
+
 	it('labels the server items', () => {
 		expect(checklistRow({ id: 'decision', met: false }).label).toBe('Decision made')
 		expect(checklistRow({ id: 'openTasks', met: true, count: 0 }).label).toBe('Open tasks: 0')
@@ -110,5 +118,6 @@ describe('CaseArchiveDialog', () => {
 		expect(archive.visibleWhen.all).toContainEqual({ field: 'endingAct', op: 'notEmpty' })
 		expect(actions.some((action) => action.target === 'CaseLifecycleMenuDialog')).toBe(true)
 		expect(JSON.stringify(simple)).toContain('"target":"CaseArchiveDialog"')
+		expect(JSON.stringify(simple)).toContain('"id":"stage-archive","props":{"caseId":"@objectId"},"visibleWhen":{"field":"@self.archived","op":"empty"}')
 	})
 })

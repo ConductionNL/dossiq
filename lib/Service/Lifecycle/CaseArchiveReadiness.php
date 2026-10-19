@@ -33,8 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Lifecycle;
 
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
-use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\IUserSession;
 use Throwable;
 
@@ -44,6 +45,8 @@ use Throwable;
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 class CaseArchiveReadiness {
+
+	use SearchesObjects;
 
 	/**
 	 * The task states from which a task never moves again (OpenRegister's Task::TERMINAL_STATES).
@@ -55,14 +58,16 @@ class CaseArchiveReadiness {
 	/**
 	 * Constructor.
 	 *
-	 * @param ZaakdossierService $dossier     The documents on the case.
-	 * @param EngineTaskInbox    $tasks       The tasks on the case.
-	 * @param IUserSession       $userSession The reader, for the task engine.
+	 * @param SettingsService $settingsService The register and the document schemas.
+	 * @param EngineTaskInbox $tasks           The tasks on the case.
+	 * @param IUserSession    $userSession     The reader, for the task engine.
+	 * @param CaseEndingActs  $endings         Says whether the case has ended, as the archive act asks.
 	 */
 	public function __construct(
-		private readonly ZaakdossierService $dossier,
+		private readonly SettingsService $settingsService,
 		private readonly EngineTaskInbox $tasks,
 		private readonly IUserSession $userSession,
+		private readonly CaseEndingActs $endings,
 	) {
 	}//end __construct()
 
@@ -85,7 +90,7 @@ class CaseArchiveReadiness {
 		}
 
 		return [
-			['id' => 'ended', 'met' => trim((string)($case[CaseEndingActs::ENDING_FIELD] ?? '')) !== ''],
+			['id' => 'ended', 'met' => $this->endings->isEnded(case: $case)],
 			[
 				'id' => 'result',
 				'met' => trim((string)($case['result'] ?? '')) !== '',
@@ -98,15 +103,40 @@ class CaseArchiveReadiness {
 	}//end checklist()
 
 	/**
-	 * How many of the case's documents are final.
+	 * How many of the case's documents are final: one read of the case's
+	 * document links and one of those documents, rather than a read per
+	 * document.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
 	 * @return array<string, mixed> The item.
 	 */
 	private function documents(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
+		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
+		if ($objectService === null || $register === '' || $joinSchema === '' || $infoSchema === '') {
+			return ['id' => 'documents', 'met' => null];
+		}
+
 		try {
-			$documents = ($this->dossier->getDossierForCase(caseId: $caseId)['informatieobjecten'] ?? []);
+			$joins = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $joinSchema,
+				filters: ['case' => $caseId, '_limit' => 500],
+			);
+			$ids = array_values(array_unique(array_filter(array_map(static fn (array $join): string => (string)($join['informatieobject'] ?? ''), $joins))));
+			$documents = [];
+			if ($ids !== []) {
+				$documents = $this->searchObjectsAsArrays(
+					objectService: $objectService,
+					register: $register,
+					schema: $infoSchema,
+					filters: ['_ids' => $ids, '_limit' => count($ids)],
+				);
+			}
 		} catch (Throwable) {
 			return ['id' => 'documents', 'met' => null];
 		}
@@ -114,12 +144,11 @@ class CaseArchiveReadiness {
 		$final = count(
 			array_filter(
 				$documents,
-				static fn (mixed $document): bool => is_array($document) === true
-					&& in_array((string)($document['status'] ?? ''), ['final', 'archived'], true) === true
+				static fn (array $document): bool => in_array((string)($document['status'] ?? ''), ['final', 'archived'], true) === true
 			)
 		);
 
-		return ['id' => 'documents', 'met' => $final === count($documents), 'count' => $final, 'total' => count($documents)];
+		return ['id' => 'documents', 'met' => $final === count($ids), 'count' => $final, 'total' => count($ids)];
 	}//end documents()
 
 	/**

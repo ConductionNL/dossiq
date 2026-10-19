@@ -9001,6 +9001,7 @@ OC.L10N.register(
         "This case has {count} linked tasks. Are you sure you want to delete it?": "Deze zaak heeft {count} gekoppelde taken. Weet u zeker dat u deze wilt verwijderen?",
         "This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?": "Deze zaak heeft {count} deelzaken. Door te verwijderen worden de deelzaken losgekoppeld van hun hoofdzaak. Wilt u doorgaan?",
         "This case holds nothing of the kinds a split may divide here.": "Deze zaak bevat niets van wat hier gesplitst mag worden.",
+        "This case is already archived.": "Deze zaak is al gearchiveerd.",
         "This case is already flagged as needing attention.": "Deze zaak is al gemarkeerd als aandacht nodig.",
         "This case is already suspended.": "Deze zaak is al opgeschort.",
         "This case is archived. You can read it, and changes are refused.": "Deze zaak is gearchiveerd. Je kunt hem lezen; wijzigingen worden geweigerd.",

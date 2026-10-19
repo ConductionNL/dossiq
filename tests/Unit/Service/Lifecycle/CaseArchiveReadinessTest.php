@@ -25,14 +25,17 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Lifecycle;
 
 use OCA\Dossiq\Service\Lifecycle\CaseArchiveReadiness;
+use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
-use OCA\Dossiq\Service\ZaakdossierService;
+use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseArchiveReadiness
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class CaseArchiveReadinessTest extends TestCase {
 
@@ -46,8 +49,24 @@ class CaseArchiveReadinessTest extends TestCase {
 	 * @return CaseArchiveReadiness The readiness.
 	 */
 	private function readiness(array $documents, array $tasks, string $taskError = ''): CaseArchiveReadiness {
-		$dossier = $this->createMock(ZaakdossierService::class);
-		$dossier->method('getDossierForCase')->with('case-1')->willReturn(['informatieobjecten' => $documents]);
+		$register = new InMemoryRegister();
+		foreach ($documents as $at => $document) {
+			$register->seed('informatieobject', 'io-' . $at, $document);
+			$register->seed('zaakinformatieobject', 'j-' . $at, ['case' => 'case-1', 'informatieobject' => 'io-' . $at]);
+		}
+
+		// A document of another case is not counted.
+		$register->seed('informatieobject', 'io-other', ['status' => 'draft']);
+		$register->seed('zaakinformatieobject', 'j-other', ['case' => 'case-2', 'informatieobject' => 'io-other']);
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($register);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => [
+				'register' => 'dossiq',
+				'dossier_informatieobject_schema' => 'informatieobject',
+				'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
+			][$key] ?? $default
+		);
 
 		$inbox = $this->createMock(EngineTaskInbox::class);
 		$inbox->method('forCase')->with('case-1', 'pieter')->willReturn($tasks);
@@ -58,7 +77,10 @@ class CaseArchiveReadinessTest extends TestCase {
 		$session = $this->createMock(IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
-		return new CaseArchiveReadiness(dossier: $dossier, tasks: $inbox, userSession: $session);
+		$endings = $this->createMock(CaseEndingActs::class);
+		$endings->method('isEnded')->willReturnCallback(static fn (array $case): bool => trim((string)($case['endingAct'] ?? '')) !== '');
+
+		return new CaseArchiveReadiness(settingsService: $settings, tasks: $inbox, userSession: $session, endings: $endings);
 	}//end readiness()
 
 	/**
