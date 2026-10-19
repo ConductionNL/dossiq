@@ -48,6 +48,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Setup\ExampleDataFragments;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -105,6 +106,7 @@ class DemoDataService {
 	 * @param IAppManager        $appManager Resolves this app's path and version.
 	 * @param ContainerInterface $container  Resolves OpenRegister's importer.
 	 * @param LoggerInterface    $logger     Records what was imported.
+	 * @param ExampleDataFragments|null $fragments The curated example objects loaded with the generated set.
 	 *
 	 * @return void
 	 */
@@ -112,6 +114,7 @@ class DemoDataService {
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?ExampleDataFragments $fragments = null,
 	) {
 	}//end __construct()
 
@@ -233,12 +236,17 @@ class DemoDataService {
 			return null;
 		}
 
-		$components = ($data['components'] ?? []);
-		if (is_array($components) === false || is_array(($components['objects'] ?? null)) === false) {
-			return 0;
+		$curated = 0;
+		if ($this->fragments !== null) {
+			$curated = count($this->fragments->rawObjects());
 		}
 
-		return count($components['objects']);
+		$components = ($data['components'] ?? []);
+		if (is_array($components) === false || is_array(($components['objects'] ?? null)) === false) {
+			return $curated;
+		}
+
+		return count($components['objects']) + $curated;
 
 	}//end shippedObjectCount()
 
@@ -292,6 +300,8 @@ class DemoDataService {
 
 		// The ASK: how many objects the shipped descriptor carries. Kept, but
 		// as one half of a comparison rather than as the answer.
+		$data = $this->withFragments(data: $data);
+
 		$requested = 0;
 		$components = ($data['components'] ?? []);
 		if (is_array($components) === true && is_array(($components['objects'] ?? null)) === true) {
@@ -459,6 +469,24 @@ class DemoDataService {
 
 		return $data;
 	}//end objectsOnly()
+
+	/**
+	 * Add the curated example data fragments to the generated set.
+	 *
+	 * @param array<string, mixed> $data The generated descriptor.
+	 *
+	 * @return array<string, mixed> The descriptor with the fragment objects appended.
+	 */
+	private function withFragments(array $data): array {
+		if ($this->fragments === null) {
+			return $data;
+		}
+
+		$objects = (array)($data['components']['objects'] ?? []);
+		$data['components']['objects'] = array_merge(array_values($objects), $this->fragments->objects());
+
+		return $data;
+	}//end withFragments()
 
 	/**
 	 * Absolute path to the shipped descriptor.
