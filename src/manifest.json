@@ -9093,7 +9093,13 @@
 							"emptyText": "No address on file",
 							"link": {
 								"label": "Cases on the map",
-								"route": "CaseMap"
+								"route": {
+									"name": "Cases",
+									"query": {
+										"_view": "map",
+										"requester": "@objectId"
+									}
+								}
 							}
 						}
 					},
@@ -9633,7 +9639,13 @@
 							],
 							"link": {
 								"label": "Cases on the map",
-								"route": "CaseMap"
+								"route": {
+									"name": "Cases",
+									"query": {
+										"_view": "map",
+										"requester": "@objectId"
+									}
+								}
 							}
 						}
 					},
