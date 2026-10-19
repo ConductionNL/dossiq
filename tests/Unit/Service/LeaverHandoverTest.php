@@ -80,7 +80,8 @@ class LeaverHandoverTest extends TestCase {
 		$this->store->seed(
 			schema: 'caseType',
 			uuid: 'ct-draft',
-			row: ['title' => 'Concept zaaktype', 'isDraft' => true, '@self' => ['owner' => 'jan']],
+			// A case type title is translatable: the store answers a language map.
+			row: ['title' => ['nl' => 'Concept zaaktype'], 'isDraft' => true, '@self' => ['owner' => 'jan']],
 		);
 		$this->store->seed(
 			schema: 'caseType',

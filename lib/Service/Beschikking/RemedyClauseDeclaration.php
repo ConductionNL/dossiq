@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Beschikking;
 
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCP\IL10N;
 
 /**
  * Reads the remedy a case type declares, and writes the clause its decisions print.
@@ -51,9 +52,11 @@ class RemedyClauseDeclaration {
 	/**
 	 * Constructor.
 	 *
+	 * @param IL10N           $l10n Words the publication warning in the reader's language.
 	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
+		private readonly IL10N $l10n,
 		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
@@ -233,12 +236,15 @@ class RemedyClauseDeclaration {
 
 		$title = $this->text->textOf(value: ($caseType['title'] ?? null));
 		if ($title === '') {
-			$title = 'this case type';
+			$title = $this->l10n->t('this case type');
 		}
 
 		return [
-			'The decisions of ' . $title . ' declare no remedy, so they print no '
-			. 'bezwaarclausule. Name the kind, the term in days and the body it is lodged with.',
+			$this->l10n->t(
+				'The decisions of %s declare no remedy, so they print no bezwaarclausule. Name the kind, '
+				. 'the term in days and the body it is lodged with.',
+				[$title]
+			),
 		];
 	}//end publicationWarnings()
 }//end class

@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCP\IL10N;
 
 /**
  * What a case type says about confirming receipt.
@@ -51,6 +52,16 @@ use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
  * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
  */
 class CaseTypeAcknowledgement {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param IL10N $l10n Words the publication warnings in the reader's language.
+	 */
+	public function __construct(
+		private readonly IL10N $l10n,
+	) {
+	}//end __construct()
 
 	/**
 	 * The intake channels that count as an electronic submission.
@@ -369,18 +380,17 @@ class CaseTypeAcknowledgement {
 		$warnings = [];
 
 		if ($declaration['enabled'] === false) {
-			$warnings[] = 'This case type sends no acknowledgement of receipt. '
-				. 'Awb 4:3a asks for one on every electronic submission.';
+			$warnings[] = $this->l10n->t('This case type sends no acknowledgement of receipt. Awb 4:3a asks for one on every electronic submission.');
 		}
 
 		if ($declaration['enabled'] === true && $declaration['intakeChannels'] === []) {
-			$warnings[] = 'This case type names no intake channel that owes an acknowledgement, '
-				. 'so none is ever sent. Awb 4:3a asks for one on every electronic submission.';
+			$warnings[] = $this->l10n->t('This case type names no intake channel that owes an acknowledgement, so none is ever sent. '
+				. 'Awb 4:3a asks for one on every electronic submission.');
 		}
 
 		if ($this->statutoryMomentWasRemoved(caseType: $caseType) === true) {
-			$warnings[] = 'The statutory acknowledgement of receipt was removed from this case '
-				. 'type\'s automatic messages. Awb 4:3a asks for one on every electronic submission.';
+			$warnings[] = $this->l10n->t('The statutory acknowledgement of receipt was removed from this case type\'s automatic '
+				. 'messages. Awb 4:3a asks for one on every electronic submission.');
 		}
 
 		return $warnings;

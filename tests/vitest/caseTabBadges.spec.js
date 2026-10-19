@@ -40,7 +40,6 @@ const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
-const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 
 const caseDetail = manifest.pages.find((p) => p.id === 'CaseDetail')
 
@@ -110,7 +109,8 @@ describe('the strip is declared on the case page', () => {
 		// not the one this page uses.
 		expect(registrySource).toContain("'case-unread': {")
 		expect(registrySource).toContain('component: CaseUnreadPanel,')
-		expect(iconsSource).toContain(`\n\t${widget.icon},\n`)
+		// The boards draw no icon on a card title.
+		expect(widget.icon).toBeUndefined()
 	})
 
 	it('carries the reason gate 29 asks a custom widget for', () => {

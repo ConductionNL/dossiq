@@ -23,6 +23,7 @@ use OCA\Dossiq\Service\Notification\ApplicantMessage;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -51,7 +52,7 @@ class ApplicantMessageTest extends TestCase {
 	 */
 	private function messages(TermijnNotificationService $notifications, CaseTimeline $timeline): ApplicantMessage {
 		return new ApplicantMessage(
-			moments: new CaseTypeAcknowledgement(),
+			moments: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
 			contacts: new CaseContactDirectory(),
 			terms: $this->createMock(TermijnService::class),
 			notifications: $notifications,

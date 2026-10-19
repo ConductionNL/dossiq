@@ -37,4 +37,8 @@ describe('the catalogue page', () => {
 		expect(objectTypes.content.columns.find((column) => column.key === 'cases')).toMatchObject({ label: 'Used in', formatter: 'caseCount' })
 		expect(objectTypes.content.emptyText).toBe('Object types appear here once cases link objects.')
 	})
+
+	it('pages the object types four at a time, as the board\'s pager does', () => {
+		expect(widget('catalogue-object-types').content.pageSize).toBe(4)
+	})
 })
