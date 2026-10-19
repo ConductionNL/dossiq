@@ -304,8 +304,10 @@ describe('CaseDetail: one menu holds every lifecycle act', () => {
 
 describe('CaseDetail: every icon it names is registered', () => {
 	it('registers each icon the new widgets and actions use', () => {
+		// The stages card draws no title icon, as the boards draw none; the
+		// action button keeps its icon.
+		expect(widget('case-stages').icon).toBeUndefined()
 		const named = [
-			widget('case-stages').icon,
 			action('case-lifecycle-menu').icon,
 		]
 		for (const name of named) {

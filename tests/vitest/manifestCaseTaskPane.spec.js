@@ -178,12 +178,12 @@ describe('the CaseTaskPane registry binding', () => {
 })
 
 describe('the case-tasks widget after the retype', () => {
-	it('keeps its id, title, icon and every content key', () => {
+	it('keeps its id, title and every content key, and draws no title icon', () => {
 		const pane = widget('CaseDetail', 'case-tasks')
 		expect(pane).toBeDefined()
 		expect(pane.type).toBe('case-task-pane')
 		expect(pane.title).toBe('Tasks')
-		expect(pane.icon).toBe('ClipboardCheckOutline')
+		expect(pane.icon).toBeUndefined()
 		// The content is what the widget goes back to reading the day
 		// CnObjectListWidget grows a lifecycle column. Dropping a key here
 		// would make the swap back a second change rather than a revert.

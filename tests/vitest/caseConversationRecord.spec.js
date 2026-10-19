@@ -27,7 +27,6 @@ const readJson = (...parts) => JSON.parse(read(...parts))
 const manifest = readJson('src', 'manifest.json')
 const register = readJson('lib', 'Settings', 'dossiq_register.json')
 const registrySource = read('src', 'registry.js')
-const iconsSource = read('src', 'icons.js')
 const panelSource = read(
 	'src',
 	'views',
@@ -58,9 +57,8 @@ describe('the live conversation section on the case', () => {
 		expect(registrySource).toContain('component: CaseConversationsPanel')
 	})
 
-	it('names an icon the icon registry carries', () => {
-		expect(section.widget.icon).toBe('PhoneInTalk')
-		expect(iconsSource).toContain('PhoneInTalk')
+	it('draws no title icon, as the boards draw none on card titles', () => {
+		expect(section.widget.icon).toBeUndefined()
 	})
 })
 
