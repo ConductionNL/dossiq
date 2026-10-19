@@ -328,13 +328,6 @@
 			"order": 56
 		},
 		{
-			"id": "CaseMap",
-			"label": "Map",
-			"icon": "MapOutline",
-			"route": "CaseMap",
-			"order": 60
-		},
-		{
 			"id": "SettingsGroup",
 			"label": "Settings",
 			"icon": "CogOutline",
@@ -1771,6 +1764,11 @@
 					"isTemplate": false
 				},
 				"allowSavedViews": true,
+				"_defaultSavedViewsNote": "saved-views-manage-and-defaults: the Queue's base filter already keeps it to open, unclaimed cases, so its defaults only add the deadline window, with the same flat keys and tokens as the Cases chips.",
+				"defaultSavedViews": [
+					{ "slug": "late", "name": "Late", "filters": { "deadline[lt]": "@today" } },
+					{ "slug": "this-week", "name": "This week", "filters": { "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } }
+				],
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "The one case create form, mirrored from the Dashboard `new-case` header action (friendly-case-create-form) so filing a case asks the same questions wherever it starts. src/utils/caseCreateForm.js carries the same shape for the surfaces configured from JS; keep the two in step.",
 				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
@@ -1988,6 +1986,14 @@
 					"isTemplate": false
 				},
 				"allowSavedViews": true,
+				"_wooSavedViewNote": "Woo requests are a view of the case list, not a page of their own (Ruben, 19 October 2026): the default view `woo-requests` is the Woo case type with the same working-list rule as the Woo chip, and a link to the Woo list is `/cases?savedView=default:woo-requests`.",
+				"_defaultSavedViewsNote": "saved-views-manage-and-defaults: views dossiq ships for every user, read-only, listed under Default views above the user's own saved views. A user applies one, or saves a copy to edit and share. They combine conditions the quick-filter chips offer one at a time (Mine and Overdue), so they add a lens instead of repeating a chip. The conditions are the chips' own: the same flat `deadline[lt]` / `deadline[gte]` keys with `@today` tokens, the same working-list rule `statusHiddenInLists: false`.",
+				"defaultSavedViews": [
+					{ "slug": "mine-overdue", "name": "Mine, overdue", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
+					{ "slug": "mine-due-this-week", "name": "Mine, due this week", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
+					{ "slug": "unclaimed-overdue", "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
+					{ "slug": "woo-requests", "name": "Woo requests", "filters": { "caseType": "3c0f5a00-0000-4000-a000-00000000a001", "statusHiddenInLists": false, "isDraft": false } }
+				],
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "Same create form as the Queue page; see its `_formNote`.",
 				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
@@ -2023,6 +2029,10 @@
 					"geoField": "geometry",
 					"popupField": "title",
 					"center": [52.1326, 5.2913],
+					"_parityNote": "What the retired /map page did, now as configuration: every case that matches the filters is plotted (up to 500, with a note past that), each marker takes the colour of its status type, as the board's columns do, and a line says how many cases have a place.",
+					"plotAll": true,
+					"count": "Showing {located} of {total} located cases",
+					"markerColor": { "field": "status", "source": { "schema": "statusType", "colorField": "colour" }, "colorMap": {"blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)"} },
 					"_basemapNote": "EVERY ENTRY CARRIES `options.referrerPolicy` AND MUST KEEP IT. Nextcloud sends `Referrer-Policy: no-referrer` on every page (server/lib/OC.php), Leaflet draws a tile as a plain `<img>`, and OpenStreetMap's CDN answers a refererless tile request with an \"App is not following the tile usage policy\" image carrying `x-blocked: Access denied` — a grey map rather than an error, which is why it reads as working-but-empty. An `<img>`-level policy overrides the document's, and `strict-origin-when-cross-origin` sends the instance origin but never the path, which is where a case id would be. nextcloud-vue's CnMapWidget defaults the same value, so this is belt-and-braces for as long as dossiq resolves a library release that predates that default. THE `{s}` SUBDOMAIN FORM IS ALSO LOAD-BEARING: MapCspRegistrar allowlists `https://*.tile.openstreetmap.org`, and a CSP wildcard does NOT match the bare host, so rewriting these to OSM's modern `tile.openstreetmap.org` would trade a policy block for a CSP block.",
 					"basemaps": [
 						{
@@ -5095,18 +5105,6 @@
 			"_note": "The task page over OpenRegister's task ENGINE, which is not an OpenRegister object and has no typed page that can render it. It was `type: \"detail\"` bound to `register: dossiq, schema: caseTask`, the schema remove-casetask deletes. CnDetailPage takes objectType/objectId and resolves them through the object store; it has NO entitySource mode (checked against the installed @conduction/nextcloud-vue 2.46.0), so unlike the Tasks index, which stayed `type: \"index\"` and gained `entitySource: \"tasks\"`, this page cannot be fixed with a manifest key. The defect it closes is specific: the page asked BOTH stores with one uuid, so an engine uuid rendered the case card and every field below it as an em dash, a legacy uuid rendered the fields and no case card, and neither showed a lifecycle button that worked. THE ROUTE AND THE PAGE ID ARE UNCHANGED: `/tasks/:id` and `TaskDetail`, so notification links and bookmarks still resolve. The `deepLinks` entry went with the schema in remove-casetask 4.2. It was keyed on `schemaSlug: caseTask` and fed OpenRegister's schema-scoped unified search only, so with no objects of that schema it matched nothing and resolved nothing. Engine tasks therefore have NO unified-search provider today. That gap is OpenRegister's: the engine's tasks live in their own table and no deep-link shape addresses them, and a dossiq entry cannot invent one. TaskDetailView keeps every widget the detail page carried. The case card (TaskCaseCard) and the waiting-case section (TaskWaitingCaseSection) are now plain child components rather than page slots. The notes and appointment leaves moved from `type: \"integration\"` to the task-anchored endpoints /api/flow-tasks/{uuid}/notes and /events, because the library's integration widgets read an OBJECT and a task has none. The audit sidebar tab became a page section reading /api/flow-tasks/{uuid}/audit, which is the engine's own append-only trail; a `type: \"custom\"` page has no sidebar for CnPageRenderer to render. The version-history tab is gone on purpose: an engine task is not an object and nothing writes a version of it, so the tab was an always-empty drawer. The lifecycle buttons are the engine's verbs through invoke(uuid, verb), NOT CnLifecycleActions, which asks /api/objects/{uuid}/available-actions and 404s for a task.",
 			"config": {
 				"documentationUrl": "https://dossiq.conduction.nl"
-			}
-		},
-		{
-			"id": "CaseMap",
-			"route": "/map",
-			"type": "custom",
-			"title": "Case map",
-			"component": "CasesOnMapView",
-			"_note": "Full-screen split view: a filter sidebar (case type + status) beside a CnMapWidget rendering RBAC-scoped case markers with clustering and auto-fit. Markers and overview are sourced from OpenRegister's maps-overview leaf (ADR-022, OR #154). No standard page type offers the sidebar-plus-map layout or the maps-overview declaration/points fetch lifecycle.",
-			"config": {
-				"register": "dossiq",
-				"schema": "case"
 			}
 		},
 		{
