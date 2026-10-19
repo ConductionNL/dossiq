@@ -518,11 +518,6 @@
                         "description": "The organisational unit responsible for handling cases of this type",
                         "title": "Responsible unit"
                     },
-                    "referenceProcess": {
-                        "type": "string",
-                        "description": "The reference process this case type follows",
-                        "title": "Reference process"
-                    },
                     "keywords": {
                         "type": "string",
                         "description": "Keywords for finding this case type, comma separated",
