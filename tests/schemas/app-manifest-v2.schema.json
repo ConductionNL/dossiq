@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.126.0",
+	"version": "2.127.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -1998,6 +1998,7 @@
 										"items": { "$ref": "#/$defs/action" },
 										"description": "Declarative row/widget actions rendered by CnWidgetObjectTable. object-op patch/delete render per row; object-op create renders as a widget-scoped footer affordance."
 									},
+									"pageSize": { "type": "integer", "minimum": 1, "description": "Rows per page: the table shows one page with the board pager under it (\"4 of 7\", DqCatalogus). Under a pager `source.limit` is how many rows are read (2.127.0)." },
 									"rowClass": {
 										"type": "array",
 										"description": "#91: declarative per-row CSS class rules compiled into CnDataTable's rowClass function. Each rule { when: { field, op?, value }, class } adds `class` to a row when the shared visibleWhen predicate holds against that row (field = dot-path into the row, op = eq|neq|gt|gte|lt|lte default eq, value = literal). Rules evaluate in order and every matching class is space-joined — so overdue / at-risk rows can be highlighted from the manifest. A host-supplied rowClass FUNCTION (runtime-only) still passes straight through.",
@@ -4052,6 +4053,8 @@
 							"additionalProperties": true,
 							"description": "type='index': the opt-in folder navigation pane (CnFolderSidebar) rendered left of the list. Selecting a folder filters the list by `filterField` (or `field`); \"All\" clears it. Only the per-scope list-layout keys are typed here; the pane's own keys (source, register, schema, idField, nameField, folders, allLabel, title, allowCreate, ...) stay free-form. Maps to CnIndexPage `folderSidebar`.",
 							"properties": {
+								"heading": { "type": "boolean", "description": "true heads the list with the selected folder's name, its parent folder and its count (always on a `groups` pane, 2.127.0)." },
+								"countText": { "type": "string", "minLength": 1, "description": "The count in that heading, `{count}` filled in, through the app's translate; a groups pane defaults to \"{count} members\" (2.127.0)." },
 								"pane": { "type": "boolean", "default": true, "description": "false keeps the folder scope (a deep link such as `?caseType=<uuid>` still applies the scope's look and filter) without drawing the pane (dossiq's simple profile, 2.126.0)." },
 								"folders": {
 									"type": "array",
@@ -4214,6 +4217,11 @@
 									}
 								]
 							}
+						},
+						"sideColumnFrom": {
+							"type": "string",
+							"minLength": 1,
+							"description": "type='detail': a field path, read like a `visibleWhen` field, whose value picks the side column and its order for this record, e.g. `@context.caseType.sideCards` (a case type that names the cards its cases show). When the value is a non-empty list of widget ids, the side column is those of `sideColumn` in that order and the rest are left out; each still follows its own `visibleWhen`. Any other value, or no value, keeps `sideColumn` as declared. Maps to CnDetailPage `sideColumnFrom`."
 						},
 						"headerActions": {
 							"type": "array",
@@ -4714,8 +4722,22 @@
 									"variant": { "type": "string", "enum": ["primary", "secondary"], "default": "secondary" },
 									"icon": { "type": "string", "minLength": 1, "description": "MDI icon name." },
 									"format": { "type": "string", "enum": ["csv", "excel"], "default": "csv", "description": "For `export`." },
+									"run": { "type": "string", "minLength": 1, "description": "For `export`: the id of a `headerActions` entry the button runs instead of the export dialog. On a named or endpoint source an Export without `run` (and without a mass-export listener) is not drawn (2.127.0)." },
 									"items": { "type": "array", "minItems": 1, "items": { "anyOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["heading"], "properties": { "heading": { "type": "string", "minLength": 1, "description": "i18n key of a group heading." } } } ] }, "description": "For `actions-menu`: the menu's entries, in order. Each is `header-actions` (every header action), the id of one `headerActions` entry, or a built-in of the actions bar's own menu, which the bar drops while header buttons show: `import`, `export`, `refresh`, `copy-selected`, `delete-selected` (disabled until a row is selected) or `documentation` (a link to the page's documentationUrl, left out without one). An unknown name is left out. Absent: the header actions only (screens-index-header-actions-menu, 2.90.0). Entries can be grouped: `{ \"heading\": \"<i18n key>\" }` draws a group heading and `\"separator\"` a rule, each only when an entry follows it, so a group whose entries are all left out leaves no empty heading (screens-index-header-menu-headings, 2.93.0)." }
 								}
+							}
+						},
+						"search": { "type": "boolean", "default": true, "description": "type='index': `false` draws no inline search in the actions bar, also in the board look, which otherwise draws one on every index page. Wins over `inlineSearch` (2.127.0)." },
+						"searchPlacement": { "type": "string", "enum": ["", "toolbar"], "default": "", "description": "type='index', board look: where the search field sits. `toolbar` puts it on row 1 before the Filter button and the view switch instead of opening row 2 (DqTeamwachtrij, 2.127.0)." },
+						"defaultOrder": { "description": "type='index', self-fetch: the order the page opens on when neither the address nor sortKeys gives one: `\"-createdAt\"`, `\"priority:desc,title\"`, an `_order` map or a `[{ key, order }]` list (2.127.0).", "anyOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": { "type": "string", "enum": ["asc", "desc", "ASC", "DESC"] } }, { "type": "array", "items": { "type": "object", "required": ["key"], "properties": { "key": { "type": "string", "minLength": 1 }, "order": { "type": "string", "enum": ["asc", "desc"] } } } } ] },
+						"listConfig": {
+							"type": "object",
+							"additionalProperties": true,
+							"description": "type='index': the field mapping of the list view's rows (CnObjectRow): titleField, subtitleField, imageField, iconField, iconName, badgeField and the badge keys stay free-form. 2.127.0 types the row cells and the meta template (DqTeamwachtrij).",
+							"properties": {
+								"subtitleTemplate": { "type": "string", "minLength": 1, "description": "The meta line: `{field}` tokens filled from the row; empty parts and their separators drop." },
+								"leading": {"type": "object", "required": ["key"], "additionalProperties": true, "properties": {"key": {"type": "string", "minLength": 1}, "widget": {"type": "string", "minLength": 1}, "widgetProps": {"type": "object", "additionalProperties": true}, "formatter": {"type": "string", "minLength": 1}, "width": {"type": "string", "minLength": 1, "description": "CSS width, lining the column up across rows."}}, "description": "One cell before the title, drawn as a table column draws it (`{ key: \"createdAt\", widget: \"age\" }`)."},
+								"trailing": { "description": "A cell, or a list of cells, after the badges, each drawn as a table column draws it.", "anyOf": [ {"type": "object", "required": ["key"], "additionalProperties": true, "properties": {"key": {"type": "string", "minLength": 1}, "widget": {"type": "string", "minLength": 1}, "widgetProps": {"type": "object", "additionalProperties": true}, "formatter": {"type": "string", "minLength": 1}, "width": {"type": "string", "minLength": 1, "description": "CSS width, lining the column up across rows."}}}, { "type": "array", "items": {"type": "object", "required": ["key"], "additionalProperties": true, "properties": {"key": {"type": "string", "minLength": 1}, "widget": {"type": "string", "minLength": 1}, "widgetProps": {"type": "object", "additionalProperties": true}, "formatter": {"type": "string", "minLength": 1}, "width": {"type": "string", "minLength": 1, "description": "CSS width, lining the column up across rows."}}} } ] }
 							}
 						},
 						"rowTitle": {
