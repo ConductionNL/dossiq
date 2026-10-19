@@ -151,6 +151,38 @@ class CaseActsController extends Controller {
 	}//end acts()
 
 	/**
+	 * Whether this case is ready to be archived, item by item, for the archive dialog.
+	 *
+	 * Read access is enough, as for the act menu: the checklist tells, the
+	 * archive act itself refuses whoever may not archive.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	#[NoAdminRequired]
+	public function archiveReadiness(string $caseId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'Sign in first.', 'error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(
+				['message' => 'You do not work on this case.', 'error' => 'not-authorized'],
+				Http::STATUS_FORBIDDEN,
+			);
+		}
+
+		return $this->answered(
+			caseId: $caseId,
+			run: fn (): array => $this->overview->archiveReadiness(caseId: $caseId),
+		);
+	}//end archiveReadiness()
+
+	/**
 	 * The overview as a reader who may not act sees it: every act listed, none allowed.
 	 *
 	 * A handling team member reads an unclaimed case of their team, but only

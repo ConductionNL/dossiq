@@ -2,12 +2,12 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The default filters dossiq ships on its case lists. Each one combines
+ * The default views dossiq ships on its case lists. Each one combines
  * conditions a quick-filter chip already carries, so each condition is held
  * equal to the chip it came from: a default that drifted from its chip would
  * count one set of cases while the chip beside it counts another.
  *
- * @spec openspec/changes/saved-filters-default-filters/specs/case-lists/spec.md
+ * @spec openspec/changes/saved-views-default-views/specs/case-lists/spec.md
  */
 
 import fs from 'node:fs'
@@ -21,14 +21,14 @@ const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/nl.json'), 'utf8')).
 
 const page = (id) => manifest.pages.find((p) => p.id === id)
 const chip = (label) => page('Cases').config.quickFilters.find((q) => q.label === label).filter
-const byslug = (id) => Object.fromEntries(page(id).config.defaultSavedFilters.map((d) => [d.slug, d.filters]))
+const byslug = (id) => Object.fromEntries(page(id).config.defaultSavedViews.map((d) => [d.slug, d.filters]))
 
-describe('default filters on Cases', () => {
+describe('default views on Cases', () => {
 	const defaults = byslug('Cases')
 
 	it('ships four, each with a Dutch name', () => {
 		expect(Object.keys(defaults)).toEqual(['mine-overdue', 'mine-due-this-week', 'unclaimed-overdue', 'woo-requests'])
-		for (const d of page('Cases').config.defaultSavedFilters) {
+		for (const d of page('Cases').config.defaultSavedViews) {
 			expect(nl[d.name]).toBeTruthy()
 		}
 	})
@@ -40,15 +40,15 @@ describe('default filters on Cases', () => {
 	})
 })
 
-describe('Woo requests as a filter on Cases', () => {
-	it('is a default filter equal to the Woo chip of the case list', () => {
+describe('Woo requests as a view of Cases', () => {
+	it('is a default view equal to the Woo chip of the case list', () => {
 		const simple = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/menu-layout.simple.json'), 'utf8'))
 		const wooChip = simple.pages.find((p) => p.id === 'Cases').configAppend.quickFilters.find((q) => q.label === 'Woo requests').filter
 		expect(byslug('Cases')['woo-requests']).toEqual(wooChip)
 	})
 })
 
-describe('default filters on Queue', () => {
+describe('default views on Queue', () => {
 	it('narrow the queue by the Overdue and Due this week windows only', () => {
 		const defaults = byslug('Queue')
 		const window = (f) => Object.fromEntries(Object.entries(f).filter(([k]) => k.startsWith('deadline[')))

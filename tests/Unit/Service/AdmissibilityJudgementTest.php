@@ -40,6 +40,8 @@ use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Notification\ApplicantMessage;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -96,10 +98,11 @@ class AdmissibilityJudgementTest extends TestCase {
 	 *
 	 * @param array<string, mixed> $caseType The case type the resolver answers with.
 	 * @param bool $messageSent What the applicant's letter reports back.
+	 * @param IL10N|null $l10n The translator; an untranslating one when null.
 	 *
 	 * @return AdmissibilityJudgement The service.
 	 */
-	private function judgementOver(array $caseType, bool $messageSent = true): AdmissibilityJudgement {
+	private function judgementOver(array $caseType, bool $messageSent = true, ?IL10N $l10n = null): AdmissibilityJudgement {
 		$resolver = $this->createMock(originalClassName: CaseTypeResolver::class);
 		$resolver->method('effectiveCaseType')->willReturn($caseType);
 
@@ -157,6 +160,7 @@ class AdmissibilityJudgementTest extends TestCase {
 			endings: $endings,
 			letters: $letters,
 			logger: new NullLogger(),
+			l10n: $l10n ?? new SourceL10n(),
 		);
 	}//end judgementOver()
 
@@ -400,4 +404,45 @@ class AdmissibilityJudgementTest extends TestCase {
 			self::assertSame(expected: 'admissibility-not-declared', actual: $refusal->getRule());
 		}
 	}//end testACaseTypeThatAsksForNoVerdictRefusesOne()
+
+	/**
+	 * The warnings come translated, with the declared moment filled in.
+	 *
+	 * @return void
+	 */
+	public function testTheWarningsAreTranslatedWithTheMomentFilledIn(): void {
+		$caseType = $this->caseType(result: '');
+		$service  = $this->judgementOver(caseType: $caseType, l10n: $this->markingL10n());
+		$warnings = $service->publicationWarnings(caseType: $caseType);
+
+		self::assertNotSame(expected: [], actual: $warnings);
+		foreach ($warnings as $warning) {
+			self::assertStringStartsWith(prefix: 'NL: ', string: $warning);
+		}
+
+		$silent = $this->judgementOver(caseType: $this->caseType(), messageSent: false, l10n: $this->markingL10n());
+		$moment = $silent->publicationWarnings(caseType: $this->caseType());
+		self::assertSame(
+			expected: ['NL: This case type closes an inadmissible aanvraag without telling the applicant. Add the moment ' . AdmissibilityJudgement::MOMENT . ' to its automatic messages.'],
+			actual: $moment
+		);
+	}//end testTheWarningsAreTranslatedWithTheMomentFilledIn()
+
+	/**
+	 * A translator that marks what it translated, so a test can tell a
+	 * translated warning from a hard-coded one.
+	 *
+	 * @return IL10N The translator.
+	 */
+	private function markingL10n(): IL10N {
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $parameters = []): string => 'NL: ' . vsprintf($text, $parameters)
+		);
+		$l10n->method('n')->willReturnCallback(
+			static fn (string $singular, string $plural, int $count, array $parameters = []): string => 'NL: ' . vsprintf(str_replace('%n', (string)$count, $count === 1 ? $singular : $plural), $parameters)
+		);
+
+		return $l10n;
+	}//end markingL10n()
 }//end class

@@ -49,6 +49,7 @@ describe('the Configuratie section', () => {
 				{ id: 24, slug: 'other' },
 			],
 			schemas: [{ id: 172, title: 'Case' }, { id: 9 }],
+			t: (app, text) => text,
 		}
 		expect(Settings.computed.registerOptions.call(vm)).toEqual([
 			{ id: 23, label: 'Dossiq' },
@@ -57,6 +58,17 @@ describe('the Configuratie section', () => {
 		expect(Settings.computed.schemaOptions.call(vm)).toEqual([
 			{ id: 172, label: 'Case' },
 			{ id: 9, label: '9' },
+		])
+	})
+
+	it('names a schema by its title in the reader\'s language', () => {
+		const vm = {
+			schemas: [{ id: 172, title: 'Case' }, { id: 173, title: 'Status type' }],
+			t: (app, text) => ({ Case: 'Zaak', 'Status type': 'Statustype' })[text] ?? text,
+		}
+		expect(Settings.computed.schemaOptions.call(vm)).toEqual([
+			{ id: 172, label: 'Zaak' },
+			{ id: 173, label: 'Statustype' },
 		])
 	})
 

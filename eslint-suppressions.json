@@ -288,9 +288,6 @@
     }
   },
   "src/views/cases/components/CaseEmailTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
     "no-console": {
       "count": 2
     }
@@ -488,9 +485,6 @@
     }
   },
   "src/views/settings/tabs/ChecklistsTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 3
     }

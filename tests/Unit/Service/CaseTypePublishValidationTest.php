@@ -45,6 +45,7 @@ use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCA\Dossiq\Service\Email\SenderIdentity;
 use PHPUnit\Framework\TestCase;
@@ -165,10 +166,10 @@ class CaseTypePublishValidationTest extends TestCase {
 			checks: new PublicationChecks(
 				caseTypeResolver: new CaseTypeResolver(store: $store),
 				store: $store,
-				acknowledgement: new CaseTypeAcknowledgement(),
-				unreadTriggers: new UnreadTriggerService(),
+				acknowledgement: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
+				unreadTriggers: new UnreadTriggerService(l10n: new SourceL10n()),
 				admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
-				remedy: new RemedyClauseDeclaration(),
+				remedy: new RemedyClauseDeclaration(l10n: new SourceL10n()),
 				handling: new CaseTypeHandling(),
 				reachability: new CaseTypeReachability(),
 				senders: $this->createMock(originalClassName: SenderIdentity::class),

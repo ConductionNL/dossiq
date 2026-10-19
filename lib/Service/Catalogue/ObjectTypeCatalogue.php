@@ -62,10 +62,12 @@ class ObjectTypeCatalogue {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Config and OpenRegister's ObjectService.
+	 * @param SettingsService          $settingsService Config and OpenRegister's ObjectService.
+	 * @param ObjectTypeSchemaResolver $schemas         The schema a linked object's URL names.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly ObjectTypeSchemaResolver $schemas,
 	) {
 	}//end __construct()
 
@@ -76,7 +78,7 @@ class ObjectTypeCatalogue {
 	 * configured, or when no case links an object. A read OpenRegister refuses
 	 * throws, so the caller can tell a failed read from an empty catalogue.
 	 *
-	 * @return array<int, array{id: string, title: string, cases: int}> The rows.
+	 * @return array<int, array{id: string, title: string, cases: int, schema: string, properties: int|null, views: array<int, string>}> The rows.
 	 *
 	 * @throws RuntimeException When OpenRegister is not available.
 	 *
@@ -95,6 +97,7 @@ class ObjectTypeCatalogue {
 		}
 
 		$casesByType = [];
+		$urlByType   = [];
 		for ($page = 1; $page <= self::MAX_PAGES; $page++) {
 			$links = $this->searchObjectsAsArrays(
 				objectService: $objectService,
@@ -103,6 +106,7 @@ class ObjectTypeCatalogue {
 				filters: ['_limit' => self::PAGE_SIZE, '_offset' => (($page - 1) * self::PAGE_SIZE)]
 			);
 			$casesByType = $this->collect(casesByType: $casesByType, links: $links);
+			$urlByType   = $this->collectUrls(urlByType: $urlByType, links: $links);
 			if (count($links) < self::PAGE_SIZE) {
 				break;
 			}
@@ -110,7 +114,7 @@ class ObjectTypeCatalogue {
 
 		$rows = [];
 		foreach ($casesByType as $type => $cases) {
-			$rows[] = ['id' => (string)$type, 'title' => (string)$type, 'cases' => count($cases)];
+			$rows[] = $this->rowFor(type: (string)$type, cases: count($cases), objectUrl: ($urlByType[$type] ?? ''));
 		}
 
 		usort($rows, static fn (array $left, array $right): int => self::compareRows(left: $left, right: $right));
@@ -138,6 +142,58 @@ class ObjectTypeCatalogue {
 
 		return $casesByType;
 	}//end collect()
+
+	/**
+	 * Remember, per object type, the first link whose URL names an OpenRegister
+	 * schema, so the row can show that schema.
+	 *
+	 * @param array<string, string>            $urlByType The URL seen so far, by type.
+	 * @param array<int, array<string, mixed>> $links     One page of links.
+	 *
+	 * @return array<string, string> The URL, by type.
+	 */
+	private function collectUrls(array $urlByType, array $links): array {
+		foreach ($links as $link) {
+			$type = trim((string)($link['objectType'] ?? ''));
+			$url  = (string)($link['objectUrl'] ?? '');
+			if ($type === '' || isset($urlByType[$type]) === true) {
+				continue;
+			}
+
+			if ($this->schemas->namesSchema(objectUrl: $url) === true) {
+				$urlByType[$type] = $url;
+			}
+		}
+
+		return $urlByType;
+	}//end collectUrls()
+
+	/**
+	 * One catalogue row: the type, its case count and, when a link names an
+	 * OpenRegister schema, that schema's title, property count and views. A
+	 * free-text type leaves the schema columns empty.
+	 *
+	 * @param string $type      The object type.
+	 * @param int    $cases     The cases that link one.
+	 * @param string $objectUrl A link URL naming the schema, or ''.
+	 *
+	 * @return array{id: string, title: string, cases: int, schema: string, properties: int|null, views: array<int, string>} The row.
+	 */
+	private function rowFor(string $type, int $cases, string $objectUrl): array {
+		$schema = null;
+		if ($objectUrl !== '') {
+			$schema = $this->schemas->describe(objectUrl: $objectUrl);
+		}
+
+		return [
+			'id'         => $type,
+			'title'      => $type,
+			'cases'      => $cases,
+			'schema'     => ($schema['title'] ?? ''),
+			'properties' => ($schema['properties'] ?? null),
+			'views'      => ($schema['views'] ?? []),
+		];
+	}//end rowFor()
 
 	/**
 	 * Order rows by the number of cases, most first, then by name.

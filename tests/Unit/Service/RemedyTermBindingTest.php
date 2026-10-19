@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\TermKind;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -91,7 +92,7 @@ class RemedyTermBindingTest extends TestCase {
 		return new CaseRemedy(
 			store: $store,
 			caseTypes: $resolver,
-			declaration: new RemedyClauseDeclaration(),
+			declaration: new RemedyClauseDeclaration(l10n: new SourceL10n()),
 			terms: $terms,
 			logger: new NullLogger(),
 		);
@@ -164,7 +165,7 @@ class RemedyTermBindingTest extends TestCase {
 		$remedy = new CaseRemedy(
 			store: $store,
 			caseTypes: $resolver,
-			declaration: new RemedyClauseDeclaration(),
+			declaration: new RemedyClauseDeclaration(l10n: new SourceL10n()),
 			terms: $this->createMock(originalClassName: CaseTermsService::class),
 			logger: new NullLogger(),
 		);

@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Catalogue;
 
 use OCA\Dossiq\Service\Catalogue\ObjectTypeCatalogue;
+use OCA\Dossiq\Service\Catalogue\ObjectTypeSchemaResolver;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -55,14 +56,38 @@ final class ObjectTypeCatalogueTest extends TestCase {
 
 		$this->assertSame(
 			[
-				['id' => 'building', 'title' => 'building', 'cases' => 2],
-				['id' => 'Boom', 'title' => 'Boom', 'cases' => 1],
-				['id' => 'vehicle', 'title' => 'vehicle', 'cases' => 1],
+				['id' => 'building', 'title' => 'building', 'cases' => 2, 'schema' => '', 'properties' => null, 'views' => []],
+				['id' => 'Boom', 'title' => 'Boom', 'cases' => 1, 'schema' => '', 'properties' => null, 'views' => []],
+				['id' => 'vehicle', 'title' => 'vehicle', 'cases' => 1, 'schema' => '', 'properties' => null, 'views' => []],
 			],
 			$rows
 		);
 		$this->assertSame(['register' => 23, 'schema' => 41], $service->queries[0]['@self']);
 	}
+
+	/**
+	 * A type whose link names an OpenRegister schema shows that schema; a
+	 * free-text type leaves the schema columns empty.
+	 *
+	 * @return void
+	 */
+	public function testShowsTheSchemaAnObjectUrlNames(): void {
+		$url     = 'https://cloud.example/index.php/apps/openregister/api/objects/7/trees/abc';
+		$service = $this->objectService(links: [
+			['case' => 'c1', 'objectType' => 'Boom', 'objectUrl' => 'https://elsewhere.example/tree/1'],
+			['case' => 'c2', 'objectType' => 'Boom', 'objectUrl' => $url],
+			['case' => 'c3', 'objectType' => 'building'],
+		]);
+		$schemas = [$url => ['title' => 'Bomenregister', 'properties' => 9, 'views' => ['map', 'table']]];
+
+		$rows = $this->catalogue(register: '23', schema: '41', objectService: $service, schemas: $schemas)->list();
+
+		$this->assertSame(
+			['id' => 'Boom', 'title' => 'Boom', 'cases' => 2, 'schema' => 'Bomenregister', 'properties' => 9, 'views' => ['map', 'table']],
+			$rows[0]
+		);
+		$this->assertSame(['', null, []], [$rows[1]['schema'], $rows[1]['properties'], $rows[1]['views']]);
+	}//end testShowsTheSchemaAnObjectUrlNames()
 
 	/**
 	 * Links are read page by page until a page comes back short.
@@ -119,10 +144,11 @@ final class ObjectTypeCatalogueTest extends TestCase {
 	 * @param string      $register      The register id.
 	 * @param string      $schema        The case-object schema id.
 	 * @param object|null $objectService The fake ObjectService, null when absent.
+	 * @param array<string, array{title: string, properties: int, views: array<int, string>}> $schemas What the resolver answers, by URL.
 	 *
 	 * @return ObjectTypeCatalogue The catalogue under test.
 	 */
-	private function catalogue(string $register, string $schema, ?object $objectService): ObjectTypeCatalogue {
+	private function catalogue(string $register, string $schema, ?object $objectService, array $schemas = []): ObjectTypeCatalogue {
 		$settings = $this->getMockBuilder(SettingsService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['getConfigValue', 'getObjectService'])
@@ -136,7 +162,11 @@ final class ObjectTypeCatalogueTest extends TestCase {
 		);
 		$settings->method('getObjectService')->willReturn($objectService);
 
-		return new ObjectTypeCatalogue(settingsService: $settings);
+		$resolver = $this->createMock(ObjectTypeSchemaResolver::class);
+		$resolver->method('describe')->willReturnCallback(static fn (string $objectUrl): ?array => ($schemas[$objectUrl] ?? null));
+		$resolver->method('namesSchema')->willReturnCallback(static fn (string $objectUrl): bool => ObjectTypeSchemaResolver::schemaNamedIn(objectUrl: $objectUrl) !== '');
+
+		return new ObjectTypeCatalogue(settingsService: $settings, schemas: $resolver);
 	}
 
 	/**
