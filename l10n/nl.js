@@ -4584,6 +4584,8 @@ OC.L10N.register(
         "MIME type of the document (e.g. application/pdf)": "MIME-type van het document (bijvoorbeeld application/pdf)",
         "Min": "Min",
         "Mine": "Mijn zaken",
+        "Mine, due this week": "Mijn zaken, deze week",
+        "Mine, overdue": "Mijn zaken, te laat",
         "Minimum acceptable numeric value for this measurement item": "Laagste aanvaardbare getalswaarde voor dit meetitem",
         "Minimum identificatievragen match score to link a burger and reveal full zaaksinfo. Below the threshold, only openbare zaaksinformatie is shown.": "Minimale matchscore voor identificatievragen om een burger te koppelen en volledige zaaksinfo te tonen. Onder de drempel wordt alleen openbare zaaksinformatie getoond.",
         "Minimum invitees": "Minimaal aantal genodigden",
@@ -9441,6 +9443,7 @@ OC.L10N.register(
         "Uncategorised": "Zonder categorie",
         "Uncategorized": "Ongecategoriseerd",
         "Unclaimed": "Niet toegewezen",
+        "Unclaimed, overdue": "Niet toegewezen, te laat",
         "Undo move": "Verplaatsen ongedaan maken",
         "Unique contract number": "Uniek contractnummer",
         "Unique number identifying this mandate decision.": "Uniek nummer dat dit mandaatbesluit aanduidt.",
@@ -10912,10 +10915,7 @@ OC.L10N.register(
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
         "{within}/{total} within SLA": "{within}/{total} binnen SLA",
-        "{years} years": "{years} jaar",
-        "Mine, overdue": "Mijn zaken, te laat",
-        "Mine, due this week": "Mijn zaken, deze week",
-        "Unclaimed, overdue": "Niet toegewezen, te laat"
+        "{years} years": "{years} jaar"
     },
     "nplurals=2; plural=(n != 1);"
 )
