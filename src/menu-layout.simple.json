@@ -4324,7 +4324,10 @@
 								},
 								{
 									"label": "Statuses",
-									"widgetId": "case-type-statuses-list",
+									"widgetIds": [
+										"case-type-statuses-list",
+										"case-type-results"
+									],
 									"countFrom": {
 										"register": "dossiq",
 										"schema": "statusType",
@@ -4339,12 +4342,17 @@
 										"case-type-phase-board",
 										"case-type-terms",
 										"case-type-messages",
-										"case-type-blueprint"
+										"case-type-blueprint",
+										"case-type-document-types",
+										"case-type-decision-types"
 									]
 								},
 								{
 									"label": "Rights",
-									"widgetId": "case-type-rights"
+									"widgetIds": [
+										"case-type-rights",
+										"case-type-roles"
+									]
 								},
 								{
 									"label": "Privacy",
@@ -4663,6 +4671,174 @@
 							"lead": "Warnings ({total}):",
 							"limit": 1,
 							"emptyText": "No warnings"
+						}
+					},
+					{
+						"id": "case-type-results",
+						"type": "object-list",
+						"title": "Results",
+						"content": {
+							"register": "dossiq",
+							"schema": "resultType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Result"
+								},
+								{
+									"key": "archivalAction",
+									"label": "Archival action"
+								},
+								{
+									"key": "archivalPeriod",
+									"label": "Archival period"
+								}
+							],
+							"emptyText": "This case type has no results yet",
+							"rowRoute": "ResultTypeDetail",
+							"rowActions": [
+								{
+									"id": "case-type-results-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-roles",
+						"type": "object-list",
+						"title": "Roles",
+						"content": {
+							"register": "dossiq",
+							"schema": "roleType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Role"
+								},
+								{
+									"key": "genericRole",
+									"label": "Generic role"
+								}
+							],
+							"emptyText": "This case type has no roles yet",
+							"rowRoute": "RoleTypeDetail",
+							"rowActions": [
+								{
+									"id": "case-type-roles-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-document-types",
+						"type": "object-list",
+						"title": "Document types",
+						"content": {
+							"register": "dossiq",
+							"schema": "documentType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Document type"
+								},
+								{
+									"key": "category",
+									"label": "Category"
+								},
+								{
+									"key": "confidentiality",
+									"label": "Confidentiality"
+								},
+								{
+									"key": "isRequired",
+									"label": "Required"
+								}
+							],
+							"emptyText": "This case type has no document types yet",
+							"rowRoute": "DocumentTypeDetail",
+							"rowActions": [
+								{
+									"id": "case-type-document-types-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-decision-types",
+						"type": "object-list",
+						"title": "Decision types",
+						"content": {
+							"register": "dossiq",
+							"schema": "decisionType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Decision type"
+								},
+								{
+									"key": "publicationRequired",
+									"label": "Publication required"
+								}
+							],
+							"emptyText": "This case type has no decision types yet",
+							"rowRoute": "DecisionTypeDetail",
+							"rowActions": [
+								{
+									"id": "case-type-decision-types-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
 						}
 					}
 				]

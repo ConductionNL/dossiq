@@ -2,3 +2,5 @@
 - [x] rowRoute and delete rowActions on the Statuses and Fields lists; Fields grouped by category
 - [x] subject, handlerAction, publicationRequired, maxExtensions, queue thresholds on the case type cards
 - [x] tests/vitest/caseTypePartsPages.spec.js
+- [x] Result, role, document type and decision type lists and pages
+- [x] isDraft removed from the editable case type card (no unpublish)

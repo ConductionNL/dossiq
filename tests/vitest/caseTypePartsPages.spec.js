@@ -24,11 +24,28 @@ describe('the parts of a case type', () => {
 	it.each([
 		['case-type-statuses-list', 'StatusTypeDetail', 'statusType'],
 		['case-type-fields', 'PropertyDefinitionDetail', 'propertyDefinition'],
+		['case-type-results', 'ResultTypeDetail', 'resultType'],
+		['case-type-roles', 'RoleTypeDetail', 'roleType'],
+		['case-type-document-types', 'DocumentTypeDetail', 'documentType'],
+		['case-type-decision-types', 'DecisionTypeDetail', 'decisionType'],
 	])('%s opens %s and deletes a row', (widgetId, pageId, schema) => {
 		const content = appended(widgetId).content
 		expect(content.rowRoute).toBe(pageId)
 		expect(content.rowActions).toEqual([expect.objectContaining({ type: 'object-op', op: 'delete', destructive: true })])
 		expect(page(pageId).config).toMatchObject({ register: 'dossiq', schema })
+		expect(appended(widgetId).content).toMatchObject({ register: 'dossiq', schema, filter: { caseType: '@objectId' } })
+	})
+
+	it('places results under statuses, roles under rights, document and decision types under phases', () => {
+		const tabs = appended('case-type-panels').content.tabs
+		const holds = (label) => tabs.find((tab) => tab.label === label).widgetIds
+		expect(holds('Statuses')).toEqual(['case-type-statuses-list', 'case-type-results'])
+		expect(holds('Rights')).toEqual(['case-type-rights', 'case-type-roles'])
+		expect(holds('Phases and tasks')).toEqual(expect.arrayContaining(['case-type-document-types', 'case-type-decision-types']))
+	})
+
+	it('cannot unpublish: isDraft is not an editable field on the case type card', () => {
+		expect(baseWidget('case-type-core').content.include).not.toContain('isDraft')
 	})
 
 	it('binds every field on the part pages to a property the schema declares', () => {
