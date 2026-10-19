@@ -76,6 +76,7 @@
 					},
 					{
 						"label": "Subject access",
+						"activeLabel": "Kind: subject access",
 						"showCount": true,
 						"filter": {
 							"dataSubjectRequestType": "inzage"
@@ -83,6 +84,7 @@
 					},
 					{
 						"label": "Correction",
+						"activeLabel": "Kind: correction",
 						"showCount": true,
 						"filter": {
 							"dataSubjectRequestType": "correctie"
@@ -90,6 +92,7 @@
 					},
 					{
 						"label": "Erasure",
+						"activeLabel": "Kind: erasure",
 						"showCount": true,
 						"filter": {
 							"dataSubjectRequestType": "verwijdering"
