@@ -885,6 +885,7 @@ OC.L10N.register(
         "Attention flag": "Attention flag",
         "Attention flag history": "Attention flag history",
         "Attention markers": "Attention markers",
+        "Attribute": "Attribute",
         "Attributes": "Attributes",
         "Attribution": "Attribution",
         "Attribution text for the layer": "Attribution text for the layer",

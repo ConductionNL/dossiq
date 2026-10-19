@@ -4445,7 +4445,18 @@
 									"label": "Final"
 								}
 							],
-							"emptyText": "This case type has no statuses yet"
+							"emptyText": "This case type has no statuses yet",
+							"rowRoute": "StatusTypeDetail",
+							"rowActions": [
+								{
+									"id": "status-type-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
 						}
 					},
 					{
@@ -4485,7 +4496,19 @@
 									"label": "In the list"
 								}
 							],
-							"emptyText": "This case type has no fields of its own yet"
+							"emptyText": "This case type has no fields of its own yet",
+							"groupBy": "category",
+							"rowRoute": "PropertyDefinitionDetail",
+							"rowActions": [
+								{
+									"id": "property-definition-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
 						}
 					},
 					{

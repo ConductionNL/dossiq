@@ -560,7 +560,7 @@ describe('attributes are in folders', () => {
 		}
 	})
 
-	it('offers no view action, because there is no detail page for one', () => {
+	it('offers no view action on the index; the attribute page opens from a case type\'s Fields list', () => {
 		expect(attributes().config.showViewAction).toBe(false)
 		expect(
 			manifest.pages.find((p) => p.id === 'PropertyDefinitionDetail'),

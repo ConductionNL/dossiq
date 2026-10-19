@@ -885,6 +885,7 @@ OC.L10N.register(
         "Attention flag": "Aandachtsvlag",
         "Attention flag history": "Historie van de aandachtsvlag",
         "Attention markers": "Aandachtsmarkeringen",
+        "Attribute": "Kenmerk",
         "Attributes": "Kenmerken",
         "Attribution": "Toeschrijving",
         "Attribution text for the layer": "Bronvermelding bij de kaartlaag",

@@ -1,0 +1,4 @@
+- [x] StatusTypeDetail and PropertyDefinitionDetail pages (manifest.d/68-case-type-parts.json)
+- [x] rowRoute and delete rowActions on the Statuses and Fields lists; Fields grouped by category
+- [x] subject, handlerAction, publicationRequired, maxExtensions, queue thresholds on the case type cards
+- [x] tests/vitest/caseTypePartsPages.spec.js

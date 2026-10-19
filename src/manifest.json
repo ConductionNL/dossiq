@@ -8014,7 +8014,7 @@
 					"isRequired"
 				],
 				"showViewAction": false,
-				"_showViewActionNote": "There is no PropertyDefinitionDetail page and a view action with no route pushes vue-router at a name it cannot resolve, so the row opens the metadata sidebar instead. An attribute is eight fields; a page of its own would be the sidebar with a header.",
+				"_showViewActionNote": "The row opens the metadata sidebar. PropertyDefinitionDetail (manifest.d/68-case-type-parts.json) is opened from a case type's Fields list, where an attribute belongs to that type.",
 				"formSize": "large",
 				"formColumns": 2,
 				"includeFields": [
@@ -8071,7 +8071,10 @@
 								"confidentiality",
 								"coordinatorRequiredBeforeSigning",
 								"isDraft",
-								"knowledgeBasePage"
+								"knowledgeBasePage",
+								"subject",
+								"handlerAction",
+								"publicationRequired"
 							],
 							"hideEmpty": false
 						}
@@ -8089,8 +8092,11 @@
 								"suspensionAllowed",
 								"extensionAllowed",
 								"extensionPeriod",
+								"maxExtensions",
 								"validFrom",
-								"validUntil"
+								"validUntil",
+								"queueWarningDays",
+								"queueCriticalDays"
 							],
 							"hideEmpty": false
 						}
