@@ -44,7 +44,6 @@ namespace OCA\Dossiq\Service\Transitions;
 use OCA\Dossiq\Service\Obligations\ObligationDeclaration;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\Status\DerivedStatusEvaluator;
-use OCA\Dossiq\Service\Support\LanguageMapText;
 
 /**
  * Decides whether a transition is available, and says what is in the way.
@@ -92,13 +91,11 @@ class TransitionPreconditions {
 	 * @param ObligationService      $obligations The obligations a case is waiting on.
 	 * @param ObligationDeclaration  $declaration What an obligation is.
 	 * @param DerivedStatusEvaluator $evaluator   The field and document conditions.
-	 * @param LanguageMapText        $text        Reads a translatable obligation title as text.
 	 */
 	public function __construct(
 		private readonly ObligationService $obligations,
 		private readonly ObligationDeclaration $declaration,
 		private readonly DerivedStatusEvaluator $evaluator,
-		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -272,7 +269,7 @@ class TransitionPreconditions {
 				return $label;
 			}
 
-			$title = $this->text->textOf(value: ($obligation['title'] ?? ''));
+			$title = trim((string)($obligation['title'] ?? ''));
 			if ($title !== '') {
 				return $title;
 			}

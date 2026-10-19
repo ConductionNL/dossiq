@@ -422,21 +422,4 @@ class DwellTimeAnalyzerTest extends TestCase {
 
 	}//end testWithoutTheHeldReaderTheTotalsAreEmpty()
 
-	/**
-	 * A status name is translatable, so a row read through searchObjects()
-	 * carries it as a language map. The stats read it as text rather than
-	 * falling back to the raw status id (DqProcesanalyse, "fase 3c0f…b007").
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
-	 */
-	public function testATranslatableStatusNameIsReadAsText(): void {
-		$stats = $this->analyzer->aggregateDwellStats(
-			[['caseId' => 'c1', 'statusId' => 'st-publish', 'hours' => 8.0]],
-			['st-publish' => ['name' => ['nl' => 'Publicatie']]]
-		);
-
-		self::assertSame('Publicatie', $stats[0]['statusName']);
-	}//end testATranslatableStatusNameIsReadAsText()
 }//end class

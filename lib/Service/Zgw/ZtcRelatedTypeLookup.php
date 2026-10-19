@@ -28,7 +28,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
-use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
@@ -49,11 +48,9 @@ class ZtcRelatedTypeLookup {
 	 * Constructor.
 	 *
 	 * @param ZgwService $zgwService Supplies the ZGW mappings
-	 * @param LanguageMapText $text Reads a translatable document type name as text
 	 */
 	public function __construct(
 		private readonly ZgwService $zgwService,
-		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -173,7 +170,7 @@ class ZtcRelatedTypeLookup {
 	 */
 	private function sameNameDocumentTypeUrls(object $objectService, array $iotMapping, mixed $iotRef, string $baseUrl): array {
 		try {
-			$iotName = $this->text->textOf(value: ($this->findIn(objectService: $objectService, mapping: $iotMapping, id: $iotRef)['name'] ?? ''));
+			$iotName = $this->findIn(objectService: $objectService, mapping: $iotMapping, id: $iotRef)['name'] ?? '';
 			if ($iotName === '') {
 				return [];
 			}

@@ -24,7 +24,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
-use OCA\Dossiq\Service\Support\LanguageMapText;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -96,14 +95,12 @@ class ShippedConfigurationService {
 	 * @param ShippedSets        $sets        The sets dossiq ships, and their versions.
 	 * @param ShippedFingerprint $fingerprint The hash that says whether an object moved.
 	 * @param LoggerInterface    $logger      Logger.
-	 * @param LanguageMapText    $text        Reads a translatable title or name as text.
 	 */
 	public function __construct(
 		private readonly StarterStore $store,
 		private readonly ShippedSets $sets,
 		private readonly ShippedFingerprint $fingerprint,
 		private readonly LoggerInterface $logger,
-		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -301,7 +298,7 @@ class ShippedConfigurationService {
 
 			$overview[] = [
 				'targetObject' => $targetObject,
-				'title' => $this->text->textOf(value: ($object['title'] ?? ($object['name'] ?? ''))),
+				'title' => (string)($object['title'] ?? ($object['name'] ?? '')),
 				'state' => $this->stateFor(untouched: $untouched),
 				'set' => $set,
 				'setVersion' => $seeded,

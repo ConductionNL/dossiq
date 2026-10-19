@@ -372,7 +372,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 			return false;
 		}
 
-		$btOmschrijving = $this->textOf(value: ($btData['title'] ?? ($btData['name'] ?? '')));
+		$btOmschrijving = $btData['title'] ?? ($btData['name'] ?? '');
 		foreach ($this->decodeList(value: $ztData['decisionTypes'] ?? []) as $dt) {
 			$dtStr = (string)$dt;
 			// Match by omschrijving or UUID.

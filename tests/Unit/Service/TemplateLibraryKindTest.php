@@ -233,33 +233,4 @@ class TemplateLibraryKindTest extends TestCase {
 			self::assertContains(needle: $kind, haystack: ContentTemplateService::KINDS);
 		}
 	}//end testTheLibraryHoldsEveryKindTheSpecNames()
-	/**
-	 * A content template's name and body are translatable, so the store
-	 * answers them as a language map; the library offers, searches and
-	 * applies them as text.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 */
-	public function testATranslatableNameAndBodyAreReadAsText(): void {
-		$this->harness->seed(
-			schema: 'contentTemplate',
-			uuid: 'tpl-result',
-			row: [
-				'id' => 'tpl-result',
-				'kind' => 'result',
-				'name' => ['nl' => 'Niet-ontvankelijkverklaring'],
-				'caseTypes' => [],
-				'body' => ['nl' => 'Uw bezwaar is niet-ontvankelijk verklaard.'],
-			],
-		);
-
-		$offered = $this->library->offered(kind: 'result', caseTypeId: 'ct-vth', search: 'ontvankelijk');
-
-		self::assertNotNull(actual: $offered);
-		self::assertSame(expected: 'Niet-ontvankelijkverklaring', actual: $offered[0]['name']);
-		self::assertSame(expected: 'Uw bezwaar is niet-ontvankelijk verklaard.', actual: $offered[0]['body']);
-		self::assertSame(expected: 'Uw bezwaar is niet-ontvankelijk verklaard.', actual: $this->library->apply(templateId: 'tpl-result')['body']);
-	}//end testATranslatableNameAndBodyAreReadAsText()
 }//end class
