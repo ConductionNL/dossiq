@@ -10764,6 +10764,7 @@ OC.L10N.register(
         "{count} report in this group": "{count} melding in deze groep",
         "{count} reports in this group": "{count} meldingen in deze groep",
         "{count} skipped": "{count} overgeslagen",
+        "{count} staff": "{count} medewerkers",
         "{count} steps": "{count} stappen",
         "{count} sub-cases": "{count} deelzaken",
         "{count} task": "{count} taak",

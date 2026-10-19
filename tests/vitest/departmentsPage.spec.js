@@ -27,7 +27,13 @@ describe('the departments page', () => {
 		expect(page.config.showViewToggle).toBe(false)
 	})
 
-	it('draws the groups pane without a heading', () => {
+	it('heads the members with the picked group and its count of staff', () => {
+		const nl = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../l10n/nl.json'), 'utf8')).translations
+		expect(page.config.folderSidebar).toMatchObject({ heading: true, countText: '{count} staff' })
+		expect(nl['{count} staff']).toBe('{count} medewerkers')
+	})
+
+	it('draws no title over the groups pane', () => {
 		expect(page.config.folderSidebar.title).toBeUndefined()
 	})
 })

@@ -29,7 +29,9 @@
 				"showViewToggle": false,
 				"folderSidebar": {
 					"source": "groups",
-					"filterField": "group"
+					"filterField": "group",
+					"heading": true,
+					"countText": "{count} staff"
 				},
 				"breadcrumb": {
 					"label": "Settings",
