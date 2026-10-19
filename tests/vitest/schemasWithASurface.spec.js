@@ -90,6 +90,14 @@ function iconRenders(name) {
 	)
 }
 
+/** The pages a role permission opens instead of admin. */
+const ROLE_PERMISSION = {
+	AvgIncidents: 'privacy',
+	Indicatiestellingen: 'sociaal-domein',
+	MdoOverleggen: 'sociaal-domein',
+	ReIntegratieTrajecten: 'sociaal-domein',
+}
+
 describe.each([
 	['SupplierUsers', 'SupplierUsersMenu', 'supplierUser'],
 	['AvgIncidents', 'AvgIncidentsMenu', 'avgIncident'],
@@ -122,11 +130,14 @@ describe.each([
 		expect(iconRenders(menuEntry(menuId).icon)).toBe(true)
 	})
 
-	it('is admin-only on the page and in the menu, not one or the other', () => {
+	it('is gated on the same permission on the page and in the menu, not one or the other', () => {
 		// The menu entry hides the link; the page permission refuses the
 		// route. A page gated only in the menu is reachable by typing the URL.
-		expect(page(pageId).permission).toBe('admin')
-		expect(menuEntry(menuId).permission).toBe('admin')
+		// The data breaches and the social-domain records are their role
+		// group's (privacy-and-social-domain-groups); the rest is admin-only.
+		const expected = ROLE_PERMISSION[pageId] ?? 'admin'
+		expect(page(pageId).permission).toBe(expected)
+		expect(menuEntry(menuId).permission).toBe(expected)
 	})
 
 	it('shows only columns the schema actually has', () => {
