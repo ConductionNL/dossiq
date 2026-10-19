@@ -435,6 +435,14 @@
 						'An application from the DSO becomes a case of the linked case type. The mapping is integriq\'s.',
 					)
 				">
+				<template v-if="ownerApps.integriq" #actions>
+					<NcButton :href="integriqAdminUrl" variant="secondary">
+						<template #icon>
+							<Plus :size="20" />
+						</template>
+						{{ t('dossiq', 'Link activity') }}
+					</NcButton>
+				</template>
 				<NcNoteCard v-if="!ownerApps.integriq" type="info">
 					{{
 						t(
@@ -462,6 +470,14 @@
 						'What a case type costs, per rule and validity date. The fee schedules are shillinq\'s.',
 					)
 				">
+				<template v-if="ownerApps.shillinq" #actions>
+					<NcButton :href="feeSchedulesUrl" variant="secondary">
+						<template #icon>
+							<Plus :size="20" />
+						</template>
+						{{ t('dossiq', 'Add rule') }}
+					</NcButton>
+				</template>
 				<NcNoteCard v-if="!ownerApps.shillinq" type="info">
 					{{
 						t(
@@ -488,7 +504,15 @@
 					)
 				"
 				:loading="!storesReady">
-				<ChecklistsTab v-if="storesReady" />
+				<template v-if="storesReady" #actions>
+					<NcButton variant="secondary" @click="$refs.checklists.openEditor(null)">
+						<template #icon>
+							<Plus :size="20" />
+						</template>
+						{{ t('dossiq', 'Add checklist') }}
+					</NcButton>
+				</template>
+				<ChecklistsTab v-if="storesReady" ref="checklists" :hideAddButton="true" />
 			</CnSettingsSection>
 
 			<CnSettingsSection
@@ -535,6 +559,7 @@ import {
 import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
 import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
 import BackgroundServiceAccountSettings from './BackgroundServiceAccountSettings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
@@ -573,6 +598,7 @@ export default {
 	name: 'AdminRoot',
 	components: {
 		BackgroundServiceAccountSettings,
+		Plus,
 		FirstRunTab,
 		PrerequisitesTab,
 		TenantOnboardingTab,
@@ -958,6 +984,26 @@ export default {
 		 */
 		mailIntakeLogUrl() {
 			return generateUrl('/apps/dossiq/mail-intake-log')
+		},
+
+		/**
+		 * integriq's admin settings, where a DSO activity is linked to a case type.
+		 *
+		 * @return {string} The address.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		integriqAdminUrl() {
+			return generateUrl('/settings/admin/integriq')
+		},
+
+		/**
+		 * shillinq's fee schedules, where a fee rule is added.
+		 *
+		 * @return {string} The address.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		feeSchedulesUrl() {
+			return generateUrl('/apps/shillinq/overheid/fee-schedules')
 		},
 
 		/**
