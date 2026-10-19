@@ -18,10 +18,31 @@
   `value` accepts that payload back, or the bare uuid `case.requester`
   holds, so the picker shows the choice already on the case.
 
+  AS A FORM FIELD it is one search field (board DqNieuweZaak, Aanvrager).
+  CnFormDialog mounts it for `widget: "InitiatorPicker"` and hands it `field`
+  and `modelValue`; it then draws CnSearchSelect over the person and company
+  register sets together, rows with initials, the name and a second line
+  ("Inwoner · Beukenlaan 3", "Organisatie · KvK 24157431"), and writes the
+  chosen row's uuid back through `update:modelValue`. A Nextcloud contact has
+  no register row and so no uuid to store; contacts stay in the tabbed picker.
+
   @spec openspec/specs/initiator-selection/spec.md
 -->
 <template>
-	<div class="initiator-picker" data-testid="initiator-picker">
+	<CnSearchSelect
+		v-if="field"
+		:modelValue="boundUuid"
+		:options="lookOptions"
+		:inputLabel="String(field.label || t('dossiq', 'Requester'))"
+		:labelOutside="true"
+		:loading="searching"
+		:filterable="false"
+		:disabled="disabled"
+		:placeholder="t('dossiq', 'Name, BSN, trade name or KvK number')"
+		data-testid="initiator-picker-search"
+		@search="onLookSearch"
+		@update:modelValue="onLookPick" />
+	<div v-else class="initiator-picker" data-testid="initiator-picker">
 		<div
 			v-if="currentChoice"
 			class="initiator-picker__current"
@@ -105,6 +126,8 @@
 </template>
 
 <script>
+import { CnSearchSelect } from '@conduction/nextcloud-vue'
+import { translate as t } from '@nextcloud/l10n'
 import {
 	NcCheckboxRadioSwitch,
 	NcEmptyContent,
@@ -129,9 +152,41 @@ import {
 	searchRefusalHeadline,
 } from '../../utils/searchRefusal.js'
 
+/**
+ * A person or company register row as a row of the search look.
+ *
+ * @param {string} schema The register set the row came from: `brpPerson` or `kvkCompany`.
+ * @param {object} row The row.
+ * @return {{id: string, label: string, secondary: string, avatar: boolean}|null} The row, or null without an id.
+ * @spec openspec/specs/initiator-selection/spec.md
+ */
+export function searchLookRow(schema, row) {
+	const id = String(row?.id || row?.['@self']?.id || '')
+	if (id === '') {
+		return null
+	}
+	if (schema === 'kvkCompany') {
+		const company = companyResult(row)
+		return {
+			id,
+			label: company.displayName || company.sourceId,
+			secondary: [t('dossiq', 'Organisation'), company.sourceId && t('dossiq', 'CoC {number}', { number: company.sourceId })].filter(Boolean).join(' · '),
+			avatar: true,
+		}
+	}
+	const residence = row.residence || {}
+	return {
+		id,
+		label: personResult(row).displayName,
+		secondary: [t('dossiq', 'Resident'), [residence.street, residence.houseNumber].filter(Boolean).join(' ')].filter(Boolean).join(' · '),
+		avatar: true,
+	}
+}
+
 export default {
 	name: 'InitiatorPicker',
 	components: {
+		CnSearchSelect,
 		NcCheckboxRadioSwitch,
 		NcEmptyContent,
 		NcLoadingIcon,
@@ -151,9 +206,26 @@ export default {
 			type: [Object, String],
 			default: null,
 		},
+
+		/** The value CnFormDialog binds when it mounts this picker as a form field. */
+		modelValue: {
+			type: [Object, String],
+			default: null,
+		},
+
+		/** The field definition CnFormDialog hands over; set, the picker draws the search look. */
+		field: {
+			type: Object,
+			default: null,
+		},
+
+		disabled: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
-	emits: ['select'],
+	emits: ['select', 'update:modelValue'],
 
 	data() {
 		return {
@@ -162,6 +234,8 @@ export default {
 			results: [],
 			searching: false,
 			searchTimer: null,
+			/** The search look's rows: `{ id, label, secondary, avatar }`. */
+			lookRows: [],
 			/**
 			 * The refusal the register answered the typed term with, or null.
 			 *
@@ -192,14 +266,14 @@ export default {
 		 */
 		currentChoice() {
 			if (
-				this.value
-				&& typeof this.value === 'object'
-				&& this.value.initiatorType
+				this.bound
+				&& typeof this.bound === 'object'
+				&& this.bound.initiatorType
 			) {
 				return {
-					type: this.value.initiatorType,
-					sourceId: this.value.initiatorSourceId || '',
-					displayName: this.value.initiatorDisplayName || '',
+					type: this.bound.initiatorType,
+					sourceId: this.bound.initiatorSourceId || '',
+					displayName: this.bound.initiatorDisplayName || '',
 				}
 			}
 			return this.resolvedValue
@@ -252,10 +326,50 @@ export default {
 					)
 				: t('dossiq', 'No matching records in the seeded register set.')
 		},
+
+		/**
+		 * The value as bound: `modelValue` as a form field, `value` as a standalone picker.
+		 *
+		 * @return {object|string|null} The payload or uuid.
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		bound() {
+			return this.field ? this.modelValue : this.value
+		},
+
+		/**
+		 * The requester uuid the search look marks as chosen.
+		 *
+		 * @return {string|null} The uuid.
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		boundUuid() {
+			const bound = this.bound
+			if (bound && typeof bound === 'object') {
+				return bound.requester || null
+			}
+			return bound || null
+		},
+
+		/**
+		 * The search rows, with the requester already chosen kept so the field shows its name.
+		 *
+		 * @return {Array<object>} The rows.
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		lookOptions() {
+			const chosen = this.resolvedValue && this.resolvedValue.objectId
+				? { id: this.resolvedValue.objectId, label: this.resolvedValue.displayName, secondary: '', avatar: true }
+				: null
+			if (chosen && !this.lookRows.some((row) => row.id === chosen.id)) {
+				return [chosen, ...this.lookRows]
+			}
+			return this.lookRows
+		},
 	},
 
 	watch: {
-		value: {
+		bound: {
 			immediate: true,
 			/**
 			 * Resolve a newly-bound requester for display.
@@ -334,6 +448,53 @@ export default {
 		},
 
 		/**
+		 * The search look: search again a moment after typing stops.
+		 *
+		 * @param {string} query What was typed.
+		 * @return {void}
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		onLookSearch(query) {
+			clearTimeout(this.searchTimer)
+			this.searchTimer = setTimeout(() => this.runLookSearch(query), 300)
+		},
+
+		/**
+		 * The search look: persons and companies together, persons first.
+		 *
+		 * @param {string} query What was typed.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		async runLookSearch(query) {
+			const term = String(query ?? '').trim()
+			if (term === '') {
+				this.lookRows = []
+				return
+			}
+			this.searching = true
+			try {
+				const sets = await Promise.all(['brpPerson', 'kvkCompany'].map((schema) => this.objectStore.fetchCollection(schema, { _search: term, _limit: 10 })
+					.then((rows) => (rows || []).map((row) => searchLookRow(schema, row)))
+					.catch(() => [])))
+				this.lookRows = sets.flat().filter(Boolean)
+			} finally {
+				this.searching = false
+			}
+		},
+
+		/**
+		 * The search look: write the chosen row's uuid, and hand the payload to a standalone listener.
+		 *
+		 * @param {string|null} id The chosen row's uuid.
+		 * @return {void}
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		onLookPick(id) {
+			this.$emit('update:modelValue', id || null)
+		},
+
+		/**
 		 * Whether a result matches the current selection.
 		 *
 		 * @param {object} result A unified initiator result.
@@ -341,7 +502,7 @@ export default {
 		 * @spec openspec/specs/initiator-selection/spec.md
 		 */
 		isSelected(result) {
-			return isCurrentRequester(this.value, result)
+			return isCurrentRequester(this.bound, result)
 		},
 
 		/**
@@ -355,11 +516,11 @@ export default {
 		 * @spec openspec/specs/initiator-selection/spec.md
 		 */
 		async resolveValue() {
-			if (typeof this.value !== 'string' || this.value === '') {
+			if (typeof this.bound !== 'string' || this.bound === '') {
 				this.resolvedValue = null
 				return
 			}
-			const uuid = this.value
+			const uuid = this.bound
 			for (const [schema, shape] of [
 				['brpPerson', personResult],
 				['kvkCompany', companyResult],
@@ -386,7 +547,10 @@ export default {
 		 * @spec openspec/specs/initiator-selection/spec.md
 		 */
 		async select(result) {
-			this.$emit('select', requesterPayload(await this.deduplicated(result)))
+			const payload = requesterPayload(await this.deduplicated(result))
+			this.$emit('select', payload)
+			// Mounted as a form field, the form keeps the uuid `case.requester` holds.
+			this.$emit('update:modelValue', payload.requester || null)
 		},
 
 		/**
