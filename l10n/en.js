@@ -715,6 +715,7 @@ OC.L10N.register(
         "Applied Conditions": "Applied Conditions",
         "Applies one statutory lifecycle gesture to every selected case, with the reason recorded on each.": "Applies one statutory lifecycle gesture to every selected case, with the reason recorded on each.",
         "Applies to": "Applies to",
+        "applies to the whole organisation": "applies to the whole organisation",
         "applies to the whole organisation; case types, flows and departments are in the app under Settings": "applies to the whole organisation; case types, flows and departments are in the app under Settings",
         "applies to you": "applies to you",
         "Apply": "Apply",

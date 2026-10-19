@@ -562,6 +562,7 @@ import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
 import WooReportsSettingsTab from './tabs/WooReportsSettingsTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import manifest from '../../manifest.json'
+import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
 import {
 	houseStyleFields,
@@ -634,6 +635,7 @@ export default {
 		return {
 			storesReady: false,
 			activeTab: 'general',
+			tabCounts: {},
 			ownerApps: loadState('dossiq', 'ownerApps', {
 				integriq: true,
 				shillinq: true,
@@ -644,13 +646,14 @@ export default {
 	computed: {
 		/**
 		 * The tabs of the page, in the order the board draws them. Every
-		 * section the page had before sits on one of them.
+		 * section the page had before sits on one of them. Integrations and
+		 * Map layers carry how many there are, once that is read.
 		 *
-		 * @return {Array<{id: string, label: string}>} The tabs.
+		 * @return {Array<{id: string, label: string, count?: number}>} The tabs.
 		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		adminTabs() {
-			return [
+			return this.withCounts([
 				{ id: 'general', label: this.t('dossiq', 'General') },
 				{ id: 'system', label: this.t('dossiq', 'System') },
 				{
@@ -661,7 +664,7 @@ export default {
 				{ id: 'map-layers', label: this.t('dossiq', 'Map layers') },
 				{ id: 'vth', label: this.t('dossiq', 'VTH') },
 				{ id: 'substitution', label: this.t('dossiq', 'Substitution') },
-			]
+			])
 		},
 
 		/**
@@ -719,6 +722,11 @@ export default {
 					'dossiq',
 					'permits, supervision and enforcement, for the whole organisation',
 				)
+			}
+			// The Algemeen board ends the path with the short note; the other
+			// tabs say where the in-app settings are.
+			if (this.activeTab === 'general') {
+				return this.t('dossiq', 'applies to the whole organisation')
 			}
 			return this.t(
 				'dossiq',
@@ -973,11 +981,27 @@ export default {
 
 	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 	async created() {
+		fetchAdminTabCounts().then((counts) => {
+			this.tabCounts = counts
+		})
 		await initializeStores()
 		this.storesReady = true
 	},
 
 	methods: {
+		/**
+		 * Add the known counts to the tabs.
+		 *
+		 * @param {Array<{id: string, label: string}>} tabs The tabs.
+		 * @return {Array<{id: string, label: string, count?: number}>} The tabs with their counts.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		withCounts(tabs) {
+			return tabs.map((tab) => (typeof this.tabCounts[tab.id] === 'number'
+				? { ...tab, count: this.tabCounts[tab.id] }
+				: tab))
+		},
+
 		/**
 		 * Remember which tab is open, for the title and the path.
 		 *
