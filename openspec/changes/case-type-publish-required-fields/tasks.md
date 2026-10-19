@@ -1,0 +1,2 @@
+- [x] PublicationChecks finds each empty required field
+- [x] PHPUnit: each field, a missing field, a translatable field, no writes on refusal
