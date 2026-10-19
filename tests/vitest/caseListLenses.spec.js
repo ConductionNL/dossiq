@@ -762,6 +762,7 @@ describe('what this change does NOT move', () => {
 			// screen that closes the day against what they opened in it.
 			'Your queue',
 			'Queue',
+			'Assigned to me',
 			'My work',
 			'Contacts',
 			'Organisations',

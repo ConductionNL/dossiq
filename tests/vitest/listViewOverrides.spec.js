@@ -67,6 +67,13 @@ describe('the my-work view', () => {
 		expect(overrides.cardLayout).toMatchObject({ number: 'identifier', title: 'title', footerDate: { field: 'deadline' } })
 	})
 
+	it('is a menu entry that keeps the MyWork id, so its pins still lead somewhere', () => {
+		expect(manifest.menu.find((item) => item.id === 'MyWork')).toMatchObject({ route: 'Cases', query: { savedView: 'default:my-work' } })
+		expect(manifest.personalisation.pinnedMenu).toEqual(['Queue', 'MyWork', 'Cases'])
+		expect(full.relocations.MyWork).toBe('WorkGroup')
+		expect(simple.removals).toContain('MyWork')
+	})
+
 	it('mounts the workload strip and the substituted work, both registered', () => {
 		expect(overrides.slots).toEqual({ 'below-header': ['WorkloadSummaryBar'], 'before-collection': ['SubstitutedWork'] })
 		expect(registry).toMatch(/\tWorkloadSummaryBar: \{\n\t\tkind: 'page',\n\t\tcomponent: WorkloadSummaryBar,/)

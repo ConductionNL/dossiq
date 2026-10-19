@@ -37,10 +37,14 @@ library's API does:
 - The team queue's menu entry is back under its old id `Queue`, opening
   `default:team-queue`: label "Queue" at order 15 in the full profile
   (relocated under My work), "Team queue" at order 14 with the attention
-  badge in the simple one, and pinned by default again. So its pins keep
-  working and `PinnedPagesAsViews` only maps `MyWork` pins.
+  badge in the simple one. Assigned to me's entry is back under `MyWork`,
+  opening `default:my-work`, order 20 under My work in the full profile and
+  removed from the simple one as before. Both are pinned by default again,
+  so every pin keeps working and no repair step is needed.
 
 What still differs from the pages:
+
+Open in nextcloud-vue (coordinator, 19 October 2026):
 
 - A view's filter is a saved view's filters, which the reader can change or
   leave; the Queue and MyWork pages had a base filter nobody could clear.
@@ -50,8 +54,6 @@ What still differs from the pages:
 - The Assigned to me card has no description line, and case type and status
   are text in the meta line rather than chips; the deadline is a plain date,
   not red when overdue.
-- Assigned to me has no menu entry in the full profile any more; it is
-  reached from My work and, for whoever pinned it, from My views.
 
 ## 1. `team-queue` (was /queue, page `Queue`)
 
@@ -634,11 +636,8 @@ this branch, and complaints never had a page.
 
 ## 5. Pins
 
-`lib/Repair/PinnedPagesAsViews.php` maps a user's pins of `MyWork`
-(`pref_cn_pinned_menu`, or the old default `["Queue","MyWork","Cases"]` for a
-user who never set any) to `{id: 'default:my-work', page: 'Cases', name}` in
-`pref_cn_saved_view_menu` and takes `MyWork` out of the pins, once per user.
-`Queue` pins need nothing: the menu entry kept its id.
+The `Queue` and `MyWork` menu entries kept their ids and open their views,
+so users' pins and the default pins need nothing.
 
 ## 6. Other references to the old routes (not rewritten here)
 

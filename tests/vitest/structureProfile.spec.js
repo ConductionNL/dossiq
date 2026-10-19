@@ -90,12 +90,12 @@ describe('the full profile', () => {
 		expect(build(fullFile)).toEqual(before)
 	})
 
-	it('counts 38 entries: 12 main, 5 footer, 18 settings, 3 integrations (Assigned to me is a view now)', () => {
+	it('still counts 39 entries: 13 main, 5 footer, 18 settings, 3 integrations', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
-		expect(flat(menu)).toHaveLength(38)
-		expect(count('main')).toBe(12)
+		expect(flat(menu)).toHaveLength(39)
+		expect(count('main')).toBe(13)
 		expect(count('footer')).toBe(5)
 		expect(count('settings')).toBe(18)
 		expect(count('integrations')).toBe(3)

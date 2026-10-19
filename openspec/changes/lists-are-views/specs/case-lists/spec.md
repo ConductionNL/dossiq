@@ -25,19 +25,13 @@ config overrides, so nothing a user had on the page is lost.
 - WHEN the app loads its manifest
 - THEN the Cases page has a Complaints view filtering on that case type
 
-### Requirement: A pin of a retired list page points at its view
+### Requirement: The menu entries of the retired pages keep their ids
 
-A user's menu pin of Assigned to me SHALL become that view in the user's
-menu views, once per user, and the retired id SHALL leave their pins. A user
-who never set pins SHALL be treated as holding the former default. The team
-queue keeps its menu id `Queue`, so its pins keep working.
+The team queue and Assigned to me SHALL keep their menu entries `Queue` and
+`MyWork`, each opening its view of the Cases page, so a user's pins of them
+keep working and the default pins are unchanged.
 
 #### Scenario: A user pinned Assigned to me
 - GIVEN a user whose pins are `MyWork` and `Tasks`
-- WHEN the app upgrades
-- THEN their menu views end with `default:my-work` on the Cases page, and their pins are `Tasks`
-
-#### Scenario: A view taken out stays out
-- GIVEN the upgrade already mapped a user's pins, and the user then removed the view from their menu
-- WHEN the app upgrades again
-- THEN the view is not added back
+- WHEN they open the menu
+- THEN the pinned Assigned to me entry opens `/cases?savedView=default:my-work`
