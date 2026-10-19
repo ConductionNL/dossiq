@@ -19,6 +19,12 @@
     "sideCards": [
       "case-tile-deadline",
       "case-banner-stack"
+    ],
+    "tabs": [
+      "case-overview",
+      "case-tender-bids",
+      "case-files",
+      "case-timeline-panel"
     ]
   },
   "statusTypes": [

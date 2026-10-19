@@ -25,6 +25,14 @@
       "overviewCards": [
         "case-objection-grounds",
         "case-objection-advice-card"
+      ],
+      "tabs": [
+        "case-overview",
+        "case-objection-hearings",
+        "case-objection-advice",
+        "case-objection-decision",
+        "case-files",
+        "case-timeline-panel"
       ]
     },
     {

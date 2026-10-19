@@ -39,6 +39,12 @@
     "sideCards": [
       "side-requester",
       "case-banner-stack"
+    ],
+    "tabs": [
+      "case-overview",
+      "case-grant-decisions",
+      "case-grant-advances",
+      "case-timeline-panel"
     ]
   },
   "propertyDefinitions": [

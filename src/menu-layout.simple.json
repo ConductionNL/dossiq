@@ -896,6 +896,8 @@
 				},
 				"_sideColumnFromNote": "Side cards per case type (Ruben, 18 October 2026): a case type that lists `sideCards` shows those cards in that order, a case type that lists none shows the column below. The list names ids of this column. Needs nextcloud-vue detail-side-column-from; on an older release the key is ignored and every case shows the column below.",
 				"sideColumnFrom": "@context.caseType.sideCards",
+				"_tabsFromNote": "Tabs per case type: a case type that lists `tabs` shows those tabs of the case panels, in that order; one that lists none shows them as declared. A tab is named by its `id`, else its `widgetId`. Needs nextcloud-vue tabsFrom (item 62); on an older release the key is ignored.",
+				"tabsFrom": "@context.caseType.tabs",
 				"sideColumn": [
 					"case-tile-deadline",
 					{
@@ -1309,6 +1311,7 @@
 							"moreLabel": "More",
 							"tabs": [
 								{
+									"id": "case-overview",
 									"widgetIds": [
 										"case-objection-grounds",
 										"case-objection-advice-card",
@@ -1499,6 +1502,7 @@
 									"label": "Documents"
 								},
 								{
+									"id": "case-contact",
 									"label": "Contact",
 									"countFrom": {
 										"register": "dossiq",
@@ -1517,6 +1521,7 @@
 									"_note": "DqZaakContact: the communication panel's sections as the board's cards, contact moments first, then the receipt confirmation, the live conversation and the customer record from pipelinq."
 								},
 								{
+									"id": "case-tasks",
 									"label": "Tasks",
 									"widgetIds": [
 										"case-tasks-card",

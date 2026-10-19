@@ -24,6 +24,13 @@
     ],
     "overviewCards": [
       "case-summary"
+    ],
+    "tabs": [
+      "case-overview",
+      "case-social-indications",
+      "case-social-meetings",
+      "case-files",
+      "case-timeline-panel"
     ]
   },
   "statusTypes": [

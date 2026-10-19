@@ -4215,6 +4215,16 @@
 								]
 							}
 						},
+						"sideColumnFrom": {
+							"type": "string",
+							"minLength": 1,
+							"description": "type='detail': a field path, read like a `visibleWhen` field, whose value picks the side column and its order for this record, e.g. `@context.caseType.sideCards`. Maps to CnDetailPage `sideColumnFrom`."
+						},
+						"tabsFrom": {
+							"type": "string",
+							"minLength": 1,
+							"description": "type='detail': a field path, read like a `visibleWhen` field, whose list of tab ids picks the tabs of the page's `tabs` widgets and their order for this record, e.g. `@context.caseType.tabs`. A tab's id is its `id`, else its `widgetId`. An empty or missing list keeps the declared tabs. Maps to CnDetailPage `tabsFrom`."
+						},
 						"headerActions": {
 							"type": "array",
 							"description": "Page-level header actions rendered inside CnActionsBar's overflow dropdown (between the built-in Refresh action and the `#action-items` slot). On a `type:'detail'` page the same entries render in the header's Actions menu, above the Request-a-feature / Report-a-bug / Documentation trio. Same shape as the row-level `actions[]` ($ref action), but handlers receive NO row context — they are page-level. Reserved ids (`refresh`, `import`, `export`, `copy`, `delete`) are dropped at render time to avoid shadowing built-ins. See manifest-icons-and-page-actions for the dispatch semantics.",
