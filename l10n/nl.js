@@ -711,7 +711,7 @@ OC.L10N.register(
         "Applied Conditions": "Toegepaste voorwaarden",
         "Applies one statutory lifecycle gesture to every selected case, with the reason recorded on each.": "Past één wettelijke handeling toe op elke geselecteerde zaak, met de reden vastgelegd op elke zaak.",
         "Applies to": "Geldt voor",
-        "applies to the whole organisation; case types, flows and departments are in the app under Settings": "geldt voor de hele organisatie; zaaktypen, flows en afdelingen staan in de app onder Instellingen",
+        "applies to the whole organisation": "geldt voor de hele organisatie",
         "applies to you": "geldt voor jou",
         "Apply": "Toepassen",
         "Apply classification": "Classificatie toepassen",
