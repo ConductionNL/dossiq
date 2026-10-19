@@ -217,4 +217,37 @@ class ExampleDataFragmentsTest extends TestCase {
 		$this->assertArrayNotHasKey('assignedGroup', $this->fragments(appDir: $dir, uid: null)->objects()[0]);
 
 	}//end testMyGroupIsTheLoadersFirstTeam()
+	/**
+	 * A token dropped from a list leaves no gap, so the list stays a JSON array.
+	 *
+	 * @return void
+	 */
+	public function testADroppedListElementLeavesNoGap(): void {
+		$dir = $this->appWith([['@self' => ['schema' => 'case', 'slug' => 'a'], 'title' => 'x', 'tags' => ['first', '@myGroup', 'last']]]);
+
+		$object = $this->fragments(appDir: $dir, uid: 'pieter', groupIds: ['admin'])->objects()[0];
+
+		$this->assertSame(['first', 'last'], $object['tags']);
+		$this->assertSame('["first","last"]', json_encode($object['tags']));
+
+	}//end testADroppedListElementLeavesNoGap()
+
+	/**
+	 * Objects an earlier load created are left out, and the slugs are listed.
+	 *
+	 * @return void
+	 */
+	public function testObjectsAnEarlierLoadCreatedAreLeftOut(): void {
+		$dir = $this->appWith(
+			[
+				['@self' => ['schema' => 'case', 'slug' => 'a'], 'title' => 'x'],
+				['@self' => ['schema' => 'case', 'slug' => 'b'], 'title' => 'y'],
+			]
+		);
+		$fragments = $this->fragments(appDir: $dir, uid: 'pieter');
+
+		$this->assertSame(['a', 'b'], $fragments->slugs());
+		$this->assertSame(['b'], array_map(static fn (array $object): string => $object['@self']['slug'], $fragments->objects(skipSlugs: ['a'])));
+
+	}//end testObjectsAnEarlierLoadCreatedAreLeftOut()
 }//end class

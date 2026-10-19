@@ -79,6 +79,22 @@ class ExampleDataFragments {
 	}//end __construct()
 
 	/**
+	 * The slugs of every fragment object.
+	 *
+	 * @return array<int, string> The slugs.
+	 *
+	 * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
+	 */
+	public function slugs(): array {
+		return array_values(
+			array_filter(
+				array_map(static fn (array $object): string => (string)($object['@self']['slug'] ?? ''), $this->rawObjects()),
+				static fn (string $slug): bool => $slug !== ''
+			)
+		);
+	}//end slugs()
+
+	/**
 	 * The fragment objects as written, tokens unresolved.
 	 *
 	 * @return array<int, array<string, mixed>> The objects, in file name order.
@@ -111,11 +127,13 @@ class ExampleDataFragments {
 	 * in no group but `admin`, drops the property, so the object stays valid
 	 * and simply has nobody or no team assigned.
 	 *
+	 * @param array<int, string> $skipSlugs Slugs of objects an earlier load already created; they are left out.
+	 *
 	 * @return array<int, array<string, mixed>> The objects.
 	 *
 	 * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
 	 */
-	public function objects(): array {
+	public function objects(array $skipSlugs = []): array {
 		$who = ['@me' => '', '@myGroup' => ''];
 		$user = $this->userSession->getUser();
 		if ($user !== null) {
@@ -125,9 +143,14 @@ class ExampleDataFragments {
 
 		$now = $this->time->now();
 
+		$fresh = array_filter(
+			$this->rawObjects(),
+			static fn (array $object): bool => in_array((string)($object['@self']['slug'] ?? ''), $skipSlugs, true) === false
+		);
+
 		return array_map(
 			fn (array $object): array => $this->resolve(value: $object, who: $who, now: $now),
-			$this->rawObjects()
+			array_values($fresh)
 		);
 	}//end objects()
 
@@ -149,13 +172,14 @@ class ExampleDataFragments {
 	/**
 	 * Fill the tokens in one value, recursively.
 	 *
-	 * @param array<string, mixed>  $value The object or nested value.
+	 * @param array<array-key, mixed> $value The object, or a nested object or list.
 	 * @param array<string, string> $who   `@me` and `@myGroup`, '' when unknown.
 	 * @param DateTimeImmutable     $now   The moment of loading.
 	 *
-	 * @return array<string, mixed> The value with tokens filled in.
+	 * @return array<array-key, mixed> The value with tokens filled in.
 	 */
 	private function resolve(array $value, array $who, DateTimeImmutable $now): array {
+		$isList = array_is_list($value);
 		foreach ($value as $key => $item) {
 			if (is_array($item) === true) {
 				$value[$key] = $this->resolve(value: $item, who: $who, now: $now);
@@ -176,6 +200,12 @@ class ExampleDataFragments {
 			}
 
 			$value[$key] = $this->date(token: $item, now: $now);
+		}
+
+		// A dropped list element must not leave a gap: a list with a gap
+		// encodes as a JSON object.
+		if ($isList === true) {
+			return array_values($value);
 		}
 
 		return $value;
