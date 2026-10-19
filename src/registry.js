@@ -1302,6 +1302,8 @@ const registry = {
 
 	'case-notes-pane': {
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseNotesTab,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Notes tab: the mention-aware CnNotesTab through CaseNotesTab, the same surface the sidebar offers, so a handler reading the case file does not have to open the sidebar to leave a note on it.',
