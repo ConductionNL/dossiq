@@ -3585,7 +3585,7 @@
 								"order": 5
 							},
 							"requester": {
-								"widget": "RequesterSearchField",
+								"widget": "InitiatorPicker",
 								"label": "Requester",
 								"order": 3
 							},
