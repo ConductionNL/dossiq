@@ -3395,15 +3395,7 @@
 			"config": {
 				"searchPlaceholder": "Search by case, number or requester",
 				"quickFilterMaxVisible": 5,
-				"folderSidebar": {
-					"source": "register",
-					"register": "dossiq",
-					"schema": "caseType",
-					"idField": "@self.id",
-					"nameField": "title",
-					"filterField": "caseType",
-					"pane": false
-				},
+				"folderSidebar": null,
 				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The board's address line under each title needs an address text the case does not carry, so the line is the case number.",
 				"mapConfig": {
 					"geoField": "geometry",
@@ -3444,7 +3436,6 @@
 						"due": "{deadline|date}"
 					}
 				},
-				"folderSidebar": null,
 				"columns": [
 					{
 						"key": "title",
