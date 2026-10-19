@@ -21,6 +21,10 @@
         "case-tile-deadline",
         "side-objection-appeal",
         "case-banner-stack"
+      ],
+      "overviewCards": [
+        "case-objection-grounds",
+        "case-objection-advice-card"
       ]
     },
     {
