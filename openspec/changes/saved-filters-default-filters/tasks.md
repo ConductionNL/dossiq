@@ -12,3 +12,4 @@
   - Dutch names in the catalogue
 - [x] Implement
 - [x] Test
+- [x] Woo requests are a default filter on Cases (`woo-requests`, the Woo chip's filter), not a page of their own (Ruben, 19 October 2026)
