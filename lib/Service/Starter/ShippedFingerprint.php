@@ -95,6 +95,57 @@ class ShippedFingerprint {
 	}//end matches()
 
 	/**
+	 * Whether a shipped object is untouched: the whole object still hashes to
+	 * its stamp, or, given the keys a package ships, those keys still hash to
+	 * the row as it shipped.
+	 *
+	 * @param array<string, mixed> $object             The object as stored.
+	 * @param string               $fingerprint        The stamp of the object as stored.
+	 * @param string               $shippedFingerprint The stamp of the row as it shipped.
+	 * @param array<int, string>   $shippedKeys        The keys the package ships; none skips the second check.
+	 *
+	 * @return boolean True when untouched.
+	 *
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 */
+	public function untouched(array $object, string $fingerprint, string $shippedFingerprint, array $shippedKeys = []): bool {
+		if ($this->matches(object: $object, fingerprint: $fingerprint) === true) {
+			return true;
+		}
+
+		return $shippedKeys !== [] && $this->matchesShipped(object: $object, fingerprint: $shippedFingerprint, shippedKeys: $shippedKeys);
+	}//end untouched()
+
+	/**
+	 * Whether an object still hashes to what shipped, read only over the keys
+	 * a package ships that the object holds a value for.
+	 *
+	 * A stored row carries more than the package wrote: OpenRegister fills
+	 * every declared property, so the whole row never hashes to the shipped
+	 * row. Over the shipped keys it does, while nobody edited them. A key a
+	 * newer version adds is still empty here, so it drops out; a key somebody
+	 * filled in here counts, and reads as changed.
+	 *
+	 * @param array<string, mixed> $object      The object as stored.
+	 * @param string               $fingerprint The fingerprint recorded for the shipped row.
+	 * @param array<int, string>   $shippedKeys The keys the package ships.
+	 *
+	 * @return boolean True when the shipped keys are untouched.
+	 *
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 */
+	public function matchesShipped(array $object, string $fingerprint, array $shippedKeys): bool {
+		$projected = [];
+		foreach ($shippedKeys as $key) {
+			if (array_key_exists($key, $object) === true && $object[$key] !== null && $object[$key] !== '' && $object[$key] !== []) {
+				$projected[$key] = $object[$key];
+			}
+		}
+
+		return $this->matches(object: $projected, fingerprint: $fingerprint);
+	}//end matchesShipped()
+
+	/**
 	 * The object with platform keys dropped and every map key sorted.
 	 *
 	 * Sorting matters: OpenRegister does not promise property order across a
