@@ -59,7 +59,7 @@ final class CmmnRetirementTest extends TestCase {
 	 * @var string
 	 */
 	private const DOOR = 'dossiq holds no case engine. Read and move a case plan through OpenRegister\'s '
-		.'/api/cases surface (src/services/casePlanApi.js, lib/Service/CasePlanProjectionService.php).';
+		.'/api/cases surface (the library plan widget, lib/Service/CasePlanProjectionService.php).';
 
 	/**
 	 * What counts as a reference to the retired runtime.
@@ -221,20 +221,25 @@ final class CmmnRetirementTest extends TestCase {
 	}//end testTheRetiredCodeIsGone()
 
 	/**
-	 * The plan slot belongs to the panel over OpenRegister (REQ-RCMN-005).
+	 * The plan cell is the library plan widget over OpenRegister (REQ-RCMN-005).
 	 *
 	 * @return void
 	 */
 	public function testThePlanSlotIsServedByThePanelOverOpenRegister(): void {
-		$manifest = (string) file_get_contents(self::ROOT.'/src/manifest.json');
-		$this->assertStringContainsString('"widget-cmmn-case-plan": "CasePlanPanel"', $manifest);
+		$manifest = json_decode((string) file_get_contents(self::ROOT.'/src/manifest.json'), true);
+		$found    = null;
+		foreach (($manifest['pages'] ?? []) as $page) {
+			foreach (($page['config']['widgets'] ?? []) as $widget) {
+				if (($widget['id'] ?? '') === 'cmmn-case-plan') {
+					$found = $widget;
+				}
+			}
+		}
 
-		$panel = (string) file_get_contents(self::ROOT.'/src/components/case/CasePlanPanel.vue');
-		$this->assertStringContainsString('services/casePlanApi.js', $panel);
-
-		$client = (string) file_get_contents(self::ROOT.'/src/services/casePlanApi.js');
-		$this->assertStringContainsString('/apps/openregister/api/cases', $client);
-		$this->assertStringNotContainsString('/apps/dossiq/api', $client);
+		$this->assertIsArray($found, 'The case page declares the cmmn-case-plan widget.');
+		$this->assertSame('plan', $found['type'] ?? null);
+		$this->assertFileDoesNotExist(self::ROOT.'/src/components/case/CasePlanPanel.vue');
+		$this->assertFileDoesNotExist(self::ROOT.'/src/services/casePlanApi.js');
 	}//end testThePlanSlotIsServedByThePanelOverOpenRegister()
 
 	/**

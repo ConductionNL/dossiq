@@ -29,7 +29,6 @@
 import CaseAiFeaturesPanel from './components/case/CaseAiFeaturesPanel.vue'
 // The case's archival future as openregister decided it, on the Archiving tab.
 // @spec openspec/specs/archief-edepot-handover/spec.md
-import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
 // The line saying this case is in the archive, and what that means for the
 // reader (archived-cases-leave-the-lenses).
 // @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
@@ -70,7 +69,6 @@ import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
 // The adaptive case plan, served by OpenRegister's case layer rather than by
 // dossiq's own CMMN runtime (retire-cmmn-caseplanstate, group 1).
 // @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
-import CasePlanPanel from './components/case/CasePlanPanel.vue'
 import CasePlanSociaalDomeinPanel from './components/case/CasePlanSociaalDomeinPanel.vue'
 import CaseProgrammeSection from './components/case/CaseProgrammeSection.vue'
 // What is new on this case since the handler last looked, and where.
@@ -718,35 +716,6 @@ const registry = {
 		_note: 'CaseDetail Related cases tab: what is related to this case, and what is about to be. The planned rows come from /api/case/{id}/planned, which lists the scheduled flows for this case that have not fired; once one fires its case is an ordinary related case and the row is gone. The Plan follow-up button sits here as well as in the Actions menu, because the tab is where a handler is already looking at what this case is connected to.',
 	},
 
-	// --- The adaptive case plan, over OpenRegister's case layer
-	//     (retire-cmmn-caseplanstate). ---
-	//
-	// The plan is rows in `openregister_case_items` read over /api/cases.
-	// OpenRegister is the only runtime; dossiq holds no case engine.
-	// @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
-	CasePlanPanel: {
-		// @custom-widget-ratchet exclude the adaptive plan is a TREE of plan items with a six-state lifecycle and per-item transition actions, living in OpenRegister's case layer rather than in the case object; no declarative widget reads /api/cases, and an object-list over the case would render neither the nesting nor the transitions. Deleted the day the manifest vocabulary has a case-plan widget type
-		kind: 'widget',
-		// A card of its own on the side column and in a tab stack, titled from the definition.
-		chrome: 'card',
-		component: CasePlanPanel,
-		...PANEL_WIDGET_META,
-		_note: 'CaseDetail: the stages, tasks and milestones OpenRegister holds for this case, with enable, complete and stop per item. Fails CLOSED on an unreachable case layer: an error with a retry, never an empty plan, because an outage and a finished case look identical from the browser and only one of them is safe to act on.',
-	},
-
-	// --- The case's archival future, as openregister decided it. ---
-	// The archiving process lives in openregister (decision D7): this panel reads
-	// `@self._retention` and derives nothing. A second derivation in the browser
-	// would eventually disagree with the stored one, and a records manager reading
-	// a disposal date has no way to tell which of the two they are looking at.
-	// @spec openspec/specs/archief-edepot-handover/spec.md
-	// Keyed by TYPE, not by component name. A tab child resolves through
-	// `resolveRegistryRenderer`, which reads `cnRegistry[widget.type]` and
-	// nothing else: a page `slots` map is read by CnDashboardPage's grid and
-	// never reaches a widget inside a tab panel. The Archiving tab shipped as
-	// `type: "custom"` with a `widget-case-archival` slot, and drew an empty
-	// panel with no warning: the same failure `case-timeline-pane` below
-	// records having shipped twice.
 	// --- Who has held this case, and who is asking for it (CaseDetail). ---
 	// Keyed by TYPE, like every other tab child: a tab panel resolves through
 	// `resolveRegistryRenderer`, which reads `cnRegistry[widget.type]` and
@@ -768,14 +737,6 @@ const registry = {
 		component: FileSetItems,
 		...PANEL_WIDGET_META,
 		_note: "Generic (decision 182): the items of a frozen file set with file name, classification and SHA-256, and Compare on an item whose file that went out is not its original, opening DocumentCompareDialog over filinq's OCA.Filinq.mountCompare. The case type configures it in the widget content (filesUrl, classificationLabels); the Woo delivered set page is the first user. Without filinq the dialog says so and offers both files as links.",
-	},
-
-	'case-archival-pane': {
-		// @custom-widget-ratchet exclude `@self._retention` is metadata attached on the render path, not a stored property, so a data widget builds its fields from the schema's properties and renders every one of them blank; the nomination also carries a rule and a reason that are prose beside a value, and the recompute gesture is a POST carrying a required reason. Deleted the day the manifest vocabulary has a retention widget type
-		kind: 'widget',
-		component: CaseArchivalPanel,
-		...PANEL_WIDGET_META,
-		_note: "CaseDetail Archiving tab: the appraisal, the disposal date, the retention period, the selectielijst row, the nomination with the rule that produced it, and the outcome once a reviewer has decided one. Fails CLOSED on an unreachable openregister: an error with a retry, never an empty archival block, because an outage and a case with no archival future look identical from the browser. An unnominatable case is drawn apart from a case nobody has closed yet, because only one of the two is somebody's problem today.",
 	},
 
 	// --- The work instruction for this kind of case (knowledge-base-on-the-case). ---

@@ -129,7 +129,7 @@ describe('CaseDetail — the identity row is three configured tiles and the hour
 	it('has retired the custom band and its slot', () => {
 		expect(widget('case-header')).toBeUndefined()
 		expect(cells('case-header')).toHaveLength(0)
-		expect(caseDetail().slots['widget-case-header']).toBeUndefined()
+		expect((caseDetail().slots || {})['widget-case-header']).toBeUndefined()
 		// The IMPORT and the ENTRY, not the name: the registry keeps a comment
 		// saying the three components went and why, and a bare name match would
 		// read that explanation as the thing it explains.

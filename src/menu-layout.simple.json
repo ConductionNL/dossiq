@@ -1930,13 +1930,16 @@
 					},
 					{
 						"id": "case-plan-card",
-						"type": "CasePlanPanel",
+						"type": "plan",
+						"content": {
+							"emptyText": "This case type has no adaptive plan"
+						},
 						"visibleWhen": {
 							"field": "@context.caseType.overviewCards",
 							"op": "empty"
 						},
 						"title": "Case plan",
-						"_note": "The adaptive plan as a card of the Overview stack. A tab child resolves by TYPE through the registry, so this names the registry key; the full profile keeps cmmn-case-plan as a layout cell with its slot."
+						"_note": "The adaptive plan as a card of the Overview stack (library widget type plan -> CnPlanWidget). The full profile keeps cmmn-case-plan as a layout cell."
 					},
 					{
 						"id": "case-publication",

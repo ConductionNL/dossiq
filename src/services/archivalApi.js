@@ -99,25 +99,6 @@ export async function decide({
 }
 
 /**
- * Ask openregister to derive this record's nomination again.
- *
- * @param {string} objectId The record uuid.
- * @param {string} reason Why the recomputation was asked for, required.
- * @return {Promise<object>} The nomination openregister wrote.
- * @throws {Error} When openregister refuses.
- *
- * @spec openspec/specs/archief-edepot-handover/spec.md
- */
-export async function recomputeNomination(objectId, reason) {
-	const { data } = await axios.post(
-		generateUrl(`${API}/archival/objects/${objectId}/nomination/recompute`),
-		{ reason },
-	)
-
-	return data
-}
-
-/**
  * openregister's archival settings.
  *
  * @return {Promise<object>} The settings, including reviewReminderFrequency.
@@ -168,33 +149,3 @@ export function isIsoDuration(value) {
 	)
 }
 
-/**
- * The retention block openregister publishes on a case.
- *
- * `@self._retention` is metadata attached on the render path, not a stored
- * property, so it is read off the object rather than asked for as a field.
- *
- * Returned beside it are `@self.archived`, the platform's archive marker from
- * openregister#3772, and the case's own `archiveStatus`. Both describe the same
- * event and only one of them is the platform's, so the panel shows the marker
- * and says when the case's own field disagrees with it.
- *
- * @param {string} caseId The case uuid.
- * @return {Promise<object>} `retention`, `archived` and `archiveStatus`.
- * @throws {Error} When the case cannot be read.
- *
- * @spec openspec/specs/archief-edepot-handover/spec.md
- */
-export async function caseRetention(caseId) {
-	const { data } = await axios.get(
-		generateUrl(`${API}/objects/dossiq/case/${caseId}`),
-	)
-
-	const self = data?.['@self'] ?? {}
-
-	return {
-		retention: self._retention ?? null,
-		archived: self.archived ?? null,
-		archiveStatus: String(data?.archiveStatus ?? ''),
-	}
-}

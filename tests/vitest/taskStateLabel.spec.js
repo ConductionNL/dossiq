@@ -64,9 +64,8 @@ describe('taskStateLabel', () => {
 		expect(taskStateLabel(' ')).toBe('')
 	})
 
-	it('is the one wording: the case plan and the task page both use it', () => {
+	it('is the one wording the task page uses', () => {
 		for (const file of [
-			'src/components/case/CasePlanPanel.vue',
 			'src/views/tasks/TaskDetailView.vue',
 		]) {
 			expect(readFileSync(file, 'utf8'), file).toContain('taskStateLabel(')
