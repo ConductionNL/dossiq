@@ -69,6 +69,14 @@ final class PackageTestRegister extends InMemoryRegister {
 	public array $deletedFrom = [];
 
 	/**
+	 * Properties the store fills in on save when a row leaves them out, by
+	 * schema, as OpenRegister fills every property a schema declares.
+	 *
+	 * @var array<string, array<string, mixed>>
+	 */
+	public array $fills = [];
+
+	/**
 	 * Save, unless the row is one the test told the store to refuse.
 	 *
 	 * @param array<string, mixed> $object        The row.
@@ -92,6 +100,7 @@ final class PackageTestRegister extends InMemoryRegister {
 			throw new RuntimeException('the store refused the write');
 		}
 
+		$object += ($this->fills[(string)$schema] ?? []);
 		$stored = parent::saveObject($object, $register, $schema, $uuid, $_rbac, $_multitenancy);
 		$this->savedIn[(string)$stored['id']] = (string)$register;
 
@@ -1644,4 +1653,84 @@ class PackageInstallerTest extends TestCase {
 		$this->assertIsString(actual: $cases[0]['statusHistory']);
 		$this->assertCount(expectedCount: 4, haystack: (array)json_decode(json: $cases[0]['statusHistory'], associative: true));
 	}//end testTheShippedBezwaarPackageInstallsWithItsExampleCase()
+
+	/**
+	 * A row the store filled in on save is still untouched: a newer version
+	 * refreshes it. The ledger stamps the row as stored, not as shipped.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 */
+	public function testANewerVersionRefreshesARowTheStoreFilledIn(): void {
+		$this->register->fills['caseType'] = ['handlingModel' => null, 'tags' => []];
+		$this->installer()->install(id: 'fixture-case-type');
+
+		$outcome = $this->installer(root: $this->raisedVersion())->install(id: 'fixture-case-type');
+
+		$this->assertSame(expected: [], actual: $outcome['kept']);
+		$this->assertSame(expected: 'The description 1.1.0 ships.', actual: $this->register->row('caseType', self::CASE_TYPE)['description']);
+		$this->assertSame(expected: '1.1.0', actual: $this->ledgerRowOf(targetObject: self::CASE_TYPE)['setVersion']);
+	}//end testANewerVersionRefreshesARowTheStoreFilledIn()
+
+	/**
+	 * A ledger stamped with the shipped row (before rows were stamped as
+	 * stored) does not hold an untouched row back: over the keys the package
+	 * ships, the stored row still hashes to what shipped.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 */
+	public function testALedgerStampedWithTheShippedRowStillRefreshesAnUntouchedRow(): void {
+		$this->register->fills['caseType'] = ['handlingModel' => null, 'tags' => []];
+		$this->installer()->install(id: 'fixture-case-type');
+		$shipped = json_decode(json: (string)file_get_contents(self::FIXTURES . '/fixture-case-type/case-type.json'), associative: true)['caseType'];
+		$this->stampLedger(targetObject: self::CASE_TYPE, fingerprint: (new ShippedFingerprint())->hashOf(object: $shipped));
+
+		$outcome = $this->installer(root: $this->raisedVersion())->install(id: 'fixture-case-type');
+
+		$this->assertSame(expected: [], actual: $outcome['kept']);
+		$this->assertSame(expected: 'The description 1.1.0 ships.', actual: $this->register->row('caseType', self::CASE_TYPE)['description']);
+	}//end testALedgerStampedWithTheShippedRowStillRefreshesAnUntouchedRow()
+
+	/**
+	 * A field filled in here that the package does not ship survives the
+	 * refresh, and an edited shipped field still keeps the row.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 */
+	public function testARefreshKeepsWhatThisInstanceAddedAndNeverAnEdit(): void {
+		$this->register->fills['caseType'] = ['handlingModel' => null];
+		$this->installer()->install(id: 'fixture-case-type');
+		$this->register->rows['caseType'][self::CASE_TYPE]['handlingModel'] = 'cmmn';
+
+		$outcome = $this->installer(root: $this->raisedVersion())->install(id: 'fixture-case-type');
+
+		$caseType = $this->register->row('caseType', self::CASE_TYPE);
+		$this->assertSame(expected: [], actual: $outcome['kept']);
+		$this->assertSame(expected: 'The description 1.1.0 ships.', actual: $caseType['description']);
+		$this->assertSame(expected: 'cmmn', actual: $caseType['handlingModel'], message: 'a field the package does not ship keeps the value set here');
+	}//end testARefreshKeepsWhatThisInstanceAddedAndNeverAnEdit()
+
+	/**
+	 * Overwrite the fingerprint the ledger holds for one row.
+	 *
+	 * @param string $targetObject The row id.
+	 * @param string $fingerprint  The fingerprint.
+	 *
+	 * @return void
+	 */
+	private function stampLedger(string $targetObject, string $fingerprint): void {
+		foreach ($this->register->rows['shippedOrigin'] as $id => $row) {
+			if (($row['targetObject'] ?? '') === $targetObject) {
+				$this->register->rows['shippedOrigin'][$id]['fingerprint'] = $fingerprint;
+				return;
+			}
+		}
+
+		$this->fail(message: "No ledger row for {$targetObject}");
+	}//end stampLedger()
 }//end class

@@ -118,13 +118,37 @@ class ShippedConfigurationService {
 	 * @param string|null          $version      The set's version, when the caller
 	 *                                           read it from the package itself;
 	 *                                           null to look it up in ShippedSets.
+	 * @param array<string, mixed>|null $shipped The row as the set ships it, hashed as
+	 *                                           `shippedFingerprint`; null hashes `$object`.
+	 * @param string               $objectsKey   The app config key naming the schema; when given,
+	 *                                           the row is stamped as this instance stores it, read
+	 *                                           back, because the store fills properties a set never
+	 *                                           named. Empty stamps `$object` as given.
 	 *
 	 * @return boolean True when the stamp was written.
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 */
-	public function stamp(string $set, string $targetSchema, string $targetObject, array $object, ?string $version = null): bool {
+	public function stamp(
+		string $set,
+		string $targetSchema,
+		string $targetObject,
+		array $object,
+		?string $version = null,
+		?array $shipped = null,
+		string $objectsKey = '',
+	): bool {
+		$stored = null;
+		if ($objectsKey !== '') {
+			$stored = $this->store->row(configKey: $objectsKey, id: $targetObject);
+		}
+
+		if ($stored !== null) {
+			$shipped = ($shipped ?? $object);
+			$object = (new ShippedRowShape())->asWritten(object: $stored, objectsKey: $objectsKey);
+		}
+
 		$version = ($version ?? $this->sets->versionOf(set: $set));
 		if ($version === '' || $targetObject === '' || $targetSchema === '') {
 			// ADR-102: a stamp that cannot name its set is worse than no stamp,
@@ -144,6 +168,7 @@ class ShippedConfigurationService {
 			'targetSchema' => $targetSchema,
 			'targetObject' => $targetObject,
 			'fingerprint' => $this->fingerprint->hashOf(object: $object),
+			'shippedFingerprint' => $this->fingerprint->hashOf(object: ($shipped ?? $object)),
 			'seededAt' => gmdate('c'),
 		];
 
@@ -227,20 +252,30 @@ class ShippedConfigurationService {
 	 * @param string               $targetSchema The object's schema slug.
 	 * @param string               $targetObject The object's id.
 	 * @param array<string, mixed> $object       The object as it stands now.
+	 * @param array<int, string>   $shippedKeys  The keys a package ships for it; when given, an object
+	 *                                           whose whole row differs is still untouched while those
+	 *                                           keys hash to what was recorded (a ledger stamped with the
+	 *                                           shipped row rather than the stored one).
 	 *
 	 * @return array{state: string, set: string, setVersion: string} The answer.
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
-	public function stateOf(string $targetSchema, string $targetObject, array $object): array {
+	public function stateOf(string $targetSchema, string $targetObject, array $object, array $shippedKeys = []): array {
 		$row = $this->ledgerRow(targetSchema: $targetSchema, targetObject: $targetObject);
 		if ($row === null) {
 			return ['state' => self::STATE_LOCAL, 'set' => '', 'setVersion' => ''];
 		}
 
-		$untouched = $this->fingerprint->matches(
+		$fingerprint = (string)($row['fingerprint'] ?? '');
+		// A ledger row from before `shippedFingerprint` was recorded was
+		// stamped with the shipped row itself.
+		$shippedFingerprint = (string)($row['shippedFingerprint'] ?? $fingerprint);
+		$untouched = $this->fingerprint->untouched(
 			object: $object,
-			fingerprint: (string)($row['fingerprint'] ?? ''),
+			fingerprint: $fingerprint,
+			shippedFingerprint: $shippedFingerprint,
+			shippedKeys: $shippedKeys,
 		);
 
 		return [
@@ -438,7 +473,12 @@ class ShippedConfigurationService {
 			return ['outcome' => self::REFRESH_UNCHANGED, 'reason' => ''];
 		}
 
-		$state = $this->stateOf(targetSchema: $targetSchema, targetObject: $targetObject, object: $current);
+		$state = $this->stateOf(
+			targetSchema: $targetSchema,
+			targetObject: $targetObject,
+			object: (new ShippedRowShape())->asWritten(object: $current, objectsKey: $objectsKey),
+			shippedKeys: array_map('strval', array_keys($newShipped)),
+		);
 		if ($state['set'] !== $set) {
 			return ['outcome' => self::REFRESH_KEPT, 'reason' => 'not_shipped_by_this_set'];
 		}
@@ -521,10 +561,12 @@ class ShippedConfigurationService {
 			return ['adopted' => false, 'reason' => 'not_found'];
 		}
 
+		$current = (new ShippedRowShape())->asWritten(object: $current, objectsKey: $objectsKey);
 		$state = $this->stateOf(
 			targetSchema: $targetSchema,
 			targetObject: $targetObject,
 			object: $current,
+			shippedKeys: array_map('strval', array_keys($newShipped)),
 		);
 
 		if ($state['state'] === self::STATE_LOCAL) {
@@ -535,7 +577,12 @@ class ShippedConfigurationService {
 			return ['adopted' => false, 'reason' => 'changed_locally'];
 		}
 
-		$payload = $newShipped;
+		// What the set ships wins; a key it does not ship keeps the value this
+		// instance holds, so a field somebody filled in here survives the write.
+		$payload = array_merge(
+			array_diff_key($current, array_flip(ShippedFingerprint::IGNORED)),
+			$newShipped
+		);
 		$payload['id'] = $targetObject;
 
 		$saved = $this->store->save(configKey: $objectsKey, payload: $payload, id: $targetObject);
@@ -547,8 +594,9 @@ class ShippedConfigurationService {
 			set: $set,
 			targetSchema: $targetSchema,
 			targetObject: $targetObject,
-			object: $saved,
+			object: (new ShippedRowShape())->asWritten(object: $saved, objectsKey: $objectsKey),
 			version: $version,
+			shipped: $newShipped,
 		);
 
 		return ['adopted' => true, 'reason' => ''];

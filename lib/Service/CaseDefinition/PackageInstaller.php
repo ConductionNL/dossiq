@@ -431,6 +431,7 @@ class PackageInstaller {
 				targetObject: (string)$row['id'],
 				object: (array)$row['row'],
 				version: $version,
+				objectsKey: (string)($row['schemaKey'] ?? ''),
 			);
 			if ($stamped === false) {
 				return false;
