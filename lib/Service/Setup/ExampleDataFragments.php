@@ -13,6 +13,8 @@
  * shape of a register seed. Values may carry tokens that are only known when
  * the set is loaded:
  * - `@me`: the user who loads the example data;
+ * - `@myGroup`: that user's first group other than `admin`, by id, the team
+ *   whose queue the example cases land in;
  * - `@today`, `@today+3d`, `@today-2d`: a date relative to the load day;
  * - `@now`, `@now-1d`: a date-time relative to the moment of loading.
  * Everything in these files is fictional.
@@ -43,6 +45,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IGroupManager;
 use OCP\IUserSession;
 
 /**
@@ -65,11 +68,13 @@ class ExampleDataFragments {
 	 * @param IAppManager   $appManager  App manager, for the app's path.
 	 * @param IUserSession  $userSession The user loading the example data.
 	 * @param ITimeFactory  $time        The clock the relative dates count from.
+	 * @param IGroupManager $groups      The loading user's groups, for `@myGroup`.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,
+		private readonly IGroupManager $groups,
 	) {
 	}//end __construct()
 
@@ -102,71 +107,89 @@ class ExampleDataFragments {
 	/**
 	 * The fragment objects with every token filled in for this load.
 	 *
-	 * A `@me` with nobody signed in (an `occ` run) drops the property, so the
-	 * object stays valid and simply has nobody assigned.
+	 * A `@me` with nobody signed in (an `occ` run), or a `@myGroup` for a user
+	 * in no group but `admin`, drops the property, so the object stays valid
+	 * and simply has nobody or no team assigned.
 	 *
 	 * @return array<int, array<string, mixed>> The objects.
 	 *
 	 * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
 	 */
 	public function objects(): array {
+		$who = ['@me' => '', '@myGroup' => ''];
 		$user = $this->userSession->getUser();
-		$userId = '';
 		if ($user !== null) {
-			$userId = $user->getUID();
+			$who['@me'] = $user->getUID();
+			$who['@myGroup'] = $this->firstTeam(groupIds: $this->groups->getUserGroupIds($user));
 		}
 
 		$now = $this->time->now();
 
 		return array_map(
-			fn (array $object): array => $this->resolve(value: $object, userId: $userId, now: $now),
+			fn (array $object): array => $this->resolve(value: $object, who: $who, now: $now),
 			$this->rawObjects()
 		);
 	}//end objects()
 
 	/**
+	 * The loading user's team: the first of their groups, by id, that is not
+	 * `admin`.
+	 *
+	 * @param array<int, string> $groupIds The user's group ids.
+	 *
+	 * @return string The group id, or '' when there is none.
+	 */
+	private function firstTeam(array $groupIds): string {
+		$teams = array_values(array_diff($groupIds, ['admin']));
+		sort($teams);
+
+		return (string)($teams[0] ?? '');
+	}//end firstTeam()
+
+	/**
 	 * Fill the tokens in one value, recursively.
 	 *
-	 * @param array<string, mixed> $value  The object or nested value.
-	 * @param string               $userId The loading user, '' for none.
-	 * @param DateTimeImmutable    $now    The moment of loading.
+	 * @param array<string, mixed>  $value The object or nested value.
+	 * @param array<string, string> $who   `@me` and `@myGroup`, '' when unknown.
+	 * @param DateTimeImmutable     $now   The moment of loading.
 	 *
 	 * @return array<string, mixed> The value with tokens filled in.
 	 */
-	private function resolve(array $value, string $userId, DateTimeImmutable $now): array {
+	private function resolve(array $value, array $who, DateTimeImmutable $now): array {
 		foreach ($value as $key => $item) {
 			if (is_array($item) === true) {
-				$value[$key] = $this->resolve(value: $item, userId: $userId, now: $now);
+				$value[$key] = $this->resolve(value: $item, who: $who, now: $now);
 				continue;
 			}
 
-			if ($item === '@me' && $userId === '') {
-				unset($value[$key]);
+			if (is_string($item) === false) {
 				continue;
 			}
 
-			if (is_string($item) === true) {
-				$value[$key] = $this->token(token: $item, userId: $userId, now: $now);
+			if (array_key_exists($item, $who) === true) {
+				$value[$key] = $who[$item];
+				if ($who[$item] === '') {
+					unset($value[$key]);
+				}
+
+				continue;
 			}
+
+			$value[$key] = $this->date(token: $item, now: $now);
 		}
 
 		return $value;
 	}//end resolve()
 
 	/**
-	 * Fill one token; any other string is returned as it is.
+	 * Fill one date token; any other string is returned as it is.
 	 *
-	 * @param string            $token  The value.
-	 * @param string            $userId The loading user.
-	 * @param DateTimeImmutable $now    The moment of loading.
+	 * @param string            $token The value.
+	 * @param DateTimeImmutable $now   The moment of loading.
 	 *
 	 * @return string The filled value.
 	 */
-	private function token(string $token, string $userId, DateTimeImmutable $now): string {
-		if ($token === '@me') {
-			return $userId;
-		}
-
+	private function date(string $token, DateTimeImmutable $now): string {
 		$matches = [];
 		if (preg_match('/^@(today|now)(?:([+-])(\d+)d)?$/', $token, $matches) !== 1) {
 			return $token;
@@ -186,5 +209,5 @@ class ExampleDataFragments {
 		}
 
 		return $moment->format(DATE_ATOM);
-	}//end token()
+	}//end date()
 }//end class

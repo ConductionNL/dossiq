@@ -26,6 +26,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\Setup\ExampleDataFragments;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -49,10 +50,11 @@ class ExampleDataFragmentsTest extends TestCase {
 	 *
 	 * @param string      $appDir The app directory.
 	 * @param string|null $uid    The loading user, null for nobody.
+	 * @param array<int, string> $groupIds The loading user's groups.
 	 *
 	 * @return ExampleDataFragments The reader.
 	 */
-	private function fragments(string $appDir, ?string $uid): ExampleDataFragments {
+	private function fragments(string $appDir, ?string $uid, array $groupIds = ['admin', 'vergunningen', 'team-woo']): ExampleDataFragments {
 		$apps = $this->createMock(IAppManager::class);
 		$apps->method('getAppPath')->willReturn($appDir);
 
@@ -68,7 +70,10 @@ class ExampleDataFragmentsTest extends TestCase {
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('now')->willReturn(new DateTimeImmutable('2026-10-19T10:00:00+00:00'));
 
-		return new ExampleDataFragments(appManager: $apps, userSession: $session, time: $time);
+		$groups = $this->createMock(IGroupManager::class);
+		$groups->method('getUserGroupIds')->willReturn($groupIds);
+
+		return new ExampleDataFragments(appManager: $apps, userSession: $session, time: $time, groups: $groups);
 
 	}//end fragments()
 
@@ -199,4 +204,17 @@ class ExampleDataFragmentsTest extends TestCase {
 		$this->assertSame([], $problems);
 
 	}//end testEveryShippedObjectFitsItsSchema()
+	/**
+	 * `@myGroup` is the loader's first group other than admin, by id; with none it is left out.
+	 *
+	 * @return void
+	 */
+	public function testMyGroupIsTheLoadersFirstTeam(): void {
+		$dir = $this->appWith([['@self' => ['schema' => 'case', 'slug' => 'a'], 'assignedGroup' => '@myGroup', 'title' => 'x']]);
+
+		$this->assertSame('team-woo', $this->fragments(appDir: $dir, uid: 'pieter')->objects()[0]['assignedGroup']);
+		$this->assertArrayNotHasKey('assignedGroup', $this->fragments(appDir: $dir, uid: 'pieter', groupIds: ['admin'])->objects()[0]);
+		$this->assertArrayNotHasKey('assignedGroup', $this->fragments(appDir: $dir, uid: null)->objects()[0]);
+
+	}//end testMyGroupIsTheLoadersFirstTeam()
 }//end class

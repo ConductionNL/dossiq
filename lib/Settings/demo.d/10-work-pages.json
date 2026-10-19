@@ -2,7 +2,7 @@
 	"_meta": {
 		"spdx-license": "EUPL-1.2",
 		"spdx-copyright": "2026 Conduction B.V.",
-		"description": "Curated example data for the work pages: my work, assigned to me, end of day, the dashboard, the Woo decision and redaction, and the data subject requests. Loaded with the generated set by the setup wizard's example data step. @me is the user who loads the set; @today and @now are relative to the moment of loading. Every person, address and document is fictional."
+		"description": "Curated example data for the work pages: my work, assigned to me, end of day, the dashboard, the Woo decision and redaction, and the data subject requests. Loaded with the generated set by the setup wizard's example data step. @me is the user who loads the set and @myGroup that user's first group other than admin; @today and @now are relative to the moment of loading. Every person, address and document is fictional."
 	},
 	"components": {
 		"objects": [
@@ -92,6 +92,7 @@
 				"description": "Verzoek om de stukken van de aanbesteding van de afvalinzameling.",
 				"caseType": "3c0f5a00-0000-4000-a000-00000000a001",
 				"status": "3c0f5a00-0000-4000-a000-00000000b001",
+				"assignedGroup": "@myGroup",
 				"priority": "normal",
 				"startDate": "@today",
 				"receivedAt": "@now",
@@ -366,7 +367,8 @@
 				"intakeChannel": "email",
 				"dataSubjectRequestType": "correctie",
 				"dataSubject": "p.smit@voorbeeld.invalid",
-				"dataSubjectType": "email"
+				"dataSubjectType": "email",
+				"assignedGroup": "@myGroup"
 			},
 			{
 				"@self": {
