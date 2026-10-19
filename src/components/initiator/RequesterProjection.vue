@@ -21,10 +21,10 @@ import { initializeStores } from '../../store/store.js'
 /**
  * Derive a case's requester projection from its canonical `requester` uuid.
  *
- * THIS IS THE ONE PLACE THE PROJECTION IS MADE from a uuid. A form writes the
- * uuid alone (InitiatorPicker as a form field), so a replaced requester keeps
- * the previous one's name and type until this runs; it compares and rewrites,
- * not only fills an empty projection.
+ * A FALLBACK. The server writes the projection in the save that sets the
+ * requester (CaseRequesterProjectionListener), so a case saved since then
+ * already carries the right one and this writes nothing. It still compares and
+ * rewrites, for cases saved before the listener existed.
  *
  * Two writers reach `case.requester`: the picker, which writes the projection
  * (`initiatorType`, `initiatorSourceId`, `initiatorDisplayName`) alongside
