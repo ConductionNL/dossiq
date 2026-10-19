@@ -226,6 +226,13 @@ class InMemoryRegister {
 	 * @return bool True when it matches.
 	 */
 	private function matches(array $row, array $filters): bool {
+		// `_ids` is OpenRegister's batched id restriction (MagicSearchHandler).
+		if (array_key_exists('_ids', $filters) === true
+			&& in_array((string)($row['id'] ?? ''), array_map('strval', (array)$filters['_ids']), true) === false
+		) {
+			return false;
+		}
+
 		foreach ($filters as $key => $value) {
 			if (str_starts_with((string)$key, '_') === true || $key === '@self') {
 				continue;

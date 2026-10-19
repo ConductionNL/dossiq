@@ -164,7 +164,10 @@ describe('the stage', () => {
 			const entry = stageEntry(simple.primaryActionByStage, stage)
 			expect(entry, `${stage} shows a card and no button`).toBeTruthy()
 			if (typeof entry === 'object') {
-				expect(entry.visibleWhen, stage).toBeUndefined()
+				// The one condition a working case always passes: not archived yet.
+				if (entry.visibleWhen !== undefined) {
+					expect(entry.visibleWhen, stage).toEqual({ field: '@self.archived', op: 'empty' })
+				}
 				// The closed stage opens the archive dialog (board DqArchiveren);
 				// every other stage opens the Lifecycle dialog.
 				expect(entry.target, stage).toBe(stage === 'closed' ? 'CaseArchiveDialog' : 'CaseLifecycleMenuDialog')
