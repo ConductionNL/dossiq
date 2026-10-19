@@ -21,7 +21,7 @@ vi.mock('../../src/services/caseSummary.js', () => ({
 	fetchCaseSummary: async () => null,
 }))
 
-const { default: CaseHandoverDialog } = await import('../../src/dialogs/CaseHandoverDialog.vue')
+const { default: CaseHandoverDialog, withTypedTeam } = await import('../../src/dialogs/CaseHandoverDialog.vue')
 
 /**
  * Mount the dialog with the library stubbed.
@@ -58,7 +58,19 @@ describe('CaseHandoverDialog team search', () => {
 
 		expect(wrapper.findComponent({ name: 'CnSearchSelect' }).props('options')).toEqual([
 			{ id: 'juridische-zaken', label: 'Juridische zaken', icon: 'AccountGroupOutline' },
+			{ id: 'juri', label: 'Use "juri"', icon: 'AccountGroupOutline' },
 		])
+	})
+
+	it('still takes a typed team name, also when the search finds no team', async () => {
+		expect(withTypedTeam([], 'Toezicht')).toEqual([{ id: 'Toezicht', label: 'Use "Toezicht"', icon: 'AccountGroupOutline' }])
+		expect(withTypedTeam([{ id: 'juridische-zaken', label: 'Juridische zaken' }], 'juridische zaken')).toHaveLength(1)
+
+		const wrapper = mountDialog()
+		wrapper.findComponent({ name: 'CnSearchSelect' }).vm.$emit('update:modelValue', 'Toezicht')
+		await flushPromises()
+
+		expect(wrapper.vm.team).toBe('Toezicht')
 	})
 
 	it('moves the case to the team whose row was chosen', async () => {

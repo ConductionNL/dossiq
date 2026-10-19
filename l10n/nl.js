@@ -9449,6 +9449,7 @@ OC.L10N.register(
         "Usage Rights Indication": "Aanduiding van de gebruiksrechten",
         "Usage type": "Gebruikstype",
         "Use": "Gebruiksdoel",
+        "Use \"{name}\"": "Gebruik \"{name}\"",
         "Use as initiator": "Gebruik als indiener",
         "use default": "standaard gebruiken",
         "Use my version": "Mijn versie gebruiken",

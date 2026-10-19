@@ -118,6 +118,23 @@ import { searchTeams } from '../services/teamSearch.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
+/**
+ * The team rows, with what was typed offered as a team of its own when no row
+ * carries that name: where group sharing is restricted the search answers
+ * nothing, and the route still takes a team by its name.
+ *
+ * @param {Array<object>} found The teams the search found.
+ * @param {string} typed What was typed.
+ * @return {Array<object>} The rows.
+ * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ */
+export function withTypedTeam(found, typed) {
+	if (typed === '' || found.some((team) => String(team.id) === typed || String(team.label).toLowerCase() === typed.toLowerCase())) {
+		return found
+	}
+	return [...found, { id: typed, label: t('dossiq', 'Use "{name}"', { name: typed }), icon: 'AccountGroupOutline' }]
+}
+
 export default {
 	name: 'CaseHandoverDialog',
 
@@ -215,14 +232,17 @@ export default {
 		 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
 		 */
 		async searchTeams(query) {
+			const typed = String(query ?? '').trim()
 			this.searching = true
+			let found = []
 			try {
-				this.teamOptions = (await searchTeams(query)).map((team) => ({ ...team, icon: 'AccountGroupOutline' }))
+				found = (await searchTeams(typed)).map((team) => ({ ...team, icon: 'AccountGroupOutline' }))
 			} catch {
-				this.teamOptions = []
+				// No team rows: what was typed is still offered below.
 			} finally {
 				this.searching = false
 			}
+			this.teamOptions = withTypedTeam(found, typed)
 		},
 
 		/**
