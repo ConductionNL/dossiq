@@ -27,7 +27,7 @@ import { currentPermissions, permits } from './permissions.js'
 export const RETIRED_ROUTES = [
 	{
 		path: '/workflow-board',
-		redirect: { name: 'Cases', query: { _view: 'board' } },
+		redirect: { name: 'Cases', query: { _view: 'kanban' } },
 	},
 ]
 

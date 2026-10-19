@@ -302,7 +302,7 @@
 			"label": "Workflow board",
 			"icon": "ViewColumnOutline",
 			"route": "Cases",
-			"query": { "_view": "board" },
+			"query": { "_view": "kanban" },
 			"order": 35
 		},
 		{
@@ -1951,9 +1951,9 @@
 				"createSuccessMessage": "Case created.",
 				"formSize": "normal",
 				"formColumns": 1,
-				"viewModes": ["table", "cards", "board", "map"],
+				"viewModes": ["table", "cards", "kanban", "map"],
 				"_boardNote": "dqwerkbord-as-the-cases-board. The Werkbord is this list in board view (board DqWerkbord), not a page of its own. A case's status references a statusType row and every case type has its own rows, so the columns come from those rows, merged by name and narrowed to one case type while the list is filtered on one. A drop resolves to the statusType row of the case's own case type and moves the case through `moveCaseStatus`, the status-transition engine, never a PATCH of `status`; `caseStatusTargets` asks the engine where a case may go and what holds it, so the board fades the rest and names the guard. A status type's `capacity` is the column's limit; final statuses are filtered out, so none of them carries one onto the board. The case type and handler columns are read-only: a drag does not change a case type, and handing a case over asks for the reason the bulk Reassign collects.",
-				"board": {
+				"kanban": {
 					"statusField": "status",
 					"wrap": true,
 					"columnLimit": 3,

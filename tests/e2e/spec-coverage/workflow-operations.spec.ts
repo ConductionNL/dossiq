@@ -35,7 +35,7 @@ test.describe('Workflow board', () => {
 	 * @param page The page.
 	 */
 	async function openBoard(page: Page): Promise<void> {
-		await page.goto('/index.php/apps/dossiq/cases?_view=board')
+		await page.goto('/index.php/apps/dossiq/cases?_view=kanban')
 		await dismissSupportDialog(page)
 	}
 
@@ -47,13 +47,13 @@ test.describe('Workflow board', () => {
 		page,
 	}) => {
 		await openBoard(page)
-		await expect(page.locator('[data-testid="cn-board-view"]')).toBeVisible({
+		await expect(page.locator('[data-testid="cn-kanban-view"]')).toBeVisible({
 			timeout: 30000,
 		})
 		await expect(
 			page
 				.locator(
-					'[data-testid="cn-board-column"], [data-testid="cn-board-unusable"]',
+					'[data-testid="cn-kanban-column"], [data-testid="cn-kanban-unusable"]',
 				)
 				.first(),
 		).toBeVisible({ timeout: 30000 })
@@ -67,7 +67,7 @@ test.describe('Workflow board', () => {
 	test('workflow board loads without dossiq console errors', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
 		await openBoard(page)
-		await expect(page.locator('[data-testid="cn-board-view"]')).toBeVisible({
+		await expect(page.locator('[data-testid="cn-kanban-view"]')).toBeVisible({
 			timeout: 30000,
 		})
 		await page.waitForTimeout(1500)

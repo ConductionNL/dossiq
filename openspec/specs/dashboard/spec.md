@@ -678,7 +678,7 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 
 ### Requirement: REQ-DASH-V1-006 Workflow Board View [V1]
 
-The Cases list in board view (`/cases?_view=board`, the library's CnBoardView, board DqWerkbord)
+The Cases list in kanban view (`/cases?_view=kanban`, the library's CnKanbanView, board DqWerkbord)
 SHALL provide a Kanban board with one column per non-final status type, case cards in each column,
 and a status transition control that MUST be operable by both drag-and-drop AND keyboard alone —
 drag-and-drop MUST NOT be the only path to advance a case's status. The former `/workflow-board`

@@ -132,7 +132,7 @@ describe('the retired workflow board address', () => {
 		})
 		await router.push('/workflow-board')
 		expect(router.currentRoute.value.name).toBe('Cases')
-		expect(router.currentRoute.value.query).toEqual({ _view: 'board' })
+		expect(router.currentRoute.value.query).toEqual({ _view: 'kanban' })
 	})
 
 	it('is no page of its own any more', () => {

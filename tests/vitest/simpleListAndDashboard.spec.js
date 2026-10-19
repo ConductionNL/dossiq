@@ -311,11 +311,11 @@ describe('the cases list', () => {
 })
 
 describe('the board', () => {
-	const board = (built) => page(built, 'Cases').config.board
+	const board = (built) => page(built, 'Cases').config.kanban
 
 	it('is the Cases list in board view in both structures, with no page of its own', () => {
 		for (const built of [builtSimple, builtFull]) {
-			expect(page(built, 'Cases').config.viewModes).toContain('board')
+			expect(page(built, 'Cases').config.viewModes).toContain('kanban')
 			expect(
 				(built.pages || []).some((entry) => entry.id === 'WorkflowBoard'),
 			).toBe(false)
@@ -579,7 +579,7 @@ describe('the landing page', () => {
 		expect(link('simple-per-step')).toEqual({
 			label: 'To the board',
 			route: 'Cases',
-			query: { _view: 'board' },
+			query: { _view: 'kanban' },
 		})
 		const pageIds = new Set(builtSimple.pages.map((item) => item.id))
 		for (const item of mine.layout.filter((cell) => cell.headerLink)) {

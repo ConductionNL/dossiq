@@ -187,7 +187,7 @@ describe('the simple profile', () => {
 		expect(main.find((entry) => entry.id === 'WorkflowBoard')).toMatchObject({
 			label: 'Board',
 			route: 'Cases',
-			query: { _view: 'board' },
+			query: { _view: 'kanban' },
 		})
 	})
 

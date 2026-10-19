@@ -3,7 +3,7 @@
 
 /**
  * The two named handlers the Cases board view runs (manifest
- * `config.board.moveHandler` and `moveTargetsHandler`): a status move goes
+ * `config.kanban.moveHandler` and `moveTargetsHandler`): a status move goes
  * through the status-transition engine, the same write path the case page
  * uses, and the board asks the engine where a case may go.
  *

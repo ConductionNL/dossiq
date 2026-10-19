@@ -107,19 +107,19 @@ test.describe('Case lifecycle — state machine', () => {
 	 * @param page The page.
 	 */
 	async function openBoard(page: Page): Promise<void> {
-		await page.goto('/index.php/apps/dossiq/cases?_view=board', {
+		await page.goto('/index.php/apps/dossiq/cases?_view=kanban', {
 			waitUntil: 'domcontentloaded',
 			timeout: 60_000,
 		})
 		await dismissSupportDialog(page)
-		await expect(page.locator('[data-testid="cn-board-view"]')).toBeVisible({
+		await expect(page.locator('[data-testid="cn-kanban-view"]')).toBeVisible({
 			timeout: 30000,
 		})
 		// The board loads every statusType, caseType and case in batches,
 		// which on a loaded rig takes well over 15s.
 		await expect(
 			page
-				.locator('.cn-board-view__column-title', { hasText: RUN_PREFIX })
+				.locator('.cn-kanban-view__column-title', { hasText: RUN_PREFIX })
 				.first(),
 		).toBeVisible({ timeout: 30000 })
 	}
@@ -135,12 +135,12 @@ test.describe('Case lifecycle — state machine', () => {
 		await expect
 			.poll(
 				async () => {
-					const more = page.locator('[data-testid="cn-board-show-more"]')
+					const more = page.locator('[data-testid="cn-kanban-show-more"]')
 					while ((await more.count()) > 0) {
 						await more.first().click()
 					}
 					return page
-						.locator('[data-testid="cn-board-card"]', { hasText: title })
+						.locator('[data-testid="cn-kanban-card"]', { hasText: title })
 						.count()
 				},
 				{ message: `the board must draw "${title}"`, timeout: 30000 },
@@ -279,14 +279,14 @@ test.describe('Case lifecycle — state machine', () => {
 		expect(decision).not.toBe('')
 
 		await openBoard(page)
-		const ours = page.locator('[data-testid="cn-board-column"]').filter({
-			has: page.locator('.cn-board-view__column-title', { hasText: board }),
+		const ours = page.locator('[data-testid="cn-kanban-column"]').filter({
+			has: page.locator('.cn-kanban-view__column-title', { hasText: board }),
 		})
 		await expect(ours.first()).toBeVisible({ timeout: 15000 })
 
 		// THREE columns, IN ORDER, and the final status is not one of them.
 		await expect(
-			ours.locator('.cn-board-view__column-title'),
+			ours.locator('.cn-kanban-view__column-title'),
 			'one column per non-final status type, in status order',
 		).toHaveText([
 			`${board} Ontvangen`,
@@ -296,7 +296,7 @@ test.describe('Case lifecycle — state machine', () => {
 
 		// Each header shows the count of cases in that status.
 		await expect(
-			ours.locator('[data-testid="cn-board-count"]'),
+			ours.locator('[data-testid="cn-kanban-count"]'),
 			'each column header counts the cases in that status',
 		).toHaveText(['2', '1', '0'])
 	})

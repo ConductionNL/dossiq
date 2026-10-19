@@ -327,7 +327,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	test('a coloured status draws its board column in that colour', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases?_view=board`)
+		await page.goto(`/apps/${REGISTER}/cases?_view=kanban`)
 		await dismissSupportDialog(page)
 
 		// The board merges every non-final status sharing a NAME into one
@@ -340,14 +340,14 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		// hue wins the merge over a stored grey, whichever row the API
 		// answers with first. The dot is drawn in the status palette token
 		// (`colorMap`), the same one the status badge uses.
-		const column = page.locator('[data-testid="cn-board-column"]').filter({
-			has: page.locator('.cn-board-view__column-title', {
+		const column = page.locator('[data-testid="cn-kanban-column"]').filter({
+			has: page.locator('.cn-kanban-view__column-title', {
 				hasText: `${RUN_PREFIX} In behandeling`,
 			}),
 		})
 		await expect(column).toBeVisible({ timeout: 30_000 })
 
-		await expect(column.locator('[data-testid="cn-board-dot"]')).toHaveAttribute(
+		await expect(column.locator('[data-testid="cn-kanban-dot"]')).toHaveAttribute(
 			'style',
 			/var\(--nl-color-orange, #e17000\)/,
 		)

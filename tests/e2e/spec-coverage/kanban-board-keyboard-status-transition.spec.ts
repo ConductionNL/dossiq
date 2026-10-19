@@ -5,8 +5,8 @@
  * Gate-19 spec-coverage tests for kanban-board-keyboard-status-transition
  * (WCAG 2.1.1 Keyboard on the board's status move).
  *
- * The board is the Cases list in board view (`/cases?_view=board`, the
- * library's CnBoardView). The old `/workflow-board` page redirects there.
+ * The board is the Cases list in kanban view (`/cases?_view=kanban`, the
+ * library's CnKanbanView). The old `/workflow-board` page redirects there.
  *
  * WHY THIS FILE SEEDS ITS OWN DATA. The board is data-dependent: with no
  * statusTypes and no cases there is nothing to render, and the tests used to
@@ -137,8 +137,8 @@ test.describe('Cases board keyboard status transition', () => {
 	 * @return The column whose header names that status.
 	 */
 	function column(page: Page, name: string): Locator {
-		return page.locator('[data-testid="cn-board-column"]').filter({
-			has: page.locator('.cn-board-view__column-title', { hasText: name }),
+		return page.locator('[data-testid="cn-kanban-column"]').filter({
+			has: page.locator('.cn-kanban-view__column-title', { hasText: name }),
 		})
 	}
 
@@ -151,7 +151,7 @@ test.describe('Cases board keyboard status transition', () => {
 	 * @return The card.
 	 */
 	function cardIn(page: Page, name: string, title: string): Locator {
-		return column(page, name).locator('[data-testid="cn-board-card"]', {
+		return column(page, name).locator('[data-testid="cn-kanban-card"]', {
 			hasText: title,
 		})
 	}
@@ -177,7 +177,7 @@ test.describe('Cases board keyboard status transition', () => {
 			.poll(
 				async () => {
 					const more = column(page, name).locator(
-						'[data-testid="cn-board-show-more"]',
+						'[data-testid="cn-kanban-show-more"]',
 					)
 					if ((await more.count()) > 0) {
 						await more.first().click()
@@ -204,9 +204,9 @@ test.describe('Cases board keyboard status transition', () => {
 		page: Page,
 		title: string,
 	): Promise<Locator> {
-		await page.goto('/index.php/apps/dossiq/cases?_view=board')
+		await page.goto('/index.php/apps/dossiq/cases?_view=kanban')
 		await dismissSupportDialog(page)
-		await expect(page.locator('[data-testid="cn-board-view"]')).toBeVisible({
+		await expect(page.locator('[data-testid="cn-kanban-view"]')).toBeVisible({
 			timeout: 30_000,
 		})
 		// The seeded non-final column must exist, or there is nowhere for a
@@ -261,11 +261,11 @@ test.describe('Cases board keyboard status transition', () => {
 		// M on the focused card opens its menu with a target focused. The
 		// menu lists what the engine offers this case, so the seeded target
 		// is there and allowed.
-		await card.locator('[data-testid="cn-board-card-open"]').focus()
+		await card.locator('[data-testid="cn-kanban-card-open"]').focus()
 		await page.keyboard.press('m')
-		const menu = card.locator('[data-testid="cn-board-card-menu-list"]')
+		const menu = card.locator('[data-testid="cn-kanban-card-menu-list"]')
 		await expect(menu).toBeVisible({ timeout: 15000 })
-		const target = menu.locator('[data-testid="cn-board-menu-move"]', {
+		const target = menu.locator('[data-testid="cn-kanban-menu-move"]', {
 			hasText: IN_PROGRESS,
 		})
 		await expect(target).toBeVisible({ timeout: 15000 })
@@ -282,7 +282,7 @@ test.describe('Cases board keyboard status transition', () => {
 		await page.keyboard.press('Enter')
 
 		// Opening the menu must not also open the case.
-		await expect(page).toHaveURL(/\/cases\?_view=board/)
+		await expect(page).toHaveURL(/\/cases\?_view=kanban/)
 
 		await expectStoredStatus(
 			keyboardCaseId,
@@ -299,7 +299,7 @@ test.describe('Cases board keyboard status transition', () => {
 		await expect(cardIn(page, RECEIVED, KEYBOARD_TITLE)).toHaveCount(0)
 
 		// Enter on the card's title still opens the case.
-		await moved.locator('[data-testid="cn-board-card-open"]').focus()
+		await moved.locator('[data-testid="cn-kanban-card-open"]').focus()
 		await page.keyboard.press('Enter')
 		await expect(
 			page,

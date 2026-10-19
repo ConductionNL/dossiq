@@ -125,7 +125,7 @@ describe('caseStatusBoardMoves', () => {
 		const manifest = JSON.parse(
 			fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 		)
-		const board = manifest.pages.find((page) => page.id === 'Cases').config.board
+		const board = manifest.pages.find((page) => page.id === 'Cases').config.kanban
 		expect(board.moveHandler).toBe('moveCaseStatus')
 		expect(board.moveTargetsHandler).toBe('caseStatusTargets')
 		const status = board.columnFields.find((column) => column.field === 'status')

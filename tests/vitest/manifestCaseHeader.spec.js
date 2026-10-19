@@ -95,12 +95,12 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// 62 -> 63: the redaction page of a case (DqLakken).
 		expect(manifest.pages).toHaveLength(63)
 		// Two entries open Cases: the list, and the Werkbord, which is the
-		// same list in its board view (`query: { _view: 'board' }`).
+		// same list in its board view (`query: { _view: 'kanban' }`).
 		expect(
 			manifest.menu
 				.filter((entry) => entry.route === 'Cases')
 				.map((entry) => entry.query?._view ?? ''),
-		).toEqual(['', 'board'])
+		).toEqual(['', 'kanban'])
 	})
 })
 
