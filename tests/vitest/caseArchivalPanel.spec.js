@@ -183,6 +183,11 @@ describe('CaseArchivalPanel', () => {
 		expect(
 			wrapper.find('[data-testid="case-archival-unnominatable"]').exists(),
 		).toBe(false)
+		// Board DqZaakArchivering: the grid stands, every fact says when it is decided.
+		const pending = wrapper.find('[data-testid="case-archival-none"]').text()
+		expect(pending).toContain('Decided when it closes')
+		expect(pending).toContain('The case type, when it closes')
+		expect(pending).toContain('Not yet')
 	})
 
 	it('shows an error with a retry when openregister cannot be read', async () => {

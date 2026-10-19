@@ -51,6 +51,7 @@ export function houseStyleFields(t) {
 		{
 			key: 'logo',
 			label: t('dossiq', 'Other logo'),
+			uploadLabel: t('dossiq', 'Other logo'),
 			type: 'image',
 			url: '/apps/thematiq/settings/theming',
 			valuePath: 'logo_url',

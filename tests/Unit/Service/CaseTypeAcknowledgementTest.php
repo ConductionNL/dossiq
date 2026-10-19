@@ -29,6 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -52,7 +54,7 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->declaration = new CaseTypeAcknowledgement();
+		$this->declaration = new CaseTypeAcknowledgement(l10n: new SourceL10n());
 	}//end setUp()
 
 	/**
@@ -417,4 +419,37 @@ class CaseTypeAcknowledgementTest extends TestCase {
 		self::assertSame(['sanne@example.org', 'second@example.org'], $this->declaration->addressesOn(case: $case, caseType: $caseType));
 		self::assertSame([], $this->declaration->addressesOn(case: $case, caseType: []));
 	}//end testTheAddressIsReadWhereTheCaseTypeDeclaresIt()
+
+	/**
+	 * The warning comes translated.
+	 *
+	 * @return void
+	 */
+	public function testTheWarningIsTranslated(): void {
+		$declaration = new CaseTypeAcknowledgement(l10n: $this->markingL10n());
+		$warnings    = $declaration->publicationWarnings(caseType: ['acknowledgement' => ['enabled' => false]]);
+
+		self::assertSame(
+			expected: ['NL: This case type sends no acknowledgement of receipt. Awb 4:3a asks for one on every electronic submission.'],
+			actual: $warnings
+		);
+	}//end testTheWarningIsTranslated()
+
+	/**
+	 * A translator that marks what it translated, so a test can tell a
+	 * translated warning from a hard-coded one.
+	 *
+	 * @return IL10N The translator.
+	 */
+	private function markingL10n(): IL10N {
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $parameters = []): string => 'NL: ' . vsprintf($text, $parameters)
+		);
+		$l10n->method('n')->willReturnCallback(
+			static fn (string $singular, string $plural, int $count, array $parameters = []): string => 'NL: ' . vsprintf(str_replace('%n', (string)$count, $count === 1 ? $singular : $plural), $parameters)
+		);
+
+		return $l10n;
+	}//end markingL10n()
 }//end class

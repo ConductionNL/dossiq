@@ -132,6 +132,7 @@ import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
 import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
+import CaseArchiveDialog from './dialogs/CaseArchiveDialog.vue'
 // The Actions menu's non-lifecycle gestures: copy this case, start a flow
 // its type allows, and plan a follow-up case for a later date.
 // @spec openspec/specs/case-management/spec.md
@@ -562,6 +563,8 @@ const registry = {
 	'case-programme': {
 		// @custom-widget-ratchet exclude the programme and its work items are pipelinq's objects, found by a `dossiq:case` reference only pipelinq's ProgrammePortfolioService resolves, and the progress figure needs the mode that produced it, which no declared widget renders
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseProgrammeSection,
 		...PANEL_WIDGET_META,
 		_note: "CaseDetail Related tab, the Programme section (board DqZaakPartijen): the pipelinq programme the case hangs under, its progress with the mode, an uncomputable figure said rather than drawn as zero, and the link dialog with pipelinq's refusal naming the holder.",
@@ -579,6 +582,14 @@ const registry = {
 		component: CaseHandoverDialog,
 		propsSchema: {},
 		_note: 'CaseDetail Actions menu: hand this case to another team. A modal rather than an api-call because the act takes a team, a reason and the Awb 2:3 declaration, and an api-call carries a fixed body. The declaration is the field that cannot be defaulted: on, the applicant is told the case moved and to whom; off, nothing is sent, because an internal move between two teams of one bestuursorgaan is our arrangement and not their news.',
+	},
+
+	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	CaseArchiveDialog: {
+		kind: 'modal',
+		component: CaseArchiveDialog,
+		propsSchema: {},
+		_note: 'Archive a case on its own (board DqArchiveren): the case, what the case type keeps, a checklist read off the stored case through GET /api/case/{caseId}/archive/readiness, a reason and what archiving means. It posts the same archive act as the Lifecycle dialog, which keeps offering it, and the server checks the same role and refuses an open case the same way. Only the ended item decides; the others inform. Opened by the case-archive header action and the closed stage card.',
 	},
 
 	// @spec openspec/specs/status-transition-engine/spec.md
@@ -709,6 +720,8 @@ const registry = {
 	'case-related-planned': {
 		// @custom-widget-ratchet exclude a planned follow-up is a SCHEDULED FLOW and not a case, so the `related` widget cannot list it: it reads related OBJECTS. The widget wraps the library's own CnRelatedObjectsWidget and only adds an extraSections group, so the built-in related content is unchanged. Deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3)
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CasePlannedWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Related cases tab: what is related to this case, and what is about to be. The planned rows come from /api/case/{id}/planned, which lists the scheduled flows for this case that have not fired; once one fires its case is an ordinary related case and the row is gone. The Plan follow-up button sits here as well as in the Actions menu, because the tab is where a handler is already looking at what this case is connected to.',
@@ -835,7 +848,7 @@ const registry = {
 			'contactmoment.contact',
 			'role.representedParty',
 		],
-		_note: 'Cross-source initiator picker (Person=brpPerson / Company=kvkCompany register sets via the object store, Contact=core contactsmenu with graceful empty state). Bound to case.requester through fieldOverrides on the Dashboard new-case action and the CaseDetail case-core overrides. Also used inline by InitiatorPickerModal in the StartCaseWidget create flow. NOTE: a form-field entry is validated by CnAppRoot but not yet MOUNTED into CnFormDialog by @conduction/nextcloud-vue 2.41.0 — the manifest binding is the declaration, and until the library mounts it the resolved ns#Requester provider renders the field as its own object picker.',
+		_note: 'The one picker for case.requester, contactmoment.contact and role.representedParty. Inside a form (nextcloud-vue 2.103 mounts a field widget named in fieldOverrides, and it then receives `field`) it is one search field over the brpPerson and kvkCompany register sets (board DqNieuweZaak) and writes the chosen row uuid through update:modelValue; the projection (initiatorType, initiatorSourceId, initiatorDisplayName) is derived from that uuid by RequesterProjection on the case page, the one place it is made. Standalone, in InitiatorPickerModal for the StartCaseWidget create flow, it keeps its Person / Company / Contact tabs and emits `select` with the uuid and the projection together.',
 	},
 
 	// --- Which role a party takes on the case (gemachtigde-role-on-every-case-type). ---
@@ -1302,6 +1315,8 @@ const registry = {
 
 	'case-notes-pane': {
 		kind: 'widget',
+		// A card of its own on the side column and in a tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseNotesTab,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Notes tab: the mention-aware CnNotesTab through CaseNotesTab, the same surface the sidebar offers, so a handler reading the case file does not have to open the sidebar to leave a note on it.',
