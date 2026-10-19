@@ -45,7 +45,10 @@ function declaredSchemas() {
 		for (const [key, schema] of Object.entries(
 			data?.components?.schemas ?? {},
 		)) {
-			out[schema?.slug || key] = schema
+			// A fragment may carry only part of a schema (92-admin-data-access
+			// adds just `authorization`), so later files merge into earlier ones.
+			const slug = schema?.slug || key
+			out[slug] = { ...(out[slug] ?? {}), ...schema }
 		}
 	}
 	return out

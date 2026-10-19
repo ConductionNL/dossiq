@@ -35,6 +35,49 @@
 			</template>
 		</NcEmptyContent>
 
+		<template v-else-if="isBoard">
+			<h3 class="case-email-tab__title">
+				{{ t('dossiq', 'Email') }}
+			</h3>
+			<p class="case-email-tab__subtitle">
+				{{ t('dossiq', 'Mail linked to this case, also from a shared mailbox') }}
+			</p>
+			<div class="case-email-tab__template-row" data-testid="case-email-template-row">
+				<NcSelect
+					v-model="selectedTemplate"
+					class="case-email-tab__template-select"
+					:options="templates"
+					:disabled="templates.length === 0"
+					:inputLabel="t('dossiq', 'Email template')"
+					label="name"
+					trackBy="id"
+					:placeholder="templates.length === 0 ? t('dossiq', 'No templates for this case type yet') : t('dossiq', 'Select a template (optional)…')"
+					:clearable="true" />
+				<NcButton
+					:disabled="isFinal || drafting || !selectedTemplate"
+					data-testid="case-email-draft-template"
+					@click="composeDraft">
+					{{ t('dossiq', 'Open draft from template') }}
+				</NcButton>
+				<NcButton
+					:disabled="isFinal || drafting"
+					data-testid="case-email-draft-blank"
+					@click="composeBlank">
+					{{ t('dossiq', 'Empty draft') }}
+				</NcButton>
+			</div>
+			<p class="case-email-tab__hint">
+				{{ t('dossiq', 'The draft opens in Nextcloud Mail with the case details filled in. You send it from there.') }}
+			</p>
+			<NcNoteCard
+				v-if="error"
+				type="error"
+				:heading="t('dossiq', 'Could not open draft')"
+				role="alert">
+				{{ error }}
+			</NcNoteCard>
+		</template>
+
 		<template v-else>
 			<!-- Toolbar with template-driven compose action -->
 			<div class="case-email-tab__toolbar">
@@ -50,7 +93,7 @@
 					:clearable="true" />
 
 				<NcButton
-					type="primary"
+					variant="primary"
 					:disabled="isFinal || drafting"
 					:title="
 						isFinal
@@ -144,6 +187,16 @@ export default {
 			type: Object,
 			default: null,
 		},
+
+		/**
+		 * The widget's manifest content. `variant: "board"` draws the board's
+		 * header and template row only, for a tab that places the linked-mail
+		 * list (the email integration) beside it.
+		 */
+		content: {
+			type: Object,
+			default: () => ({}),
+		},
 	},
 
 	emits: ['drafted'],
@@ -165,6 +218,17 @@ export default {
 	computed: {
 		resolvedCaseId() {
 			return this.caseId || this.$route?.params?.id || null
+		},
+
+		/**
+		 * Whether the tab draws the board's header and template row only.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/specs/case-email-integration/spec.md#requirement-the-system-shall-prefill-an-nc-mail-draft-from-a-template-it-shall-not-send-mail-itself
+		 */
+		isBoard() {
+			return this.content?.variant === 'board'
 		},
 
 		/**
@@ -325,6 +389,18 @@ export default {
 			}
 		},
 
+		/**
+		 * Open an empty draft, whatever template is chosen.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-email-integration/spec.md#requirement-the-system-shall-prefill-an-nc-mail-draft-from-a-template-it-shall-not-send-mail-itself
+		 */
+		async composeBlank() {
+			this.selectedTemplate = null
+			await this.composeDraft()
+		},
+
 		formatVariable(name) {
 			return `{{${name}}}`
 		},
@@ -358,7 +434,7 @@ export default {
 
 .case-email-tab__unresolved {
 	margin: 4px 0 0;
-	padding-left: 20px;
+	padding-inline-start: 20px;
 }
 
 .case-email-tab__unresolved code {
@@ -366,5 +442,28 @@ export default {
 	padding: 2px 6px;
 	border-radius: var(--border-radius);
 	font-family: var(--font-face-mono, monospace);
+}
+
+.case-email-tab__title {
+	margin: 0;
+	font-size: 16px;
+	font-weight: bold;
+}
+
+.case-email-tab__subtitle,
+.case-email-tab__hint {
+	margin: 0;
+	color: var(--color-text-maxcontrast);
+}
+
+.case-email-tab__template-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 8px;
+}
+
+.case-email-tab__template-select {
+	flex: 1 1 260px;
 }
 </style>

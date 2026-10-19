@@ -154,7 +154,8 @@ export default {
 		},
 
 		/**
-		 * The chosen register's schemas as select options.
+		 * The chosen register's schemas as select options, by their title in
+		 * the reader's language where dossiq translates it.
 		 *
 		 * @return {Array<{id: number, label: string}>} The options.
 		 * @spec openspec/specs/admin-settings/spec.md
@@ -162,7 +163,9 @@ export default {
 		schemaOptions() {
 			return this.schemas.map((schema) => ({
 				id: schema.id,
-				label: schema.title || schema.slug || String(schema.id),
+				label: schema.title
+					? this.t('dossiq', schema.title)
+					: schema.slug || String(schema.id),
 			}))
 		},
 	},

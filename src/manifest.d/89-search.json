@@ -23,7 +23,13 @@
 							"schema": "case",
 							"subtitleField": "identifier",
 							"statusField": "status",
-							"href": "/apps/dossiq/cases/{id}"
+							"href": "/apps/dossiq/cases/{id}",
+							"statusResolve": {
+								"register": "dossiq",
+								"schema": "statusType",
+								"labelField": "name"
+							},
+							"linkedField": "assignee"
 						},
 						{
 							"id": "objects",
@@ -36,7 +42,8 @@
 							"label": "Documents",
 							"files": true
 						}
-					]
+					],
+					"linkedLabel": "Linked"
 				},
 				"showTitle": true,
 				"countText": "{total} results in cases, objects and documents, only what you may see",
@@ -48,9 +55,35 @@
 						"action": "export",
 						"label": "Download",
 						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "save-view",
+						"label": "Save search",
+						"variant": "primary",
+						"icon": "Plus"
 					}
 				],
-				"documentationUrl": "https://dossiq.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"title": "Search: {term}",
+				"allowSavedViews": true,
+				"sidePanel": [
+					{
+						"id": "search-saved",
+						"type": "saved-view-alert",
+						"title": "Saved search",
+						"content": {
+							"noun": {
+								"one": "case",
+								"other": "cases"
+							}
+						}
+					},
+					{
+						"id": "search-exports",
+						"type": "exports",
+						"title": "Your exports"
+					}
+				]
 			}
 		}
 	]

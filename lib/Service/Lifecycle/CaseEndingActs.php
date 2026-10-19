@@ -558,7 +558,7 @@ class CaseEndingActs {
 	 *
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
-	private function isEnded(array $case): bool {
+	public function isEnded(array $case): bool {
 		return (trim((string)($case[self::ENDING_FIELD] ?? '')) !== '');
 	}//end isEnded()
 

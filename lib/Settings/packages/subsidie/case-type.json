@@ -32,7 +32,14 @@
     "publicationRequired": false,
     "isDraft": false,
     "confidentiality": "zaakvertrouwelijk",
-    "initialStatus": "b3c1a000-0000-4000-a000-00005ab50001"
+    "initialStatus": "b3c1a000-0000-4000-a000-00005ab50001",
+    "overviewCards": [
+      "case-grant-decisions-card"
+    ],
+    "sideCards": [
+      "side-requester",
+      "case-banner-stack"
+    ]
   },
   "propertyDefinitions": [
     {

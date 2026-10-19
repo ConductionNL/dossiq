@@ -190,3 +190,19 @@ describe('the requesterName formatter', () => {
 		expect(found[0].formatter).toBe('requesterName')
 	})
 })
+
+describe('the catalogue formatters', () => {
+	// The test l10n answers the plural template unfilled, as for caseCount above.
+	it('reads a property count as a phrase and leaves a type without a schema empty', () => {
+		expect(formatters.propertyCount(9)).toBe('%n properties')
+		expect(formatters.propertyCount(1)).toBe('%n property')
+		expect(formatters.propertyCount(null)).toBe('')
+	})
+
+	it('names the views an object type supports', () => {
+		expect(formatters.objectViews(['map', 'table'])).toBe('Map, Table')
+		expect(formatters.objectViews(['table'])).toBe('Table')
+		expect(formatters.objectViews([])).toBe('')
+		expect(formatters.objectViews(null)).toBe('')
+	})
+})

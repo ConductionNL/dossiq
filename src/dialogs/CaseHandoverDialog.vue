@@ -31,17 +31,17 @@
 				<label class="case-handover-dialog__label" for="case-handover-team">
 					{{ t('dossiq', 'New team') }}
 				</label>
-				<NcSelect
-					v-model="teamOption"
+				<CnSearchSelect
+					:modelValue="teamOption"
 					inputId="case-handover-team"
 					:inputLabel="t('dossiq', 'New team')"
 					:labelOutside="true"
 					:options="teamOptions"
 					:loading="searching"
 					:filterable="false"
-					:taggable="true"
 					:placeholder="t('dossiq', 'The group that handles it from here')"
 					data-testid="case-handover-team"
+					@update:modelValue="teamOption = $event"
 					@search="searchTeams" />
 				<span class="case-handover-dialog__hint">
 					{{ currentTeam ? t('dossiq', 'Now with {team}. The new team picks its own handler.', { team: currentTeam }) : t('dossiq', 'The new team picks its own handler.') }}
@@ -104,14 +104,13 @@
 </template>
 
 <script>
-import { CnDialog } from '@conduction/nextcloud-vue'
+import { CnDialog, CnSearchSelect } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import SwapHorizontal from 'vue-material-design-icons/SwapHorizontal.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
@@ -119,14 +118,31 @@ import { searchTeams } from '../services/teamSearch.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
+/**
+ * The team rows, with what was typed offered as a team of its own when no row
+ * carries that name: where group sharing is restricted the search answers
+ * nothing, and the route still takes a team by its name.
+ *
+ * @param {Array<object>} found The teams the search found.
+ * @param {string} typed What was typed.
+ * @return {Array<object>} The rows.
+ * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ */
+export function withTypedTeam(found, typed) {
+	if (typed === '' || found.some((team) => String(team.id) === typed || String(team.label).toLowerCase() === typed.toLowerCase())) {
+		return found
+	}
+	return [...found, { id: typed, label: t('dossiq', 'Use "{name}"', { name: typed }), icon: 'AccountGroupOutline' }]
+}
+
 export default {
 	name: 'CaseHandoverDialog',
 
 	components: {
 		CnDialog,
+		CnSearchSelect,
 		NcButton,
 		NcCheckboxRadioSwitch,
-		NcSelect,
 		NcTextArea,
 		SwapHorizontal,
 	},
@@ -216,14 +232,17 @@ export default {
 		 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
 		 */
 		async searchTeams(query) {
+			const typed = String(query ?? '').trim()
 			this.searching = true
+			let found = []
 			try {
-				this.teamOptions = await searchTeams(query)
+				found = (await searchTeams(typed)).map((team) => ({ ...team, icon: 'AccountGroupOutline' }))
 			} catch {
-				this.teamOptions = []
+				// No team rows: what was typed is still offered below.
 			} finally {
 				this.searching = false
 			}
+			this.teamOptions = withTypedTeam(found, typed)
 		},
 
 		/**

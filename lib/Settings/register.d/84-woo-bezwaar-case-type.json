@@ -38,6 +38,10 @@
           "case-tile-deadline",
           "side-objection-appeal",
           "case-banner-stack"
+        ],
+        "overviewCards": [
+          "case-objection-grounds",
+          "case-objection-advice-card"
         ]
       },
       {
@@ -124,7 +128,8 @@
         "description": "Bezwaarschriftencommissie heeft advies uitgebracht (Awb art. 7:13)",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 6,
-        "isFinal": false
+        "isFinal": false,
+        "role": "review"
       },
       {
         "@self": {
