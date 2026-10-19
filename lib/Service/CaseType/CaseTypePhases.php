@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseType;
 
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Task\TaskDeclaration;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
 
@@ -48,6 +49,7 @@ class CaseTypePhases {
 	 * @param CaseTypeResolver       $resolver     The effective statuses and case type.
 	 * @param WorkflowTemplateLoader $templates    The active workflow definition, steps decoded.
 	 * @param TaskDeclaration        $declarations How a step declares its task.
+	 * @param TranslatedText         $text         Reads a translatable status name in the reader's language.
 	 *
 	 * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
 	 */
@@ -55,6 +57,7 @@ class CaseTypePhases {
 		private readonly CaseTypeResolver $resolver,
 		private readonly WorkflowTemplateLoader $templates,
 		private readonly TaskDeclaration $declarations,
+		private readonly TranslatedText $text,
 	) {
 	}//end __construct()
 
@@ -126,7 +129,7 @@ class CaseTypePhases {
 
 			$phases[$id] = [
 				'id'      => $id,
-				'name'    => ($statusType['name'] ?? ''),
+				'name'    => $this->text->forReader(value: ($statusType['name'] ?? '')),
 				'order'   => (int) ($statusType['order'] ?? 0),
 				'isFinal' => (($statusType['isFinal'] ?? false) === true),
 				'tasks'   => [],

@@ -266,4 +266,20 @@ class TransitionMatrixBuilderTest extends TestCase {
 
 	}//end testStatusLabelsResolveThroughTheStatusTypeIndex()
 
+	/**
+	 * The matrix names a status from its translatable name, not its id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	public function testATranslatableStatusNameIsReadAsText(): void {
+		$result = $this->builder->computeTransitionMatrix(
+			['c1' => [['statusType' => 'st-decide'], ['statusType' => 'st-publish']]],
+			['st-decide' => ['name' => ['nl' => 'Besluit']], 'st-publish' => ['name' => ['nl' => 'Publicatie']]]
+		);
+
+		self::assertSame('Besluit', $result['matrix'][0]['fromName']);
+		self::assertSame('Publicatie', $result['matrix'][0]['toName']);
+	}//end testATranslatableStatusNameIsReadAsText()
 }//end class
