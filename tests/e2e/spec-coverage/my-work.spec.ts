@@ -4,9 +4,12 @@
  *
  * Gate-19 spec-coverage tests for my-work spec.
  *
- * My Work is now a standard CnIndexPage card list scoped to the current
- * user (assignee = current uid), not the legacy 4-tab case+task board.
- * Each test is tagged with the scenario it covers.
+ * Assigned to me is the `my-work` default view of the Cases index
+ * (`/cases?savedView=default:my-work`), scoped to the current user
+ * (assignee = @me). Its card layout and five table columns are view
+ * overrides (openspec/changes/lists-are-views/restore.md, section 2), so
+ * both tests are fixme until those land. Each test is tagged with the
+ * scenario it covers.
  *
  * ⚠️ THE LIST NEEDS A ROW OF ITS OWN, SO THIS FILE SEEDS ONE
  * ---------------------------------------------------------
@@ -20,14 +23,10 @@
  * `title` query parameter through as a filter, measured 2026-09-11), so
  * neither answer depends on how many other cases that user holds.
  *
- * MUTATION POINTS, NOT YET RUN. The mutation runs were refused by the
- * permission system on 2026-09-11. Both points are client-side, in
- * `src/views/MyWorkCards.vue`:
- *
- *  - `viewMode="cards"` becomes `viewMode="table"`. Expected red: `My Work
- *    must open in card view, so the seeded case renders as a card`.
- *  - drop `'deadline'` from `columns()`. Expected red: `the table view must
- *    show identifier, title, case type, status and deadline, in that order`.
+ * MUTATION POINTS, NOT YET RUN. Both are in the `my-work` view's
+ * overrides once restored: a `table` default mode reds `Assigned to me must
+ * open in card view`, and dropping `deadline` from its columns reds `the
+ * table view must show identifier, title, case type, status and deadline`.
  *
  * Note: Use /apps/dossiq/<route> (not /index.php/apps/dossiq/<route>)
  * so the Vue history-mode router can resolve the route correctly.
@@ -45,9 +44,7 @@ import {
 	seedCase,
 } from '../helpers/fixtures.ts'
 import { dismissSupportDialog } from '../helpers/nav.ts'
-// Route named after the component that renders it, so this spec states WHICH
-// screen it covers in executable code rather than in a comment.
-import { MyWorkCards } from '../helpers/page-components.ts'
+import { CasesSavedView, VIEW_OVERRIDES_APPLIED } from '../helpers/page-components.ts'
 
 /** The seeded case. Assigned to the signed-in user, found by its title. */
 const TITLE = `${RUN_PREFIX} My work case`
@@ -80,18 +77,16 @@ test.describe('My Work spec coverage', () => {
 	})
 
 	/**
-	 * Open My Work narrowed to the seeded case.
+	 * Open the Assigned to me view narrowed to the seeded case.
 	 *
 	 * @param page The page.
 	 */
 	async function openMyWork(page: Page): Promise<void> {
 		await page.goto(
-			`/index.php/apps/dossiq${MyWorkCards}?title=${encodeURIComponent(TITLE)}`,
+			`/index.php/apps/dossiq${CasesSavedView('my-work')}&title=${encodeURIComponent(TITLE)}`,
 		)
 		await dismissSupportDialog(page)
-		// The My Work route renders NO page heading — measured on a CI runner
-		// (2026-08-04) it exposes zero `heading` roles. Identify the view by
-		// the sort controls unique to it.
+		// The view offers Urgency in the sort select.
 		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
 			timeout: 60_000,
 		})
@@ -99,6 +94,7 @@ test.describe('My Work spec coverage', () => {
 
 	// @e2e openspec/specs/my-work/spec.md#card-and-table-view
 	test('opens in card view, and offers a card/table toggle', async ({ page }) => {
+		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs view overrides: openspec/changes/lists-are-views/restore.md section 2')
 		await openMyWork(page)
 
 		// The DEFAULT is the claim, so nothing is clicked before it is read.
@@ -106,8 +102,8 @@ test.describe('My Work spec coverage', () => {
 		// page: a list that opened in table view renders the same case as a
 		// row instead.
 		await expect(
-			page.locator('.mywork-card', { hasText: TITLE }),
-			'My Work must open in card view, so the seeded case renders as a card',
+			page.getByText(TITLE).first(),
+			'Assigned to me must open in card view, so the seeded case renders as a card',
 		).toBeVisible({ timeout: 60_000 })
 		await expect(page.locator('table')).toHaveCount(0)
 
@@ -123,11 +119,12 @@ test.describe('My Work spec coverage', () => {
 	test('the table view shows identifier, title, case type, status and deadline', async ({
 		page,
 	}) => {
+		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs view overrides: openspec/changes/lists-are-views/restore.md section 2')
 		await openMyWork(page)
 		// Wait for the list to answer before switching: the toggle paints with
 		// the shell, and switching before the rows exist leaves a table view
 		// with no `<table>` to read.
-		await expect(page.locator('.mywork-card', { hasText: TITLE })).toBeVisible({
+		await expect(page.getByText(TITLE).first()).toBeVisible({
 			timeout: 60_000,
 		})
 

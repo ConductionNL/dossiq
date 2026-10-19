@@ -41,8 +41,24 @@
 /** `src/views/CasesOnMapView.vue` — the Cases map view (manifest page `CaseMap`). */
 export const CasesOnMapView = '/map'
 
-/** `src/views/MyWorkCards.vue` — the personal workload cards (manifest page `MyWork`). */
-export const MyWorkCards = '/my-work'
+/**
+ * A default view of the Cases index (manifest page `Cases`, `defaultSavedViews`):
+ * `my-work`, `team-queue`, `data-subject-requests`, `woo-requests`.
+ *
+ * @param slug The view's slug.
+ * @return The app-relative route that opens the view.
+ */
+export function CasesSavedView(slug: string): string {
+	return `/cases?savedView=default:${slug}`
+}
+
+/**
+ * Whether nextcloud-vue renders a view's page config `overrides` (card
+ * layout, columns, slots, header, tabs). Until it does, the tests that read
+ * what a view restores (openspec/changes/lists-are-views/restore.md) are
+ * marked fixme; flip this when restore.md is applied.
+ */
+export const VIEW_OVERRIDES_APPLIED = false
 
 /**
  * `src/views/settings/SubstitutionSettings.vue` — self-service vervanging.

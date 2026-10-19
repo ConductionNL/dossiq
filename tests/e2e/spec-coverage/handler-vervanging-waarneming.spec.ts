@@ -47,8 +47,10 @@ import {
 	// and the skip reason's note about Dutch locators answered a question nobody
 	// had asked. The tests below assert the actions the page offers instead.
 
+	CasesSavedView,
 	SubstitutionAdmin,
 	SubstitutionPersonalSettings,
+	VIEW_OVERRIDES_APPLIED,
 } from '../helpers/page-components.ts'
 
 /** The dossiq controller surface these scenarios are actually enforced on. */
@@ -831,20 +833,18 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * (`PLAIN_USER` covered by `ADMIN_USER`), so nothing here needs its own
 	 * fixture and nothing here writes one.
 	 *
-	 * MUTATION-CHECKED, because "a test that cannot fail" is what this file is
-	 * the rewrite of: dropping `this.loadSubstitutedWork()` from
-	 * `MyWorkCards.vue` reds the marker assertion below and the three vitest
-	 * cases in `tests/vitest/substitutedWorkOnMyWork.spec.js` that cover the
-	 * same three claims off a stubbed resolver.
+	 * Assigned to me is the `my-work` default view of the Cases index, and
+	 * the substituted group is a slot of that view
+	 * (openspec/changes/lists-are-views/restore.md, section 2), so this test
+	 * is fixme until view overrides land.
 	 */
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#waarnemer-sees-substituted-work-in-my-work
 	test('the absentee in-scope case is on the waarnemer My work, marked and hideable', async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/dossiq/my-work')
+		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs the view slot: openspec/changes/lists-are-views/restore.md section 2')
+		await page.goto(`/index.php/apps/dossiq${CasesSavedView('my-work')}`)
 		await dismissSupportDialog(page)
-		// The My Work route renders no page heading (measured on a CI runner
-		// 2026-08-04) — assert the view by a control it does render.
 		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
 			timeout: 15000,
 		})

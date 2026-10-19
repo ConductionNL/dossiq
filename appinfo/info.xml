@@ -862,6 +862,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 types, so it runs after the import.
             -->
             <step>OCA\Dossiq\Repair\PinCaseTypesAsViews</step>
+            <!--
+                Menu pins of the team queue and Assigned to me point at their
+                views of the case list (lists-are-views), once per user.
+            -->
+            <step>OCA\Dossiq\Repair\PinnedPagesAsViews</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
