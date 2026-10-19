@@ -235,7 +235,6 @@ import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
 //     customComponents map, plus the handlers a manifest names by string. ---
 import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
-import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
 import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
 import PmDwellByAssigneeWidget from './views/processMining/PmDwellByAssigneeWidget.vue'
@@ -250,6 +249,7 @@ import EndOfDayView from './views/queue/EndOfDayView.vue'
 // @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 import PersonalQueueView from './views/queue/PersonalQueueView.vue'
 import StoreGallery from './views/store/StoreGallery.vue'
+import SubstitutedWork from './views/SubstitutedWork.vue'
 // The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
 // `type: "detail"` page when remove-casetask took the caseTask schema away:
 // CnDetailPage has no entity-source mode, so a detail page can only bind a
@@ -265,6 +265,7 @@ import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 import FirstTodayWidget from './views/widgets/FirstTodayWidget.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
 import WooReportsView from './views/woo/WooReportsView.vue'
+import WorkloadSummaryBar from './views/WorkloadSummaryBar.vue'
 import { leafTab } from './integrations/leafTabs.js'
 // Ask whether this case already exists, before it does.
 // @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
@@ -421,10 +422,16 @@ const registry = {
 	},
 
 	// --- Genuine exceptions: no abstract manifest analogue. ---
-	MyWorkView: {
+	// My Work's two slots (DqAanMijToegewezen): the list itself is manifest config.
+	WorkloadSummaryBar: {
 		kind: 'page',
-		component: MyWorkView,
-		_note: 'Current-user case index (assignee = current uid) in card view; a thin CnIndexPage wrapper injecting the resolved uid because the stock index base-filter does not resolve the @me token.',
+		component: WorkloadSummaryBar,
+		_note: "My Work below-header slot: the coordinator's open cases per colleague, read from /api/work-queue/workload (403, and so nothing, for anyone else). A colleague's chip opens their open cases on the Cases page.",
+	},
+	SubstitutedWork: {
+		kind: 'page',
+		component: SubstitutedWork,
+		_note: 'My Work before-collection slot: the cases an active substitution routes to the reader, marked with whose they are and until when, hideable. Not a filter on the list, because these cases are not assigned to the reader.',
 	},
 
 	// --- Cases-on-map overview (case-map-overview). ---

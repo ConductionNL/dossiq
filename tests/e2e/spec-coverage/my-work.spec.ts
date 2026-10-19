@@ -21,12 +21,12 @@
  * neither answer depends on how many other cases that user holds.
  *
  * MUTATION POINTS, NOT YET RUN. The mutation runs were refused by the
- * permission system on 2026-09-11. Both points are client-side, in
- * `src/views/MyWorkCards.vue`:
+ * permission system on 2026-09-11. Both points are client-side, in the
+ * `MyWork` page of `src/manifest.json`:
  *
- *  - `viewMode="cards"` becomes `viewMode="table"`. Expected red: `My Work
+ *  - `"viewMode": "cards"` becomes `"table"`. Expected red: `My Work
  *    must open in card view, so the seeded case renders as a card`.
- *  - drop `'deadline'` from `columns()`. Expected red: `the table view must
+ *  - drop `"deadline"` from `columns`. Expected red: `the table view must
  *    show identifier, title, case type, status and deadline, in that order`.
  *
  * Note: Use /apps/dossiq/<route> (not /index.php/apps/dossiq/<route>)
@@ -106,7 +106,7 @@ test.describe('My Work spec coverage', () => {
 		// page: a list that opened in table view renders the same case as a
 		// row instead.
 		await expect(
-			page.locator('.mywork-card', { hasText: TITLE }),
+			page.locator('.cn-object-card', { hasText: TITLE }),
 			'My Work must open in card view, so the seeded case renders as a card',
 		).toBeVisible({ timeout: 60_000 })
 		await expect(page.locator('table')).toHaveCount(0)
@@ -127,7 +127,7 @@ test.describe('My Work spec coverage', () => {
 		// Wait for the list to answer before switching: the toggle paints with
 		// the shell, and switching before the rows exist leaves a table view
 		// with no `<table>` to read.
-		await expect(page.locator('.mywork-card', { hasText: TITLE })).toBeVisible({
+		await expect(page.locator('.cn-object-card', { hasText: TITLE })).toBeVisible({
 			timeout: 60_000,
 		})
 

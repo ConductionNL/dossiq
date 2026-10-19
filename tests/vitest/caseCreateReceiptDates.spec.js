@@ -85,11 +85,12 @@ function collect(node, match, found = []) {
 describe('the create forms leave the receipt to dossiq', () => {
 	const createForms = caseForms().filter((form) => form.page !== EDIT_PAGE)
 
-	it('finds the six create surfaces', () => {
+	it('finds the seven create surfaces', () => {
 		expect(createForms.map((form) => form.where).sort()).toEqual([
 			'Cases.config',
 			'ContactDetail.headerActions.new-case-for-contact',
 			'Dashboard.headerActions.new-case',
+			'MyWork.config',
 			'MyWorkHome.headerActions.new-case',
 			'OrganisationDetail.headerActions.new-case-for-contact',
 			'Queue.config',

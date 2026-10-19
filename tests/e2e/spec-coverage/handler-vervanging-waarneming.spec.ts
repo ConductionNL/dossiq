@@ -832,8 +832,8 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * fixture and nothing here writes one.
 	 *
 	 * MUTATION-CHECKED, because "a test that cannot fail" is what this file is
-	 * the rewrite of: dropping `this.loadSubstitutedWork()` from
-	 * `MyWorkCards.vue` reds the marker assertion below and the three vitest
+	 * the rewrite of: dropping `this.load()` from `mounted()` in
+	 * `SubstitutedWork.vue` reds the marker assertion below and the three vitest
 	 * cases in `tests/vitest/substitutedWorkOnMyWork.spec.js` that cover the
 	 * same three claims off a stubbed resolver.
 	 */

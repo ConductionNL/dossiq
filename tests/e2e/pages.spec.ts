@@ -540,11 +540,10 @@ test.describe('My Work page', () => {
 		// AND THE FIVE COLUMNS THE SCENARIO NAMES. Switching views is the
 		// other half of the toggle claim, and the headers are the half that
 		// says what a reader gets when they switch.
-		// `.mywork-card` is this page's own card, not the library's generic
-		// row: MyWorkCards fills CnIndexPage's `#card` slot with
-		// MyWorkCaseCard, so `cn-object-row` never appears in card view here.
+		// The card view draws the library's record card (`cardLayout`), not
+		// the generic row, so `cn-object-row` never appears in card view here.
 		await expect(
-			page.locator('.mywork-card').first(),
+			page.locator('.cn-object-card').first(),
 			'the list has answered, so an absent column is a decision',
 		).toBeVisible({ timeout: 30_000 })
 		await tableToggle.click()

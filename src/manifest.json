@@ -1872,14 +1872,183 @@
 		{
 			"id": "MyWork",
 			"route": "/my-work",
-			"type": "custom",
-			"title": "My work",
-			"component": "MyWorkView",
-			"_note": "Case index scoped to the current user (assignee = current uid) in card view. A thin CnIndexPage wrapper because the stock index base-filter does not resolve the @me current-user token; the wrapper injects the resolved uid.",
+			"type": "index",
+			"title": "Assigned to me",
+			"_note": "DqAanMijToegewezen. The reader's open cases, cards first. Urgency is the default order and comes from GET /api/work-queue: the server scores each case per request from its deadline, priority and idle days, which OpenRegister cannot sort by, so the sort option names that endpoint as its `source` and the page searches, filters and pages its ranked rows in the browser (nextcloud-vue index-sort-source). The tier each entry carries is copied onto its case (`carry`) and, with `annotate`, onto the cases of the Newest order too, which is what the card's head pill reads. When the queue fails the list orders by deadline and says so. The coordinator's workload strip and the substituted work are the two slots; neither is a filter on this list.",
 			"config": {
-				"_note": "BOTH halves of the pair, not `register` alone: CnPageRenderer auto-registers a custom page's object type from `register` + `schema` and skips it with a warning when only one is declared, so a lone register was a page that named its data and registered nothing. `dossiq` is the OpenRegister register SLUG rather than this app's id (see MyWorkCards.vue), and `case` is what the wrapper's CnIndexPage mounts with.",
 				"register": "dossiq",
-				"schema": "case"
+				"schema": "case",
+				"filter": {
+					"assignee": "@me",
+					"statusHiddenInLists": false,
+					"isDraft": false
+				},
+				"showTitle": true,
+				"breadcrumb": {
+					"label": "My work",
+					"route": "MyWorkHome"
+				},
+				"headerMeta": "{total} cases in your name · most urgent first",
+				"footerNote": "Urgency follows from the deadline, the priority and how long a case has been idle.",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "actions-menu",
+						"label": "Actions"
+					},
+					{
+						"action": "add",
+						"label": "New case",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
+				"viewMode": "cards",
+				"viewModes": [
+					"cards",
+					"table"
+				],
+				"columns": [
+					"identifier",
+					"title",
+					{
+						"key": "caseType",
+						"label": "Case type",
+						"formatter": "caseTypeName"
+					},
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "statusTypeName"
+					},
+					"deadline"
+				],
+				"cardLayout": {
+					"headPill": {
+						"field": "deadlineTier",
+						"labels": {
+							"overdue": "Late",
+							"critical": "Critical",
+							"warning": "Soon",
+							"normal": "Normal"
+						},
+						"colorMap": {
+							"overdue": "error",
+							"critical": "warning",
+							"warning": "info",
+							"normal": "default"
+						}
+					},
+					"number": "identifier",
+					"title": "title",
+					"meta": [
+						{
+							"field": "caseType",
+							"formatter": "caseTypeName"
+						},
+						{
+							"field": "status",
+							"formatter": "statusTypeName"
+						}
+					],
+					"footerDate": {
+						"field": "deadline",
+						"label": "Deadline"
+					}
+				},
+				"showSortSelect": true,
+				"sortSelectOptions": [
+					{
+						"value": "urgency",
+						"label": "Urgency",
+						"default": true,
+						"order": "deadline",
+						"source": {
+							"url": "/apps/dossiq/api/work-queue",
+							"rowsPath": "items",
+							"rowPath": "case",
+							"carry": [
+								"deadlineTier",
+								"score"
+							],
+							"annotate": true,
+							"searchFields": [
+								"title",
+								"identifier",
+								"description"
+							],
+							"failedNote": "Ordered by deadline: the urgency could not be computed."
+						}
+					},
+					{
+						"value": "newest",
+						"label": "Newest",
+						"order": "-startDate"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": false
+				},
+				"showViewAction": false,
+				"rowClickToView": true,
+				"editOpensDetail": true,
+				"excludeFields": [
+					"status",
+					"priority",
+					"priorityOverride",
+					"priorityOverrideReason"
+				],
+				"includeFields": [
+					"caseType",
+					"title",
+					"requester",
+					"description",
+					"assignee",
+					"impact",
+					"urgency",
+					"confidentiality",
+					"intakeChannel",
+					"plannedEndDate"
+				],
+				"fieldOverrides": {
+					"description": {
+						"widget": "textarea"
+					},
+					"requester": {
+						"widget": "InitiatorPicker",
+						"label": "Requester"
+					},
+					"confidentiality": {
+						"enumLabels": {
+							"openbaar": "Public",
+							"beperkt_openbaar": "Restricted public",
+							"intern": "Internal",
+							"zaakvertrouwelijk": "Case confidential",
+							"vertrouwelijk": "Confidential",
+							"confidentieel": "Classified confidential",
+							"geheim": "Secret",
+							"zeer_geheim": "Top secret"
+						}
+					}
+				},
+				"createDefaults": {
+					"assignee": "@me",
+					"confidentiality": "vertrouwelijk"
+				},
+				"formSize": "large",
+				"formColumns": 2,
+				"createSuccessRoute": "CaseDetail",
+				"createSuccessMessage": "Case created.",
+				"documentationUrl": "https://dossiq.conduction.nl"
+			},
+			"slots": {
+				"below-header": "WorkloadSummaryBar",
+				"before-collection": "SubstitutedWork"
 			}
 		},
 		{

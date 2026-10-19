@@ -150,7 +150,11 @@ vi.mock('@nextcloud/vue', () => ({
 	}),
 }))
 
-const { default: MyWorkCards } = await import('../../src/views/MyWorkCards.vue')
+vi.mock('../../src/services/formatters.js', () => ({
+	default: { caseTypeName: (value) => value, statusTypeName: (value) => value },
+}))
+
+const { default: SubstitutedWork } = await import('../../src/views/SubstitutedWork.vue')
 const { default: MyWorkWidget } =
 	await import('../../src/views/widgets/MyWorkWidget.vue')
 
@@ -174,16 +178,19 @@ function substitutedCase(over = {}) {
 	}
 }
 
+/** The router My Work's slot opens a case with. */
+let router = { push: vi.fn() }
+
 /**
- * Mount the My work index.
+ * Mount My Work's substituted-work slot.
  *
  * @return {Promise<object>} The mounted wrapper, after its loads settle.
  */
 async function mountIndex() {
-	const wrapper = mount(MyWorkCards, {
+	router = { push: vi.fn() }
+	const wrapper = mount(SubstitutedWork, {
 		global: {
-			mocks: { $router: { push: vi.fn() } },
-			stubs: { WorkloadSummaryBar: true },
+			mocks: { $router: router },
 		},
 	})
 	await flushPromises()
@@ -260,13 +267,26 @@ describe('the My work index', () => {
 		expect(wrapper.find('[data-testid="substituted-work"]').exists()).toBe(false)
 	})
 
-	it('renders the reader own list when the resolver refuses', async () => {
+	it('shows no group when the resolver refuses', async () => {
 		// A 403 or a 500 on the substituted read must not take My work with it:
-		// the group is work ADDED to the page, never work the page depends on.
+		// the group is work ADDED to the page (a slot of its own), never work
+		// the page's list depends on.
 		substituted = new Error('resolver unavailable')
 		const wrapper = await mountIndex()
-		expect(wrapper.find('.cn-index-page-stub').exists()).toBe(true)
 		expect(wrapper.find('[data-testid="substituted-work"]').exists()).toBe(false)
+	})
+
+	it('opens a substituted case on its own page', async () => {
+		substituted = { cases: [substitutedCase()], tasks: [] }
+		const wrapper = await mountIndex()
+		await wrapper.find('[data-testid="substituted-card-c-1"]').trigger('click')
+		expect(router.push).toHaveBeenCalledWith({ name: 'CaseDetail', params: { id: 'c-1' } })
+	})
+
+	it('is mounted on My Work\'s before-collection slot', () => {
+		const manifest = JSON.parse(readFileSync(resolve(ROOT, 'src/manifest.json'), 'utf8'))
+		const page = manifest.pages.find((entry) => entry.id === 'MyWork')
+		expect(page.slots['before-collection']).toBe('SubstitutedWork')
 	})
 })
 
@@ -393,7 +413,7 @@ describe('the helper module', () => {
 		expect(exports.length).toBeGreaterThan(0)
 
 		const callers = [
-			readFileSync(resolve(ROOT, 'src/views/MyWorkCards.vue'), 'utf8'),
+			readFileSync(resolve(ROOT, 'src/views/SubstitutedWork.vue'), 'utf8'),
 			readFileSync(
 				resolve(ROOT, 'src/views/widgets/MyWorkWidget.vue'),
 				'utf8',

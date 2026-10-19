@@ -40,11 +40,6 @@ const kpiSource = fs.readFileSync(
 	path.join(ROOT, 'lib', 'Service', 'KpiAggregationService.php'),
 	'utf8',
 )
-const myWorkSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'views', 'MyWorkCards.vue'),
-	'utf8',
-)
-
 /** The mirror every working surface narrows on. */
 const FLAG = 'statusHiddenInLists'
 
@@ -100,15 +95,8 @@ describe('a hidden status leaves every working lens', () => {
 		)
 	})
 
-	it('My Work narrows on it in the base filter the wrapper injects', () => {
-		// My Work is a custom view rather than a manifest filter, because the
-		// stock index base-filter cannot resolve `@me`. The condition
-		// therefore has to be asserted against the source, and the assertion
-		// is on the RETURNED filter object rather than on the file containing
-		// the word: the word appears in the comment above it either way.
-		expect(myWorkSource).toContain(
-			`return { assignee: uid, ${FLAG}: false, isDraft: false }`,
-		)
+	it('My Work narrows on it in its base filter, beside its own assignee', () => {
+		expect(page('MyWork').config.filter).toEqual({ assignee: '@me', [FLAG]: false, isDraft: false })
 	})
 })
 

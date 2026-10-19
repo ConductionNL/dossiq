@@ -9,7 +9,7 @@
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 
@@ -31,6 +31,16 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 
 vi.mock('@nextcloud/auth', () => ({
 	getCurrentUser: () => ({ uid: 'pieter' }),
+}))
+
+const getWorkload = vi.fn()
+
+vi.mock('@nextcloud/axios', () => ({
+	default: { get: (...args) => getWorkload(...args) },
+}))
+
+vi.mock('@nextcloud/router', () => ({
+	generateUrl: (path) => `/index.php${path}`,
 }))
 
 const { default: WorkloadSummaryBar } = await import('../../src/views/WorkloadSummaryBar.vue')
@@ -78,5 +88,35 @@ describe('WorkloadSummaryBar', () => {
 		const wrapper = mountBar([])
 
 		expect(wrapper.find('[data-testid="workload-summary"]').exists()).toBe(false)
+	})
+})
+
+describe('WorkloadSummaryBar on My Work', () => {
+	it('reads the workload itself when no rows are handed in', async () => {
+		getWorkload.mockResolvedValue({ data: { handlers } })
+		const wrapper = mount(WorkloadSummaryBar, { global: { mocks: { t, $router: { push: vi.fn() } } } })
+		await flushPromises()
+		expect(getWorkload).toHaveBeenCalledWith('/index.php/apps/dossiq/api/work-queue/workload')
+		expect(wrapper.find('[data-testid="workload-summary"]').exists()).toBe(true)
+	})
+
+	it('renders nothing for a reader the endpoint refuses', async () => {
+		getWorkload.mockRejectedValue(new Error('403'))
+		const wrapper = mount(WorkloadSummaryBar, { global: { mocks: { t, $router: { push: vi.fn() } } } })
+		await flushPromises()
+		expect(wrapper.find('[data-testid="workload-summary"]').exists()).toBe(false)
+	})
+
+	it('opens a colleague\'s open cases and stays put on the reader\'s own chip', async () => {
+		const push = vi.fn()
+		const wrapper = mount(WorkloadSummaryBar, { props: { handlers }, global: { mocks: { t, $router: { push } } } })
+		const bar = wrapper.findComponent({ name: 'CnQuickFilterBar' })
+		await bar.vm.$emit('update:active-index', 0)
+		expect(push).not.toHaveBeenCalled()
+		await bar.vm.$emit('update:active-index', 1)
+		expect(push).toHaveBeenCalledWith({
+			name: 'Cases',
+			query: { assignee: 'anouk', isFinalStatus: 'false', statusHiddenInLists: 'false', isDraft: 'false' },
+		})
 	})
 })

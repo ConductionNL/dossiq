@@ -73,10 +73,10 @@ async function openMyWork(page: Page): Promise<void> {
 	await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
 		timeout: 60_000,
 	})
-	await expect(page.locator('.mywork-card', { hasText: HIGH })).toBeVisible({
+	await expect(page.locator('.cn-object-card', { hasText: HIGH })).toBeVisible({
 		timeout: 60_000,
 	})
-	await expect(page.locator('.mywork-card', { hasText: LOW })).toBeVisible({
+	await expect(page.locator('.cn-object-card', { hasText: LOW })).toBeVisible({
 		timeout: 60_000,
 	})
 }
@@ -88,7 +88,7 @@ async function openMyWork(page: Page): Promise<void> {
  * @return The two titles, in the order the cards appear.
  */
 async function seededOrder(page: Page): Promise<string[]> {
-	const titles = await page.locator('.mywork-card__title').allInnerTexts()
+	const titles = await page.locator('.cn-object-card__title').allInnerTexts()
 	return titles
 		.map((title) => title.trim())
 		.filter((title) => title === HIGH || title === LOW)
@@ -146,7 +146,7 @@ test.describe('configurable-queue-urgency', () => {
 		await openMyWork(page)
 
 		await page.getByRole('button', { name: 'Newest' }).click()
-		await expect(page.locator('.mywork-card', { hasText: LOW })).toBeVisible({
+		await expect(page.locator('.cn-object-card', { hasText: LOW })).toBeVisible({
 			timeout: 60_000,
 		})
 		await expect

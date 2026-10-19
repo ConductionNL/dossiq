@@ -102,9 +102,13 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  * Moved 13 -> 14 by the redaction page of a case (DqLakken), a custom page:
  * the panel reads its own redaction routes, which no typed page can. Both
  * numbers rise, for the same reason as above.
+ *
+ * Moved 14 -> 13 when My Work became an index page: its urgency order is a
+ * sort option with an endpoint source (nextcloud-vue index-sort-source). Both
+ * numbers drop, for the same reason as above.
  */
-const CUSTOM_PAGE_COUNT_BEFORE = 13
-const CUSTOM_PAGE_COUNT_AFTER = 14
+const CUSTOM_PAGE_COUNT_BEFORE = 12
+const CUSTOM_PAGE_COUNT_AFTER = 13
 
 /**
  * One page as the manifest declares it.

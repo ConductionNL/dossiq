@@ -41,7 +41,7 @@
 /** `src/views/CasesOnMapView.vue` — the Cases map view (manifest page `CaseMap`). */
 export const CasesOnMapView = '/map'
 
-/** `src/views/MyWorkCards.vue` — the personal workload cards (manifest page `MyWork`). */
+/** The personal workload cards: manifest page `MyWork`, an index page in card view. */
 export const MyWorkCards = '/my-work'
 
 /**
