@@ -1312,6 +1312,8 @@
 									"widgetIds": [
 										"case-objection-grounds",
 										"case-objection-advice-card",
+										"case-summary",
+										"case-grant-decisions-card",
 										"case-request",
 										"case-details",
 										"case-priority-card",
@@ -1610,6 +1612,10 @@
 						}
 					},
 					"case-terms": {
+						"visibleWhen": {
+							"field": "@context.caseType.overviewCards",
+							"op": "empty"
+						},
 						"title": "Term and payment",
 						"content": {
 							"title": "Term and payment",
@@ -1633,9 +1639,17 @@
 						}
 					},
 					"case-flow-runs": {
+						"visibleWhen": {
+							"field": "@context.caseType.overviewCards",
+							"op": "empty"
+						},
 						"title": "Flows"
 					},
 					"case-kpis-hours": {
+						"visibleWhen": {
+							"field": "@context.caseType.overviewCards",
+							"op": "empty"
+						},
 						"title": "Record hours"
 					},
 					"case-email-panel": {
@@ -1705,6 +1719,10 @@
 					{
 						"id": "case-request",
 						"type": "facts",
+						"visibleWhen": {
+							"field": "@context.caseType.overviewCards",
+							"op": "empty"
+						},
 						"title": "The request",
 						"_note": "DqZaak: the card that opens the Overview tab, what the case is about in the requester's words. Read only: the description is edited in the Edit dialog.",
 						"content": {
@@ -1720,6 +1738,10 @@
 					{
 						"id": "case-details",
 						"type": "data",
+						"visibleWhen": {
+							"field": "@context.caseType.overviewCards",
+							"op": "empty"
+						},
 						"title": "Case details",
 						"_note": "DqZaak Zaakgegevens: the case's own fields in three columns, in the board's order. Holds what case-core held on the Data tab except the title (the page title), the description (The request) and the priority (its own card beside Locations).",
 						"content": {
@@ -1841,6 +1863,10 @@
 					{
 						"id": "case-priority-card",
 						"type": "data",
+						"visibleWhen": {
+							"field": "@context.caseType.overviewCards",
+							"op": "empty"
+						},
 						"title": "Priority",
 						"content": {
 							"title": "Priority",
@@ -1885,6 +1911,10 @@
 					{
 						"id": "case-locations-card",
 						"type": "case-location-map",
+						"visibleWhen": {
+							"field": "@context.caseType.overviewCards",
+							"op": "empty"
+						},
 						"title": "Locations",
 						"content": {
 							"height": "260px",
@@ -1895,6 +1925,10 @@
 					{
 						"id": "case-plan-card",
 						"type": "CasePlanPanel",
+						"visibleWhen": {
+							"field": "@context.caseType.overviewCards",
+							"op": "empty"
+						},
 						"title": "Case plan",
 						"_note": "The adaptive plan as a card of the Overview stack. A tab child resolves by TYPE through the registry, so this names the registry key; the full profile keeps cmmn-case-plan as a layout cell with its slot."
 					},
@@ -2249,6 +2283,114 @@
 						"title": "Cards",
 						"icon": "ViewColumnOutline",
 						"_note": "leaf-integrations REQ-LEAF-105: a board for the ad-hoc coordination around a case, beside the tasks and never instead of them. NOTHING IN DOSSIQ READS OR WRITES A DECK CARD FROM A `task`, OR THE OTHER WAY ROUND. Task lifecycle belongs to WorkflowEngineService alone and the kanban WorkflowBoardView is the workflow surface; a mirror would give a handler two places to finish the same work and no rule about which one counts. A SECTION of the Work panel rather than a body widget with a layout entry, which is what the design named: the case body is a tab strip and its grid is full, and a card board is work, so it belongs beside the tasks. The leaf owns link, create and unlink, so dossiq ships no Deck code at all; with the Deck app absent the library renders its own empty state rather than an error."
+					},
+					{
+						"id": "case-summary",
+						"type": "facts",
+						"title": "The report",
+						"visibleWhen": {
+							"any": [
+								{
+									"field": "gezinsplanId",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@context.caseType.category",
+									"op": "in",
+									"value": [
+										"Sociaal domein",
+										"Jeugd",
+										"Jeugdhulp"
+									]
+								}
+							]
+						},
+						"_note": "DqSociaalDomein De melding: what the case is about and its key facts in one card, read off the case itself. The first card of the Overview stack for a case type whose overview lists its own cards (caseType.overviewCards).",
+						"content": {
+							"columns": 2,
+							"fields": [
+								{
+									"as": "text",
+									"path": "description"
+								},
+								{
+									"label": "Case type",
+									"path": "caseType",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "caseType",
+										"labelField": "title"
+									}
+								},
+								{
+									"label": "Legal basis",
+									"path": "legalBasis"
+								},
+								{
+									"label": "Reported by",
+									"path": "initiatorDisplayName"
+								},
+								{
+									"label": "Investigation ready by",
+									"path": "deadline",
+									"format": "date-long"
+								},
+								{
+									"label": "Handler",
+									"path": "assignee"
+								}
+							],
+							"emptyText": "No description yet"
+						}
+					},
+					{
+						"id": "case-grant-decisions-card",
+						"type": "object-list",
+						"title": "Grant decisions",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Subsidies",
+								"Grants"
+							]
+						},
+						"_note": "DqSubsidie Beschikkingen: the grant decisions of this case on the Overview tab, per year, reached through the linked application as the Grant decisions tab reaches them.",
+						"content": {
+							"register": "dossiq",
+							"schema": "subsidieBeschikking",
+							"filter": {
+								"_referenced[subsidieAanvraag][subsidieaanvraag][case]": "@objectId"
+							},
+							"sort": {
+								"field": "termStart",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "termStart",
+									"label": "Year from",
+									"format": "date"
+								},
+								{
+									"key": "grantedAmount",
+									"label": "Granted",
+									"formatter": "currency"
+								},
+								{
+									"key": "verplichtingen",
+									"label": "Condition",
+									"sortable": false
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"widget": "badge"
+								}
+							],
+							"emptyText": "No grant decisions yet"
+						}
 					},
 					{
 						"id": "case-objection-hearings",
