@@ -723,9 +723,14 @@ export default {
 					'permits, supervision and enforcement, for the whole organisation',
 				)
 			}
+			// The Algemeen board ends the path with the short note; the other
+			// tabs say where the in-app settings are.
+			if (this.activeTab === 'general') {
+				return this.t('dossiq', 'applies to the whole organisation')
+			}
 			return this.t(
 				'dossiq',
-				'applies to the whole organisation',
+				'applies to the whole organisation; case types, flows and departments are in the app under Settings',
 			)
 		},
 
