@@ -60,8 +60,8 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseReassignmentService;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -89,7 +89,7 @@ class LeaverHandoverService {
 	 * @param CaseSeats               $seats        The coordinator seat.
 	 * @param SettingsService         $settings     Bridge to OpenRegister and the configured schemas.
 	 * @param LoggerInterface         $logger       Records the act and what it could not reach.
-	 * @param LanguageMapText         $text         Reads a translatable case type title as text.
+	 * @param TranslatedText          $text         Reads a translatable case type title in the reader's language.
 	 *
 	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
 	 */
@@ -98,7 +98,7 @@ class LeaverHandoverService {
 		private readonly CaseSeats $seats,
 		private readonly SettingsService $settings,
 		private readonly LoggerInterface $logger,
-		private readonly LanguageMapText $text = new LanguageMapText(),
+		private readonly TranslatedText $text = new TranslatedText(),
 	) {
 	}//end __construct()
 
@@ -400,7 +400,7 @@ class LeaverHandoverService {
 
 			$drafts[] = [
 				'id' => trim((string)($row['id'] ?? ($self['id'] ?? ''))),
-				'title' => $this->text->textOf(value: ($row['title'] ?? '')),
+				'title' => $this->text->forReader(value: ($row['title'] ?? '')),
 				'schema' => 'caseType',
 			];
 		}

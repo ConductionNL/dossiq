@@ -37,7 +37,7 @@ namespace OCA\Dossiq\Service\ProcessMining;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Status\StatusDwellService;
-use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\TranslatedText;
 
 /**
  * Reconstructs per-status dwell intervals and ranks the resulting bottlenecks.
@@ -60,13 +60,13 @@ class DwellTimeAnalyzer {
 	 *                                      is on. Optional for the same reason:
 	 *                                      a caller that wants wall hours only
 	 *                                      builds the analyzer unchanged.
-	 * @param LanguageMapText         $text  Reads a translatable status name as text.
+	 * @param TranslatedText          $text  Reads a translatable status name as text, in the reader's language.
 	 */
 	public function __construct(
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?StatusDwellService $held = null,
 		private readonly ?WorkingClock $clock = null,
-		private readonly LanguageMapText $text = new LanguageMapText(),
+		private readonly TranslatedText $text = new TranslatedText(),
 	) {
 	}//end __construct()
 
@@ -474,7 +474,12 @@ class DwellTimeAnalyzer {
 		$entry = $statusTypeIndex[$statusId];
 
 		// A status name is translatable, so the row carries a language map.
-		return $this->text->textOr(value: ($entry['name'] ?? ($entry['title'] ?? '')), fallback: $statusId);
+		$name = $this->text->forReader(value: ($entry['name'] ?? ($entry['title'] ?? '')));
+		if ($name === '') {
+			return $statusId;
+		}
+
+		return $name;
 	}//end statusLabel()
 
 	/**

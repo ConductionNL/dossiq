@@ -262,4 +262,33 @@ class TemplateLibraryKindTest extends TestCase {
 		self::assertSame(expected: 'Uw bezwaar is niet-ontvankelijk verklaard.', actual: $offered[0]['body']);
 		self::assertSame(expected: 'Uw bezwaar is niet-ontvankelijk verklaard.', actual: $this->library->apply(templateId: 'tpl-result')['body']);
 	}//end testATranslatableNameAndBodyAreReadAsText()
+	/**
+	 * An English reader is offered, searches and applies a template in English.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	public function testAnEnglishReaderGetsTheTemplateInEnglish(): void {
+		$l10n = $this->createMock(\OCP\IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn('en');
+		$library = new ContentTemplateService($this->harness->store, $this->mail, new NullLogger(), new \OCA\Dossiq\Service\Support\TranslatedText(l10n: $l10n));
+		$this->harness->seed(
+			schema: 'contentTemplate',
+			uuid: 'tpl-result',
+			row: [
+				'id' => 'tpl-result',
+				'kind' => 'result',
+				'name' => ['nl' => 'Niet-ontvankelijkverklaring', 'en' => 'Inadmissibility'],
+				'caseTypes' => [],
+				'body' => ['nl' => 'Uw bezwaar is niet-ontvankelijk verklaard.', 'en' => 'Your objection is inadmissible.'],
+			],
+		);
+
+		$offered = $library->offered(kind: 'result', caseTypeId: 'ct-vth', search: 'inadmiss');
+
+		self::assertNotNull(actual: $offered);
+		self::assertSame(expected: 'Inadmissibility', actual: $offered[0]['name']);
+		self::assertSame(expected: 'Your objection is inadmissible.', actual: $library->apply(templateId: 'tpl-result')['body']);
+	}//end testAnEnglishReaderGetsTheTemplateInEnglish()
 }//end class

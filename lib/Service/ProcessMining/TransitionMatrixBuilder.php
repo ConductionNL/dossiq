@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\ProcessMining;
 
-use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\TranslatedText;
 
 /**
  * Builds the from→to transition matrix and detects rework loops.
@@ -45,12 +45,12 @@ class TransitionMatrixBuilder {
 	/**
 	 * Constructor.
 	 *
-	 * @param LanguageMapText $text Reads a translatable status name as text.
+	 * @param TranslatedText  $text Reads a translatable status name as text, in the reader's language.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly LanguageMapText $text = new LanguageMapText(),
+		private readonly TranslatedText $text = new TranslatedText(),
 	) {
 	}//end __construct()
 
@@ -184,6 +184,11 @@ class TransitionMatrixBuilder {
 		$entry = $statusTypeIndex[$statusId];
 
 		// A status name is translatable, so the row carries a language map.
-		return $this->text->textOr(value: ($entry['name'] ?? ($entry['title'] ?? '')), fallback: $statusId);
+		$name = $this->text->forReader(value: ($entry['name'] ?? ($entry['title'] ?? '')));
+		if ($name === '') {
+			return $statusId;
+		}
+
+		return $name;
 	}//end statusLabel()
 }//end class
