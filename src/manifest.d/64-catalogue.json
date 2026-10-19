@@ -70,7 +70,8 @@
 								{ "key": "title", "label": "Object type", "cellClass": "cn-cell--strong" },
 								{ "key": "cases", "label": "Used in", "formatter": "caseCount" }
 							],
-							"emptyText": "Object types appear here once cases link objects."
+							"emptyText": "Object types appear here once cases link objects.",
+							"pageSize": 4
 						}
 					},
 					{
