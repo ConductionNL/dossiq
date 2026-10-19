@@ -3021,15 +3021,7 @@
 			"config": {
 				"searchPlaceholder": "Search by case, number or requester",
 				"quickFilterMaxVisible": 5,
-				"folderSidebar": {
-					"source": "register",
-					"register": "dossiq",
-					"schema": "caseType",
-					"idField": "@self.id",
-					"nameField": "title",
-					"filterField": "caseType",
-					"pane": false
-				},
+				"folderSidebar": null,
 				"columns": [
 					{
 						"key": "title",
@@ -3059,17 +3051,6 @@
 						"widgetProps": {
 							"user": true
 						}
-					},
-					{
-						"key": "initiatorDisplayName",
-						"label": "Requester",
-						"hidden": true
-					},
-					{
-						"key": "startDate",
-						"label": "Received",
-						"widget": "date",
-						"hidden": true
 					},
 					{
 						"key": "deadline",
