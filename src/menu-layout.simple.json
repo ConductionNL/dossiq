@@ -1551,9 +1551,14 @@
 									"overflow": true
 								},
 								{
-									"widgetId": "case-decisions-panel",
 									"label": "Decisions",
-									"overflow": true
+									"overflow": true,
+									"widgetIds": [
+										"case-decisions-panel",
+										"case-decision-letter",
+										"case-advice-requests"
+									],
+									"_note": "DqZaakBesluiten: the decisions from decidiq, then the decision letter and the advice on the case as cards."
 								},
 								{
 									"widgetId": "case-related-panel",
@@ -2733,6 +2738,82 @@
 						"title": "Followers",
 						"icon": "AccountMultipleOutline",
 						"_note": "case-followers, row 13.18. Who is watching this case, over OpenRegister's GET /api/objects/{register}/{schema}/{id}/watchers (object-watchers). It sits LAST on this tab because the three sections above it say who the case is about and this one says who is reading over their shoulder: a teamleider following a sensitive case holds no role on it and appears here and nowhere else. TYPE names the registry key rather than \"custom\": a tab child resolves from cnRegistry[widget.type] and renders nothing at all, logging nothing, when no key answers. Reading the list needs `update` on the case, so a reader without it is told that in words rather than shown an empty list, which would be a claim about the audience nobody made to them. No remove button: taking off somebody else's subscription needs `manage`, and you stop following from the strip on the case page, which acts on your own row only."
+					},
+					{
+						"id": "case-decision-letter",
+						"type": "facts",
+						"title": "Decision letter",
+						"icon": "FileDocumentOutline",
+						"_note": "DqZaakBesluiten Beschikking: the decision document the case's document step writes, with Document genereren as the card's action.",
+						"content": {
+							"fields": [
+								{
+									"as": "text",
+									"path": "besluitDocument"
+								}
+							],
+							"emptyText": "No decision letter written yet",
+							"headerAction": {
+								"label": "Generate document",
+								"icon": "FileDocumentPlusOutline",
+								"type": "open-modal",
+								"target": "BeschikkingComposerDialog",
+								"props": {
+									"caseId": "@objectId",
+									"open": true
+								}
+							}
+						}
+					},
+					{
+						"id": "case-advice-requests",
+						"type": "object-list",
+						"title": "Advice on the case",
+						"icon": "CommentQuestionOutline",
+						"_note": "DqZaakBesluiten Adviezen: the internal and external advice requested on this case; Toevoegen asks a new one with the case filled in.",
+						"content": {
+							"register": "dossiq",
+							"schema": "adviesAanvraag",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "requestedAt",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "subject",
+									"label": "Subject"
+								},
+								{
+									"key": "advisor",
+									"label": "Advisor"
+								},
+								{
+									"key": "deadline",
+									"label": "Answer by",
+									"format": "date"
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"enum": [
+										"requested",
+										"received",
+										"expired"
+									],
+									"enumLabels": {
+										"requested": "Waiting for answer",
+										"received": "Received",
+										"expired": "Expired"
+									}
+								}
+							],
+							"rowRoute": "AdviceDetail",
+							"emptyText": "No advice requested on this case yet"
+						}
 					}
 				],
 				"headerActions": [
