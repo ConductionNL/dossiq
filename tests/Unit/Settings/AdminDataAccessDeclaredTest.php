@@ -24,6 +24,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/admin-data-access/specs/admin-data-access/spec.md
+ * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
  */
 
 declare(strict_types=1);
@@ -54,9 +55,27 @@ final class AdminDataAccessDeclaredTest extends TestCase {
 	 */
 	private const EXPECTED = [
 		'avgIncident' => [
-			'read' => ['admin', 'beheerders', 'dossiq-background-service'],
-			'create' => ['admin', 'beheerders', 'dossiq-medewerkers', 'dossiq-background-service'],
-			'update' => ['admin', 'beheerders', 'dossiq-background-service'],
+			'read' => ['admin', 'beheerders', 'dossiq-privacy', 'dossiq-background-service'],
+			'create' => ['admin', 'beheerders', 'dossiq-privacy', 'dossiq-medewerkers', 'dossiq-background-service'],
+			'update' => ['admin', 'beheerders', 'dossiq-privacy', 'dossiq-background-service'],
+			'delete' => ['admin', 'beheerders'],
+		],
+		'indicatiestelling' => [
+			'read' => ['admin', 'beheerders', 'dossiq-sociaal-domein', 'dossiq-background-service'],
+			'create' => ['admin', 'beheerders', 'dossiq-sociaal-domein', 'dossiq-background-service'],
+			'update' => ['admin', 'beheerders', 'dossiq-sociaal-domein', 'dossiq-background-service'],
+			'delete' => ['admin', 'beheerders'],
+		],
+		'mdoOverleg' => [
+			'read' => ['admin', 'beheerders', 'dossiq-sociaal-domein', 'dossiq-background-service'],
+			'create' => ['admin', 'beheerders', 'dossiq-sociaal-domein', 'dossiq-background-service'],
+			'update' => ['admin', 'beheerders', 'dossiq-sociaal-domein', 'dossiq-background-service'],
+			'delete' => ['admin', 'beheerders'],
+		],
+		'reIntegratieTraject' => [
+			'read' => ['admin', 'beheerders', 'dossiq-sociaal-domein', 'dossiq-background-service'],
+			'create' => ['admin', 'beheerders', 'dossiq-sociaal-domein', 'dossiq-background-service'],
+			'update' => ['admin', 'beheerders', 'dossiq-sociaal-domein', 'dossiq-background-service'],
 			'delete' => ['admin', 'beheerders'],
 		],
 		'supplierUser' => [
@@ -139,8 +158,8 @@ final class AdminDataAccessDeclaredTest extends TestCase {
 	}//end testTheSchemaCarriesItsOwnBlock()
 
 	/**
-	 * No verb is granted to everybody, and only the reading and the reporting
-	 * of a breach reach ordinary staff.
+	 * No verb is granted to everybody, and of ordinary staff only the reading
+	 * of tenant records and the reporting of a breach remain.
 	 *
 	 * @param string $slug The schema slug.
 	 *
@@ -185,6 +204,6 @@ final class AdminDataAccessDeclaredTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheRegisterVersionMoves(): void {
-		$this->assertTrue(version_compare((string)$this->config['info']['version'], '0.20.53', '>'));
+		$this->assertTrue(version_compare((string)$this->config['info']['version'], '0.20.54', '>'));
 	}//end testTheRegisterVersionMoves()
 }//end class

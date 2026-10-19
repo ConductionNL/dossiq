@@ -39,6 +39,7 @@
 					{
 						"label": "Data breaches",
 						"route": "AvgIncidents",
+						"permission": "privacy",
 						"countFrom": {
 							"register": "dossiq",
 							"schema": "avgIncident",
