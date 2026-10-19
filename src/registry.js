@@ -220,12 +220,6 @@ import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // @spec openspec/changes/deelzaak-support/tasks.md#T06
 import DeelzaakList from './views/cases/DeelzaakList.vue'
 import DeletedCasesView from './views/cases/DeletedCasesView.vue'
-// Cases-on-map — full-screen multi-object overview. Consumes OpenRegister's
-// page-level maps-overview leaf (OR #154): OR owns the geometry extraction,
-// RBAC scoping, and base-layer config; the markers render through the lib's
-// `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in dossiq (ADR-022).
-// @spec openspec/specs/case-map-overview/spec.md
-import CasesOnMapView from './views/CasesOnMapView.vue'
 import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
 import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
 import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
@@ -425,14 +419,6 @@ const registry = {
 		kind: 'page',
 		component: MyWorkView,
 		_note: 'Current-user case index (assignee = current uid) in card view; a thin CnIndexPage wrapper injecting the resolved uid because the stock index base-filter does not resolve the @me token.',
-	},
-
-	// --- Cases-on-map overview (case-map-overview). ---
-	// @spec openspec/specs/case-map-overview/spec.md
-	CasesOnMapView: {
-		kind: 'page',
-		component: CasesOnMapView,
-		_note: "Full-screen multi-object cases-on-map overview. Markers come from OpenRegister's page-level maps-overview surface (RBAC-scoped, OR #154) and render through the lib's CnMapWidget — no bespoke Leaflet/WMS/WFS plumbing (ADR-022).",
 	},
 
 	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
@@ -1446,9 +1432,8 @@ const registry = {
 	// (MapsProvider / CnMapsTab): the leaf owns tiles, layers, zoom and
 	// marker interaction and fetches straight from OpenRegister using the
 	// objectId/register/schema/apiBase CnObjectSidebar injects. Replaces the
-	// bespoke per-case Leaflet surface (LocationTab → CaseMap). The
-	// multi-object cases-on-map overview (CasesOnMapView / /map page) is OUT
-	// OF SCOPE here — tracked as a separate OR maps-overview follow-up.
+	// bespoke per-case Leaflet surface (LocationTab → CaseMap). The map of
+	// many cases is the Cases index's own map view (`/cases?_view=map`).
 	// @spec openspec/changes/migrate-maps-to-maps-leaf/tasks.md#P1.2
 	MapsLeafTab: {
 		kind: 'page',

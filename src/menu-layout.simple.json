@@ -10,7 +10,6 @@
 	},
 	"removals": [
 		"SubsidiesGroup",
-		"CaseMap",
 		"Analytics",
 		"TermijnDashboardMenu",
 		"ProcessMiningDashboardMenu",
@@ -23,7 +22,6 @@
 	],
 	"removalsReplacedBy": {
 		"SubsidiesGroup": "Cases",
-		"CaseMap": "Cases",
 		"Analytics": "Reports",
 		"TermijnDashboardMenu": "Reports",
 		"ProcessMiningDashboardMenu": "Reports",

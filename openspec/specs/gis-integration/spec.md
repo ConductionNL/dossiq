@@ -11,7 +11,7 @@ status-note: >-
   src/services/casesOnMapApi.js and renders them with the shared CnMapWidget,
   which owns clustering and the PDOK base layer. What remains in this app is
   the marker shaping in src/services/mapFormatters.js, covered by
-  tests/vitest/casesOnMap.spec.js. This spec is retained for history; the geo
+  tests/vitest/mapFormatters.spec.js. This spec is retained for history; the geo
   capability is owned by OpenRegister.
 ---
 
@@ -164,7 +164,7 @@ the backend or PDOK tiles are unavailable.
 
 #### Scenario: Map data shaping is pure and testable
 
-@e2e exclude pure data-shaping helpers, covered by tests/vitest/casesOnMap.spec.js.
+@e2e exclude pure data-shaping helpers, covered by tests/vitest/mapFormatters.spec.js.
 After bac6f7073 the shaping is shapeMarkerFeatures in
 src/services/mapFormatters.js, and that vitest spec asserts the coordinate
 order, the status colour and icon, malformed rows and non-array input.
