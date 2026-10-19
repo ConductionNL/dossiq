@@ -4229,6 +4229,23 @@
 						}
 					},
 					{
+						"id": "side-case-type-check",
+						"type": "record-list",
+						"title": "Check",
+						"_note": "DqZaaktypeOverzicht Controle: the warnings publishing would give for this case type (GET /api/case-types/{id}/publish/validate answers warnings as plain strings), as one warning notice.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/publish/validate",
+								"responsePath": "warnings"
+							},
+							"presentation": "notice",
+							"variant": "warning",
+							"lead": "Warnings ({total}):",
+							"limit": 1,
+							"emptyText": "No warnings"
+						}
+					},
+					{
 						"id": "side-case-type-facts",
 						"type": "facts",
 						"title": "Data",
