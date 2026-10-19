@@ -24,7 +24,6 @@
 //   A second, @vue-flow-based implementation (Vue-3-only, incompatible with
 //   this app's Vue 2.7 build) was removed by workflow-editor-integration.
 
-import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
 // The AI features a case type switched on, and the report group the case is in
 // (ai-features-on-the-case-consume-hermiq, board DqZaakAssistent).
 import CaseAiFeaturesPanel from './components/case/CaseAiFeaturesPanel.vue'
@@ -121,9 +120,7 @@ import CaseTypeFieldFilters from './components/search/CaseTypeFieldFilters.vue'
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
-import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
-import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // Send digital post — the CaseDetail header action's compose surface.
 // @spec openspec/specs/berichtenbox-integration/spec.md
@@ -186,8 +183,6 @@ import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 import CaseRedactionView from './views/cases/CaseRedactionView.vue'
 // VTH-specific case detail panels
-import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
-import AdviesPanel from './views/cases/components/AdviesPanel.vue'
 // Federated case sharing/transfer/activity — federated-case-collaboration.
 // @spec openspec/specs/federated-case-collaboration/spec.md
 import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
@@ -210,7 +205,6 @@ import DataSubjectRequestTab from './views/cases/components/DataSubjectRequestTa
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
-import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
 import InspectionPanel from './views/cases/components/InspectionPanel.vue'
 import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // Deelzaak (sub-case) full-page views — wired via manifest routes
@@ -230,7 +224,6 @@ import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
 import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
 import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
 import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
-import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
 //     customComponents map, plus the handlers a manifest names by string. ---
@@ -257,8 +250,6 @@ import StoreGallery from './views/store/StoreGallery.vue'
 // @spec openspec/specs/task-management/spec.md
 import TaskDetailView from './views/tasks/TaskDetailView.vue'
 import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
-import TdCaseTypeFilter from './views/termijn/TdCaseTypeFilter.vue'
-import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
 import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // The Dashboard's My work tile, over OpenRegister's task engine.
 // @spec openspec/specs/dashboard/spec.md
@@ -1056,11 +1047,6 @@ const registry = {
 	// The agenda compiler and the vergadering detail view were retired: decidiq
 	// owns agenda-building and meetings, and surfaces them on a case through the
 	// `decidesk-decisions` integration leaf rather than through pages here.
-	BesluitPublicatiePanel: {
-		kind: 'page',
-		component: BesluitPublicatiePanel,
-		_note: 'DROP/LVBB publication status + retry; embeddable as a case-detail sidebar tab component.',
-	},
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
 	// The bespoke public case-view (PublicCaseView) was removed by
@@ -1088,20 +1074,10 @@ const registry = {
 	// These resolve when a sidebarTab uses `component: "<key>"` instead of
 	// a `widgets[]` array. CnDetailPage injects the resolved component into
 	// the tab panel slot.
-	CaseTasksTab: {
-		kind: 'page',
-		component: CaseTasksTab,
-		_note: 'Tasks where task.case === parent.id',
-	},
 	// CaseDecisionsTab was retired by dossiq-decisions-to-decidiq: it offered
 	// create/edit/delete of local decision records while mounted on no page.
 	// Decisions are authored in decidiq (besluitvorming leaf); the read-only
 	// case-decisions widget displays the outcomes stored on the case.
-	CaseDocumentsTab: {
-		kind: 'page',
-		component: CaseDocumentsTab,
-		_note: 'Documents where document.case === parent.id',
-	},
 
 	// --- Deelzaak (sub-case) full-page views — manifest routes. ---
 	// @spec openspec/changes/deelzaak-support/tasks.md#T05
@@ -1285,7 +1261,7 @@ const registry = {
 		chrome: 'card',
 		component: CasePartiesWidget,
 		...PANEL_WIDGET_META,
-		_note: 'CaseDetail People tab, the Roles section: the parties of the case grouped by role with the primary party first, which on a case is the initiator. It is the half the contacts integration beside it cannot carry -- a melder with no Nextcloud account, a gemachtigde acting for the applicant, and the indicators a party holds. An indicator renders WITH its verdict (warn, refuse publication, refuse send) because an indicator that only renders is one somebody misses; the two refusals are enforced again where the act happens, in BesluitPublicatiePanel and FileRequestService, and once more inside OpenRegister. A failed read says so in words rather than drawing an empty party list, which would read as a case whose parties had been removed.',
+		_note: 'CaseDetail People tab, the Roles section: the parties of the case grouped by role with the primary party first, which on a case is the initiator. It is the half the contacts integration beside it cannot carry -- a melder with no Nextcloud account, a gemachtigde acting for the applicant, and the indicators a party holds. An indicator renders WITH its verdict (warn, refuse publication, refuse send) because an indicator that only renders is one somebody misses; the two refusals are enforced again where the act happens, in FileRequestService, and once more inside OpenRegister. A failed read says so in words rather than drawing an empty party list, which would read as a case whose parties had been removed.',
 	},
 
 	'case-timeline-pane': {
@@ -1381,11 +1357,6 @@ const registry = {
 		component: CaseSharingTab,
 		_note: 'Partner + federated case sharing, transfer and activity — container that wires ShareTab/CreateShareDialog/CaseTransferDialog/CreateFederatedShareDialog/FederatedActivityPanel to the backend API.',
 	},
-	AdviesPanel: {
-		kind: 'page',
-		component: AdviesPanel,
-		_note: 'Advice/advies panel used in CaseDetail and BezwaarDetail sidebar tabs',
-	},
 
 	// --- Besluitvorming (decision-making) sidebar tab — decidesk leaf. ---
 	// "decidesk owns it; dossiq shows a leaf" (ADR-019 / ADR-022). The
@@ -1405,16 +1376,6 @@ const registry = {
 
 	// --- VTH module: case detail sidebar tabs. ---
 	// @spec openspec/changes/vth-module/tasks.md#task-7
-	AdviceRequestPanel: {
-		kind: 'page',
-		component: AdviceRequestPanel,
-		_note: 'VTH advice request panel — shows open/received/overdue adviesAanvragen on VTH case detail',
-	},
-	InspectionChecklistPanel: {
-		kind: 'page',
-		component: InspectionChecklistPanel,
-		_note: 'VTH checklist panel — shows inspection checklist completion status on Toezichtzaak',
-	},
 	InspectionPanel: {
 		kind: 'page',
 		component: InspectionPanel,
@@ -1607,12 +1568,6 @@ const registry = {
 		component: DtCaseTypeFilter,
 		_note: 'header-actions slot: SLA-bearing case types only. A component rather than a declarative pageFilter because the options are fetched.',
 	},
-	DtKpiWidget: {
-		kind: 'widget',
-		component: DtKpiWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'KPI row + the three guidance states.',
-	},
 	DtChartsWidget: {
 		kind: 'widget',
 		component: DtChartsWidget,
@@ -1636,17 +1591,6 @@ const registry = {
 		component: DtBreakdownWidget,
 		...DASHBOARD_TILE_META,
 		_note: 'Per-case-type performance table.',
-	},
-	TdCaseTypeFilter: {
-		kind: 'actions',
-		component: TdCaseTypeFilter,
-		_note: 'header-actions slot: case-type filter.',
-	},
-	TdKpiWidget: {
-		kind: 'widget',
-		component: TdKpiWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Headline KPI tiles (CnKpiGrid + CnStatsBlock).',
 	},
 	TdQuarterlyWidget: {
 		kind: 'widget',
