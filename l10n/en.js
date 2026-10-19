@@ -10677,6 +10677,7 @@ OC.L10N.register(
         "{count} report in this group": "{count} report in this group",
         "{count} reports in this group": "{count} reports in this group",
         "{count} skipped": "{count} skipped",
+        "{count} staff": "{count} staff",
         "{count} steps": "{count} steps",
         "{count} sub-cases": "{count} sub-cases",
         "{count} week left": "{count} week left",
