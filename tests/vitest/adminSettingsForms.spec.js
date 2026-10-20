@@ -15,6 +15,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+import { STRUCTURE_SETTING } from '../../src/utils/structureProfile.js'
 import {
 	archivalFields,
 	consultationFields,
@@ -26,7 +27,6 @@ import {
 	reviewReportFields,
 	storeRegistryFields,
 } from '../../src/views/settings/adminFields.js'
-import { STRUCTURE_SETTING } from '../../src/utils/structureProfile.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 const configKeys = fs.readFileSync(

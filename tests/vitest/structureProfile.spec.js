@@ -36,7 +36,6 @@ import {
 	overlayItemName,
 	resolveStructureProfile,
 	STRUCTURE_FULL,
-	STRUCTURE_SETTING,
 	STRUCTURE_SIMPLE,
 } from '../../src/utils/structureProfile.js'
 
