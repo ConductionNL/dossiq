@@ -152,13 +152,13 @@ import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import { formatDate } from '../../utils/caseHelpers.js'
-import { contentTemplateOption } from '../../utils/templatePicker.js'
 import {
 	asksReasonText,
 	offersPauseReasons,
 	OTHER_PAUSE_REASON,
 	pickedPauseReason,
 } from '../../utils/pauseReasonChoice.js'
+import { contentTemplateOption } from '../../utils/templatePicker.js'
 
 export default {
 	name: 'CaseActFields',

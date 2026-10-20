@@ -64,7 +64,7 @@ function modalEntries() {
 }
 
 /**
- * Every modal target any manifest action names, across the base manifest,
+ * Every modal target any manifest action or field-list row action names, across the base manifest,
  * every fragment under `src/manifest.d` and the structure profiles
  * (`src/menu-layout*.json`), whose page overlays add actions of their own.
  *
@@ -102,6 +102,12 @@ function manifestTargets() {
 		}
 		if (node.type === 'open-modal' && typeof node.target === 'string') {
 			targets.add(node.target)
+		}
+		// A field-list row action opens a registry dialog by name too.
+		if (Array.isArray(node.rowActions)) {
+			node.rowActions
+				.filter((rowAction) => rowAction && typeof rowAction.dialog === 'string')
+				.forEach((rowAction) => targets.add(rowAction.dialog))
 		}
 		Object.values(node).forEach(walk)
 	}

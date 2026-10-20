@@ -273,7 +273,7 @@ describe('the items of a delivered set', () => {
 	it('offers Compare only on an item whose file that went out is not its original', () => {
 		const [compare] = widget.content.rowActions
 		expect(compare).toMatchObject({ id: 'compare', label: 'Compare', placement: 'inline', dialog: 'DocumentCompareDialog' })
-		expect(compare.when).toEqual({ deliveredRef: { set: true, neq: '@originalRef' } })
+		expect(compare.when).toEqual({ deliveredRef: { set: true, neq: '@row.originalRef' } })
 		expect(compare.ariaLabel).toBe('Compare {fileName} with the original')
 	})
 
