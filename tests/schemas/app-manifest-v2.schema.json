@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.129.0",
+	"version": "2.131.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -1060,7 +1060,8 @@
 				},
 				"seeded": {
 					"type": "array",
-					"description": "Views that ship with the app. They render as their own group above the user's own, and a user may copy one but not delete it: a view the product promises is not a view one person can remove from everybody's install.",
+					"deprecated": true,
+					"description": "DEPRECATED since 2.129.0: declare default views with the index page's `config.defaultSavedViews`, which carries the criteria this key never had and is what the page actually lists. Nothing ever read this key, so moving off it loses nothing. Views that ship with the app. They render as their own group above the user's own, and a user may copy one but not delete it: a view the product promises is not a view one person can remove from everybody's install.",
 					"items": {
 						"type": "object",
 						"additionalProperties": false,
@@ -4477,6 +4478,52 @@
 							"type": "string",
 							"description": "type='index': which pages share this page's saved views. By default a view is shared by every page over the same register and schema and by no other, because a view is filters over one schema's fields. Set this to share views across pages over different sources, or to keep two pages over one source apart. Written into the saved view's `query.scope`; views saved before scoping stay visible everywhere. Maps to CnIndexPage `savedViewsScope`."
 						},
+						"defaultSavedViews": {
+							"type": "array",
+							"description": "type='index': views the app ships for this page. Listed read-only above each user's own saved views, under Default views, and never stored: a new app version updates them for everybody and no user can delete one. A user may apply a default or save a copy, which they then own. `@`-tokens in `filters` (`@me`, `@today`, `@today+7d`) resolve when the default is applied; a copy keeps them. Maps to CnIndexPage `defaultSavedViews`.",
+							"items": {
+								"type": "object",
+								"additionalProperties": false,
+								"required": ["slug", "name", "filters"],
+								"properties": {
+									"slug": {
+										"type": "string",
+										"pattern": "^[a-z0-9][a-z0-9-]*$",
+										"description": "The stable name of the default. Lowercase and dash only."
+									},
+									"name": {
+										"type": "string",
+										"minLength": 1,
+										"description": "What the filter is called in the control. Translatable."
+									},
+									"filters": {
+										"type": "object",
+										"description": "The filters, keyed by property, in the shape a quick filter's `filter` takes."
+									},
+									"search": {
+										"type": "string",
+										"description": "A search term the default applies."
+									},
+									"sort": {
+										"type": "array",
+										"description": "Sort keys, in priority order.",
+										"items": {
+											"type": "object",
+											"additionalProperties": false,
+											"required": ["key"],
+											"properties": {
+												"key": { "type": "string" },
+												"order": { "type": "string", "enum": ["asc", "desc"] }
+											}
+										}
+									},
+									"label": {
+										"type": "string",
+										"description": "One label for the control's label filter."
+									}
+								}
+							}
+						},
 						"splitCloseButton": {
 							"type": "boolean",
 							"default": true,
@@ -4574,13 +4621,32 @@
 							"description": "type='dashboard': page-level filter controls in the header. Each selection is written into the page's workspace context, so a widget reads it through a `@page.<key>` / `@workspace.<key>` token (an endpoint widget also in its `responsePath`). Maps to the CnDashboardPage `pageFilters` prop.",
 							"items": {
 								"type": "object",
-								"required": ["key", "options"],
+								"required": ["key"],
+								"anyOf": [{ "required": ["options"] }, { "required": ["optionsFrom"] }],
 								"additionalProperties": false,
 								"properties": {
 									"key": { "type": "string", "minLength": 1, "description": "Workspace-context key written on change (the `@page.<key>` / `@workspace.<key>` token name)." },
 									"label": { "type": "string", "description": "Control label (i18n key or plain text)." },
 									"type": { "type": "string", "enum": ["select"], "default": "select", "description": "Control type, carried over from v1." },
 									"control": { "type": "string", "enum": ["select", "segmented"], "default": "select", "description": "How the filter is drawn: a select, or a compact segmented group." },
+									"clearable": { "type": "boolean", "default": false, "description": "Lets the reader clear the select back to all; `placeholder` names that state (2.130.0)." },
+									"placeholder": { "type": "string", "description": "What a cleared select shows, e.g. \"All case types\", through the app's translate (2.130.0)." },
+									"optionsFrom": {
+										"type": "object",
+										"additionalProperties": false,
+										"description": "Read the options instead of listing them: from an app endpoint (`url`, `params`, `responsePath`) or from OpenRegister objects (`register`, `schema`, `filter`). `valueField` and `labelField` pick each option's value and label (default `id` and `title` or `name`); tokens resolve (2.130.0).",
+										"anyOf": [{ "required": ["url"] }, { "required": ["register", "schema"] }],
+										"properties": {
+											"url": { "type": "string", "minLength": 1 },
+											"params": { "type": "object", "additionalProperties": true },
+											"responsePath": { "type": "string", "minLength": 1 },
+											"register": { "type": "string", "minLength": 1 },
+											"schema": { "type": "string", "minLength": 1 },
+											"filter": { "type": "object", "additionalProperties": true },
+											"valueField": { "type": "string", "minLength": 1 },
+											"labelField": { "type": "string", "minLength": 1 }
+										}
+									},
 									"placement": { "type": "string", "enum": ["row", "description"], "default": "row", "description": "Where the filter sits: in the header's filter row, or (a segmented group) on the description line after the period group (DqProcesanalyse)." },
 									"default": { "type": ["string", "number"], "description": "Initial value seeded into the context on mount; the first option's value when omitted." },
 									"options": {
@@ -4916,6 +4982,35 @@
 									"type": "boolean",
 									"default": true,
 									"description": "Whether coincident markers are grouped into a cluster that spiderfies on click. ON by default here — the opposite of CnMapWidget's own default — because an index map plots whatever the filter returns, and several rows at one address is the normal case: unclustered they land on identical pixels, the topmost takes every click and the rest are unreachable with nothing on screen saying they exist. Non-point geometry skips the cluster group, so areas are unaffected. Set false for the old behaviour."
+								},
+								"markerColor": {
+									"type": "object",
+									"required": ["field"],
+									"additionalProperties": false,
+									"description": "Colour each marker by a field of its row. Without `source` the value is looked up in `colorMap`; with `source` the field is a reference and the referenced row's `colorField` is the colour, or the key `colorMap` maps to one. A value nothing maps to gets `default`, else the map's own colour.",
+									"properties": {
+										"field": { "type": "string", "description": "The row field (dotted path, also under `@self`)." },
+										"colorMap": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Value (or source colour key) to CSS colour; `var(--x, #fallback)` is resolved for the SVG marker." },
+										"source": {
+											"type": "object",
+											"required": ["colorField"],
+											"properties": {
+												"register": { "type": "string" },
+												"schema": { "type": "string" },
+												"colorField": { "type": "string" },
+												"filter": { "type": "object" }
+											}
+										},
+										"default": { "type": "string" }
+									}
+								},
+								"plotAll": {
+									"oneOf": [{ "type": "boolean" }, { "type": "integer", "minimum": 1 }],
+									"description": "Plot every row that matches the filters instead of the current page: `true` for up to 500, or a number. When more rows match, a note under the map says the first N are shown."
+								},
+								"count": {
+									"oneOf": [{ "type": "boolean" }, { "type": "string" }],
+									"description": "A count line under the map: `true` for \"Showing {located} of {total} located\", or a template with `{located}` and `{total}` through the app's translate."
 								}
 							}
 						},

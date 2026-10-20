@@ -71,7 +71,7 @@ describe('pageTitleFor', () => {
 	})
 })
 
-// The "My case types" entry the backend delta adds (ManifestController).
+// A menu entry that opens the list narrowed to one case type.
 const WOO = '3c0f5a00-0000-4000-a000-00000000a001'
 const DELTA_MENU = [
 	{ id: 'MyCaseTypesCaption', type: 'caption', label: 'My case types' },

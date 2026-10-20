@@ -281,8 +281,14 @@ describe('the cases list', () => {
 	it('draws the map with its numbered list and keeps the full profile\'s map (DqZakenKaart)', () => {
 		expect(simple.mapConfig.list).toMatchObject({ title: '{title}', sub: '{identifier}' })
 		const { list, ...rest } = simple.mapConfig
-		const { _basemapNote, ...fullMap } = before.mapConfig
+		const { _basemapNote, _parityNote, plotAll, ...fullMap } = before.mapConfig
 		expect(rest).toEqual(fullMap)
+	})
+
+	it('colours and counts the markers but plots only the current page', () => {
+		expect(simple.mapConfig.markerColor).toEqual(before.mapConfig.markerColor)
+		expect(simple.mapConfig.count).toBe(before.mapConfig.count)
+		expect(simple.mapConfig).not.toHaveProperty('plotAll')
 	})
 
 	it('touches nothing else on the list', () => {
