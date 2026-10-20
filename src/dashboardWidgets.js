@@ -31,6 +31,8 @@ const CASES = { href: '/apps/dossiq/cases' }
 const TASK_HREF = '/apps/dossiq/tasks/{uuid}'
 const TASKS = { href: '/apps/dossiq/tasks' }
 const MY_TASKS = { url: '/apps/openregister/api/flow-tasks', responsePath: 'results' }
+// A date still to come reads as the days left, as the widgets always said it.
+const DUE = { todayLabel: 'Due today', upcomingLabel: { one: '{count} day remaining', other: '{count} days remaining' } }
 
 registerNcDashboardWidgets([
 	{
@@ -47,7 +49,7 @@ registerNcDashboardWidgets([
 		id: 'procest_overdue_cases_widget',
 		config: {
 			source: { register: 'dossiq', schema: 'case', params: { ...OPEN, deadline: { lt: '@today' }, _order: { deadline: 'asc' } } },
-			subtitle: '{deadline|date}',
+			due: { field: 'deadline' },
 			href: CASE_HREF,
 			viewAll: CASES,
 			emptyText: 'No open cases',
@@ -58,7 +60,7 @@ registerNcDashboardWidgets([
 		config: {
 			source: { register: 'dossiq', schema: 'case', params: { ...OPEN, deadline: { lte: '@today+3d' }, _order: { deadline: 'asc' } } },
 			limit: 10,
-			subtitle: '{deadline|date}',
+			due: { field: 'deadline', ...DUE },
 			href: CASE_HREF,
 			viewAll: CASES,
 			emptyText: 'No deadline alerts',
@@ -69,7 +71,7 @@ registerNcDashboardWidgets([
 		config: {
 			source: { register: 'dossiq', schema: 'case', params: { ...OPEN, '@self': { lastUserActivity: { lt: '@today-7d', orNull: true } }, _order: { '@self.lastUserActivity': 'asc' } } },
 			limit: 5,
-			subtitle: '{@self.lastUserActivity|date}',
+			subtitle: '{@self.lastUserActivity|days} days inactive',
 			href: CASE_HREF,
 			viewAll: CASES,
 			emptyText: 'All cases active',
@@ -79,7 +81,7 @@ registerNcDashboardWidgets([
 		id: 'procest_my_tasks_widget',
 		config: {
 			source: { ...MY_TASKS, params: { scope: 'assigned', isTerminal: 'false', sort: 'due' } },
-			subtitle: '{dueAt|date}',
+			due: { field: 'dueAt', todayLabel: 'Due today', emptyText: 'No deadline' },
 			href: TASK_HREF,
 			viewAll: TASKS,
 			emptyText: 'No tasks found',
@@ -90,7 +92,7 @@ registerNcDashboardWidgets([
 		config: {
 			source: { ...MY_TASKS, params: { scope: 'assigned', isTerminal: 'false', dueBefore: '@today+3d', sort: 'due' } },
 			limit: 10,
-			subtitle: '{dueAt|date}',
+			due: { field: 'dueAt', ...DUE },
 			href: TASK_HREF,
 			viewAll: TASKS,
 			emptyText: 'No task reminders',
