@@ -80,10 +80,10 @@ function chip(label) {
 }
 
 describe('statusType carries a colour and a list visibility', () => {
-	it('enumerates twelve colours rather than accepting a hex value', () => {
+	it('enumerates fourteen colours rather than accepting a hex value', () => {
 		const colour = schema('statusType').properties.colour
 		expect(colour.type).toBe('string')
-		expect(colour.enum).toHaveLength(12)
+		expect(colour.enum).toHaveLength(14)
 		for (const value of colour.enum) {
 			expect(value).not.toMatch(/^#/)
 		}

@@ -603,10 +603,11 @@ describe('the tabs', () => {
 		// the deadline is the first card of the side column, and neither
 		// widget is still placed in the grid, so nothing renders twice.
 		expect(simple.breadcrumb.currentField).toBe('identifier')
-		// The pill above the title names the case type, as DqZaak draws "Woo-verzoek".
+		// The pill above the title names the case type, as DqZaak draws "Woo-verzoek",
+		// in the case type's own colour and icon.
 		expect(simple.typePill).toEqual({
 			field: 'caseType',
-			resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title' },
+			resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title', colorField: 'colour', iconField: 'icon' },
 		})
 		expect(simple.sideColumn[0]).toBe('case-tile-deadline')
 		const placed = simple.layout.map((entry) => entry.widgetId)

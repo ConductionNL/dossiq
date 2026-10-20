@@ -6,13 +6,15 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.0.1",
+          "version": "1.0.2",
           "slug": "bezwaar"
         },
         "id": "b3c1a000-0000-4000-a000-00000000be2a",
         "uuid": "b3c1a000-0000-4000-a000-00000000be2a",
         "identifier": "bezwaar",
         "title": "Bezwaar",
+        "colour": "purple",
+        "icon": "Gavel",
         "description": "Bezwaarprocedure conform Awb hoofdstuk 6 en 7",
         "category": "Bezwaar en beroep",
         "purpose": "Behandeling van bezwaarschriften tegen besluiten",

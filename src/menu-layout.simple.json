@@ -1134,7 +1134,9 @@
 					"resolve": {
 						"register": "dossiq",
 						"schema": "caseType",
-						"labelField": "title"
+						"labelField": "title",
+						"colorField": "colour",
+						"iconField": "icon"
 					}
 				}
 			},
@@ -3412,7 +3414,7 @@
 							"red": "var(--nl-color-red, #d52b1e)",
 							"red-light": "var(--nl-color-red-light, #fbe9e8)",
 							"purple": "var(--nl-color-purple, #762f8e)",
-							"purple-light": "var(--nl-color-purple-light, #f2eaf5)",
+							"purple-light": "var(--nl-color-purple-light, #f2eaf5)", "teal": "var(--nl-color-teal, #1d5e66)", "teal-light": "var(--nl-color-teal-light, #e3f1f3)",
 							"grey": "var(--nl-color-grey, #696969)",
 							"grey-light": "var(--nl-color-grey-light, #f0f0f0)"
 						}
@@ -3974,7 +3976,11 @@
 						"formatter": "caseTypeName",
 						"widget": "badge",
 						"widgetProps": {
-							"variant": "info"
+							"variant": "info",
+							"resolve": {
+								"colorField": "colour",
+								"iconField": "icon"
+							}
 						}
 					},
 					{
@@ -4035,7 +4041,11 @@
 							"formatter": "caseTypeName",
 							"widget": "badge",
 							"widgetProps": {
-								"variant": "info"
+								"variant": "info",
+								"resolve": {
+									"colorField": "colour",
+									"iconField": "icon"
+								}
 							},
 							"width": "200px"
 						},

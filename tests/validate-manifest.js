@@ -198,6 +198,41 @@ function newerSchemaAccepts(instancePath, property) {
 		def = schema.$defs.visibleWhen
 	}
 
+	// A detail header pill's `resolve` (pill-color-field, schema 2.134.0).
+	if (
+		def === null
+		&& segments.length === 5
+		&& segments[0] === 'pages'
+		&& segments[2] === 'config'
+		&& ['typePill', 'statusPill'].includes(segments[3])
+		&& segments[4] === 'resolve'
+	) {
+		def = schema.$defs.headerPill?.properties?.resolve ?? null
+	}
+
+	// A board card (its pill's `resolve`, pill-color-field, schema 2.135.0).
+	if (
+		def === null
+		&& segments.length === 5
+		&& segments[0] === 'pages'
+		&& segments[2] === 'config'
+		&& segments[3] === 'board'
+		&& segments[4] === 'card'
+	) {
+		def = schema.$defs.boardView?.properties?.card ?? null
+	}
+
+	// A page's default saved view (its `icon`, pill-color-field, schema 2.134.0).
+	if (
+		def === null
+		&& segments.length === 5
+		&& segments[0] === 'pages'
+		&& segments[2] === 'config'
+		&& segments[3] === 'defaultSavedViews'
+	) {
+		def = schema.$defs.page?.properties?.config?.properties?.defaultSavedViews?.items ?? null
+	}
+
 	// A walkthrough tour is declared inline, not under $defs. Resolved by
 	// its path like the others (the-getting-started-tour-starts-on-the-
 	// dashboard, `startOn` in schema 2.94.0).
@@ -407,6 +442,19 @@ function main() {
 			continue
 		}
 		real.push(err)
+	}
+
+	// A shape checked inside an `if`/`then` (a board under `type: index`)
+	// reports its lag twice: the property, and the `then` it sits under on an
+	// ancestor path. The wrapper is that same lag, not a defect of its own; a
+	// real error under the same page is reported separately and still fails.
+	const laggedPaths = lagged.map(({ err }) => err.instancePath || '')
+	for (let i = real.length - 1; i >= 0; i--) {
+		const err = real[i]
+		const at = err.instancePath || ''
+		if (err.keyword === 'if' && laggedPaths.some((lagPath) => lagPath.startsWith(at + '/'))) {
+			real.splice(i, 1)
+		}
 	}
 
 	if (lagged.length > 0) {
