@@ -141,4 +141,53 @@ class ZuiddrechtWooLindelaanInProgressTest extends TestCase {
 			}
 		}
 	}//end testTheContactMomentsFitTheSchema()
+	/**
+	 * Seven documents are on the case through zaakinformatieobject rows, and
+	 * four of them carry a verdict: "4 van 7 beoordeeld", with the board's
+	 * tally (two public, one in part, one not).
+	 *
+	 * @return void
+	 */
+	public function testFourOfSevenDocumentsAreAssessed(): void {
+		$documents   = [];
+		$assessments = [];
+		foreach ($this->objects() as $object) {
+			$data = (array)($object['data'] ?? []);
+			if (($object['schema'] ?? '') === 'zaakinformatieobject' && ($data['case'] ?? '') === '{{object:woo-lindelaan.id}}') {
+				$documents[] = (string)$data['informatieobject'];
+			}
+
+			if (($object['schema'] ?? '') === 'wooDocumentAssessment' && ($data['caseRef'] ?? '') === '{{object:woo-lindelaan.id}}') {
+				$assessments[(string)$data['documentRef']] = (string)$data['classification'];
+			}
+		}
+
+		$this->assertCount(expectedCount: 7, haystack: array_unique($documents));
+		$this->assertCount(expectedCount: 4, haystack: $assessments);
+		$this->assertSame(expected: [], actual: array_diff(array_keys($assessments), $documents));
+		$tally = array_count_values($assessments);
+		ksort($tally);
+		$this->assertSame(expected: ['deels_openbaar' => 1, 'niet_openbaar' => 1, 'openbaar' => 2], actual: $tally);
+
+		foreach ($documents as $reference) {
+			$key      = substr($reference, strlen('{{object:'), -strlen('.id}}'));
+			$document = $this->object(key: $key);
+			$this->assertSame(expected: 'informatieobject', actual: $document['schema']);
+			$file = __DIR__.'/../../../lib/Settings/example-sets/'.$document['files'][0]['path'];
+			$this->assertFileExists(filename: $file);
+		}
+	}//end testFourOfSevenDocumentsAreAssessed()
+
+	/**
+	 * No board draws a recorded decision or a notice of default on this case:
+	 * DqZaakBesluiten draws the decision as a concept still to sign, and
+	 * DqTermijnen draws its notices on other cases.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseCarriesNoDecisionOrNoticeOfDefault(): void {
+		$keys = array_column($this->objects(), 'key');
+		$this->assertNotContains(needle: 'woo-lindelaan-besluit', haystack: $keys);
+		$this->assertNotContains(needle: 'ingebrekestelling-woo-lindelaan', haystack: $keys);
+	}//end testTheCaseCarriesNoDecisionOrNoticeOfDefault()
 }//end class

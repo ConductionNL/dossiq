@@ -14,3 +14,15 @@ direction and nature SHALL be a value the contact moment schema allows.
 - **GIVEN** the Zuiddrecht example set installed
 - **THEN** the case "Verlichting fietspad Lindelaan" shows the "Wat nu?" card of its in-progress stage
 - **AND** its Contact tab counts 4 contact moments
+
+### Requirement: The example Woo case holds seven documents, four assessed, and no decision yet
+
+The case SHALL hold seven documents as `informatieobject` rows linked by `zaakinformatieobject` (the way a case's
+documents are found), four of them assessed (two public, one in part, one not), as DqZaakDocumenten draws "4 van 7
+beoordeeld". The set SHALL seed no recorded decision and no notice of default on it: DqZaakBesluiten draws the decision
+as a concept still to sign, and DqTermijnen draws its notices on other cases.
+
+#### Scenario: the installed set
+
+- **GIVEN** the Zuiddrecht example set installed
+- **THEN** the case's documents read "4 van 7 beoordeeld" and the case has no decision
