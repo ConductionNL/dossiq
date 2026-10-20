@@ -52,3 +52,16 @@ with the decision's tally, and it SHALL carry every case field the archive dialo
 - **WHEN** a handler opens "Zaak archiveren" on that case
 - **THEN** the dialog lists "Case ended", "Result recorded", "Decision made" and "Documents final: 7 of 7" as met, with
   nomination "vernietigen"
+
+### Requirement: The in-progress case carries its advice, its status dates and its archive status
+
+The Lindelaan case SHALL carry its status history with the day each status was reached (receipt, then the in-progress
+status a day later, which `currentStatusEnteredAt` repeats), two advice requests (`adviesAanvraag`: Mobiliteit en
+verkeer still open with its answer due, Juridische zaken received), and `archiveStatus: nog_te_archiveren` without an
+archive nomination, action date or ending act, as an open case has none yet.
+
+#### Scenario: the installed set
+
+- **GIVEN** the Zuiddrecht example set installed
+- **THEN** the case's advice card lists the open request to Mobiliteit en verkeer and the received legal review
+- **AND** the case data reads archive status "nog te archiveren"

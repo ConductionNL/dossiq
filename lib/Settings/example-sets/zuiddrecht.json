@@ -988,7 +988,8 @@
 				"tags": [
 					"woo",
 					"openbare-ruimte"
-				]
+				],
+				"archiveStatus": "nog_te_archiveren"
 			}
 		},
 		{
@@ -1067,6 +1068,37 @@
 				"summary": "Vult het verzoek aan met de offertes voor de lantaarnpalen.",
 				"firstTimeFix": false,
 				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "woo-lindelaan-advies-verlichting",
+			"register": "dossiq",
+			"schema": "adviesAanvraag",
+			"data": {
+				"case": "{{object:woo-lindelaan.id}}",
+				"advisor": "Mobiliteit en verkeer",
+				"type": "intern",
+				"subject": "Advies verlichting",
+				"questions": "Welke adviezen over de verlichting kunnen openbaar, en wat weegt de afdeling over de planning met de aannemer?",
+				"deadline": "{{date:3}}",
+				"status": "requested",
+				"requestedAt": "{{datetime:-4 09:30}}"
+			}
+		},
+		{
+			"key": "woo-lindelaan-advies-juridisch",
+			"register": "dossiq",
+			"schema": "adviesAanvraag",
+			"data": {
+				"case": "{{object:woo-lindelaan.id}}",
+				"advisor": "Juridische zaken",
+				"type": "intern",
+				"subject": "Juridische toets weigeringsgronden",
+				"questions": "Houdt grond 5.1.2e stand voor de klachtenlijst en de mail van de aannemer?",
+				"deadline": "{{date:-9}}",
+				"status": "received",
+				"requestedAt": "{{datetime:-13 11:00}}",
+				"receivedAt": "{{datetime:-10 15:20}}"
 			}
 		},
 		{
