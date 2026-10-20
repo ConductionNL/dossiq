@@ -4,24 +4,18 @@
 /**
  * What the access tab says about a field somebody cannot see.
  *
- * Two assertions here are about things that cannot be seen on a screen.
- *
- *  - a row is marked as applying to the reader ONLY when OpenRegister's own
- *    answer says so. The declaration names groups, the browser does not know
- *    the reader's groups, and a panel that guessed would be a second evaluator
- *    of an access question. An instance that answers nothing gets "no", never
- *    an invented "yes";
- *  - no code under `src/` decides any of this. The design note says the form
- *    and the data panel render what the platform returns, and a single role
- *    comparison on one of these fields would make that sentence false while
- *    everything still looked right.
+ * The rows ("applies to you" only when OpenRegister's own answer says so) are
+ * rendered by the library's `object-permissions` widget and pinned in its
+ * specs. What is pinned here is that no code under `src/` decides any of it.
+ * The design note says the form and the data panel render what the platform
+ * returns, and a single role comparison on one of these fields would make that
+ * sentence false while everything still looked right.
  *
  * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { fieldRoleRows, roleRuleSentence } from '../../src/utils/fieldRoleRules.js'
 
 /** The five fields the change's worked example is about. */
 const WORKED_EXAMPLE = [
@@ -31,15 +25,6 @@ const WORKED_EXAMPLE = [
 	'qualityScore',
 	'qualityStatus',
 ]
-
-/** One declared rule, hiding the quality score from the handlers. */
-const HIDES_THE_SCORE = {
-	field: 'qualityScore',
-	rule: 'hidden',
-	groups: ['behandelaars'],
-	heldBy: ['dossiq-coordinators', 'dossiq-quality'],
-	reason: 'The quality officer scores the handling.',
-}
 
 /**
  * Every `.js` and `.vue` file under `src/`.
@@ -62,60 +47,6 @@ function sourceFiles(dir) {
 
 	return found
 }
-
-describe('the rules a role meets', () => {
-	it('keeps a rule that names a field, with both group lists', () => {
-		expect(fieldRoleRows([HIDES_THE_SCORE], null)).toEqual([
-			{
-				field: 'qualityScore',
-				rule: 'hidden',
-				groups: ['behandelaars'],
-				heldBy: ['dossiq-coordinators', 'dossiq-quality'],
-				reason: 'The quality officer scores the handling.',
-				appliesToMe: false,
-			},
-		])
-	})
-
-	it('drops a row naming no field, so hesitating does not render a blank line', () => {
-		expect(fieldRoleRows([{ field: '  ', rule: 'hidden' }], null)).toEqual([])
-	})
-
-	it('drops a rule whose kind the platform does not read', () => {
-		expect(
-			fieldRoleRows([{ field: 'qualityScore', rule: 'readonly' }], null),
-		).toEqual([])
-	})
-
-	it('marks a row as applying only when OpenRegister said so', () => {
-		const [applied] = fieldRoleRows([HIDES_THE_SCORE], {
-			hidden: ['qualityScore'],
-			readOnly: [],
-		})
-
-		expect(applied.appliesToMe).toBe(true)
-	})
-
-	it('does not mark a row from the other kind of rule', () => {
-		const [notApplied] = fieldRoleRows([HIDES_THE_SCORE], {
-			hidden: [],
-			readOnly: ['qualityScore'],
-		})
-
-		expect(notApplied.appliesToMe).toBe(false)
-	})
-
-	it('says no on an instance that answered nothing, rather than guessing yes', () => {
-		expect(fieldRoleRows([HIDES_THE_SCORE], null)[0].appliesToMe).toBe(false)
-	})
-
-	it('names both sides in the sentence beside the field', () => {
-		const sentence = roleRuleSentence(fieldRoleRows([HIDES_THE_SCORE], null)[0])
-
-		expect(sentence).toContain('behandelaars')
-		expect(sentence).toContain('dossiq-coordinators')
-	})
-})
 
 describe('no dossiq code decides any of it', () => {
 	it('branches on no role for the fields the rules are about', () => {

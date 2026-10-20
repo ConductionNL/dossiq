@@ -4294,8 +4294,19 @@
 							"id": "access",
 							"label": "Access",
 							"icon": "ShieldAccountOutline",
-							"_note": "case-grants-name-their-source REQ-CGP-01: who holds which right on this case and where each grant came from, so an auditor can be told after the fact who could open the dossier. A `component:` tab and not a `widgets[]` one, because a sidebar tab renders either a registered component or a CnObjectSidebar built-in (data, metadata, audit / audit-trail, object-table), and none of the four can read OpenRegister's permission catalogue, role definitions or deny preview. dossiq computes no effective permission here: the panel renders what OpenRegister answered, one row per rule.",
-							"component": "CaseAccessTab"
+							"_note": "case-grants-name-their-source REQ-CGP-01: who holds which right on this case and where each grant came from, so an auditor can be told after the fact who could open the dossier, and who held a right on a past date. Rendered by the library built-in `object-permissions` (CnObjectPermissionsTab) over OpenRegister's permission reads; dossiq computes no effective permission here: the tab renders what OpenRegister answered, one row per rule, a deny as its own row. `fieldRules` points it at the case type's `fieldRoleRules` declaration (field-rules-declared), read beside the case's own `@self.fieldRules` decision.",
+							"widgets": [
+								{
+									"type": "object-permissions",
+									"props": {
+										"fieldRules": {
+											"typeField": "caseType",
+											"typeSchema": "caseType",
+											"declarationField": "fieldRoleRules"
+										}
+									}
+								}
+							]
 						},
 						{
 							"id": "sharing",

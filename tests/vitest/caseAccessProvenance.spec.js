@@ -10,15 +10,10 @@
  * is the half a reader sees, and each of these is a way it could be wrong
  * while looking fine:
  *
- *  - `inheritedFrom` falling into `source`. `sourceLabel()` returns its
- *    argument unchanged for a key it does not know, so a uuid arriving there
- *    renders as a raw identifier under a column headed Where it comes from.
- *    That is an id standing where prose was expected: it reads as a broken
- *    label, and nothing warns.
- *
  *  - the provenance going missing. The grant is not on the case in front of
  *    the reader, so a handler who cannot see which case granted it cannot
- *    remove it at all.
+ *    remove it at all. The rows themselves are rendered by the library's
+ *    `object-permissions` widget and pinned in its specs.
  *
  *  - the Sharing tab staying silent. A share that quietly widens to the
  *    deelzaken is the failure this row is about, inverted, and a warning after
@@ -34,7 +29,6 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import { grantRows, objectPermissionRows } from '../../src/services/caseAccessApi.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 const register = JSON.parse(
@@ -47,10 +41,6 @@ const slugMapSource = fs.readFileSync(
 	path.join(ROOT, 'lib', 'Service', 'Settings', 'SchemaSlugMap.php'),
 	'utf8',
 )
-const accessTabSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'views', 'cases', 'components', 'CaseAccessTab.vue'),
-	'utf8',
-)
 const sharingTabSource = fs.readFileSync(
 	path.join(ROOT, 'src', 'views', 'cases', 'components', 'CaseSharingTab.vue'),
 	'utf8',
@@ -58,6 +48,10 @@ const sharingTabSource = fs.readFileSync(
 const guardSource = fs.readFileSync(
 	path.join(ROOT, 'lib', 'Service', 'CaseAccessGuard.php'),
 	'utf8',
+)
+
+const manifest = JSON.parse(
+	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
 
 const caseSchema = register.components.schemas.case
@@ -136,77 +130,13 @@ describe('the case declares which edge a grant travels down', () => {
 })
 
 describe('an inherited grant names the case it came from', () => {
-	it('does not put the ancestor id in the source', () => {
-		const rows = grantRows({
-			objectGrants: [
-				{
-					principal: 'alice',
-					actions: ['read'],
-					inheritedFrom: '2f1c9a10-0000-4000-8000-000000000001',
-				},
-			],
-			roleGrants: null,
-			callerScope: null,
-			denyRules: null,
-		})
-
-		expect(rows).toHaveLength(1)
-		expect(rows[0].source).toBe('inherited')
-		expect(rows[0].inheritedFrom).toBe('2f1c9a10-0000-4000-8000-000000000001')
-	})
-
-	it('keeps a source OpenRegister named, inherited or not', () => {
-		const rows = grantRows({
-			objectGrants: [
-				{ principal: 'alice', actions: ['read'], source: 'group' },
-				{ principal: 'bob', actions: ['read'] },
-			],
-			roleGrants: null,
-			callerScope: null,
-			denyRules: null,
-		})
-
-		expect(rows.map((row) => row.source)).toEqual(['group', 'share'])
-		expect(rows.map((row) => row.inheritedFrom)).toEqual(['', ''])
-	})
-
-	it('carries the ancestor through the object permission set too', () => {
-		// The set is the first read since openregister#3744; the five older
-		// reads are the fallback. A provenance carried on one path and not the
-		// other is a panel that names the granting case on some instances.
-		const rows = objectPermissionRows({
-			denyEnforcement: 'enforcing',
-			holders: [
-				{
-					rules: [
-						{
-							principal: 'alice',
-							action: 'read',
-							level: 'inherited',
-							inheritedFrom: 'parent-case-uuid',
-						},
-					],
-				},
-			],
-			denied: [],
-		})
-
-		expect(rows).toHaveLength(1)
-		expect(rows[0].inheritedFrom).toBe('parent-case-uuid')
-	})
-
-	it('gives the panel a word for the inherited source', () => {
-		// Without the label, `sourceLabel()` returns the key unchanged and the
-		// column reads `inherited` rather than a sentence.
-		expect(accessTabSource).toContain('inherited: t(')
-		expect(accessTabSource).toContain('inheritedHint(row)')
-	})
-
-	it('renders the ancestor inside a sentence, never bare', () => {
-		// The id is an answer only when something says what it is.
-		expect(accessTabSource).toMatch(
-			/Granted on case \{case\}, which this one hangs under/,
-		)
+	it('is rendered by the library tab, which names the ancestor in a sentence', () => {
+		// The rows and the sentence are pinned in @conduction/nextcloud-vue
+		// (tests/utils/objectPermissions.spec.js, CnObjectPermissionsTab spec):
+		// the ancestor id rides beside the source and never in it.
+		const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
+		const access = caseDetail.config.sidebar.tabs.find((tab) => tab.id === 'access')
+		expect(access.widgets[0].type).toBe('object-permissions')
 	})
 })
 
