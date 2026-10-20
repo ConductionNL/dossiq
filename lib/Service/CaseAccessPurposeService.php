@@ -105,14 +105,13 @@ class CaseAccessPurposeService {
 			throw $this->notRecorded(previous: null);
 		}
 
-		$case = $this->find(objectService: $objectService, id: $caseId, register: $register, schema: $caseSchema);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'case-not-readable',
-				sentence: 'This case cannot be opened.',
-				status: 404
-			);
-		}
+		$case = $this->find(
+			objectService: $objectService,
+			id: $caseId,
+			register: $register,
+			schema: $caseSchema,
+			refusal: new RefusedException(rule: 'case-not-readable', sentence: 'This case cannot be opened.', status: 404)
+		);
 
 		$categories = $this->categoriesOf(objectService: $objectService, case: $case, register: $register, schema: $caseTypeSchema);
 		if ($categories === []) {
@@ -174,27 +173,30 @@ class CaseAccessPurposeService {
 	}//end assertPurpose()
 
 	/**
-	 * The case as the reader may read it, or null.
+	 * An object as the reader may read it.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $id            The case uuid.
-	 * @param string $register      The register.
-	 * @param string $schema        The case schema.
+	 * @param object           $objectService OpenRegister's ObjectService.
+	 * @param string           $id            The object uuid.
+	 * @param string           $register      The register.
+	 * @param string           $schema        The schema.
+	 * @param RefusedException $refusal       What a miss is answered with.
 	 *
-	 * @return object|null The case entity.
+	 * @return object The entity.
+	 *
+	 * @throws RefusedException When the reader cannot read it.
 	 */
-	private function find(object $objectService, string $id, string $register, string $schema): ?object {
+	private function find(object $objectService, string $id, string $register, string $schema, RefusedException $refusal): object {
 		try {
 			$found = $objectService->find($id, register: $register, schema: $schema);
 		} catch (Throwable $e) {
-			return null;
+			throw $refusal;
 		}
 
-		if (is_object($found) === true) {
-			return $found;
+		if (is_object($found) === false) {
+			throw $refusal;
 		}
 
-		return null;
+		return $found;
 	}//end find()
 
 	/**
@@ -206,6 +208,8 @@ class CaseAccessPurposeService {
 	 * @param string $schema        The case type schema.
 	 *
 	 * @return list<string> The categories.
+	 *
+	 * @throws RefusedException When the case type cannot be read.
 	 */
 	private function categoriesOf(object $objectService, object $case, string $register, string $schema): array {
 		$caseData = $this->dataOf(entity: $case);
@@ -214,10 +218,15 @@ class CaseAccessPurposeService {
 			return [];
 		}
 
-		$caseType = $this->find(objectService: $objectService, id: $caseTypeId, register: $register, schema: $schema);
-		if ($caseType === null) {
-			return [];
-		}
+		// The case type decides whether a purpose is asked, so one that cannot
+		// be read is not taken to ask nothing.
+		$caseType = $this->find(
+			objectService: $objectService,
+			id: $caseTypeId,
+			register: $register,
+			schema: $schema,
+			refusal: $this->notRecorded(previous: null)
+		);
 
 		$categories = ($this->dataOf(entity: $caseType)['specialDataCategories'] ?? []);
 		if (is_array($categories) === false) {

@@ -213,6 +213,24 @@ class CaseAccessPurposeServiceTest extends TestCase {
 	}//end testRefusesACaseTheReaderCannotOpen()
 
 	/**
+	 * A case type that cannot be read is not taken to ask nothing: the open is refused.
+	 *
+	 * @return void
+	 */
+	public function testRefusesWhenTheCaseTypeCannotBeRead(): void {
+		$objects = $this->jeugdwet();
+		unset($objects['ct-jw']);
+		try {
+			$this->service(objects: $objects)->record(caseId: 'case-1', readerId: 'pieter', purpose: 'handling', note: '');
+			$this->fail('An unreadable case type must refuse the open.');
+		} catch (RefusedException $e) {
+			$this->assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+		}
+
+		$this->assertSame([], $this->written);
+	}//end testRefusesWhenTheCaseTypeCannotBeRead()
+
+	/**
 	 * A failed write refuses the open, so the case does not open unrecorded.
 	 *
 	 * @return void
