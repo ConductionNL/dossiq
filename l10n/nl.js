@@ -5035,6 +5035,7 @@ OC.L10N.register(
         "No substitutions": "Geen waarnemingen",
         "No suggestions available": "Geen suggesties beschikbaar",
         "No systemic issues detected.": "Geen systemische problemen gedetecteerd.",
+        "No target": "Geen norm",
         "No task reminders": "Geen taakherinneringen",
         "No tasks for this case yet": "Nog geen taken voor deze zaak",
         "No tasks found": "Geen taken gevonden",

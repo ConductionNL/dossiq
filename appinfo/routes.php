@@ -352,6 +352,9 @@ $extra = [
         // Process mining bottleneck report — dwell-time, bottleneck ranking,
         // transition matrix + rework detection, throughput trend.
     ['name' => 'processMining#report', 'url' => '/api/reports/process-mining', 'verb' => 'GET'],
+        // Processing-time report: target compliance, distribution, trend,
+        // throughput, records at risk and the per-type breakdown.
+    ['name' => 'processingTimeReport#show', 'url' => '/api/reports/processing-time', 'verb' => 'GET'],
 
         // Deelzaak (sub-case) parent-child relations.
     ['name' => 'deelzaak#counts',   'url' => '/api/deelzaken/counts',                'verb' => 'GET'],
