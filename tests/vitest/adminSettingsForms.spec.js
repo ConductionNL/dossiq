@@ -17,8 +17,11 @@ import path from 'path'
 import { describe, expect, it } from 'vitest'
 import { STRUCTURE_SETTING } from '../../src/utils/structureProfile.js'
 import {
+	aiFields,
 	archivalFields,
+	backgroundAccountFields,
 	consultationFields,
+	contactCentreFields,
 	ISO_DURATION_PATTERN,
 	mandateSettingsFields,
 	menuStructureFields,
@@ -26,11 +29,16 @@ import {
 	queueUrgencyFields,
 	reviewReportFields,
 	storeRegistryFields,
+	workDigestFields,
 } from '../../src/views/settings/adminFields.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 const configKeys = fs.readFileSync(
 	path.join(ROOT, 'lib', 'Service', 'Settings', 'ConfigKeys.php'),
+	'utf8',
+)
+const userSettings = fs.readFileSync(
+	path.join(ROOT, 'src', 'views', 'settings', 'UserSettings.vue'),
 	'utf8',
 )
 const adminRoot = fs.readFileSync(
@@ -69,6 +77,7 @@ describe('admin forms saved through dossiq settings', () => {
 		consultationFields,
 		reviewReportFields,
 		paymentCallbackFields,
+		contactCentreFields,
 	}
 
 	it.each(
@@ -186,5 +195,90 @@ describe('archiving', () => {
 		expect(['P7D', 'P1M', 'PT12H', 'P1Y2M3DT4H'].every((value) => iso.test(value))).toBe(true)
 		expect(['', 'P', '7D', 'PT', 'weekly'].some((value) => iso.test(value))).toBe(false)
 		expect(field.required).toBe(true)
+	})
+})
+
+describe('the KCC bridge', () => {
+	const fields = byKey(contactCentreFields(t))
+
+	it('edits the trigger words one per line and stores them as JSON text', () => {
+		expect(fields.sentiment_trigger_words).toMatchObject({ type: 'lines', saveAs: 'json' })
+	})
+
+	it('offers the three identification methods, both by default', () => {
+		expect(fields.identification_method.options.map((option) => option.value)).toEqual(['digid', 'bsn_questions', 'both'])
+		expect(fields.identification_method.default).toBe('both')
+	})
+
+	it('keeps the save button the e2e presses', () => {
+		expect(adminRoot).toContain("t('dossiq', 'Save KCC settings')")
+	})
+})
+
+describe('the background service account', () => {
+	const fields = byKey(backgroundAccountFields(t))
+
+	it('reads and saves on its own endpoint, and reads again for the warning', () => {
+		const section = adminRoot.slice(adminRoot.indexOf('id="section-background-service-account"'))
+		const tag = section.slice(0, section.indexOf('/>'))
+		expect(tag).toContain('url="/apps/dossiq/api/settings/background-service-account"')
+		expect(tag).toContain(':reloadAfterSave="true"')
+		expect(tag).toContain('Background jobs now save as {userId}.')
+	})
+
+	it('names what is wrong with an unusable account, only while it is unusable', () => {
+		expect(fields.reason).toMatchObject({ type: 'status', tone: 'warning', visibleWhen: { key: 'usable', equals: false } })
+		expect(Object.keys(fields.reason.textMap)).toEqual(['unknown', 'disabled', 'not-in-group', '*'])
+		expect(Object.values(fields.reason.textMap).every((text) => text.endsWith('nothing is saved.'))).toBe(true)
+	})
+})
+
+describe('AI-assisted processing', () => {
+	const fields = aiFields(t)
+	const keyed = byKey(fields)
+
+	it('draws a switch the server did not report as on as off: no switch defaults to on', () => {
+		for (const field of fields.filter((entry) => entry.type === 'switch')) {
+			expect(field.default).toBeUndefined()
+		}
+	})
+
+	it('shows everything after the global switch only while it is on', () => {
+		for (const field of fields.slice(1)) {
+			const conditions = [].concat(field.visibleWhen)
+			expect(conditions).toContainEqual({ key: 'ai_enabled', equals: true })
+		}
+	})
+
+	it('asks a key and warns only for a cloud model', () => {
+		expect(keyed.ai_api_key).toMatchObject({ type: 'secret', setKey: 'ai_api_key_set' })
+		expect(keyed.ai_api_key.visibleWhen).toContainEqual({ key: 'ai_model_type', equals: 'cloud' })
+		expect(keyed['cloud-warning'].visibleWhen).toContainEqual({ key: 'ai_model_type', equals: 'cloud' })
+	})
+
+	it('warns until the DPIA is acknowledged', () => {
+		expect(keyed['dpia-warning'].visibleWhen).toContainEqual({ key: 'ai_dpia_acknowledged', equals: false })
+	})
+
+	it('tests the connection and reports a failure as an error', () => {
+		expect(keyed['test-connection']).toMatchObject({ type: 'action', url: '/apps/dossiq/api/ai/health', okPath: 'healthy' })
+	})
+})
+
+describe('the daily digest', () => {
+	const fields = byKey(workDigestFields(t))
+
+	it('sends the switch and the hour together, as the endpoint replaces both', () => {
+		expect(userSettings).toContain(':saveAll="true"')
+		expect(userSettings).toContain(':autoSave="true"')
+		expect(userSettings).toContain(':bare="true"')
+	})
+
+	it('asks the hour only while the digest is on', () => {
+		expect(fields.hour).toMatchObject({ min: 0, max: 23, integer: true, visibleWhen: { key: 'enabled', equals: true } })
+	})
+
+	it('names who decided the setting', () => {
+		expect(Object.keys(fields.source.textMap)).toEqual(['user-override', 'group-default', 'schema-default', '*'])
 	})
 })

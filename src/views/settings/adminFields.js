@@ -496,3 +496,256 @@ export function archivalFields(t) {
 		},
 	]
 }
+
+/**
+ * The KCC bridge behaviour: how a caller is identified, what the case summary
+ * holds, how often sentiment and availability are read, when a call plan
+ * overflows, and the words that flag negative sentiment. The defaults are the
+ * server's (SettingsService::KCC_DEFAULTS).
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ * @spec openspec/specs/admin-settings/spec.md
+ */
+export function contactCentreFields(t) {
+	const number = (key, label, fallback, hint = '') => ({
+		key,
+		label,
+		type: 'number',
+		min: 0,
+		default: fallback,
+		placeholder: String(fallback),
+		...(hint ? { hint } : {}),
+	})
+	return [
+		{
+			key: 'kcc-scope',
+			type: 'status',
+			text: t(
+				'dossiq',
+				'Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by Integriq and pipelinq respectively; only the Dossiq-side behaviour is configured here.',
+			),
+		},
+		{
+			key: 'identification_method',
+			label: t('dossiq', 'Identification method'),
+			type: 'select',
+			required: true,
+			default: 'both',
+			options: [
+				{ value: 'digid', label: 'DigiD' },
+				{ value: 'bsn_questions', label: t('dossiq', 'Identification questions') },
+				{ value: 'both', label: t('dossiq', 'Both') },
+			],
+			hint: t(
+				'dossiq',
+				'Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both.',
+			),
+		},
+		{
+			...number(
+				'identification_score_threshold',
+				t('dossiq', 'Identification score threshold (0.6 - 1.0)'),
+				0.8,
+				t(
+					'dossiq',
+					'Minimum identificatievragen match score to link a burger and reveal full zaaksinfo. Below the threshold, only openbare zaaksinformatie is shown.',
+				),
+			),
+			max: 1,
+		},
+		number('sentiment_polling_interval', t('dossiq', 'Sentiment polling interval (seconds)'), 5),
+		number('specialist_availability_polling_interval', t('dossiq', 'Specialist availability polling interval (seconds)'), 30),
+		number('max_zaken_voorblad', t('dossiq', 'Max open zaken in voorblad'), 10),
+		number('max_contactmomenten_history', t('dossiq', 'Max contactmomenten in history'), 5),
+		number('belplan_overflow_threshold_wachttijd', t('dossiq', 'Belplan overflow threshold: wachttijd (seconds)'), 180),
+		number('belplan_overflow_threshold_wachtrij_lengte', t('dossiq', 'Belplan overflow threshold: wachtrij lengte'), 5),
+		{
+			key: 'sentiment_trigger_words',
+			label: t('dossiq', 'Sentiment trigger words (one per line)'),
+			type: 'lines',
+			saveAs: 'json',
+			rows: 6,
+			wide: true,
+			placeholder: 'klacht\nadvocaat\nwethouder\nmedia',
+			hint: t(
+				'dossiq',
+				'Dutch words that flag negative sentiment and trigger an escalation recommendation. One word or phrase per line.',
+			),
+		},
+	]
+}
+
+/**
+ * The group the background service account joins.
+ *
+ * @type {string}
+ */
+export const BACKGROUND_SERVICE_GROUP = 'dossiq-background-service'
+
+/**
+ * The account background jobs save as: its user name, and a warning naming
+ * what is wrong with it while it cannot be used.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ * @spec openspec/specs/admin-settings/spec.md
+ */
+export function backgroundAccountFields(t) {
+	const until = t(
+		'dossiq',
+		'Until you choose one, reminders on suspended terms are not sent and nothing is saved.',
+	)
+	return [
+		{
+			key: 'reason',
+			type: 'status',
+			tone: 'warning',
+			visibleWhen: { key: 'usable', equals: false },
+			textMap: {
+				unknown: `${t('dossiq', 'The chosen account does not exist.')} ${until}`,
+				disabled: `${t('dossiq', 'The chosen account is disabled.')} ${until}`,
+				'not-in-group': `${t('dossiq', 'The chosen account is not in the group {group}.', { group: BACKGROUND_SERVICE_GROUP })} ${until}`,
+				'*': `${t('dossiq', 'No account is chosen.')} ${until}`,
+			},
+		},
+		{
+			key: 'userId',
+			label: t('dossiq', 'Nextcloud user name'),
+			required: true,
+		},
+	]
+}
+
+/**
+ * AI-assisted processing: the global switch, the model, the features, the
+ * privacy acknowledgements and a connection test. Everything after the
+ * global switch shows only while it is on.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ * @spec openspec/specs/ai-assistance/spec.md
+ */
+export function aiFields(t) {
+	const on = { key: 'ai_enabled', equals: true }
+	const cloud = { key: 'ai_model_type', equals: 'cloud' }
+	const features = [
+		['ai_feature_classification', t('dossiq', 'Document classification')],
+		['ai_feature_extraction', t('dossiq', 'Data extraction')],
+		['ai_feature_qa', t('dossiq', 'Knowledge base Q&A')],
+		['ai_feature_summary', t('dossiq', 'Auto-summarization')],
+		['ai_feature_routing', t('dossiq', 'Routing suggestions')],
+		['ai_feature_decision_support', t('dossiq', 'Decision support')],
+	]
+	return [
+		{ key: 'ai_enabled', label: t('dossiq', 'Enable AI-assisted processing'), type: 'switch' },
+		{ key: 'heading-model', label: t('dossiq', 'Model configuration'), type: 'heading', visibleWhen: on },
+		{
+			key: 'ai_model_type',
+			label: t('dossiq', 'Model type'),
+			type: 'radio',
+			default: 'local',
+			options: [
+				{ value: 'local', label: t('dossiq', 'Local (Ollama)') },
+				{ value: 'cloud', label: t('dossiq', 'Cloud') },
+			],
+			visibleWhen: on,
+		},
+		{
+			key: 'cloud-warning',
+			type: 'status',
+			tone: 'warning',
+			text: t(
+				'dossiq',
+				'Warning: Case data will be sent to an external service. Ensure this complies with your data processing agreements.',
+			),
+			visibleWhen: [on, cloud],
+		},
+		{ key: 'ai_model_url', label: t('dossiq', 'Model endpoint URL'), visibleWhen: on },
+		{ key: 'ai_model_name', label: t('dossiq', 'Model name'), placeholder: 'llama3.1', visibleWhen: on },
+		{
+			key: 'ai_api_key',
+			label: t('dossiq', 'API Key'),
+			type: 'secret',
+			setKey: 'ai_api_key_set',
+			visibleWhen: [on, cloud],
+		},
+		{ key: 'heading-features', label: t('dossiq', 'Features'), type: 'heading', visibleWhen: on },
+		...features.map(([key, label]) => ({ key, label, type: 'switch', visibleWhen: on })),
+		{ key: 'heading-privacy', label: t('dossiq', 'Privacy and compliance'), type: 'heading', visibleWhen: on },
+		{
+			key: 'ai_pii_stripping',
+			label: t('dossiq', 'Strip PII (BSN, financial data) from AI prompts'),
+			type: 'switch',
+			visibleWhen: on,
+		},
+		{
+			key: 'ai_dpia_acknowledged',
+			label: t('dossiq', 'DPIA (Data Protection Impact Assessment) has been completed'),
+			type: 'switch',
+			visibleWhen: on,
+		},
+		{
+			key: 'dpia-warning',
+			type: 'status',
+			tone: 'warning',
+			text: t(
+				'dossiq',
+				'A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.',
+			),
+			visibleWhen: [on, { key: 'ai_dpia_acknowledged', equals: false }],
+		},
+		{ key: 'heading-test', label: t('dossiq', 'Connection test'), type: 'heading', visibleWhen: on },
+		{
+			key: 'test-connection',
+			label: t('dossiq', 'Test connection'),
+			type: 'action',
+			url: '/apps/dossiq/api/ai/health',
+			okPath: 'healthy',
+			visibleWhen: on,
+		},
+	]
+}
+
+/**
+ * The daily digest a person gets: on or off, the hour, and who decided it.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ */
+export function workDigestFields(t) {
+	return [
+		{
+			key: 'enabled',
+			label: t('dossiq', 'Send me a daily digest of my open work'),
+			type: 'switch',
+			default: true,
+		},
+		{
+			key: 'hour',
+			label: t('dossiq', 'Hour of the day'),
+			type: 'number',
+			integer: true,
+			min: 0,
+			max: 23,
+			default: 8,
+			visibleWhen: { key: 'enabled', equals: true },
+		},
+		{
+			key: 'source',
+			type: 'status',
+			textMap: {
+				'user-override': t('dossiq', 'You set this.'),
+				'group-default': t('dossiq', 'Your team set this. You can decide for yourself.'),
+				'schema-default': t('dossiq', 'Nobody has changed this, so it is on the setting it ships with.'),
+				'*': t('dossiq', 'This instance keeps the setting here rather than with your other notifications.'),
+			},
+		},
+		{
+			key: 'nothing-waiting',
+			type: 'status',
+			text: t('dossiq', 'A day with nothing waiting sends nothing.'),
+		},
+	]
+}

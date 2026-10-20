@@ -70,7 +70,7 @@
 				"
 				:fields="menuStructureFields" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-background-service-account"
 				:name="t('dossiq', 'Background service account')"
 				:description="
@@ -78,9 +78,19 @@
 						'dossiq',
 						'The account background jobs save as, with the access checks of OpenRegister on.',
 					)
-				">
-				<BackgroundServiceAccountSettings />
-			</CnSettingsSection>
+				"
+				:detailedDescription="
+					t(
+						'dossiq',
+						'Background jobs, such as the reminders on suspended terms, have no signed-in user. They save as this account, which joins the group {group}. Pick an account that nobody signs in with.',
+						{ group: backgroundServiceGroup },
+					)
+				"
+				url="/apps/dossiq/api/settings/background-service-account"
+				:reloadAfterSave="true"
+				:saveLabel="t('dossiq', 'Use this account')"
+				:savedMessage="t('dossiq', 'Background jobs now save as {userId}.')"
+				:fields="backgroundAccountFields" />
 
 			<CnSettingsSection
 				id="section-mailbox"
@@ -95,7 +105,8 @@
 				<EmailSettings v-if="storesReady" />
 			</CnSettingsSection>
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
+				id="section-ai"
 				:name="t('dossiq', 'AI-assisted processing')"
 				:description="
 					t(
@@ -103,9 +114,11 @@
 						'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support',
 					)
 				"
-				:loading="!storesReady">
-				<AiSettingsTab v-if="storesReady" />
-			</CnSettingsSection>
+				url="/apps/dossiq/api/ai/settings"
+				valuesPath="settings"
+				saveMethod="POST"
+				:autoSave="true"
+				:fields="aiFields" />
 
 			<CnSettingsFieldsSection
 				id="section-consultation"
@@ -346,8 +359,9 @@
 				<ZgwMappingSettings v-if="storesReady" />
 			</CnSettingsSection>
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-kcc"
+				appId="dossiq"
 				:name="t('dossiq', 'KCC-werkplek integration')"
 				:description="
 					t(
@@ -355,9 +369,10 @@
 						'Burger identification, case-voorblad limits, sentiment trigger words, and belplan overflow thresholds for the KCC contact-center bridge.',
 					)
 				"
-				:loading="!storesReady">
-				<KccIntegrationSettings v-if="storesReady" />
-			</CnSettingsSection>
+				:columns="2"
+				valuesPath="config"
+				:saveLabel="t('dossiq', 'Save KCC settings')"
+				:fields="contactCentreFields" />
 
 			<CnSettingsSection
 				id="section-dmn"
@@ -598,14 +613,11 @@ import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
-import BackgroundServiceAccountSettings from './BackgroundServiceAccountSettings.vue'
 import EmailSettings from './EmailSettings.vue'
-import KccIntegrationSettings from './KccIntegrationSettings.vue'
 import Settings from './Settings.vue'
 import ShippedConfiguration from './ShippedConfiguration.vue'
 import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
-import AiSettingsTab from './tabs/AiSettingsTab.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
 import FirstRunTab from './tabs/FirstRunTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
@@ -618,9 +630,13 @@ import manifest from '../../manifest.json'
 import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
 import {
+	aiFields,
 	archivalFields,
+	BACKGROUND_SERVICE_GROUP,
+	backgroundAccountFields,
 	CONNECTION_STATUS_TONES,
 	consultationFields,
+	contactCentreFields,
 	houseStyleFields,
 	kadasterFields,
 	mandateSettingsFields,
@@ -635,7 +651,6 @@ import {
 export default {
 	name: 'AdminRoot',
 	components: {
-		BackgroundServiceAccountSettings,
 		Plus,
 		FirstRunTab,
 		PrerequisitesTab,
@@ -647,13 +662,11 @@ export default {
 		CnWorkingCalendarWidget,
 		Settings,
 		ZgwMappingSettings,
-		AiSettingsTab,
 		SearchIndexTab,
 		ChecklistsTab,
 		TermijnDefinitiesTab,
 		MandaatMatrixTab,
 		EmailSettings,
-		KccIntegrationSettings,
 		ShippedConfiguration,
 		StufEndpoints,
 		StufAuditLog,
@@ -1041,6 +1054,41 @@ export default {
 		 */
 		archivalFields() {
 			return archivalFields(this.t.bind(this))
+		},
+
+		/**
+		 * The AI switches, model and connection test.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		aiFields() {
+			return aiFields(this.t.bind(this))
+		},
+
+		/**
+		 * The background service account and why it cannot be used.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		backgroundAccountFields() {
+			return backgroundAccountFields(this.t.bind(this))
+		},
+
+		/**
+		 * The KCC bridge behaviour.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		contactCentreFields() {
+			return contactCentreFields(this.t.bind(this))
+		},
+
+		/** @return {string} The group the background service account joins. */
+		backgroundServiceGroup() {
+			return BACKGROUND_SERVICE_GROUP
 		},
 
 		/**
