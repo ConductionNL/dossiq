@@ -300,6 +300,7 @@ describe('the cases list', () => {
 			showTitle,
 			countSubtitle,
 			countText,
+			defaultOrder,
 			footerNote,
 			bulkHint,
 			headerButtons,
