@@ -69,6 +69,7 @@ import CashRegister from 'vue-material-design-icons/CashRegister.vue'
 import ChartBoxOutline from 'vue-material-design-icons/ChartBoxOutline.vue'
 import ChartLine from 'vue-material-design-icons/ChartLine.vue'
 import ChartSankey from 'vue-material-design-icons/ChartSankey.vue'
+import Check from 'vue-material-design-icons/Check.vue'
 import CheckboxMarkedCircleOutline from 'vue-material-design-icons/CheckboxMarkedCircleOutline.vue'
 import CheckboxMarkedOutline from 'vue-material-design-icons/CheckboxMarkedOutline.vue'
 import CheckboxOutline from 'vue-material-design-icons/CheckboxOutline.vue'
@@ -293,6 +294,7 @@ export default {
 	ChartBoxOutline,
 	ChartLine,
 	ChartSankey,
+	Check,
 	CheckCircleOutline,
 	CheckDecagram,
 	CheckboxMarkedCircleOutline,
