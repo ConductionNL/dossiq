@@ -153,9 +153,9 @@ class MailIntakeController extends Controller {
 		if ($refusal !== null && $refusal->getStatus() === Http::STATUS_FORBIDDEN) {
 			return new JSONResponse(
 				[
-					'message' => $this->l10n->t(
-						'You do not have the intake role, so you cannot read this log. It holds the original of every message the mailbox received. Ask an administrator to add you to the intake group.'
-					),
+					// The sentence is one literal so the translation tools find it.
+					// phpcs:ignore Generic.Files.LineLength
+					'message' => $this->l10n->t('You do not have the intake role, so you cannot read this log. It holds the original of every message the mailbox received. Ask an administrator to add you to the intake group.'),
 				],
 				Http::STATUS_FORBIDDEN
 			);
