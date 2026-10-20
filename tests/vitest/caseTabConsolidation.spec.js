@@ -370,7 +370,7 @@ describe('the container type this change depends on', () => {
 			'case-custody-panel': 'case-custody-pane',
 			// Review arrived with woo-review-triage: where a document review
 			// stands. A single surface keyed by TYPE (registry.js), like the rest.
-			'case-document-review': 'document-review',
+			'case-document-review': 'document-relevance-review',
 		}
 
 		// The tabs the LIBRARY draws from another app's leaf. Files is the
