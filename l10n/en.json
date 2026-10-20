@@ -1583,6 +1583,7 @@
         "CMMN standard event on the referenced plan item that satisfies this sentry: 'complete' when it reaches Completed, 'terminate' when it reaches Terminated, 'disable' when it reaches Disabled.": "CMMN standard event on the referenced plan item that satisfies this sentry: 'complete' when it reaches Completed, 'terminate' when it reaches Terminated, 'disable' when it reaches Disabled.",
         "Co-Financing List": "Co-Financing List",
         "Co-initiator": "Co-initiator",
+        "CoC {number}": "CoC {number}",
         "Code": "Code",
         "Collaborating Parties": "Collaborating Parties",
         "Collaboration": "Collaboration",

@@ -10,11 +10,21 @@
  * @spec openspec/specs/initiator-selection/spec.md
  */
 
-/** @type {Array<object>} The register sets, persons first. */
-export const REGISTER_PARTY_SOURCES = Object.freeze([
-	{ id: 'person', register: 'dossiq', schema: 'brpPerson', label: 'Resident', title: '{displayName}', secondary: '{residence.street} {residence.houseNumber}' },
-	{ id: 'company', register: 'dossiq', schema: 'kvkCompany', label: 'Organisation', title: '{tradeName}', secondary: '{kvkNumber}' },
-])
+import { translate as t } from '@nextcloud/l10n'
+
+/**
+ * The register sets, persons first. A company's second line reads "KvK
+ * 24157431" in Dutch: the translated sentence takes the number's template as
+ * its value, so the picker fills it per row.
+ *
+ * @return {Array<object>}
+ */
+export function registerPartySources() {
+	return [
+		{ id: 'person', register: 'dossiq', schema: 'brpPerson', label: 'Resident', title: '{displayName}', secondary: '{residence.street} {residence.houseNumber}' },
+		{ id: 'company', register: 'dossiq', schema: 'kvkCompany', label: 'Organisation', title: '{tradeName}', secondary: t('dossiq', 'CoC {number}', { number: '{kvkNumber}' }) },
+	]
+}
 
 /**
  * The register sets and the reader's Nextcloud contacts, for picking who

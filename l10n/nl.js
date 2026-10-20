@@ -1554,6 +1554,7 @@ OC.L10N.register(
         "CMMN standard event on the referenced plan item that satisfies this sentry: 'complete' when it reaches Completed, 'terminate' when it reaches Terminated, 'disable' when it reaches Disabled.": "Standaard CMMN-gebeurtenis op het genoemde planitem die aan deze sentry voldoet: 'complete' zodra het Completed bereikt, 'terminate' bij Terminated en 'disable' bij Disabled.",
         "Co-Financing List": "Lijst met cofinanciering",
         "Co-initiator": "Mede-initiator",
+        "CoC {number}": "KvK {number}",
         "Code": "Code",
         "Collaborating Parties": "Samenwerkende partijen",
         "Collaboration": "Samenwerking",

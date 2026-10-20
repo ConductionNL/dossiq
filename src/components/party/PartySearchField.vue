@@ -27,7 +27,7 @@
 <script>
 import { CnPartyPicker } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
-import { REGISTER_PARTY_SOURCES } from './partySources.js'
+import { registerPartySources } from './partySources.js'
 
 export default {
 	name: 'PartySearchField',
@@ -58,7 +58,7 @@ export default {
 
 	data() {
 		return {
-			sources: REGISTER_PARTY_SOURCES,
+			sources: registerPartySources(),
 		}
 	},
 
