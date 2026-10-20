@@ -969,8 +969,11 @@
 							]
 						},
 						"in-progress": {
-							"title": "What now? Handle the case",
-							"after": "Then: the decision",
+							"title": [
+								"What now? Step 2: {statusPublicLabel|lower}",
+								"What now? Handle the case"
+							],
+							"after": "Then: on to step 3, the decision",
 							"checklist": [
 								{
 									"label": "Choose a handler",
@@ -1441,7 +1444,13 @@
 								"kind": "lifecycle"
 							},
 							"unreachableReason": "Not possible from the current status",
-							"variant": "bars"
+							"variant": "bars",
+							"datesSource": {
+								"url": "/apps/dossiq/api/case-types/@object.caseType/blueprint?case=@objectId",
+								"path": "statusTypes",
+								"idField": "id",
+								"dateField": "reachedAt"
+							}
 						}
 					},
 					"case-panels": {
@@ -1687,7 +1696,17 @@
 										"case-seats-card",
 										"case-followers-card"
 									],
-									"_note": "DqZaakBetrokkenen: the people panel's sections as the board's cards, the parties first, then roles, seats and followers."
+									"layout": [
+										{
+											"widgetId": "case-seats-card",
+											"gridWidth": 6
+										},
+										{
+											"widgetId": "case-followers-card",
+											"gridWidth": 6
+										}
+									],
+									"_note": "DqZaakBetrokkenen: the people panel's sections as the board's cards: the parties by role first (Partijen), the linked contacts, then seats and followers side by side, half a row each."
 								},
 								{
 									"label": "Email",

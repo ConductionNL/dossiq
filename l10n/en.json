@@ -9748,6 +9748,8 @@
         "What now? Decide": "What now? Decide",
         "What now? Deciding asks two things: draft the decision and record it. The letter comes first.": "What now? Deciding asks two things: draft the decision and record it. The letter comes first.",
         "What now? Handle the case": "What now? Handle the case",
+        "What now? Step 2: {statusPublicLabel|lower}": "What now? Step 2: {statusPublicLabel|lower}",
+        "Then: on to step 3, the decision": "Then: on to step 3, the decision",
         "What now? Pre-announcement": "What now? Pre-announcement",
         "What now? Remedial action": "What now? Remedial action",
         "What now? Take the case on": "What now? Take the case on",
