@@ -64,6 +64,12 @@ describe('the end-of-day page', () => {
 		expect(text).not.toMatch(/"(hours|time)field"|"key":\s*"hours"/)
 	})
 
+	it('draws its icons from the ones the app registers', () => {
+		const icons = readFileSync(resolve(root, 'src/icons.js'), 'utf8')
+		expect(icons).toContain(`\n\t${widget('eod-recorded').content.icon},\n`)
+		expect(icons).toContain(`\n\t${widget('eod-open').content.noteAction.recordAll.icon},\n`)
+	})
+
 	it('opens a case and a task on their own pages', () => {
 		for (const id of ['eod-open', 'eod-recorded', 'eod-tomorrow']) {
 			expect(widget(id).content.rowRouteField, id).toBe('routeName')
