@@ -784,7 +784,7 @@ describe('the case type list', () => {
 		// A Dutch reader saw "38 case types": the key was in the manifest and
 		// in no catalogue, so the library drew it as written.
 		const nl = JSON.parse(read('l10n', 'nl.json')).translations
-		expect(nl[list.config.countSubtitle]).toBe('{total} zaaktypen')
+		expect(nl[list.config.headerMeta]).toBe('{total} zaaktypen')
 		expect(nl[list.config.searchPlaceholder]).toBe('Zoeken in deze lijst')
 	})
 

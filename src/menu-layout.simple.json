@@ -4202,7 +4202,6 @@
 			"config": {
 				"folderSidebar": null,
 				"showTitle": true,
-				"countSubtitle": "{total} case types",
 				"breadcrumb": {
 					"label": "Settings",
 					"href": "/index.php/settings/admin/dossiq"
