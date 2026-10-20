@@ -153,25 +153,26 @@
 		<!-- Mounted by `v-if`, never by an `open` prop: a dialog whose own
 		     `open` defaults to false renders nothing at all and says nothing
 		     about why. -->
-		<PlanItemDialog
+		<CnActionDialog
 			v-if="planning"
+			:config="planConfig"
 			@close="planning = false"
-			@planned="onPlanned" />
+			@done="onPlanned" />
 	</div>
 </template>
 
 <script>
-import { CnBuildiqEditButton } from '@conduction/nextcloud-vue'
+import { CnActionDialog, CnBuildiqEditButton } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import CalendarClockOutline from 'vue-material-design-icons/CalendarClockOutline.vue'
-import PlanItemDialog from '../../dialogs/PlanItemDialog.vue'
 import {
 	fetchQueue,
 	hideGroupForToday,
 	showGroupAgain,
 } from '../../services/personalQueueApi.js'
 import { visibleGroups, waitingSentence } from '../../utils/personalQueueHelpers.js'
+import { PLAN_ITEM_DIALOG } from './planItemDialog.js'
 
 export default {
 	name: 'PersonalQueueView',
@@ -182,7 +183,7 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 		NcNoteCard,
-		PlanItemDialog,
+		CnActionDialog,
 	},
 
 	data() {
@@ -196,6 +197,14 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {object} The plan-an-item dialog's config.
+		 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+		 */
+		planConfig() {
+			return PLAN_ITEM_DIALOG
+		},
+
 		/**
 		 * The groups still on screen.
 		 *

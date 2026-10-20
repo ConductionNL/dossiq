@@ -130,12 +130,10 @@ import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
 import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
-import CaseArchiveDialog from './dialogs/CaseArchiveDialog.vue'
 // The Actions menu's non-lifecycle gestures: copy this case, start a flow
 // its type allows, and plan a follow-up case for a later date.
 // @spec openspec/specs/case-management/spec.md
 import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
-import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'
 import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
 // The case as OpenRegister stored it, behind the admin-only Inspect action.
 // @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
@@ -574,21 +572,6 @@ const registry = {
 		component: CasePublishDialog,
 		propsSchema: {},
 		_note: 'CaseDetail More menu, Publication group: what a decided case publishes, counted per assessment, then one press (board DqPubliceren). The groups, their notes and the group that never goes along come from the action props.',
-	},
-
-	CaseHandoverDialog: {
-		kind: 'modal',
-		component: CaseHandoverDialog,
-		propsSchema: {},
-		_note: 'CaseDetail Actions menu: hand this case to another team. A modal rather than an api-call because the act takes a team, a reason and the Awb 2:3 declaration, and an api-call carries a fixed body. The declaration is the field that cannot be defaulted: on, the applicant is told the case moved and to whom; off, nothing is sent, because an internal move between two teams of one bestuursorgaan is our arrangement and not their news.',
-	},
-
-	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
-	CaseArchiveDialog: {
-		kind: 'modal',
-		component: CaseArchiveDialog,
-		propsSchema: {},
-		_note: 'Archive a case on its own (board DqArchiveren): the case, what the case type keeps, a checklist read off the stored case through GET /api/case/{caseId}/archive/readiness, a reason and what archiving means. It posts the same archive act as the Lifecycle dialog, which keeps offering it, and the server checks the same role and refuses an open case the same way. Only the ended item decides; the others inform. Opened by the case-archive header action and the closed stage card.',
 	},
 
 	// @spec openspec/specs/status-transition-engine/spec.md

@@ -268,17 +268,17 @@ test.describe('One personal queue', () => {
 			.getByRole('button', { name: /plan an item|plan iets in/i })
 			.click()
 
-		const dialog = page.getByTestId('plan-item-dialog')
+		const dialog = page.getByTestId('cn-action-dialog')
 		await expect(dialog).toBeVisible(PAGE_LOAD)
 		await dialog
-			.getByTestId('plan-item-title')
+			.getByTestId('cn-action-dialog-field-title')
 			.locator('input')
 			.fill(`${RUN_PREFIX} call the applicant back`)
 		await dialog
-			.getByTestId('plan-item-when')
+			.getByTestId('cn-action-dialog-field-startsAt')
 			.locator('input')
 			.fill('2026-12-01T09:00')
-		await dialog.getByRole('button', { name: /plan it|plan het in/i }).click()
+		await dialog.getByRole('button', { name: /schedule it|plan it|plan het in|inplannen/i }).click()
 
 		await expect(page.getByTestId('queue-group-planned-items')).toBeVisible(
 			PAGE_LOAD,

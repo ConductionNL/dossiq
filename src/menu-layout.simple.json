@@ -775,12 +775,99 @@
 					},
 					"closed": {
 						"type": "open-modal",
-						"target": "CaseArchiveDialog",
+						"target": "CnActionDialog",
 						"label": "Archive it",
 						"icon": "ArchiveOutline",
 						"id": "stage-archive",
 						"props": {
-							"caseId": "@objectId"
+							"objectId": "@objectId",
+							"config": {
+								"title": "Archive this case",
+								"eyebrow": "Close off",
+								"subtitle": "The case goes to the archive and is only read afterwards.",
+								"summary": {
+									"source": {
+										"url": "/apps/openregister/api/objects/dossiq/case/@objectId"
+									},
+									"title": "{title}",
+									"meta": "{identifier} · {initiatorDisplayName}",
+									"badge": "{resultPublicLabel}"
+								},
+								"facts": [
+									{
+										"title": "Retention under the case type",
+										"items": [
+											{
+												"label": "Archive nomination",
+												"value": "{archiveNomination}"
+											},
+											{
+												"label": "Destruction date",
+												"value": "{archiveActionDate}"
+											}
+										]
+									}
+								],
+								"checklist": {
+									"title": "Ready to archive",
+									"source": {
+										"url": "/apps/dossiq/api/case/@objectId/archive/readiness"
+									},
+									"itemsPath": "checklist",
+									"labels": {
+										"ended": {
+											"label": "Case ended",
+											"unmetDetail": "Finish or abort the case first"
+										},
+										"result": {
+											"label": "Result recorded"
+										},
+										"decision": {
+											"label": "Decision made",
+											"unmetDetail": "No decision on this case"
+										},
+										"documents": {
+											"label": "Documents final",
+											"detail": "{count} of {total} final"
+										},
+										"openTasks": {
+											"label": "Open tasks: {count}"
+										}
+									},
+									"required": [
+										"ended"
+									]
+								},
+								"permission": {
+									"source": {
+										"url": "/apps/dossiq/api/case/@objectId/acts"
+									},
+									"listPath": "acts",
+									"match": {
+										"act": "archive"
+									},
+									"allowedPath": "allowed",
+									"reasonPath": "reason"
+								},
+								"reason": {
+									"label": "Reason",
+									"hint": "Goes into the history of the case."
+								},
+								"note": {
+									"variant": "info",
+									"title": "Read only afterwards",
+									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
+								},
+								"confirm": {
+									"label": "Archive it",
+									"icon": "ArchiveOutline",
+									"request": {
+										"method": "POST",
+										"url": "/apps/dossiq/api/case/@objectId/archive"
+									}
+								},
+								"doneText": "The case is archived."
+							}
 						},
 						"visibleWhen": {
 							"field": "@self.archived",
