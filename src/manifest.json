@@ -230,14 +230,16 @@
 			"id": "Queue",
 			"label": "Queue",
 			"icon": "TrayFull",
-			"route": "Queue",
+			"route": "Cases",
+			"query": { "savedView": "default:team-queue" },
 			"order": 15
 		},
 		{
 			"id": "MyWork",
 			"label": "Assigned to me",
 			"icon": "ClipboardAccountOutline",
-			"route": "MyWork",
+			"route": "Cases",
+			"query": { "savedView": "default:my-work" },
 			"order": 20
 		},
 		{
@@ -396,6 +398,7 @@
 			"label": "Objection advisory committees",
 			"icon": "FileAlertOutline",
 			"route": "BezwaarCommittees",
+			"section": "settings",
 			"order": 49
 		},
 		{
@@ -1371,10 +1374,50 @@
 							},
 							{
 								"id": "archival-reviews",
-								"type": "custom",
+								"type": "decision-list",
 								"title": "My archival reviews",
 								"icon": "ArchiveOutline",
-								"_note": "The destruction list entries this person has to sign off, read from openregister's /archival/reviews/pending (page slot widget-archival-reviews -> MyArchivalReviews). That endpoint reads the session user id, so no id is sent and nothing is narrowed in the browser: a filter over a wider list would be a different, weaker thing wearing the same label. It fails CLOSED. A failed read draws an error with a retry, never an empty list, because a reviewer with nothing to sign off and an unreachable openregister look identical from an empty array, and only one of them means somebody's work is invisible. It is a custom widget and not an object-table because a destruction list entry is not a dossiq object: it lives on openregister's destruction list, and each of the three answers carries a reason that has to be collected before the post."
+								"_note": "The destruction list entries this person has to sign off (library widget type decision-list -> CnDecisionListWidget), read from openregister's /archival/reviews/pending, which reads the session user: no id is sent and nothing is narrowed in the browser. It fails CLOSED: a failed read is an error with a retry, never an empty list. Each entry takes destroy, retain or transfer with a reason; retain also asks the new disposal date, which openregister refuses the decision without. An entry leaves the list when its answer lands.",
+								"content": {
+									"source": {
+										"url": "/apps/openregister/api/archival/reviews/pending"
+									},
+									"itemsPath": "results",
+									"idField": "entryId",
+									"title": "{title}",
+									"meta": "{archiefactiedatum}",
+									"answers": [
+										{
+											"value": "destroy"
+										},
+										{
+											"value": "retain",
+											"fields": [
+												{
+													"field": "newArchiefactiedatum",
+													"type": "date",
+													"label": "New disposal date"
+												}
+											]
+										},
+										{
+											"value": "transfer"
+										}
+									],
+									"answerLabel": "Your answer",
+									"reason": {
+										"label": "Why?"
+									},
+									"submit": {
+										"label": "Record this decision",
+										"request": {
+											"method": "POST",
+											"url": "/apps/openregister/api/archival/destruction-lists/{listId}/entries/{entryId}/decision"
+										}
+									},
+									"emptyText": "You hold no archival decisions right now.",
+									"errorTitle": "Your archival reviews are unavailable"
+								}
 							}
 						],
 						"layout": [
@@ -1731,8 +1774,7 @@
 				"documentationUrl": "https://dossiq.conduction.nl"
 			},
 			"slots": {
-				"widget-my-work": "MyWorkWidget",
-				"widget-archival-reviews": "MyArchivalReviews"
+				"widget-my-work": "MyWorkWidget"
 			}
 		},
 		{
@@ -1747,192 +1789,6 @@
 			}
 		},
 		{
-			"id": "Queue",
-			"route": "/queue",
-			"type": "index",
-			"title": "Queue",
-			"_note": "The one queue: every case that is open and that nobody has picked up. It is a FILTER over `case`, not a collection of its own, so this is a plain type:index rather than a bespoke view. `assignee: \"IS NULL\"` is the literal sentinel every OpenRegister condition builder matches by value. The suffix spelling `assignee_isnull=true` was dead when this page shipped: the only code that mentioned it had no callers, and `isnull` was missing from MagicSearchHandler::COMPARISON_OPERATORS, so the filter contributed no condition at all. Fixed in openregister `isnull-filter-operator`; the sentinel is kept because it also works on instances that do not yet carry that change. `isFinalStatus: false` keeps closed cases out; it is a real boolean on every case row, not a derived one, so plain equality reaches it. `statusHiddenInLists: false` is the third condition, added by lifecycle-acts-on-the-case REQ-LIFE-01, and it is kept LITERALLY EQUAL to the Cases page Unclaimed chip for the reason that note gives: the two lists answer the same question and a drift between them is invisible. Assigning a case removes it from here and puts it on that person's Assigned to me; All cases shows it either way. The caseType folder sidebar is the same control the Cases index uses, so the queue narrows by case type without a second page. WHY THIS IS A PAGE AND NOT A `menu[].query` PRESET, which is what gate-68 (ADR-097 Decision 5) proposes for a second index over an already-indexed schema: a preset is only a link into the target page, where the query filters and the reader's own facet filters share one map, so a facet interaction can widen the queue back to every case. A base filter on the page itself cannot be cleared by the person reading it, and that is the property that makes the queue trustworthy. Assigned to me is a page for the same reason.",
-			"config": {
-				"register": "dossiq",
-				"schema": "case",
-				"_templateNote": "A case template is a case row marked `isTemplate`, so it is in this store like any other case and every list has to take it out (starter-content-and-templates, D-5). The filter sits on the PAGE and not on each chip, so a lens added later cannot forget it: a template turning up in an open-cases count reads as work nobody is doing, which is the same complaint hidden statuses were introduced to fix.",
-				"filter": {
-					"assignee": "IS NULL",
-					"isFinalStatus": false,
-					"statusHiddenInLists": false,
-					"isDraft": false,
-					"isTemplate": false
-				},
-				"allowSavedViews": true,
-				"_defaultSavedViewsNote": "saved-views-manage-and-defaults: the Queue's base filter already keeps it to open, unclaimed cases, so its defaults only add the deadline window, with the same flat keys and tokens as the Cases chips.",
-				"defaultSavedViews": [
-					{ "slug": "late", "name": "Late", "filters": { "deadline[lt]": "@today" } },
-					{ "slug": "this-week", "name": "This week", "filters": { "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } }
-				],
-				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
-				"_formNote": "The one case create form, mirrored from the Dashboard `new-case` header action (friendly-case-create-form) so filing a case asks the same questions wherever it starts. src/utils/caseCreateForm.js carries the same shape for the surfaces configured from JS; keep the two in step.",
-				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
-				"fieldOverrides": {
-					"description": { "widget": "textarea" },
-					"requester": { "widget": "InitiatorPicker", "label": "Requester" },
-					"confidentiality": { "enumLabels": { "openbaar": "Public", "beperkt_openbaar": "Restricted public", "intern": "Internal", "zaakvertrouwelijk": "Case confidential", "vertrouwelijk": "Confidential", "confidentieel": "Classified confidential", "geheim": "Secret", "zeer_geheim": "Top secret" } }
-				},
-				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
-				"createSuccessRoute": "CaseDetail",
-				"createSuccessMessage": "Case created.",
-				"formSize": "normal",
-				"formColumns": 1,
-				"viewModes": ["table", "cards", "board", "map"],
-				"cardLayout": {
-					"headPill": { "field": "deadline", "due": { "soonWithin": 7 }, "labels": { "overdue": "Late", "soon": "Almost due" } },
-					"number": "identifier",
-					"title": "title",
-					"meta": [{ "field": "caseType", "formatter": "caseTypeName" }, "initiatorDisplayName"],
-					"footerPill": { "field": "statusPublicLabel", "variant": "info" },
-					"footerDate": { "field": "deadline", "label": "Deadline" }
-				},
-				"board": {
-					"statusField": "status",
-					"wrap": true,
-					"columnLimit": 3,
-					"columnSwitchLabel": "Columns",
-					"hint": "One column per value of the property. Drag a card to change its status.",
-					"moveHandler": "moveCaseStatus",
-					"moveTargetsHandler": "caseStatusTargets",
-					"narrow": { "field": "caseType", "label": "Case type", "allLabel": "All case types", "source": { "schema": "caseType", "labelField": "title", "filter": { "isDraft": false } } },
-					"card": { "title": "title", "sub": ["identifier", "initiatorDisplayName"], "pill": "caseType", "due": "deadline", "owner": "assignee", "formatters": { "caseType": "caseTypeName" } },
-					"columnFields": [
-						{ "field": "status", "label": "status", "source": { "schema": "statusType", "labelField": "name", "orderField": "order", "colorField": "colour", "neutralColor": "grey", "colorMap": {"blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)"}, "capacityField": "capacity", "mergeBy": "name", "filter": { "isFinal": false }, "narrowBy": { "field": "caseType", "rowField": "caseType" } } },
-						{ "field": "caseType", "label": "type", "source": { "schema": "caseType", "labelField": "title", "filter": { "isDraft": false } }, "readOnly": true },
-						{ "field": "assignee", "label": "assignee", "kind": "values", "emptyLabel": "Nobody", "readOnly": true }
-					]
-				},
-				"mapConfig": {
-					"geoField": "geometry",
-					"popupField": "title",
-					"center": [52.1326, 5.2913],
-					"_basemapNote": "EVERY ENTRY CARRIES `options.referrerPolicy` AND MUST KEEP IT. Nextcloud sends `Referrer-Policy: no-referrer` on every page (server/lib/OC.php), Leaflet draws a tile as a plain `<img>`, and OpenStreetMap's CDN answers a refererless tile request with an \"App is not following the tile usage policy\" image carrying `x-blocked: Access denied` — a grey map rather than an error, which is why it reads as working-but-empty. An `<img>`-level policy overrides the document's, and `strict-origin-when-cross-origin` sends the instance origin but never the path, which is where a case id would be. nextcloud-vue's CnMapWidget defaults the same value, so this is belt-and-braces for as long as dossiq resolves a library release that predates that default. THE `{s}` SUBDOMAIN FORM IS ALSO LOAD-BEARING: MapCspRegistrar allowlists `https://*.tile.openstreetmap.org`, and a CSP wildcard does NOT match the bare host, so rewriting these to OSM's modern `tile.openstreetmap.org` would trade a policy block for a CSP block.",
-					"basemaps": [
-						{
-							"name": "Standard",
-							"url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-							"attribution": "© OpenStreetMap contributors",
-							"options": { "referrerPolicy": "strict-origin-when-cross-origin" }
-						},
-						{
-							"name": "Humanitarian",
-							"url": "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-							"attribution": "© OpenStreetMap contributors, tiles by HOT",
-							"options": { "referrerPolicy": "strict-origin-when-cross-origin" }
-						},
-						{
-							"name": "Terrain",
-							"url": "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
-							"attribution": "© OpenStreetMap contributors, SRTM | © OpenTopoMap",
-							"options": { "referrerPolicy": "strict-origin-when-cross-origin" }
-						}
-					]
-				},
-				"showViewAction": false,
-				"_claimNote": "The Claim row action (case-claim-action, row 2.4) takes the case without opening it. It is a FUNCTION handler out of registry.js (a `kind: 'handler'` entry), because an index row action can only be `navigate`, `open-page` or a handler name: `api-call` is not in the row dispatcher's vocabulary at all, and `object-op` writes `action.values` VERBATIM, so a declared assignee of `@me` would store that literal string on the case. The handler posts the same endpoint the case page's Claim button does, so one rule refuses a claim on a case that is already somebody's, whichever surface the gesture came from.",
-				"actions": [
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "CaseDetail",
-						"type": "handler"
-					},
-					{
-						"id": "claim",
-						"label": "Claim",
-						"icon": "AccountCheckOutline",
-						"handler": "claimCase",
-						"type": "handler",
-						"visibleWhen": { "field": "assignee", "op": "empty" }
-					},
-					{
-						"id": "mark-unread",
-						"label": "Mark unread",
-						"icon": "EmailMarkAsUnread",
-						"handler": "markCaseUnread",
-						"type": "handler"
-					},
-					{
-						"id": "mark-read",
-						"label": "Mark read",
-						"icon": "EmailOpenOutline",
-						"handler": "markCaseRead",
-						"type": "handler"
-					},
-					{
-						"id": "follow",
-						"label": "Follow or stop following",
-						"icon": "EyeOutline",
-						"handler": "toggleCaseFollow",
-						"type": "handler"
-					}
-				],
-				"columns": [
-					{
-						"key": "@self.unread",
-						"label": "Unread",
-						"widget": "unreadIndicator",
-						"sortable": false,
-						"_note": "unread-state-on-the-case, task 1.1. `@self.unread` is NOT a stored field: OpenRegister attaches it per reader on the render path and memoises it per request, so four hundred rows cost one query rather than four hundred. It is therefore `sortable: false`: the server has no column to order by, so a sortable header would send an `_order` the mapper answers by ignoring, which reads as a broken sort rather than as an absent one. Narrowing the list to what is unread is the Unread chip, whose `_unread=true` is resolved INSIDE the query so the page, the total and the facets cannot disagree; a column-side filter would be a post-filter over one page and would give a first page of 25 against a total of 120. A cell WIDGET and not a formatter, for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a dot. An absent flag reads as READ, because `@self.unread` is omitted entirely for an anonymous read and treating absence as unread would paint every row on a public page."
-					},
-					"identifier",
-					"title",
-					{
-						"key": "caseType",
-						"label": "Case type",
-						"formatter": "caseTypeName"
-					},
-					{
-						"key": "status",
-						"label": "Status",
-						"formatter": "statusTypeName"
-					},
-					{
-						"key": "priorityOrder",
-						"label": "Priority",
-						"widget": "priorityBadge",
-						"_note": "Keyed on `priorityOrder`, not on `priority`, and that is not a typo. CnDataTable sorts on the server, on the stored value of the column's key, and the stored value of `priority` is a word: sorting by it gives high, low, normal, urgent. `priorityOrder` is the order the schema declares (x-enum-order on the priority property) stored as an integer, so the server sorts it right, and the `priorityBadge` cell reads the word back off the row so the reader still sees a priority. A cell WIDGET rather than a formatter for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a colour."
-					},
-					"deadline"
-				],
-				"emptyText": "Nothing is waiting. Every open case has someone on it.",
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"folderSidebar": {
-					"source": "register",
-					"register": "dossiq",
-					"schema": "caseType",
-					"idField": "@self.id",
-					"nameField": "title",
-					"filterField": "caseType",
-					"allLabel": "All types"
-				},
-				"documentationUrl": "https://dossiq.conduction.nl"
-			}
-		},
-		{
-			"id": "MyWork",
-			"route": "/my-work",
-			"type": "custom",
-			"title": "My work",
-			"component": "MyWorkView",
-			"_note": "Case index scoped to the current user (assignee = current uid) in card view. A thin CnIndexPage wrapper because the stock index base-filter does not resolve the @me current-user token; the wrapper injects the resolved uid.",
-			"config": {
-				"_note": "BOTH halves of the pair, not `register` alone: CnPageRenderer auto-registers a custom page's object type from `register` + `schema` and skips it with a warning when only one is declared, so a lone register was a page that named its data and registered nothing. `dossiq` is the OpenRegister register SLUG rather than this app's id (see MyWorkCards.vue), and `case` is what the wrapper's CnIndexPage mounts with.",
-				"register": "dossiq",
-				"schema": "case"
-			}
-		},
-		{
 			"id": "Cases",
 			"route": "/cases",
 			"type": "index",
@@ -1940,7 +1796,6 @@
 			"manualOrder": true,
 			"actionsComponent": "CaseListExportAction",
 			"slots": {
-				"below-header": "CaseSearchRefusal",
 				"after-search": "CaseTypeFieldFilters"
 			},
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
@@ -1992,7 +1847,634 @@
 					{ "slug": "mine-overdue", "name": "Mine, overdue", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
 					{ "slug": "mine-due-this-week", "name": "Mine, due this week", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
 					{ "slug": "unclaimed-overdue", "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
-					{ "slug": "woo-requests", "name": "Woo requests", "filters": { "caseType": "3c0f5a00-0000-4000-a000-00000000a001", "statusHiddenInLists": false, "isDraft": false } }
+					{ "slug": "woo-requests", "name": "Woo requests", "filters": { "caseType": "3c0f5a00-0000-4000-a000-00000000a001", "statusHiddenInLists": false, "isDraft": false } },
+					{ "slug": "subsidies", "name": "Subsidies", "filters": { "caseType": "b3c1a000-0000-4000-a000-0000000005ab", "statusHiddenInLists": false, "isDraft": false }, "overrides": { "title": "Subsidies", "columns": ["identifier", "title", { "key": "status", "label": "Status", "formatter": "statusTypeName" }, "assignee", "deadline"] } },
+					{
+						"slug": "my-work",
+						"name": "Assigned to me",
+						"filters": {},
+						"overrides": {
+							"lockedFilters": {
+								"assignee": "@me",
+								"statusHiddenInLists": false,
+								"isDraft": false
+							},
+							"title": "Assigned to me",
+							"showTitle": true,
+							"breadcrumb": {
+								"label": "My work",
+								"route": "MyWorkHome"
+							},
+							"headerMeta": "{total} cases in your name · most urgent first",
+							"footerNote": "Urgency follows from the deadline, the priority and how long a case has been idle.",
+							"headerButtons": [
+								{
+									"action": "export",
+									"label": "Download",
+									"icon": "TrayArrowDown"
+								},
+								{
+									"action": "actions-menu",
+									"label": "Actions"
+								},
+								{
+									"action": "add",
+									"label": "New case",
+									"variant": "primary",
+									"icon": "Plus"
+								}
+							],
+							"viewMode": "cards",
+							"viewModes": [
+								"cards",
+								"table"
+							],
+							"columns": [
+								"identifier",
+								"title",
+								{
+									"key": "caseType",
+									"label": "Case type",
+									"formatter": "caseTypeName"
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"formatter": "statusTypeName"
+								},
+								"deadline"
+							],
+							"sidebar": {
+								"enabled": true,
+								"showMetadata": false
+							},
+							"rowClickToView": true,
+							"showViewAction": false,
+							"sortOption": "urgency",
+							"cardLayout": {
+								"headPill": {
+									"field": "deadlineTier",
+									"labels": {
+										"overdue": "Late",
+										"critical": "Critical",
+										"warning": "Soon",
+										"normal": "Normal"
+									},
+									"colorMap": {
+										"overdue": "error",
+										"critical": "warning",
+										"warning": "info",
+										"normal": "default"
+									}
+								},
+								"number": "identifier",
+								"title": "title",
+								"description": {
+									"field": "description",
+									"maxLength": 140
+								},
+								"chips": [
+									{
+										"field": "caseType",
+										"formatter": "caseTypeName"
+									},
+									{
+										"field": "status",
+										"formatter": "statusTypeName"
+									}
+								],
+								"footerDate": {
+									"field": "deadline",
+									"label": "Deadline",
+									"overdueVariant": "error"
+								}
+							},
+							"slots": {
+								"below-header": [
+									"WorkloadSummaryBar"
+								],
+								"before-collection": [
+									"SubstitutedWork"
+								]
+							}
+						}
+					},
+					{
+						"slug": "team-queue",
+						"name": "Team queue",
+						"filters": {},
+						"sort": [
+							{
+								"key": "startDate",
+								"order": "asc"
+							}
+						],
+						"overrides": {
+							"lockedFilters": {
+								"assignee": "IS NULL",
+								"isFinalStatus": false,
+								"statusHiddenInLists": false,
+								"isDraft": false,
+								"isTemplate": false
+							},
+							"title": "Team queue",
+							"showTitle": true,
+							"searchPlaceholder": "Search by case, number or requester",
+							"statRow": [
+								{
+									"id": "queue-unassigned",
+									"type": "stat",
+									"title": "Without a handler",
+									"content": {
+										"label": "Without a handler",
+										"caption": "{queueNewToday} came in today",
+										"format": {
+											"style": "decimal",
+											"decimals": 0
+										},
+										"endpointSource": {
+											"url": "/apps/dossiq/api/dashboard/kpis"
+										},
+										"valueField": "queueCount",
+										"layout": "stacked"
+									}
+								},
+								{
+									"id": "queue-oldest",
+									"type": "stat",
+									"title": "Waiting longest",
+									"content": {
+										"label": "Waiting longest",
+										"caption": "the oldest case in the queue",
+										"format": {
+											"style": "decimal",
+											"decimals": 0,
+											"suffix": " days"
+										},
+										"endpointSource": {
+											"url": "/apps/dossiq/api/dashboard/kpis"
+										},
+										"valueField": "queueOldestDays",
+										"layout": "stacked"
+									}
+								},
+								{
+									"id": "queue-due-soon",
+									"type": "stat",
+									"title": "Deadline within 7 days",
+									"content": {
+										"label": "Deadline within 7 days",
+										"caption": "pick these up first",
+										"format": {
+											"style": "decimal",
+											"decimals": 0
+										},
+										"endpointSource": {
+											"url": "/apps/dossiq/api/dashboard/kpis"
+										},
+										"valueField": "queueDueSoon",
+										"layout": "stacked"
+									}
+								}
+							],
+							"quickFilterMaxVisible": 4,
+							"quickFiltersFrom": {
+								"field": "caseType",
+								"register": "dossiq",
+								"schema": "caseType",
+								"labelField": "title",
+								"allLabel": "All types"
+							},
+							"sidePanel": [
+								{
+									"id": "queue-team-today",
+									"type": "team-workload",
+									"title": "Team today",
+									"content": {
+										"source": {
+											"url": "/apps/dossiq/api/work-queue/workload",
+											"responsePath": "handlers",
+											"userField": "handler",
+											"countField": "openCaseCount"
+										},
+										"capacity": 12,
+										"countLabel": {
+											"one": "{count} case",
+											"other": "{count} cases"
+										}
+									}
+								},
+								{
+									"id": "queue-by-type",
+									"type": "record-list",
+									"title": "Work in stock per case type",
+									"content": {
+										"endpointSource": {
+											"url": "/apps/dossiq/api/dashboard/kpis",
+											"responsePath": "queueByType"
+										},
+										"presentation": "table",
+										"columns": [
+											{
+												"label": "Case type",
+												"value": "{title}"
+											},
+											{
+												"label": "Open now",
+												"value": "{open}",
+												"align": "end"
+											},
+											{
+												"label": "Queued",
+												"value": "{waiting}",
+												"align": "end",
+												"alertAbove": 0
+											}
+										],
+										"footnote": "Open with the team, and how many of those have no handler yet",
+										"emptyText": "No open cases"
+									}
+								}
+							],
+							"columns": [
+								{
+									"key": "startDate",
+									"width": "96px",
+									"label": "Waiting",
+									"widget": "age"
+								},
+								{
+									"key": "title",
+									"width": "328px",
+									"label": "Case",
+									"link": true,
+									"cellClass": "cn-cell--strong",
+									"secondary": "{identifier} · {initiatorDisplayName} · {priority}"
+								},
+								{
+									"key": "caseType",
+									"width": "179px",
+									"label": "Type",
+									"formatter": "caseTypeName",
+									"widget": "badge",
+									"widgetProps": {
+										"variant": "info"
+									}
+								},
+								{
+									"key": "deadline",
+									"width": "141px",
+									"label": "Deadline",
+									"widget": "date",
+									"widgetProps": {
+										"due": {
+											"todayLabel": "Today",
+											"overdueLabel": {
+												"one": "{count} day overdue",
+												"other": "{count} days overdue"
+											},
+											"upcomingLabel": {
+												"one": "{count} day left",
+												"other": "{count} days left"
+											},
+											"upcomingWeeksLabel": {
+												"one": "{count} week left",
+												"other": "{count} weeks left"
+											}
+										},
+										"variantWhen": [
+											{
+												"op": "lt",
+												"value": 0,
+												"variant": "error"
+											},
+											{
+												"op": "lte",
+												"value": 7,
+												"variant": "warning"
+											}
+										]
+									}
+								}
+							],
+							"viewModes": [
+								"list",
+								"table",
+								"cards",
+								"board",
+								"map"
+							],
+							"viewMode": "list",
+							"listConfig": {
+								"titleField": "title",
+								"subtitleTemplate": "{identifier} · {initiatorDisplayName} · {priority}",
+								"leading": {
+									"key": "startDate",
+									"widget": "age",
+									"width": "96px"
+								},
+								"trailing": [
+									{
+										"key": "caseType",
+										"formatter": "caseTypeName",
+										"widget": "badge",
+										"widgetProps": {
+											"variant": "info"
+										},
+										"width": "200px"
+									},
+									{
+										"key": "deadline",
+										"widget": "date",
+										"width": "140px",
+										"widgetProps": {
+											"due": {
+												"todayLabel": "Today",
+												"overdueLabel": {
+													"one": "{count} day overdue",
+													"other": "{count} days overdue"
+												},
+												"upcomingLabel": {
+													"one": "{count} day left",
+													"other": "{count} days left"
+												},
+												"upcomingWeeksLabel": {
+													"one": "{count} week left",
+													"other": "{count} weeks left"
+												}
+											},
+											"variantWhen": [
+												{
+													"op": "lt",
+													"value": 0,
+													"variant": "error"
+												},
+												{
+													"op": "lte",
+													"value": 7,
+													"variant": "warning"
+												}
+											]
+										}
+									}
+								]
+							},
+							"countText": "{shown} of {total} open cases without a handler · oldest first",
+							"footerNote": "a case leaves the queue as soon as someone picks it up",
+							"headerButtons": [
+								{
+									"action": "export",
+									"label": "Download",
+									"icon": "TrayArrowDown"
+								},
+								{
+									"action": "actions-menu",
+									"label": "Actions",
+									"items": [
+										"header-actions",
+										"import",
+										"refresh",
+										"copy-selected",
+										"delete-selected",
+										"documentation"
+									]
+								},
+								{
+									"action": "add",
+									"label": "New case",
+									"variant": "primary",
+									"icon": "Plus"
+								}
+							],
+							"folderSidebar": null,
+							"cardLayout": {
+								"headPill": {
+									"field": "deadline",
+									"due": {
+										"soonWithin": 7
+									},
+									"labels": {
+										"overdue": "Late",
+										"soon": "Almost due"
+									}
+								},
+								"number": "identifier",
+								"title": "title",
+								"meta": [
+									{
+										"field": "caseType",
+										"formatter": "caseTypeName"
+									},
+									"initiatorDisplayName"
+								],
+								"footerPill": {
+									"field": "statusPublicLabel",
+									"variant": "info"
+								},
+								"footerDate": {
+									"field": "deadline",
+									"label": "Deadline"
+								}
+							},
+							"emptyText": "Nothing is waiting. Every open case has someone on it."
+						}
+					},
+					{ "slug": "unclaimed-due-this-week", "name": "Unclaimed, due this week", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
+					{
+						"slug": "data-subject-requests",
+						"name": "Data subject requests",
+						"filters": {},
+						"sort": [
+							{
+								"key": "deadline",
+								"order": "asc"
+							}
+						],
+						"overrides": {
+							"lockedFilters": {
+								"dataSubjectRequestType": [
+									"inzage",
+									"correctie",
+									"verwijdering"
+								]
+							},
+							"title": "Data subject requests",
+							"showTitle": true,
+							"breadcrumb": {
+								"label": "Privacy",
+								"route": "Cases",
+								"query": {
+									"savedView": "default:data-subject-requests"
+								}
+							},
+							"pageTabs": [
+								{
+									"label": "Data subject requests",
+									"route": "Cases",
+									"query": {
+										"savedView": "default:data-subject-requests"
+									},
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"dataSubjectRequestType": [
+												"inzage",
+												"correctie",
+												"verwijdering"
+											],
+											"isFinalStatus": false
+										}
+									}
+								},
+								{
+									"label": "Data breaches",
+									"route": "AvgIncidents",
+									"permission": "privacy",
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "avgIncident",
+										"filter": {}
+									}
+								}
+							],
+							"headerMeta": "{total} open · term one month, extendable by two",
+							"addLabel": "New data subject request",
+							"headerButtons": [
+								{
+									"action": "export",
+									"label": "Download",
+									"icon": "TrayArrowDown"
+								},
+								{
+									"action": "add",
+									"label": "New data subject request",
+									"variant": "primary",
+									"icon": "Plus"
+								}
+							],
+							"searchPlaceholder": "Search by case or person involved",
+							"footerNote": "20 per page",
+							"notice": {
+								"variant": "info",
+								"text": "A data subject request is a case with a handler, a legal month and a history. The search, the preview of what gets erased and the export are done by OpenRegister."
+							},
+							"quickFilters": [
+								{
+									"label": "All",
+									"showCount": true,
+									"filter": {},
+									"default": true
+								},
+								{
+									"label": "Subject access",
+									"activeLabel": "Kind: subject access",
+									"showCount": true,
+									"filter": {
+										"dataSubjectRequestType": "inzage"
+									}
+								},
+								{
+									"label": "Correction",
+									"activeLabel": "Kind: correction",
+									"showCount": true,
+									"filter": {
+										"dataSubjectRequestType": "correctie"
+									}
+								},
+								{
+									"label": "Erasure",
+									"activeLabel": "Kind: erasure",
+									"showCount": true,
+									"filter": {
+										"dataSubjectRequestType": "verwijdering"
+									}
+								}
+							],
+							"columns": [
+								{
+									"key": "title",
+									"label": "Data subject request",
+									"secondary": "{identifier} · {initiatorDisplayName}"
+								},
+								{
+									"key": "dataSubjectRequestType",
+									"label": "Kind"
+								},
+								{
+									"key": "startDate",
+									"label": "Received",
+									"formatter": "date"
+								},
+								{
+									"key": "deadline",
+									"label": "Term",
+									"widget": "deadlineCountdown"
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"formatter": "statusTypeName",
+									"widget": "statusBadge"
+								},
+								"assignee"
+							],
+							"includeFields": [
+								"caseType",
+								"title",
+								"requester",
+								"dataSubjectRequestType",
+								"description",
+								"assignee"
+							],
+							"fieldOverrides": {
+								"description": {
+									"widget": "textarea"
+								},
+								"requester": {
+									"widget": "InitiatorPicker",
+									"label": "Requester"
+								}
+							},
+							"actions": [
+								{
+									"id": "view",
+									"label": "View",
+									"icon": "EyeOutline",
+									"handler": "navigate",
+									"route": "CaseDetail",
+									"type": "handler"
+								}
+							],
+							"sidebar": {
+								"enabled": true,
+								"showMetadata": true
+							}
+						}
+					}
+				],
+				"_listsAsViewsNote": "Lists that were pages of their own are views of this list (Ruben, 19 October 2026): Assigned to me (`my-work`, was /my-work), the team queue (`team-queue`, was /queue; its late window is `unclaimed-overdue`, its week window `unclaimed-due-this-week`) and the data subject requests (`data-subject-requests`, was /privacy/requests). The old addresses redirect here with `?savedView=default:<slug>` (RETIRED_ROUTES). The subsidies (`subsidies`, was /subsidies) are a view too: there are no case-type-specific pages or menu entries (Ruben, 20 October 2026). Complaints is a view per instance, added by the /api/manifest delta, because the complaint case type has no fixed id. The conditions each page applied as a base filter are the view's `overrides.lockedFilters`, which the reader cannot clear, so the view's own `filters` stay empty. Each view carries what its page had as `overrides` (nextcloud-vue saved-view-overrides, openspec/changes/lists-are-views/restore.md): the team queue's counts, case type chips, side cards and columns; Assigned to me's cards, urgency order (`sortOption: urgency`, the server's ranking from GET /api/work-queue) and its two slots; the data subject requests' tabs, notice, chips and columns. The team queue and Assigned to me keep their menu entries `Queue` and `MyWork`, each opening its view, so their pins keep working.",
+				"showSortSelect": true,
+				"sortSelectOptions": [
+					{
+						"value": "urgency",
+						"label": "Urgency",
+						"order": "deadline",
+						"source": {
+							"url": "/apps/dossiq/api/work-queue",
+							"rowsPath": "items",
+							"rowPath": "case",
+							"carry": ["deadlineTier", "score"],
+							"annotate": true,
+							"searchFields": ["title", "identifier", "description"],
+							"failedNote": "Ordered by deadline: the urgency could not be computed."
+						}
+					},
+					{
+						"value": "newest",
+						"label": "Newest",
+						"order": "-startDate"
+					}
 				],
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "Same create form as the Queue page; see its `_formNote`.",

@@ -285,8 +285,8 @@ describe('the bar is placed where it can be reached', () => {
 		expect(cases.slots['after-search']).toBe('CaseTypeFieldFilters')
 	})
 
-	it('does not displace the search refusal, which holds the other slot', () => {
-		expect(cases.slots['below-header']).toBe('CaseSearchRefusal')
+	it('leaves the search refusal to the index page, which draws it itself', () => {
+		expect(cases.slots['below-header']).toBeUndefined()
 	})
 
 	it('names a registry key that exists, or the slot renders nothing at all', () => {

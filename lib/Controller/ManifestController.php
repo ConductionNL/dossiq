@@ -95,7 +95,11 @@ class ManifestController extends Controller {
 		// The case types a user pinned are views of the case list, which the
 		// library's "My views" section lists; no menu entry of dossiq's own.
 		$chosen = $this->menuCaseTypes->chosen(userId: $user->getUID(), visible: $offered);
-		$views = $this->caseTypeViews->views(caseTypes: $chosen);
+		$identifiers = array_column($this->caseTypeViews->declaredViews(), 'caseTypeIdentifier');
+		$views = array_merge(
+			$this->caseTypeViews->instanceViews(byIdentifier: $this->menuCaseTypes->byIdentifier(identifiers: $identifiers)),
+			$this->caseTypeViews->views(caseTypes: $chosen)
+		);
 		if ($views === []) {
 			return new JSONResponse(['menu' => []]);
 		}

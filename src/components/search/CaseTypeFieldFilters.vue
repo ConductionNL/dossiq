@@ -104,11 +104,10 @@
  * cases match" for a filter that was never run. The refusal is rendered HERE,
  * under the bar, naming the field rather than the raw block.
  *
- * 🔑 IT SITS IN `after-search` AND NOT IN `below-header`. The change's proposal
- * named `after-search` for the refusal; `CaseSearchRefusal` already occupies
- * `below-header` and a slot holds one component. `after-search` is the actions
- * bar's slot for inline refinement controls, which is what a filter bar is, so
- * the bar goes there and carries its own refusal.
+ * 🔑 IT SITS IN `after-search`, the actions bar's slot for inline refinement
+ * controls, which is what a filter bar is, and it carries its own refusal: a
+ * refused `_related` block names a field, which the index page's own refusal
+ * of a search term does not.
  *
  * 🔴 THE FILTERS TRAVEL TWICE, AND ONLY ONE OF THE TWO REACHES THE SERVER.
  * The route query is the record: it is what a shared link carries and what

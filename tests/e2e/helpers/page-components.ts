@@ -38,8 +38,24 @@
  * `page.goto()` prefix them with `/index.php/apps/dossiq`.
  */
 
-/** `src/views/MyWorkCards.vue` — the personal workload cards (manifest page `MyWork`). */
-export const MyWorkCards = '/my-work'
+/**
+ * A default view of the Cases index (manifest page `Cases`, `defaultSavedViews`):
+ * `my-work`, `team-queue`, `data-subject-requests`, `woo-requests`.
+ *
+ * @param slug The view's slug.
+ * @return The app-relative route that opens the view.
+ */
+export function CasesSavedView(slug: string): string {
+	return `/cases?savedView=default:${slug}`
+}
+
+/**
+ * Whether nextcloud-vue renders a view's page config `overrides` (card
+ * layout, columns, slots, header, tabs; library batch 18). The tests that
+ * read what a view restores (openspec/changes/lists-are-views/restore.md)
+ * are fixme while this is false.
+ */
+export const VIEW_OVERRIDES_APPLIED = true
 
 /**
  * `src/views/settings/SubstitutionSettings.vue` — self-service vervanging.

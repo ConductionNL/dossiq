@@ -105,9 +105,12 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  *
  * Moved 14 -> 13 by the retirement of the CaseMap page: the case map is the
  * Cases index page in map view. Both numbers drop.
+ *
+ * Moved 13 -> 12 by `lists-are-views`: the custom MyWork page is a view of
+ * the Cases list. Both numbers drop, for the same reason as above.
  */
-const CUSTOM_PAGE_COUNT_BEFORE = 12
-const CUSTOM_PAGE_COUNT_AFTER = 13
+const CUSTOM_PAGE_COUNT_BEFORE = 11
+const CUSTOM_PAGE_COUNT_AFTER = 12
 
 /**
  * One page as the manifest declares it.

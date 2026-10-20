@@ -2725,8 +2725,144 @@
                                     "to": "end"
                                 }
                             ]
+                        },
+                        {
+                            "name": "Finish the Woo request",
+                            "app": "dossiq",
+                            "description": "Macro (DqZaakAssistent \"Woo-verzoek afronden\"): moves the case to the status Besluit and creates the Publiceren task, in one click on the case page. Run by the declared action finish-woo-request, as the handler.",
+                            "trigger": "manual",
+                            "triggerRegister": "dossiq",
+                            "executionMode": "sync",
+                            "limits": {
+                                "maxTransitions": 20
+                            },
+                            "nodes": [
+                                {
+                                    "id": "start",
+                                    "type": "openregister.trigger-manual",
+                                    "config": {
+                                        "next": "stay"
+                                    }
+                                },
+                                {
+                                    "id": "status-besluit",
+                                    "type": "dossiq.setStatus",
+                                    "label": "status naar Besluit",
+                                    "config": {
+                                        "status": "Besluit"
+                                    }
+                                },
+                                {
+                                    "id": "task-publiceren",
+                                    "type": "dossiq.createTask",
+                                    "label": "taak Publiceren aangemaakt",
+                                    "config": {
+                                        "title": "Publiceren"
+                                    }
+                                },
+                                {
+                                    "id": "end",
+                                    "type": "openregister.end",
+                                    "config": {}
+                                }
+                            ],
+                            "edges": [
+                                {
+                                    "id": "e-start",
+                                    "from": "start",
+                                    "to": "status-besluit"
+                                },
+                                {
+                                    "id": "e-status",
+                                    "from": "status-besluit",
+                                    "to": "task-publiceren"
+                                },
+                                {
+                                    "id": "e-task",
+                                    "from": "task-publiceren",
+                                    "to": "end"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Suspend for supplementary information",
+                            "app": "dossiq",
+                            "description": "Macro (DqZaakAssistent \"Opschorten voor aanvulling\"): suspends the term (Awb 4:15) under the case type's rules and asks the handler to send the applicant the message Aanvullende gegevens. The applicant has no Nextcloud identity, so the message itself is the handler's: the flow cannot address the indiener (see ask-aanvulling in Case behandeling).",
+                            "trigger": "manual",
+                            "triggerRegister": "dossiq",
+                            "executionMode": "sync",
+                            "limits": {
+                                "maxTransitions": 20
+                            },
+                            "nodes": [
+                                {
+                                    "id": "start",
+                                    "type": "openregister.trigger-manual",
+                                    "config": {
+                                        "next": "stay"
+                                    }
+                                },
+                                {
+                                    "id": "suspend-term",
+                                    "type": "dossiq.suspendTerm",
+                                    "label": "termijn opgeschort",
+                                    "config": {
+                                        "durationDays": 14,
+                                        "rationale": "Aanvullende gegevens gevraagd"
+                                    }
+                                },
+                                {
+                                    "id": "ask-message",
+                                    "type": "dossiq.askPerson",
+                                    "label": "bericht Aanvullende gegevens klaargezet",
+                                    "config": {
+                                        "question": "Verstuur het bericht Aanvullende gegevens",
+                                        "details": "De termijn is opgeschort voor aanvulling. Vraag de indiener via Mijn Zuiddrecht om de ontbrekende gegevens.",
+                                        "assignee": "{{ case.assignee }}",
+                                        "assigneeFallback": "behandelaars",
+                                        "dueInDays": "2",
+                                        "signalKey": "aanvullingBericht"
+                                    }
+                                },
+                                {
+                                    "id": "end",
+                                    "type": "openregister.end",
+                                    "config": {}
+                                }
+                            ],
+                            "edges": [
+                                {
+                                    "id": "e-start",
+                                    "from": "start",
+                                    "to": "suspend-term"
+                                },
+                                {
+                                    "id": "e-suspend",
+                                    "from": "suspend-term",
+                                    "to": "ask-message"
+                                },
+                                {
+                                    "id": "e-ask",
+                                    "from": "ask-message",
+                                    "to": "end"
+                                }
+                            ]
                         }
                     ],
+                    "x-openregister-action": {
+                        "finish-woo-request": {
+                            "name": "Finish the Woo request",
+                            "description": "Status to Decision, create the Publish task",
+                            "macro": true,
+                            "flow": "Finish the Woo request"
+                        },
+                        "suspend-for-supplement": {
+                            "name": "Suspend for supplementary information",
+                            "description": "Suspend the term, prepare the message Supplementary information",
+                            "macro": true,
+                            "flow": "Suspend for supplementary information"
+                        }
+                    },
                     "partyKinds": [
                         {
                             "key": "person",

@@ -96,9 +96,16 @@ function filterFields(filter) {
 
 describe('the full structure', () => {
 	it('keeps the list, the dashboard and the landing page exactly as the manifest declares them', () => {
-		for (const id of ['Cases', 'Dashboard', 'MyWorkHome']) {
+		for (const id of ['Dashboard', 'MyWorkHome']) {
 			expect(page(builtFull, id), id).toEqual(original(id))
 		}
+		// The list too, but for the team queue view, which the full profile
+		// patches back to the Queue page it had (menu-layout.json `pages`).
+		const withoutQueue = (cases) => ({
+			...cases,
+			config: { ...cases.config, defaultSavedViews: cases.config.defaultSavedViews.filter((view) => view.slug !== 'team-queue') },
+		})
+		expect(withoutQueue(page(builtFull, 'Cases'))).toEqual(withoutQueue(original('Cases')))
 	})
 })
 
@@ -420,7 +427,7 @@ describe('the landing page', () => {
 		expect(widget('archival-reviews')).toEqual(
 			withoutNotes(base.find((w) => w.id === 'archival-reviews')),
 		)
-		expect(simple.slots['widget-archival-reviews']).toBe('MyArchivalReviews')
+		expect(widget('archival-reviews').type).toBe('decision-list')
 	})
 
 	it('draws the cases you follow as rows, and loses nothing the table had', () => {
@@ -484,7 +491,7 @@ describe('the landing page', () => {
 		// They are pills on the switch row now (`viewLinks`).
 		expect(simple.config.viewLinks.map((link) => link.route)).toEqual([
 			'PersonalQueue',
-			'MyWork',
+			{ name: 'Cases', query: { savedView: 'default:my-work' } },
 			'EndOfDay',
 		])
 	})
