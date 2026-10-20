@@ -43,10 +43,12 @@ runs, as DqTermijnen draws "Te vroeg: termijn loopt nog".
 The set SHALL seed a closed Woo case ("Aanbesteding van het zaaksysteem", Afgehandeld) that meets the archive
 readiness items DqArchiveren draws: ended by finishing (`endingAct: finish`), its result and its decision recorded on
 the case (`result`, `decisions`), and the case type's retention facts (`archiveNomination: vernietigen`, an
-`archiveActionDate` five years after the decision, `archiveStatus: nog_te_archiveren`). It SHALL NOT be archived.
+`archiveActionDate` five years after the decision, `archiveStatus: nog_te_archiveren`). It SHALL hold seven final documents linked by `zaakinformatieobject`, the five the decision rules on assessed
+with the decision's tally, and it SHALL carry every case field the archive dialog's facts name. It SHALL NOT be archived.
 
 #### Scenario: the installed set
 
 - **GIVEN** the Zuiddrecht example set installed
 - **WHEN** a handler opens "Zaak archiveren" on that case
-- **THEN** the dialog lists "Case ended", "Result recorded" and "Decision made" as met, with nomination "vernietigen"
+- **THEN** the dialog lists "Case ended", "Result recorded", "Decision made" and "Documents final: 7 of 7" as met, with
+  nomination "vernietigen"

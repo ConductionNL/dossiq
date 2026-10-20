@@ -1082,6 +1082,300 @@
 			}
 		},
 		{
+			"key": "woo-zaaksysteem-doc-verzoek",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/01-verzoek-om-informatie.pdf",
+					"title": "Verzoek om informatie"
+				}
+			],
+			"data": {
+				"title": "Verzoek om informatie",
+				"fileName": "01-verzoek-om-informatie.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"creatiedatum": "{{date:-52}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-verzoek",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-verzoek.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-leidraad",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/02-aanbestedingsleidraad.pdf",
+					"title": "Aanbestedingsleidraad zaaksysteem"
+				}
+			],
+			"data": {
+				"title": "Aanbestedingsleidraad zaaksysteem",
+				"fileName": "02-aanbestedingsleidraad.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-230}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-leidraad",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-leidraad.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-proces-verbaal",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/03-proces-verbaal-opening.pdf",
+					"title": "Proces-verbaal opening inschrijvingen"
+				}
+			],
+			"data": {
+				"title": "Proces-verbaal opening inschrijvingen",
+				"fileName": "03-proces-verbaal-opening.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-160}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-proces-verbaal",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-proces-verbaal.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-gunningsadvies",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/04-gunningsadvies.pdf",
+					"title": "Gunningsadvies zaaksysteem"
+				}
+			],
+			"data": {
+				"title": "Gunningsadvies zaaksysteem",
+				"fileName": "04-gunningsadvies.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-120}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-gunningsadvies",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-gunningsadvies.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-inschrijving",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/05-inschrijving-andere-partij.pdf",
+					"title": "Inschrijving van een andere partij"
+				}
+			],
+			"data": {
+				"title": "Inschrijving van een andere partij",
+				"fileName": "05-inschrijving-andere-partij.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"creatiedatum": "{{date:-165}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-inschrijving",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-inschrijving.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-interne-mail",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/06-interne-mail-gunning.eml",
+					"title": "Interne e-mail over de gunning"
+				}
+			],
+			"data": {
+				"title": "Interne e-mail over de gunning",
+				"fileName": "06-interne-mail-gunning.eml",
+				"format": "message/rfc822",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-100}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-interne-mail",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-interne-mail.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-besluitbrief",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/07-woo-besluit-aanbesteding.pdf",
+					"title": "Woo-besluit aanbesteding zaaksysteem"
+				}
+			],
+			"data": {
+				"title": "Woo-besluit aanbesteding zaaksysteem",
+				"fileName": "07-woo-besluit-aanbesteding.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "outgoing",
+				"creatiedatum": "{{date:-20}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-besluitbrief",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-besluitbrief.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-leidraad-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-zaaksysteem.id}}",
+				"documentRef": "{{object:woo-zaaksysteem-doc-leidraad.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-24 14:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-proces-verbaal-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-zaaksysteem.id}}",
+				"documentRef": "{{object:woo-zaaksysteem-doc-proces-verbaal.id}}",
+				"classification": "deels_openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-24 14:00}}",
+				"weigeringsgronden": [
+					"5.1.1.c",
+					"5.1.2.e"
+				]
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-gunningsadvies-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-zaaksysteem.id}}",
+				"documentRef": "{{object:woo-zaaksysteem-doc-gunningsadvies.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-24 14:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-inschrijving-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-zaaksysteem.id}}",
+				"documentRef": "{{object:woo-zaaksysteem-doc-inschrijving.id}}",
+				"classification": "niet_openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-24 14:00}}",
+				"weigeringsgronden": [
+					"5.1.1.c"
+				]
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-interne-mail-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-zaaksysteem.id}}",
+				"documentRef": "{{object:woo-zaaksysteem-doc-interne-mail.id}}",
+				"classification": "niet_openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-24 14:00}}",
+				"weigeringsgronden": [
+					"5.2.1"
+				]
+			}
+		},
+		{
 			"key": "woo-lindelaan-advies",
 			"register": "dossiq",
 			"schema": "informatieobject",

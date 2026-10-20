@@ -94,4 +94,68 @@ class ZuiddrechtWooReadyToArchiveTest extends TestCase {
 		$this->assertSame(expected: ['{{object:woo-zaaksysteem-besluit.id}}'], actual: $change['set']['decisions']);
 		$this->assertSame(expected: '{{object:woo-zaaksysteem.id}}', actual: $decision['data']['case']);
 	}//end testTheResultAndDecisionAreRecordedOnTheCase()
+	/**
+	 * Seven documents are on the case through zaakinformatieobject rows, all
+	 * final ("Documents final: 7 of 7"), each with its file; the five the
+	 * decision rules on carry the decision's tally.
+	 *
+	 * @return void
+	 */
+	public function testSevenFinalDocumentsAndTheDecisionsTally(): void {
+		$byKey = [];
+		foreach ((array)$this->set()['objects'] as $object) {
+			$byKey[(string)$object['key']] = $object;
+		}
+
+		$documents   = [];
+		$assessments = [];
+		foreach ($byKey as $object) {
+			$data = (array)($object['data'] ?? []);
+			if (($object['schema'] ?? '') === 'zaakinformatieobject' && ($data['case'] ?? '') === '{{object:woo-zaaksysteem.id}}') {
+				$documents[] = substr((string)$data['informatieobject'], strlen('{{object:'), -strlen('.id}}'));
+			}
+
+			if (($object['schema'] ?? '') === 'wooDocumentAssessment' && ($data['caseRef'] ?? '') === '{{object:woo-zaaksysteem.id}}') {
+				$assessments[] = (string)$data['classification'];
+			}
+		}
+
+		$this->assertCount(expectedCount: 7, haystack: array_unique($documents));
+		foreach ($documents as $key) {
+			$this->assertSame(expected: 'informatieobject', actual: $byKey[$key]['schema']);
+			$this->assertSame(expected: 'final', actual: $byKey[$key]['data']['status']);
+			$this->assertFileExists(filename: __DIR__.'/../../../lib/Settings/example-sets/'.$byKey[$key]['files'][0]['path']);
+		}
+
+		$tally = array_count_values($assessments);
+		ksort($tally);
+		$summary = (array)$byKey['woo-zaaksysteem-besluit']['data']['wooSummary'];
+		ksort($summary);
+		$this->assertSame(expected: $summary, actual: $tally);
+	}//end testSevenFinalDocumentsAndTheDecisionsTally()
+
+	/**
+	 * The archive dialog (CnActionDialog, `case-archive` in the manifest)
+	 * shows the case fields its facts name, and the case carries each one.
+	 *
+	 * @return void
+	 */
+	public function testTheArchiveDialogsFactsAreSeeded(): void {
+		$manifest = json_decode((string)file_get_contents(__DIR__.'/../../../src/manifest.json'), true);
+		$fields   = [];
+		array_walk_recursive(
+			$manifest,
+			static function (mixed $value, mixed $key) use (&$fields): void {
+				if ($key === 'value' && is_string($value) === true && preg_match('/^\{(archive\w+)\}$/', $value, $match) === 1) {
+					$fields[] = $match[1];
+				}
+			}
+		);
+
+		$this->assertNotSame(expected: [], actual: $fields);
+		$case = $this->entry(list: 'objects', key: 'woo-zaaksysteem');
+		foreach (array_unique($fields) as $field) {
+			$this->assertArrayHasKey(key: $field, array: $case['data']);
+		}
+	}//end testTheArchiveDialogsFactsAreSeeded()
 }//end class
