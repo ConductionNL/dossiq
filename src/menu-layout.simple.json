@@ -1252,7 +1252,7 @@
 						"id": "side-special-data-health",
 						"type": "banner",
 						"title": "Special categories of personal data",
-						"_note": "DqSociaalDomein: the warning at the top of the side column when the case type processes this special category of personal data (caseType.specialDataCategories). A case type lists the card in its sideCards to show it.",
+						"_note": "DqSociaalDomein: the warning at the top of the side column when the case type processes this special category of personal data (caseType.specialDataCategories). A case type lists the card in its sideCards to show it. The sentence on logging holds because opening such a case records the reader's purpose (config.accessPurpose, case-access-purpose).",
 						"visibleWhen": {
 							"field": "@context.caseType.specialDataCategories",
 							"op": "contains",
@@ -1262,7 +1262,7 @@
 							"variant": "warning",
 							"icon": "AlertOutline",
 							"lead": "Special categories of personal data:",
-							"text": "health."
+							"text": "health. Every view is logged with its purpose."
 						}
 					},
 					{
@@ -1278,7 +1278,7 @@
 							"variant": "warning",
 							"icon": "AlertOutline",
 							"lead": "Special categories of personal data:",
-							"text": "racial or ethnic origin."
+							"text": "racial or ethnic origin. Every view is logged with its purpose."
 						}
 					},
 					{
@@ -1294,7 +1294,7 @@
 							"variant": "warning",
 							"icon": "AlertOutline",
 							"lead": "Special categories of personal data:",
-							"text": "religion or belief."
+							"text": "religion or belief. Every view is logged with its purpose."
 						}
 					},
 					{
@@ -1310,7 +1310,7 @@
 							"variant": "warning",
 							"icon": "AlertOutline",
 							"lead": "Special categories of personal data:",
-							"text": "political opinions."
+							"text": "political opinions. Every view is logged with its purpose."
 						}
 					},
 					{
@@ -1326,7 +1326,7 @@
 							"variant": "warning",
 							"icon": "AlertOutline",
 							"lead": "Special categories of personal data:",
-							"text": "criminal convictions and offences."
+							"text": "criminal convictions and offences. Every view is logged with its purpose."
 						}
 					},
 					"case-banner-stack"
