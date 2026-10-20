@@ -1110,7 +1110,7 @@ const registry = {
 	},
 
 	// @spec openspec/changes/woo-review-triage/specs/document-review/spec.md
-	'document-review': {
+	'document-relevance-review': {
 		// @custom-widget-ratchet exclude document review reads five schemas together (documentReview, reviewBatch, stoppingRule, recallSample and the case type's documentReview block) through dossiq's review routes, which compute the outstanding list, the unseen required pages and the recall estimate on the server. No declarative widget joins them or computes those. Deleted the day a widget type can render a server-computed summary with child collections and actions
 		kind: 'widget',
 		component: DocumentReviewPanel,
