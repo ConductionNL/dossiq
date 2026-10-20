@@ -195,7 +195,12 @@ describe('check:manifest tells a lag from a defect', () => {
 			'resolve',
 		)
 
-		if (declaresAll && declaresStartOn && declaresCardResolve) {
+		// The generated quarter and year page filters (schema 2.138.0): a
+		// value and an anyOf branch, not a property, so the newer schema is
+		// asked about the path itself.
+		const declaresGeneratedFilters = (installed.$defs.page?.properties?.config?.properties?.pageFilters?.items?.properties?.type?.enum || []).includes('quarter')
+
+		if (declaresAll && declaresStartOn && declaresCardResolve && declaresGeneratedFilters) {
 			expect(out).not.toContain('pending a library release')
 			return
 		}
@@ -210,7 +215,22 @@ describe('check:manifest tells a lag from a defect', () => {
 		if (!declaresCardResolve) {
 			expect(out).toContain('/config/board/card uses "resolve"')
 		}
+		if (!declaresGeneratedFilters) {
+			expect(out).toMatch(/\/config\/pageFilters\/0\/type uses "enum", which schema [\d.]+ accepts/)
+		}
 	}, 30000)
+
+	it('a value the newer schema refuses too is a defect, not a lag', () => {
+		const manifest = JSON.parse(
+			fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+		)
+		const page = manifest.pages.find((candidate) => Array.isArray(candidate?.config?.pageFilters))
+		page.config.pageFilters[0].type = 'fortnight'
+
+		const result = validate(manifest)
+
+		expect(result.code).toBe(1)
+	})
 
 	it('a defect on a shape the newer schema also refuses still fails', () => {
 		const manifest = JSON.parse(

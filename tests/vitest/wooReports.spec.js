@@ -279,9 +279,7 @@ describe('The reports page draws the halves on offer (REQ-WRR-001)', () => {
 			global: { mocks: { $route: { query: { case: 'case-7' } } } },
 		})
 
-		expect(
-			wrapper.find('[data-testid="case-mail-parties-case"]').element.value,
-		).toBe('case-7')
+		expect(wrapper.findComponent({ name: 'CnCountTablesReport' }).props('objectId')).toBe('case-7')
 	})
 })
 

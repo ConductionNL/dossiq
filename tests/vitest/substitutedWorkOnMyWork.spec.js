@@ -28,12 +28,9 @@ const ROOT = resolve(HERE, '../..')
 
 /** What the stubbed `/api/substitutions/work` answers, replaced per test. */
 let substituted = { cases: [], tasks: [] }
-/** How many times the views asked for it. */
-let fetchCalls = 0
 
 vi.mock('../../src/services/substitutionApi.js', () => ({
 	fetchSubstitutedWork: async () => {
-		fetchCalls += 1
 		if (substituted instanceof Error) {
 			throw substituted
 		}
@@ -158,26 +155,6 @@ const { default: MyWorkWidget } =
 	await import('../../src/views/widgets/MyWorkWidget.vue')
 
 /**
- * One substituted case, as `/api/substitutions/work` answers it.
- *
- * @param {object} over Fields to override.
- * @return {object} The row.
- */
-function substitutedCase(over = {}) {
-	return {
-		id: 'c-1',
-		title: 'Bezwaar Jansen',
-		identifier: 'ZAAK-2026-0001',
-		_substituted: {
-			absentee: 'anna',
-			substitutionId: 'sub-1',
-			until: '2026-07-21',
-		},
-		...over,
-	}
-}
-
-/**
  * Mount the My work tile.
  *
  * @return {Promise<object>} The mounted wrapper, after its loads settle.
@@ -197,7 +174,6 @@ async function mountTile() {
 beforeEach(() => {
 	substituted = { cases: [], tasks: [] }
 	ownTasks = []
-	fetchCalls = 0
 	try {
 		window.localStorage.clear()
 	} catch {

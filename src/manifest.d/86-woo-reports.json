@@ -49,8 +49,7 @@
 							"field": "throughput",
 							"op": "eq",
 							"value": true
-						},
-						"_note": "The CSV of the period the page shows. A download is asked for, so it reads (and is recorded) only when pressed."
+						}
 					}
 				],
 				"widgets": [
