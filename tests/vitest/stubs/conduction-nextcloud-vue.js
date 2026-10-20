@@ -130,6 +130,12 @@ export const CnSelectionScope = recordingStub('CnSelectionScope', 'bulk-selectio
 export const CnTemplateSelect = recordingStub('CnTemplateSelect', 'cn-template-select', ['schema', 'url', 'params', 'inputLabel', 'placeholder', 'mapOption'], ['apply'])
 export const CnOrderedListField = recordingStub('CnOrderedListField', 'cn-ordered-list-field', ['modelValue', 'options', 'label', 'addLabel', 'emptyText', 'disabled'], ['update:modelValue'])
 export const CnSettingsField = recordingStub('CnSettingsField', 'cn-settings-field', ['field', 'modelValue', 'error', 'hint'], ['update:modelValue'])
+export const CnTransitionInputFields = recordingStub('CnTransitionInputFields', 'cn-transition-input-fields', ['inputs', 'modelValue', 'context', 'columns', 'summary', 'notice', 'disabled', 'markRequired'], ['update:modelValue'])
+
+// The library's own reading of declared inputs, not a stand-in: whether an
+// act may be confirmed is decided there, and a copy here could only agree
+// with itself.
+export { readTransitionInputs } from '@conduction/nextcloud-vue/src/utils/transitionInputs.js'
 
 /**
  * Stand-in for `CnRelatedObjectsWidget`.
