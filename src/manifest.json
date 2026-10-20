@@ -5343,7 +5343,24 @@
 				"appId": "dossiq",
 				"pageId": "Doorlooptijd",
 				"showWidgetActions": false,
-				"description": "All case types",
+				"_pageFiltersNote": "The case type choice sits on the description line, before the period group, as the DqDoorlooptijd board draws it (\"alle zaaktypen\"). Only case types that declare a processing deadline are offered: a type without one gives a dashboard that can say nothing. Clearing it reads every case type.",
+				"pageFilters": [
+					{
+						"key": "caseType",
+						"label": "Filter by case type",
+						"placement": "description",
+						"clearable": true,
+						"placeholder": "All case types",
+						"optionsFrom": {
+							"register": "dossiq",
+							"schema": "caseType",
+							"filter": {
+								"processingDeadline_isnull": false
+							},
+							"labelField": "title"
+						}
+					}
+				],
 				"widgets": [
 					{
 						"id": "dt-avg",
@@ -5680,7 +5697,6 @@
 				}
 			},
 			"slots": {
-				"header-actions": "DtCaseTypeFilter",
 				"widget-dt-charts": "DtChartsWidget",
 				"widget-dt-woo": "DtWooWidget",
 				"widget-dt-atrisk": "DtAtRiskWidget",
