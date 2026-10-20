@@ -286,7 +286,9 @@ describe('the cases list', () => {
 	})
 
 	it('draws the map with its numbered list and keeps the full profile\'s map (DqZakenKaart)', () => {
-		expect(simple.mapConfig.list).toMatchObject({ title: '{title}', sub: '{identifier}' })
+		expect(simple.mapConfig.list).toMatchObject({ title: '{title}' })
+		// The second line is the case address, falling back to the identifier.
+		expect(simple.mapConfig.list.sub).toContain('{identifier}')
 		const { list, ...rest } = simple.mapConfig
 		const { _basemapNote, _parityNote, plotAll, ...fullMap } = before.mapConfig
 		expect(rest).toEqual(fullMap)
@@ -745,7 +747,11 @@ describe('the landing page', () => {
 		const menuIcon = (route) => entries.find((entry) => entry.route === route && entry.icon)?.icon
 		for (const link of simple.config.viewLinks) {
 			expect(link.icon, link.label).toBeTruthy()
-			expect(link.icon, link.label).toBe(menuIcon(link.route))
+			// A link to a saved view (an object route) replaces no menu entry by
+			// route, so only a string route is held to its menu entry's icon.
+			if (typeof link.route === 'string') {
+				expect(link.icon, link.label).toBe(menuIcon(link.route))
+			}
 			expect(iconsSource, link.label).toContain(`\n\t${link.icon},\n`)
 		}
 	})

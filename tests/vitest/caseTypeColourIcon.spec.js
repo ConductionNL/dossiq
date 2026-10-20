@@ -57,8 +57,9 @@ describe('case type colour and icon', () => {
 	})
 
 	it('resolves every case type tag in the case lists', () => {
+		// The Queue, the one list that drew case type tags, is a view on Cases
+		// now, so there may be none; any that do appear must resolve.
 		const badges = caseTypeBadges(simple)
-		expect(badges.length).toBeGreaterThan(0)
 		for (const badge of badges) {
 			expect(badge.widgetProps.resolve).toEqual(RESOLVE)
 		}
@@ -101,9 +102,14 @@ describe('case type colour and icon', () => {
 	})
 
 	it('paints teal statuses on the board columns and map markers too', () => {
-		const text = JSON.stringify(manifest)
-		const maps = text.match(/"purple-light":"var\(--nl-color-purple-light, #f2eaf5\)"/g) || []
-		expect(maps.length).toBeGreaterThan(0)
-		expect((text.match(/"teal":"var\(--nl-color-teal, #1d5e66\)"/g) || []).length).toBe(maps.length)
+		const cases = manifest.pages.find((entry) => entry.id === 'Cases').config
+		const maps = [
+			cases.board.columnFields.find((field) => field.source?.colorMap).source.colorMap,
+			cases.mapConfig.markerColor.colorMap,
+		]
+		for (const map of maps) {
+			expect(map.teal).toBe('var(--nl-color-teal, #1d5e66)')
+			expect(map['teal-light']).toBe('var(--nl-color-teal-light, #e3f1f3)')
+		}
 	})
 })
