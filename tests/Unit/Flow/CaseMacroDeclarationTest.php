@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Flow;
 
+use OCA\Dossiq\Tests\Unit\Fixtures\ShippedRegisterSchema;
 use PHPUnit\Framework\TestCase;
 
 class CaseMacroDeclarationTest extends TestCase {
@@ -88,6 +89,15 @@ class CaseMacroDeclarationTest extends TestCase {
 			$this->assertContains($key, $declared);
 		}
 	}//end testTheWooRequestOffersBothMacrosAndEveryListedKeyIsDeclared()
+
+	public function testWhoeverMayEditTheCaseMayRunItsMacros(): void {
+		$case = ShippedRegisterSchema::schema('case');
+		$rules = $case['authorization'];
+		foreach (array_keys($this->configuration()['x-openregister-action']) as $key) {
+			$this->assertArrayHasKey($key, $rules, $key . ' carries a rule of its own, not OpenRegister\'s default');
+			$this->assertSame($rules['update'], $rules[$key], $key . ' follows the case\'s update rule');
+		}
+	}//end testWhoeverMayEditTheCaseMayRunItsMacros()
 
 	public function testTheSuspensionGoesThroughTheTermNode(): void {
 		foreach ($this->configuration()['x-openregister-flows'] as $flow) {
