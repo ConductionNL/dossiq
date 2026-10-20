@@ -11,7 +11,7 @@
 // from `/apps/openregister/api/objects/{register}/{schema}/{id}/integrations/{id}`.
 //
 // dossiq's manifest is `sidebarTabs[]` + `component:` driven (the
-// CaseEmailTab pattern), so to surface a leaf tab we resolve its bespoke
+// CaseTimelineTab pattern), so to surface a leaf tab we resolve its bespoke
 // Vue component out of the lib's `builtinIntegrations` descriptor array
 // and register it under a registry key. CnObjectSidebar injects
 // `objectId` / `register` / `schema` / `apiBase` via `sharedTabProps`,

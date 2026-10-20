@@ -194,12 +194,7 @@ import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
 // Case-assistant chat panel — conversational assistance delegated to Hermiq
 // (fleet rule: AI functionality lives in Hermiq; dossiq is a thin consumer).
 // @spec openspec/specs/case-assistant-via-hermiq/spec.md
-// Case-email integration — leaf-first per ADR-022. The sidebar tab
-// wraps the EmailThread component (display only), reuses NC Mail as
-// the email engine, and triggers prefillDraft via the case-email API.
-// @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseConversationsPanel from './views/cases/components/CaseConversationsPanel.vue'
-import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
@@ -996,14 +991,6 @@ const registry = {
 	// by component name instead.
 	// @spec openspec/specs/case-dashboard-view/spec.md
 	// @spec openspec/specs/case-dashboard-view/spec.md
-	'case-email-pane': {
-		// @custom-widget-ratchet exclude the surface is a LEAF, not a collection of OpenRegister objects: CaseEmailTab consumes the mail leaf and calls prefillDraft to compose, and a built-in object-list takes a register and a schema, which email threads do not have. There is no `integration` id for mail either, so `type: "integration"` cannot reach it. This entry is deleted the day the library ships a mail widget type or OpenRegister exposes an email integration leaf
-		kind: 'widget',
-		component: CaseEmailTab,
-		...PANEL_WIDGET_META,
-		_note: 'The Email tab of the case panels: correspondence linked to the case, consuming the mail leaf. Was a sidebar tab; moved into the strip so the two logs a handler reads, email and contact moments, sit beside each other rather than one in each chrome.',
-	},
-
 	// @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
 	'case-conversations-pane': {
 		// @custom-widget-ratchet exclude the surface is an ACT, not a collection of OpenRegister objects: it starts a Talk room, declares the case major and opens the one channel that declaration made, and a built-in object-list takes a register and a schema and offers no button. The records it lists live on the case itself as `case.conversations`, which no widget type can read as a collection either. Deleted the day the library ships a widget type that posts to an app endpoint and renders the array a field holds
@@ -1124,14 +1111,6 @@ const registry = {
 		kind: 'page',
 		component: DeelzaakDetail,
 		_note: 'Sub-case detail with parent breadcrumb; mounted under /cases/:parentId/deelzaken/:id.',
-	},
-
-	// --- Case-email sidebar tab — leaf-first per ADR-022. ---
-	// @spec openspec/changes/case-email-integration/tasks.md#T12
-	CaseEmailTab: {
-		kind: 'page',
-		component: CaseEmailTab,
-		_note: 'Sidebar tab that surfaces email correspondence linked to the case; consumes the email leaf for display + uses prefillDraft for compose.',
 	},
 
 	// --- Case-appointment (internal calendar) sidebar tab — leaf-first per ADR-022. ---
@@ -1495,7 +1474,7 @@ const registry = {
 	CaseTimelineTab: {
 		kind: 'page',
 		component: CaseTimelineTab,
-		_note: 'The same component `case-timeline-pane` above mounts, under its COMPONENT name, for a manifest that names it as a sidebar tab rather than as a tab-widget type. The pair `case-email-pane` / `CaseEmailTab` carries the same two keys for the same reason.',
+		_note: 'The same component `case-timeline-pane` above mounts, under its COMPONENT name, for a manifest that names it as a sidebar tab rather than as a tab-widget type.',
 	},
 
 	// --- Named behaviours: a manifest `handler` string, not a component. ---
