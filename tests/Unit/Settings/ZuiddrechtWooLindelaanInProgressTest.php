@@ -245,4 +245,36 @@ class ZuiddrechtWooLindelaanInProgressTest extends TestCase {
 		$this->assertArrayNotHasKey(key: 'archiveActionDate', array: $data);
 		$this->assertArrayNotHasKey(key: 'endingAct', array: $data);
 	}//end testTheOpenCaseIsStillToArchive()
+	/**
+	 * The case's four tasks, as DqZaakTaken draws them: one open with its
+	 * handler, a high priority and a deadline still ahead, and three done,
+	 * each with when it was done. Only the fields OpenRegister's example-set
+	 * tasks take (ExampleSetTasks::FIELDS).
+	 *
+	 * @return void
+	 */
+	public function testTheCaseCarriesTheBoardsTasks(): void {
+		$set   = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$tasks = array_values(
+			array_filter(
+				(array)($set['tasks'] ?? []),
+				static fn (array $task): bool => ($task['data']['objectUuid'] ?? '') === '{{object:woo-lindelaan.id}}'
+			)
+		);
+		$fields = ['title', 'description', 'objectUuid', 'state', 'assignee', 'candidateGroups', 'priority', 'dueAt', 'completedAt', 'completedBy', 'kind'];
+
+		$this->assertCount(expectedCount: 4, haystack: $tasks);
+		$open = array_values(array_filter($tasks, static fn (array $task): bool => $task['data']['state'] === 'active'));
+		$this->assertCount(expectedCount: 1, haystack: $open);
+		$this->assertSame(expected: 'Documenten beoordelen', actual: $open[0]['data']['title']);
+		$this->assertSame(expected: 'high', actual: $open[0]['data']['priority']);
+		$this->assertMatchesRegularExpression(pattern: '/^\{\{date:\d+\}\}$/', string: $open[0]['data']['dueAt']);
+		foreach ($tasks as $task) {
+			$this->assertSame(expected: [], actual: array_diff(array_keys($task['data']), $fields), message: $task['key']);
+			$this->assertStringStartsWith(prefix: '{{cast:', string: $task['data']['assignee']);
+			if ($task['data']['state'] === 'completed') {
+				$this->assertArrayHasKey(key: 'completedAt', array: $task['data']);
+			}
+		}
+	}//end testTheCaseCarriesTheBoardsTasks()
 }//end class

@@ -1880,6 +1880,59 @@
 			}
 		}
 	],
+	"tasks": [
+		{
+			"key": "woo-lindelaan-taak-beoordelen",
+			"data": {
+				"title": "Documenten beoordelen",
+				"description": "3 van 7 nog open",
+				"objectUuid": "{{object:woo-lindelaan.id}}",
+				"state": "active",
+				"assignee": "{{cast:thomas.uid}}",
+				"dueAt": "{{date:1}}",
+				"priority": "high"
+			}
+		},
+		{
+			"key": "woo-lindelaan-taak-stukken",
+			"data": {
+				"title": "Stukken opvragen bij Mobiliteit en verkeer",
+				"description": "Adviezen en mail 2025 en 2026",
+				"objectUuid": "{{object:woo-lindelaan.id}}",
+				"state": "completed",
+				"assignee": "{{cast:daan.uid}}",
+				"dueAt": "{{date:-11}}",
+				"completedAt": "{{datetime:-11 15:40}}",
+				"completedBy": "{{cast:daan.uid}}"
+			}
+		},
+		{
+			"key": "woo-lindelaan-taak-compleet",
+			"data": {
+				"title": "Verzoek compleet maken",
+				"description": "Periode en onderwerp vastgelegd",
+				"objectUuid": "{{object:woo-lindelaan.id}}",
+				"state": "completed",
+				"assignee": "{{cast:thomas.uid}}",
+				"dueAt": "{{date:-13}}",
+				"completedAt": "{{datetime:-13 11:20}}",
+				"completedBy": "{{cast:thomas.uid}}"
+			}
+		},
+		{
+			"key": "woo-lindelaan-taak-ontvangst",
+			"data": {
+				"title": "Ontvangst bevestigen",
+				"description": "Bericht via Mijn Zuiddrecht",
+				"objectUuid": "{{object:woo-lindelaan.id}}",
+				"state": "completed",
+				"assignee": "{{cast:thomas.uid}}",
+				"dueAt": "{{date:-13}}",
+				"completedAt": "{{datetime:-14 09:30}}",
+				"completedBy": "{{cast:thomas.uid}}"
+			}
+		}
+	],
 	"changes": [
 		{
 			"key": "parkeren-henk-uitkomst",

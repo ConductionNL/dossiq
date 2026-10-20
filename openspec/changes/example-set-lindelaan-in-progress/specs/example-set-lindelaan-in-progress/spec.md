@@ -65,3 +65,14 @@ archive nomination, action date or ending act, as an open case has none yet.
 - **GIVEN** the Zuiddrecht example set installed
 - **THEN** the case's advice card lists the open request to Mobiliteit en verkeer and the received legal review
 - **AND** the case data reads archive status "nog te archiveren"
+
+### Requirement: The in-progress case carries its tasks
+
+The Lindelaan case SHALL carry the four tasks DqZaakTaken draws, as example-set `tasks` (OpenRegister
+`example-set-tasks`): "Documenten beoordelen" open with its handler, high priority and a deadline ahead, and three done
+with when they were done. A task SHALL use only the fields an example-set task takes.
+
+#### Scenario: the installed set
+
+- **GIVEN** the Zuiddrecht example set installed on an OpenRegister with example-set tasks
+- **THEN** the case's task list shows one open task and three done
