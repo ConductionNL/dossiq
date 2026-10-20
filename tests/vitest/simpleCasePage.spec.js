@@ -783,6 +783,14 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 		expect(tab.widgetIds).toEqual(['case-ai-activity', 'case-macros'])
 	})
 
+	it('stands the four generic side cards aside on that tab, so the chat is alone as the board draws it', () => {
+		const side = page.config.sideColumn.filter((entry) => typeof entry === 'object')
+		for (const id of ['side-requester', 'side-handling', 'side-work-instruction']) {
+			expect(side.find((entry) => entry.id === id).notTabs).toEqual(['ai-oversight'])
+		}
+		expect(page.configPatch.widgets['case-tile-deadline'].notTabs).toEqual(['ai-oversight'])
+	})
+
 	it('puts the chat in the side column, after the generic cards, while that tab is open', () => {
 		const ids = page.config.sideColumn.map((entry) => (typeof entry === 'string' ? entry : entry.id))
 		expect(ids.indexOf('case-assistant-chat')).toBe(ids.indexOf('side-work-instruction') + 1)

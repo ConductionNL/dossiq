@@ -983,6 +983,9 @@
 					"case-tile-deadline",
 					{
 						"id": "side-requester",
+						"notTabs": [
+							"ai-oversight"
+						],
 						"type": "facts",
 						"title": "Requester",
 						"_note": "DqZaak Verzoeker: the requester as a lead (initials and name), then what kind of requester and the channel, read from the projection the requester picker writes.",
@@ -1012,6 +1015,9 @@
 					},
 					{
 						"id": "side-handling",
+						"notTabs": [
+							"ai-oversight"
+						],
 						"type": "facts",
 						"title": "Handling",
 						"_note": "DqZaak Behandeling: who handles the case, in which team and since when, as label and value rows; the handler reads as the user's display name (facts format user).",
@@ -1037,6 +1043,9 @@
 					},
 					{
 						"id": "side-work-instruction",
+						"notTabs": [
+							"ai-oversight"
+						],
 						"type": "case-work-instruction",
 						"title": "Work instruction",
 						"_note": "DqZaak Werkinstructie: the case type's work instruction beside the case; the Knowledge tab keeps it with the linked pages."
@@ -1336,6 +1345,9 @@
 				},
 				"widgets": {
 					"case-tile-deadline": {
+						"notTabs": [
+							"ai-oversight"
+						],
 						"_note": "The deadline is the first card of the side column, and the card already carries the widget title (Termijn) as its heading, as DqZaak draws it. The countdown's own label would print the same word a second time under it, so the simple structure leaves it out. The rest of the content is the manifest's, repeated because a patch replaces `content` whole. DqZaak draws the card as the headline in days, \"Beslissen uiterlijk <date>\" under it, a bar for the share of the term that has passed since the start date, and Termijn opschorten, which opens the lifecycle dialog on its suspend act (nextcloud-vue countdown board anatomy).",
 						"content": {
 							"field": "deadline",
