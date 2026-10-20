@@ -28,6 +28,7 @@ import {
 	statusBadgeStyle,
 	statusColourStyle,
 	statusColourToken,
+	statusTextToken,
 } from '../../src/utils/statusColour.js'
 
 const ROOT = path.resolve(__dirname, '../..')
@@ -145,18 +146,26 @@ describe('statusColourStyle', () => {
 })
 
 describe('statusBadgeStyle', () => {
-	it('draws a full hue as its own tint with the darkened hue as text', () => {
+	it('draws a full hue as its own tint with the theme\'s pill text, else the darkened hue', () => {
 		const style = statusBadgeStyle('blue')
 		expect(style.backgroundColor).toBe(statusColourToken('blue-light'))
 		expect(style.color).toBe(
-			`color-mix(in srgb, ${statusColourToken('blue')} 65%, var(--color-main-text, #1b1c1d))`,
+			`var(--nl-color-blue-text, color-mix(in srgb, ${statusColourToken('blue')} 65%, var(--color-main-text, #1b1c1d)))`,
 		)
 	})
 
-	it('leaves a light tint as it was: the tint with the main text', () => {
-		expect(statusBadgeStyle('green-light')).toEqual(
-			statusColourStyle('green-light'),
-		)
+	it('leaves a light tint as its tint, with the theme\'s pill text, else the main text', () => {
+		expect(statusBadgeStyle('green-light')).toEqual({
+			backgroundColor: statusColourStyle('green-light').backgroundColor,
+			color: 'var(--nl-color-green-text, var(--color-main-text))',
+		})
+	})
+
+	it('reads the pill text token of every hue', () => {
+		for (const hue of ['blue', 'green', 'orange', 'red', 'purple', 'grey']) {
+			expect(statusBadgeStyle(hue).color.startsWith(`var(--nl-color-${hue}-text, `), hue).toBe(true)
+			expect(statusTextToken(hue, 'black')).toBe(`var(--nl-color-${hue}-text, black)`)
+		}
 	})
 
 	it('reaches AA on every hue, computed on the fallback ramps', () => {
