@@ -30,7 +30,7 @@ const manifest = JSON.parse(
 const STUB = {}
 
 /** The pages a handler triages from, which are the only ones that split. */
-const TRIAGED_FROM = ['Cases', 'Queue']
+const TRIAGED_FROM = ['Cases']
 
 /**
  * One page of the shipped manifest.

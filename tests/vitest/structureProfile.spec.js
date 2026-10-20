@@ -85,19 +85,36 @@ function section(menu, section) {
 }
 
 describe('the full profile', () => {
-	it('is exactly what buildManifest made before profiles existed', () => {
+	it('is exactly what buildManifest made before profiles existed, but for the team queue view', () => {
 		const before = buildManifest(manifest(), fragments, fullFile)
-		expect(build(fullFile)).toEqual(before)
+		const built = build(fullFile)
+		const others = (result) => ({ ...result, pages: result.pages.filter((page) => page.id !== 'Cases') })
+		expect(others(built)).toEqual(others(before))
+		const views = (result) => result.pages.find((page) => page.id === 'Cases').config.defaultSavedViews
+		expect(views(built).filter((view) => view.slug !== 'team-queue')).toEqual(views(before).filter((view) => view.slug !== 'team-queue'))
 	})
 
-	it('still counts 39 entries: 13 main, 5 footer, 18 settings, 3 integrations', () => {
+	it('keeps the Queue page it had as the team queue view: title, unread and priority columns, case type folders', () => {
+		const views = build(fullFile).pages.find((page) => page.id === 'Cases').config.defaultSavedViews
+		const overrides = views.find((view) => view.slug === 'team-queue').overrides
+		expect(overrides.title).toBe('Queue')
+		expect(overrides.columns.map((column) => (typeof column === 'string' ? column : column.key))).toEqual(
+			['@self.unread', 'identifier', 'title', 'caseType', 'status', 'priorityOrder', 'deadline'],
+		)
+		expect(overrides.folderSidebar).toMatchObject({ schema: 'caseType', filterField: 'caseType' })
+		// The deep merge keeps what the patch does not name.
+		expect(overrides.statRow).toHaveLength(3)
+		expect(overrides.sidePanel).toHaveLength(2)
+	})
+
+	it('counts 39 entries: 12 main, 5 footer, 19 settings, 3 integrations (Case objects is settings-only)', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
 		expect(flat(menu)).toHaveLength(39)
-		expect(count('main')).toBe(13)
+		expect(count('main')).toBe(12)
 		expect(count('footer')).toBe(5)
-		expect(count('settings')).toBe(18)
+		expect(count('settings')).toBe(19)
 		expect(count('integrations')).toBe(3)
 	})
 })
@@ -176,10 +193,11 @@ describe('the simple profile', () => {
 			expect(shown.icon).toBe(original.icon)
 			expect(shown.route).toBe(original.route)
 		}
-		// Two entries are worded for the simple menu. Their page is the same.
+		// The team queue is worded for the simple menu; it opens its view of Cases.
 		expect(main.find((entry) => entry.id === 'Queue')).toMatchObject({
 			label: 'Team queue',
-			route: 'Queue',
+			route: 'Cases',
+			query: { savedView: 'default:team-queue' },
 		})
 		// The Werkbord is the Cases list in its board view (board DqWerkbord).
 		expect(main.find((entry) => entry.id === 'WorkflowBoard')).toMatchObject({
@@ -300,11 +318,11 @@ describe('the simple profile', () => {
 		// beside an entry is the number of rows behind it.
 		const entry = (entryId) =>
 			flat(built.menu).find((item) => item.id === entryId)
-		const queuePage = built.pages.find((page) => page.id === 'Queue')
+		const teamQueue = built.pages.find((page) => page.id === 'Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue')
 		expect(entry('Queue').count).toEqual({
 			register: 'dossiq',
 			schema: 'case',
-			filter: queuePage.config.filter,
+			filter: teamQueue.overrides.lockedFilters,
 		})
 		expect(entry('WorkGroup').count).toEqual({
 			register: 'dossiq',
@@ -405,7 +423,7 @@ describe('the simple profile', () => {
 			// The My work page draws its links as pills on the view-switch
 			// row (`viewLinks`, nextcloud-vue 2.79.0), as DqMijnWerk does.
 			for (const link of page.config?.viewLinks ?? []) {
-				linked.add(link.route)
+				linked.add(typeof link.route === 'string' ? link.route : link.route?.name)
 			}
 		}
 		const lost = flat(build(fullFile).menu)
@@ -416,10 +434,10 @@ describe('the simple profile', () => {
 
 		// The control: the three entries this profile takes out are really out,
 		// so the check above is passing on the links and not on the menu.
-		for (const id of ['PersonalQueueMenu', 'MyWork', 'EndOfDayMenu']) {
+		for (const id of ['PersonalQueueMenu', 'EndOfDayMenu']) {
 			expect(shown.has(id), id).toBe(false)
 		}
-		expect([...linked].sort()).toEqual(['EndOfDay', 'MyWork', 'PersonalQueue'])
+		expect([...linked].sort()).toEqual(['Cases', 'EndOfDay', 'PersonalQueue'])
 	})
 
 	it('adds the links to My work and the dashboard without changing the manifest or the full profile', () => {
@@ -435,7 +453,7 @@ describe('the simple profile', () => {
 			built.pages
 				.find((page) => page.id === 'MyWorkHome')
 				.config.viewLinks.map((link) => link.route),
-		).toEqual(['PersonalQueue', 'MyWork', 'EndOfDay'])
+		).toEqual(['PersonalQueue', { name: 'Cases', query: { savedView: 'default:my-work' } }, 'EndOfDay'])
 		// DqDashboard: Close out your day leads, the primary New case ends the row.
 		expect(actionIds(built, 'Dashboard')).toEqual([
 			'open-end-of-day',
@@ -470,10 +488,12 @@ describe('the simple profile', () => {
 	// 77 -> 78: the redaction page of a case (DqLakken).
 	// 78 -> 82: the parts of a case type without an editor of their own (result, role, document and decision type) get a page each.
 	// 82 -> 81: the CaseMap page retires; `/map` redirects to the Cases map view.
-	it('builds the same 81 pages as the full profile, so every route stays', () => {
+	// 81 -> 78: Queue, MyWork and PrivacyRequests became views of Cases.
+	// 78 -> 77: Subsidies became a view of Cases.
+	it('builds the same 77 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(81)
+		expect(built.pages).toHaveLength(77)
 	})
 })
 
@@ -540,7 +560,7 @@ describe('a page overlay', () => {
 		expect(page.config.list).toHaveLength(3)
 	})
 
-	it('names a list item by id, then key, then label, and a bare string by itself', () => {
+	it('names a list item by id, then key, then slug, then label, and a bare string by itself', () => {
 		const page = {
 			id: 'P',
 			config: {
@@ -568,6 +588,29 @@ describe('a page overlay', () => {
 			{ label: 'All' },
 			{ label: 'Closed' },
 		])
+	})
+
+	it('names a default view by its slug and merges a patch into it deeply, arrays replaced', () => {
+		const page = {
+			id: 'P',
+			config: {
+				defaultSavedViews: [
+					{ slug: 'queue', name: 'Queue', filters: { a: 1 }, overrides: { title: 'Team', columns: ['x', 'y'], header: { meta: 'm', notice: 'n' } } },
+					{ slug: 'other', name: 'Other', filters: {} },
+				],
+			},
+		}
+		const out = applyPageOverlay(page, {
+			id: 'P',
+			configPatch: {
+				defaultSavedViews: { queue: { overrides: { title: 'Queue', columns: ['z'], header: { meta: 'M' } } } },
+			},
+		})
+		expect(out.config.defaultSavedViews).toEqual([
+			{ slug: 'queue', name: 'Queue', filters: { a: 1 }, overrides: { title: 'Queue', columns: ['z'], header: { meta: 'M', notice: 'n' } } },
+			{ slug: 'other', name: 'Other', filters: {} },
+		])
+		expect(page.config.defaultSavedViews[0].overrides.title).toBe('Team')
 	})
 
 	it('adds slots to the page and leaves a page without the key as it was', () => {

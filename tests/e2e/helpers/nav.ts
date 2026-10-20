@@ -587,3 +587,48 @@ export async function openHeaderActionsMenu(page: Page): Promise<void> {
 
 	await expect(menu).toHaveClass(/action-item--open/, { timeout: 10_000 })
 }
+
+/**
+ * The Sort section of an index page's sidebar, opened if it is closed.
+ *
+ * The sidebar draws the section in the card, list and map views (the table
+ * sorts by its headers): a "Sort by" select with one option per entry of the
+ * page's sort options, and a line naming the current order.
+ *
+ * @param page The Playwright page.
+ * @return The Sort section.
+ */
+export async function openSortSection(page: Page): Promise<Locator> {
+	const section = page.getByTestId('cn-index-sidebar-sort')
+	if (!(await section.isVisible())) {
+		await page.getByTestId('cn-actions-bar-filter-button').click()
+	}
+	await expect(section).toBeVisible({ timeout: 30_000 })
+	return section
+}
+
+/**
+ * Choose an order in the index sidebar's Sort section.
+ *
+ * @param page The Playwright page.
+ * @param label The option's label, e.g. "Newest".
+ */
+export async function chooseSort(page: Page, label: string): Promise<void> {
+	const section = await openSortSection(page)
+	await section.getByRole('combobox').click()
+	await page.getByRole('option', { name: label, exact: true }).click()
+}
+
+/**
+ * Assert the order the index sidebar's Sort section names as current.
+ *
+ * An endpoint-ranked order (Urgency) is a fixed entry, which the section
+ * names as "Current order: <label>".
+ *
+ * @param page The Playwright page.
+ * @param label The option's label.
+ */
+export async function expectSort(page: Page, label: string): Promise<void> {
+	const section = await openSortSection(page)
+	await expect(section.getByTestId('cn-index-sidebar-sort-current')).toContainText(label, { timeout: 30_000 })
+}

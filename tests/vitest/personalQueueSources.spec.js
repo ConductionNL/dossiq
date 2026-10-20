@@ -30,7 +30,7 @@ vi.mock('@nextcloud/l10n', () => ({
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 
-const { OFFER_HIDE_GROUP, canDismiss, offerInsteadOfDismissing, visibleGroups } =
+const { OFFER_HIDE_GROUP, canDismiss, offerInsteadOfDismissing } =
 	await import('../../src/utils/personalQueueHelpers.js')
 
 const catalogue = readFileSync(
@@ -113,14 +113,10 @@ describe('every mechanism reaches the queue by declaring itself', () => {
 		}
 	})
 
-	it('renders the group heading and closing sentence the server sent', () => {
-		expect(queueView).toContain('{{ group.label }}')
-		expect(queueView).toContain('{{ group.closesWhen }}')
-	})
-
-	it('names a source that could not be read, rather than showing fewer items', () => {
-		expect(queueView).toContain('could not be read, so this list is incomplete.')
-		expect(queueView).toContain('queue-source-unavailable-')
+	it('draws the groups the server sent through the library work queue, which names unreadable sources', () => {
+		expect(queueView).toContain('<CnWorkQueue')
+		expect(queueView).toContain("source: { url: BASE }")
+		expect(queueView).toContain('hide: `${BASE}/groups/{group}/hide`')
 	})
 })
 
@@ -135,12 +131,14 @@ describe('the page is a page, and not a second case index', () => {
 		expect(page('PersonalQueue').config.register).toBeUndefined()
 	})
 
-	it('the unclaimed pool keeps its own page and its own meaning', () => {
-		// Two pages, two different questions. `Queue` is every open case nobody
-		// has picked up, a team surface; `PersonalQueue` is one person's own.
-		expect(page('Queue').type).toBe('index')
-		expect(page('Queue').config.filter.assignee).toBe('IS NULL')
-		expect(page('PersonalQueue').route).not.toBe(page('Queue').route)
+	it('the unclaimed pool keeps its own meaning, as a view of the case list', () => {
+		// Two different questions. The team queue is every open case nobody has
+		// picked up, a team surface and a view of Cases now; `PersonalQueue` is
+		// one person's own, across stores, and stays a page.
+		const teamQueue = page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue')
+		expect(teamQueue.overrides.lockedFilters.assignee).toBe('IS NULL')
+		expect(page('Queue')).toBeUndefined()
+		expect(page('PersonalQueue').type).toBe('custom')
 	})
 
 	it('both new entries live under the existing My work group', () => {
@@ -163,18 +161,6 @@ describe('a person orders and hides, and cannot dismiss', () => {
 			offer: OFFER_HIDE_GROUP,
 			group: 'tasks',
 		})
-	})
-
-	it('hides a whole group and leaves the rest', () => {
-		const groups = [{ key: 'tasks' }, { key: 'assigned-cases' }]
-
-		expect(visibleGroups(groups, ['tasks'])).toEqual([{ key: 'assigned-cases' }])
-	})
-
-	it('shows every group when nothing is hidden', () => {
-		const groups = [{ key: 'tasks' }, { key: 'assigned-cases' }]
-
-		expect(visibleGroups(groups, [])).toEqual(groups)
 	})
 
 	it('offers no call that would remove an item', async () => {

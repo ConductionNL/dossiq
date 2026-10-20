@@ -85,7 +85,6 @@ import CaseWorkInstructionPanel from './components/case/CaseWorkInstructionPanel
 import DocumentReviewPanel from './components/case/DocumentReviewPanel.vue'
 // A reviewer's own pending archival decisions, on My Work.
 // @spec openspec/specs/archief-edepot-handover/spec.md
-import MyArchivalReviews from './components/case/MyArchivalReviews.vue'
 import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
@@ -111,11 +110,12 @@ import CaseListExportAction from './components/export/CaseListExportAction.vue'
 import FileSetItems from './components/fileSet/FileSetItems.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
-import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
 import RequesterProjection from './components/initiator/RequesterProjection.vue'
+// Ask whether this case already exists, before it does.
+// @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+import PartySearchField from './components/party/PartySearchField.vue'
 // A search openregister refused, said where the term was typed.
 // @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
-import CaseSearchRefusal from './components/search/CaseSearchRefusal.vue'
 import CaseTypeFieldFilters from './components/search/CaseTypeFieldFilters.vue'
 // "Besluitvorming" decision-making is owned by decidesk and surfaced here as
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
@@ -210,15 +210,12 @@ import DeelzaakList from './views/cases/DeelzaakList.vue'
 import DeletedCasesView from './views/cases/DeletedCasesView.vue'
 import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
 import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
-import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
 import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
 //     customComponents map, plus the handlers a manifest names by string. ---
 import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
-import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
-import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
 import PmDwellByAssigneeWidget from './views/processMining/PmDwellByAssigneeWidget.vue'
 import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
 import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
@@ -231,6 +228,7 @@ import EndOfDayView from './views/queue/EndOfDayView.vue'
 // @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 import PersonalQueueView from './views/queue/PersonalQueueView.vue'
 import StoreGallery from './views/store/StoreGallery.vue'
+import SubstitutedWork from './views/SubstitutedWork.vue'
 // The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
 // `type: "detail"` page when remove-casetask took the caseTask schema away:
 // CnDetailPage has no entity-source mode, so a detail page can only bind a
@@ -244,9 +242,8 @@ import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 import FirstTodayWidget from './views/widgets/FirstTodayWidget.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
 import WooReportsView from './views/woo/WooReportsView.vue'
+import WorkloadSummaryBar from './views/WorkloadSummaryBar.vue'
 import { leafTab } from './integrations/leafTabs.js'
-// Ask whether this case already exists, before it does.
-// @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
 import {
 	extendTermSelection,
@@ -361,14 +358,6 @@ const HEADLESS_WIDGET_META = {
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
-	// --- A refused search, said rather than rendered as an empty list. ---
-	// @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
-	CaseSearchRefusal: {
-		kind: 'page',
-		component: CaseSearchRefusal,
-		_note: "Cases-page below-header slot. OpenRegister refuses a malformed _search term with 400 {error, position, term} rather than running it as a literal, precisely because a literal returns zero rows and reads as an honest empty result. useObjectStore.fetchCollection() then records the refusal on errors['dossiq-case'] and returns [] anyway, so CnIndexPage draws its empty state over it and the reader retypes a word that was never the problem. Mounted through pages[].slots because the search box is CnIndexPage's; deleted the day the library renders the store's own error above the list.",
-	},
-
 	// --- The filters a case type's own fields offer. ---
 	// @spec openspec/specs/case-search-via-or-unified-search/spec.md
 	CaseTypeFieldFilters: {
@@ -400,10 +389,17 @@ const registry = {
 	},
 
 	// --- Genuine exceptions: no abstract manifest analogue. ---
-	MyWorkView: {
+	// The Assigned to me view's two slots (Cases `defaultSavedViews` my-work
+	// `overrides.slots`): the list itself is manifest config.
+	WorkloadSummaryBar: {
 		kind: 'page',
-		component: MyWorkView,
-		_note: 'Current-user case index (assignee = current uid) in card view; a thin CnIndexPage wrapper injecting the resolved uid because the stock index base-filter does not resolve the @me token.',
+		component: WorkloadSummaryBar,
+		_note: "Below-header slot: the coordinator's open cases per colleague, read from /api/work-queue/workload (403, and so nothing, for anyone else). A colleague's chip opens their open cases on the Cases page.",
+	},
+	SubstitutedWork: {
+		kind: 'page',
+		component: SubstitutedWork,
+		_note: 'Before-collection slot: the cases an active substitution routes to the reader, marked with whose they are and until when, hideable. Not a filter on the list, because these cases are not assigned to the reader.',
 	},
 
 	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
@@ -744,19 +740,6 @@ const registry = {
 		_note: 'CaseDetail Knowledge tab, first section: the Collectives page that explains how this municipality handles this kind of case, followed one reference from the case to its type. dossiq stores no article text and fetches no article body, so a handler whose role group is not in the collective\'s team meets Collectives\' own refusal on the page rather than a copy dossiq made. Nothing renders when the type names no page, because most types will not for a while and a heading over "no work instruction" is a reproach for something an administrator has not done. A lookup that FAILED says so with a retry: a blank panel would read as a type without an instruction.',
 	},
 
-	// --- A reviewer's own pending archival decisions (My Work). ---
-	// `/archival/reviews/pending` reads the session user id, so nothing is narrowed
-	// in the browser. A filter over a wider list would be a weaker thing wearing
-	// the same label.
-	// @spec openspec/specs/archief-edepot-handover/spec.md
-	MyArchivalReviews: {
-		// @custom-widget-ratchet exclude a destruction list entry is not a dossiq object: it lives on openregister's destruction list and no declarative widget reads that surface, and each of the three answers carries a reason, with retain also carrying a new date, collected before the post. Deleted the day the manifest vocabulary has a worklist widget over a leaf endpoint
-		kind: 'widget',
-		component: MyArchivalReviews,
-		...DASHBOARD_TILE_META,
-		_note: 'My Work: the destruction list entries the signed-in person has to sign off, with destroy, retain and transfer, each carrying a reason. An answered entry leaves the list without a reload. An empty list reads as nothing to sign off; a failed read reads as an error with a retry, because the two look identical from an empty array.',
-	},
-
 	// --- Plan a follow-up case (case-actions-menu, row A26). ---
 	// @spec openspec/specs/workflow-definition-engine/spec.md
 	CasePlanFollowUpDialog: {
@@ -787,7 +770,7 @@ const registry = {
 	// @spec openspec/specs/initiator-selection/spec.md
 	InitiatorPicker: {
 		kind: 'form-field',
-		component: InitiatorPicker,
+		component: PartySearchField,
 		appliesTo: [
 			'case.requester',
 			'contactmoment.contact',
@@ -1494,17 +1477,12 @@ const registry = {
 	},
 
 	// --- Dashboard-page slots: Processing time, Deadline monitoring, Process
-	//     mining. Each page owns its heading and its filters; these fill its
-	//     `slots` map. A filter lands in `header-actions` and is therefore an
-	//     `actions` kind; the rest are widgets, carrying the grid metadata the
-	//     validator asks of every widget even though the page's own slot map
-	//     positions them.
+	//     mining. Each page owns its heading and its filters (a case-type
+	//     filter is a pageFilters entry reading its options from the register);
+	//     these fill its `slots` map, carrying the grid metadata the validator
+	//     asks of every widget even though the page's own slot map positions
+	//     them.
 	// @spec openspec/specs/doorlooptijd-dashboard/spec.md
-	DtCaseTypeFilter: {
-		kind: 'actions',
-		component: DtCaseTypeFilter,
-		_note: 'header-actions slot: SLA-bearing case types only. A component rather than a declarative pageFilter because the options are fetched.',
-	},
 	DtChartsWidget: {
 		kind: 'widget',
 		component: DtChartsWidget,
@@ -1544,11 +1522,6 @@ const registry = {
 	// The process-mining page owns the heading and both filters — a widget that
 	// drew its own heading would be the dashboard-in-dashboard antipattern
 	// (hydra#316).
-	PmCaseTypeFilter: {
-		kind: 'actions',
-		component: PmCaseTypeFilter,
-		_note: 'header-actions slot: case-type filter (pageFilters cannot bind dynamic options).',
-	},
 	PmKpiWidget: {
 		kind: 'widget',
 		component: PmKpiWidget,

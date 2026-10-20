@@ -96,9 +96,16 @@ function filterFields(filter) {
 
 describe('the full structure', () => {
 	it('keeps the list, the dashboard and the landing page exactly as the manifest declares them', () => {
-		for (const id of ['Cases', 'Dashboard', 'MyWorkHome']) {
+		for (const id of ['Dashboard', 'MyWorkHome']) {
 			expect(page(builtFull, id), id).toEqual(original(id))
 		}
+		// The list too, but for the team queue view, which the full profile
+		// patches back to the Queue page it had (menu-layout.json `pages`).
+		const withoutQueue = (cases) => ({
+			...cases,
+			config: { ...cases.config, defaultSavedViews: cases.config.defaultSavedViews.filter((view) => view.slug !== 'team-queue') },
+		})
+		expect(withoutQueue(page(builtFull, 'Cases'))).toEqual(withoutQueue(original('Cases')))
 	})
 })
 
@@ -279,7 +286,9 @@ describe('the cases list', () => {
 	})
 
 	it('draws the map with its numbered list and keeps the full profile\'s map (DqZakenKaart)', () => {
-		expect(simple.mapConfig.list).toMatchObject({ title: '{title}', sub: '{identifier}' })
+		expect(simple.mapConfig.list).toMatchObject({ title: '{title}' })
+		// The second line is the case address, falling back to the identifier.
+		expect(simple.mapConfig.list.sub).toContain('{identifier}')
 		const { list, ...rest } = simple.mapConfig
 		const { _basemapNote, _parityNote, plotAll, ...fullMap } = before.mapConfig
 		expect(rest).toEqual(fullMap)
@@ -300,6 +309,7 @@ describe('the cases list', () => {
 			showTitle,
 			countSubtitle,
 			countText,
+			defaultOrder,
 			footerNote,
 			bulkHint,
 			headerButtons,
@@ -420,7 +430,7 @@ describe('the landing page', () => {
 		expect(widget('archival-reviews')).toEqual(
 			withoutNotes(base.find((w) => w.id === 'archival-reviews')),
 		)
-		expect(simple.slots['widget-archival-reviews']).toBe('MyArchivalReviews')
+		expect(widget('archival-reviews').type).toBe('decision-list')
 	})
 
 	it('draws the cases you follow as rows, and loses nothing the table had', () => {
@@ -484,7 +494,7 @@ describe('the landing page', () => {
 		// They are pills on the switch row now (`viewLinks`).
 		expect(simple.config.viewLinks.map((link) => link.route)).toEqual([
 			'PersonalQueue',
-			'MyWork',
+			{ name: 'Cases', query: { savedView: 'default:my-work' } },
 			'EndOfDay',
 		])
 	})
@@ -725,6 +735,27 @@ describe('the landing page', () => {
 		})
 	})
 
+	// DqMijnWerk draws each link pill with the icon of the menu entry it
+	// stands in for, so the pill reads as that entry.
+	it('draws each view link with the icon of the menu entry it replaces', () => {
+		const entries = []
+		const walk = (items) => (items ?? []).forEach((entry) => {
+			entries.push(entry)
+			walk(entry.children)
+		})
+		walk(builtFull.menu)
+		const menuIcon = (route) => entries.find((entry) => entry.route === route && entry.icon)?.icon
+		for (const link of simple.config.viewLinks) {
+			expect(link.icon, link.label).toBeTruthy()
+			// A link to a saved view (an object route) replaces no menu entry by
+			// route, so only a string route is held to its menu entry's icon.
+			if (typeof link.route === 'string') {
+				expect(link.icon, link.label).toBe(menuIcon(link.route))
+			}
+			expect(iconsSource, link.label).toContain(`\n\t${link.icon},\n`)
+		}
+	})
+
 	it('uses icons the app registers', () => {
 		for (const item of pageWidgets(simple).filter((w) =>
 			w.id.startsWith('simple-'),
@@ -784,7 +815,7 @@ describe('the case type list', () => {
 		// A Dutch reader saw "38 case types": the key was in the manifest and
 		// in no catalogue, so the library drew it as written.
 		const nl = JSON.parse(read('l10n', 'nl.json')).translations
-		expect(nl[list.config.countSubtitle]).toBe('{total} zaaktypen')
+		expect(nl[list.config.headerMeta]).toBe('{total} zaaktypen')
 		expect(nl[list.config.searchPlaceholder]).toBe('Zoeken in deze lijst')
 	})
 

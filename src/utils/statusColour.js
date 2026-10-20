@@ -5,7 +5,7 @@
 //
 // `statusType.colour` is a NAME from the NL Design System palette, never a hex
 // value, so a themed install repoints one token and every badge, every board
-// column header and every stepper step follows. The names are the twelve the
+// column header and every stepper step follows. The names are the fourteen the
 // schema enumerates; anything else — an empty colour, a value from an older
 // row, a typo — resolves to grey rather than to nothing, because a badge with
 // no colour at all reads as a rendering fault rather than as an unconfigured
@@ -32,6 +32,8 @@ export const STATUS_COLOURS = [
 	'red-light',
 	'purple',
 	'purple-light',
+	'teal',
+	'teal-light',
 	'grey',
 	'grey-light',
 ]
@@ -54,6 +56,8 @@ const FALLBACK = {
 	'red-light': '#fbe9e8',
 	purple: '#762f8e',
 	'purple-light': '#f2eaf5',
+	teal: '#1d5e66',
+	'teal-light': '#e3f1f3',
 	grey: '#696969',
 	'grey-light': '#f0f0f0',
 }
@@ -133,9 +137,11 @@ export function statusColourStyle(colour) {
  * text over it, the way the Zuiddrecht workplace boards draw every status
  * pill (DqTokens "Statuskleuren": zachte vlakken met donkere tekst).
  *
- * A full hue becomes its own `-light` tint as the background, with the hue
- * darkened towards the main text as the text: `color-mix(in srgb, <hue> 65%,
- * <text>)`. A `-light` tint stays what it was: the tint with the main text.
+ * A full hue becomes its own `-light` tint as the background. The text is the
+ * theme's pill text for that hue (`--nl-color-<hue>-text`) when it names one,
+ * else the hue darkened towards the main text: `color-mix(in srgb, <hue> 65%,
+ * <text>)`. A `-light` tint stays the tint, with the theme's pill text or else
+ * the main text.
  *
  * Computed on the fallback ramps, text on tint: blue 7.20:1, green 6.50:1,
  * orange 5.20:1, red 7.01:1, purple 9.45:1, grey 7.30:1 (all AA). The full
@@ -153,12 +159,28 @@ export function statusColourStyle(colour) {
 export function statusBadgeStyle(colour) {
 	const name = normaliseStatusColour(colour)
 	if (isLightStatusColour(name)) {
-		return statusColourStyle(name)
+		const style = statusColourStyle(name)
+		return { ...style, color: statusTextToken(name.replace(/-light$/, ''), style.color) }
 	}
 	return {
 		backgroundColor: statusColourToken(`${name}-light`),
-		color: `color-mix(in srgb, ${statusColourToken(name)} 65%, var(--color-main-text, #1b1c1d))`,
+		color: statusTextToken(name, `color-mix(in srgb, ${statusColourToken(name)} 65%, var(--color-main-text, #1b1c1d))`),
 	}
+}
+
+/**
+ * The text a status badge sets on a hue's tint: the theme's own pill text
+ * for that hue (`--nl-color-<hue>-text`, the boards' text in the workplace
+ * sets, each at AA on its tint), else the given fallback.
+ *
+ * @param {string} hue A hue name from the palette, without `-light`.
+ * @param {string} fallback The CSS colour when the theme names none.
+ * @return {string} A `var(--nl-color-<hue>-text, <fallback>)` expression.
+ *
+ * @spec openspec/changes/status-badge-text-token/specs/case-types/spec.md#requirement-a-status-badge-sets-the-theme-s-pill-text
+ */
+export function statusTextToken(hue, fallback) {
+	return `var(--nl-color-${hue}-text, ${fallback})`
 }
 
 /**
@@ -181,6 +203,8 @@ export const STATUS_COLOUR_BADGE_VARIANTS = Object.freeze({
 	'red-light': 'error',
 	purple: 'purple',
 	'purple-light': 'purple',
+	teal: 'teal',
+	'teal-light': 'teal',
 	grey: 'default',
 	'grey-light': 'default',
 })

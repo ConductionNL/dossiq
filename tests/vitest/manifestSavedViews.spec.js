@@ -62,7 +62,7 @@ function offersSavedViews(config) {
 describe('saved views on every dossiq index page', () => {
 	it('finds the index pages', () => {
 		expect(indexPages.length).toBeGreaterThan(20)
-		expect(indexPages.map((page) => page.id)).toEqual(expect.arrayContaining(['Cases', 'Tasks', 'Contacts', 'Organisations', 'Queue']))
+		expect(indexPages.map((page) => page.id)).toEqual(expect.arrayContaining(['Cases', 'Tasks', 'Contacts', 'Organisations']))
 	})
 
 	it.each(indexPages.filter((page) => !NO_FILTER_SIDEBAR.includes(page.id)).map((page) => [page.id, page]))('%s offers saved views', (id, page) => {

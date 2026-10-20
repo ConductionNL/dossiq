@@ -92,62 +92,30 @@ test.describe('Case map', () => {
 // (the TransferDetail route is kept for deep links). See
 // feat(nav): streamline work queue.
 
-test.describe('Subsidies intake page', () => {
-	// UNPARKED, AND THE ASSERTION IT WAS WAITING ON WAS THE WRONG ONE.
-	//
-	// The old FIXME(#719) recorded that /subsidies shows "Add Case" rather than
-	// "Add Subsidie", and parked the test until a subsidy-specific create
-	// control appeared. It never will, and it should not: `Subsidies` in
-	// src/manifest.d/50-subsidie.json is an index over register `dossiq`,
-	// schema `case`, narrowed by `filter.caseType`. A subsidie-aanvraag IS a
-	// case — that is the same decision ADR-044 records for grant schemes
-	// becoming case types — so CnIndexPage labels the create button from the
-	// `case` schema's title, and "Add Case" is the correct label.
-	//
-	// So the shell this test pins is not the create button. It is that
-	// /subsidies is a NARROWED case list with its own column set, rather than
-	// the unfiltered Cases index under a different name.
-	// @e2e exclude No canonical spec covers the subsidies index shell. The
-	// subsidie specs describe the keten (voorschot, termijnen, verplichting,
-	// vaststelling) and the settlement of case costs, none of them the page
-	// that lists the aanvragen. This test pins the shell until one is written.
-	test('subsidies index renders the subsidy intake list shell', async ({
+test.describe('Subsidies are a view of the case list', () => {
+	// There are no case-type-specific pages (Ruben, 20 October 2026): the
+	// Subsidies list is the Cases page's default view `subsidies`, narrowed to
+	// the subsidie case type, and the old /subsidies address redirects there.
+	// @e2e exclude No canonical spec covers the subsidies list. The subsidie
+	// specs describe the keten (voorschot, termijnen, verplichting,
+	// vaststelling) and the settlement of case costs, none of them the list
+	// of aanvragen. This test pins the redirect and the view until one is
+	// written.
+	test('/subsidies opens the subsidies view of the case list', async ({
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
-		// "Subsidies" is a group header with no label in the subsidie manifest
-		// fragment, so it renders no clickable nav entry — navigate by route.
 		await navToRoute(page, '/subsidies')
-		// View switcher renders as buttons, not radios.
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
+		await expect(page).toHaveURL(/\/cases\?savedView=default(:|%3A)subsidies/, {
 			timeout: 30_000,
 		})
-		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
-		// Its own page, by its own title.
+		// The view titles the page, so the reader still sees which list this is.
 		await expect(
 			page.getByRole('heading', { name: /^Subsidies$/i }).first(),
 		).toBeVisible({ timeout: 30_000 })
-		// 🔴 THE NARROWING IS THE CLAIM, AND AN ABSENCE IS HOW IT READS.
-		// `Subsidies` declares `config.filter.caseType` and NO `quickFilters`,
-		// while `Cases` declares six of them (All, Mine, Unclaimed, Closed,
-		// Overdue, Due this week) and no filter. So the chip strip is present
-		// on exactly one of the two pages, and its absence here is what says
-		// this is the narrowed subsidy list rather than the Cases index under
-		// another route. Measured rather than assumed: the column headers this
-		// used to assert are not on the page at all, because the seeded
-		// register holds no case of this caseType and the table renders its
-		// empty state instead.
-		for (const chip of ['All', 'Unclaimed', 'Overdue']) {
-			await expect(
-				page.getByRole('tab', { name: chip, exact: true }),
-				`the subsidies index declares no quick filters, so there is no ${chip} chip`,
-			).toHaveCount(0)
-		}
-		// The create control carries the `case` schema's label, because a
-		// subsidie-aanvraag IS a case. This is the assertion the old FIXME was
-		// waiting to see inverted.
+		// A subsidie-aanvraag IS a case, so the create control is the case one.
 		await expect(
-			page.getByRole('button', { name: /^Add (Item|Case)$/ }).first(),
+			page.getByRole('button', { name: /^(Add (Item|Case)|New case)$/ }).first(),
 		).toBeVisible({ timeout: 30_000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 		expect(errors, errors.join('\n')).toEqual([])

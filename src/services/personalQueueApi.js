@@ -19,26 +19,6 @@ import { generateUrl } from '@nextcloud/router'
 const BASE = '/apps/dossiq/api/personal-queue'
 
 /**
- * Everything waiting on the reader, most pressing first.
- *
- * @return {Promise<object>} The queue: items, groups, hidden groups and unavailable sources.
- *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
- */
-export async function fetchQueue() {
-	const { data } = await axios.get(generateUrl(BASE))
-
-	return {
-		items: data?.items ?? [],
-		groups: data?.groups ?? [],
-		groupBy: data?.groupBy ?? 'source',
-		hiddenGroups: data?.hiddenGroups ?? [],
-		unavailable: data?.unavailable ?? [],
-		total: Number(data?.total ?? 0),
-	}
-}
-
-/**
  * The cases and tasks the reader may close their day on.
  *
  * @return {Promise<{items: Array, unavailable: Array}>} The candidates.
@@ -49,44 +29,6 @@ export async function fetchEndOfDay() {
 	const { data } = await axios.get(generateUrl(`${BASE}/end-of-day`))
 
 	return { items: data?.items ?? [], unavailable: data?.unavailable ?? [] }
-}
-
-/**
- * Hide one group until tomorrow.
- *
- * This is the ONLY way an item leaves the reader's screen by their own hand,
- * and it is a group at a time on purpose. An item cannot be dismissed while
- * the work behind it stands, so there is no call here that would.
- *
- * @param {string} group The group key.
- * @return {Promise<Array>} The groups hidden after the call.
- *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
- */
-export async function hideGroupForToday(group) {
-	const { data } = await axios.post(
-		generateUrl(`${BASE}/groups/${encodeURIComponent(group)}/hide`),
-		{},
-	)
-
-	return data?.hiddenGroups ?? []
-}
-
-/**
- * Show a group the reader hid.
- *
- * @param {string} group The group key.
- * @return {Promise<Array>} The groups hidden after the call.
- *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
- */
-export async function showGroupAgain(group) {
-	const { data } = await axios.post(
-		generateUrl(`${BASE}/groups/${encodeURIComponent(group)}/show`),
-		{},
-	)
-
-	return data?.hiddenGroups ?? []
 }
 
 /**

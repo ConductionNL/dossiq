@@ -191,7 +191,6 @@
 						"title": "Organisation parts",
 						"content": {
 							"ariaLabel": "Organisation parts",
-							"variant": "segmented",
 							"tabs": [
 								{
 									"label": "Overview",

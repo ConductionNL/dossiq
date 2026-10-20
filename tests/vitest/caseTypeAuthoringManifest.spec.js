@@ -80,10 +80,10 @@ function chip(label) {
 }
 
 describe('statusType carries a colour and a list visibility', () => {
-	it('enumerates twelve colours rather than accepting a hex value', () => {
+	it('enumerates fourteen colours rather than accepting a hex value', () => {
 		const colour = schema('statusType').properties.colour
 		expect(colour.type).toBe('string')
-		expect(colour.enum).toHaveLength(12)
+		expect(colour.enum).toHaveLength(14)
 		for (const value of colour.enum) {
 			expect(value).not.toMatch(/^#/)
 		}
@@ -400,11 +400,11 @@ describe('the Case types index shows one row per case type', () => {
 		expect(current.filter).toEqual({ supersededBy: 'IS NULL' })
 	})
 
-	it('spells the empty test as the sentinel the Queue page uses', () => {
+	it('spells the empty test as the sentinel the team queue uses', () => {
 		// `assignee: "IS NULL"` is the literal sentinel every OpenRegister
 		// condition builder matches by value. A different spelling here would
 		// contribute no condition at all and list every version.
-		const queue = page('Queue').config.filter.assignee
+		const queue = page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters.assignee
 		expect(chips()[0].filter.supersededBy).toBe(queue)
 	})
 

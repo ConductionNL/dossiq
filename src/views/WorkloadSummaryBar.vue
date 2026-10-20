@@ -3,7 +3,7 @@
   - SPDX-License-Identifier: EUPL-1.2
 -->
 <template>
-	<section v-if="handlers.length > 0" class="workload-summary" data-testid="workload-summary">
+	<section v-if="rows.length > 0" class="workload-summary" data-testid="workload-summary">
 		<h2 class="workload-summary__title">
 			{{ t('dossiq', 'Team workload') }}
 		</h2>
@@ -22,14 +22,20 @@
 <script>
 import { CnQuickFilterBar } from '@conduction/nextcloud-vue'
 import { getCurrentUser } from '@nextcloud/auth'
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
 
 /**
  * The team's open work per colleague, as a strip of name chips with a count,
- * rendered on My Work only when GET /api/work-queue/workload succeeds (the
- * caller is a coordinator). The reader's own chip is the active one; choosing
- * another name emits `select` with that handler's user id. Renders nothing
- * when there is no data: the parent swallows a 403 for non-coordinators, so
- * this component never needs to tell "no access" from "no data".
+ * on My Work's `below-header` slot. It reads GET /api/work-queue/workload
+ * itself, which answers only a coordinator; anyone else gets a 403 and the
+ * strip renders nothing, so it never needs to tell "no access" from "no data".
+ * The reader's own chip is the active one; choosing another name emits
+ * `select` and opens that colleague's open cases on the Cases page.
+ *
+ * The chips are the strip's own rather than the index page's quick filters:
+ * the names are only known at runtime, only a coordinator sees them, and a
+ * choice leaves this page for the Cases list.
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
@@ -39,14 +45,24 @@ export default {
 	components: { CnQuickFilterBar },
 
 	props: {
-		/** Per-handler open-case counts, e.g. [{ handler, openCaseCount, displayName? }]. */
+		/**
+		 * Per-handler open-case counts, e.g. [{ handler, openCaseCount, displayName? }].
+		 * When not given the strip reads them from the workload endpoint.
+		 */
 		handlers: {
 			type: Array,
-			default: () => [],
+			default: null,
 		},
 	},
 
 	emits: ['select'],
+
+	data() {
+		return {
+			/** The workload the strip read itself. */
+			loaded: [],
+		}
+	},
 
 	computed: {
 		/** The signed-in user's id, or '' when nobody is signed in. */
@@ -63,10 +79,15 @@ export default {
 			}))
 		},
 
+		/** The workload shown: the prop when given, else what the strip read. */
+		rows() {
+			return Array.isArray(this.handlers) ? this.handlers : this.loaded
+		},
+
 		/** The handlers with the reader's own row first, the rest as the server ranked them. */
 		ordered() {
-			const own = this.handlers.filter((row) => row.handler === this.ownUid)
-			return [...own, ...this.handlers.filter((row) => row.handler !== this.ownUid)]
+			const own = this.rows.filter((row) => row.handler === this.ownUid)
+			return [...own, ...this.rows.filter((row) => row.handler !== this.ownUid)]
 		},
 
 		/** The open-case count per chip, in chip order. */
@@ -80,17 +101,49 @@ export default {
 		},
 	},
 
+	mounted() {
+		if (!Array.isArray(this.handlers)) {
+			this.fetchWorkload()
+		}
+	},
+
 	methods: {
 		/**
-		 * Emit the handler behind a chosen chip.
+		 * Read the team workload; a refusal (not a coordinator) or a failure
+		 * leaves the strip empty.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		async fetchWorkload() {
+			try {
+				const response = await axios.get(generateUrl('/apps/dossiq/api/work-queue/workload'))
+				this.loaded = (response.data && response.data.handlers) || []
+			} catch {
+				this.loaded = []
+			}
+		},
+
+		/**
+		 * Emit the handler behind a chosen chip and open a colleague's open
+		 * cases; the reader's own chip stays on this page.
 		 *
 		 * @param {number|null} index The chosen chip.
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		choose(index) {
 			const row = index === null ? null : this.ordered[index]
-			if (row) {
-				this.$emit('select', row.handler)
+			if (!row) {
+				return
 			}
+			this.$emit('select', row.handler)
+			if (row.handler === this.ownUid || !this.$router) {
+				return
+			}
+			this.$router.push({
+				name: 'Cases',
+				query: { assignee: row.handler, isFinalStatus: 'false', statusHiddenInLists: 'false', isDraft: 'false' },
+			})
 		},
 	},
 }

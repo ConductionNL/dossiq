@@ -17,13 +17,11 @@
 	<CnDialog
 		:name="t('dossiq', 'Add location')"
 		:eyebrow="eyebrow"
+		width="wizard"
 		data-testid="case-location-dialog"
 		@closing="$emit('close')">
 		<div class="case-location-dialog">
-			<p class="case-location-dialog__label">
-				{{ t('dossiq', 'Search an address') }}
-			</p>
-			<AddressSearch data-testid="case-location-search" @select="onSelect" />
+			<CnAddressSearch data-testid="case-location-search" @select="onSelect" />
 			<p class="case-location-dialog__hint">
 				{{ t('dossiq', 'Searches the PDOK Locatieserver. Only addresses from the BAG can be saved.') }}
 			</p>
@@ -101,7 +99,7 @@
 </template>
 
 <script>
-import { CnDialog, CnMapWidget } from '@conduction/nextcloud-vue'
+import { CnAddressSearch, CnDialog, CnMapWidget } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
@@ -111,7 +109,6 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import MapMarkerOutline from 'vue-material-design-icons/MapMarkerOutline.vue'
-import AddressSearch from '../components/map/AddressSearch.vue'
 import { lookupParcel } from '../services/brkApi.js'
 import { caseLocationRecord, parcelOf, saveCaseLocation } from '../services/caseLocationApi.js'
 import { fetchCaseSummary } from '../services/caseSummary.js'
@@ -124,7 +121,7 @@ export default {
 	name: 'CaseLocationDialog',
 
 	components: {
-		AddressSearch,
+		CnAddressSearch,
 		CnDialog,
 		CnMapWidget,
 		MapMarkerOutline,
@@ -145,7 +142,7 @@ export default {
 
 	data() {
 		return {
-			/** What AddressSearch emitted for the chosen address, or null. */
+			/** What the address search emitted for the chosen address, or null. */
 			chosen: null,
 			/** The configured WMS/WFS layers, `{ id, title, type, url, layerName, isDefault }`. */
 			layers: [],
@@ -320,7 +317,7 @@ export default {
 		/**
 		 * An address was chosen: look up what the registers say about it.
 		 *
-		 * @param {{result: object, coordinates: object|null, address: string}} chosen What AddressSearch emitted.
+		 * @param {{result: object, coordinates: object|null, address: string}|null} chosen What the address search emitted; null when it was cleared.
 		 * @spec openspec/specs/case-dashboard-view/spec.md
 		 */
 		async onSelect(chosen) {
@@ -369,37 +366,43 @@ export default {
 .case-location-dialog {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
-}
-
-.case-location-dialog__label {
-	margin: 0;
-	font-weight: bold;
+	gap: 16px;
 }
 
 .case-location-dialog__hint {
 	margin: 0;
 	color: var(--color-text-maxcontrast);
+	font-size: 13px;
 }
 
 .case-location-dialog__map {
 	min-height: 200px;
+	border-radius: 8px;
+	overflow: hidden;
 }
 
+/* The map takes the row; the layer list beside it is 200px. */
 .case-location-dialog__map-row {
 	display: grid;
-	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+	grid-template-columns: minmax(0, 1fr) 200px;
 	gap: 12px;
 }
 
 .case-location-dialog__layers {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
 	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
-	padding: 8px 12px;
+	border-radius: 8px;
+	padding: 10px 12px;
 }
 
 .case-location-dialog__layers legend {
-	font-weight: bold;
+	padding: 0 4px;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.2;
 }
 
 .case-location-dialog__facts {
@@ -409,28 +412,38 @@ export default {
 }
 
 .case-location-dialog__card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
-	padding: 12px 16px;
+	border-radius: 12px;
+	padding: 14px 16px;
 }
 
 .case-location-dialog__card h3 {
-	margin: 0 0 8px;
-	font-size: 16px;
+	margin: 0;
+	font-size: 17px;
+	font-weight: 700;
+	line-height: 1.2;
 }
 
 .case-location-dialog__card dl {
 	display: grid;
 	grid-template-columns: max-content 1fr;
-	gap: 4px 16px;
+	gap: 8px 16px;
 	justify-items: start;
 	margin: 0;
+	padding: 0;
+	font-size: 14px;
 }
 
 .case-location-dialog__card dt,
 .case-location-dialog__card dd {
 	text-align: start;
 	width: auto;
+	margin: 0;
+	padding: 0;
+	line-height: 1.4;
 }
 
 .case-location-dialog__card dt {
@@ -438,8 +451,7 @@ export default {
 }
 
 .case-location-dialog__card dd {
-	margin: 0;
-	font-weight: bold;
+	font-weight: 500;
 }
 
 @media (max-width: 600px) {

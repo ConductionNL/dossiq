@@ -35,7 +35,7 @@ import {
 	RUN_PREFIX,
 	showObject,
 } from '../helpers/fixtures.ts'
-import { dismissSupportDialog } from '../helpers/nav.ts'
+import { dismissSupportDialog, expectSort } from '../helpers/nav.ts'
 import {
 	// WHY THESE TESTS USED TO SKIP ON EVERY RUN, diagnosed by #2480 and kept here
 	// because the reason was not what the skip said. The old guards waited for a
@@ -47,8 +47,10 @@ import {
 	// and the skip reason's note about Dutch locators answered a question nobody
 	// had asked. The tests below assert the actions the page offers instead.
 
+	CasesSavedView,
 	SubstitutionAdmin,
 	SubstitutionPersonalSettings,
+	VIEW_OVERRIDES_APPLIED,
 } from '../helpers/page-components.ts'
 
 /** The dossiq controller surface these scenarios are actually enforced on. */
@@ -831,23 +833,20 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * (`PLAIN_USER` covered by `ADMIN_USER`), so nothing here needs its own
 	 * fixture and nothing here writes one.
 	 *
-	 * MUTATION-CHECKED, because "a test that cannot fail" is what this file is
-	 * the rewrite of: dropping `this.loadSubstitutedWork()` from
-	 * `MyWorkCards.vue` reds the marker assertion below and the three vitest
-	 * cases in `tests/vitest/substitutedWorkOnMyWork.spec.js` that cover the
-	 * same three claims off a stubbed resolver.
+	 * Assigned to me is the `my-work` default view of the Cases index, and
+	 * the substituted group is that view's `before-collection` slot
+	 * (`SubstitutedWork.vue`). Dropping `this.load()` from its `mounted()`
+	 * reds the marker assertion below and the vitest cases in
+	 * `tests/vitest/substitutedWorkOnMyWork.spec.js`.
 	 */
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#waarnemer-sees-substituted-work-in-my-work
 	test('the absentee in-scope case is on the waarnemer My work, marked and hideable', async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/dossiq/my-work')
+		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs the view slot: openspec/changes/lists-are-views/restore.md section 2')
+		await page.goto(`/index.php/apps/dossiq${CasesSavedView('my-work')}`)
 		await dismissSupportDialog(page)
-		// The My Work route renders no page heading (measured on a CI runner
-		// 2026-08-04) — assert the view by a control it does render.
-		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
-			timeout: 15000,
-		})
+		await expectSort(page, 'Urgency')
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 
 		const group = page.getByTestId('substituted-work')

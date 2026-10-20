@@ -828,7 +828,7 @@
         "digest": "7cb7dc7e787418460a092158c4a9ee6dcfb59cb97b1c0811cfab2497bb676497"
     },
     "lib/Settings/dossiq_register.json::statusType": {
-        "version": "1.7.2",
+        "version": "1.7.3",
         "digest": "ca4565a41c50db0fa2318923f1452c2a4443e1911cda441cb907f200ea98d70b"
     },
     "lib/Settings/dossiq_register.json::supplier": {
@@ -1701,6 +1701,10 @@
     },
     "lib/Settings/register.d/99-case-type-overview-cards.json::caseType": {
         "version": "1.25.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-type-palette.json::caseType": {
+        "version": "1.26.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/dso-omgevingsloket.json::case": {
