@@ -4046,9 +4046,9 @@
 					},
 					{
 						"id": "case-document-review",
-						"type": "document-review",
+						"type": "document-relevance-review",
 						"title": "Review",
-						"_note": "document-review (woo-review-triage and woo-review-recall-and-stopping, generic per decision 182), board DqWooReview: relevance apart from the verdict, the stopping rule and recall samples, batches and reviewers, and what is still open. A tab beside Files because review is work on the case's documents. On a case whose case type does not set documentReview.enabled it says so in one sentence.",
+						"_note": "document-relevance-review (woo-review-triage and woo-review-recall-and-stopping, generic per decision 182), board DqWooReview: relevance apart from the verdict, the stopping rule and recall samples, batches and reviewers, and what is still open. A tab beside Files because review is work on the case's documents. On a case whose case type does not set documentReview.enabled it says so in one sentence.",
 						"content": {}
 					},
 					{
