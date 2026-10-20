@@ -108,9 +108,13 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  *
  * Moved 13 -> 12 by `lists-are-views`: the custom MyWork page is a view of
  * the Cases list. Both numbers drop, for the same reason as above.
+ *
+ * The unit TaskDetail spent comes back with task-page-on-the-manifest: the
+ * task page is a `type: "detail"` page on `entitySource: "tasks"` again, so
+ * the count after the pane equals the count before it.
  */
 const CUSTOM_PAGE_COUNT_BEFORE = 11
-const CUSTOM_PAGE_COUNT_AFTER = 12
+const CUSTOM_PAGE_COUNT_AFTER = 11
 
 /**
  * One page as the manifest declares it.
@@ -230,15 +234,15 @@ describe('the case-tasks widget after the retype', () => {
 		).toBe(false)
 	})
 
-	it('adds no page, and spends exactly one ratchet unit on the retype', () => {
+	it('adds no page, and spends no ratchet unit', () => {
 		const pages = manifest().pages
-		// The pane still adds and retypes nothing: it is a WIDGET on the case
-		// page. The one unit above the pre-pane count belongs to TaskDetail,
-		// and to nothing else.
+		// The pane adds and retypes nothing: it is a WIDGET on the case page.
+		// TaskDetail, which spent one unit while it was a custom view, is a
+		// typed detail page again (task-page-on-the-manifest).
 		const custom = pages.filter((entry) => entry.type === 'custom')
 		expect(custom).toHaveLength(CUSTOM_PAGE_COUNT_AFTER)
-		expect(CUSTOM_PAGE_COUNT_AFTER - CUSTOM_PAGE_COUNT_BEFORE).toBe(1)
-		expect(custom.map((entry) => entry.id)).toContain('TaskDetail')
+		expect(CUSTOM_PAGE_COUNT_AFTER - CUSTOM_PAGE_COUNT_BEFORE).toBe(0)
+		expect(custom.map((entry) => entry.id)).not.toContain('TaskDetail')
 
 		// The retype the pane could have been given instead is a page of its
 		// own, which is the thing this asserts: no page renders the case's
@@ -247,8 +251,7 @@ describe('the case-tasks widget after the retype', () => {
 
 		// NO page binds `caseTask` any more. The Tasks index moved to
 		// `entitySource: "tasks"` and reads the engine's inbox; TaskDetail
-		// became `type: "custom"` over TaskDetailView and reads the engine
-		// too. Both bind no schema at all, which is what remove-casetask
+		// is a detail page on the same source and reads the engine too. Both bind no schema at all, which is what remove-casetask
 		// needs before the schema can be deleted.
 		expect(
 			pages
@@ -305,25 +308,15 @@ describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
 		expect(taskLinks).toEqual([])
 	})
 
-	it('is a custom page bound to a component the registry answers', () => {
-		// `type: "custom"` with no `component` is the one shape the manifest
-		// schema rejects outright; a `component` no registry key answers is
-		// the shape that renders a console warning and an empty page, which
-		// is the failure this catches.
+	it('is a detail page on the tasks entity source', () => {
+		// task-page-on-the-manifest: the library reads one task, so the page is
+		// typed again and no custom view or registry page stands behind it.
 		const detail = page('TaskDetail')
-		expect(detail.type).toBe('custom')
-		expect(detail.component).toBe('TaskDetailView')
-
-		const entry = registryEntry('TaskDetailView')
-		expect(entry).toContain("kind: 'page'")
-		expect(entry).toContain('component: TaskDetailView')
-		expect(entry).toContain('_note:')
-
-		const match = registrySource().match(/^import TaskDetailView from '(.+)'$/m)
-		expect(match, 'TaskDetailView must be imported').not.toBeNull()
-		expect(
-			fs.existsSync(path.join(ROOT, 'src', match[1].replace(/^\.\//, ''))),
-		).toBe(true)
+		expect(detail.type).toBe('detail')
+		expect(detail.config.entitySource).toBe('tasks')
+		expect(detail).not.toHaveProperty('component')
+		expect(registrySource()).not.toMatch(/^\tTaskDetailView: \{/m)
+		expect(fs.existsSync(path.join(ROOT, 'src/views/tasks/TaskDetailView.vue'))).toBe(false)
 	})
 
 	it('binds no register and no schema, which is the point of the retype', () => {
@@ -337,62 +330,36 @@ describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
 		expect(page('TaskDetail')).not.toHaveProperty('slots')
 	})
 
-	it('mounts every widget the detail page carried', () => {
-		// The widgets are no longer manifest entries, so the check moves to
-		// the component that renders them. All five are here: the case card,
-		// the waiting-case section, the notes and appointment leaves and the
-		// history that used to be a sidebar tab.
-		const view = fs.readFileSync(
-			path.join(ROOT, 'src/views/tasks/TaskDetailView.vue'),
-			'utf8',
-		)
-		for (const child of [
-			'TaskWaitingCaseSection',
-			'TaskNotesLeaf',
-			'TaskEventsLeaf',
-			'TaskAuditLeaf',
-		]) {
-			expect(view, `${child} must be mounted`).toContain(`<${child}`)
+	it('carries every widget the custom view mounted', () => {
+		// The notes, appointments and history leaves and the waiting-case
+		// section are dossiq widgets; the case card is the library facts
+		// widget reading the case.
+		const config = page('TaskDetail').config
+		const types = [...config.widgets, ...config.sideColumn].map((widget) => widget.type)
+		for (const type of ['task-notes', 'task-events', 'task-audit', 'task-waiting-case', 'checklist']) {
+			expect(types, `${type} must be on the page`).toContain(type)
 		}
-		// The case card is the library's facts widget, not an app component.
-		expect(view).toContain('data-testid="task-case-card"')
-		expect(view).toContain('<CnFactsWidget :content="caseFacts"')
+		const caseCard = config.sideColumn.find((widget) => widget.id === 'side-case')
+		expect(caseCard.type).toBe('facts')
+		expect(caseCard.content.source).toEqual({ register: 'dossiq', schema: 'case', id: '@object.objectUuid' })
 	})
 
 	it('drives the lifecycle with the engine verbs, not CnLifecycleActions', () => {
-		// 🔴 The mistake this pins down has been made once already, on the
-		// case pane. CnLifecycleActions asks OpenRegister for an OBJECT's
-		// available transitions (/api/objects/{uuid}/available-actions); an
-		// engine task is not an object, so it 404s and no button renders. It
-		// only shows in a browser, because every unit test stubs the
-		// component away.
-		const view = fs.readFileSync(
-			path.join(ROOT, 'src/views/tasks/TaskDetailView.vue'),
-			'utf8',
-		)
-		//
-		// Matched on the IMPORT and the TAG, not on the bare name: the
-		// component's own header comment explains at length why the strip is
-		// not used, and a substring check would fail on the explanation.
-		expect(view).not.toMatch(/^import .*CnLifecycleActions/m)
-		expect(view).not.toContain('<CnLifecycleActions')
-		expect(view).toContain('engineTasks.invoke(')
+		// 🔴 CnLifecycleActions asks OpenRegister for an OBJECT's available
+		// transitions; an engine task is not an object, so it 404s and no
+		// button renders. The verbs come from the tasks source; Finish goes
+		// through dossiq's own completion route.
+		const config = page('TaskDetail').config
+		expect(config).not.toHaveProperty('lifecycleActions')
+		expect(config.verbEndpoints).toEqual({ complete: '/apps/dossiq/api/case-tasks/{id}/complete' })
 	})
 
-	it('keeps the waiting-case section as a plain child, and the case card is the library widget', () => {
-		// They are no longer registry entries: nothing in the manifest names
-		// them any more, and a registry key no manifest resolves is dead
-		// configuration. The FILES stay, because the page still mounts them.
-		expect(registrySource()).not.toMatch(/^\tTaskCaseCard: \{/m)
-		expect(registrySource()).not.toMatch(/^\tTaskWaitingCaseSection: \{/m)
+	it('names the waiting-case section as a widget, and the case card is the library widget', () => {
 		// TaskCaseCard is gone: the card is CnFactsWidget over the case.
+		expect(registrySource()).not.toMatch(/^\tTaskCaseCard: \{/m)
+		expect(registrySource()).toMatch(/^\t'task-waiting-case': \{/m)
 		expect(
 			fs.existsSync(path.join(ROOT, 'src/components/tasks/TaskCaseCard.vue')),
 		).toBe(false)
-		expect(
-			fs.existsSync(
-				path.join(ROOT, 'src/components/flow/TaskWaitingCaseSection.vue'),
-			),
-		).toBe(true)
 	})
 })

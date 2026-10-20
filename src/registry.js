@@ -108,6 +108,8 @@ import CaseListExportAction from './components/export/CaseListExportAction.vue'
 // The items of a frozen file set with a per-item document compare, configured per case type (decision 182).
 // @spec openspec/specs/document-compare/spec.md
 import FileSetItems from './components/fileSet/FileSetItems.vue'
+// The task page's leaves, as detail widgets (task-page-on-the-manifest).
+import TaskWaitingCaseSection from './components/flow/TaskWaitingCaseSection.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
 import RequesterProjection from './components/initiator/RequesterProjection.vue'
@@ -123,6 +125,9 @@ import CaseTypeFieldFilters from './components/search/CaseTypeFieldFilters.vue'
 import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
+import TaskAuditLeaf from './components/tasks/TaskAuditLeaf.vue'
+import TaskEventsLeaf from './components/tasks/TaskEventsLeaf.vue'
+import TaskNotesLeaf from './components/tasks/TaskNotesLeaf.vue'
 // Send digital post — the CaseDetail header action's compose surface.
 // @spec openspec/specs/berichtenbox-integration/spec.md
 import AssessmentDecisionDialog from './dialogs/AssessmentDecisionDialog.vue'
@@ -229,12 +234,6 @@ import EndOfDayView from './views/queue/EndOfDayView.vue'
 import PersonalQueueView from './views/queue/PersonalQueueView.vue'
 import StoreGallery from './views/store/StoreGallery.vue'
 import SubstitutedWork from './views/SubstitutedWork.vue'
-// The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
-// `type: "detail"` page when remove-casetask took the caseTask schema away:
-// CnDetailPage has no entity-source mode, so a detail page can only bind a
-// register and a schema. Route and page id unchanged, so deep links resolve.
-// @spec openspec/specs/task-management/spec.md
-import TaskDetailView from './views/tasks/TaskDetailView.vue'
 import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
 import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // The Dashboard's My work tile, over OpenRegister's task engine.
@@ -788,12 +787,45 @@ const registry = {
 		_note: "The Add party form's Role field. The $ref on role.roleType makes the library offer EVERY roleType row this instance holds, including the seats of case types this case is not, and it cannot skip the generic Gemachtigde a type declares itself. This narrows the list to the case type's own rows followed by the generic ones, and drops a generic row whose key the type already claims. The ordering and the deduplication live in src/services/roleTypeOptions.js so they are testable without mounting anything. Same standing limitation as InitiatorPicker above: @conduction/nextcloud-vue 3.2.0 validates a form-field entry (CnAppRoot requires `appliesTo`) but does not yet mount one into the form dialog, so until it does the field falls back to the library's own object picker and this is the declaration of what it should be.",
 	},
 
-	// TaskWaitingCaseSection is NOT a registry entry any more, and neither is
-	// TaskCaseCard. Both were resolved through TaskDetail's `slots` map while
-	// that page was `type: "detail"`; the page is now `type: "custom"` and
-	// mounts them as plain child components of TaskDetailView, the same way
-	// WorkflowTab mounts WorkflowEditor. A registry entry no manifest names
-	// resolves for nobody and is dead configuration.
+	// --- The task page's own leaves, as detail widgets (task-page-on-the-manifest). ---
+	// The task page is a manifest detail page on `entitySource: "tasks"`; these
+	// four are the parts of it no library widget can draw, because each reads a
+	// TASK-anchored engine endpoint and every library leaf reads an OBJECT. Each
+	// takes the page's record id as `objectId`. The case card is not here: it is
+	// the library `facts` widget reading the case through `source`.
+	// @spec openspec/changes/task-page-on-the-manifest/specs/task-management/spec.md#requirement-the-task-page-is-a-manifest-detail-page
+	'task-notes': {
+		// @custom-widget-ratchet exclude an engine task is not an OpenRegister object: its notes live behind /api/flow-tasks/{uuid}/notes and CnNotesCard builds only /objects/{register}/{schema}/{id}/notes
+		kind: 'widget',
+		chrome: 'card',
+		component: TaskNotesLeaf,
+		...PANEL_WIDGET_META,
+		_note: 'TaskDetail Overview tab, Notes (DqTaak): the task\'s notes from the engine, add one, remove your own.',
+	},
+	'task-events': {
+		// @custom-widget-ratchet exclude an engine task is not an OpenRegister object: its appointments live behind /api/flow-tasks/{uuid}/events and the calendar leaf reads an object's events
+		kind: 'widget',
+		chrome: 'card',
+		component: TaskEventsLeaf,
+		...PANEL_WIDGET_META,
+		_note: 'TaskDetail Overview tab, Appointments (DqTaak): the calendar events linked to the task.',
+	},
+	'task-audit': {
+		// @custom-widget-ratchet exclude the engine keeps its own append-only trail at /api/flow-tasks/{uuid}/audit, with performer type and authorization, and the audit-trail widget reads an object's trail
+		kind: 'widget',
+		chrome: 'card',
+		component: TaskAuditLeaf,
+		...PANEL_WIDGET_META,
+		_note: 'TaskDetail History tab and the side History card (DqTaak): the engine\'s trail for this task. `content.open: true` shows the entries without the disclosure.',
+	},
+	'task-waiting-case': {
+		// @custom-widget-ratchet exclude the case a suspended flow run waits on is found from the run on the engine task and named from the case object; no declared widget follows a run to its case
+		kind: 'widget',
+		chrome: 'card',
+		component: TaskWaitingCaseSection,
+		...PANEL_WIDGET_META,
+		_note: 'TaskDetail side card (DqTaak "Wat deze taak tegenhoudt"): the case a flow run is waiting on, with a link to it. Draws nothing for a task no run waits on, so the manifest hides the card with visibleWhen on runUuid.',
+	},
 
 	// --- Send digital post, the CaseDetail header action (digital-post-consumes-integriq). ---
 	// @spec openspec/specs/berichtenbox-integration/spec.md
@@ -930,14 +962,6 @@ const registry = {
 		component: CaseLocationMap,
 		...PANEL_WIDGET_META,
 		_note: 'Replaces the Locations list that was the second section of the retired Objects and locations tab. `case-location` already carries latitude and longitude, so the addresses were a table of coordinates nobody could picture. A row with no usable pair is skipped rather than plotted at (0, 0), which is open water and looks like a real pin.',
-	},
-
-	// --- The task page (`/tasks/:id`), over the engine (remove-casetask 2.1). ---
-	// @spec openspec/specs/task-management/spec.md
-	TaskDetailView: {
-		kind: 'page',
-		component: TaskDetailView,
-		_note: "The task page reads OpenRegister's task ENGINE, which is not an OpenRegister object, and there is no typed page that can. CnDetailPage takes objectType/objectId and resolves them through the object store; it has no entitySource mode, so a type:detail page can only bind a register and a schema, and the schema it bound is the one remove-casetask deletes. The route, the page id and every deep link are unchanged. It mounts TaskCaseCard and TaskWaitingCaseSection as plain children, reads the notes, appointments and history leaves from the task-anchored endpoints (the object-anchored library widgets have no object to read), and drives the lifecycle with the engine's own verbs through invoke(uuid, verb): CnLifecycleActions asks /api/objects/{uuid}/available-actions, which 404s for a task.",
 	},
 
 	// --- The Dashboard's My work tile (remove-casetask 2.3). ---

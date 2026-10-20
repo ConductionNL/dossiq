@@ -86,8 +86,8 @@ import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
  * the instance locale is not forced, so a label match would be a locale
  * dependency. The testids are not.
  */
-/** The task page's root, rendered by src/views/tasks/TaskDetailView.vue. */
-const TASK_PAGE = '[data-testid="task-detail-page"]'
+/** The task page's root: the TaskDetail manifest detail page. */
+const TASK_PAGE = '[data-testid="cn-detail-page"]'
 
 const COMPLETE_BUTTON = '[data-testid="case-task-pane-verb-complete"]'
 const CANCEL_BUTTON = '[data-testid="case-task-pane-verb-cancel"]'
