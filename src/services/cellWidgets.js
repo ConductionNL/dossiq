@@ -17,7 +17,6 @@
 // formatter first; add an entry here only when the cell has a state to show.
 
 import CaseStateMarkersCell from '../components/cells/CaseStateMarkersCell.vue'
-import DeadlineCountdownCell from '../components/cells/DeadlineCountdownCell.vue'
 import DwellDaysCell from '../components/cells/DwellDaysCell.vue'
 import LensedValueCell from '../components/cells/LensedValueCell.vue'
 import PriorityBadgeCell from '../components/cells/PriorityBadgeCell.vue'
@@ -25,11 +24,6 @@ import StatusBadgeCell from '../components/cells/StatusBadgeCell.vue'
 import UnreadIndicatorCell from '../components/cells/UnreadIndicatorCell.vue'
 
 export default {
-	// The Deadline column on the Cases index: days left, days overdue past
-	// the deadline, empty when the case has none.
-	// @spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md
-	deadlineCountdown: DeadlineCountdownCell,
-
 	// The Days in status column on the Cases index: how long the case has been
 	// where it is, and a chip when that is longer than the status allows. The
 	// number is held on the case, which is what makes the column sortable on

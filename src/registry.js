@@ -100,11 +100,6 @@ import CaseTypeRulesWidget from './components/caseType/CaseTypeRulesWidget.vue'
 // @spec openspec/specs/case-configuration-i18n/spec.md
 import CaseTypeTranslationsWidget from './components/caseType/CaseTypeTranslationsWidget.vue'
 import CaseTypeWorkflowEditorWidget from './components/caseType/CaseTypeWorkflowEditorWidget.vue'
-// Case-list CSV/Excel export via the OR export leaf — actions-slot component
-// on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
-// export-leaf URL client-side; no dossiq-side serialization (ADR-022).
-// @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
-import CaseListExportAction from './components/export/CaseListExportAction.vue'
 // The items of a frozen file set with a per-item document compare, configured per case type (decision 182).
 // @spec openspec/specs/document-compare/spec.md
 import FileSetItems from './components/fileSet/FileSetItems.vue'
@@ -224,9 +219,6 @@ import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
 import EndOfDayView from './views/queue/EndOfDayView.vue'
-// One personal queue fed by the declared sources (one-personal-queue).
-// @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
-import PersonalQueueView from './views/queue/PersonalQueueView.vue'
 import StoreGallery from './views/store/StoreGallery.vue'
 import SubstitutedWork from './views/SubstitutedWork.vue'
 // The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
@@ -364,22 +356,6 @@ const registry = {
 		kind: 'page',
 		component: CaseTypeFieldFilters,
 		_note: "Cases-page after-search slot. The values a handler wants to narrow by are NOT on the case: dossiq stores each declared field as a caseProperty row pointing back at it, so the query is openregister's `_related[caseProperty][case][…]` (query-related-schema-rows, #3909/#3916/#3921/#3923). It sits in after-search rather than below-header for two reasons: that slot is the actions bar's own place for inline refinement controls, which is what a filter bar is, and below-header already holds CaseSearchRefusal — a slot takes one component. It therefore carries its OWN refusal notice, because a refused `_related` leaves CnIndexPage drawing its empty state and 'no cases match' is not what happened.",
-	},
-
-	// --- Case-list CSV/Excel export via the OR export leaf. ---
-	// @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
-	CaseListExportAction: {
-		kind: 'page',
-		component: CaseListExportAction,
-		_note: 'Cases-page actions-slot "Export" menu (CSV/Excel); receives no props (CnIndexPage\'s #actions slot is unscoped). Builds the OR export-leaf URL client-side — no dossiq-side serialization (ADR-022).',
-	},
-
-	// --- One personal queue, fed by every mechanism (one-personal-queue). ---
-	// @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
-	PersonalQueueView: {
-		kind: 'page',
-		component: PersonalQueueView,
-		_note: 'The page holding everything waiting on the reader. A page and not an index, because it is not a list of one schema: it merges cases, engine tasks, consultations, advice, mentions, covered work and planned calendar items, and no manifest key names a set that spans four stores and a calendar. It hard-codes NO source: every group and its heading come from the declared queue sources the server resolves, which is what keeps a new mechanism from needing a page change.',
 	},
 
 	EndOfDayView: {
