@@ -30,8 +30,20 @@ describe('organisation lifecycle actions', () => {
 	})
 
 	it('shows Suspend and Resume in the header and End under More, confirmed', () => {
-		expect(config.quickActions).toEqual(['organisation-suspend', 'organisation-resume'])
+		expect(config.quickActions).toEqual(['organisation-suspend', 'organisation-resume', 'organisation-edit'])
 		expect(action('organisation-end').confirm).toBe(true)
 		expect(action('organisation-suspend').confirm).toBe(true)
+	})
+})
+
+/**
+ * @spec openspec/changes/organisation-edit/specs/organisation-edit/spec.md#requirement-an-organisation-is-edited-from-its-page
+ */
+describe('organisation edit', () => {
+	it('edits the name and description through OpenRegister\'s organisation endpoint', () => {
+		const edit = action('organisation-edit')
+		expect(edit.type).toBe('open-form')
+		expect(edit.endpoint).toEqual({ url: '/apps/openregister/api/organisations/@objectId', method: 'PATCH', responsePath: 'organisation' })
+		expect(Object.keys(edit.formProperties)).toEqual(['name', 'description'])
 	})
 })

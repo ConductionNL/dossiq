@@ -177,6 +177,7 @@ import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 import PackageVariantClosed from 'vue-material-design-icons/PackageVariantClosed.vue'
 import PaperclipCheck from 'vue-material-design-icons/PaperclipCheck.vue'
 import PauseCircleOutline from 'vue-material-design-icons/PauseCircleOutline.vue'
+import Pencil from 'vue-material-design-icons/Pencil.vue'
 import PercentOutline from 'vue-material-design-icons/PercentOutline.vue'
 import PhoneForward from 'vue-material-design-icons/PhoneForward.vue'
 import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
@@ -401,6 +402,7 @@ export default {
 	PackageVariantClosed,
 	PaperclipCheck,
 	PauseCircleOutline,
+	Pencil,
 	PercentOutline,
 	PhoneForward,
 	PhoneInTalk,
