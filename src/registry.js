@@ -207,7 +207,6 @@ import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // @spec openspec/changes/deelzaak-support/tasks.md#T05
 // @spec openspec/changes/deelzaak-support/tasks.md#T06
 import DeelzaakList from './views/cases/DeelzaakList.vue'
-import DeletedCasesView from './views/cases/DeletedCasesView.vue'
 import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
 import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
 import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
@@ -1356,11 +1355,6 @@ const registry = {
 
 	// --- Pages that were only ever in the legacy customComponents map. ---
 	//
-	DeletedCasesView: {
-		kind: 'page',
-		component: DeletedCasesView,
-		_note: 'The deleted lens. A plain component rather than an index page: the deleted rows are not in the objects endpoint the index renderer fetches from, they are in OpenRegister trash, which answers on its own door.',
-	},
 	MailIntakeLogView: {
 		kind: 'page',
 		component: MailIntakeLogView,
