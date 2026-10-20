@@ -25,6 +25,7 @@
  * @spec openspec/changes/the-case-page-finished/specs/case-dashboard-view/spec.md
  */
 
+import { LIBRARY_WIDGET_KEYS } from '@conduction/nextcloud-vue/src/utils/libraryWidgetKeys.js'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
@@ -359,8 +360,8 @@ describe('the container type this change depends on', () => {
 			// the widget id,
 			// and a page slot is read by the widget GRID and never reaches a
 			// widget inside a tab panel, so the tab drew nothing while this
-			// test stayed green. It is keyed by TYPE now, like the five above.
-			'case-archival-panel': 'case-archival-pane',
+			// test stayed green. It is the library's retention widget now.
+			'case-archival-panel': 'retention',
 			// Custody arrived with #2940: who has held this case, and who is
 			// asking for it. Keyed by TYPE for the same reason as the six
 			// above, and a custom pane rather than a data widget because a
@@ -413,12 +414,15 @@ describe('the container type this change depends on', () => {
 			if (PANES[widgetId]) {
 				const type = PANES[widgetId]
 				expect(widget(widgetId).type).toBe(type)
-				// And the type actually resolves. Without this the assertion
-				// above passes on a manifest naming a renderer nobody wrote.
-				expect(
-					registry,
-					`${type} is named by the manifest but registered nowhere, so the ${widgetId} tab renders nothing`,
-				).toContain(`'${type}': {`)
+				// And the type actually resolves, in this registry or as a
+				// library widget. Without this the assertion above passes on a
+				// manifest naming a renderer nobody wrote.
+				if (!LIBRARY_WIDGET_KEYS.includes(type)) {
+					expect(
+						registry,
+						`${type} is named by the manifest but registered nowhere, so the ${widgetId} tab renders nothing`,
+					).toContain(`'${type}': {`)
+				}
 				continue
 			}
 			expect(widget(widgetId).type).toBe('sections')

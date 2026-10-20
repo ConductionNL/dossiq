@@ -2605,9 +2605,12 @@
 					},
 					{
 						"id": "cmmn-case-plan",
-						"type": "custom",
+						"type": "plan",
 						"title": "Case plan",
-						"_note": "The adaptive case plan of a caseType with `handlingModel: cmmn` (page slot widget-cmmn-case-plan -> CasePlanPanel). The stages, tasks and milestones are rows OpenRegister holds in its case layer and serves on /api/cases; dossiq holds no case engine of its own. It renders nothing for a BPMN caseType, whose status moves are taken by clicking a stage in the `case-stages` widget above. It fails CLOSED when OpenRegister cannot be reached: an error with a retry, never an empty plan, because an outage and a case with no work left look identical from the browser and only one of them is safe to act on. It sits at the foot of the page and takes the full width, because a plan tree is wide and a right-rail cell would wrap every item name. Deleted the day the manifest vocabulary has a case-plan widget type over /api/cases (retire-cmmn-caseplanstate)."
+						"content": {
+							"emptyText": "This case type has no adaptive plan"
+						},
+						"_note": "The adaptive case plan (library widget type plan -> CnPlanWidget): the stages, tasks and milestones OpenRegister's case layer holds for this case on /api/cases, with the moves OpenRegister allows. dossiq holds no case engine of its own. A BPMN case has no plan rows, OpenRegister answers 404, and the widget says the case type has no adaptive plan; status moves for those are the case-stages widget above. It fails CLOSED when OpenRegister cannot be reached: an error with a retry, never an empty plan. It sits at the foot of the page and takes the full width, because a plan tree is wide."
 					},
 					{
 						"id": "case-panels",
@@ -3590,9 +3593,14 @@
 					},
 					{
 						"id": "case-archival-panel",
-						"type": "case-archival-pane",
+						"type": "retention",
 						"title": "Archiving",
-						"_note": "What happens to this case when its business use ends, as openregister decided it (registry type case-archival-pane -> CaseArchivalPanel). Rendered by TYPE because a tab child resolves from cnRegistry[widget.type]: a page `slots` map is read by the widget GRID and never reaches a widget inside a tab panel, so the type custom this shipped as drew an empty Archiving tab and logged nothing. Every value is read off @self._retention, which openregister writes once at closure with the rule and the selectielijst row that produced it; the panel derives nothing, because a second derivation would eventually disagree with the stored one and a records manager reading a disposal date could not tell which of the two they were looking at. It is a custom widget and NOT a data widget: a data widget builds its fields from the schema's own properties, and _retention is metadata attached on the render path, so every field would render blank. An unnominatable case is drawn apart from a case nobody has closed yet, on purpose: the two look the same from an absent appraisal and only one of them is somebody's problem today. Recomputing asks for a reason before it sends, because openregister refuses a recomputation without one and meeting that refusal after the click teaches the archivist nothing."
+						"content": {
+							"statusField": "archiveStatus",
+							"archivedValues": ["archived", "archived_retention_period_unknown"],
+							"archivistGroups": ["archivaris"]
+						},
+						"_note": "What happens to this case when its business use ends, as openregister decided it (library widget type retention -> CnRetentionWidget). Every value is read off @self._retention and @self.archived, which openregister writes; the widget derives nothing, so a records manager never reads a second derivation that could disagree with the stored one. A case nobody could nominate is drawn apart from a case nobody has closed yet. archiveStatus is the case's own ZGW field, and a disagreement with openregister's archived marker is said out loud. Recomputing asks the archivist for a reason before it sends."
 					},
 					{
 						"id": "case-knowledge-panel",
@@ -4404,9 +4412,6 @@
 						}
 					}
 				]
-			},
-			"slots": {
-				"widget-cmmn-case-plan": "CasePlanPanel"
 			}
 		},
 		{
@@ -4417,11 +4422,14 @@
 			"component": "CaseRedactionView",
 			"_note": "The redaction page of a case (board DqLakken): the case's partly public documents one by one, the text with its passages marked and the proposal beside it. The case page's Redact documents action navigates here. The config carries the routes and the passage type labels the panel reads.",
 			"config": {
-				"listUrl": "/apps/dossiq/api/cases/{caseId}/redactions",
-				"detectUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/detect",
-				"checkUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/check",
-				"redactUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/redact",
-				"uploadUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/upload",
+				"urls": {
+					"list": "/apps/dossiq/api/cases/{recordId}/redactions",
+					"detect": "/apps/dossiq/api/cases/{recordId}/redactions/{documentRef}/detect",
+					"check": "/apps/dossiq/api/cases/{recordId}/redactions/{documentRef}/check",
+					"redact": "/apps/dossiq/api/cases/{recordId}/redactions/{documentRef}/redact",
+					"upload": "/apps/dossiq/api/cases/{recordId}/redactions/{documentRef}/upload"
+				},
+				"groundsPath": "weigeringsgronden",
 				"typeLabels": {
 					"PERSON": "Name",
 					"PHONE": "Phone number",
