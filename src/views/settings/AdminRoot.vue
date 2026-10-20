@@ -193,7 +193,7 @@
 					)
 				"
 				:loading="!storesReady">
-				<TermijnDefinitiesTab v-if="storesReady" />
+				<DeadlineDefinitionsTab v-if="storesReady" />
 			</CnSettingsSection>
 
 			<CnSettingsSection
@@ -216,7 +216,7 @@
 					)
 				"
 				:loading="!storesReady">
-				<MandaatMatrixTab v-if="storesReady" />
+				<DelegationMatrixTab v-if="storesReady" />
 			</CnSettingsSection>
 
 			<CnSettingsSection
@@ -513,7 +513,7 @@
 						{{ t('dossiq', 'Add checklist') }}
 					</NcButton>
 				</template>
-				<ChecklistsTab v-if="storesReady" ref="checklists" :hideAddButton="true" />
+				<ChecklistTemplatesTab v-if="storesReady" ref="checklists" :hideAddButton="true" />
 			</CnSettingsSection>
 
 			<CnSettingsSection
@@ -571,19 +571,19 @@ import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
 import ArchivalSettingsTab from './tabs/ArchivalSettingsTab.vue'
-import ChecklistsTab from './tabs/ChecklistsTab.vue'
+import ChecklistTemplatesTab from './tabs/ChecklistTemplatesTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
 import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import FirstRunTab from './tabs/FirstRunTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
-import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
+import DelegationMatrixTab from './tabs/DelegationMatrixTab.vue'
 import MenuStructureTab from './tabs/MenuStructureTab.vue'
 import PrerequisitesTab from './tabs/PrerequisitesTab.vue'
 import QueueUrgencySettingsTab from './tabs/QueueUrgencySettingsTab.vue'
 import SearchIndexTab from './tabs/SearchIndexTab.vue'
 import StoreSettingsTab from './tabs/StoreSettingsTab.vue'
 import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
-import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
+import DeadlineDefinitionsTab from './tabs/DeadlineDefinitionsTab.vue'
 import WooReportsSettingsTab from './tabs/WooReportsSettingsTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import manifest from '../../manifest.json'
@@ -614,11 +614,11 @@ export default {
 		AiSettingsTab,
 		ArchivalSettingsTab,
 		SearchIndexTab,
-		ChecklistsTab,
-		TermijnDefinitiesTab,
+		ChecklistTemplatesTab,
+		DeadlineDefinitionsTab,
 		WooReportsSettingsTab,
 		QueueUrgencySettingsTab,
-		MandaatMatrixTab,
+		DelegationMatrixTab,
 		MandaatMatrixSettingsTab,
 		MenuStructureTab,
 		ConsultationSettingsTab,

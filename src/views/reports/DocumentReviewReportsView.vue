@@ -146,7 +146,7 @@ export function throughputUrl(from, to, csv = false) {
 		params.set('format', 'csv')
 	}
 	return generateUrl(
-		'/apps/dossiq/api/woo/reports/throughput?' + params.toString(),
+		'/apps/dossiq/api/document-review/reports/throughput?' + params.toString(),
 	)
 }
 
@@ -176,7 +176,7 @@ export function offeredReports() {
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
  */
 export default {
-	name: 'WooReportsView',
+	name: 'DocumentReviewReportsView',
 	components: {
 		CnCountTablesReport,
 		NcAppContent,

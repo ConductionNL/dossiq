@@ -27,7 +27,7 @@
 	],
 	"item": [
 		{
-			"name": "TermijnController — POST /termijn/instances missing fields returns 400",
+			"name": "TermijnController — POST /deadlines/instances missing fields returns 400",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -36,9 +36,9 @@
 				],
 				"body": {"mode": "raw", "raw": "{}"},
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances",
+					"raw": "{{base_url}}/api/deadlines/instances",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances"]
+					"path": ["api", "deadlines", "instances"]
 				}
 			},
 			"event": [
@@ -49,7 +49,7 @@
 			]
 		},
 		{
-			"name": "TermijnController — POST /termijn/instances creates a TermijnInstance",
+			"name": "TermijnController — POST /deadlines/instances creates a TermijnInstance",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -61,9 +61,9 @@
 					"raw": "{\n  \"zaakId\": \"newman-zaak-{{run_id}}\",\n  \"zaaktype\": \"besluitbeschikking\"\n}"
 				},
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances",
+					"raw": "{{base_url}}/api/deadlines/instances",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances"]
+					"path": ["api", "deadlines", "instances"]
 				}
 			},
 			"event": [
@@ -79,14 +79,14 @@
 			]
 		},
 		{
-			"name": "TermijnController — GET /termijn/instances/{id} on unknown id returns 404",
+			"name": "TermijnController — GET /deadlines/instances/{id} on unknown id returns 404",
 			"request": {
 				"method": "GET",
 				"header": [{"key": "OCS-APIRequest", "value": "true"}],
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances/00000000-0000-0000-0000-000000000000",
+					"raw": "{{base_url}}/api/deadlines/instances/00000000-0000-0000-0000-000000000000",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances", "00000000-0000-0000-0000-000000000000"]
+					"path": ["api", "deadlines", "instances", "00000000-0000-0000-0000-000000000000"]
 				}
 			},
 			"event": [
@@ -105,9 +105,9 @@
 				],
 				"body": {"mode": "raw", "raw": "{\"duurDagen\": 0, \"motivering\": \"\"}"},
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances/00000000-0000-0000-0000-000000000000/pauze",
+					"raw": "{{base_url}}/api/deadlines/instances/00000000-0000-0000-0000-000000000000/pause",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances", "00000000-0000-0000-0000-000000000000", "pauze"]
+					"path": ["api", "deadlines", "instances", "00000000-0000-0000-0000-000000000000", "pause"]
 				}
 			},
 			"event": [
@@ -127,9 +127,9 @@
 				],
 				"body": {"mode": "raw", "raw": "{}"},
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances/00000000-0000-0000-0000-000000000000/verleng",
+					"raw": "{{base_url}}/api/deadlines/instances/00000000-0000-0000-0000-000000000000/extend",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances", "00000000-0000-0000-0000-000000000000", "verleng"]
+					"path": ["api", "deadlines", "instances", "00000000-0000-0000-0000-000000000000", "extend"]
 				}
 			},
 			"event": [
@@ -243,9 +243,9 @@
 				"method": "GET",
 				"header": [{"key": "OCS-APIRequest", "value": "true"}],
 				"url": {
-					"raw": "{{base_url}}/api/termijn/dashboard/kpi",
+					"raw": "{{base_url}}/api/deadlines/dashboard/kpi",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "dashboard", "kpi"]
+					"path": ["api", "deadlines", "dashboard", "kpi"]
 				}
 			},
 			"event": [
@@ -268,9 +268,9 @@
 				],
 				"body": {"mode": "raw", "raw": "{\"zaakId\":\"newman-unauth-{{run_id}}\",\"zaaktype\":\"besluitbeschikking\"}"},
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances",
+					"raw": "{{base_url}}/api/deadlines/instances",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances"]
+					"path": ["api", "deadlines", "instances"]
 				}
 			},
 			"event": [
@@ -286,9 +286,9 @@
 				"method": "GET",
 				"header": [{"key": "OCS-APIRequest", "value": "true"}],
 				"url": {
-					"raw": "{{base_url}}/api/termijn/instances/00000000-0000-0000-0000-000000000000",
+					"raw": "{{base_url}}/api/deadlines/instances/00000000-0000-0000-0000-000000000000",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "instances", "00000000-0000-0000-0000-000000000000"]
+					"path": ["api", "deadlines", "instances", "00000000-0000-0000-0000-000000000000"]
 				}
 			},
 			"event": [

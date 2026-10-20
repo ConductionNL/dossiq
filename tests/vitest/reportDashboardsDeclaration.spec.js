@@ -34,10 +34,10 @@ describe('processing time', () => {
 
 	it('draws the four compliance charts from the server report, one view each', () => {
 		const views = {
-			'dt-charts': ['donut', 'sla'],
-			'dt-charts-distribution': ['bar', 'distribution'],
-			'dt-charts-trend': ['line', 'trend'],
-			'dt-charts-throughput': ['line', 'throughput'],
+			'processing-time-charts': ['donut', 'sla'],
+			'processing-time-charts-distribution': ['bar', 'distribution'],
+			'processing-time-charts-trend': ['line', 'trend'],
+			'processing-time-charts-throughput': ['line', 'throughput'],
 		}
 		for (const [id, [kind, view]] of Object.entries(views)) {
 			const w = widget('Doorlooptijd', id)
@@ -52,7 +52,7 @@ describe('processing time', () => {
 	})
 
 	it('lists the cases at risk with the severity as text beside its colour, rows opening the case', () => {
-		const w = widget('Doorlooptijd', 'dt-atrisk')
+		const w = widget('Doorlooptijd', 'processing-time-at-risk')
 		expect(w.type).toBe('object-table')
 		expect(w.content.endpointSource).toMatchObject({ url: PT, responsePath: 'atRisk', params: { view: 'atRisk' } })
 		expect(w.content.rowRoute).toBe('CaseDetail')
@@ -63,7 +63,7 @@ describe('processing time', () => {
 	})
 
 	it('selects one case type for the deadline list by configuration, never by a word in its title', () => {
-		const w = widget('Doorlooptijd', 'dt-woo')
+		const w = widget('Doorlooptijd', 'processing-time-case-type-deadlines')
 		expect(w.type).toBe('object-table')
 		expect(w.content.endpointSource.params).toMatchObject({ view: 'atRisk', threshold: 1 })
 		expect(typeof w.content.endpointSource.params.caseType).toBe('string')
@@ -72,7 +72,7 @@ describe('processing time', () => {
 	})
 
 	it('sorts the breakdown and names each performance band', () => {
-		const w = widget('Doorlooptijd', 'dt-breakdown')
+		const w = widget('Doorlooptijd', 'processing-time-breakdown')
 		expect(w.content.endpointSource).toMatchObject({ url: PT, responsePath: 'breakdown' })
 		expect(w.content.columns.filter((c) => c.sortable)).toHaveLength(5)
 		const status = w.content.columns.find((c) => c.key === 'status')
@@ -120,23 +120,23 @@ describe('process mining', () => {
 
 describe('deadline reports', () => {
 	it('draws the quarterly report from its rows, named by case type, with CSV export', () => {
-		const w = widget('TermijnDashboard', 'td-quarterly')
+		const w = widget('TermijnDashboard', 'deadline-report-quarterly')
 		expect(w.type).toBe('object-table')
-		expect(w.content.endpointSource).toMatchObject({ responsePath: 'rows', params: { periode: '@workspace.quarter' } })
+		expect(w.content.endpointSource).toMatchObject({ responsePath: 'rows', params: { period: '@workspace.quarter' } })
 		expect(w.content.exportCsv).toBe(true)
 		const keys = Object.fromEntries(w.content.columns.map((c) => [c.key, c]))
 		expect(keys.caseTypeTitle.label).toBe('Case type')
-		expect(keys.binnenTermijnPct.format).toMatchObject({ decimals: 1, suffix: ' %' })
+		expect(keys.withinTermPct.format).toMatchObject({ decimals: 1, suffix: ' %' })
 		expect(keys.penaltyTotalEuros.format).toMatchObject({ style: 'currency', currency: 'EUR' })
-		expect(keys.gemiddeldeDoorlooptijdDagen).toBeTruthy()
+		expect(keys.averageProcessingDays).toBeTruthy()
 	})
 
 	it('shows the annual audit as tiles over the summary keys', () => {
-		const fields = { 'td-annual': 'summary.totalEuros', 'td-annual-payments': 'summary.count', 'td-annual-warnings': 'summary.warningCount' }
+		const fields = { 'deadline-report-annual': 'summary.totalEuros', 'deadline-report-annual-payments': 'summary.count', 'deadline-report-annual-warnings': 'summary.warningCount' }
 		for (const [id, field] of Object.entries(fields)) {
 			const w = widget('TermijnDashboard', id)
 			expect(w.type).toBe('stat')
-			expect(w.content.endpointSource.params.jaar).toBe('@workspace.year')
+			expect(w.content.endpointSource.params.year).toBe('@workspace.year')
 			expect(w.content.valueField).toBe(field)
 			expect(onGrid('TermijnDashboard', id)).toBe(true)
 		}

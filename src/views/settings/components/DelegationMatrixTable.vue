@@ -80,7 +80,7 @@ import Import from 'vue-material-design-icons/Import.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 
 export default {
-	name: 'MandaatMatrixTable',
+	name: 'DelegationMatrixTable',
 	components: {
 		NcButton,
 		NcEmptyContent,

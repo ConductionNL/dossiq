@@ -6,7 +6,7 @@
  *
  * The page is a manifest `type: "dashboard"` composed of three widgets, and the
  * KPI figures plus the case-type filter options are needed by more than one of
- * them. One store means one `/api/termijn/dashboard/kpi` call for the whole
+ * them. One store means one `/api/deadlines/dashboard/kpi` call for the whole
  * page instead of one per widget.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
@@ -58,7 +58,7 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 				const params = {}
 				if (caseType) params.case_type = caseType
 				const res = await axios.get(
-					generateUrl('/apps/dossiq/api/termijn/dashboard/kpi'),
+					generateUrl('/apps/dossiq/api/deadlines/dashboard/kpi'),
 					{ params },
 				)
 				this.kpi = res.data || null
@@ -89,8 +89,8 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 			this.error = null
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/dossiq/api/termijn/reports/kwartaal'),
-					{ params: { periode } },
+					generateUrl('/apps/dossiq/api/deadlines/reports/quarterly'),
+					{ params: { period: periode } },
 				)
 				this.quarterly = res.data
 				if (this.quarterly?.perType) {
@@ -117,8 +117,8 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 			this.error = null
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/dossiq/api/termijn/reports/jaarrekening'),
-					{ params: { jaar } },
+					generateUrl('/apps/dossiq/api/deadlines/reports/annual'),
+					{ params: { year: jaar } },
 				)
 				this.annual = res.data
 			} catch (e) {

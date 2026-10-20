@@ -419,7 +419,7 @@ describe('the tabs', () => {
 			'case-communication': 'case-contact-moments-card',
 			'case-acknowledgement': 'case-acknowledgement-card',
 			'case-conversations': 'case-conversations-card',
-			'case-pipelinq-contact-moments': 'case-customer-record-card',
+			'linked-contact-moments': 'case-customer-record-card',
 		}
 		expect(Object.keys(contactCards).sort()).toEqual([...communication].sort())
 		const contactTab = strip.tabs.find((tab) => tab.label === 'Contact')
@@ -599,7 +599,7 @@ describe('the tabs', () => {
 		const PAIRED = {
 			'money-payments': 0,
 			'money-contract': 6,
-			'family-plan-panel': 0,
+			'goal-plan-panel': 0,
 			'documents-merge-to-pdf': 0,
 		}
 		for (const entry of simple.layout) {

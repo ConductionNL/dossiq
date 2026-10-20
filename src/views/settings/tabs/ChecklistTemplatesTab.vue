@@ -1,5 +1,6 @@
 <!--
-  Dossiq VTH Checklist Admin Tab
+  Checklist templates, for an administrator: the list, and a form dialog whose
+  items are an editable table of sub-objects.
   SPDX-License-Identifier: EUPL-1.2
   SPDX-FileCopyrightText: 2026 Conduction B.V.
   @spec openspec/changes/vth-module/tasks.md#task-5
@@ -15,7 +16,7 @@
 		<NcLoadingIcon v-if="loading" :size="32" />
 
 		<NcEmptyContent
-			v-if="!loading && checklists.length === 0 && !editing"
+			v-if="!loading && checklists.length === 0"
 			:name="t('dossiq', 'No checklists')"
 			:description="
 				t('dossiq', 'Create an inspection checklist to get started.')
@@ -28,7 +29,7 @@
 		<!-- The library's list rows (board DqVthInstellingen): the name over its
 		     version and size, the state as a status pill, Edit and Delete in the
 		     row's menu. -->
-		<div v-if="!loading && !editing" class="checklists-tab__list">
+		<div v-if="!loading" class="checklists-tab__list">
 			<CnObjectRow
 				v-for="row in rows"
 				:key="row.id"
@@ -44,12 +45,19 @@
 			</CnObjectRow>
 		</div>
 
-		<InspectionChecklistEditor
+		<CnFormDialog
 			v-if="editing"
-			:checklist="editingChecklist"
-			:saving="saving"
-			@save="saveChecklist"
-			@cancel="closeEditor" />
+			ref="formDialog"
+			:schema="templateSchema"
+			:item="editingChecklist.id ? editingChecklist : null"
+			:initialData="editingChecklist.id ? {} : editingChecklist"
+			:dialogTitle="editingChecklist.id ? t('dossiq', 'Edit checklist') : t('dossiq', 'New checklist')"
+			nameField="name"
+			size="large"
+			:feedback="false"
+			:recoverDraft="false"
+			@confirm="saveChecklist"
+			@close="closeEditor" />
 
 		<CnConfirmDialog
 			v-if="showDeleteConfirm"
@@ -68,7 +76,7 @@
 </template>
 
 <script>
-import { CnConfirmDialog, CnObjectRow, CnRowActions } from '@conduction/nextcloud-vue'
+import { CnConfirmDialog, CnFormDialog, CnObjectRow, CnRowActions } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
@@ -78,13 +86,12 @@ import {
 	NcIconSvgWrapper,
 	NcLoadingIcon,
 } from '@nextcloud/vue'
-import InspectionChecklistEditor from '../../../components/InspectionChecklistEditor.vue'
 
 /**
  * Checklist CRUD for the admin surface goes through dossiq's OWN controller.
  *
- * `InspectionChecklistController` already serves exactly the four verbs this tab
- * uses — `GET/POST /api/vth/checklists` and `PUT/DELETE /api/vth/checklists/{id}`
+ * `ChecklistTemplateController` already serves exactly the four verbs this tab
+ * uses — `GET/POST /api/checklists` and `PUT/DELETE /api/checklists/{id}`
  * (appinfo/routes.php) — and every one of them is guarded with
  * `#[AuthorizedAdminSetting(settings: AdminSettings::class)]`, which is the right
  * posture for a control that lives in the admin settings page. It also routes
@@ -102,7 +109,7 @@ import InspectionChecklistEditor from '../../../components/InspectionChecklistEd
  * bypasses dossiq's admin-setting authorization, bypasses the service that owns
  * versioning, and adds a second write path for a resource that already has one.
  */
-const COLLECTION_URL = '/apps/dossiq/api/vth/checklists'
+const COLLECTION_URL = '/apps/dossiq/api/checklists'
 
 /**
  * Coerce an API response into the checklist array the template iterates.
@@ -129,15 +136,15 @@ function asChecklistArray(body) {
 }
 
 export default {
-	name: 'ChecklistsTab',
+	name: 'ChecklistTemplatesTab',
 
 	components: {
 		NcButton,
 		NcLoadingIcon,
 		NcEmptyContent,
 		NcIconSvgWrapper,
-		InspectionChecklistEditor,
 		CnConfirmDialog,
+		CnFormDialog,
 		CnObjectRow,
 		CnRowActions,
 	},
@@ -190,6 +197,56 @@ export default {
 			})
 		},
 
+		/**
+		 * The template as a form: its own fields, and `items` as an editable
+		 * table of sub-objects (question, answer type, required, weight).
+		 *
+		 * @return {object} A JSON schema for CnFormDialog.
+		 * @spec openspec/specs/inspection-checklists/spec.md#inspection-checklist-admin-ui
+		 */
+		templateSchema() {
+			return {
+				title: t('dossiq', 'Checklist'),
+				type: 'object',
+				required: ['name'],
+				properties: {
+					name: { type: 'string', title: t('dossiq', 'Name'), order: 1 },
+					version: { type: 'integer', title: t('dossiq', 'Version'), minimum: 1, default: 1, order: 2 },
+					active: { type: 'boolean', title: t('dossiq', 'Active'), default: false, order: 3 },
+					validFrom: { type: 'string', format: 'date', title: t('dossiq', 'Valid from'), order: 4 },
+					items: {
+						type: 'array',
+						title: t('dossiq', 'Checklist items'),
+						'x-widget': 'sub-objects',
+						order: 5,
+						items: {
+							type: 'object',
+							title: t('dossiq', 'Item'),
+							required: ['question'],
+							properties: {
+								question: { type: 'string', title: t('dossiq', 'Question or instruction'), order: 1 },
+								type: {
+									type: 'string',
+									title: t('dossiq', 'Answer type'),
+									enum: ['boolean', 'text', 'enum', 'photo'],
+									'x-enum-labels': {
+										boolean: t('dossiq', 'Yes/No'),
+										text: t('dossiq', 'Text'),
+										enum: t('dossiq', 'Multiple choice'),
+										photo: t('dossiq', 'Photo'),
+									},
+									default: 'boolean',
+									order: 2,
+								},
+								required: { type: 'boolean', title: t('dossiq', 'Required'), default: false, order: 3 },
+								weight: { type: 'integer', title: t('dossiq', 'Weight'), minimum: 0, maximum: 100, default: 1, order: 4 },
+							},
+						},
+					},
+				},
+			}
+		},
+
 		/** @return {object} Which row fields CnObjectRow draws where. */
 		rowConfig() {
 			return { titleField: 'name', subtitleField: 'subtitle', badgeField: 'state', badgeVariantField: 'tone' }
@@ -228,6 +285,14 @@ export default {
 			}
 		},
 
+		/**
+		 * Open the form dialog on a template, or on a new one.
+		 *
+		 * @param {object|null} checklist The template to edit, or null for a new one.
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/inspection-checklists/spec.md#inspection-checklist-admin-ui
+		 */
 		openEditor(checklist) {
 			this.editingChecklist = checklist
 				? { ...checklist }
@@ -255,16 +320,18 @@ export default {
 		},
 
 		/**
-		 * Create or update a checklist, then reload the list.
+		 * Create or update a checklist, then reload the list. A refusal stays in
+		 * the dialog with the server's sentence, so nothing typed is lost.
 		 *
-		 * @param {object} checklist The checklist being saved; an `id` selects
-		 *                           update (PUT) over create (POST).
+		 * @param {object} formData The form's values; an `id` selects update
+		 *                          (PUT) over create (POST).
 		 *
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/specs/inspection-checklists/spec.md#inspection-checklist-admin-ui
 		 */
-		async saveChecklist(checklist) {
+		async saveChecklist(formData) {
+			const checklist = { ...this.editingChecklist, ...formData }
 			this.saving = true
 			try {
 				const url = checklist.id
@@ -275,10 +342,14 @@ export default {
 				const method = checklist.id ? 'put' : 'post'
 				await axios[method](url, checklist)
 				showSuccess(t('dossiq', 'Checklist saved'))
+				this.$refs.formDialog?.setResult({ success: true })
 				this.closeEditor()
 				await this.loadChecklists()
 			} catch (e) {
 				showError(t('dossiq', 'Failed to save checklist'))
+				this.$refs.formDialog?.setResult({
+					error: e?.response?.data?.message || t('dossiq', 'Failed to save checklist'),
+				})
 			} finally {
 				this.saving = false
 			}

@@ -108,7 +108,7 @@ import CheckBold from 'vue-material-design-icons/CheckBold.vue'
 import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
 
 export default {
-	name: 'MandaatImportPanel',
+	name: 'DelegationImportPanel',
 	components: { NcButton, NcLoadingIcon, NcNoteCard, EyeOutline, CheckBold },
 	emits: ['imported'],
 	data() {

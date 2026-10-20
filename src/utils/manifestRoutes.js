@@ -50,6 +50,11 @@ export const RETIRED_ROUTES = [
 		path: '/subsidies',
 		redirect: { name: 'Cases', query: { savedView: 'default:subsidies' } },
 	},
+	// Pages renamed to say what they do (dq-abstract L7).
+	{
+		path: '/woo-reports',
+		redirect: { name: 'DocumentReviewReports' },
+	},
 ]
 
 /**

@@ -127,11 +127,11 @@ async function flipThroughputOn(wrapper) {
 
 const tab = await import('../../src/views/settings/tabs/WooReportsSettingsTab.vue')
 const WooReportsSettingsTab = tab.default
-const { isSwitchedOn } = tab
-const view = await import('../../src/views/woo/WooReportsView.vue')
-const WooReportsView = view.default
+const { isSwitchedOn, storedSetting } = tab
+const view = await import('../../src/views/reports/DocumentReviewReportsView.vue')
+const DocumentReviewReportsView = view.default
 const { throughputUrl } = view
-const { mailPartiesReport } = await import('../../src/views/woo/mailPartiesReport.js')
+const { mailPartiesReport } = await import('../../src/views/reports/mailPartiesReport.js')
 
 describe('Woo report switches (REQ-WRR-001)', () => {
 	beforeEach(() => {
@@ -185,8 +185,8 @@ describe('Woo report switches (REQ-WRR-001)', () => {
 		expect(axios.post).toHaveBeenCalledWith(
 			expect.stringContaining('/apps/dossiq/api/settings'),
 			{
-				wooReviewerThroughputReport: 'true',
-				wooReviewerThroughputReaders: '',
+				reviewerThroughputReport: 'true',
+				reviewerThroughputReaders: '',
 			},
 		)
 		expect(wrapper.text()).toContain('Name an existing reader group')
@@ -195,7 +195,13 @@ describe('Woo report switches (REQ-WRR-001)', () => {
 		).toBe(false)
 	})
 
-	it('sends the reader group with the switch and draws what the server stored', async () => {
+	it('reads the current setting keys before the earlier ones', () => {
+		expect(storedSetting({ reviewerThroughputReport: 'true', wooReviewerThroughputReport: 'false' }, 'reviewerThroughputReport', 'wooReviewerThroughputReport')).toBe('true')
+		expect(storedSetting({ reviewerThroughputReport: '', wooReviewerThroughputReport: 'true' }, 'reviewerThroughputReport', 'wooReviewerThroughputReport')).toBe('true')
+		expect(storedSetting({}, 'reviewerThroughputReaders', 'wooReviewerThroughputReaders')).toBeUndefined()
+	})
+
+	it('sends the reader group with the switch and draws what the server stored under the earlier keys', async () => {
 		axios.post.mockResolvedValue({
 			data: {
 				config: {
@@ -214,8 +220,8 @@ describe('Woo report switches (REQ-WRR-001)', () => {
 		await flushPromises()
 
 		expect(axios.post.mock.calls[0][1]).toEqual({
-			wooReviewerThroughputReport: 'true',
-			wooReviewerThroughputReaders: 'woo-leiding',
+			reviewerThroughputReport: 'true',
+			reviewerThroughputReaders: 'woo-leiding',
 		})
 		expect(
 			wrapper.find('[data-testid="woo-reports-throughput"]').element.checked,
@@ -232,7 +238,7 @@ describe('Woo throughput screen (REQ-WRR-002)', () => {
 
 	it('asks for the period, and for the CSV of the same period', () => {
 		expect(throughputUrl('2026-11-01', '2026-11-30')).toContain(
-			'/apps/dossiq/api/woo/reports/throughput?from=2026-11-01&to=2026-11-30',
+			'/apps/dossiq/api/document-review/reports/throughput?from=2026-11-01&to=2026-11-30',
 		)
 		expect(throughputUrl('2026-11-01', '2026-11-30', true)).toContain(
 			'&format=csv',
@@ -265,7 +271,7 @@ describe('Woo throughput screen (REQ-WRR-002)', () => {
 				truncated: false,
 			},
 		})
-		const wrapper = mount(WooReportsView)
+		const wrapper = mount(DocumentReviewReportsView)
 		await wrapper.find('[data-testid="woo-throughput-show"]').trigger('click')
 		await flushPromises()
 
@@ -291,7 +297,7 @@ describe('Woo throughput screen (REQ-WRR-002)', () => {
 				},
 			},
 		})
-		const wrapper = mount(WooReportsView)
+		const wrapper = mount(DocumentReviewReportsView)
 		await wrapper.find('[data-testid="woo-throughput-show"]').trigger('click')
 		await flushPromises()
 
@@ -310,7 +316,7 @@ describe('The reports screen draws the halves on offer (REQ-WRR-001)', () => {
 	})
 
 	it('draws both halves when both are offered', () => {
-		const wrapper = mount(WooReportsView)
+		const wrapper = mount(DocumentReviewReportsView)
 
 		expect(wrapper.find('[data-testid="woo-throughput"]').exists()).toBe(true)
 		expect(wrapper.find('[data-testid="case-mail-parties"]').exists()).toBe(true)
@@ -318,7 +324,7 @@ describe('The reports screen draws the halves on offer (REQ-WRR-001)', () => {
 
 	it('leaves the throughput half out for somebody outside the reader group', () => {
 		offered.throughput = false
-		const wrapper = mount(WooReportsView)
+		const wrapper = mount(DocumentReviewReportsView)
 
 		expect(wrapper.find('[data-testid="woo-throughput"]').exists()).toBe(false)
 		expect(wrapper.find('[data-testid="woo-throughput-show"]').exists()).toBe(
@@ -329,7 +335,7 @@ describe('The reports screen draws the halves on offer (REQ-WRR-001)', () => {
 
 	it('leaves the parties half out while that report is off', () => {
 		offered.parties = false
-		const wrapper = mount(WooReportsView)
+		const wrapper = mount(DocumentReviewReportsView)
 
 		expect(wrapper.find('[data-testid="woo-throughput"]').exists()).toBe(true)
 		expect(wrapper.find('[data-testid="case-mail-parties"]').exists()).toBe(
@@ -338,7 +344,7 @@ describe('The reports screen draws the halves on offer (REQ-WRR-001)', () => {
 	})
 
 	it('starts the parties half on the case the address names', () => {
-		const wrapper = mount(WooReportsView, {
+		const wrapper = mount(DocumentReviewReportsView, {
 			global: { mocks: { $route: { query: { case: 'case-7' } } } },
 		})
 
@@ -371,7 +377,7 @@ describe('Mail parties of a case (REQ-WRR-004)', () => {
 
 	it('hands the report its config on the reports screen', () => {
 		offered.parties = true
-		const wrapper = mount(WooReportsView, {
+		const wrapper = mount(DocumentReviewReportsView, {
 			global: { mocks: { $route: { query: { case: 'case-7' } } } },
 		})
 		const report = wrapper.findComponent({ name: 'CnCountTablesReport' })

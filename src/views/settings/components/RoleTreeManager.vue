@@ -3,8 +3,8 @@
   SPDX-License-Identifier: EUPL-1.2
 -->
 <template>
-	<div class="rol-manager">
-		<div class="rol-manager__toolbar">
+	<div class="role-manager">
+		<div class="role-manager__toolbar">
 			<NcButton type="primary" @click="openEditor(null)">
 				<template #icon>
 					<Plus :size="18" />
@@ -29,16 +29,32 @@
 			</template>
 		</NcEmptyContent>
 
-		<!-- Hierarchical role list (depth-first render). -->
-		<div v-if="!loading && roots.length > 0" class="rol-manager__tree">
-			<RolNode
-				v-for="r in roots"
-				:key="r.id"
-				:role="r"
-				:childrenByParent="childrenByParent"
-				:onEdit="openEditor"
-				:onDelete="confirmDelete" />
-		</div>
+		<!-- The role hierarchy, every level open, with each role's kind, mandate level and unit beside its name. -->
+		<CnTreeView
+			v-if="!loading && roots.length > 0"
+			class="role-manager__tree"
+			:nodes="tree"
+			:expandedIds="expandedIds"
+			:expandLabel="t('dossiq', 'Expand')"
+			:collapseLabel="t('dossiq', 'Collapse')"
+			@update:expanded-ids="expandedIds = $event">
+			<template #actions="{ node }">
+				<span v-if="node.role.type" class="role-manager__pill">{{ node.role.type }}</span>
+				<span v-if="node.role.mandateLevel" class="role-manager__pill role-manager__pill--alt">{{
+					t('dossiq', 'level {n}', { n: node.role.mandateLevel })
+				}}</span>
+				<span v-if="node.role.department" class="role-manager__pill">{{ node.role.department }}</span>
+				<span v-if="node.role.team" class="role-manager__pill">{{ node.role.team }}</span>
+				<span class="role-manager__actions">
+					<NcButton size="small" @click.stop="openEditor(node.role)">
+						{{ t('dossiq', 'Edit') }}
+					</NcButton>
+					<NcButton size="small" type="error" @click.stop="confirmDelete(node.role)">
+						{{ t('dossiq', 'Delete') }}
+					</NcButton>
+				</span>
+			</template>
+		</CnTreeView>
 
 		<RolEditorDialog
 			v-if="editorOpen"
@@ -57,6 +73,7 @@
 </template>
 
 <script>
+import { CnTreeView } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -65,17 +82,16 @@ import AccountGroup from 'vue-material-design-icons/AccountGroup.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import DeleteRolDialog from '../../../dialogs/DeleteRolDialog.vue'
 import RolEditorDialog from '../../../dialogs/RolEditorDialog.vue'
-import RolNode from './RolNode.vue'
 
 export default {
-	name: 'OrganisatieRolManager',
+	name: 'RoleTreeManager',
 	components: {
 		NcButton,
 		NcEmptyContent,
 		NcLoadingIcon,
 		Plus,
 		AccountGroup,
-		RolNode,
+		CnTreeView,
 		RolEditorDialog,
 		DeleteRolDialog,
 	},
@@ -88,6 +104,7 @@ export default {
 	emits: ['reload'],
 	data() {
 		return {
+			expandedIds: [],
 			editorOpen: false,
 			editingRole: null,
 			deleting: null,
@@ -111,6 +128,24 @@ export default {
 			return (this.roles || []).filter((r) => !r.parentRole)
 		},
 
+		/**
+		 * The roles as tree nodes, each under its parent role.
+		 *
+		 * @return {Array<object>} Root nodes `{ id, label, role, children }`.
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
+		tree() {
+			const toNode = (role, seen) => ({
+				id: role.id,
+				label: role.name || role.id,
+				role,
+				children: seen.has(role.id)
+					? []
+					: (this.childrenByParent[role.id] || []).map((child) => toNode(child, new Set([...seen, role.id]))),
+			})
+			return this.roots.map((role) => toNode(role, new Set()))
+		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		parentOptions() {
 			return [
@@ -131,6 +166,21 @@ export default {
 					'Cannot delete: this role is the parent of other roles. Re-parent them first.',
 				)
 			return ''
+		},
+	},
+
+	watch: {
+		/**
+		 * Open every level whenever the roles change, as the hierarchy was
+		 * always shown whole.
+		 *
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
+		roles: {
+			immediate: true,
+			handler(roles) {
+				this.expandedIds = (roles || []).map((role) => role.id)
+			},
 		},
 	},
 
@@ -216,5 +266,22 @@ export default {
 	border-radius: var(--border-radius);
 	padding: 8px;
 	background: var(--color-main-background);
+}
+
+.role-manager__pill {
+	font-size: 11px;
+	padding: 2px 8px;
+	border-radius: 8px;
+	background: var(--color-background-dark);
+}
+
+.role-manager__pill--alt {
+	background: var(--color-primary-element-light);
+}
+
+.role-manager__actions {
+	display: flex;
+	gap: 4px;
+	margin-inline-start: auto;
 }
 </style>

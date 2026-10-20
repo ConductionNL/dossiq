@@ -323,4 +323,65 @@ class DeadlineReportingServiceTest extends TestCase {
 		self::assertSame(357.0, $report['summary']['totalEuros']);
 		self::assertSame(count($report['warnings']), $report['summary']['warningCount']);
 	}
+
+	/**
+	 * Every report carries the generic key beside the old one, with the same
+	 * value, so a reader of either name gets the figure for one release.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+	 */
+	public function testReportsCarryTheGenericKeysBesideTheOldOnes(): void {
+		$this->objects->seed('dwangsomUitbetaling', [
+			'id' => 'u-1',
+			'reference' => 'REF-1',
+			'amount' => 35700,
+			'actualPaymentDate' => '2026-04-20',
+			'betalingsreferentie' => 'ERP-1',
+			'status' => 'paid',
+		]);
+
+		$quarterly = $this->service->generateQuarterlyReport('2026-Q2');
+		self::assertSame('2026-Q2', $quarterly['period']);
+		self::assertSame($quarterly['periode'], $quarterly['period']);
+		$row = $quarterly['perType']['omgevingsvergunning-regulier'];
+		$pairs = [
+			'totaal' => 'total',
+			'binnenTermijnPct' => 'withinTermPct',
+			'gemiddeldeDoorlooptijdDagen' => 'averageProcessingDays',
+			'verlengingen' => 'extensions',
+			'overschrijdingen' => 'overruns',
+			'ingebrekestellingen' => 'noticesOfDefault',
+			'dwangsomTotalCents' => 'penaltyTotalCents',
+		];
+		foreach ($pairs as $old => $new) {
+			self::assertArrayHasKey($new, $row, $new . ' missing beside ' . $old);
+			self::assertSame($row[$old], $row[$new]);
+		}
+
+		$listed = array_column($quarterly['rows'], 'withinTermPct', 'caseType');
+		self::assertSame(75.0, $listed['omgevingsvergunning-regulier']);
+
+		$kpi = $this->service->getTermijnKpi();
+		self::assertSame($kpi['totalZaken'], $kpi['totalCases']);
+		self::assertSame($kpi['withinTermijnPercent'], $kpi['withinTermPercent']);
+		self::assertSame($kpi['dwangsomTotalCents'], $kpi['penaltyTotalCents']);
+
+		$annual = $this->service->generateDwangsomAuditReport(2026);
+		self::assertSame(2026, $annual['year']);
+		self::assertSame(35700, $annual['rows'][0]['amountCents']);
+		self::assertSame('ERP-1', $annual['rows'][0]['paymentReference']);
+		self::assertSame($annual['rows'][0]['bedragCents'], $annual['rows'][0]['amountCents']);
+	}
+
+	/**
+	 * A row without an old key gains no generic key.
+	 *
+	 * @return void
+	 */
+	public function testGenericKeysAddNothingARowDoesNotHave(): void {
+		self::assertSame([], DeadlineReportingService::genericKeys(row: ['received' => 3]));
+		self::assertSame(['total' => 3], DeadlineReportingService::genericKeys(row: ['totaal' => 3]));
+	}
 }

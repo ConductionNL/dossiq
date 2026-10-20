@@ -31,24 +31,24 @@
 		</div>
 
 		<div class="mandaat-matrix-tab__body">
-			<MandaatMatrixTable
+			<DelegationMatrixTable
 				v-if="active === 'besluiten'"
 				:matrices="matrices"
 				:loading="loading"
 				@edit="openEditor"
 				@import="openImport" />
-			<OrganisatieRolManager
+			<RoleTreeManager
 				v-else-if="active === 'rollen'"
 				:roles="roles"
 				:loading="loading"
 				@reload="loadRoles" />
-			<MandaatToewijzingenTable
+			<RoleAssignmentsTable
 				v-else-if="active === 'toewijzingen'"
 				:assignments="assignments"
 				:loading="loading"
 				:roleOptions="roleOptions"
 				@reload="loadAssignments" />
-			<MandaatImportPanel
+			<DelegationImportPanel
 				v-else-if="active === 'import'"
 				@imported="onImported" />
 		</div>
@@ -68,20 +68,20 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { NcAppNavigationCaption, NcButton } from '@nextcloud/vue'
 import MandaatEditor from '../../../modals/MandaatEditor.vue'
-import MandaatImportPanel from '../components/MandaatImportPanel.vue'
-import MandaatMatrixTable from '../components/MandaatMatrixTable.vue'
-import MandaatToewijzingenTable from '../components/MandaatToewijzingenTable.vue'
-import OrganisatieRolManager from '../components/OrganisatieRolManager.vue'
+import DelegationImportPanel from '../components/DelegationImportPanel.vue'
+import DelegationMatrixTable from '../components/DelegationMatrixTable.vue'
+import RoleAssignmentsTable from '../components/RoleAssignmentsTable.vue'
+import RoleTreeManager from '../components/RoleTreeManager.vue'
 
 export default {
-	name: 'MandaatMatrixTab',
+	name: 'DelegationMatrixTab',
 	components: {
 		NcButton,
 		NcAppNavigationCaption,
-		MandaatMatrixTable,
-		OrganisatieRolManager,
-		MandaatToewijzingenTable,
-		MandaatImportPanel,
+		DelegationMatrixTable,
+		RoleTreeManager,
+		RoleAssignmentsTable,
+		DelegationImportPanel,
 		MandaatEditor,
 	},
 

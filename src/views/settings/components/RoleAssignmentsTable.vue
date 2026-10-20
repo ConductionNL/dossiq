@@ -105,7 +105,7 @@ import AddAssignmentDialog from '../../../dialogs/AddAssignmentDialog.vue'
 import EndAssignmentDialog from '../../../dialogs/EndAssignmentDialog.vue'
 
 export default {
-	name: 'MandaatToewijzingenTable',
+	name: 'RoleAssignmentsTable',
 	components: {
 		NcButton,
 		NcEmptyContent,

@@ -3,9 +3,8 @@
 /**
  * Checklist templates, for an administrator
  *
- * The four verbs of the template catalogue. The URLs keep their first names
- * (`/api/vth/checklists`), because the settings tab and the end-to-end tests
- * call them; the code behind them knows no procedure.
+ * The four verbs of the template catalogue at `/api/checklists`. The earlier
+ * `/api/vth/checklists` stays routed to the `*LegacyPath()` delegates.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -190,4 +189,72 @@ class ChecklistTemplateController extends Controller {
 			Http::STATUS_INTERNAL_SERVER_ERROR
 		);
 	}//end destroy()
+
+	/**
+	 * index() on its old address.
+	 *
+	 * Deprecated alias of GET /api/checklists; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function indexLegacyPath(): JSONResponse {
+		return $this->index();
+	}//end indexLegacyPath()
+
+	/**
+	 * create() on its old address.
+	 *
+	 * Deprecated alias of POST /api/checklists; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function createLegacyPath(): JSONResponse {
+		return $this->create();
+	}//end createLegacyPath()
+
+	/**
+	 * update() on its old address.
+	 *
+	 * Deprecated alias of PUT /api/checklists/{id}; remove after the next major.
+	 *
+	 * @param string $id UUID of the checklist to update
+	 *
+	 * @return JSONResponse
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function updateLegacyPath(string $id): JSONResponse {
+		return $this->update(id: $id);
+	}//end updateLegacyPath()
+
+	/**
+	 * destroy() on its old address.
+	 *
+	 * Deprecated alias of DELETE /api/checklists/{id}; remove after the next major.
+	 *
+	 * @param string $id UUID of the checklist to delete
+	 *
+	 * @return JSONResponse
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function destroyLegacyPath(string $id): JSONResponse {
+		return $this->destroy(id: $id);
+	}//end destroyLegacyPath()
 }//end class

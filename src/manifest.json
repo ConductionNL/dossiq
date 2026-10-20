@@ -3697,7 +3697,7 @@
 								{
 									"label": "Customer record",
 									"widget": {
-										"id": "case-pipelinq-contact-moments",
+										"id": "linked-contact-moments",
 										"type": "case-pipelinq-contact-moments",
 										"title": "Contact moments in the customer record",
 										"_note": "parties-and-contact-moments-consume-pipelinq 2.2 and 2.3, board DqZaakContactmomenten: pipelinq's contact moments read by MEMBERSHIP of this case, with the line saying a moment is also on other cases (a case the reader may not open counted, not named), and the two filing acts. It sits under dossiq's own Communication list rather than replacing it, because that list is dossiq's record and the one an instance without pipelinq has; this section says in words when pipelinq is absent. Rendered by TYPE (registry key case-pipelinq-contact-moments), as a section child resolves from the registry and an unknown type draws nothing."
@@ -4049,7 +4049,7 @@
 						"content": {}
 					},
 					{
-						"id": "family-plan",
+						"id": "goal-plan",
 						"type": "family-plan",
 						"title": "Family plan",
 						"_note": "the-social-domain-plan-and-its-grounds REQ-CPN-01 and REQ-CPN-03, rows 14.1 and 5.18. The Jeugdwet gezinsplan: the goals this household agreed to work on, the interventions under each with their provider and their target date, and what is late. NOT the adaptive case plan: `cmmn-case-plan` renders OpenRegister\u2019s case layer, the stages and milestones of any case, and this is what was agreed with one family. Two things called a plan, and confusing them would put a household\u2019s goals in a widget every case type shows. The register declared `gezinsplan.goals` and `deploymentTrajectories` as plain string arrays and nothing read them, so the plan a family is worked to did not exist as data at all; that is why the row was rated `no` and not `partial`. TYPE is a registry key rather than a declarative widget because the plan is THREE schemas read together, `gezinsplan` with its `casePlanGoal` rows and the `intervention` rows under those, with `overdue` and `dueForReview` computed server-side against today; no widget type joins three schemas, and a `data` widget over `gezinsplan` would render the plan\u2019s own fields and none of its goals. Silent on a case that names no plan, which is every case outside Jeugdwet.",
@@ -4149,8 +4149,8 @@
 						"showTitle": false
 					},
 					{
-						"id": "family-plan-panel",
-						"widgetId": "family-plan",
+						"id": "goal-plan-panel",
+						"widgetId": "goal-plan",
 						"gridX": 0,
 						"gridY": 23,
 						"gridWidth": 12,
@@ -5842,11 +5842,11 @@
 				],
 				"widgets": [
 					{
-						"id": "dt-avg",
+						"id": "processing-time-average",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-avg",
+							"field": "visible.processing-time-average",
 							"op": "eq",
 							"value": true
 						},
@@ -5873,11 +5873,11 @@
 						}
 					},
 					{
-						"id": "dt-within-norm",
+						"id": "processing-time-within-target",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-within-norm",
+							"field": "visible.processing-time-within-target",
 							"op": "eq",
 							"value": true
 						},
@@ -5904,11 +5904,11 @@
 						}
 					},
 					{
-						"id": "dt-over-norm",
+						"id": "processing-time-over-target",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-over-norm",
+							"field": "visible.processing-time-over-target",
 							"op": "eq",
 							"value": true
 						},
@@ -5935,11 +5935,11 @@
 						}
 					},
 					{
-						"id": "dt-closed",
+						"id": "processing-time-closed",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-closed",
+							"field": "visible.processing-time-closed",
 							"op": "eq",
 							"value": true
 						},
@@ -5965,11 +5965,11 @@
 						}
 					},
 					{
-						"id": "dt-monthly",
+						"id": "processing-time-monthly",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-monthly",
+							"field": "visible.processing-time-monthly",
 							"op": "eq",
 							"value": true
 						},
@@ -6008,11 +6008,11 @@
 						}
 					},
 					{
-						"id": "dt-within-by-type",
+						"id": "processing-time-within-by-type",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-within-by-type",
+							"field": "visible.processing-time-within-by-type",
 							"op": "eq",
 							"value": true
 						},
@@ -6043,11 +6043,11 @@
 						}
 					},
 					{
-						"id": "dt-charts",
+						"id": "processing-time-charts",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-charts",
+							"field": "visible.processing-time-charts",
 							"op": "eq",
 							"value": true
 						},
@@ -6076,11 +6076,11 @@
 						}
 					},
 					{
-						"id": "dt-charts-distribution",
+						"id": "processing-time-charts-distribution",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-charts-distribution",
+							"field": "visible.processing-time-charts-distribution",
 							"op": "eq",
 							"value": true
 						},
@@ -6109,11 +6109,11 @@
 						}
 					},
 					{
-						"id": "dt-charts-trend",
+						"id": "processing-time-charts-trend",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-charts-trend",
+							"field": "visible.processing-time-charts-trend",
 							"op": "eq",
 							"value": true
 						},
@@ -6153,11 +6153,11 @@
 						}
 					},
 					{
-						"id": "dt-charts-throughput",
+						"id": "processing-time-charts-throughput",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-charts-throughput",
+							"field": "visible.processing-time-charts-throughput",
 							"op": "eq",
 							"value": true
 						},
@@ -6186,11 +6186,11 @@
 						}
 					},
 					{
-						"id": "dt-woo",
+						"id": "processing-time-case-type-deadlines",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-woo",
+							"field": "visible.processing-time-case-type-deadlines",
 							"op": "eq",
 							"value": true
 						},
@@ -6254,11 +6254,11 @@
 						}
 					},
 					{
-						"id": "dt-atrisk",
+						"id": "processing-time-at-risk",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-atrisk",
+							"field": "visible.processing-time-at-risk",
 							"op": "eq",
 							"value": true
 						},
@@ -6328,11 +6328,11 @@
 						}
 					},
 					{
-						"id": "dt-breakdown",
+						"id": "processing-time-breakdown",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-breakdown",
+							"field": "visible.processing-time-breakdown",
 							"op": "eq",
 							"value": true
 						},
@@ -6409,7 +6409,7 @@
 				"layout": [
 					{
 						"id": 1,
-						"widgetId": "dt-monthly",
+						"widgetId": "processing-time-monthly",
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
@@ -6417,7 +6417,7 @@
 					},
 					{
 						"id": 2,
-						"widgetId": "dt-within-by-type",
+						"widgetId": "processing-time-within-by-type",
 						"gridX": 0,
 						"gridY": 4,
 						"gridWidth": 12,
@@ -6425,7 +6425,7 @@
 					},
 					{
 						"id": 3,
-						"widgetId": "dt-charts",
+						"widgetId": "processing-time-charts",
 						"gridX": 0,
 						"gridY": 7,
 						"gridWidth": 6,
@@ -6433,7 +6433,7 @@
 					},
 					{
 						"id": 7,
-						"widgetId": "dt-charts-distribution",
+						"widgetId": "processing-time-charts-distribution",
 						"gridX": 6,
 						"gridY": 7,
 						"gridWidth": 6,
@@ -6441,7 +6441,7 @@
 					},
 					{
 						"id": 8,
-						"widgetId": "dt-charts-trend",
+						"widgetId": "processing-time-charts-trend",
 						"gridX": 0,
 						"gridY": 11,
 						"gridWidth": 6,
@@ -6449,7 +6449,7 @@
 					},
 					{
 						"id": 9,
-						"widgetId": "dt-charts-throughput",
+						"widgetId": "processing-time-charts-throughput",
 						"gridX": 6,
 						"gridY": 11,
 						"gridWidth": 6,
@@ -6457,7 +6457,7 @@
 					},
 					{
 						"id": 4,
-						"widgetId": "dt-woo",
+						"widgetId": "processing-time-case-type-deadlines",
 						"gridX": 0,
 						"gridY": 15,
 						"gridWidth": 12,
@@ -6465,7 +6465,7 @@
 					},
 					{
 						"id": 5,
-						"widgetId": "dt-atrisk",
+						"widgetId": "processing-time-at-risk",
 						"gridX": 0,
 						"gridY": 20,
 						"gridWidth": 6,
@@ -6473,7 +6473,7 @@
 					},
 					{
 						"id": 6,
-						"widgetId": "dt-breakdown",
+						"widgetId": "processing-time-breakdown",
 						"gridX": 6,
 						"gridY": 20,
 						"gridWidth": 6,
@@ -6481,7 +6481,7 @@
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
-				"kpiRow": ["dt-avg", "dt-within-norm", "dt-over-norm", "dt-closed"],
+				"kpiRow": ["processing-time-average", "processing-time-within-target", "processing-time-over-target", "processing-time-closed"],
 				"dateRange": {
 					"enabled": true,
 					"control": "segmented",
@@ -8785,7 +8785,7 @@
 			"route": "/termijn-dashboard",
 			"type": "dashboard",
 			"title": "Deadline monitoring",
-			"_note": "Deadline monitoring as drawn on the DqTermijnen board: five figures, the share decided on time per case type, the notices of default, then the quarterly report and the annual penalty audit. The figures come from /api/termijn/dashboard/kpi, which counts the running terms and penalties server side; the notices are a register list.",
+			"_note": "Deadline monitoring as drawn on the DqTermijnen board: five figures, the share decided on time per case type, the notices of default, then the quarterly report and the annual penalty audit. The figures come from /api/deadlines/dashboard/kpi, which counts the running terms and penalties server side; the notices are a register list.",
 			"config": {
 				"_headerNote": "Board DqTermijnen's header row is Quarterly report, the buildiq square and Register notice of default, with no Actions menu. There is no in-page Edit button: changing the layout is buildiq's, under the buildiq button (Ruben, 18 Oct).",
 				"allowEdit": false,
@@ -8811,11 +8811,11 @@
 				],
 				"widgets": [
 					{
-						"id": "td-running",
+						"id": "deadline-report-running",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-running",
+							"field": "visible.deadline-report-running",
 							"op": "eq",
 							"value": true
 						},
@@ -8826,7 +8826,7 @@
 							"label": "Running terms",
 							"layout": "stacked",
 							"endpointSource": {
-								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
 							},
 							"valueField": "runningCount",
 							"format": {
@@ -8837,11 +8837,11 @@
 						}
 					},
 					{
-						"id": "td-due-week",
+						"id": "deadline-report-due-week",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-due-week",
+							"field": "visible.deadline-report-due-week",
 							"op": "eq",
 							"value": true
 						},
@@ -8852,7 +8852,7 @@
 							"label": "Ending this week",
 							"layout": "stacked",
 							"endpointSource": {
-								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
 							},
 							"valueField": "dueThisWeekCount",
 							"format": {
@@ -8863,11 +8863,11 @@
 						}
 					},
 					{
-						"id": "td-overdue",
+						"id": "deadline-report-overdue",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-overdue",
+							"field": "visible.deadline-report-overdue",
 							"op": "eq",
 							"value": true
 						},
@@ -8878,7 +8878,7 @@
 							"label": "Overdue",
 							"layout": "stacked",
 							"endpointSource": {
-								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
 							},
 							"valueField": "overdueCount",
 							"format": {
@@ -8890,11 +8890,11 @@
 						}
 					},
 					{
-						"id": "td-penalty",
+						"id": "deadline-report-penalty",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-penalty",
+							"field": "visible.deadline-report-penalty",
 							"op": "eq",
 							"value": true
 						},
@@ -8905,7 +8905,7 @@
 							"label": "Penalty running",
 							"layout": "stacked",
 							"endpointSource": {
-								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
 							},
 							"valueField": "penaltyRunningEuros",
 							"format": {
@@ -8918,11 +8918,11 @@
 						}
 					},
 					{
-						"id": "td-on-time",
+						"id": "deadline-report-on-time",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-on-time",
+							"field": "visible.deadline-report-on-time",
 							"op": "eq",
 							"value": true
 						},
@@ -8933,9 +8933,9 @@
 							"label": "Decided on time",
 							"layout": "stacked",
 							"endpointSource": {
-								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+								"url": "/apps/dossiq/api/deadlines/dashboard/kpi"
 							},
-							"valueField": "withinTermijnPercent",
+							"valueField": "withinTermPercent",
 							"format": {
 								"style": "decimal",
 								"decimals": 0,
@@ -8945,11 +8945,11 @@
 						}
 					},
 					{
-						"id": "td-on-time-by-type",
+						"id": "deadline-report-on-time-by-type",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-on-time-by-type",
+							"field": "visible.deadline-report-on-time-by-type",
 							"op": "eq",
 							"value": true
 						},
@@ -8964,7 +8964,7 @@
 								"suffix": " %"
 							},
 							"endpointSource": {
-								"url": "/apps/dossiq/api/termijn/dashboard/kpi",
+								"url": "/apps/dossiq/api/deadlines/dashboard/kpi",
 								"labelsPath": "onTimeByCaseType.labels",
 								"series": [
 									{
@@ -8981,11 +8981,11 @@
 						"subtitle": "Decided within the statutory or extended term"
 					},
 					{
-						"id": "td-notices",
+						"id": "deadline-report-notices",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-notices",
+							"field": "visible.deadline-report-notices",
 							"op": "eq",
 							"value": true
 						},
@@ -9026,11 +9026,11 @@
 						"subtitle": "Awb 4:17 and 4:18"
 					},
 					{
-						"id": "td-quarterly",
+						"id": "deadline-report-quarterly",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-quarterly",
+							"field": "visible.deadline-report-quarterly",
 							"op": "eq",
 							"value": true
 						},
@@ -9039,9 +9039,9 @@
 						"title": "Quarterly report",
 						"content": {
 							"endpointSource": {
-								"url": "/apps/dossiq/api/termijn/reports/kwartaal",
+								"url": "/apps/dossiq/api/deadlines/reports/quarterly",
 								"params": {
-									"periode": "@workspace.quarter"
+									"period": "@workspace.quarter"
 								},
 								"responsePath": "rows"
 							},
@@ -9051,11 +9051,11 @@
 									"label": "Case type"
 								},
 								{
-									"key": "totaal",
+									"key": "total",
 									"label": "Total"
 								},
 								{
-									"key": "binnenTermijnPct",
+									"key": "withinTermPct",
 									"label": "Within deadline",
 									"format": {
 										"style": "decimal",
@@ -9064,19 +9064,19 @@
 									}
 								},
 								{
-									"key": "overschrijdingen",
+									"key": "overruns",
 									"label": "Overruns"
 								},
 								{
-									"key": "gemiddeldeDoorlooptijdDagen",
+									"key": "averageProcessingDays",
 									"label": "Avg. duration"
 								},
 								{
-									"key": "verlengingen",
+									"key": "extensions",
 									"label": "Extensions"
 								},
 								{
-									"key": "ingebrekestellingen",
+									"key": "noticesOfDefault",
 									"label": "Notices of default"
 								},
 								{
@@ -9094,11 +9094,11 @@
 						}
 					},
 					{
-						"id": "td-annual",
+						"id": "deadline-report-annual",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-annual",
+							"field": "visible.deadline-report-annual",
 							"op": "eq",
 							"value": true
 						},
@@ -9109,9 +9109,9 @@
 							"label": "Total dwangsom in the year",
 							"layout": "stacked",
 							"endpointSource": {
-								"url": "/apps/dossiq/api/termijn/reports/jaarrekening",
+								"url": "/apps/dossiq/api/deadlines/reports/annual",
 								"params": {
-									"jaar": "@workspace.year"
+									"year": "@workspace.year"
 								}
 							},
 							"valueField": "summary.totalEuros",
@@ -9120,15 +9120,15 @@
 								"currency": "EUR",
 								"decimals": 2
 							},
-							"caption": "In {jaar}"
+							"caption": "In {year}"
 						}
 					},
 					{
-						"id": "td-annual-payments",
+						"id": "deadline-report-annual-payments",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-annual-payments",
+							"field": "visible.deadline-report-annual-payments",
 							"op": "eq",
 							"value": true
 						},
@@ -9139,9 +9139,9 @@
 							"label": "Payments",
 							"layout": "stacked",
 							"endpointSource": {
-								"url": "/apps/dossiq/api/termijn/reports/jaarrekening",
+								"url": "/apps/dossiq/api/deadlines/reports/annual",
 								"params": {
-									"jaar": "@workspace.year"
+									"year": "@workspace.year"
 								}
 							},
 							"valueField": "summary.count",
@@ -9152,11 +9152,11 @@
 						}
 					},
 					{
-						"id": "td-annual-warnings",
+						"id": "deadline-report-annual-warnings",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-annual-warnings",
+							"field": "visible.deadline-report-annual-warnings",
 							"op": "eq",
 							"value": true
 						},
@@ -9167,9 +9167,9 @@
 							"label": "Data warnings",
 							"layout": "stacked",
 							"endpointSource": {
-								"url": "/apps/dossiq/api/termijn/reports/jaarrekening",
+								"url": "/apps/dossiq/api/deadlines/reports/annual",
 								"params": {
-									"jaar": "@workspace.year"
+									"year": "@workspace.year"
 								}
 							},
 							"valueField": "summary.warningCount",
@@ -9183,7 +9183,7 @@
 				"layout": [
 					{
 						"id": 1,
-						"widgetId": "td-on-time-by-type",
+						"widgetId": "deadline-report-on-time-by-type",
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
@@ -9191,7 +9191,7 @@
 					},
 					{
 						"id": 2,
-						"widgetId": "td-notices",
+						"widgetId": "deadline-report-notices",
 						"gridX": 0,
 						"gridY": 3,
 						"gridWidth": 12,
@@ -9199,7 +9199,7 @@
 					},
 					{
 						"id": 3,
-						"widgetId": "td-quarterly",
+						"widgetId": "deadline-report-quarterly",
 						"gridX": 0,
 						"gridY": 7,
 						"gridWidth": 12,
@@ -9207,7 +9207,7 @@
 					},
 					{
 						"id": 4,
-						"widgetId": "td-annual",
+						"widgetId": "deadline-report-annual",
 						"gridX": 0,
 						"gridY": 14,
 						"gridWidth": 4,
@@ -9215,7 +9215,7 @@
 					},
 					{
 						"id": 5,
-						"widgetId": "td-annual-payments",
+						"widgetId": "deadline-report-annual-payments",
 						"gridX": 4,
 						"gridY": 14,
 						"gridWidth": 4,
@@ -9223,7 +9223,7 @@
 					},
 					{
 						"id": 6,
-						"widgetId": "td-annual-warnings",
+						"widgetId": "deadline-report-annual-warnings",
 						"gridX": 8,
 						"gridY": 14,
 						"gridWidth": 4,
@@ -9231,17 +9231,17 @@
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
-				"kpiRow": ["td-running", "td-due-week", "td-overdue", "td-penalty", "td-on-time"],
+				"kpiRow": ["deadline-report-running", "deadline-report-due-week", "deadline-report-overdue", "deadline-report-penalty", "deadline-report-on-time"],
 				"headerActions": [
 					{
-						"id": "td-reports",
+						"id": "deadline-report-reports",
 						"type": "navigate",
 						"label": "Quarterly report",
 						"icon": "Download",
 						"target": "/reports"
 					},
 					{
-						"id": "td-register-notice",
+						"id": "deadline-report-register-notice",
 						"type": "open-form",
 						"label": "Register notice of default",
 						"icon": "Plus",

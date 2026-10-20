@@ -23,6 +23,7 @@ const stub = (tag) => ({ render() { return h(tag, this.$slots.default ? this.$sl
 vi.mock('@nextcloud/vue', () => ({ NcButton: stub('button'), NcLoadingIcon: stub('span'), NcEmptyContent: stub('div'), NcIconSvgWrapper: stub('span') }))
 vi.mock('@conduction/nextcloud-vue', () => ({
 	CnConfirmDialog: stub('div'),
+	CnFormDialog: { name: 'CnFormDialog', props: ['schema', 'item', 'initialData', 'dialogTitle'], methods: { setResult: vi.fn() }, render: () => h('div', { class: 'form-dialog' }) },
 	CnObjectRow: {
 		name: 'CnObjectRow',
 		props: ['object', 'config'],
@@ -32,9 +33,8 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 	},
 	CnRowActions: { name: 'CnRowActions', props: ['actions', 'row', 'rowLabel'], render: () => h('span') },
 }))
-vi.mock('../../src/components/InspectionChecklistEditor.vue', () => ({ default: stub('div') }))
 
-const ChecklistsTab = (await import('../../src/views/settings/tabs/ChecklistsTab.vue')).default
+const ChecklistTemplatesTab = (await import('../../src/views/settings/tabs/ChecklistTemplatesTab.vue')).default
 
 /**
  * @return {Promise<object>} The tab with two checklists.
@@ -44,7 +44,7 @@ async function mountTab() {
 		{ id: 'a', name: 'Brandveiligheid', active: true, version: 3, items: [{}, {}] },
 		{ id: 'b', name: 'Asbest', active: false, version: 1, items: [] },
 	] })
-	const wrapper = mount(ChecklistsTab)
+	const wrapper = mount(ChecklistTemplatesTab)
 	await flushPromises()
 	return wrapper
 }
@@ -71,5 +71,57 @@ describe('VTH checklists as library rows', () => {
 	it('draws no buttons of its own in a row', async () => {
 		const wrapper = await mountTab()
 		expect(wrapper.findAll('.row button')).toHaveLength(0)
+	})
+})
+
+describe('the checklist template form', () => {
+	it('edits a template in the library form dialog, its items as a table of sub-objects', async () => {
+		const wrapper = await mountTab()
+		wrapper.vm.openEditor(wrapper.vm.checklists[0])
+		await flushPromises()
+
+		const dialog = wrapper.findComponent({ name: 'CnFormDialog' })
+		expect(dialog.exists()).toBe(true)
+		expect(dialog.props('item')).toMatchObject({ id: 'a' })
+		const schema = dialog.props('schema')
+		expect(Object.keys(schema.properties)).toEqual(['name', 'version', 'active', 'validFrom', 'items'])
+		expect(schema.properties.items['x-widget']).toBe('sub-objects')
+		expect(Object.keys(schema.properties.items.items.properties)).toEqual(['question', 'type', 'required', 'weight'])
+		expect(schema.properties.items.items.properties.type.enum).toEqual(['boolean', 'text', 'enum', 'photo'])
+	})
+
+	it('names no procedure in the form', async () => {
+		const wrapper = await mountTab()
+		wrapper.vm.openEditor(null)
+		await flushPromises()
+		const schema = JSON.stringify(wrapper.findComponent({ name: 'CnFormDialog' }).props('schema'))
+		expect(schema).not.toMatch(/Bouwtoezicht|VTH|inspectie/i)
+	})
+
+	it('creates a new template with POST and updates one with PUT on the generic route', async () => {
+		const wrapper = await mountTab()
+		axios.post = vi.fn().mockResolvedValue({ data: {} })
+		axios.put = vi.fn().mockResolvedValue({ data: {} })
+
+		wrapper.vm.openEditor(null)
+		await wrapper.vm.saveChecklist({ name: 'Nieuw', items: [{ question: 'Q', type: 'text' }] })
+		expect(axios.post).toHaveBeenCalledWith('/index.php/apps/dossiq/api/checklists', expect.objectContaining({ name: 'Nieuw', version: 1 }))
+
+		wrapper.vm.openEditor(wrapper.vm.checklists[0])
+		await wrapper.vm.saveChecklist({ id: 'a', name: 'Brandveiligheid' })
+		expect(axios.put).toHaveBeenCalledWith('/index.php/apps/dossiq/api/checklists/a', expect.objectContaining({ id: 'a', version: 3 }))
+	})
+
+	it('keeps the dialog open with the server\'s sentence when the save is refused', async () => {
+		const wrapper = await mountTab()
+		axios.put = vi.fn().mockRejectedValue({ response: { data: { message: 'Version 3 is already published' } } })
+
+		wrapper.vm.openEditor(wrapper.vm.checklists[0])
+		await flushPromises()
+		const dialog = wrapper.findComponent({ name: 'CnFormDialog' })
+		await wrapper.vm.saveChecklist({ id: 'a', name: 'Brandveiligheid' })
+
+		expect(wrapper.vm.editing).toBe(true)
+		expect(dialog.vm.setResult).toHaveBeenCalledWith({ error: 'Version 3 is already published' })
 	})
 })

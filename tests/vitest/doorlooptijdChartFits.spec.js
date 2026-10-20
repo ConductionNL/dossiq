@@ -16,12 +16,12 @@ import { describe, expect, it } from 'vitest'
 
 const manifest = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../src/manifest.json'), 'utf8'))
 const page = manifest.pages.find((item) => item.id === 'Doorlooptijd')
-const widget = page.config.widgets.find((item) => item.id === 'dt-monthly')
+const widget = page.config.widgets.find((item) => item.id === 'processing-time-monthly')
 
 describe('the Doorlooptijd monthly chart', () => {
 	it('fits its tile instead of pinning a height', () => {
 		expect(widget.content.height).toBeUndefined()
-		expect(page.config.layout.find((item) => item.widgetId === 'dt-monthly').gridHeight).toBe(4)
+		expect(page.config.layout.find((item) => item.widgetId === 'processing-time-monthly').gridHeight).toBe(4)
 	})
 
 	it('puts its source line under the plot', () => {

@@ -9,7 +9,16 @@
 				t(
 					'dossiq',
 					'Configure the shared secret used to validate the X-Procest-Signature HMAC-SHA256 header on the public dwangsom payment-confirmation callback ({endpoint}). Without a configured secret, every callback request is rejected (HTTP 401). An unconfigured secret is never treated as an implicit pass.',
-					{ endpoint: '/apps/dossiq/api/dwangsom/payment-callback' },
+					{ endpoint: '/apps/dossiq/api/payments/callback' },
+				)
+			}}
+		</p>
+		<p class="financial-integration-tab__description" data-testid="payment-callback-legacy-address">
+			{{
+				t(
+					'dossiq',
+					'A payment provider configured with the earlier address {endpoint} keeps working.',
+					{ endpoint: '/apps/dossiq/api/dossiq/openconnector/dwangsom-payment-callback' },
 				)
 			}}
 		</p>

@@ -81,6 +81,24 @@ export function isSwitchedOn(value) {
 }
 
 /**
+ * A stored setting under its current key, or under its earlier key when the
+ * current one was never written.
+ *
+ * @param {object} config  The stored settings.
+ * @param {string} current The current key.
+ * @param {string} legacy  The earlier, procedure-named key.
+ * @return {string|boolean|undefined} The stored value.
+ * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+ */
+export function storedSetting(config, current, legacy) {
+	const value = config?.[current]
+	if (value !== undefined && value !== null && value !== '') {
+		return value
+	}
+	return config?.[legacy] ?? value
+}
+
+/**
  * The two Woo review report switches and the throughput reader group (decision D9).
  *
  * It saves through the settings route directly rather than the settings store,
@@ -128,9 +146,9 @@ export default {
 		 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 		 */
 		apply(config) {
-			this.throughput = isSwitchedOn(config.wooReviewerThroughputReport)
-			this.parties = isSwitchedOn(config.wooCollectionPartiesReport)
-			this.readers = config.wooReviewerThroughputReaders || ''
+			this.throughput = isSwitchedOn(storedSetting(config, 'reviewerThroughputReport', 'wooReviewerThroughputReport'))
+			this.parties = isSwitchedOn(storedSetting(config, 'collectionPartiesReport', 'wooCollectionPartiesReport'))
+			this.readers = storedSetting(config, 'reviewerThroughputReaders', 'wooReviewerThroughputReaders') || ''
 		},
 
 		/**
@@ -141,8 +159,8 @@ export default {
 		 */
 		async saveThroughput(on) {
 			await this.persist({
-				wooReviewerThroughputReport: on ? 'true' : 'false',
-				wooReviewerThroughputReaders: this.readers.trim(),
+				reviewerThroughputReport: on ? 'true' : 'false',
+				reviewerThroughputReaders: this.readers.trim(),
 			})
 		},
 
@@ -153,7 +171,7 @@ export default {
 		 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 		 */
 		async saveParties(on) {
-			await this.persist({ wooCollectionPartiesReport: on ? 'true' : 'false' })
+			await this.persist({ collectionPartiesReport: on ? 'true' : 'false' })
 		},
 
 		/**

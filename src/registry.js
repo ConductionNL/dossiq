@@ -229,7 +229,7 @@ import TaskDetailView from './views/tasks/TaskDetailView.vue'
 // @spec openspec/specs/dashboard/spec.md
 import FirstTodayWidget from './views/widgets/FirstTodayWidget.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
-import WooReportsView from './views/woo/WooReportsView.vue'
+import DocumentReviewReportsView from './views/reports/DocumentReviewReportsView.vue'
 import WorkloadSummaryBar from './views/WorkloadSummaryBar.vue'
 import { leafTab } from './integrations/leafTabs.js'
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
@@ -1349,10 +1349,10 @@ const registry = {
 		component: MailIntakeLogView,
 		_note: 'Named by src/manifest.d/37-mail-intake.json. A custom page because the intake-role check lives in MailIntakeController, and an index page would read the generic object endpoint and show every processed message original to anyone the register lets read.',
 	},
-	WooReportsView: {
+	DocumentReviewReportsView: {
 		kind: 'page',
-		component: WooReportsView,
-		_note: 'Named by src/manifest.d/86-woo-reports.json. A custom page because the reader-group check and the audit record of every read live in WooReportController.',
+		component: DocumentReviewReportsView,
+		_note: 'Named by src/manifest.d/86-document-review-reports.json. A custom page because the reader-group check and the audit record of every read live in WooReportController.',
 	},
 	StoreGallery: {
 		kind: 'page',

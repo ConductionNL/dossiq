@@ -60,6 +60,25 @@ class DeadlineReportingService {
 	public const UNRESOLVED = TermCaseTypeResolver::UNRESOLVED;
 
 	/**
+	 * Old report key => its generic name. Both are sent for one release.
+	 *
+	 * @var array<string, string>
+	 */
+	public const GENERIC_KEYS = [
+		'totalZaken' => 'totalCases',
+		'withinTermijnPercent' => 'withinTermPercent',
+		'dwangsomTotalCents' => 'penaltyTotalCents',
+		'totaal' => 'total',
+		'binnenTermijnPct' => 'withinTermPct',
+		'gemiddeldeDoorlooptijdDagen' => 'averageProcessingDays',
+		'verlengingen' => 'extensions',
+		'overschrijdingen' => 'overruns',
+		'ingebrekestellingen' => 'noticesOfDefault',
+		'bedragCents' => 'amountCents',
+		'betalingsreferentie' => 'paymentReference',
+	];
+
+	/**
 	 * Resolves each term's case type for the quarterly report.
 	 *
 	 * @var TermCaseTypeResolver
@@ -137,10 +156,9 @@ class DeadlineReportingService {
 		$perType = $this->reducePerType(byType: $this->aggregateByType(rows: $rows, department: $department, types: $types['byRow']));
 
 		return [
-			// 'periode' and 'department' are RESPONSE KEYS, not identifiers. They
-			// are the published shape of /api/termijn/reports/kwartaal and are
-			// read by the dashboard; they move only with a coordinated frontend
-			// change, not with this rename.
+			// `periode` is the old name of `period`, kept for one release for
+			// readers of the old report.
+			'period' => $period,
 			'periode' => $period,
 			'department' => $department,
 			'from' => $bounds['from'],
@@ -278,6 +296,7 @@ class DeadlineReportingService {
 				'suspended' => $b['suspended'],
 				'metShare' => $binnenPct,
 			];
+			$perType[$type] += self::genericKeys(row: $perType[$type]);
 		}//end foreach
 
 		return $perType;
@@ -324,7 +343,7 @@ class DeadlineReportingService {
 				$warnings[] = 'Missing betalingsreferentie for ' . ((string)($row['reference'] ?? ''));
 			}
 
-			$outRows[] = [
+			$outRow = [
 				'reference' => (string)($row['reference'] ?? ''),
 				'bedragCents' => $amount,
 				'actualPaymentDate' => $payment,
@@ -333,9 +352,11 @@ class DeadlineReportingService {
 				'legalBasis' => (string)($row['legalBasis'] ?? ''),
 				'iban' => (string)($row['iban'] ?? ''),
 			];
+			$outRows[] = $outRow + self::genericKeys(row: $outRow);
 		}//end foreach
 
 		return [
+			'year' => $year,
 			'jaar' => $year,
 			'rows' => $outRows,
 			'summary' => [
@@ -379,12 +400,15 @@ class DeadlineReportingService {
 			$avgDurationDays = round(array_sum($durations) / $aantalDuraties, 1);
 		}
 
-		return [
+		$kpi = [
 			'totalZaken' => $total,
 			'withinTermijnPercent' => $withinTermPercent,
 			'avgDurationDays' => $avgDurationDays,
 			'overrunCount' => $overrun,
 			'dwangsomTotalCents' => $dwTotal,
+		];
+
+		return $kpi + self::genericKeys(row: $kpi) + [
 			'lastUpdated' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 			...$this->figures->forDashboard(
 				rows: $rows,
@@ -442,6 +466,29 @@ class DeadlineReportingService {
 			'durations' => $durations,
 		];
 	}//end collectKpiTotals()
+
+	/**
+	 * The generic names of a row's procedure-named keys, with their values.
+	 *
+	 * A report carries both names for one release, so a cached client or an
+	 * external report reader that still reads the old key keeps working.
+	 *
+	 * @param array<string, mixed> $row A report row or summary.
+	 *
+	 * @return array<string, mixed> The generic keys present in the row's old keys.
+	 *
+	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+	 */
+	public static function genericKeys(array $row): array {
+		$generic = [];
+		foreach (self::GENERIC_KEYS as $old => $new) {
+			if (array_key_exists($old, $row) === true) {
+				$generic[$new] = $row[$old];
+			}
+		}
+
+		return $generic;
+	}//end genericKeys()
 
 	/**
 	 * Generate a CSV for a quarterly report.

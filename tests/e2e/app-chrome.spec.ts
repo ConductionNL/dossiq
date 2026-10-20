@@ -139,7 +139,7 @@ test.describe('app chrome (ADR-114)', () => {
 		// empty state and the broken state look the same on screen.
 		const kpiResponses: Array<{ status: number; url: string }> = []
 		page.on('response', (r) => {
-			if (r.url().includes('/api/termijn/dashboard/kpi')) {
+			if (r.url().includes('/api/deadlines/dashboard/kpi')) {
 				kpiResponses.push({ status: r.status(), url: r.url() })
 			}
 		})
