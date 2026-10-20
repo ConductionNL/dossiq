@@ -65,6 +65,12 @@ export default {
 
 	props: {
 		/** The role type already chosen: a uuid, or null. */
+		modelValue: {
+			type: [Object, String],
+			default: null,
+		},
+
+		/** The same value under the name CnFormDialog also binds. */
 		value: {
 			type: [Object, String],
 			default: null,
@@ -77,7 +83,7 @@ export default {
 		},
 	},
 
-	emits: ['select'],
+	emits: ['update:modelValue'],
 
 	data() {
 		return {
@@ -95,7 +101,8 @@ export default {
 		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		selected() {
-			const id = String(this.value?.id || this.value || '')
+			const current = this.modelValue ?? this.value
+			const id = String(current?.id || current || '')
 			return this.options.find((option) => option.id === id) || null
 		},
 	},
@@ -143,7 +150,7 @@ export default {
 		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		pick(option) {
-			this.$emit('select', option ? option.id : null)
+			this.$emit('update:modelValue', option ? option.id : null)
 		},
 	},
 }
