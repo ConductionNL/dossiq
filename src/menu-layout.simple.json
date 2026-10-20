@@ -4269,6 +4269,7 @@
 						"id": "side-case-type-versions",
 						"type": "record-list",
 						"title": "Versions",
+						"tabs": ["overview", "statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "history"],
 						"content": {
 							"register": "dossiq",
 							"schema": "caseType",
@@ -4314,6 +4315,7 @@
 						"id": "side-case-type-facts",
 						"type": "facts",
 						"title": "Data",
+						"tabs": ["statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "history"],
 						"content": {
 							"fields": [
 								{
@@ -4338,6 +4340,49 @@
 								}
 							]
 						}
+					},
+					{
+						"id": "side-case-type-check",
+						"type": "record-list",
+						"title": "Check",
+						"_note": "DqZaaktypeOverzicht Controle, beside the Overview tab only (`tabs`): the warnings publishing would give for this case type (GET /api/case-types/{id}/publish/validate answers warnings as plain strings), as one warning notice. The side cards per tab follow the boards: Overview Versions and Check, Phases and tasks Versions, Data and History, Fields the parent type.",
+						"tabs": ["overview"],
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/publish/validate",
+								"responsePath": "warnings"
+							},
+							"presentation": "notice",
+							"variant": "warning",
+							"lead": "Warnings ({total}):",
+							"limit": 1,
+							"emptyText": "No warnings"
+						}
+					},
+					{
+						"id": "side-case-type-parent",
+						"type": "facts",
+						"title": "Parent type",
+						"tabs": ["fields"],
+						"content": {
+							"fields": [
+								{
+									"label": "Inherits from",
+									"path": "parentCaseType",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "caseType"
+									}
+								}
+							],
+							"emptyText": "This case type inherits from no parent type"
+						}
+					},
+					{
+						"id": "side-case-type-history",
+						"type": "audit-trail",
+						"title": "History",
+						"tabs": ["phases"]
 					}
 				],
 				"layout": [
@@ -4363,17 +4408,13 @@
 							"ariaLabel": "Case type parts",
 							"tabs": [
 								{
+									"id": "overview",
 									"label": "Overview",
 									"widgetIds": [
-										"case-type-check",
 										"case-type-statuses",
 										"case-type-rights"
 									],
 									"layout": [
-										{
-											"widgetId": "case-type-check",
-											"gridWidth": 12
-										},
 										{
 											"widgetId": "case-type-statuses",
 											"gridWidth": 12
@@ -4393,6 +4434,7 @@
 									]
 								},
 								{
+									"id": "fields",
 									"label": "Fields",
 									"widgetIds": [
 										"case-type-fields-editor",
@@ -4410,6 +4452,7 @@
 									}
 								},
 								{
+									"id": "statuses",
 									"label": "Statuses",
 									"widgetIds": [
 										"case-type-statuses-editor",
@@ -4424,6 +4467,7 @@
 									}
 								},
 								{
+									"id": "phases",
 									"label": "Phases and tasks",
 									"widgetIds": [
 										"case-type-phase-board",
@@ -4436,6 +4480,7 @@
 									]
 								},
 								{
+									"id": "rights",
 									"label": "Rights",
 									"widgetIds": [
 										"case-type-rights",
@@ -4443,14 +4488,17 @@
 									]
 								},
 								{
+									"id": "privacy",
 									"label": "Privacy",
 									"widgetId": "case-type-privacy"
 								},
 								{
+									"id": "translations",
 									"label": "Translations",
 									"widgetId": "case-type-translations"
 								},
 								{
+									"id": "versions",
 									"label": "Versions",
 									"widgetIds": [
 										"case-type-chain",
@@ -4465,6 +4513,7 @@
 									}
 								},
 								{
+									"id": "portal",
 									"label": "Portal",
 									"widgetIds": [
 										"case-type-portal",
@@ -4472,6 +4521,7 @@
 									]
 								},
 								{
+									"id": "history",
 									"widgetId": "case-type-history",
 									"label": "Record history"
 								}
@@ -4615,23 +4665,6 @@
 							},
 							"emptyText": "This case type has no phases yet",
 							"groupEmptyText": "No tasks in this phase"
-						}
-					},
-					{
-						"id": "case-type-check",
-						"type": "record-list",
-						"title": "Check",
-						"_note": "DqZaaktypeOverzicht Controle, on the Overview tab only (a side card would show on every tab): the warnings publishing would give for this case type (GET /api/case-types/{id}/publish/validate answers warnings as plain strings), as one warning notice.",
-						"content": {
-							"endpointSource": {
-								"url": "/apps/dossiq/api/case-types/@objectId/publish/validate",
-								"responsePath": "warnings"
-							},
-							"presentation": "notice",
-							"variant": "warning",
-							"lead": "Warnings ({total}):",
-							"limit": 1,
-							"emptyText": "No warnings"
 						}
 					},
 					{
