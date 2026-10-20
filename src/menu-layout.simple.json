@@ -980,6 +980,32 @@
 				"_sideColumnFromNote": "Side cards per case type (Ruben, 18 October 2026): a case type that lists `sideCards` shows those cards in that order, a case type that lists none shows the column below. The list names ids of this column. Needs nextcloud-vue detail-side-column-from; on an older release the key is ignored and every case shows the column below.",
 				"sideColumnFrom": "@context.caseType.sideCards",
 				"sideColumn": [
+					{
+						"id": "side-advice-requested",
+						"type": "banner",
+						"_note": "DqZaak Advies gevraagd: the notice at the top of the side column while advice is still asked on this case. It shows while an open advice request (adviesAanvraag, status requested) points at this case, and names the first one, the soonest due. Needs nextcloud-vue notice-scoped-to-the-record (the @objectId token in a banner source); on an older release the token stays unresolved, the query finds nothing and the notice stays hidden.",
+						"content": {
+							"variant": "warning",
+							"lead": "Advice requested",
+							"text": "to {subject.advisor}. Answer due {subject.deadline|longdate}. Closing waits until then.",
+							"visibleWhen": {
+								"source": {
+									"register": "dossiq",
+									"schema": "adviesAanvraag",
+									"filter": {
+										"case": "@objectId",
+										"status": "requested"
+									},
+									"order": {
+										"deadline": "asc"
+									}
+								},
+								"field": "@total",
+								"op": "gt",
+								"value": 0
+							}
+						}
+					},
 					"case-tile-deadline",
 					{
 						"id": "side-requester",

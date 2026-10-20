@@ -37,7 +37,7 @@ const simple = buildProfiledManifest(
 
 const sideId = (entry) => (typeof entry === 'string' ? entry : entry.id)
 const sideIds = simple.sideColumn.map(sideId)
-const GENERIC = ['case-tile-deadline', 'side-requester', 'side-handling', 'side-work-instruction']
+const GENERIC = ['side-advice-requested', 'case-tile-deadline', 'side-requester', 'side-handling', 'side-work-instruction']
 
 function packageCaseTypes (id) {
 	const data = readJson('lib', 'Settings', 'packages', id, 'case-type.json')
