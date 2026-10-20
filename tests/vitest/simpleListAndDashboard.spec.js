@@ -725,6 +725,23 @@ describe('the landing page', () => {
 		})
 	})
 
+	// DqMijnWerk draws each link pill with the icon of the menu entry it
+	// stands in for, so the pill reads as that entry.
+	it('draws each view link with the icon of the menu entry it replaces', () => {
+		const entries = []
+		const walk = (items) => (items ?? []).forEach((entry) => {
+			entries.push(entry)
+			walk(entry.children)
+		})
+		walk(builtFull.menu)
+		const menuIcon = (route) => entries.find((entry) => entry.route === route && entry.icon)?.icon
+		for (const link of simple.config.viewLinks) {
+			expect(link.icon, link.label).toBeTruthy()
+			expect(link.icon, link.label).toBe(menuIcon(link.route))
+			expect(iconsSource, link.label).toContain(`\n\t${link.icon},\n`)
+		}
+	})
+
 	it('uses icons the app registers', () => {
 		for (const item of pageWidgets(simple).filter((w) =>
 			w.id.startsWith('simple-'),

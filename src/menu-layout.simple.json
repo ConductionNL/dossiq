@@ -193,14 +193,17 @@
 				"viewLinks": [
 					{
 						"label": "Your queue",
+						"icon": "ClipboardListOutline",
 						"route": "PersonalQueue"
 					},
 					{
 						"label": "Assigned to me",
+						"icon": "ClipboardAccountOutline",
 						"route": "MyWork"
 					},
 					{
 						"label": "Close out your day",
+						"icon": "ClipboardCheckOutline",
 						"route": "EndOfDay"
 					}
 				],
