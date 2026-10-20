@@ -28,12 +28,13 @@ const defaults = byslug('Cases')
 
 describe('default views on Cases', () => {
 
-	it('ships eight, each with a Dutch name', () => {
+	it('ships nine, each with a Dutch name', () => {
 		expect(Object.keys(defaults)).toEqual([
 			'mine-overdue',
 			'mine-due-this-week',
 			'unclaimed-overdue',
 			'woo-requests',
+			'subsidies',
 			'my-work',
 			'team-queue',
 			'unclaimed-due-this-week',

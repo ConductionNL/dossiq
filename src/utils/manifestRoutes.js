@@ -46,6 +46,10 @@ export const RETIRED_ROUTES = [
 		path: '/privacy/requests',
 		redirect: { name: 'Cases', query: { savedView: 'default:data-subject-requests' } },
 	},
+	{
+		path: '/subsidies',
+		redirect: { name: 'Cases', query: { savedView: 'default:subsidies' } },
+	},
 ]
 
 /**

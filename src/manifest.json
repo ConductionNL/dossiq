@@ -398,6 +398,7 @@
 			"label": "Objection advisory committees",
 			"icon": "FileAlertOutline",
 			"route": "BezwaarCommittees",
+			"section": "settings",
 			"order": 49
 		},
 		{
@@ -1809,6 +1810,7 @@
 					{ "slug": "mine-due-this-week", "name": "Mine, due this week", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
 					{ "slug": "unclaimed-overdue", "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
 					{ "slug": "woo-requests", "name": "Woo requests", "filters": { "caseType": "3c0f5a00-0000-4000-a000-00000000a001", "statusHiddenInLists": false, "isDraft": false } },
+					{ "slug": "subsidies", "name": "Subsidies", "filters": { "caseType": "b3c1a000-0000-4000-a000-0000000005ab", "statusHiddenInLists": false, "isDraft": false }, "overrides": { "title": "Subsidies", "columns": ["identifier", "title", { "key": "status", "label": "Status", "formatter": "statusTypeName" }, "assignee", "deadline"] } },
 					{
 						"slug": "my-work",
 						"name": "Assigned to me",
@@ -2413,7 +2415,7 @@
 						}
 					}
 				],
-				"_listsAsViewsNote": "Lists that were pages of their own are views of this list (Ruben, 19 October 2026): Assigned to me (`my-work`, was /my-work), the team queue (`team-queue`, was /queue; its late window is `unclaimed-overdue`, its week window `unclaimed-due-this-week`) and the data subject requests (`data-subject-requests`, was /privacy/requests). The old addresses redirect here with `?savedView=default:<slug>` (RETIRED_ROUTES). Complaints is a view per instance, added by the /api/manifest delta, because the complaint case type has no fixed id. The conditions each page applied as a base filter are the view's `overrides.lockedFilters`, which the reader cannot clear, so the view's own `filters` stay empty. Each view carries what its page had as `overrides` (nextcloud-vue saved-view-overrides, openspec/changes/lists-are-views/restore.md): the team queue's counts, case type chips, side cards and columns; Assigned to me's cards, urgency order (`sortOption: urgency`, the server's ranking from GET /api/work-queue) and its two slots; the data subject requests' tabs, notice, chips and columns. The team queue and Assigned to me keep their menu entries `Queue` and `MyWork`, each opening its view, so their pins keep working.",
+				"_listsAsViewsNote": "Lists that were pages of their own are views of this list (Ruben, 19 October 2026): Assigned to me (`my-work`, was /my-work), the team queue (`team-queue`, was /queue; its late window is `unclaimed-overdue`, its week window `unclaimed-due-this-week`) and the data subject requests (`data-subject-requests`, was /privacy/requests). The old addresses redirect here with `?savedView=default:<slug>` (RETIRED_ROUTES). The subsidies (`subsidies`, was /subsidies) are a view too: there are no case-type-specific pages or menu entries (Ruben, 20 October 2026). Complaints is a view per instance, added by the /api/manifest delta, because the complaint case type has no fixed id. The conditions each page applied as a base filter are the view's `overrides.lockedFilters`, which the reader cannot clear, so the view's own `filters` stay empty. Each view carries what its page had as `overrides` (nextcloud-vue saved-view-overrides, openspec/changes/lists-are-views/restore.md): the team queue's counts, case type chips, side cards and columns; Assigned to me's cards, urgency order (`sortOption: urgency`, the server's ranking from GET /api/work-queue) and its two slots; the data subject requests' tabs, notice, chips and columns. The team queue and Assigned to me keep their menu entries `Queue` and `MyWork`, each opening its view, so their pins keep working.",
 				"showSortSelect": true,
 				"sortSelectOptions": [
 					{

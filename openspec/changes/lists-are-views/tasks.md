@@ -20,3 +20,5 @@
 - The default pinned menu entries Queue and Assigned to me (both back, opening their views).
 - Assigned to me: the substituted work group (Work you are standing in for).
 - [x] 1.12 Base filters as `overrides.lockedFilters`; Assigned to me card description, chips and overdue tone (schema 2.132.0)
+- [x] 1.13 Subsidies: the page and its menu entry go; default view `subsidies`, /subsidies redirects (Ruben, 20 October 2026)
+- [x] 1.14 Own-record entries are settings-only: BezwaarCommitteesMenu declares `section: settings`; the full profile lifts CaseObjectsMenu into settings as the simple one does

@@ -35,3 +35,21 @@ keep working and the default pins are unchanged.
 - GIVEN a user whose pins are `MyWork` and `Tasks`
 - WHEN they open the menu
 - THEN the pinned Assigned to me entry opens `/cases?savedView=default:my-work`
+
+### Requirement: No case-type-specific pages or menu entries
+
+Dossiq SHALL have no list page or menu entry per case type (Ruben, 20 October
+2026). A list of one case type SHALL be a default view of the Cases page
+(`woo-requests`, `complaints`, `data-subject-requests`, `subsidies`), and a
+user who wants another makes a view. Pages over a case type's own records
+SHALL be reached from settings or administration, never from the main menu.
+
+#### Scenario: A bookmark of the subsidies list
+- GIVEN a bookmark of /subsidies
+- WHEN it is opened
+- THEN the Cases page opens with the `subsidies` view, the cases of the subsidie case type
+
+#### Scenario: A data subject request is filed from its view
+- GIVEN the Cases page with the `data-subject-requests` view applied
+- WHEN the reader chooses New data subject request
+- THEN the create form asks for the request kind (`dataSubjectRequestType`)

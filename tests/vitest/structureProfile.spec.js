@@ -107,14 +107,14 @@ describe('the full profile', () => {
 		expect(overrides.sidePanel).toHaveLength(2)
 	})
 
-	it('still counts 39 entries: 13 main, 5 footer, 18 settings, 3 integrations', () => {
+	it('counts 39 entries: 12 main, 5 footer, 19 settings, 3 integrations (Case objects is settings-only)', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
 		expect(flat(menu)).toHaveLength(39)
-		expect(count('main')).toBe(13)
+		expect(count('main')).toBe(12)
 		expect(count('footer')).toBe(5)
-		expect(count('settings')).toBe(18)
+		expect(count('settings')).toBe(19)
 		expect(count('integrations')).toBe(3)
 	})
 })
@@ -489,10 +489,11 @@ describe('the simple profile', () => {
 	// 78 -> 82: the parts of a case type without an editor of their own (result, role, document and decision type) get a page each.
 	// 82 -> 81: the CaseMap page retires; `/map` redirects to the Cases map view.
 	// 81 -> 78: Queue, MyWork and PrivacyRequests became views of Cases.
-	it('builds the same 78 pages as the full profile, so every route stays', () => {
+	// 78 -> 77: Subsidies became a view of Cases.
+	it('builds the same 77 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(78)
+		expect(built.pages).toHaveLength(77)
 	})
 })
 

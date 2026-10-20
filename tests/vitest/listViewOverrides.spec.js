@@ -129,3 +129,37 @@ describe('the data-subject-requests view', () => {
 		expect(entry.sort).toEqual([{ key: 'deadline', order: 'asc' }])
 	})
 })
+
+describe('the data subject requests are still filed from their view', () => {
+	const overrides = view('data-subject-requests').overrides
+
+	it('offers New data subject request, whose form asks the request kind', () => {
+		expect(overrides.headerButtons.find((button) => button.action === 'add')).toMatchObject({ label: 'New data subject request' })
+		expect(overrides.includeFields).toContain('dataSubjectRequestType')
+	})
+})
+
+describe('no case-type-specific pages or menu entries', () => {
+	const routes = fs.readFileSync(path.join(ROOT, 'src/utils/manifestRoutes.js'), 'utf8')
+	const subsidie = read('src/manifest.d/50-subsidie.json')
+
+	it('lists the subsidies as a default view of Cases, and /subsidies redirects to it', () => {
+		expect(view('subsidies').filters.caseType).toBe('b3c1a000-0000-4000-a000-0000000005ab')
+		expect(subsidie.pages.map((page) => page.id)).toEqual(['SubsidieDetail', 'Terugvorderingen'])
+		expect(subsidie.menu).toBeUndefined()
+		expect(routes).toMatch(/path: '\/subsidies',\n\t\tredirect: \{ name: 'Cases', query: \{ savedView: 'default:subsidies' \} \}/)
+	})
+
+	it('names no removed entry in either profile', () => {
+		for (const file of [full, simple]) {
+			expect(file.removals).not.toContain('SubsidiesGroup')
+			expect(Object.keys(file.removalsReplacedBy)).not.toContain('SubsidiesGroup')
+		}
+	})
+
+	it('keeps the own-record entries out of the main menu', () => {
+		expect(manifest.menu.find((item) => item.id === 'BezwaarCommitteesMenu').section).toBe('settings')
+		expect(full.settingsSection).toContain('CaseObjectsMenu')
+		expect(simple.settingsSection).toContain('CaseObjectsMenu')
+	})
+})
