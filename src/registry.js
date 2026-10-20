@@ -169,6 +169,7 @@ import RemedyLodgeDialog from './dialogs/RemedyLodgeDialog.vue'
 import RemindDialog from './dialogs/RemindDialog.vue'
 import WooSearchPlanDialog from './dialogs/WooSearchPlanDialog.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
+import DeelzaakCreateModal from './modals/DeelzaakCreateModal.vue'
 // The Documents tab's upload dialog and bulk-action dialog
 // (documents-on-the-case task 2.2: the tab itself is now a `type:
 // "object-list"` CnObjectListWidget, resolved by the library, not a
@@ -516,6 +517,14 @@ const registry = {
 	},
 	// @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
 	// @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02
+	// @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
+	DeelzaakCreateModal: {
+		kind: 'modal',
+		component: DeelzaakCreateModal,
+		propsSchema: {},
+		_note: "CaseDetail `case-sub-cases` list's create action. Creates the sub-case through /api/deelzaken (validate, then derive), so it inherits what case.parentCase declares; the list's own create form would save the case directly and inherit nothing. parentCase arrives as the resolved `@objectId`; the modal reads the parent and its case type itself and says why when the parent cannot take a sub-case.",
+	},
+
 	LogContactDialog: {
 		kind: 'modal',
 		component: LogContactDialog,

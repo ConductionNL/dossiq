@@ -5039,6 +5039,7 @@ OC.L10N.register(
         "No store registry is configured, so nothing was requested from the network. An administrator can connect one under Administration settings. The templates below ship with dossiq.": "Er is geen storeregister ingesteld, dus er is niets van het netwerk opgehaald. Een beheerder kan er een verbinden bij de beheerinstellingen. De sjablonen hieronder worden met dossiq meegeleverd.",
         "No StUF endpoints configured yet.": "Nog geen StUF-endpoints geconfigureerd.",
         "No StUF messages match the filters.": "Geen StUF-berichten voldoen aan de filters.",
+        "No sub-case can be added here": "Hier kan geen deelzaak worden toegevoegd",
         "No sub-cases yet": "Nog geen deelzaken",
         "No substitutions": "Geen waarnemingen",
         "No suggestions available": "Geen suggesties beschikbaar",
