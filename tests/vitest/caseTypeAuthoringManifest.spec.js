@@ -400,11 +400,11 @@ describe('the Case types index shows one row per case type', () => {
 		expect(current.filter).toEqual({ supersededBy: 'IS NULL' })
 	})
 
-	it('spells the empty test as the sentinel the Queue page uses', () => {
+	it('spells the empty test as the sentinel the team queue uses', () => {
 		// `assignee: "IS NULL"` is the literal sentinel every OpenRegister
 		// condition builder matches by value. A different spelling here would
 		// contribute no condition at all and list every version.
-		const queue = page('Queue').config.filter.assignee
+		const queue = page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters.assignee
 		expect(chips()[0].filter.supersededBy).toBe(queue)
 	})
 

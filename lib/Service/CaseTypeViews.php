@@ -121,6 +121,53 @@ final class CaseTypeViews {
 	}//end views()
 
 	/**
+	 * The views every user gets for case types the instance names by
+	 * identifier (lib/Settings/case-type-views.json).
+	 *
+	 * @return array<int, array{slug: string, name: string, caseTypeIdentifier: string}> The declared views.
+	 *
+	 * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
+	 */
+	public function declaredViews(): array {
+		$decoded = json_decode((string)file_get_contents(__DIR__ . '/../Settings/case-type-views.json'), true);
+		$views = [];
+		foreach ((array)($decoded['views'] ?? []) as $view) {
+			if (is_array($view) === true && is_string($view['slug'] ?? null) === true && is_string($view['caseTypeIdentifier'] ?? null) === true) {
+				$views[] = ['slug' => $view['slug'], 'name' => (string)($view['name'] ?? $view['slug']), 'caseTypeIdentifier' => $view['caseTypeIdentifier']];
+			}
+		}
+
+		return $views;
+	}//end declaredViews()
+
+	/**
+	 * The declared views whose case type this instance has, each filtering on it.
+	 *
+	 * @param array<string, array{id: string, title: string}> $byIdentifier The instance's case types, by identifier.
+	 *
+	 * @return array<int, array{slug: string, name: string, filters: array<string, mixed>}> The views.
+	 *
+	 * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
+	 */
+	public function instanceViews(array $byIdentifier): array {
+		$views = [];
+		foreach ($this->declaredViews() as $view) {
+			$caseType = ($byIdentifier[$view['caseTypeIdentifier']] ?? null);
+			if ($caseType === null) {
+				continue;
+			}
+
+			$views[] = [
+				'slug' => $view['slug'],
+				'name' => $view['name'],
+				'filters' => ['caseType' => (string)$caseType['id'], 'statusHiddenInLists' => false, 'isDraft' => false],
+			];
+		}
+
+		return $views;
+	}//end instanceViews()
+
+	/**
 	 * The menu entries for the case types a user pinned, in their order.
 	 *
 	 * @param array<int, array{id: string, title: string}> $caseTypes The pinned case types.

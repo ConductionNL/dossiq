@@ -7,7 +7,7 @@
  * work into the reader's own list without duplicating, filtering substituted
  * items out when the show/hide toggle is off, and remembering that toggle.
  *
- * Every export here is called from `src/views/MyWorkCards.vue` or
+ * Every export here is called from `src/views/SubstitutedWork.vue` or
  * `src/views/widgets/MyWorkWidget.vue`. That is asserted mechanically by
  * `tests/vitest/substitutedWorkOnMyWork.spec.js`, because these helpers shipped
  * with no call site at all: the file was written, reviewed and merged, and

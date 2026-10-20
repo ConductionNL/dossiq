@@ -115,14 +115,14 @@ describe('the landing page in the full structure', () => {
 			)
 			expect(widget, widget.id).toEqual(withoutNotes(source))
 		}
-		// The team queue is the dashboard's own preset: the Queue page's
+		// The team queue is the dashboard's own preset: the team queue view's
 		// filter narrowed to the reader's own teams (my-teams-queue).
 		const preset = dashboard.config.userWidgets.find(
 			(item) => item.id === 'your-teams-queue',
 		)
 		expect(team[0]).toEqual({ id: preset.id, ...preset.widget })
 		expect(team[0].content.filter).toEqual({
-			...page(manifest.pages, 'Queue').config.filter,
+			...page(manifest.pages, 'Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters,
 			assignedGroup: '@myGroups',
 		})
 		// The deadline reads as a date, not as the stored ISO string
