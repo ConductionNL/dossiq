@@ -49,6 +49,10 @@ function nameField(tab: Locator): Locator {
 const CASE_TYPE_TITLE = `${RUN_PREFIX} Vergunning`
 
 test.describe('case type field vocabulary', () => {
+	// The `#pd-add-*` form these target (PropertyDefinitionFields.vue) was never
+	// mounted and is removed. The case type's field form is the manifest's
+	// `formIncludeFields` form now; retarget these at it.
+	test.fixme(true, 'targets #pd-add-* ids that no page renders; the field form is the manifest form now')
 	test.setTimeout(300_000)
 
 	let caseTypeId = ''

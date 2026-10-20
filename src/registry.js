@@ -196,17 +196,6 @@ import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
 // The AVG panel on a data subject request case
 // (data-subject-requests-drive-the-platform).
 import DataSubjectRequestTab from './views/cases/components/DataSubjectRequestTab.vue'
-// CMMN adaptive case-plan panel — sibling to the BPMN status-transition
-// engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
-// @spec openspec/specs/cmmn-adaptive-case/spec.md
-import InspectionPanel from './views/cases/components/InspectionPanel.vue'
-import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
-// Deelzaak (sub-case) full-page views — wired via manifest routes
-// /cases/:id/deelzaken (list) and /cases/:parentId/deelzaken/:id (detail).
-// Modal isolation per ADR-004: DeelzaakCreateModal lives in src/modals/.
-// @spec openspec/changes/deelzaak-support/tasks.md#T05
-// @spec openspec/changes/deelzaak-support/tasks.md#T06
-import DeelzaakList from './views/cases/DeelzaakList.vue'
 import DeletedCasesView from './views/cases/DeletedCasesView.vue'
 import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
 import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
@@ -1008,20 +997,6 @@ const registry = {
 	// Decisions are authored in decidiq (besluitvorming leaf); the read-only
 	// case-decisions widget displays the outcomes stored on the case.
 
-	// --- Deelzaak (sub-case) full-page views — manifest routes. ---
-	// @spec openspec/changes/deelzaak-support/tasks.md#T05
-	DeelzaakList: {
-		kind: 'page',
-		component: DeelzaakList,
-		_note: 'Sub-case list for a parent case; mounted under /cases/:id/deelzaken.',
-	},
-	// @spec openspec/changes/deelzaak-support/tasks.md#T06
-	DeelzaakDetail: {
-		kind: 'page',
-		component: DeelzaakDetail,
-		_note: 'Sub-case detail with parent breadcrumb; mounted under /cases/:parentId/deelzaken/:id.',
-	},
-
 	// --- Case-appointment (internal calendar) sidebar tab — leaf-first per ADR-022. ---
 	// The former bespoke LocalBackend scheduling surface is replaced by OR's
 	// `calendar` integration leaf (CalendarProvider): the leaf owns event
@@ -1049,13 +1024,6 @@ const registry = {
 		_note: 'nc-vue built-in version-history integration leaf (CnVersionHistory) surfaced on every detail page sidebar beside the existing audit-trail tab.',
 	},
 
-	// --- Notes sidebar tab with @mention notifications (ncvue-w2-leaves-adoption, nc-vue #207). ---
-	// The existing "case-notes" CaseDetail body widget renders CnNotesCard,
-	// which predates @mention and does not emit it. This sidebar tab renders
-	// the full CnNotesTab (which does emit `mention`) and forwards the event
-	// to dossiq's own notification endpoint — see CaseNotesTab.vue for the
-	// full rationale. Wired as a `component:` sidebar tab on CaseDetail.
-	// @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	// --- The requester's projection, kept in step without a card. ---
 	//
 	// The initiator card left the page on 2026-09-12 (Ruben), but the card
@@ -1071,11 +1039,6 @@ const registry = {
 		component: RequesterProjection,
 		...HEADLESS_WIDGET_META,
 		_note: 'CaseDetail actions slot, headless: fills initiatorType, initiatorSourceId and initiatorDisplayName from the canonical requester uuid when the case carries the reference and no projection. Renders nothing.',
-	},
-	CaseNotesTab: {
-		kind: 'page',
-		component: CaseNotesTab,
-		_note: "Mention-aware notes sidebar tab: wraps the library CnNotesTab (via leafTab('notes')) and POSTs mention payloads to /api/notes/mention. Zero note/mention UI logic reimplemented — see CaseNotesTab.vue.",
 	},
 	// --- The notes as a tab on the case page. ---
 	//
@@ -1279,30 +1242,6 @@ const registry = {
 		_note: 'Partner + federated case sharing, transfer and activity — container that wires ShareTab/CreateShareDialog/CaseTransferDialog/CreateFederatedShareDialog/FederatedActivityPanel to the backend API.',
 	},
 
-	// --- Besluitvorming (decision-making) sidebar tab — decidesk leaf. ---
-	// "decidesk owns it; dossiq shows a leaf" (ADR-019 / ADR-022). The
-	// decidesk `decidesk-decisions` integration leaf (registered cross-app on
-	// the shared OR integration registry by decidesk's global init script)
-	// surfaces proposals/advice/decisions linked to this case via decidesk's
-	// subjectId back-reference. The wrapper resolves the registered provider's
-	// tab at render time and forwards the case `{ register, schema, objectId }`
-	// context that CnObjectSidebar injects. Retires dossiq's former standalone
-	// Voorstellen/Advies/Agenda nav.
-	// @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
-	BesluitvormingLeafTab: {
-		kind: 'page',
-		component: BesluitvormingLeafTab,
-		_note: 'decidesk decisions integration leaf (decidesk-decisions) surfaced on the case detail; replaces the standalone Besluitvorming nav (ADR-019/ADR-022).',
-	},
-
-	// --- VTH module: case detail sidebar tabs. ---
-	// @spec openspec/changes/vth-module/tasks.md#task-7
-	InspectionPanel: {
-		kind: 'page',
-		component: InspectionPanel,
-		_note: 'VTH inspection panel — shows completed inspectionResult records for a case',
-	},
-
 	// --- Forms + Photos leaves — leaf-first per ADR-022. ---
 	// Inspection checklist / advice forms render through OR's `forms` leaf
 	// (FormsProvider / CnFormsTab), inspection photos through OR's `photos`
@@ -1380,11 +1319,6 @@ const registry = {
 	// case-sharing-mints-access-links: nothing ever minted the token it read,
 	// so the route could not be entered. An advisory body now answers over an
 	// OpenRegister access link declaring `comment` (openregister#3817).
-	CaseTimelineTab: {
-		kind: 'page',
-		component: CaseTimelineTab,
-		_note: 'The same component `case-timeline-pane` above mounts, under its COMPONENT name, for a manifest that names it as a sidebar tab rather than as a tab-widget type.',
-	},
 
 	// --- Named behaviours: a manifest `handler` string, not a component. ---
 	//

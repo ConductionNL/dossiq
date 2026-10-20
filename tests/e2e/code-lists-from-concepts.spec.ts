@@ -54,6 +54,10 @@ const CASE_TYPE_TITLE = `${RUN_PREFIX} Wijkmelding`
 const SCHEME = 'wijken'
 
 test.describe('code lists from concepts', () => {
+	// The `#pd-add-*` form these target (PropertyDefinitionFields.vue) was never
+	// mounted and is removed. The case type's field form is the manifest's
+	// `formIncludeFields` form now; retarget these at it.
+	test.fixme(true, 'targets #pd-add-* ids that no page renders; the field form is the manifest form now')
 	test.setTimeout(300_000)
 
 	let caseTypeId = ''

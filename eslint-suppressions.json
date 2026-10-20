@@ -195,25 +195,6 @@
       "count": 3
     }
   },
-  "src/views/cases/DeelzaakDetail.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    },
-    "no-console": {
-      "count": 2
-    }
-  },
-  "src/views/cases/DeelzaakList.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 2
-    }
-  },
   "src/views/cases/components/CaseEmailTab.vue": {
     "no-console": {
       "count": 2
