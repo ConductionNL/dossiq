@@ -94,8 +94,8 @@ export default {
 			default: '',
 		},
 
-		/** The loaded case, when the host hands it over. */
-		object: {
+		/** The loaded case, bound by CnDetailWidgetHost. */
+		objectData: {
 			type: Object,
 			default: null,
 		},
@@ -119,7 +119,7 @@ export default {
 
 		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08 */
 		caseTitle() {
-			return String(this.object?.title || '')
+			return String(this.objectData?.title || '')
 		},
 
 		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08 */
