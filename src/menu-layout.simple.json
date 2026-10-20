@@ -4624,7 +4624,14 @@
 						"id": "case-type-rules-summary",
 						"type": "record-list",
 						"title": "Rules",
-						"_note": "DqZaaktypeOverzicht Regels: the rules OpenRegister holds for the case schema (GET /apps/openregister/api/schemas/case/rules, the inventory the Fields tab's rules widget reads), one row each with whether it is on. The rules belong to the case schema, not to one case type, which is why every case type lists the same ones. Adding a rule happens on OpenRegister's schema page, so there is no Add here.",
+						"headerLink": {
+							"label": "Add rule",
+							"route": "FlowDetail",
+							"params": {
+								"id": "new"
+							}
+						},
+						"_note": "DqZaaktypeOverzicht Regels: the rules OpenRegister holds for the case schema (GET /apps/openregister/api/schemas/case/rules, the inventory the Fields tab's rules widget reads), one row each with whether it is on. The rules belong to the case schema, not to one case type, which is why every case type lists the same ones. OpenRegister derives a schema's rules from its configuration (calculations, state fields, lifecycle conditions) and from the flows triggered on it, and has no endpoint that adds a rule by itself. A condition with an action, as the board draws ('If building costs exceed 100,000, add a task'), is a flow, so Add rule opens a new flow.",
 						"content": {
 							"endpointSource": {
 								"url": "/apps/openregister/api/schemas/case/rules",

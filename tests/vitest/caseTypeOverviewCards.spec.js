@@ -32,6 +32,13 @@ describe('case type Overview cards', () => {
 		expect(rules.endpointSource).toEqual({ url: '/apps/openregister/api/schemas/case/rules', responsePath: 'rules' })
 		expect(rules.pill.field).toBe('enabled')
 	})
+
+	/**
+	 * @spec openspec/changes/case-type-add-rule/specs/case-type-add-rule/spec.md#requirement-the-rules-card-adds-a-rule-as-a-new-flow
+	 */
+	it('adds a rule by opening a new flow', () => {
+		expect(widget('case-type-rules-summary').headerLink).toEqual({ label: 'Add rule', route: 'FlowDetail', params: { id: 'new' } })
+	})
 })
 
 /**
