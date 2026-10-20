@@ -22,12 +22,14 @@ import {
 	backgroundAccountFields,
 	consultationFields,
 	contactCentreFields,
+	DEFAULT_CASE_PATTERN,
 	ISO_DURATION_PATTERN,
 	mandateSettingsFields,
 	menuStructureFields,
 	paymentCallbackFields,
 	queueUrgencyFields,
 	reviewReportFields,
+	sharedMailboxFields,
 	storeRegistryFields,
 	workDigestFields,
 } from '../../src/views/settings/adminFields.js'
@@ -280,5 +282,39 @@ describe('the daily digest', () => {
 
 	it('names who decided the setting', () => {
 		expect(Object.keys(fields.source.textMap)).toEqual(['user-override', 'group-default', 'schema-default', '*'])
+	})
+})
+
+describe('the shared mailbox', () => {
+	const fields = sharedMailboxFields(t)
+	const keyed = byKey(fields)
+	const matchingUrl = '/apps/dossiq/api/settings/email-case-matching/instance'
+
+	it('saves the intake keys on the mailbox endpoint, all of them at once', () => {
+		const section = adminRoot.slice(adminRoot.indexOf('id="section-mailbox"'))
+		const tag = section.slice(0, section.indexOf('/>'))
+		expect(tag).toContain('url="/apps/dossiq/api/settings/email"')
+		expect(tag).toContain(':saveAll="true"')
+		expect(tag).toContain(':hintsToggle="true"')
+	})
+
+	it('saves matching on its own endpoint, which checks the pattern, as yes or no', () => {
+		expect(keyed.email_case_matching_enabled).toMatchObject({ url: matchingUrl, saveMethod: 'PUT', trueValue: 'yes', falseValue: 'no' })
+		expect(keyed.email_case_matching_pattern).toMatchObject({ url: matchingUrl, saveMethod: 'PUT' })
+	})
+
+	it.each(['email_from_address', 'email_from_name', 'email_recipient_allowlist'])('saves %s through dossiq settings, which stores it', (key) => {
+		expect(keyed[key]).toMatchObject({ url: '/apps/dossiq/api/settings', valuePath: `config.${key}`, saveMethod: 'PUT' })
+		expect(configKeys).toContain(`'${key}',`)
+	})
+
+	it('offers the Mail accounts and warns when Mail is missing', () => {
+		expect(keyed.email_mail_account_id).toMatchObject({ optionsUrl: '/apps/dossiq/api/settings/email/mail-accounts', optionsPath: 'accounts', optionDetail: 'email' })
+		expect(keyed['mail-app-missing']).toMatchObject({ type: 'status', tone: 'warning', valuePath: 'available' })
+	})
+
+	it('names the default case number pattern as the server has it', () => {
+		const recognizer = fs.readFileSync(path.join(ROOT, 'lib', 'Service', 'Email', 'CaseNumberRecognizer.php'), 'utf8')
+		expect(recognizer).toContain(`DEFAULT_PATTERN = '${DEFAULT_CASE_PATTERN}'`)
 	})
 })

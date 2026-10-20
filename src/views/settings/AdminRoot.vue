@@ -92,7 +92,7 @@
 				:savedMessage="t('dossiq', 'Background jobs now save as {userId}.')"
 				:fields="backgroundAccountFields" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-mailbox"
 				:name="t('dossiq', 'Case email: shared mailbox')"
 				:description="
@@ -101,9 +101,13 @@
 						'Shared functional mailbox ingest (IMAP) and transport for case correspondence. Outbound mail and per-user accounts are owned by Nextcloud Mail.',
 					)
 				"
-				:loading="!storesReady">
-				<EmailSettings v-if="storesReady" />
-			</CnSettingsSection>
+				url="/apps/dossiq/api/settings/email"
+				:columns="2"
+				:saveAll="true"
+				:hintsToggle="true"
+				:saveLabel="t('dossiq', 'Save mailbox settings')"
+				:savedMessage="t('dossiq', 'Mailbox settings saved.')"
+				:fields="sharedMailboxFields" />
 
 			<CnSettingsFieldsSection
 				id="section-ai"
@@ -613,7 +617,6 @@ import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
-import EmailSettings from './EmailSettings.vue'
 import Settings from './Settings.vue'
 import ShippedConfiguration from './ShippedConfiguration.vue'
 import StufAuditLog from './StufAuditLog.vue'
@@ -644,6 +647,7 @@ import {
 	paymentCallbackFields,
 	queueUrgencyFields,
 	reviewReportFields,
+	sharedMailboxFields,
 	storeRegistryFields,
 	textsAndAccessFields,
 } from './adminFields.js'
@@ -666,7 +670,6 @@ export default {
 		ChecklistsTab,
 		TermijnDefinitiesTab,
 		MandaatMatrixTab,
-		EmailSettings,
 		ShippedConfiguration,
 		StufEndpoints,
 		StufAuditLog,
@@ -1054,6 +1057,16 @@ export default {
 		 */
 		archivalFields() {
 			return archivalFields(this.t.bind(this))
+		},
+
+		/**
+		 * The shared mailbox intake, matching and sender.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
+		sharedMailboxFields() {
+			return sharedMailboxFields(this.t.bind(this))
 		},
 
 		/**
