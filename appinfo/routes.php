@@ -394,7 +394,7 @@ $extra = [
         // One personal queue, fed by the declared sources (one-personal-queue).
         // Nothing here takes a user id: every endpoint answers for the caller.
     ['name' => 'personalQueue#index',              'url' => '/api/personal-queue',                   'verb' => 'GET'],
-    ['name' => 'personalQueue#endOfDay',           'url' => '/api/personal-queue/end-of-day',        'verb' => 'GET'],
+    ['name' => 'endOfDay#show',                     'url' => '/api/personal-queue/end-of-day',        'verb' => 'GET'],
     ['name' => 'personalQueue#setGrouping',        'url' => '/api/personal-queue/grouping',          'verb' => 'POST'],
     ['name' => 'personalQueue#hideGroup',          'url' => '/api/personal-queue/groups/{group}/hide', 'verb' => 'POST'],
     ['name' => 'personalQueue#showGroup',          'url' => '/api/personal-queue/groups/{group}/show', 'verb' => 'POST'],

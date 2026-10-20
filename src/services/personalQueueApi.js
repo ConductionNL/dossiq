@@ -19,19 +19,6 @@ import { generateUrl } from '@nextcloud/router'
 const BASE = '/apps/dossiq/api/personal-queue'
 
 /**
- * The cases and tasks the reader may close their day on.
- *
- * @return {Promise<{items: Array, unavailable: Array}>} The candidates.
- *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
- */
-export async function fetchEndOfDay() {
-	const { data } = await axios.get(generateUrl(`${BASE}/end-of-day`))
-
-	return { items: data?.items ?? [], unavailable: data?.unavailable ?? [] }
-}
-
-/**
  * Remember how the reader groups their queue.
  *
  * @param {string} groupBy One of source, priority, due.

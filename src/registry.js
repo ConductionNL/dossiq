@@ -223,7 +223,6 @@ import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidg
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
-import EndOfDayView from './views/queue/EndOfDayView.vue'
 // One personal queue fed by the declared sources (one-personal-queue).
 // @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 import PersonalQueueView from './views/queue/PersonalQueueView.vue'
@@ -380,12 +379,6 @@ const registry = {
 		kind: 'page',
 		component: PersonalQueueView,
 		_note: 'The page holding everything waiting on the reader. A page and not an index, because it is not a list of one schema: it merges cases, engine tasks, consultations, advice, mentions, covered work and planned calendar items, and no manifest key names a set that spans four stores and a calendar. It hard-codes NO source: every group and its heading come from the declared queue sources the server resolves, which is what keeps a new mechanism from needing a page change.',
-	},
-
-	EndOfDayView: {
-		kind: 'page',
-		component: EndOfDayView,
-		_note: "The end-of-day screen. Lists the queue candidates OpenRegister says this reader opened today, reading its per-reader read state rather than keeping a second record of who saw what. The time box is humaniq's hours leaf, placed per item and absent entirely when humaniq is not installed: a dossiq time field would become a second hours store the day humaniq arrives.",
 	},
 
 	// --- Genuine exceptions: no abstract manifest analogue. ---

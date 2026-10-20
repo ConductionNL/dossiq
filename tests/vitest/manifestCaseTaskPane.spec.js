@@ -111,6 +111,9 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  */
 const CUSTOM_PAGE_COUNT_BEFORE = 11
 const CUSTOM_PAGE_COUNT_AFTER = 12
+// Custom pages moved onto manifest config since, each one unit off the ratchet
+// (end-of-day-manifest: Close out your day is a dashboard).
+const CUSTOM_PAGES_RETIRED_SINCE = ['EndOfDay']
 
 /**
  * One page as the manifest declares it.
@@ -236,7 +239,8 @@ describe('the case-tasks widget after the retype', () => {
 		// page. The one unit above the pre-pane count belongs to TaskDetail,
 		// and to nothing else.
 		const custom = pages.filter((entry) => entry.type === 'custom')
-		expect(custom).toHaveLength(CUSTOM_PAGE_COUNT_AFTER)
+		expect(custom).toHaveLength(CUSTOM_PAGE_COUNT_AFTER - CUSTOM_PAGES_RETIRED_SINCE.length)
+		expect(custom.map((entry) => entry.id)).not.toEqual(expect.arrayContaining(CUSTOM_PAGES_RETIRED_SINCE))
 		expect(CUSTOM_PAGE_COUNT_AFTER - CUSTOM_PAGE_COUNT_BEFORE).toBe(1)
 		expect(custom.map((entry) => entry.id)).toContain('TaskDetail')
 
