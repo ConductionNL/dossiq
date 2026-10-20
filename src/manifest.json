@@ -2482,16 +2482,25 @@
 					{
 						"id": "case-payment-requests",
 						"type": "integration",
-						"integrationId": "shillinq-payment-requests",
+						"integrationId": "shillinq-payment-requests-panel",
 						"title": "Fees and payments",
-						"_note": "fees-and-payments-on-the-case D-1 and D-3. The money lives in shillinq, so shillinq renders it: this is a PLACEMENT of the `shillinq-payment-requests` leaf, the same shape as the humaniq hours leaf beside it, and not a query against another app's register. What the panel shows is the requests raised on this case, the amount, and the article of the legesverordening the amount rests on, because a citizen may ask why they are being charged and \"because the configuration says so\" is not an answer a gemeente may give. It also carries the acts: raise the leges for this case's intake channel, send the payment link, and record money that arrived another way. THE COUNTER PAYMENT IS DELIBERATELY NOT A DOSSIQ ACT. shillinq puts it behind its own `payment.administer` permission, so the authority that owns the money decides who may say it arrived; a second dossiq path to the same fact would be a second answer with a second rights matrix behind it. dossiq's own half is the word on the case (`paymentState`), refreshed hourly for the list and read live whenever an act must be refused or allowed. A leaf whose app is absent is never registered, so on an install without shillinq this panel is missing rather than empty."
+						"_note": "fees-and-payments-on-the-case D-1 and D-3. The money lives in shillinq, so shillinq renders it: this is a PLACEMENT of the `shillinq-payment-requests-panel` leaf, the same shape as the humaniq hours leaf beside it, and not a query against another app's register. What the panel shows is the requests raised on this case, the amount, and the article of the legesverordening the amount rests on, because a citizen may ask why they are being charged and \"because the configuration says so\" is not an answer a gemeente may give. It also carries the acts: raise the leges for this case's intake channel, send the payment link, and record money that arrived another way. THE COUNTER PAYMENT IS DELIBERATELY NOT A DOSSIQ ACT. shillinq puts it behind its own `payment.administer` permission, so the authority that owns the money decides who may say it arrived; a second dossiq path to the same fact would be a second answer with a second rights matrix behind it. dossiq's own half is the word on the case (`paymentState`), refreshed hourly for the list and read live whenever an act must be refused or allowed. A leaf whose app is absent is never registered, so on an install without shillinq this panel is missing rather than empty."
 					},
 					{
 						"id": "case-contract",
 						"type": "integration",
-						"integrationId": "shillinq-contracts",
+						"integrationId": "shillinq-contracts-panel",
 						"title": "Contract",
 						"_note": "fees-and-payments-on-the-case D-5. The case names the contract it is handled under and reads its term, its counterparty and what is left of its value from shillinq, which flags a contract that is expiring, expired or terminated because those change what the handler should do next. NOTHING OF THE CONTRACT IS COPIED ONTO THE CASE: a copied term goes stale and then alerts on the wrong date, and the alert before a contract lapses is shillinq's anyway. The case carries one field, `contract`, which is the reference; the other direction is shillinq's `linkedObjects`, which is how a contract lists the cases raised under it."
+					},
+					{
+						"id": "case-linked",
+						"type": "linked",
+						"title": "Linked",
+						"_note": "DqZaak Gekoppeld in the FULL profile, which has no side column: the same card the simple profile places after Handling (side-linked), here in the grid cell the standalone Projects widget had, so no profile loses the projects. nextcloud-vue linked-integrations-card mounts each leaf out of sight and lists the linked ones' rows, then one \"...: nothing linked\" line with the rest's actions. The simple profile drops this cell (`full-linked: null`) because its side column carries the card.",
+						"content": {
+							"leaves": ["filinq-documents", "shillinq-payment-requests-panel", "shillinq-contracts-panel", "planninq-projects"]
+						}
 					},
 					{
 						"id": "case-change-proposals",
@@ -3739,6 +3748,15 @@
 						"widgetId": "case-contract",
 						"gridX": 6,
 						"gridY": 19,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "full-linked",
+						"widgetId": "case-linked",
+						"gridX": 0,
+						"gridY": 27,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"showTitle": true

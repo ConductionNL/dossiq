@@ -64,3 +64,38 @@ describe('the Linked side card on the case page', () => {
 		)
 	})
 })
+
+describe('the Linked card in the full profile, which has no side column', () => {
+	it('sits in the grid cell the Projects widget had, with the same leaves', () => {
+		const widget = fullCase.widgets.find((w) => w.id === 'case-linked')
+		expect(widget.type).toBe('linked')
+		expect(widget.content.leaves).toEqual(
+			simpleCase.sideColumn.find(
+				(card) => typeof card === 'object' && card.id === 'side-linked',
+			).content.leaves,
+		)
+		const cell = fullCase.layout.find((c) => c.widgetId === 'case-linked')
+		expect(cell).toMatchObject({
+			id: 'full-linked',
+			gridX: 0,
+			gridY: 27,
+			gridWidth: 6,
+		})
+	})
+
+	it('is dropped from the simple profile, whose side column carries it', () => {
+		const patch = JSON.stringify(read('menu-layout.simple.json'))
+		expect(patch).toContain('"full-linked":null')
+	})
+})
+
+describe('the money placements mount the leaves shillinq registers', () => {
+	it.each([
+		['case-payment-requests', 'shillinq-payment-requests-panel'],
+		['case-contract', 'shillinq-contracts-panel'],
+	])('%s places %s', (id, integrationId) => {
+		expect(fullCase.widgets.find((w) => w.id === id).integrationId).toBe(
+			integrationId,
+		)
+	})
+})

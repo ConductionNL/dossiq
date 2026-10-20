@@ -1730,7 +1730,8 @@
 						"gridWidth": 6,
 						"gridHeight": 4
 					},
-					"case-banners": null
+					"case-banners": null,
+					"full-linked": null
 				}
 			},
 			"configAppend": {

@@ -12,6 +12,11 @@ contract en projecten: niets gekoppeld", then "Nieuw project" and "Openen in pla
   right after Handling, listing `filinq-documents`, `shillinq-payment-requests-panel`, `shillinq-contracts-panel` and
   `planninq-projects`.
 - The `case-projects` widget and its grid cell (`work-projects`) are removed.
+- The full profile, which has no side column, gets the same card as `case-linked` in the grid cell Projects had
+  (`full-linked`); the simple profile drops that cell.
+- The money placements `case-payment-requests` and `case-contract` named shillinq's DATA leaves
+  (`shillinq-payment-requests`, `shillinq-contracts`), which no host can mount, so they drew nothing. They now name the
+  render leaves `shillinq-payment-requests-panel` and `shillinq-contracts-panel`.
 
 ## Dependencies
 
