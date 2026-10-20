@@ -219,7 +219,6 @@ import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
 import EndOfDayView from './views/queue/EndOfDayView.vue'
-import StoreGallery from './views/store/StoreGallery.vue'
 import SubstitutedWork from './views/SubstitutedWork.vue'
 // The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
 // `type: "detail"` page when remove-casetask took the caseTask schema away:
@@ -1346,11 +1345,6 @@ const registry = {
 		kind: 'page',
 		component: WooReportsView,
 		_note: 'Named by src/manifest.d/86-woo-reports.json. A custom page because the reader-group check and the audit record of every read live in WooReportController.',
-	},
-	StoreGallery: {
-		kind: 'page',
-		component: StoreGallery,
-		_note: 'Remote store cards (ADR-080). A store item is a REMOTE object, so the index renderer — which resolves a local register+schema — cannot address it.',
 	},
 	// The token-addressed advice-response page is gone with
 	// case-sharing-mints-access-links: nothing ever minted the token it read,

@@ -3222,8 +3222,7 @@
 							"columns": [
 								{
 									"key": "objectTitle",
-									"label": "Object",
-									"widget": "lensedValue"
+									"label": "Object"
 								},
 								{
 									"key": "objectType",
@@ -3231,8 +3230,7 @@
 								},
 								{
 									"key": "objectStatus",
-									"label": "Object status",
-									"widget": "lensedValue"
+									"label": "Object status"
 								},
 								{
 									"key": "objectIdentification",
@@ -3751,7 +3749,14 @@
 						"width": "171px",
 						"label": "Status",
 						"formatter": "statusTypeName",
-						"widget": "statusBadge"
+						"widget": "badge",
+						"widgetProps": {
+							"resolve": {
+								"register": "dossiq",
+								"schema": "statusType",
+								"colorField": "colour"
+							}
+						}
 					},
 					{
 						"key": "assignee",

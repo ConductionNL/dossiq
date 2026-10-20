@@ -35,7 +35,6 @@ import menuLayoutSimple from './menu-layout.simple.json'
 import pinia from './pinia.js'
 import registry from './registry.js'
 import { installCaseLiveUpdates } from './services/caseLiveUpdates.js'
-import cellWidgets from './services/cellWidgets.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
 import { useObjectStore } from './store/modules/object.js'
@@ -345,7 +344,6 @@ const pageTypesProp = { ...defaultPageTypes }
 const registryProp = { ...registry }
 const mapFormattersProp = { ...mapFormatters }
 const formattersProp = { ...formatters }
-const cellWidgetsProp = { ...cellWidgets }
 
 const app = createApp({
 	// This root uses a native Vue-3 render() (h from 'vue'). @vue/compat would
@@ -378,7 +376,6 @@ const app = createApp({
 			pageTypes: pageTypesProp,
 			mapFormatters: mapFormattersProp,
 			formatters: formattersProp,
-			cellWidgets: cellWidgetsProp,
 		})
 	},
 })
