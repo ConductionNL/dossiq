@@ -4287,8 +4287,29 @@
 							"id": "assistant",
 							"label": "Assistant",
 							"icon": "RobotOutline",
-							"_note": "ai-features-on-the-case-consume-hermiq REQ-AIC-02 to REQ-AIC-04, board DqZaakAssistent: the AI features this case type switched on, where each runs as hermiq answers it, a run on a case document with a refusal shown in words, and the report group with its near-duplicates. A `component:` tab and not a `widgets[]` one for the reason the Terms tab gives. An undeclared case type makes no call to hermiq: the panel reads the case type's declaration first.",
-							"component": "CaseAiFeaturesPanel"
+							"_note": "ai-features-on-the-case-consume-hermiq REQ-AIC-02 to REQ-AIC-04, board DqZaakAssistent: the AI features this case type switched on, where each runs as hermiq answers it, a run on a case document with a refusal shown in words, hermiq's question prompts, and the report group with its near-duplicates. The features are the library built-in `ai-features` (CnAiFeaturesWidget) pointed at the case type's `aiFeatures` declaration and dossiq's assistant endpoints; an undeclared case type makes no call to hermiq, because the declaration is read first. The report group is dossiq's own (`/api/report-group`) and renders below it as CaseReportGroupWidget.",
+							"widgets": [
+								{
+									"type": "ai-features",
+									"props": {
+										"declaration": {
+											"typeField": "caseType",
+											"typeSchema": "caseType",
+											"field": "aiFeatures",
+											"surface": "case"
+										},
+										"featuresEndpoint": "/apps/dossiq/api/assistant/ai-features",
+										"featuresQueryKey": "caseType[aiFeatures]",
+										"promptsEndpoint": "/apps/dossiq/api/assistant/prompts",
+										"askEndpoint": "/apps/dossiq/api/assistant/converse",
+										"decisionEndpoint": "/apps/dossiq/api/ai/record-action",
+										"objectKey": "caseId"
+									}
+								},
+								{
+									"type": "CaseReportGroupWidget"
+								}
+							]
 						},
 						{
 							"id": "access",

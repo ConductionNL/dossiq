@@ -24,9 +24,6 @@
 //   A second, @vue-flow-based implementation (Vue-3-only, incompatible with
 //   this app's Vue 2.7 build) was removed by workflow-editor-integration.
 
-// The AI features a case type switched on, and the report group the case is in
-// (ai-features-on-the-case-consume-hermiq, board DqZaakAssistent).
-import CaseAiFeaturesPanel from './components/case/CaseAiFeaturesPanel.vue'
 // The case's archival future as openregister decided it, on the Archiving tab.
 // @spec openspec/specs/archief-edepot-handover/spec.md
 // The line saying this case is in the archive, and what that means for the
@@ -71,6 +68,9 @@ import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
 // @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
 import CasePlanSociaalDomeinPanel from './components/case/CasePlanSociaalDomeinPanel.vue'
 import CaseProgrammeSection from './components/case/CaseProgrammeSection.vue'
+// The AI features a case type switched on, and the report group the case is in
+// (ai-features-on-the-case-consume-hermiq, board DqZaakAssistent).
+import CaseReportGroupWidget from './components/case/CaseReportGroupWidget.vue'
 // What is new on this case since the handler last looked, and where.
 // @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 import CaseStatusDeclarationPanel from './components/case/CaseStatusDeclarationPanel.vue'
@@ -1263,15 +1263,15 @@ const registry = {
 		component: CaseTermsTab,
 		_note: "The statutory term, the planned end, the internal target and the phase term, each apart and each saying what it is, with the progress and the days left beside them. Every number is the server's: the browser computes no percentage, so the case page and the list column read one computation and cannot disagree. The internal target is drawn here and refused to every citizen surface by the server, which answers /terms/citizen with the statutory term alone.",
 	},
-	// --- AI features on the case (ai-features-on-the-case-consume-hermiq). ---
-	// A `component:` tab for the same reason CaseTermsTab is: no CnObjectSidebar
-	// built-in can read the case type's declaration, ask hermiq where a feature
-	// runs, run one on a document, or read the report group.
-	// @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md
-	CaseAiFeaturesPanel: {
+	// --- The report group in the Assistant tab (ai-features-on-the-case-consume-hermiq). ---
+	// The AI features themselves are the library's `ai-features` sidebar
+	// built-in; this is the dossiq-only half beside it, read from
+	// /api/report-group. kind `page`, the kind a sidebar-tab component has here.
+	// @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-identical-reports-collapse-on-the-case-and-dossiq-decides-what-a-group-means-req-aic-04
+	CaseReportGroupWidget: {
 		kind: 'page',
-		component: CaseAiFeaturesPanel,
-		_note: "Board DqZaakAssistent, the assistant panel. The AI features the case type places on the case surface, each with the provider and residency hermiq answers (unavailable, never local, when hermiq does not offer it); a run on a chosen case document in the handler's own session through caseAiFeatureGateway, a refusal shown naming the feature, the reason and hermiq's gate; and the report group the case was placed in on creation, read and never placed again, with the count and the near-duplicates hermiq was unsure about.",
+		component: CaseReportGroupWidget,
+		_note: 'Board DqZaakAssistent, the report group: the group the case was placed in on creation, read and never placed again, with the count and the near-duplicates hermiq was unsure about. A failed read says so with the reason and the gate.',
 	},
 	CaseSharingTab: {
 		kind: 'page',

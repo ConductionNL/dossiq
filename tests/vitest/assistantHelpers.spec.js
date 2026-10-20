@@ -5,7 +5,7 @@
  * Unit tests for the pure presentation helpers in src/utils/assistantHelpers.js
  * (case-assistant-via-hermiq): the composer send-guard, transcript entry
  * factory, and the errorCode/status → user-facing message mapping. The network
- * functions (src/services/assistantApi.js) are not exercised here (they need
+ * calls (the library `ai-features` widget) are not exercised here (they need
  * axios + a live route); these tests pin the behaviour the chat panel relies on.
  *
  * The global `t()` (NC translation) is stubbed to return the English source
