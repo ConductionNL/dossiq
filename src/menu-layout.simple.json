@@ -4465,7 +4465,37 @@
 								"itemText": "{label}"
 							},
 							"emptyText": "This case type has no phases yet",
-							"groupEmptyText": "No tasks in this phase"
+							"groupEmptyText": "No tasks in this phase",
+							"groupAction": {
+								"id": "phase-add-task",
+								"type": "open-form",
+								"label": "Add task",
+								"icon": "Plus",
+								"formTitle": "Add a task to this phase",
+								"formSubtitle": "The task joins the draft version of the workflow and runs once that version is published.",
+								"endpoint": {
+									"url": "/apps/dossiq/api/case-types/@objectId/phases/@group.id/steps",
+									"method": "POST"
+								},
+								"formProperties": {
+									"title": {
+										"type": "string",
+										"title": "Task"
+									},
+									"description": {
+										"type": "string",
+										"title": "Description",
+										"format": "textarea"
+									},
+									"leadTimeDays": {
+										"type": "integer",
+										"title": "Working days",
+										"minimum": 0
+									}
+								},
+								"successMessage": "The task is added to the draft version.",
+								"errorMessage": "The task was not added."
+							}
 						}
 					},
 					{
