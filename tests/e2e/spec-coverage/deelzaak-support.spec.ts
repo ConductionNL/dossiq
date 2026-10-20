@@ -1073,6 +1073,11 @@ test.describe('Deelzaak creation eligibility', () => {
 
 		await openSubCasesPage(page, closedParentId)
 		await expect(createControl(page)).toHaveCount(0)
+		// The section SAYS why, which is how a refusal is told apart from a
+		// section that failed to draw the control.
+		await expect(
+			subCasesSection(page).getByText(/This case is closed; sub-cases can no longer be added|Deze zaak is gesloten; er kunnen geen deelzaken meer worden toegevoegd/),
+		).toBeVisible({ timeout: 15_000 })
 	})
 
 	// @e2e deelzaak-support::sub-case-of-sub-case-is-prohibited
@@ -1095,5 +1100,8 @@ test.describe('Deelzaak creation eligibility', () => {
 
 		await openSubCasesPage(page, subCaseId)
 		await expect(createControl(page)).toHaveCount(0)
+		await expect(
+			subCasesSection(page).getByText(/Sub-cases cannot themselves have sub-cases|Deelzaken kunnen zelf geen deelzaken hebben/),
+		).toBeVisible({ timeout: 15_000 })
 	})
 })

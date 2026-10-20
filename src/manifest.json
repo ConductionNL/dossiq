@@ -3924,7 +3924,7 @@
 										"id": "case-sub-cases",
 										"type": "object-list",
 										"title": "Sub-cases",
-										"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Rows deep-link to CaseDetail because a sub-case IS a case. `createAction` replaces the list's own create form with DeelzaakCreateModal, which creates through /api/deelzaken so the sub-case inherits what case.parentCase declares; it shows only on an open case that is not itself a sub-case, and the modal says why if reached otherwise. `summary` is the completion roll-up under the list. The separate /cases/:id/deelzaken page that carried both is retired and redirects here.",
+										"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Rows deep-link to CaseDetail because a sub-case IS a case. `createAction` replaces the list's own create form with DeelzaakCreateModal, which creates through /api/deelzaken so the sub-case inherits what case.parentCase declares; it shows only on an open case that is not itself a sub-case, and elsewhere its `hiddenNote` says why, as the old list page did. `summary` is the completion roll-up under the list. The separate /cases/:id/deelzaken page that carried both is retired and redirects here.",
 										"content": {
 											"register": "dossiq",
 											"schema": "case",
@@ -3970,7 +3970,11 @@
 														{"field": "endDate", "op": "empty"},
 														{"field": "parentCase", "op": "empty"}
 													]
-												}
+												},
+												"hiddenNote": [
+													{"when": {"field": "parentCase", "op": "notEmpty"}, "text": "Sub-cases cannot themselves have sub-cases."},
+													{"when": {"field": "endDate", "op": "notEmpty"}, "text": "This case is closed; sub-cases can no longer be added."}
+												]
 											},
 											"summary": {
 												"text": "({completed}/{total} completed)",
