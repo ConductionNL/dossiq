@@ -41,11 +41,31 @@ describe('case type side column per tab', () => {
 		const on = (tab) => side.filter((card) => (card.tabs || tabIds).includes(tab)).map((card) => card.id)
 		expect(on('overview')).toEqual(['side-case-type-versions', 'side-case-type-check'])
 		expect(on('phases')).toEqual(['side-case-type-versions', 'side-case-type-facts', 'side-case-type-history'])
-		expect(on('fields')).toEqual(['side-case-type-parent'])
+		expect(on('fields')).toEqual(['side-case-type-choice-lists', 'side-case-type-parent'])
 	})
 
 	it('draws the check beside Overview, not in its body', () => {
 		expect(besides('side-case-type-check')).toEqual(['overview'])
 		expect(tabs[0].widgetIds).not.toContain('case-type-check')
+	})
+})
+
+/**
+ * @spec openspec/changes/case-type-choice-lists/specs/case-type-choice-lists/spec.md#requirement-a-fields-choices-are-edited-beside-fields
+ */
+describe('choice lists beside Fields', () => {
+	const card = side.find((entry) => entry.id === 'side-case-type-choice-lists')
+
+	it('lists the type\'s fields that hold a choice list', () => {
+		expect(card.type).toBe('object-list')
+		expect(card.content.schema).toBe('propertyDefinition')
+		expect(card.content.filter).toEqual({ caseType: '@objectId', enumValues: { isnull: false } })
+	})
+
+	it('edits a field\'s choices one per line and adds no field', () => {
+		expect(card.content.editable).toBe(true)
+		expect(card.content.allowCreate).toBe(false)
+		expect(card.content.formIncludeFields).toEqual(['enumValues'])
+		expect(card.content.formFieldOverrides.enumValues.widget).toBe('lines')
 	})
 })

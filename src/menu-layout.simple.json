@@ -4445,6 +4445,46 @@
 						}
 					},
 					{
+						"id": "side-case-type-choice-lists",
+						"type": "object-list",
+						"title": "Choice lists",
+						"_note": "DqZaaktypeVelden Keuzelijst: the case type's fields that limit their answers to a list (enumValues set), beside Fields. Picking one opens its choices in the forms work's lines editor, one per line, and saves enumValues on the field. Adding a field stays in the Fields list, so this card adds none.",
+						"tabs": ["fields"],
+						"content": {
+							"register": "dossiq",
+							"schema": "propertyDefinition",
+							"filter": {
+								"caseType": "@objectId",
+								"enumValues": {
+									"isnull": false
+								}
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 20,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Field"
+								}
+							],
+							"editable": true,
+							"allowCreate": false,
+							"formIncludeFields": [
+								"enumValues"
+							],
+							"formFieldOverrides": {
+								"enumValues": {
+									"label": "Choices",
+									"widget": "lines"
+								}
+							},
+							"emptyText": "No field of this case type has a choice list"
+						}
+					},
+					{
 						"id": "side-case-type-parent",
 						"type": "facts",
 						"title": "Parent type",
