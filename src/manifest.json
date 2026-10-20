@@ -5060,26 +5060,6 @@
 			}
 		},
 		{
-			"id": "DeelzaakList",
-			"route": "/cases/:id/deelzaken",
-			"type": "custom",
-			"title": "Sub-cases",
-			"_note": "Bespoke parent-scoped sub-case (deelzaak) list: header carries a back-to-parent button, a parent breadcrumb link and a roll-up summary line, and rows deep-link into DeelzaakDetail under the same parent route. A standard list/index type can't express the parent-route binding (/cases/:id/deelzaken) plus the parent-context header and roll-up text.",
-			"slots": {
-				"main": "DeelzaakList"
-			}
-		},
-		{
-			"id": "DeelzaakDetail",
-			"route": "/cases/:parentId/deelzaken/:id",
-			"type": "custom",
-			"title": "Sub-case",
-			"_note": "Sub-case detail that shares the `case` schema with CaseDetail but adds a mandatory always-visible parent breadcrumb (parent → current) and a link out to the canonical CaseDetail edit view. The standard detail type renders a single object with no parent-context breadcrumb or cross-route hand-off, so the parent-aware framing requires a bespoke page.",
-			"slots": {
-				"main": "DeelzaakDetail"
-			}
-		},
-		{
 			"id": "BezwaarDetail",
 			"route": "/bezwaren/:id",
 			"type": "detail",
@@ -9542,6 +9522,7 @@
 								"category",
 								"propertyType",
 								"format",
+								"items",
 								"maxLength",
 								"pattern",
 								"minimum",
@@ -9581,6 +9562,17 @@
 										},
 										"itemsPath": "formats",
 										"hideWhenEmpty": true
+									},
+									"clearWhenHidden": true
+								},
+								"items": {
+									"label": "Type of each entry",
+									"widget": "json",
+									"visibleWhen": {
+										"field": "propertyType",
+										"in": [
+											"array"
+										]
 									},
 									"clearWhenHidden": true
 								},
