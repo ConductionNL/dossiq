@@ -72,6 +72,23 @@ class CaseMacroDeclarationTest extends TestCase {
 		}
 	}//end testEveryChangingStepIsLabelledForTheLastRunLine()
 
+	public function testTheCaseTypeDeclaresWhichMacrosItOffers(): void {
+		$fragment = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/register.d/99-case-type-shown-macros.json'), true);
+		$macros = $fragment['components']['schemas']['caseType']['properties']['macros'];
+		$this->assertSame('array', $macros['type']);
+		$this->assertSame('string', $macros['items']['type']);
+	}//end testTheCaseTypeDeclaresWhichMacrosItOffers()
+
+	public function testTheWooRequestOffersBothMacrosAndEveryListedKeyIsDeclared(): void {
+		$seed = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/register.d/81-woo-verzoek.json'), true);
+		$listed = $seed['components']['objects'][0]['macros'];
+		$this->assertSame(['finish-woo-request', 'suspend-for-supplement'], $listed);
+		$declared = array_keys($this->configuration()['x-openregister-action']);
+		foreach ($listed as $key) {
+			$this->assertContains($key, $declared);
+		}
+	}//end testTheWooRequestOffersBothMacrosAndEveryListedKeyIsDeclared()
+
 	public function testTheSuspensionGoesThroughTheTermNode(): void {
 		foreach ($this->configuration()['x-openregister-flows'] as $flow) {
 			if ($flow['name'] === 'Suspend for supplementary information') {

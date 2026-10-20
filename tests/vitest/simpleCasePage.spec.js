@@ -811,5 +811,6 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 
 	it('places the case schema\'s macros through the library macros widget', () => {
 		expect(byId('case-macros')).toMatchObject({ type: 'macros', title: 'Macros' })
+		expect(byId('case-macros').content.macrosFrom).toBe('@context.caseType.macros')
 	})
 })

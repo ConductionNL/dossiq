@@ -4957,7 +4957,7 @@ OC.L10N.register(
         "No location set": "No location set",
         "No locations linked to this case yet": "No locations linked to this case yet",
         "No longer want updates about this case?": "No longer want updates about this case?",
-        "No macros are set up for cases yet": "No macros are set up for cases yet",
+        "No macros are set up for this case type": "No macros are set up for this case type",
         "No mail collected on this case": "No mail collected on this case",
         "No mandate decisions": "No mandate decisions",
         "No MandateringsBesluit entries yet. Create one or import an export.": "No MandateringsBesluit entries yet. Create one or import an export.",

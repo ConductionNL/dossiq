@@ -112,9 +112,13 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.10",
+          "version": "1.4.11",
           "slug": "woo-verzoek"
         },
+        "macros": [
+          "finish-woo-request",
+          "suspend-for-supplement"
+        ],
         "title": "Woo-verzoek",
         "description": "Behandeling van verzoeken op grond van de Wet open overheid",
         "purpose": "Transparante afhandeling van informatieverzoeken conform de WOO",
