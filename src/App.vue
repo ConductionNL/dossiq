@@ -199,14 +199,15 @@ export default {
 
 	computed: {
 		/**
-		 * The user settings dialog's sections, in order: the app's own first,
-		 * then the library's credentials, guided tour and integrations.
+		 * The user settings dialog's sections, in order: the library's Views in
+		 * my menu first (board DqPersoonlijkeInstellingen), the app's own, then
+		 * the library's credentials, guided tour and integrations.
 		 *
 		 * @return {Array<string>} The section keys CnAppRoot draws.
-		 * @spec openspec/specs/personal-settings-surface/spec.md
+		 * @spec openspec/changes/views-in-my-menu-settings/specs/personal-settings-surface/spec.md#requirement-the-personal-settings-open-with-the-views-in-my-menu
 		 */
 		userSettingsSections() {
-			return ['app', 'credentials', 'walkthrough', 'integrations']
+			return ['views', 'app', 'credentials', 'walkthrough', 'integrations']
 		},
 
 		/**
