@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.132.0",
+	"version": "2.133.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -594,7 +594,10 @@
 						"responsePath": { "type": "string", "minLength": 1, "description": "Where the rows sit in the answer." },
 						"valueField": { "type": "string", "minLength": 1 },
 						"labelField": { "type": "string", "minLength": 1 },
-						"groupField": { "type": "string", "minLength": 1, "description": "Groups the options by this field, groups in the order they first appear (form-small-features)." }
+						"groupField": { "type": "string", "minLength": 1, "description": "Groups the options by this field, groups in the order they first appear (form-small-features)." },
+						"where": { "type": "object", "description": "Keep the rows whose fields equal these values; a value may be `@answer.<key>`, another field of the form (object-list-edit-in-place)." },
+						"itemsPath": { "type": "string", "minLength": 1, "description": "Read the options from the list at this path in each row (object-list-edit-in-place)." },
+						"hideWhenEmpty": { "type": "boolean", "description": "Leave the field out while the source gives no options (object-list-edit-in-place)." }
 					}
 				},
 				{
@@ -607,7 +610,10 @@
 						"filter": { "type": "object", "description": "Filters on the objects, as a list filter takes them." },
 						"valueField": { "type": "string", "minLength": 1 },
 						"labelField": { "type": "string", "minLength": 1 },
-						"groupField": { "type": "string", "minLength": 1, "description": "Groups the options by this field, groups in the order they first appear (form-small-features)." }
+						"groupField": { "type": "string", "minLength": 1, "description": "Groups the options by this field, groups in the order they first appear (form-small-features)." },
+						"where": { "type": "object", "description": "Keep the rows whose fields equal these values; a value may be `@answer.<key>`, another field of the form (object-list-edit-in-place)." },
+						"itemsPath": { "type": "string", "minLength": 1, "description": "Read the options from the list at this path in each row (object-list-edit-in-place)." },
+						"hideWhenEmpty": { "type": "boolean", "description": "Leave the field out while the source gives no options (object-list-edit-in-place)." }
 					}
 				}
 			]
@@ -2336,6 +2342,115 @@
 										"properties": {
 											"excludeApps": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Apps whose items are left out (an item's app is its own app field, else the /apps/<app>/ part of its link or icon), e.g. [\"systemtags\"]." },
 											"excludeTypes": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Item types that are left out." }
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					"description": "decision-list built-in widget (CnDecisionListWidget): per-row sign-offs, each with an answer, its fields and a reason, sent to an app endpoint (2.133.0). Texts go through the host translate.",
+					"if": {
+						"properties": { "widgetKey": { "const": "decision-list" } },
+						"required": ["widgetKey"]
+					},
+					"then": {
+						"properties": {
+							"props": {
+								"type": "object",
+								"properties": {
+									"content": {
+										"type": "object",
+										"properties": {
+											"source": { "type": "object", "additionalProperties": true, "description": "An endpointSource: `url`, `params?`, `responsePath?`." },
+											"itemsPath": { "type": "string", "minLength": 1},
+											"idField": { "type": "string", "minLength": 1},
+											"title": { "type": "string", "description": "A template filled from a row." },
+											"meta": { "type": "string", "description": "A template filled from a row." },
+											"answers": { "type": "array", "items": { "type": "object", "required": ["value", "label"], "additionalProperties": true, "properties": { "value": {}, "label": { "type": "string", "minLength": 1}, "fields": { "type": "array", "items": { "type": "object", "required": ["field"], "additionalProperties": true, "properties": { "field": { "type": "string", "minLength": 1}, "type": { "type": "string", "enum": ["date", "text"] }, "label": { "type": "string" }, "required": { "type": "boolean" } }} }} }},
+											"reason": { "description": "`{ label?, required?, field? }` (required by default, sent as `field`, default `reason`); `false` drops it.", "anyOf": [{ "type": "boolean", "const": false}, { "type": "object", "additionalProperties": false, "properties": { "label": { "type": "string" }, "required": { "type": "boolean" }, "field": { "type": "string", "minLength": 1} }}] },
+											"submit": { "type": "object", "required": ["request"], "additionalProperties": true, "properties": { "label": { "type": "string" }, "request": { "type": "object", "required": ["url"], "additionalProperties": true, "properties": { "method": { "type": "string", "minLength": 1}, "url": { "type": "string", "minLength": 1}, "body": { "type": "object", "additionalProperties": true} }} }},
+											"answerField": { "type": "string", "minLength": 1},
+											"emptyText": { "type": "string" },
+											"errorTitle": { "type": "string" },
+											"answerLabel": { "type": "string" }
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					"description": "retention built-in widget (CnRetentionWidget): a record's stored retention, and a recompute for archivists (2.133.0). Texts go through the host translate.",
+					"if": {
+						"properties": { "widgetKey": { "const": "retention" } },
+						"required": ["widgetKey"]
+					},
+					"then": {
+						"properties": {
+							"props": {
+								"type": "object",
+								"properties": {
+									"content": {
+										"type": "object",
+										"properties": {
+											"title": { "type": "string" },
+											"subtitle": { "type": "string" },
+											"statusField": { "type": "string", "minLength": 1},
+											"archivedValues": { "type": "array", "items": { "type": "string" } },
+											"archivistGroups": { "type": "array", "items": { "type": "string", "minLength": 1}, "description": "Groups that may recompute (default [\"archivaris\"]; admins always may)." },
+											"recompute": { "type": "boolean", "description": "false hides the recompute control." }
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					"description": "plan built-in widget (CnPlanWidget): a record's planned steps from OpenRegister's case layer (2.133.0).",
+					"if": {
+						"properties": { "widgetKey": { "const": "plan" } },
+						"required": ["widgetKey"]
+					},
+					"then": {
+						"properties": {
+							"props": {
+								"type": "object",
+								"properties": {
+									"content": {
+										"type": "object",
+										"properties": {
+											"emptyText": { "type": "string", "description": "Through the host translate." }
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					"description": "work-queue built-in widget (CnWorkQueue): one queue of everything waiting on the reader, in groups that can be hidden until tomorrow (2.133.0).",
+					"if": {
+						"properties": { "widgetKey": { "const": "work-queue" } },
+						"required": ["widgetKey"]
+					},
+					"then": {
+						"properties": {
+							"props": {
+								"type": "object",
+								"properties": {
+									"content": {
+										"type": "object",
+										"properties": {
+											"source": { "type": "object", "additionalProperties": true, "description": "An endpointSource answering `{ groups, hiddenGroups?, unavailable? }`." },
+											"hide": { "type": "string", "minLength": 1, "description": "A url template with `{group}` that hides a group until tomorrow." },
+											"show": { "type": "string", "minLength": 1, "description": "A url template with `{group}` that shows a hidden group again." },
+											"itemHref": { "type": "string", "minLength": 1, "description": "A template filled from an item, for items without `route` or `href`." },
+											"waitingParties": { "type": "object", "additionalProperties": { "type": "string" } },
+											"emptyText": { "type": "string" }
 										}
 									}
 								}
@@ -5287,6 +5402,7 @@
 							}
 						},
 						"search": { "type": "boolean", "default": true, "description": "type='index': `false` draws no inline search in the actions bar, also in the board look, which otherwise draws one on every index page. Wins over `inlineSearch` (2.127.0)." },
+						"searchRefusalHint": { "type": "string", "description": "type='index': what to do after a refused search, through the app's translate; the default explains AND, OR, NOT and quotes (2.133.0)." },
 						"searchPlacement": { "type": "string", "enum": ["", "toolbar"], "default": "", "description": "type='index', board look: where the search field sits. `toolbar` puts it on row 1 before the Filter button and the view switch instead of opening row 2 (DqTeamwachtrij, 2.127.0)." },
 						"sortSelectOptions": { "type": "array", "description": "type='index': the orders the index sidebar's Sort section offers in the list, card and map views, `{ value, label, order?, default?, source? }`. An option with a `source` takes its rows from an app endpoint, in that endpoint's order, for an order the server cannot sort by; the page's search, sidebar filters and pager run over those rows in the browser, and it is chosen by its value. `default: true` opens the page on it unless the address carries an order; a column header click in the table view leaves it. When the endpoint fails the list falls back to the option's `order` and shows `failedNote` (2.131.0).", "items": { "type": "object", "required": ["value", "label"], "properties": { "value": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 }, "order": { "anyOf": [ { "type": "string", "minLength": 1 }, { "type": "object" }, { "type": "array" } ] }, "default": { "type": "boolean" }, "source": { "type": "object", "required": ["url"], "additionalProperties": false, "properties": { "url": { "type": "string", "minLength": 1, "description": "An app path, resolved with generateUrl and fetched with the session." }, "params": { "type": "object", "description": "Query parameters sent with the request." }, "rowsPath": { "type": "string", "minLength": 1, "description": "Where the entries sit in the answer; `results` by default, a bare array as is." }, "rowPath": { "type": "string", "minLength": 1, "description": "Where each entry carries its row; entries without one are left out." }, "carry": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Entry fields copied onto each row, such as a tier a card's head pill reads." }, "idPath": { "type": "string", "minLength": 1, "description": "The row's identity for `annotate`; `id` by default." }, "annotate": { "type": "boolean", "description": "Copy the carried fields onto the rows of every other order too, matched on idPath." }, "searchFields": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "The fields the search box matches; every top-level text by default." }, "failedNote": { "type": "string", "minLength": 1, "description": "Shown above the list when the endpoint failed and the option's order stands in, through the app's translate." } } } } } },
 						"defaultOrder": { "description": "type='index', self-fetch: the order the page opens on when neither the address nor sortKeys gives one: `\"-createdAt\"`, `\"priority:desc,title\"`, an `_order` map or a `[{ key, order }]` list (2.127.0).", "anyOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": { "type": "string", "enum": ["asc", "desc", "ASC", "DESC"] } }, { "type": "array", "items": { "type": "object", "required": ["key"], "properties": { "key": { "type": "string", "minLength": 1 }, "order": { "type": "string", "enum": ["asc", "desc"] } } } } ] },
