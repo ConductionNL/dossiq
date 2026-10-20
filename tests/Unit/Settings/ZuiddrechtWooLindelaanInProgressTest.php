@@ -190,4 +190,91 @@ class ZuiddrechtWooLindelaanInProgressTest extends TestCase {
 		$this->assertNotContains(needle: 'woo-lindelaan-besluit', haystack: $keys);
 		$this->assertNotContains(needle: 'ingebrekestelling-woo-lindelaan', haystack: $keys);
 	}//end testTheCaseCarriesNoDecisionOrNoticeOfDefault()
+	/**
+	 * The current status carries the day it was reached: the history holds
+	 * receipt, then the in-progress status entered the day after, and the
+	 * case says it entered its status then ("sinds 4 okt", a day after
+	 * "Ontvangen 3 okt").
+	 *
+	 * @return void
+	 */
+	public function testTheStatusHistoryDatesTheCurrentStatus(): void {
+		$case    = $this->object(key: 'woo-lindelaan');
+		$history = $case['data']['statusHistory'];
+
+		$this->assertSame(expected: ['{{lookup:ontvangst}}', '{{lookup:status}}'], actual: array_column($history, 'status'));
+		$this->assertSame(expected: $case['data']['receivedAt'], actual: $history[0]['enteredAt']);
+		$this->assertSame(expected: $case['data']['currentStatusEnteredAt'], actual: $history[1]['enteredAt']);
+		$this->assertSame(expected: '{{datetime:-14 09:12}}', actual: $case['data']['receivedAt']);
+		$this->assertSame(expected: '{{datetime:-13 10:05}}', actual: $case['data']['currentStatusEnteredAt']);
+	}//end testTheStatusHistoryDatesTheCurrentStatus()
+
+	/**
+	 * Two advice requests, as DqZaakBesluiten and DqZaak draw them: one still
+	 * open (Mobiliteit en verkeer, its answer still due) and one received
+	 * (Juridische zaken).
+	 *
+	 * @return void
+	 */
+	public function testTheAdviceRequests(): void {
+		$advice = [];
+		foreach ($this->objects() as $object) {
+			if (($object['schema'] ?? '') === 'adviesAanvraag' && ($object['data']['case'] ?? '') === '{{object:woo-lindelaan.id}}') {
+				$advice[(string)$object['data']['advisor']] = $object['data'];
+			}
+		}
+
+		$this->assertSame(expected: ['Mobiliteit en verkeer', 'Juridische zaken'], actual: array_keys($advice));
+		$this->assertSame(expected: 'requested', actual: $advice['Mobiliteit en verkeer']['status']);
+		$this->assertMatchesRegularExpression(pattern: '/^\{\{date:\d+\}\}$/', string: $advice['Mobiliteit en verkeer']['deadline']);
+		$this->assertSame(expected: 'received', actual: $advice['Juridische zaken']['status']);
+		$this->assertArrayHasKey(key: 'receivedAt', array: $advice['Juridische zaken']);
+	}//end testTheAdviceRequests()
+
+	/**
+	 * An open case is still to archive, and its retention is not fixed yet:
+	 * DqZaakArchivering draws the destruction date as set on closing and
+	 * "Vastgelegd op: nog niet".
+	 *
+	 * @return void
+	 */
+	public function testTheOpenCaseIsStillToArchive(): void {
+		$data = $this->object(key: 'woo-lindelaan')['data'];
+		$this->assertSame(expected: 'nog_te_archiveren', actual: $data['archiveStatus']);
+		$this->assertArrayNotHasKey(key: 'archiveNomination', array: $data);
+		$this->assertArrayNotHasKey(key: 'archiveActionDate', array: $data);
+		$this->assertArrayNotHasKey(key: 'endingAct', array: $data);
+	}//end testTheOpenCaseIsStillToArchive()
+	/**
+	 * The case's four tasks, as DqZaakTaken draws them: one open with its
+	 * handler, a high priority and a deadline still ahead, and three done,
+	 * each with when it was done. Only the fields OpenRegister's example-set
+	 * tasks take (ExampleSetTasks::FIELDS).
+	 *
+	 * @return void
+	 */
+	public function testTheCaseCarriesTheBoardsTasks(): void {
+		$set   = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$tasks = array_values(
+			array_filter(
+				(array)($set['tasks'] ?? []),
+				static fn (array $task): bool => ($task['data']['objectUuid'] ?? '') === '{{object:woo-lindelaan.id}}'
+			)
+		);
+		$fields = ['title', 'description', 'objectUuid', 'state', 'assignee', 'candidateGroups', 'priority', 'dueAt', 'completedAt', 'completedBy', 'kind'];
+
+		$this->assertCount(expectedCount: 4, haystack: $tasks);
+		$open = array_values(array_filter($tasks, static fn (array $task): bool => $task['data']['state'] === 'active'));
+		$this->assertCount(expectedCount: 1, haystack: $open);
+		$this->assertSame(expected: 'Documenten beoordelen', actual: $open[0]['data']['title']);
+		$this->assertSame(expected: 'high', actual: $open[0]['data']['priority']);
+		$this->assertMatchesRegularExpression(pattern: '/^\{\{date:\d+\}\}$/', string: $open[0]['data']['dueAt']);
+		foreach ($tasks as $task) {
+			$this->assertSame(expected: [], actual: array_diff(array_keys($task['data']), $fields), message: $task['key']);
+			$this->assertStringStartsWith(prefix: '{{cast:', string: $task['data']['assignee']);
+			if ($task['data']['state'] === 'completed') {
+				$this->assertArrayHasKey(key: 'completedAt', array: $task['data']);
+			}
+		}
+	}//end testTheCaseCarriesTheBoardsTasks()
 }//end class

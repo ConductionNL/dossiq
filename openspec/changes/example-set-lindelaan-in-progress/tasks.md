@@ -23,3 +23,15 @@
 - **files**: `lib/Settings/example-sets/zuiddrecht.json`
 - [x] Implement: ending act, retention facts and archive status on `woo-zaaksysteem`, its decision on the case through the change
 - [x] Test: `tests/Unit/Settings/ZuiddrechtWooReadyToArchiveTest.php`
+
+### Task 5: The in-progress case carries its advice, its status dates and its archive status
+- **spec_ref**: `openspec/changes/example-set-lindelaan-in-progress/specs/example-set-lindelaan-in-progress/spec.md#requirement-the-in-progress-case-carries-its-advice-its-status-dates-and-its-archive-status`
+- **files**: `lib/Settings/example-sets/zuiddrecht.json`
+- [x] Implement: two advice requests, archive status
+- [x] Test: `tests/Unit/Settings/ZuiddrechtWooLindelaanInProgressTest.php`
+
+### Task 6: The in-progress case carries its tasks
+- **spec_ref**: `openspec/changes/example-set-lindelaan-in-progress/specs/example-set-lindelaan-in-progress/spec.md#requirement-the-in-progress-case-carries-its-tasks`
+- **files**: `lib/Settings/example-sets/zuiddrecht.json`
+- [x] Implement: four tasks on the case
+- [x] Test: `tests/Unit/Settings/ZuiddrechtWooLindelaanInProgressTest.php`
