@@ -52,7 +52,6 @@
 			:item="editingChecklist.id ? editingChecklist : null"
 			:initialData="editingChecklist.id ? {} : editingChecklist"
 			:dialogTitle="editingChecklist.id ? t('dossiq', 'Edit checklist') : t('dossiq', 'New checklist')"
-			nameField="name"
 			size="large"
 			:feedback="false"
 			:recoverDraft="false"

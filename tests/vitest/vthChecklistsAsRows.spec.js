@@ -16,6 +16,8 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 
+const { setResult } = vi.hoisted(() => ({ setResult: vi.fn() }))
+
 vi.mock('@nextcloud/dialogs', () => ({ showError: vi.fn(), showSuccess: vi.fn() }))
 
 const stub = (tag) => ({ render() { return h(tag, this.$slots.default ? this.$slots.default() : []) } })
@@ -23,7 +25,7 @@ const stub = (tag) => ({ render() { return h(tag, this.$slots.default ? this.$sl
 vi.mock('@nextcloud/vue', () => ({ NcButton: stub('button'), NcLoadingIcon: stub('span'), NcEmptyContent: stub('div'), NcIconSvgWrapper: stub('span') }))
 vi.mock('@conduction/nextcloud-vue', () => ({
 	CnConfirmDialog: stub('div'),
-	CnFormDialog: { name: 'CnFormDialog', props: ['schema', 'item', 'initialData', 'dialogTitle'], methods: { setResult: vi.fn() }, render: () => h('div', { class: 'form-dialog' }) },
+	CnFormDialog: { name: 'CnFormDialog', props: ['schema', 'item', 'initialData', 'dialogTitle'], methods: { setResult }, render: () => h('div', { class: 'form-dialog' }) },
 	CnObjectRow: {
 		name: 'CnObjectRow',
 		props: ['object', 'config'],
@@ -118,10 +120,10 @@ describe('the checklist template form', () => {
 
 		wrapper.vm.openEditor(wrapper.vm.checklists[0])
 		await flushPromises()
-		const dialog = wrapper.findComponent({ name: 'CnFormDialog' })
+		setResult.mockClear()
 		await wrapper.vm.saveChecklist({ id: 'a', name: 'Brandveiligheid' })
 
 		expect(wrapper.vm.editing).toBe(true)
-		expect(dialog.vm.setResult).toHaveBeenCalledWith({ error: 'Version 3 is already published' })
+		expect(setResult).toHaveBeenCalledWith({ error: 'Version 3 is already published' })
 	})
 })
