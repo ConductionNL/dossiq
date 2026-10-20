@@ -1248,6 +1248,87 @@
 							"emptyText": "No bids yet"
 						}
 					},
+					{
+						"id": "side-special-data-health",
+						"type": "banner",
+						"title": "Special categories of personal data",
+						"_note": "DqSociaalDomein: the warning at the top of the side column when the case type processes this special category of personal data (caseType.specialDataCategories). A case type lists the card in its sideCards to show it.",
+						"visibleWhen": {
+							"field": "@context.caseType.specialDataCategories",
+							"op": "contains",
+							"value": "health"
+						},
+						"content": {
+							"variant": "warning",
+							"icon": "AlertOutline",
+							"lead": "Special categories of personal data:",
+							"text": "health."
+						}
+					},
+					{
+						"id": "side-special-data-ethnicity",
+						"type": "banner",
+						"title": "Special categories of personal data",
+						"visibleWhen": {
+							"field": "@context.caseType.specialDataCategories",
+							"op": "contains",
+							"value": "ethnicity"
+						},
+						"content": {
+							"variant": "warning",
+							"icon": "AlertOutline",
+							"lead": "Special categories of personal data:",
+							"text": "racial or ethnic origin."
+						}
+					},
+					{
+						"id": "side-special-data-religion",
+						"type": "banner",
+						"title": "Special categories of personal data",
+						"visibleWhen": {
+							"field": "@context.caseType.specialDataCategories",
+							"op": "contains",
+							"value": "religion"
+						},
+						"content": {
+							"variant": "warning",
+							"icon": "AlertOutline",
+							"lead": "Special categories of personal data:",
+							"text": "religion or belief."
+						}
+					},
+					{
+						"id": "side-special-data-politicalOpinion",
+						"type": "banner",
+						"title": "Special categories of personal data",
+						"visibleWhen": {
+							"field": "@context.caseType.specialDataCategories",
+							"op": "contains",
+							"value": "politicalOpinion"
+						},
+						"content": {
+							"variant": "warning",
+							"icon": "AlertOutline",
+							"lead": "Special categories of personal data:",
+							"text": "political opinions."
+						}
+					},
+					{
+						"id": "side-special-data-criminal",
+						"type": "banner",
+						"title": "Special categories of personal data",
+						"visibleWhen": {
+							"field": "@context.caseType.specialDataCategories",
+							"op": "contains",
+							"value": "criminal"
+						},
+						"content": {
+							"variant": "warning",
+							"icon": "AlertOutline",
+							"lead": "Special categories of personal data:",
+							"text": "criminal convictions and offences."
+						}
+					},
 					"case-banner-stack"
 				],
 				"showTypeEyebrow": false,
