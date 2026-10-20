@@ -20,48 +20,42 @@
                     "description": "De aanvraag is binnengekomen en staat geregistreerd.",
                     "order": 1,
                     "isFinal": false,
-                    "role": "intake",
-                    "colour": "blue"
+                    "role": "intake"
                 },
                 {
                     "name": "Wacht op aanvulling",
                     "description": "De aanvraag is niet compleet; de indiener is gevraagd om aanvullende gegevens.",
                     "order": 2,
                     "isFinal": false,
-                    "role": "pending-info",
-                    "colour": "orange"
+                    "role": "pending-info"
                 },
                 {
                     "name": "In behandeling",
                     "description": "De aanvraag is compleet en wordt inhoudelijk beoordeeld.",
                     "order": 3,
                     "isFinal": false,
-                    "role": "in-progress",
-                    "colour": "purple"
+                    "role": "in-progress"
                 },
                 {
                     "name": "Bij commissie",
                     "description": "De aanvraag ligt voor bij de planningscommissie voor een definitief besluit.",
                     "order": 4,
                     "isFinal": false,
-                    "role": "review",
-                    "colour": "orange"
+                    "role": "review"
                 },
                 {
                     "name": "Afgehandeld",
                     "description": "Er is een besluit genomen en het besluitdocument is aan de zaak toegevoegd.",
                     "order": 5,
                     "isFinal": true,
-                    "role": "closed",
-                    "colour": "green"
+                    "role": "closed"
                 },
                 {
                     "name": "Gestrand",
                     "description": "De gevraagde aanvulling is uitgebleven. De zaak is bewust beëindigd in plaats van te blijven rondlopen.",
                     "order": 6,
                     "isFinal": true,
-                    "role": "stranded",
-                    "colour": "red"
+                    "role": "stranded"
                 }
             ]
         }

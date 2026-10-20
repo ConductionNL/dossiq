@@ -66,7 +66,6 @@ class RepairStepRegistrationTest extends TestCase {
 	private const INSTALL_EXEMPT = [
 		'RetireUnscheduledBackgroundJobs' => 'removes jobs an earlier version scheduled; a fresh install never schedules them',
 		'PinCaseTypesAsViews' => 'carries pins from the retired My case types menu over; a fresh install has none',
-		'RecolourShippedStatusTypes' => 'recolours status rows an earlier version seeded; a fresh install seeds them in their board colour',
 		'RenameDutchDeadlineColumns' => 'renames columns over existing rows',
 		'RenameDutchDirectionValues' => 'rewrites values in existing rows',
 		'RenameDutchColumns' => 'renames columns over existing rows',

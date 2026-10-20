@@ -25,57 +25,49 @@
       "name": "Ontvangst",
       "description": "Verzoek ontvangen, ontvangstbevestiging verzenden",
       "order": 1,
-      "isFinal": false,
-      "colour": "blue"
+      "isFinal": false
     },
     {
       "name": "Beoordeling ontvankelijkheid",
       "description": "Controleren of het verzoek aan de formele vereisten voldoet",
       "order": 2,
-      "isFinal": false,
-      "colour": "purple"
+      "isFinal": false
     },
     {
       "name": "Zoeken documenten",
       "description": "Zoeken en verzamelen van relevante documenten",
       "order": 3,
-      "isFinal": false,
-      "colour": "purple"
+      "isFinal": false
     },
     {
       "name": "Beoordelen documenten",
       "description": "Per document beoordelen of openbaarmaking mogelijk is",
       "order": 4,
-      "isFinal": false,
-      "colour": "purple"
+      "isFinal": false
     },
     {
       "name": "Lakken / Anonimiseren",
       "description": "Gevoelige informatie in documenten anonimiseren",
       "order": 5,
-      "isFinal": false,
-      "colour": "orange"
+      "isFinal": false
     },
     {
       "name": "Besluit",
       "description": "Formeel besluit nemen over openbaarmaking",
       "order": 6,
-      "isFinal": false,
-      "colour": "teal"
+      "isFinal": false
     },
     {
       "name": "Publicatie",
       "description": "Goedgekeurde documenten publiceren in de leeskamer",
       "order": 7,
-      "isFinal": false,
-      "colour": "green"
+      "isFinal": false
     },
     {
       "name": "Afgehandeld",
       "description": "Zaak is afgerond",
       "order": 8,
-      "isFinal": true,
-      "colour": "green"
+      "isFinal": true
     }
   ],
   "propertyDefinitions": [

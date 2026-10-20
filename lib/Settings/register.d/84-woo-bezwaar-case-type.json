@@ -59,8 +59,7 @@
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 1,
         "isFinal": false,
-        "role": "intake",
-        "colour": "blue"
+        "role": "intake"
       },
       {
         "@self": {
@@ -74,8 +73,7 @@
         "description": "Toetsing op ontvankelijkheid (termijn, belanghebbendheid, besluit-karakter)",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 2,
-        "isFinal": false,
-        "colour": "purple"
+        "isFinal": false
       },
       {
         "@self": {
@@ -90,8 +88,7 @@
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 3,
         "isFinal": false,
-        "role": "in-progress",
-        "colour": "purple"
+        "role": "in-progress"
       },
       {
         "@self": {
@@ -105,8 +102,7 @@
         "description": "Hoorzitting is ingepland (Awb art. 7:2)",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 4,
-        "isFinal": false,
-        "colour": "orange"
+        "isFinal": false
       },
       {
         "@self": {
@@ -120,8 +116,7 @@
         "description": "Hoorzitting heeft plaatsgevonden",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 5,
-        "isFinal": false,
-        "colour": "purple"
+        "isFinal": false
       },
       {
         "@self": {
@@ -136,8 +131,7 @@
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 6,
         "isFinal": false,
-        "role": "review",
-        "colour": "teal"
+        "role": "review"
       },
       {
         "@self": {
@@ -151,8 +145,7 @@
         "description": "Besluit op bezwaar is genomen (Awb art. 7:11, 7:12)",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 7,
-        "isFinal": false,
-        "colour": "teal"
+        "isFinal": false
       },
       {
         "@self": {
@@ -167,8 +160,7 @@
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 8,
         "isFinal": true,
-        "role": "closed",
-        "colour": "green"
+        "role": "closed"
       },
       {
         "@self": {
@@ -182,8 +174,7 @@
         "description": "Bezwaar is niet-ontvankelijk verklaard (Awb art. 6:6)",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 90,
-        "isFinal": true,
-        "colour": "red"
+        "isFinal": true
       },
       {
         "@self": {
@@ -197,8 +188,7 @@
         "description": "Bezwaar is ingetrokken door indiener (Awb art. 6:21)",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 91,
-        "isFinal": true,
-        "colour": "grey"
+        "isFinal": true
       },
       {
         "@self": {

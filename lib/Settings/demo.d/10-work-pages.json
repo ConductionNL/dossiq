@@ -308,8 +308,7 @@
 				"caseType": "@ref:caseType:voorbeeld-avg-verzoek",
 				"order": 1,
 				"isFinal": false,
-				"role": "intake",
-				"colour": "blue"
+				"role": "intake"
 			},
 			{
 				"@self": {
@@ -321,8 +320,7 @@
 				"caseType": "@ref:caseType:voorbeeld-avg-verzoek",
 				"order": 2,
 				"isFinal": false,
-				"role": "in-progress",
-				"colour": "purple"
+				"role": "in-progress"
 			},
 			{
 				"@self": {
@@ -334,8 +332,7 @@
 				"caseType": "@ref:caseType:voorbeeld-avg-verzoek",
 				"order": 3,
 				"isFinal": true,
-				"role": "closed",
-				"colour": "green"
+				"role": "closed"
 			},
 			{
 				"@self": {

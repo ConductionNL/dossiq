@@ -29,8 +29,7 @@
       "order": 1,
       "isFinal": false,
       "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
-      "role": "intake",
-      "colour": "blue"
+      "role": "intake"
     },
     {
       "id": "82c84a55-e40e-5860-9dbf-12cfdc7d5b90",
@@ -39,8 +38,7 @@
       "order": 2,
       "isFinal": false,
       "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
-      "role": "in-progress",
-      "colour": "green"
+      "role": "in-progress"
     },
     {
       "id": "e533aa01-968c-5407-98af-c870c79a71df",
@@ -48,8 +46,7 @@
       "description": "Inschrijvers dienen hun inschrijving in tot de sluitingsdatum.",
       "order": 3,
       "isFinal": false,
-      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
-      "colour": "purple"
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932"
     },
     {
       "id": "f7d821cb-59f6-52b4-bc18-772734ad5336",
@@ -58,8 +55,7 @@
       "order": 4,
       "isFinal": false,
       "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
-      "role": "review",
-      "colour": "purple"
+      "role": "review"
     },
     {
       "id": "c6314335-bd99-5577-af9a-4520bf3bfa15",
@@ -67,8 +63,7 @@
       "description": "De gunningsbeslissing is verstuurd; de opschortende termijn loopt.",
       "order": 5,
       "isFinal": false,
-      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
-      "colour": "teal"
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932"
     },
     {
       "id": "6545bbed-3022-56e6-a4c0-4e241d6cbd72",
@@ -77,8 +72,7 @@
       "order": 6,
       "isFinal": true,
       "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
-      "role": "closed",
-      "colour": "green"
+      "role": "closed"
     },
     {
       "id": "75d3e370-0966-5da7-9a89-e2da989ce41f",
@@ -86,8 +80,7 @@
       "description": "De aanbesteding is ingetrokken.",
       "order": 90,
       "isFinal": true,
-      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
-      "colour": "grey"
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932"
     }
   ],
   "roleTypes": [

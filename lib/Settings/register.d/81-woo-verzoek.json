@@ -623,7 +623,7 @@
         "order": 2,
         "isFinal": false,
         "role": "in-progress",
-        "colour": "purple",
+        "colour": "blue",
         "publicLabel": "In behandeling",
         "publicDescription": "Wij kijken of uw verzoek compleet is."
       },
@@ -641,7 +641,7 @@
         "order": 3,
         "isFinal": false,
         "role": "in-progress",
-        "colour": "purple",
+        "colour": "orange",
         "publicLabel": "In behandeling",
         "publicDescription": "Wij zoeken de documenten waar uw verzoek over gaat."
       },
@@ -659,7 +659,7 @@
         "order": 4,
         "isFinal": false,
         "role": "in-progress",
-        "colour": "purple",
+        "colour": "orange",
         "publicLabel": "In behandeling",
         "publicDescription": "Wij beoordelen per document of het openbaar kan."
       },
@@ -695,7 +695,7 @@
         "order": 6,
         "isFinal": false,
         "role": "review",
-        "colour": "teal",
+        "colour": "purple",
         "publicLabel": "Besluit",
         "publicDescription": "Wij nemen een besluit op uw verzoek."
       },
@@ -731,7 +731,7 @@
         "order": 8,
         "isFinal": true,
         "role": "closed",
-        "colour": "green",
+        "colour": "grey",
         "publicLabel": "Afgehandeld",
         "publicDescription": "Uw verzoek is afgehandeld."
       },
