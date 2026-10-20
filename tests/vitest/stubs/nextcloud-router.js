@@ -5,9 +5,9 @@
  * Lightweight stub for @nextcloud/router used by the Vitest unit suite.
  *
  * The real package resolves the Nextcloud web root from the runtime, which
- * does not exist under Vitest. For the pdokService shim tests we only need a
+ * does not exist under Vitest. For the service tests we only need a
  * deterministic generateUrl() that prefixes `/index.php` to the given path so
- * assertions can target the exact openconnector endpoint URL.
+ * assertions can target the exact endpoint URL.
  */
 
 /**

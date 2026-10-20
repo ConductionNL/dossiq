@@ -13,7 +13,7 @@
  * the same constraint on other new components). Instead this spec imports
  * and exercises the REAL `buildCaseExportUrl()` helper the component calls
  * on click — the same "test the extracted pure logic directly" pattern used
- * by tests/vitest/pdokService.spec.js and tests/vitest/caseRelationApi.spec.js.
+ * by tests/vitest/caseRelationApi.spec.js.
  * `@nextcloud/router`'s `generateUrl()` is aliased to the deterministic
  * `/index.php`-prefixing stub in tests/vitest/stubs/nextcloud-router.js.
  *

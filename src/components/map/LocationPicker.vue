@@ -11,12 +11,12 @@
 				<h3>{{ t('dossiq', 'Select location') }}</h3>
 				<div class="location-picker__tools">
 					<NcButton
-						:type="mode === 'point' ? 'primary' : 'secondary'"
+						:variant="mode === 'point' ? 'primary' : 'secondary'"
 						@click="setMode('point')">
 						{{ t('dossiq', 'Point') }}
 					</NcButton>
 					<NcButton
-						:type="mode === 'polygon' ? 'primary' : 'secondary'"
+						:variant="mode === 'polygon' ? 'primary' : 'secondary'"
 						@click="setMode('polygon')">
 						{{ t('dossiq', 'Draw area') }}
 					</NcButton>
@@ -26,7 +26,7 @@
 				</div>
 			</div>
 
-			<AddressSearch
+			<CnAddressSearch
 				class="location-picker__search"
 				@select="onAddressSelect" />
 
@@ -59,7 +59,7 @@
 				<NcButton @click="$emit('cancel')">
 					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
-				<NcButton type="primary" :disabled="!selectedGeometry" @click="save">
+				<NcButton variant="primary" :disabled="!selectedGeometry" @click="save">
 					{{ t('dossiq', 'Save') }}
 				</NcButton>
 			</div>
@@ -68,13 +68,13 @@
 </template>
 
 <script>
+import { CnAddressSearch } from '@conduction/nextcloud-vue'
 import { NcButton } from '@nextcloud/vue'
 import L from 'leaflet'
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 // Fix Leaflet default icon paths broken by webpack
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
-import AddressSearch from './AddressSearch.vue'
 
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw'
@@ -89,7 +89,7 @@ const NL_CENTER = [52.1326, 5.2913]
 
 export default {
 	name: 'LocationPicker',
-	components: { NcButton, AddressSearch },
+	components: { CnAddressSearch, NcButton },
 	props: {
 		/** Existing geometry to pre-populate (GeoJSON object). */
 		initialGeometry: {
@@ -236,11 +236,11 @@ export default {
 		},
 
 		/**
-		 * @param {object} root0 The destructured argument object.
-		 * @param {Array<number>} root0.coordinates The [lon, lat] pair the picker selected.
+		 * @param {{coordinates: ({lat: number, lng: number}|null)}|null} chosen What the address search emitted; null when it was cleared.
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */
-		onAddressSelect({ coordinates }) {
+		onAddressSelect(chosen) {
+			const coordinates = chosen && chosen.coordinates
 			if (!coordinates) return
 			const latlng = L.latLng(coordinates.lat, coordinates.lng)
 			this.map.setView(latlng, 16)

@@ -191,10 +191,12 @@
 				"viewLinks": [
 					{
 						"label": "Your queue",
+						"icon": "ClipboardListOutline",
 						"route": "PersonalQueue"
 					},
 					{
 						"label": "Assigned to me",
+						"icon": "ClipboardAccountOutline",
 						"route": {
 							"name": "Cases",
 							"query": {
@@ -204,6 +206,7 @@
 					},
 					{
 						"label": "Close out your day",
+						"icon": "ClipboardCheckOutline",
 						"route": "EndOfDay"
 					}
 				],
@@ -591,7 +594,7 @@
 									"itemsPath": "results",
 									"idField": "entryId",
 									"title": "{title}",
-									"meta": "{archiefactiedatum}",
+									"meta": "Disposal date: {archiefactiedatum}",
 									"answers": [
 										{
 											"value": "destroy"
@@ -1264,7 +1267,9 @@
 					"resolve": {
 						"register": "dossiq",
 						"schema": "caseType",
-						"labelField": "title"
+						"labelField": "title",
+						"colorField": "colour",
+						"iconField": "icon"
 					}
 				}
 			},
@@ -3520,7 +3525,7 @@
 				"searchPlaceholder": "Search by case, number or requester",
 				"quickFilterMaxVisible": 5,
 				"folderSidebar": null,
-				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The board's address line under each title needs an address text the case does not carry, so the line is the case number. Markers take their status type's colour and a line counts the located cases, as in the full profile. `plotAll` is left out on purpose: the map shows the current page, so the numbered list stays a page long.",
+				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The line under each title is the case's address and number (`caseAddress` reads the case's first case-location; a case without one shows its number only), and the pills name the case type and the status, the status pill in its status type's colour (`resolve.colorField`). Markers take their status type's colour and a line counts the located cases, as in the full profile. `plotAll` is left out on purpose: the map shows the current page, so the numbered list stays a page long.",
 				"mapConfig": {
 					"geoField": "geometry",
 					"popupField": "title",
@@ -3545,7 +3550,7 @@
 							"red": "var(--nl-color-red, #d52b1e)",
 							"red-light": "var(--nl-color-red-light, #fbe9e8)",
 							"purple": "var(--nl-color-purple, #762f8e)",
-							"purple-light": "var(--nl-color-purple-light, #f2eaf5)",
+							"purple-light": "var(--nl-color-purple-light, #f2eaf5)", "teal": "var(--nl-color-teal, #1d5e66)", "teal-light": "var(--nl-color-teal-light, #e3f1f3)",
 							"grey": "var(--nl-color-grey, #696969)",
 							"grey-light": "var(--nl-color-grey-light, #f0f0f0)"
 						}
@@ -3578,7 +3583,24 @@
 					],
 					"list": {
 						"title": "{title}",
-						"sub": "{identifier}",
+						"sub": [
+							"{id|caseAddress} · {identifier}",
+							"{identifier}"
+						],
+						"pills": [
+							{
+								"path": "caseType",
+								"formatter": "caseTypeName"
+							},
+							{
+								"path": "status",
+								"formatter": "statusTypeName",
+								"resolve": {
+									"schema": "statusType",
+									"colorField": "colour"
+								}
+							}
+						],
 						"due": "{deadline|date}"
 					}
 				},
@@ -3635,6 +3657,7 @@
 				],
 				"showTitle": true,
 				"countSubtitle": "{total} cases",
+				"defaultOrder": "deadline",
 				"countText": "{shown} of {total} open cases in your teams, sorted by deadline",
 				"footerNote": "click a column header to sort",
 				"bulkHint": "See what changes first, then carry it out.",
@@ -3967,7 +3990,6 @@
 			"config": {
 				"folderSidebar": null,
 				"showTitle": true,
-				"countSubtitle": "{total} case types",
 				"breadcrumb": {
 					"label": "Settings",
 					"href": "/index.php/settings/admin/dossiq"
@@ -4211,7 +4233,6 @@
 						"icon": "ViewDashboard",
 						"content": {
 							"ariaLabel": "Case type parts",
-							"variant": "segmented",
 							"tabs": [
 								{
 									"label": "Overview",

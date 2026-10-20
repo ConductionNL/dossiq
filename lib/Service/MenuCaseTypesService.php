@@ -103,6 +103,43 @@ class MenuCaseTypesService {
 	}//end __construct()
 
 	/**
+	 * A case type as the menu and its picker see it: id and title, and its
+	 * icon when it names one.
+	 *
+	 * @param array{id: string, title: string, icon: string} $row The case type.
+	 *
+	 * @return array{id: string, title: string, icon?: string} The row.
+	 *
+	 * @spec openspec/changes/case-type-colour-icon/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+	 */
+	private static function publicRow(array $row): array {
+		$public = ['id' => $row['id'], 'title' => $row['title']];
+		if ($row['icon'] !== '') {
+			$public['icon'] = $row['icon'];
+		}
+
+		return $public;
+	}//end publicRow()
+
+	/**
+	 * The icon a case type row names (`caseType.icon`), or '' when it names none.
+	 *
+	 * @param array<string, mixed> $row The case type row.
+	 *
+	 * @return string The icon name.
+	 *
+	 * @spec openspec/changes/case-type-colour-icon/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+	 */
+	private function iconOf(array $row): string {
+		$icon = ($row['icon'] ?? '');
+		if (is_string($icon) === false) {
+			return '';
+		}
+
+		return trim($icon);
+	}//end iconOf()
+
+	/**
 	 * The case types offered to this user for their menu, sorted by title.
 	 *
 	 * The visible case types whose handling teams include a Nextcloud group
@@ -112,7 +149,7 @@ class MenuCaseTypesService {
 	 *
 	 * @param string $userId The user.
 	 *
-	 * @return array<int, array{id: string, title: string}> The offered case types.
+	 * @return array<int, array{id: string, title: string, icon?: string}> The offered case types.
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
@@ -141,7 +178,7 @@ class MenuCaseTypesService {
 		}
 
 		return array_map(
-			static fn (array $row): array => ['id' => $row['id'], 'title' => $row['title']],
+			static fn (array $row): array => self::publicRow(row: $row),
 			$handled
 		);
 	}//end offeredCaseTypes()
@@ -152,14 +189,14 @@ class MenuCaseTypesService {
 	 * OpenRegister applies RBAC under the user session. A superseded version is
 	 * left out: the list offers one row per case type, not one per version.
 	 *
-	 * @return array<int, array{id: string, title: string}> The case types; empty when
+	 * @return array<int, array{id: string, title: string, icon?: string}> The case types; empty when
 	 *   OpenRegister is unavailable or the register or schema is unconfigured.
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 */
 	public function visibleCaseTypes(): array {
 		return array_map(
-			static fn (array $row): array => ['id' => $row['id'], 'title' => $row['title']],
+			static fn (array $row): array => self::publicRow(row: $row),
 			$this->currentCaseTypes()
 		);
 	}//end visibleCaseTypes()
@@ -192,7 +229,7 @@ class MenuCaseTypesService {
 	/**
 	 * The current visible case types with their handling teams, sorted by title.
 	 *
-	 * @return array<int, array{id: string, title: string, identifier: string, teams: array<int, string>}> The case types.
+	 * @return array<int, array{id: string, title: string, identifier: string, icon: string, teams: array<int, string>}> The case types.
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
@@ -241,6 +278,7 @@ class MenuCaseTypesService {
 				'id' => $uuid,
 				'title' => $title,
 				'identifier' => (string)($row['identifier'] ?? ''),
+				'icon' => $this->iconOf(row: $row),
 				'teams' => $handling->teams(caseType: $row),
 			];
 		}

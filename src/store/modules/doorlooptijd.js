@@ -27,7 +27,6 @@ import {
 	computeProcessingTimeDistribution,
 	computeSlaCompliance,
 	getAtRiskCases,
-	parseDurationToDays,
 } from '../../utils/doorlooptijdHelpers.js'
 import { initializeStores } from '../store.js'
 import { useObjectStore } from './object.js'
@@ -136,12 +135,6 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		wooCases() {
 			return getWooCases(this.openCases, this.caseTypes)
 		},
-		caseTypesWithSla: (s) =>
-			s.caseTypes.filter(
-				(ct) =>
-					ct.processingDeadline
-					&& parseDurationToDays(ct.processingDeadline),
-			),
 	},
 
 	actions: {
