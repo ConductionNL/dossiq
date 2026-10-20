@@ -797,17 +797,16 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 		expect(widget.tabs).toEqual(['ai-oversight'])
 	})
 
-	it('lists hermiq\'s advisory decisions on this case, newest first, needing hermiq', () => {
+	it('lists hermiq\'s oversight records of this case through hermiq, needing hermiq', () => {
 		const activity = byId('case-ai-activity')
-		expect(activity).toMatchObject({ type: 'object-list', requiredApp: 'hermiq' })
-		expect(activity.content).toMatchObject({
-			register: 'hermiq',
-			schema: 'approval',
-			filter: { sourceType: 'advisory', 'advisoryContext.originApp': 'dossiq', 'advisoryContext.subjectId': '@objectId' },
-			sort: { field: 'decidedAt', dir: 'desc' },
+		expect(activity).toMatchObject({ type: 'object-list', requiredApp: 'hermiq', subtitle: 'Every suggestion is recorded, also when nobody uses it' })
+		expect(activity.content.endpointSource).toEqual({
+			url: '/apps/hermiq/api/ai-oversight/subject',
+			params: { originApp: 'dossiq', subjectId: '@objectId', limit: 25 },
 		})
+		expect(activity.content.register).toBeUndefined()
 		expect(activity.content.columns.map((column) => column.key)).toEqual(['decidedAt', 'decidedBy', 'prompt', 'status', 'advisoryContext.model'])
-		expect(activity.content.columns[3].enumLabels).toEqual({ approved: 'Used', overridden: 'Adapted', denied: 'Rejected' })
+		expect(activity.content.columns[3].enumLabels).toEqual({ approved: 'Used', overridden: 'Adapted', unused: 'Not used', denied: 'Rejected' })
 	})
 
 	it('places the case schema\'s macros through the library macros widget', () => {

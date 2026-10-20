@@ -3166,21 +3166,18 @@
 						"id": "case-ai-activity",
 						"type": "object-list",
 						"title": "What the assistant did on this case",
+						"subtitle": "Every suggestion is recorded, also when nobody uses it",
 						"requiredApp": "hermiq",
-						"_note": "DqZaakAssistent \"Wat de assistent op deze zaak deed\": every human decision on an AI suggestion about this case, as hermiq records it for EU AI Act art. 14. Hermiq keeps them as Approval objects with sourceType advisory; advisoryContext names the origin app, the subject and the model. A plain object list over that schema: no custom component, filtered on this case through OpenRegister's nested-path filters. The outcome maps hermiq's status onto the board's words: approved is used, overridden is adapted, denied is rejected. The board's fourth outcome, not used, has no record: hermiq is told only about suggestions a human acted on. Rows appear once dossiq dispatches hermiq's AiOversightRecordedEvent for its AI features, which it does not do yet.",
+						"_note": "DqZaakAssistent \"Wat de assistent op deze zaak deed\": every AI suggestion on this case and what a person did with it, as hermiq records it for EU AI Act art. 14 (an advisory Approval: used, adapted, not used or rejected). Read through hermiq's GET /api/ai-oversight/subject, which first asks OpenRegister whether the reader may open this case (hermiq#1172): the records are readable only through their subject, not through the OpenRegister list. The rows appear once dossiq reports its suggestions to hermiq (AiOversightRecordedEvent).",
 						"content": {
-							"register": "hermiq",
-							"schema": "approval",
-							"filter": {
-								"sourceType": "advisory",
-								"advisoryContext.originApp": "dossiq",
-								"advisoryContext.subjectId": "@objectId"
+							"endpointSource": {
+								"url": "/apps/hermiq/api/ai-oversight/subject",
+								"params": {
+									"originApp": "dossiq",
+									"subjectId": "@objectId",
+									"limit": 25
+								}
 							},
-							"sort": {
-								"field": "decidedAt",
-								"dir": "desc"
-							},
-							"limit": 25,
 							"columns": [
 								{
 									"key": "decidedAt",
@@ -3203,11 +3200,13 @@
 									"enum": [
 										"approved",
 										"overridden",
+										"unused",
 										"denied"
 									],
 									"enumLabels": {
 										"approved": "Used",
 										"overridden": "Adapted",
+										"unused": "Not used",
 										"denied": "Rejected"
 									}
 								},
