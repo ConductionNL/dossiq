@@ -1694,7 +1694,11 @@
 									"overflow": true
 								},
 								{
-									"widgetId": "case-assistant-chat",
+									"widgetIds": [
+										"case-ai-activity",
+										"case-macros",
+										"case-assistant-chat"
+									],
 									"label": "AI oversight",
 									"overflow": true,
 									"_note": "DqZaakAssistent: the assistant is drawn in the case page, as the AI-toezicht tab, not only behind the launcher hex. The tab holds the same AI Chat Companion the hex opens, embedded (nextcloud-vue `ai-chat`), with the case as its context. It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip, before Historie, while it is open, as the board draws it. The hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
@@ -3143,6 +3147,73 @@
 									"open": true
 								}
 							}
+						}
+					},
+					{
+						"id": "case-ai-activity",
+						"type": "object-list",
+						"title": "What the assistant did on this case",
+						"requiredApp": "hermiq",
+						"_note": "DqZaakAssistent \"Wat de assistent op deze zaak deed\": every human decision on an AI suggestion about this case, as hermiq records it for EU AI Act art. 14. Hermiq keeps them as Approval objects with sourceType advisory; advisoryContext names the origin app, the subject and the model. A plain object list over that schema: no custom component, filtered on this case through OpenRegister's nested-path filters. The outcome maps hermiq's status onto the board's words: approved is used, overridden is adapted, denied is rejected. The board's fourth outcome, not used, has no record: hermiq is told only about suggestions a human acted on. Rows appear once dossiq dispatches hermiq's AiOversightRecordedEvent for its AI features, which it does not do yet.",
+						"content": {
+							"register": "hermiq",
+							"schema": "approval",
+							"filter": {
+								"sourceType": "advisory",
+								"advisoryContext.originApp": "dossiq",
+								"advisoryContext.subjectId": "@objectId"
+							},
+							"sort": {
+								"field": "decidedAt",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "decidedAt",
+									"label": "Moment",
+									"format": "date-time"
+								},
+								{
+									"key": "decidedBy",
+									"label": "User",
+									"format": "user"
+								},
+								{
+									"key": "prompt",
+									"label": "Question or suggestion"
+								},
+								{
+									"key": "status",
+									"label": "Outcome",
+									"widget": "badge",
+									"enum": [
+										"approved",
+										"overridden",
+										"denied"
+									],
+									"enumLabels": {
+										"approved": "Used",
+										"overridden": "Adapted",
+										"denied": "Rejected"
+									}
+								},
+								{
+									"key": "advisoryContext.model",
+									"label": "Model"
+								}
+							],
+							"emptyText": "The assistant has made no suggestions on this case yet"
+						}
+					},
+					{
+						"id": "case-macros",
+						"type": "macros",
+						"title": "Macros",
+						"_note": "DqZaakAssistent \"Macro's\": the macros the case schema declares (OpenRegister declared actions with macro: true and a bound manual flow), each run as the handler through the declared-action endpoint. The case schema declares none yet, so the card says so; a macro is added on the schema, not here.",
+						"content": {
+							"description": "Several steps at once; then you see what changed",
+							"emptyText": "No macros are set up for cases yet"
 						}
 					},
 					{

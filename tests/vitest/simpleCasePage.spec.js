@@ -476,7 +476,7 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-followers-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-assistant-chat']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-followers-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
@@ -767,7 +767,8 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 	const layout = JSON.parse(fs.readFileSync(path.join(__dirname, '../../src/menu-layout.simple.json'), 'utf8'))
 	const page = layout.pages.find((entry) => entry.id === 'CaseDetail')
 	const widget = page.configAppend.widgets.find((entry) => entry.id === 'case-assistant-chat')
-	const tab = page.configPatch.widgets['case-panels'].content.tabs.find((entry) => entry.widgetId === 'case-assistant-chat')
+	const tab = page.configPatch.widgets['case-panels'].content.tabs.find((entry) => entry.label === 'AI oversight')
+	const byId = (id) => page.configAppend.widgets.find((entry) => entry.id === id)
 
 	it('places the AI chat the launcher opens, embedded, needing hermiq', () => {
 		expect(widget).toMatchObject({ type: 'ai-chat', requiredApp: 'hermiq', content: { chatAppId: 'hermiq' } })
@@ -775,5 +776,26 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 
 	it('gives it the AI oversight tab, under Acties until it is opened', () => {
 		expect(tab).toMatchObject({ label: 'AI oversight', overflow: true })
+	})
+
+	it('stacks what the assistant did, the macros and the chat in that tab, as the board does', () => {
+		expect(tab.widgetIds).toEqual(['case-ai-activity', 'case-macros', 'case-assistant-chat'])
+	})
+
+	it('lists hermiq\'s advisory decisions on this case, newest first, needing hermiq', () => {
+		const activity = byId('case-ai-activity')
+		expect(activity).toMatchObject({ type: 'object-list', requiredApp: 'hermiq' })
+		expect(activity.content).toMatchObject({
+			register: 'hermiq',
+			schema: 'approval',
+			filter: { sourceType: 'advisory', 'advisoryContext.originApp': 'dossiq', 'advisoryContext.subjectId': '@objectId' },
+			sort: { field: 'decidedAt', dir: 'desc' },
+		})
+		expect(activity.content.columns.map((column) => column.key)).toEqual(['decidedAt', 'decidedBy', 'prompt', 'status', 'advisoryContext.model'])
+		expect(activity.content.columns[3].enumLabels).toEqual({ approved: 'Used', overridden: 'Adapted', denied: 'Rejected' })
+	})
+
+	it('places the case schema\'s macros through the library macros widget', () => {
+		expect(byId('case-macros')).toMatchObject({ type: 'macros', title: 'Macros' })
 	})
 })
