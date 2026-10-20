@@ -782,7 +782,11 @@
 				"tags": [
 					"woo",
 					"inkoop"
-				]
+				],
+				"endingAct": "finish",
+				"archiveNomination": "vernietigen",
+				"archiveActionDate": "{{date:1806}}",
+				"archiveStatus": "nog_te_archiveren"
 			}
 		},
 		{
@@ -1566,7 +1570,10 @@
 			"schema": "case",
 			"object": "woo-zaaksysteem",
 			"set": {
-				"result": "{{object:woo-zaaksysteem-resultaat.id}}"
+				"result": "{{object:woo-zaaksysteem-resultaat.id}}",
+				"decisions": [
+					"{{object:woo-zaaksysteem-besluit.id}}"
+				]
 			}
 		}
 	]

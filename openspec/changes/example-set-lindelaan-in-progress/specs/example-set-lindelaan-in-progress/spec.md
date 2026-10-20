@@ -37,3 +37,16 @@ runs, as DqTermijnen draws "Te vroeg: termijn loopt nog".
 
 - **GIVEN** the Zuiddrecht example set installed
 - **THEN** the deadline monitoring page lists the Molenweg 4 notice as premature, with no penalty
+
+### Requirement: A closed Woo case is ready to archive
+
+The set SHALL seed a closed Woo case ("Aanbesteding van het zaaksysteem", Afgehandeld) that meets the archive
+readiness items DqArchiveren draws: ended by finishing (`endingAct: finish`), its result and its decision recorded on
+the case (`result`, `decisions`), and the case type's retention facts (`archiveNomination: vernietigen`, an
+`archiveActionDate` five years after the decision, `archiveStatus: nog_te_archiveren`). It SHALL NOT be archived.
+
+#### Scenario: the installed set
+
+- **GIVEN** the Zuiddrecht example set installed
+- **WHEN** a handler opens "Zaak archiveren" on that case
+- **THEN** the dialog lists "Case ended", "Result recorded" and "Decision made" as met, with nomination "vernietigen"
