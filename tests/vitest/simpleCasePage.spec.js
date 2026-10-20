@@ -691,7 +691,9 @@ describe('the header and the side column', () => {
 		// case page, with side cards gated on the case type's category. Each
 		// card lists records that name this case, so no card states a fact
 		// the register does not hold.
-		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen)
+		// The special-category warnings are gated on the case type itself
+		// (caseSpecialDataNotice.spec.js), not on records linked to the case.
+		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen && card.type !== 'banner')
 		expect(gated.map((card) => card.id)).toEqual([
 			'side-objection-appeal',
 			'side-grant-application',
