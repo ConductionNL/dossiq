@@ -102,7 +102,9 @@ describe('every mechanism reaches the queue by declaring itself', () => {
 			'planned-items',
 		]
 
-		const declared = JSON.stringify(page('PersonalQueue'))
+		// The plan-an-item dialog posts to its own endpoint; what must name no
+		// source is the queue the page draws.
+		const declared = JSON.stringify(page('PersonalQueue').config.widgets)
 		for (const name of names) {
 			expect(declared, `${name} is named on the queue page`).not.toContain(
 				name,
