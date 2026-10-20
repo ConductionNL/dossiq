@@ -11,6 +11,6 @@ card's title against the board's 12, because the line carried its own 12px top p
 
 - A `caseAddress` formatter reads a case's first `case-location` (its label), once per case per page load.
 - The simple profile's map list shows `"{id|caseAddress} · {identifier}"`, falling back to `"{identifier}"`, and pills
-  for the case type (`caseTypeName`) and `statusPublicLabel`. This needs nextcloud-vue `map-list-formatters`
+  for the case type (`caseTypeName`) and the status (`statusTypeName`, in its status type's `colour` through `resolve`). This needs nextcloud-vue `map-list-formatters`
   (pill `formatter`, formatter tokens, `sub` as a list).
 - The empty locations line has no padding of its own and reads 14px.

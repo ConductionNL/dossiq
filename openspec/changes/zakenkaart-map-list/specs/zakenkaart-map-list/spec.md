@@ -6,7 +6,7 @@
 
 In the simple profile, each row of the case map's numbered list SHALL show the case's address and number under its
 title ("Lindelaan 40 · 2026-0082"), the number alone when the case has no location, and pills naming the case type and
-the status by their display names. The address SHALL be the label of the case's first `case-location`, looked up once
+the status by their display names, the status pill in its status type's colour. The address SHALL be the label of the case's first `case-location`, looked up once
 per case per page load.
 
 #### Scenario: a located case with a case location
