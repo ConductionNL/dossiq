@@ -26,11 +26,11 @@
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 
-import CnCellRenderer from '@conduction/nextcloud-vue/src/components/CnCellRenderer/CnCellRenderer.vue'
 import { mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+import CnCellRenderer from '@conduction/nextcloud-vue/src/components/CnCellRenderer/CnCellRenderer.vue'
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(

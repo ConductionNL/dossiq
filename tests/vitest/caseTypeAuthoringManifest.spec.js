@@ -36,10 +36,6 @@ const register = JSON.parse(
 )
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
-const cellWidgetsSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'services', 'cellWidgets.js'),
-	'utf8',
-)
 
 /**
  * One page of the manifest.
@@ -187,9 +183,9 @@ describe('the Cases index', () => {
 		expect(chip('Closed').filter.isFinalStatus).toBe(true)
 	})
 
-	it('draws the Status column through a registered cell widget', () => {
-		expect(casesColumn('status').widget).toBe('statusBadge')
-		expect(cellWidgetsSource).toContain('statusBadge:')
+	it('draws the Status column through the library badge in the status colour', () => {
+		expect(casesColumn('status').widget).toBe('badge')
+		expect(casesColumn('status').widgetProps.resolve.colorField).toBe('colour')
 	})
 
 	it('keeps the name formatter as the widget’s fallback label', () => {
