@@ -51,8 +51,8 @@ const overrides = [
 describe('party sources', () => {
 	it('declares the party widget on every requester and represented party', () => {
 		expect(overrides.map((o) => o.field).sort()).toEqual([
-			...Array(11).fill('requester'),
 			'representedParty',
+			...Array(9).fill('requester'),
 		])
 	})
 

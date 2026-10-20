@@ -344,17 +344,29 @@ describe('the contact on a contact moment', () => {
 		).toBeDefined()
 	})
 
-	it('is served by the same picker as case.requester', () => {
-		// Both fields resolve ns#Requester, so one picker covers both — but
-		// only once its appliesTo says so. Without this the Log contact form
-		// renders the field as a bare uuid box.
-		// Asserted as membership rather than as the whole literal: the same
-		// picker took a third field, `role.representedParty`, with
-		// `gemachtigde-role-on-every-case-type` (#2918), and a third entry is
-		// what this picker is for rather than a break in it.
-		const appliesTo = registrySource.match(/appliesTo: \[([^\]]*)\]/)
-		expect(appliesTo, 'the registry declares no appliesTo').toBeTruthy()
-		expect(appliesTo[1]).toContain("'case.requester'")
-		expect(appliesTo[1]).toContain("'contactmoment.contact'")
+	it('is asked through the same party picker as case.requester, or not asked at all', () => {
+		// Both fields resolve ns#Requester, so a form that asks the contact
+		// must declare the `party` widget the requester forms declare, or it
+		// renders the field as a bare uuid box. The Log contact forms do not
+		// ask it: they preset it to the contact the page is about.
+		const forms = []
+		;(function walk(node) {
+			if (node && typeof node === 'object') {
+				if (node.schema === 'contactmoment' && Array.isArray(node.includeFields)) {
+					forms.push(node)
+				}
+				Object.values(node).forEach(walk)
+			}
+		})(manifest)
+		expect(forms.length).toBeGreaterThan(0)
+		for (const form of forms) {
+			if (form.includeFields.includes('contact')) {
+				expect(form.fieldOverrides?.contact?.widget).toBe('party')
+			}
+		}
+		for (const p of [contactDetail, organisationDetail]) {
+			expect(action(p, 'log-contact').props.contact).toBe('@objectId')
+		}
+		expect(registrySource).not.toContain('InitiatorPicker: {')
 	})
 })
