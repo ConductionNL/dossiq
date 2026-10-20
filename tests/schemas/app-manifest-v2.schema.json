@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.131.0",
+	"version": "2.132.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -552,8 +552,65 @@
 				"look": { "type": "string", "enum": ["search"], "description": "`search` draws a single select as CnSearchSelect: a magnifier instead of the chevron, and rows with initials or an icon, the name, a secondary line and a check on the chosen one (DqOverdragen \"Nieuw team\")." },
 				"optionSecondary": { "type": "string", "description": "look 'search': the row's secondary line, a template filled from each option (\"{members} leden · {focus}\")." },
 				"optionAvatar": { "type": "boolean", "description": "look 'search': draw each option's initials." },
-				"optionIcon": { "type": "string", "minLength": 1, "description": "look 'search': one icon for every row." }
+				"optionIcon": { "type": "string", "minLength": 1, "description": "look 'search': one icon for every row." },
+				"itemOverrides": { "type": "object", "additionalProperties": { "$ref": "#/$defs/fieldOverride" }, "description": "widget 'sub-objects': field overrides for the row form (sub-objects-editor)." },
+				"newItem": { "type": "object", "description": "widget 'sub-objects': the values a new row starts with." },
+				"itemLabel": { "type": "string", "minLength": 1, "description": "widget 'sub-objects': what one row is called (\"Checklist item\"), for its accessible name and dialog title." },
+				"emptyText": { "type": "string", "description": "widget 'sub-objects': shown while there are no rows." },
+				"pruneWhen": { "type": "object", "additionalProperties": false, "description": "widget 'sub-objects': tidy the rows on save: trim strings, omit empty optional keys, drop rows with a `blank` key, and with `invalid: true` rows missing a required key.", "properties": { "blank": { "type": "array", "items": { "type": "string", "minLength": 1 } }, "invalid": { "type": "boolean" } } },
+				"placeholderFrom": { "type": "string", "minLength": 1, "description": "A text field's placeholder is this other field's value (form-small-features)." },
+				"requiredWhen": { "type": "object", "description": "Required while this condition holds: a `visibleWhen` predicate, or `{ all }` / `{ any }` of them (form-small-features)." },
+				"warnWhen": { "description": "A note under the field that does not block the save, shown while `when` holds (form-small-features).", "anyOf": [{ "$ref": "#/$defs/fieldWarning" }, { "type": "array", "items": { "$ref": "#/$defs/fieldWarning" } }] },
+				"clearWhenHidden": { "type": "boolean", "description": "Write the field empty when its visibleWhen hides it (form-small-features)." },
+				"stored": { "type": "boolean", "description": "`false`: the field steers the form only and is not saved; it may be a key the schema does not have, with `type` and `label` (form-small-features)." },
+				"initialWhen": { "type": "object", "description": "A field that is not stored starts true when this condition holds on the loaded values (form-small-features)." },
+				"sectionCollapsed": { "type": "boolean", "description": "Makes the field's section foldable from its heading; true opens it folded (form-small-features)." },
+				"optionSwatches": { "type": "object", "additionalProperties": { "type": "string" }, "description": "A select option's colour by value, drawn before its label (form-small-features)." },
+				"optionIcons": { "type": "object", "additionalProperties": { "type": "string" }, "description": "A select option's icon by value, drawn before its label (form-small-features)." },
+				"unique": { "description": "Refuse a value another stored object of this schema already has, checked before the save: `true`, or `{ filter }` to compare only among the objects the filter matches (`{ \"caseType\": \"@objectId\" }`) (list-reorder-order-field).", "anyOf": [{ "type": "boolean", "const": true }, { "type": "object", "additionalProperties": false, "properties": { "filter": { "type": "object" } } }] },
+				"defaults": { "type": "object", "description": "widget 'object-switch': the object the switch fills in when turned on; off writes null. Its keys are edited as fields at dotted paths." },
+				"optionsFrom": { "$ref": "#/$defs/optionsFrom", "description": "Draw the field as a select (a multiselect on an array field) over options read from a source; the option's value is stored and its label shown. A register schema property can say the same with `x-options-from` (form-field-options-from, 2.133.0)." }
 			}
+		},
+		"fieldWarning": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["when", "text"],
+			"properties": {
+				"when": { "type": "object", "description": "The condition, as visibleWhen takes it, or `{ all }` / `{ any }`." },
+				"text": { "type": "string", "minLength": 1, "description": "The note, through the app's translate." }
+			}
+		},
+		"optionsFrom": {
+			"description": "Select options read from a source: rows from an app endpoint (`url`, `params`, `responsePath`) or OpenRegister objects (`register`, `schema`, `filter`; tokens resolve). `valueField` and `labelField` are dot-paths into a row: by default the value is `id` (else the object's uuid) and the label `title` (else `name`, else the value).",
+			"oneOf": [
+				{
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["url"],
+					"properties": {
+						"url": { "type": "string", "minLength": 1, "description": "An app path, resolved with generateUrl." },
+						"params": { "type": "object", "description": "Query parameters sent with the request." },
+						"responsePath": { "type": "string", "minLength": 1, "description": "Where the rows sit in the answer." },
+						"valueField": { "type": "string", "minLength": 1 },
+						"labelField": { "type": "string", "minLength": 1 },
+						"groupField": { "type": "string", "minLength": 1, "description": "Groups the options by this field, groups in the order they first appear (form-small-features)." }
+					}
+				},
+				{
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["register", "schema"],
+					"properties": {
+						"register": { "type": "string", "minLength": 1 },
+						"schema": { "type": "string", "minLength": 1 },
+						"filter": { "type": "object", "description": "Filters on the objects, as a list filter takes them." },
+						"valueField": { "type": "string", "minLength": 1 },
+						"labelField": { "type": "string", "minLength": 1 },
+						"groupField": { "type": "string", "minLength": 1, "description": "Groups the options by this field, groups in the order they first appear (form-small-features)." }
+					}
+				}
+			]
 		},
 		"breadcrumbCrumb": {
 			"type": "object",
@@ -564,6 +621,7 @@
 				"label": { "type": "string", "minLength": 1 },
 				"route": { "type": "string" },
 				"params": { "type": "object", "additionalProperties": true },
+				"query": { "type": "object", "additionalProperties": true, "description": "Query of the `route` link, such as `{ savedView: 'default:<slug>' }` to land on a view (saved-view-overrides)." },
 				"href": { "type": "string" },
 				"icon": { "type": "string", "minLength": 1, "description": "Optional MDI icon name (e.g. `Home`) drawn as the first crumb instead of the label, which then becomes its accessible name (zuiddrecht-pixel-gaps-2). Without it the label shows as text." },
 				"currentField": { "type": "string", "minLength": 1, "description": "A field of the record (dotted path, e.g. `identifier`) whose value is the current crumb instead of the display name; an empty value falls back to the display name (zuiddrecht-pixel-gaps-3)." },
@@ -4520,6 +4578,337 @@
 									"label": {
 										"type": "string",
 										"description": "One label for the control's label filter."
+									},
+									"overrides": {
+										"type": "object",
+										"additionalProperties": false,
+										"description": "Page config this view lays over the page while it is active; leaving the view restores the page. Each key is optional and, apart from `header`, the aliases `tabs` and `views`, `sortOption`, `slots` and `badge`, takes the shape of the page config key of the same name. A saved view carries the same object in `query.overrides`, so a copy of a default keeps it (saved-view-overrides, 2.132.0).",
+										"properties": {
+											"title": {
+												"type": "string",
+												"minLength": 1,
+												"description": "The page title. Translatable."
+											},
+											"showTitle": {
+												"type": "boolean",
+												"description": "Same as config.showTitle."
+											},
+											"breadcrumb": {
+												"description": "Same as config.breadcrumb.",
+												"anyOf": [
+													{
+														"$ref": "#/$defs/breadcrumbCrumb"
+													},
+													{
+														"type": "array",
+														"minItems": 1,
+														"items": {
+															"$ref": "#/$defs/breadcrumbCrumb"
+														}
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"headerMeta": {
+												"type": "string",
+												"description": "Same as config.headerMeta."
+											},
+											"notice": {
+												"type": [
+													"object",
+													"null"
+												],
+												"description": "Same as config.notice."
+											},
+											"pageTabs": {
+												"type": [
+													"array",
+													"null"
+												],
+												"description": "Tabs to sibling pages or views, `countFrom` included. Same as config.pageTabs."
+											},
+											"headerButtons": {
+												"type": "array",
+												"description": "Same as config.headerButtons."
+											},
+											"addLabel": {
+												"type": "string",
+												"description": "Same as config.addLabel."
+											},
+											"searchPlaceholder": {
+												"type": "string",
+												"description": "Same as config.searchPlaceholder."
+											},
+											"statRow": {
+												"type": "array",
+												"description": "Same as config.statRow."
+											},
+											"quickFilters": {
+												"type": "array",
+												"description": "Same as config.quickFilters."
+											},
+											"quickFiltersFrom": {
+												"type": [
+													"object",
+													"null"
+												],
+												"description": "Same as config.quickFiltersFrom."
+											},
+											"quickFilterPlacement": {
+												"type": "string",
+												"description": "Same as config.quickFilterPlacement."
+											},
+											"quickFilterMaxVisible": {
+												"type": "integer",
+												"minimum": 0,
+												"description": "Same as config.quickFilterMaxVisible."
+											},
+											"sidePanel": {
+												"type": "array",
+												"description": "Same as config.sidePanel."
+											},
+											"afterList": {
+												"type": "array",
+												"description": "Same as config.afterList."
+											},
+											"columns": {
+												"type": "array",
+												"description": "Same as config.columns."
+											},
+											"cardLayout": {
+												"type": [
+													"object",
+													"null"
+												],
+												"description": "Same as config.cardLayout."
+											},
+											"cardFields": {
+												"type": "array",
+												"items": {
+													"type": "string"
+												},
+												"description": "Same as config.cardFields."
+											},
+											"cardComponent": {
+												"type": "string",
+												"description": "Same as config.cardComponent."
+											},
+											"listConfig": {
+												"type": "object",
+												"description": "Same as config.listConfig."
+											},
+											"viewModes": {
+												"type": "array",
+												"items": {
+													"type": "string",
+													"minLength": 1
+												},
+												"description": "The view modes the toggle offers. Same as config.viewModes."
+											},
+											"viewMode": {
+												"type": "string",
+												"minLength": 1,
+												"description": "The view mode the view opens in. Same as config.viewMode."
+											},
+											"viewSwitch": {
+												"type": "array",
+												"items": {
+													"type": "string"
+												},
+												"description": "Same as config.viewSwitch."
+											},
+											"countText": {
+												"type": "string",
+												"description": "Same as config.countText."
+											},
+											"footerNote": {
+												"type": "string",
+												"description": "Same as config.footerNote."
+											},
+											"emptyText": {
+												"type": "string",
+												"description": "Same as config.emptyText."
+											},
+											"folderSidebar": {
+												"type": [
+													"object",
+													"null"
+												],
+												"description": "`null` hides the folder sidebar. Same as config.folderSidebar."
+											},
+											"sidebar": {
+												"type": [
+													"object",
+													"null"
+												],
+												"description": "Same as config.sidebar."
+											},
+											"defaultSort": {
+												"type": "array",
+												"description": "Same as config.defaultSort."
+											},
+											"rowClickToView": {
+												"type": "boolean",
+												"description": "Same as config.rowClickToView."
+											},
+											"showViewAction": {
+												"type": "boolean",
+												"description": "Same as config.showViewAction."
+											},
+											"actions": {
+												"type": "array",
+												"description": "Same as config.actions."
+											},
+											"includeFields": {
+												"type": "array",
+												"items": {
+													"type": "string"
+												},
+												"description": "Same as config.includeFields."
+											},
+											"fieldOverrides": {
+												"type": "object",
+												"description": "Same as config.fieldOverrides."
+											},
+											"tabs": {
+												"type": [
+													"array",
+													"null"
+												],
+												"description": "Alias of pageTabs."
+											},
+											"views": {
+												"type": "array",
+												"items": {
+													"type": "string",
+													"minLength": 1
+												},
+												"description": "Alias of viewModes."
+											},
+											"header": {
+												"type": "object",
+												"additionalProperties": false,
+												"description": "Groups header keys; a key spelled out beside it wins.",
+												"properties": {
+													"title": {
+														"type": "string",
+														"minLength": 1
+													},
+													"showTitle": {
+														"type": "boolean"
+													},
+													"breadcrumb": {
+														"anyOf": [
+															{
+																"$ref": "#/$defs/breadcrumbCrumb"
+															},
+															{
+																"type": "array",
+																"minItems": 1,
+																"items": {
+																	"$ref": "#/$defs/breadcrumbCrumb"
+																}
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"notice": {
+														"type": [
+															"object",
+															"null"
+														]
+													},
+													"headerMeta": {
+														"type": "string"
+													},
+													"headerButtons": {
+														"type": "array"
+													}
+												}
+											},
+											"lockedFilters": {
+												"type": "object",
+												"description": "Base filters added to the page's `filter` while the view is active, which the reader cannot clear, as the old Queue and Assigned to me pages had (2.132.0)."
+											},
+											"sortOption": {
+												"type": "string",
+												"minLength": 1,
+												"description": "The `value` of a `sortSelectOptions` entry to select, an endpoint-sourced one included."
+											},
+											"slots": {
+												"type": "object",
+												"description": "Named page slots (`below-header`, `before-collection`, ...) mapped to a registry component or a list of them drawn in order, laid over the page's `slots`; `null` or `[]` empties that slot.",
+												"additionalProperties": {
+													"anyOf": [
+														{
+															"type": "string",
+															"minLength": 1
+														},
+														{
+															"type": "array",
+															"items": {
+																"type": "string",
+																"minLength": 1
+															}
+														},
+														{
+															"type": "null"
+														}
+													]
+												}
+											},
+											"badge": {
+												"description": "A count on the view's menu entry, in a menu entry's terms. `true`, or `count: true`, counts the view's own list: the page's register, schema and base filter with the view's filters. A `count` object may name another `register`, `schema` or `filter`. `counterVariant: attention` draws the attention pill.",
+												"anyOf": [
+													{
+														"type": "boolean",
+														"const": true
+													},
+													{
+														"type": "object",
+														"additionalProperties": false,
+														"properties": {
+															"count": {
+																"anyOf": [
+																	{
+																		"type": "boolean",
+																		"const": true
+																	},
+																	{
+																		"type": "object",
+																		"additionalProperties": false,
+																		"properties": {
+																			"register": {
+																				"type": "string",
+																				"minLength": 1
+																			},
+																			"schema": {
+																				"type": "string",
+																				"minLength": 1
+																			},
+																			"filter": {
+																				"type": "object"
+																			}
+																		}
+																	}
+																]
+															},
+															"counterVariant": {
+																"type": "string",
+																"enum": [
+																	"default",
+																	"attention"
+																]
+															}
+														}
+													}
+												]
+											}
+										}
 									}
 								}
 							}
@@ -4840,7 +5229,9 @@
 								"title": { "type": "string", "minLength": 1 },
 								"meta": { "type": "array", "description": "The meta line's parts: a field name reads through the page column it names; `{ field, formatter?, formatterOptions? }` reads as plain text through its own formatter (card-layout-part-formatter).", "items": { "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" } } } ] } },
 								"footerPill": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "due": { "type": "object", "description": "Read the field as a due date: overdue gives the error variant, within `soonWithin` days the warning one; any other date draws no pill.", "properties": { "soonWithin": { "type": "number", "minimum": 0 } } }, "variantWhen": { "type": "array", "description": "Rules on the days left until the field's date, `{ op, value, variant }`; the first match gives the variant, no match draws no pill.", "items": { "type": "object", "required": ["op", "value", "variant"], "properties": { "op": { "type": "string" }, "value": { "type": "number" }, "variant": { "type": "string" } } } } } },
-								"footerDate": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 } } }
+								"footerDate": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 }, "overdueVariant": { "type": "string", "enum": ["error", "warning"], "description": "The date's tone once it has passed (2.132.0)." } } },
+								"description": { "description": "A line under the meta line: a field, or `{ field, maxLength? }` cut at maxLength characters (140 by default) with an ellipsis (2.132.0).", "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "maxLength": { "type": "integer", "minimum": 1 } } }] },
+								"chips": { "type": "array", "description": "Pills under the description, one per entry whose field holds a value; the text reads through the entry's formatter, `colorMap` and `labels` work as on a pill (2.132.0).", "items": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } } }] } }
 							}
 						},
 						"afterList": { "type": "array", "description": "type='index': cards after the list, stacked full width in the listed order, the counterpart of statRow above it (index-scope-presentation). Each entry is a widget definition resolved like statRow's. A query preset or a folder scope can set its own. Maps to CnIndexPage `afterList`.", "items": { "type": "object", "required": ["id", "type"], "properties": { "id": { "type": "string", "minLength": 1 }, "type": { "type": "string", "minLength": 1 }, "title": { "type": "string" }, "subtitle": { "type": "string" }, "content": { "type": "object" }, "headerLink": { "type": "object" } } } },
@@ -4897,6 +5288,7 @@
 						},
 						"search": { "type": "boolean", "default": true, "description": "type='index': `false` draws no inline search in the actions bar, also in the board look, which otherwise draws one on every index page. Wins over `inlineSearch` (2.127.0)." },
 						"searchPlacement": { "type": "string", "enum": ["", "toolbar"], "default": "", "description": "type='index', board look: where the search field sits. `toolbar` puts it on row 1 before the Filter button and the view switch instead of opening row 2 (DqTeamwachtrij, 2.127.0)." },
+						"sortSelectOptions": { "type": "array", "description": "type='index': the orders the index sidebar's Sort section offers in the list, card and map views, `{ value, label, order?, default?, source? }`. An option with a `source` takes its rows from an app endpoint, in that endpoint's order, for an order the server cannot sort by; the page's search, sidebar filters and pager run over those rows in the browser, and it is chosen by its value. `default: true` opens the page on it unless the address carries an order; a column header click in the table view leaves it. When the endpoint fails the list falls back to the option's `order` and shows `failedNote` (2.131.0).", "items": { "type": "object", "required": ["value", "label"], "properties": { "value": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 }, "order": { "anyOf": [ { "type": "string", "minLength": 1 }, { "type": "object" }, { "type": "array" } ] }, "default": { "type": "boolean" }, "source": { "type": "object", "required": ["url"], "additionalProperties": false, "properties": { "url": { "type": "string", "minLength": 1, "description": "An app path, resolved with generateUrl and fetched with the session." }, "params": { "type": "object", "description": "Query parameters sent with the request." }, "rowsPath": { "type": "string", "minLength": 1, "description": "Where the entries sit in the answer; `results` by default, a bare array as is." }, "rowPath": { "type": "string", "minLength": 1, "description": "Where each entry carries its row; entries without one are left out." }, "carry": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Entry fields copied onto each row, such as a tier a card's head pill reads." }, "idPath": { "type": "string", "minLength": 1, "description": "The row's identity for `annotate`; `id` by default." }, "annotate": { "type": "boolean", "description": "Copy the carried fields onto the rows of every other order too, matched on idPath." }, "searchFields": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "The fields the search box matches; every top-level text by default." }, "failedNote": { "type": "string", "minLength": 1, "description": "Shown above the list when the endpoint failed and the option's order stands in, through the app's translate." } } } } } },
 						"defaultOrder": { "description": "type='index', self-fetch: the order the page opens on when neither the address nor sortKeys gives one: `\"-createdAt\"`, `\"priority:desc,title\"`, an `_order` map or a `[{ key, order }]` list (2.127.0).", "anyOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": { "type": "string", "enum": ["asc", "desc", "ASC", "DESC"] } }, { "type": "array", "items": { "type": "object", "required": ["key"], "properties": { "key": { "type": "string", "minLength": 1 }, "order": { "type": "string", "enum": ["asc", "desc"] } } } } ] },
 						"listConfig": {
 							"type": "object",
