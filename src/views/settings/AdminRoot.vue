@@ -48,7 +48,21 @@
 		</CnSettingsSection>
 
 		<template #tab-system>
-			<Settings />
+			<CnRegisterMapping
+				id="section-configuration"
+				:name="t('dossiq', 'Configuration')"
+				:description="
+					t(
+						'dossiq',
+						'In which register Dossiq keeps cases, and with which schemas.',
+					)
+				"
+				docUrl="https://dossiq.conduction.nl/docs/intro"
+				:groups="registerGroups"
+				:configuration="registerConfiguration"
+				:saving="registerSaving"
+				:saveButtonText="t('dossiq', 'Save')"
+				@save="saveRegisterMapping" />
 
 			<CnSettingsFieldsSection
 				id="section-menu-structure"
@@ -607,17 +621,19 @@
 <script>
 import {
 	CnAdminSettingsShell,
+	CnRegisterMapping,
 	CnSettingsFieldsSection,
 	CnSettingsSection,
 	CnWidgetObjectTable,
 	CnWorkingCalendarWidget,
 } from '@conduction/nextcloud-vue'
+import axios from '@nextcloud/axios'
+import { showError, showSuccess } from '@nextcloud/dialogs'
 import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
-import Settings from './Settings.vue'
 import ShippedConfiguration from './ShippedConfiguration.vue'
 import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
@@ -646,6 +662,7 @@ import {
 	menuStructureFields,
 	paymentCallbackFields,
 	queueUrgencyFields,
+	registerMappingGroups,
 	reviewReportFields,
 	sharedMailboxFields,
 	storeRegistryFields,
@@ -660,11 +677,11 @@ export default {
 		PrerequisitesTab,
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
+		CnRegisterMapping,
 		CnSettingsFieldsSection,
 		CnSettingsSection,
 		CnWidgetObjectTable,
 		CnWorkingCalendarWidget,
-		Settings,
 		ZgwMappingSettings,
 		SearchIndexTab,
 		ChecklistsTab,
@@ -704,6 +721,8 @@ export default {
 	data() {
 		return {
 			storesReady: false,
+			registerConfiguration: {},
+			registerSaving: false,
 			activeTab: 'general',
 			tabCounts: {},
 			ownerApps: loadState('dossiq', 'ownerApps', {
@@ -1060,6 +1079,16 @@ export default {
 		},
 
 		/**
+		 * The register dossiq keeps its records in, and a schema per kind.
+		 *
+		 * @return {Array<object>} The groups.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		registerGroups() {
+			return registerMappingGroups(this.t.bind(this))
+		},
+
+		/**
 		 * The shared mailbox intake, matching and sender.
 		 *
 		 * @return {Array<object>} The fields.
@@ -1205,6 +1234,7 @@ export default {
 		fetchAdminTabCounts().then((counts) => {
 			this.tabCounts = counts
 		})
+		this.loadRegisterConfiguration()
 		await initializeStores()
 		this.storesReady = true
 	},
@@ -1221,6 +1251,42 @@ export default {
 			return tabs.map((tab) => (typeof this.tabCounts[tab.id] === 'number'
 				? { ...tab, count: this.tabCounts[tab.id] }
 				: tab))
+		},
+
+		/**
+		 * Read the register and schema ids from dossiq's settings.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		async loadRegisterConfiguration() {
+			try {
+				const { data } = await axios.get(generateUrl('/apps/dossiq/api/settings'))
+				this.registerConfiguration = data?.config ?? {}
+			} catch {
+				this.registerConfiguration = {}
+			}
+		},
+
+		/**
+		 * Save the register and schema ids, keeping the ids the app config
+		 * has always held.
+		 *
+		 * @param {object} configuration The register and schema ids by key.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		async saveRegisterMapping(configuration) {
+			this.registerSaving = true
+			try {
+				const { data } = await axios.put(generateUrl('/apps/dossiq/api/settings'), configuration)
+				this.registerConfiguration = data?.config ?? configuration
+				showSuccess(this.t('dossiq', 'Configuration saved'))
+			} catch (error) {
+				showError(error?.response?.data?.message || this.t('dossiq', 'That change could not be saved.'))
+			} finally {
+				this.registerSaving = false
+			}
 		},
 
 		/**

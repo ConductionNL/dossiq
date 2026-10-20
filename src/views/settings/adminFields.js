@@ -961,3 +961,30 @@ export function sharedMailboxFields(t) {
 		},
 	]
 }
+
+/**
+ * The register dossiq keeps its records in, and the schema per kind of
+ * record. The keys are the app config keys that hold the OpenRegister ids:
+ * `register`, and `<slug>_schema` per kind.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The groups.
+ * @spec openspec/specs/admin-settings/spec.md
+ */
+export function registerMappingGroups(t) {
+	return [
+		{
+			name: t('dossiq', 'Configuration'),
+			registerConfigKey: 'register',
+			types: [
+				{ slug: 'case', label: t('dossiq', 'Case schema') },
+				{ slug: 'case_type', label: t('dossiq', 'Case type schema') },
+				{ slug: 'status', label: t('dossiq', 'Status schema') },
+				{ slug: 'role', label: t('dossiq', 'Role schema') },
+				{ slug: 'result', label: t('dossiq', 'Result schema') },
+				{ slug: 'decision', label: t('dossiq', 'Decision schema') },
+				{ slug: 'status_type', label: t('dossiq', 'Status type schema') },
+			],
+		},
+	]
+}
