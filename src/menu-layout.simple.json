@@ -588,7 +588,7 @@
 									"itemsPath": "results",
 									"idField": "entryId",
 									"title": "{title}",
-									"meta": "{archiefactiedatum}",
+									"meta": "Disposal date: {archiefactiedatum}",
 									"answers": [
 										{
 											"value": "destroy"
