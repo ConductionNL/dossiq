@@ -93,10 +93,10 @@ describe('the my-work view', () => {
 		expect(simple.removals).toContain('MyWork')
 	})
 
-	it('mounts the workload strip and the substituted work, both registered', () => {
-		expect(overrides.slots).toEqual({ 'below-header': ['WorkloadSummaryBar'], 'before-collection': ['SubstitutedWork'] })
+	it('mounts the workload strip, registered, and no substituted-work card: the work queue carries covered work', () => {
+		expect(overrides.slots).toEqual({ 'below-header': ['WorkloadSummaryBar'] })
 		expect(registry).toMatch(/\tWorkloadSummaryBar: \{\n\t\tkind: 'page',\n\t\tcomponent: WorkloadSummaryBar,/)
-		expect(registry).toMatch(/\tSubstitutedWork: \{\n\t\tkind: 'page',\n\t\tcomponent: SubstitutedWork,/)
+		expect(registry).not.toContain('SubstitutedWork')
 	})
 })
 

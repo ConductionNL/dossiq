@@ -297,13 +297,13 @@ class DeadlineReportingService {
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
 		if ($objectService === null || $register === '' || $uSchema === '') {
-			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0]];
+			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
 		}
 
 		try {
 			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: []);
 		} catch (\Throwable $e) {
-			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0]];
+			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
 		}
 
 		$yearPrefix = (string)$year;
@@ -338,7 +338,12 @@ class DeadlineReportingService {
 		return [
 			'jaar' => $year,
 			'rows' => $outRows,
-			'summary' => ['count' => count($outRows), 'totalCents' => $total],
+			'summary' => [
+				'count' => count($outRows),
+				'totalCents' => $total,
+				'totalEuros' => round($total / 100, 2),
+				'warningCount' => count($warnings),
+			],
 			'warnings' => $warnings,
 		];
 	}//end generateDwangsomAuditReport()

@@ -108,13 +108,16 @@
 				</table>
 			</div>
 
-			<CaseMailPartiesReport v-if="offered.parties" :caseId="startCase" />
+			<div v-if="offered.parties" data-testid="case-mail-parties">
+				<CnCountTablesReport v-bind="mailPartiesReport" :objectId="startCase" />
+			</div>
 		</div>
 	</NcAppContent>
 </template>
 
 <script>
 import axios from '@nextcloud/axios'
+import { CnCountTablesReport } from '@conduction/nextcloud-vue'
 import { loadState } from '@nextcloud/initial-state'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -126,7 +129,7 @@ import {
 	NcNoteCard,
 	NcTextField,
 } from '@nextcloud/vue'
-import CaseMailPartiesReport from '../../components/reports/CaseMailPartiesReport.vue'
+import { mailPartiesReport } from './mailPartiesReport.js'
 
 /**
  * The query string of a throughput read over a period.
@@ -175,7 +178,7 @@ export function offeredReports() {
 export default {
 	name: 'WooReportsView',
 	components: {
-		CaseMailPartiesReport,
+		CnCountTablesReport,
 		NcAppContent,
 		NcButton,
 		NcEmptyContent,
@@ -196,6 +199,7 @@ export default {
 			loaded: false,
 			refusal: '',
 			offered: offeredReports(),
+			mailPartiesReport,
 		}
 	},
 

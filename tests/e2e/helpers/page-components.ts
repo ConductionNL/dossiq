@@ -69,7 +69,7 @@ export const SubstitutionPersonalSettings = '/apps/dossiq/#user-settings'
 /** `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console (manifest page `SubstitutionAdmin`). */
 export const SubstitutionAdmin = '/substitution-admin'
 
-/** Manifest `type: "dashboard"` page — bottleneck analysis; heading comes from the page title, widgets from `src/views/processMining/`. */
+/** Manifest `type: "dashboard"` page — bottleneck analysis; heading comes from the page title, widgets are library charts, stats and tables over `/api/reports/process-mining`. */
 export const ProcessMiningDashboard = '/process-mining'
 
 /**

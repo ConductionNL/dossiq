@@ -174,13 +174,32 @@ class ProcessingTimeRowsTest extends TestCase {
 			$this->record('request', $this->daysAgo(61), null, 'overdue'),
 			$this->record('request', $this->daysAgo(55), null, 'critical'),
 			$this->record('request', $this->daysAgo(46), null, 'warning'),
-			$this->record('request', $this->daysAgo(5), null, 'ok'),
+			$this->record('request', $this->daysAgo(30), null, 'ok'),
 		];
 
 		$rows = $this->calculator->atRisk(open: $open, types: $types, threshold: 1.0, today: $this->today);
 
 		self::assertSame(array_column($rows, 'id'), array_column($rows, 'severity'));
 	}//end testAtRiskSeverityBands()
+
+	/**
+	 * Fourteen days or fewer is at risk even on a long term, where that is
+	 * well inside the last quarter.
+	 *
+	 * @return void
+	 */
+	public function testAtRiskWithinFourteenDaysOnALongTerm(): void {
+		$types = ['permit' => $this->type('permit', 365)];
+		$rows = $this->calculator->atRisk(
+			open: [$this->record('permit', $this->daysAgo(351), null, 'x')],
+			types: $types,
+			threshold: 0.25,
+			today: $this->today
+		);
+
+		self::assertSame('warning', $rows[0]['severity']);
+		self::assertSame(14, $rows[0]['remainingDays']);
+	}//end testAtRiskWithinFourteenDaysOnALongTerm()
 
 	/**
 	 * The performance band follows the compliance rate; a type without a

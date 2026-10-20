@@ -208,18 +208,9 @@ import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // @spec openspec/changes/deelzaak-support/tasks.md#T06
 import DeelzaakList from './views/cases/DeelzaakList.vue'
 import DeletedCasesView from './views/cases/DeletedCasesView.vue'
-import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
-import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
-import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
-import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
 //     customComponents map, plus the handlers a manifest names by string. ---
 import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
-import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
-import PmDwellByAssigneeWidget from './views/processMining/PmDwellByAssigneeWidget.vue'
-import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
-import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
-import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidget.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
@@ -228,15 +219,12 @@ import EndOfDayView from './views/queue/EndOfDayView.vue'
 // @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 import PersonalQueueView from './views/queue/PersonalQueueView.vue'
 import StoreGallery from './views/store/StoreGallery.vue'
-import SubstitutedWork from './views/SubstitutedWork.vue'
 // The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
 // `type: "detail"` page when remove-casetask took the caseTask schema away:
 // CnDetailPage has no entity-source mode, so a detail page can only bind a
 // register and a schema. Route and page id unchanged, so deep links resolve.
 // @spec openspec/specs/task-management/spec.md
 import TaskDetailView from './views/tasks/TaskDetailView.vue'
-import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
-import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // The Dashboard's My work tile, over OpenRegister's task engine.
 // @spec openspec/specs/dashboard/spec.md
 import FirstTodayWidget from './views/widgets/FirstTodayWidget.vue'
@@ -389,17 +377,12 @@ const registry = {
 	},
 
 	// --- Genuine exceptions: no abstract manifest analogue. ---
-	// The Assigned to me view's two slots (Cases `defaultSavedViews` my-work
-	// `overrides.slots`): the list itself is manifest config.
+	// The Assigned to me view's below-header slot (Cases `defaultSavedViews`
+	// my-work `overrides.slots`): the list itself is manifest config.
 	WorkloadSummaryBar: {
 		kind: 'page',
 		component: WorkloadSummaryBar,
 		_note: "Below-header slot: the coordinator's open cases per colleague, read from /api/work-queue/workload (403, and so nothing, for anyone else). A colleague's chip opens their open cases on the Cases page.",
-	},
-	SubstitutedWork: {
-		kind: 'page',
-		component: SubstitutedWork,
-		_note: 'Before-collection slot: the cases an active substitution routes to the reader, marked with whose they are and until when, hideable. Not a filter on the list, because these cases are not assigned to the reader.',
 	},
 
 	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
@@ -1474,83 +1457,6 @@ const registry = {
 		kind: 'handler',
 		handler: readFileAsMessage,
 		_note: "The case Files tab's read-as-message row action. A function because CnFilesBrowser's row-action vocabulary is `open-modal` and `handler` and has no `api-call`, so a declared POST would render a menu item that does nothing when clicked; and because the browser has NO per-row condition, so the check that this row is a mail file at all lives in the handler and answers with a sentence rather than by being absent.",
-	},
-
-	// --- Dashboard-page slots: Processing time, Deadline monitoring, Process
-	//     mining. Each page owns its heading and its filters (a case-type
-	//     filter is a pageFilters entry reading its options from the register);
-	//     these fill its `slots` map, carrying the grid metadata the validator
-	//     asks of every widget even though the page's own slot map positions
-	//     them.
-	// @spec openspec/specs/doorlooptijd-dashboard/spec.md
-	DtChartsWidget: {
-		kind: 'widget',
-		component: DtChartsWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Donut / histogram / trend / throughput.',
-	},
-	DtWooWidget: {
-		kind: 'widget',
-		component: DtWooWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Woo statutory-deadline panel.',
-	},
-	DtAtRiskWidget: {
-		kind: 'widget',
-		component: DtAtRiskWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Open cases within 25% of deadline.',
-	},
-	DtBreakdownWidget: {
-		kind: 'widget',
-		component: DtBreakdownWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Per-case-type performance table.',
-	},
-	TdQuarterlyWidget: {
-		kind: 'widget',
-		component: TdQuarterlyWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Quarterly report table + CSV export.',
-	},
-	TdAnnualWidget: {
-		kind: 'widget',
-		component: TdAnnualWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Annual dwangsom audit summary.',
-	},
-	// The process-mining page owns the heading and both filters — a widget that
-	// drew its own heading would be the dashboard-in-dashboard antipattern
-	// (hydra#316).
-	PmKpiWidget: {
-		kind: 'widget',
-		component: PmKpiWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Headline KPI tiles (CnKpiGrid + CnStatsBlock).',
-	},
-	PmDwellChartWidget: {
-		kind: 'widget',
-		component: PmDwellChartWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Dwell time by status (CnChartWidget bar).',
-	},
-	PmDwellByAssigneeWidget: {
-		kind: 'widget',
-		component: PmDwellByAssigneeWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'The same dwell intervals keyed by who held them (dwell-time-on-the-working-calendar).',
-	},
-	PmThroughputChartWidget: {
-		kind: 'widget',
-		component: PmThroughputChartWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Weekly throughput (CnChartWidget line).',
-	},
-	PmBottleneckTableWidget: {
-		kind: 'widget',
-		component: PmBottleneckTableWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Bottleneck ranking (ad-hoc row shape, no object-list leaf applies).',
 	},
 }
 

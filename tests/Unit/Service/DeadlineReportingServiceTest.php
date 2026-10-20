@@ -320,5 +320,7 @@ class DeadlineReportingServiceTest extends TestCase {
 		$report = $this->service->generateDwangsomAuditReport(2026);
 		self::assertSame(1, $report['summary']['count']);
 		self::assertSame(35700, $report['summary']['totalCents']);
+		self::assertSame(357.0, $report['summary']['totalEuros']);
+		self::assertSame(count($report['warnings']), $report['summary']['warningCount']);
 	}
 }

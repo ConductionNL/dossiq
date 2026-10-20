@@ -154,7 +154,6 @@ vi.mock('../../src/services/formatters.js', () => ({
 	default: { caseTypeName: (value) => value, statusTypeName: (value) => value },
 }))
 
-const { default: SubstitutedWork } = await import('../../src/views/SubstitutedWork.vue')
 const { default: MyWorkWidget } =
 	await import('../../src/views/widgets/MyWorkWidget.vue')
 
@@ -176,25 +175,6 @@ function substitutedCase(over = {}) {
 		},
 		...over,
 	}
-}
-
-/** The router My Work's slot opens a case with. */
-let router = { push: vi.fn() }
-
-/**
- * Mount My Work's substituted-work slot.
- *
- * @return {Promise<object>} The mounted wrapper, after its loads settle.
- */
-async function mountIndex() {
-	router = { push: vi.fn() }
-	const wrapper = mount(SubstitutedWork, {
-		global: {
-			mocks: { $router: router },
-		},
-	})
-	await flushPromises()
-	return wrapper
 }
 
 /**
@@ -226,68 +206,12 @@ beforeEach(() => {
 })
 
 describe('the My work index', () => {
-	it('asks the resolver for the work an active substitution routes here', async () => {
-		await mountIndex()
-		expect(fetchCalls).toBe(1)
-	})
-
-	it('lists a substituted case marked with the absentee and the end date', async () => {
-		substituted = { cases: [substitutedCase()], tasks: [] }
-		const wrapper = await mountIndex()
-
-		const marker = wrapper.find('[data-testid="substituted-marker"]')
-		expect(marker.exists()).toBe(true)
-		// The absentee by name, not merely "something non-empty": the
-		// requirement names whose work it is, and a marker reading anything
-		// else is the wrong marker on the right row.
-		expect(marker.text()).toContain('anna')
-		expect(marker.text()).toContain('2026-07-21')
-	})
-
-	it('removes the substituted rows when they are hidden, and keeps the way back', async () => {
-		substituted = { cases: [substitutedCase()], tasks: [] }
-		const wrapper = await mountIndex()
-		expect(wrapper.findAll('[data-testid="substituted-marker"]')).toHaveLength(1)
-
-		await wrapper.find('[data-testid="substituted-toggle"]').trigger('click')
-		await flushPromises()
-
-		expect(wrapper.findAll('[data-testid="substituted-marker"]')).toHaveLength(0)
-		// The toggle itself must survive being used, or hiding is one-way.
-		expect(wrapper.find('[data-testid="substituted-toggle"]').exists()).toBe(
-			true,
-		)
-		expect(window.localStorage.getItem('dossiq:my-work:show-substituted')).toBe(
-			'false',
-		)
-	})
-
-	it('shows no group at all when nothing is routed here', async () => {
-		const wrapper = await mountIndex()
-		expect(wrapper.find('[data-testid="substituted-work"]').exists()).toBe(false)
-	})
-
-	it('shows no group when the resolver refuses', async () => {
-		// A 403 or a 500 on the substituted read must not take My work with it:
-		// the group is work ADDED to the page (a slot of its own), never work
-		// the page's list depends on.
-		substituted = new Error('resolver unavailable')
-		const wrapper = await mountIndex()
-		expect(wrapper.find('[data-testid="substituted-work"]').exists()).toBe(false)
-	})
-
-	it('opens a substituted case on its own page', async () => {
-		substituted = { cases: [substitutedCase()], tasks: [] }
-		const wrapper = await mountIndex()
-		await wrapper.find('[data-testid="substituted-card-c-1"]').trigger('click')
-		expect(router.push).toHaveBeenCalledWith({ name: 'CaseDetail', params: { id: 'c-1' } })
-	})
-
-	it('is mounted on the Assigned to me view\'s before-collection slot', () => {
+	it('has no substituted-work card: the work queue carries covered work (Ruben, 20 Oct)', () => {
 		const manifest = JSON.parse(readFileSync(resolve(ROOT, 'src/manifest.json'), 'utf8'))
 		const cases = manifest.pages.find((entry) => entry.id === 'Cases')
 		const view = cases.config.defaultSavedViews.find((entry) => entry.slug === 'my-work')
-		expect(view.overrides.slots['before-collection']).toEqual(['SubstitutedWork'])
+		expect(view.overrides.slots['before-collection']).toBeUndefined()
+		expect(readFileSync(resolve(ROOT, 'src/registry.js'), 'utf8')).not.toContain('SubstitutedWork')
 	})
 })
 
@@ -413,13 +337,10 @@ describe('the helper module', () => {
 		)
 		expect(exports.length).toBeGreaterThan(0)
 
-		const callers = [
-			readFileSync(resolve(ROOT, 'src/views/SubstitutedWork.vue'), 'utf8'),
-			readFileSync(
-				resolve(ROOT, 'src/views/widgets/MyWorkWidget.vue'),
-				'utf8',
-			),
-		].join('\n')
+		const callers = readFileSync(
+			resolve(ROOT, 'src/views/widgets/MyWorkWidget.vue'),
+			'utf8',
+		)
 
 		const orphans = exports.filter(
 			(name) => new RegExp(`\\b${name}\\b`).test(callers) === false,

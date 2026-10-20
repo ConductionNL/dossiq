@@ -36,6 +36,14 @@ class ProcessingTimeRows {
 	public const CRITICAL_DAYS = 7;
 
 	/**
+	 * Days left at or below which an open record reads as at risk, whatever
+	 * share of its target that is.
+	 *
+	 * @var int
+	 */
+	public const WARNING_DAYS = 14;
+
+	/**
 	 * The share of the target used beyond which a record counts as displayed
 	 * at its cap, so one far-overdue record does not stretch a progress bar.
 	 *
@@ -61,8 +69,9 @@ class ProcessingTimeRows {
 	 * past it, most urgent first.
 	 *
 	 * `severity` is `overdue` past the target, `critical` within
-	 * {@see self::CRITICAL_DAYS} of it, `warning` inside the threshold and
-	 * `ok` otherwise (only reachable with a threshold of 1).
+	 * {@see self::CRITICAL_DAYS} of it, `warning` within
+	 * {@see self::WARNING_DAYS} or inside the threshold, and `ok` otherwise
+	 * (only reachable with a threshold of 1).
 	 *
 	 * @param array<int, array<string, mixed>>    $open      Open records.
 	 * @param array<string, array<string, mixed>> $types     Prepared types keyed by id.
@@ -209,7 +218,7 @@ class ProcessingTimeRows {
 			return 'critical';
 		}
 
-		if ((1 - $percentUsed) <= min($threshold, 0.25)) {
+		if ($remaining <= self::WARNING_DAYS || (1 - $percentUsed) <= min($threshold, 0.25)) {
 			return 'warning';
 		}
 

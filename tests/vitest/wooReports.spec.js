@@ -89,6 +89,17 @@ vi.mock('@nextcloud/vue', () => ({
 }))
 
 const stored = { config: {} }
+// CnCountTablesReport draws the mail parties report; its behaviour (tables,
+// totals, empty state, refusal) is specified in nextcloud-vue. Here it is a
+// stub that shows the case it was handed, so the page's wiring is asserted.
+vi.mock('@conduction/nextcloud-vue', () => ({
+	CnCountTablesReport: {
+		name: 'CnCountTablesReport',
+		props: ['url', 'objectId', 'lists', 'totals', 'emptyField', 'csvParam', 'emptyText', 'title', 'objectLabel', 'note'],
+		template: '<input data-testid="case-mail-parties-case" :value="objectId">',
+	},
+}))
+
 const offered = { throughput: true, parties: true }
 vi.mock('@nextcloud/initial-state', () => ({
 	loadState: (app, key, fallback) =>
@@ -120,10 +131,7 @@ const { isSwitchedOn } = tab
 const view = await import('../../src/views/woo/WooReportsView.vue')
 const WooReportsView = view.default
 const { throughputUrl } = view
-const parties =
-	await import('../../src/components/reports/CaseMailPartiesReport.vue')
-const CaseMailPartiesReport = parties.default
-const { mailPartiesUrl } = parties
+const { mailPartiesReport } = await import('../../src/views/woo/mailPartiesReport.js')
 
 describe('Woo report switches (REQ-WRR-001)', () => {
 	beforeEach(() => {
@@ -341,143 +349,35 @@ describe('The reports screen draws the halves on offer (REQ-WRR-001)', () => {
 })
 
 describe('Mail parties of a case (REQ-WRR-004)', () => {
-	const answer = {
-		case: 'case-7',
-		mails: 3,
-		unreadable: 1,
-		senders: [
-			{ address: 'a.jansen@gemeente.nl', count: 2 },
-			{ address: 'b@aannemer.nl', count: 1 },
-		],
-		recipients: [
-			{ address: 'b@aannemer.nl', count: 2 },
-			{ address: 'a.jansen@gemeente.nl', count: 1 },
-		],
-		domains: [
-			{ domain: 'aannemer.nl', count: 3 },
-			{ domain: 'gemeente.nl', count: 3 },
-		],
-	}
-
-	/**
-	 * The cells of one list, row by row.
-	 *
-	 * @param {object} wrapper The mounted report.
-	 * @param {string} list senders, recipients or domains.
-	 * @return {Array<Array<string>>} The cell texts.
-	 */
-	function cells(wrapper, list) {
-		return wrapper
-			.findAll('[data-testid="case-mail-parties-' + list + '"] tbody tr')
-			.map((row) => row.findAll('td').map((cell) => cell.text()))
-	}
-
-	beforeEach(() => {
-		vi.clearAllMocks()
+	it('asks the case report endpoint, and its CSV form', () => {
+		expect(mailPartiesReport.url).toBe('/apps/dossiq/api/cases/{id}/reports/mail-parties')
+		expect(mailPartiesReport.csvParam).toBe('format=csv')
 	})
 
-	it('asks for the case, and for the CSV of the same case', () => {
-		expect(mailPartiesUrl('case-7')).toMatch(
-			/\/apps\/dossiq\/api\/cases\/case-7\/reports\/mail-parties$/,
-		)
-		expect(mailPartiesUrl('case-7', true)).toMatch(
-			/\/cases\/case-7\/reports\/mail-parties\?format=csv$/,
-		)
-		expect(mailPartiesUrl('a/b')).toContain('/cases/a%2Fb/reports/')
-	})
-
-	it('cannot be read before a case is named', async () => {
-		const wrapper = mount(CaseMailPartiesReport)
-
-		expect(
-			wrapper
-				.find('[data-testid="case-mail-parties-show"]')
-				.attributes('disabled'),
-		).toBeDefined()
-	})
-
-	it('lists the senders, recipients and domains with their counts', async () => {
-		axios.get.mockResolvedValue({ data: answer })
-		const wrapper = mount(CaseMailPartiesReport, {
-			props: { caseId: 'case-7' },
-		})
-		await wrapper.find('[data-testid="case-mail-parties-show"]').trigger('click')
-		await flushPromises()
-
-		expect(axios.get).toHaveBeenCalledWith(
-			expect.stringMatching(/\/cases\/case-7\/reports\/mail-parties$/),
-		)
-		expect(cells(wrapper, 'senders')).toEqual([
-			['a.jansen@gemeente.nl', '2'],
-			['b@aannemer.nl', '1'],
+	it('counts senders and recipients by address and domains by domain', () => {
+		expect(mailPartiesReport.lists).toEqual([
+			{ key: 'senders', label: 'Sender', nameField: 'address' },
+			{ key: 'recipients', label: 'Recipient', nameField: 'address' },
+			{ key: 'domains', label: 'Domain', nameField: 'domain' },
 		])
-		expect(cells(wrapper, 'recipients')).toEqual([
-			['b@aannemer.nl', '2'],
-			['a.jansen@gemeente.nl', '1'],
-		])
-		expect(cells(wrapper, 'domains')).toEqual([
-			['aannemer.nl', '3'],
-			['gemeente.nl', '3'],
-		])
-		const totals = wrapper
-			.find('[data-testid="case-mail-parties-totals"]')
-			.text()
-		expect(totals).toContain('3')
-		expect(totals).toContain('1')
-		expect(wrapper.find('[data-testid="case-mail-parties-csv"]').exists()).toBe(
-			true,
-		)
 	})
 
-	it('says so when the case collected no mail, and offers no CSV', async () => {
-		axios.get.mockResolvedValue({
-			data: {
-				case: 'case-7',
-				mails: 0,
-				unreadable: 0,
-				senders: [],
-				recipients: [],
-				domains: [],
-			},
-		})
-		const wrapper = mount(CaseMailPartiesReport, {
-			props: { caseId: 'case-7' },
-		})
-		await wrapper.find('[data-testid="case-mail-parties-show"]').trigger('click')
-		await flushPromises()
-
-		expect(wrapper.findComponent({ name: 'NcEmptyContent' }).exists()).toBe(true)
-		expect(wrapper.findAll('tbody tr')).toHaveLength(0)
-		expect(wrapper.find('[data-testid="case-mail-parties-csv"]').exists()).toBe(
-			false,
-		)
+	it('reads the totals sentence and the empty state from the mail count', () => {
+		expect(mailPartiesReport.totals).toContain('{mails}')
+		expect(mailPartiesReport.totals).toContain('{unreadable}')
+		expect(mailPartiesReport.emptyField).toBe('mails')
+		expect(mailPartiesReport.emptyText).toBe('No mail collected on this case')
 	})
 
-	it('shows the refusal and drops the last answer when the server refuses', async () => {
-		axios.get.mockResolvedValueOnce({ data: answer })
-		const wrapper = mount(CaseMailPartiesReport, {
-			props: { caseId: 'case-7' },
+	it('hands the report its config on the reports screen', () => {
+		offered.parties = true
+		const wrapper = mount(WooReportsView, {
+			global: { mocks: { $route: { query: { case: 'case-7' } } } },
 		})
-		await wrapper.find('[data-testid="case-mail-parties-show"]').trigger('click')
-		await flushPromises()
-		expect(wrapper.findAll('tbody tr').length).toBeGreaterThan(0)
+		const report = wrapper.findComponent({ name: 'CnCountTablesReport' })
 
-		axios.get.mockRejectedValueOnce({
-			response: {
-				status: 403,
-				data: {
-					message:
-						'You cannot read this case, so its report cannot be shown.',
-				},
-			},
-		})
-		await wrapper.find('[data-testid="case-mail-parties-show"]').trigger('click')
-		await flushPromises()
-
-		expect(wrapper.text()).toContain('You cannot read this case')
-		expect(wrapper.findAll('tbody tr')).toHaveLength(0)
-		expect(wrapper.find('[data-testid="case-mail-parties-csv"]').exists()).toBe(
-			false,
-		)
+		expect(report.props('url')).toBe(mailPartiesReport.url)
+		expect(report.props('lists')).toEqual(mailPartiesReport.lists)
+		expect(report.props('objectId')).toBe('case-7')
 	})
 })

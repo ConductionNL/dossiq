@@ -101,6 +101,15 @@
         "8 weeks": "8 weeks",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source",
         "> 90 dagen": "> 90 dagen",
+        "Data warnings": "Data warnings",
+        "In {jaar}": "In {jaar}",
+        "No cases at risk": "No cases at risk",
+        "No target": "No target",
+        "No terms started in this quarter.": "No terms started in this quarter.",
+        "Payments": "Payments",
+        "Remaining": "Remaining",
+        "Term used": "Term used",
+        "Total dwangsom in the year": "Total dwangsom in the year",
         "_%n case_::_%n cases_": [
             "%n case",
             "%n cases"

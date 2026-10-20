@@ -843,6 +843,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('the absentee in-scope case is on the waarnemer My work, marked and hideable', async ({
 		page,
 	}) => {
+		test.fixme(true, 'The substituted-work card on My work is dropped: covered work shows in the personal work queue (Ruben, 20 Oct 2026). Re-point this scenario at the queue.')
 		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs the view slot: openspec/changes/lists-are-views/restore.md section 2')
 		await page.goto(`/index.php/apps/dossiq${CasesSavedView('my-work')}`)
 		await dismissSupportDialog(page)
