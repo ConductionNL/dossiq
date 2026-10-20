@@ -47,3 +47,21 @@ describe('organisation edit', () => {
 		expect(Object.keys(edit.formProperties)).toEqual(['name', 'description'])
 	})
 })
+
+/**
+ * @spec openspec/changes/organisation-history-tab/specs/organisation-history-tab/spec.md#requirement-an-organisation-shows-its-history
+ */
+describe('organisation history', () => {
+	const tabs = fragment.pages.find((entry) => entry.id === 'EnvironmentOrganisationDetail').config.widgets.find((widget) => widget.id === 'organisation-panels').content.tabs
+	const history = fragment.pages.find((entry) => entry.id === 'EnvironmentOrganisationDetail').config.widgets.find((widget) => widget.id === 'organisation-history')
+
+	it('has a History tab after Billing', () => {
+		expect(tabs.map((tab) => tab.label)).toEqual(['Overview', 'Users', 'Mandates', 'Billing', 'History'])
+	})
+
+	it('reads the organisation\'s lifecycle entries from OpenRegister\'s audit trail', () => {
+		expect(history.content.endpointSource.url).toContain('/apps/openregister/api/audit-trails?object_uuid=@objectId')
+		expect(history.content.endpointSource.url).toContain('action=organisation.status_changed,organisation.updated')
+		expect(history.content.endpointSource.responsePath).toBe('results')
+	})
+})

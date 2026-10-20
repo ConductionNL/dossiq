@@ -291,8 +291,35 @@
 									"label": "Billing",
 									"widgetId": "organisation-billing-list",
 									"countFrom": "widget"
+								},
+								{
+									"label": "History",
+									"widgetId": "organisation-history"
 								}
 							]
+						}
+					},
+					{
+						"id": "organisation-history",
+						"type": "record-list",
+						"title": "History",
+						"_note": "Board DqTenant Historie: what happened to this organisation, newest first. OpenRegister writes an organisation's status changes and edits to the audit trail keyed by its uuid (organisation-lifecycle-audit); the admin audit list filters on object_uuid and action. Admin-only, as this page is.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/openregister/api/audit-trails?object_uuid=@objectId&action=organisation.status_changed,organisation.updated&sort=created&order=DESC",
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"title": "{action}",
+							"meta": "{userName} · {created|date}",
+							"valueLabels": {
+								"action": {
+									"organisation.status_changed": "Status changed",
+									"organisation.updated": "Details edited"
+								}
+							},
+							"limit": 25,
+							"emptyText": "Nothing has happened to this organisation yet"
 						}
 					},
 					{

@@ -107,6 +107,7 @@
         "{scheduledDate|date}",
         "{tedoel}",
         "{step}",
+        "{action}",
         "Agenda",
         "In status",
         "{candidateGroups}",
