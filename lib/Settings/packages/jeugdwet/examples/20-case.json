@@ -24,7 +24,11 @@
       ],
       "tags": [
         "voorbeeld"
-      ]
+      ],
+      "legalBasis": "Jeugdwet artikel 2.3",
+      "initiatorDisplayName": "Huisarts, met toestemming van de ouders",
+      "assignee": "fatma.kaya",
+      "deadline": "{{date:20}}"
     }
   ]
 }
