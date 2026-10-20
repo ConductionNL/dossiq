@@ -8211,6 +8211,7 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "caseType",
+				"follow": false,
 				"widgets": [
 					{
 						"id": "case-type-core",
