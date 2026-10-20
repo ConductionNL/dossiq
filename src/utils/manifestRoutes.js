@@ -22,7 +22,7 @@ import { currentPermissions, permits } from './permissions.js'
  * Addresses of retired pages, each sent on to the page that replaced it, so a
  * bookmark lands where the feature now lives instead of on the dashboard.
  *
- * @type {Array<{path: string, redirect: object}>}
+ * @type {Array<{path: string, redirect: (object|function(object): object)}>}
  */
 export const RETIRED_ROUTES = [
 	{
@@ -49,6 +49,16 @@ export const RETIRED_ROUTES = [
 	{
 		path: '/subsidies',
 		redirect: { name: 'Cases', query: { savedView: 'default:subsidies' } },
+	},
+	// The sub-case pages; a sub-case is a case, listed on its parent's Related
+	// tab. The hash opens that tab (CnTabsWidget reads the tab id from it).
+	{
+		path: '/cases/:id/deelzaken',
+		redirect: (to) => ({ name: 'CaseDetail', params: { id: to.params.id }, hash: '#case-related-panel' }),
+	},
+	{
+		path: '/cases/:parentId/deelzaken/:id',
+		redirect: (to) => ({ name: 'CaseDetail', params: { id: to.params.id } }),
 	},
 ]
 

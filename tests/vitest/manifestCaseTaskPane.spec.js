@@ -108,9 +108,12 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  *
  * Moved 13 -> 12 by `lists-are-views`: the custom MyWork page is a view of
  * the Cases list. Both numbers drop, for the same reason as above.
+ *
+ * Moved 12 -> 10 by the retirement of the custom DeelzaakList and
+ * DeelzaakDetail pages. Both numbers drop.
  */
-const CUSTOM_PAGE_COUNT_BEFORE = 11
-const CUSTOM_PAGE_COUNT_AFTER = 12
+const CUSTOM_PAGE_COUNT_BEFORE = 9
+const CUSTOM_PAGE_COUNT_AFTER = 10
 
 /**
  * One page as the manifest declares it.
