@@ -445,7 +445,7 @@
 					)
 				"
 				:loading="!storesReady">
-				<StufAuditLog v-if="storesReady" />
+				<CnIndexPage v-if="storesReady" v-bind="stufAuditIndex" />
 			</CnSettingsSection>
 
 			<CnSettingsFieldsSection
@@ -643,11 +643,11 @@ import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
+import StufEnvelopeDialog from '../../dialogs/StufEnvelopeDialog.vue'
 import SubstitutionActionsDialog from '../../dialogs/SubstitutionActionsDialog.vue'
 import BulkReassignModal from '../../modals/BulkReassignModal.vue'
 import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
 import ShippedConfiguration from './ShippedConfiguration.vue'
-import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
 import FirstRunTab from './tabs/FirstRunTab.vue'
@@ -680,7 +680,7 @@ import {
 	storeRegistryFields,
 	textsAndAccessFields,
 } from './adminFields.js'
-import { substitutionIndex } from './adminLists.js'
+import { stufAuditIndex, substitutionIndex } from './adminLists.js'
 
 /**
  * The modals the admin page's lists open, by the name a declaration uses.
@@ -690,6 +690,7 @@ import { substitutionIndex } from './adminLists.js'
 const ADMIN_MODALS = {
 	BulkReassignModal,
 	CnActionDialog,
+	StufEnvelopeDialog,
 	SubstitutionActionsDialog,
 	SubstitutionFormModal,
 }
@@ -714,7 +715,6 @@ export default {
 		MandaatMatrixTab,
 		ShippedConfiguration,
 		StufEndpoints,
-		StufAuditLog,
 		NcButton,
 		NcNoteCard,
 		CnIndexPage,
@@ -769,6 +769,16 @@ export default {
 		 */
 		substitutionIndex() {
 			return substitutionIndex(this.t, (key, props) => this.openAdminModal(key, props))
+		},
+
+		/**
+		 * The StUF message log's list.
+		 *
+		 * @return {object} The CnIndexPage props.
+		 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+		 */
+		stufAuditIndex() {
+			return stufAuditIndex(this.t)
 		},
 
 		/**

@@ -92,3 +92,73 @@ export function substitutionIndex(t, openModal) {
 		],
 	}
 }
+
+/**
+ * The StUF message log: every outbound and inbound StUF call with its status,
+ * searched by endpoint, narrowed by status and by message type, each envelope
+ * inspectable, and the shown rows downloadable as CSV. Admin only on the
+ * server (StufController).
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The CnIndexPage props.
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+ */
+export function stufAuditIndex(t) {
+	const statuses = ['verzonden', 'bevestigd', 'fout', 'wacht_op_retry']
+	const kinds = ['Lk01', 'Lk02', 'Lk03', 'Bv01', 'Lv01', 'La01', 'Du01', 'Fo02']
+	return {
+		// Not shown (showTitle false); it names the CSV, stuf-audit-log.csv.
+		title: 'StUF audit log',
+		showTitle: false,
+		entitySource: 'endpoint',
+		sourceConfig: {
+			url: '/apps/dossiq/api/stuf/messages',
+			rowsPath: 'items',
+			searchParam: 'endpointId',
+			searchFields: { messageKind: { param: 'messageKind', single: true } },
+			limit: 100,
+		},
+		inlineSearch: true,
+		searchPlaceholder: t('dossiq', 'Endpoint ID'),
+		emptyText: t('dossiq', 'No StUF messages match the filters.'),
+		showAdd: false,
+		showViewAction: false,
+		showEditAction: false,
+		showCopyAction: false,
+		showDeleteAction: false,
+		allowSavedViews: false,
+		quickFilters: [
+			{ label: t('dossiq', 'All'), filter: {}, default: true },
+			...statuses.map((status) => ({ label: status, filter: { status } })),
+		],
+		filterStrip: {
+			field: 'messageKind',
+			label: t('dossiq', 'Message type'),
+			options: kinds.map((kind) => ({ value: kind, label: kind })),
+		},
+		columns: [
+			{ key: 'sentOn', label: t('dossiq', 'Sent at') },
+			{ key: 'direction', label: t('dossiq', 'Direction') },
+			{ key: 'messageKind', label: t('dossiq', 'Message') },
+			{ key: 'role', label: t('dossiq', 'Function') },
+			{
+				key: 'status',
+				label: t('dossiq', 'Status'),
+				widget: 'badge',
+				colorMap: { verzonden: 'primary', bevestigd: 'success', fout: 'error', wacht_op_retry: 'warning' },
+			},
+			{ key: 'httpStatus', label: t('dossiq', 'HTTP') },
+			{ key: 'durationMs', label: t('dossiq', 'Duration (ms)') },
+			{ key: 'referenceNumber', label: t('dossiq', 'Reference') },
+			{ key: 'caseIdentification', label: t('dossiq', 'Case') },
+			{ key: 'actions', label: '', widget: 'actions', widgetProps: { actions: ['inspect'] } },
+		],
+		headerButtons: [
+			{ action: 'refresh', label: t('dossiq', 'Reload') },
+			{ action: 'export', label: t('dossiq', 'Export CSV') },
+		],
+		actions: [
+			{ id: 'inspect', label: t('dossiq', 'Inspect'), variant: 'tertiary', type: 'open-modal', target: 'StufEnvelopeDialog' },
+		],
+	}
+}

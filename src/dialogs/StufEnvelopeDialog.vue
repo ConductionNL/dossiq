@@ -2,35 +2,36 @@
   - SPDX-License-Identifier: EUPL-1.2
   - SPDX-FileCopyrightText: 2026 Conduction B.V.
   -
-  - StufEnvelopeDialog is the envelope inspector opened from StufAuditLog. It
+  - StufEnvelopeDialog is the envelope inspector opened by the StUF audit log's
+  - row action `inspect` (adminLists.js), with the row as `object`. It
   - renders the request/response SOAP envelopes plus the retries[] history and
   - fout payload of a single StUF audit-log row.
   -
   - @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
   -
-  - @visual exclude Admin-only read-only envelope inspector opened from StufAuditLog; it renders StUF SOAP envelope rows fetched from /api/stuf/messages, which only exist after real outbound/inbound traffic against a seeded zaaksysteem. Without that traffic the dialog is never reachable, so a screenshot baseline would capture nothing meaningful. Covered by the env-gated live-e2e job; the cell formatting (pretty) is unit-testable JS, not a stable pixel surface.
+  - @visual exclude Admin-only read-only envelope inspector opened from the StUF audit log; it renders StUF SOAP envelope rows fetched from /api/stuf/messages, which only exist after real outbound/inbound traffic against a seeded zaaksysteem. Without that traffic the dialog is never reachable, so a screenshot baseline would capture nothing meaningful. Covered by the env-gated live-e2e job; the cell formatting (pretty) is unit-testable JS, not a stable pixel surface.
 -->
 <template>
 	<NcDialog
 		:name="t('dossiq', 'StUF envelope')"
-		:open="!!row"
+		:open="!!object"
 		size="large"
 		@closing="$emit('close')">
 		<div class="stuf-audit-log__details">
 			<h4>{{ t('dossiq', 'Request envelope') }}</h4>
 			<pre class="stuf-audit-log__pre">{{
-				row.envelopeXml || t('dossiq', '(no envelope)')
+				object.envelopeXml || t('dossiq', '(no envelope)')
 			}}</pre>
-			<h4 v-if="row.responseEnvelopeXml">
+			<h4 v-if="object.responseEnvelopeXml">
 				{{ t('dossiq', 'Response envelope') }}
 			</h4>
-			<pre v-if="row.responseEnvelopeXml" class="stuf-audit-log__pre">{{
-				row.responseEnvelopeXml
+			<pre v-if="object.responseEnvelopeXml" class="stuf-audit-log__pre">{{
+				object.responseEnvelopeXml
 			}}</pre>
-			<h4 v-if="hasRetries(row)">
+			<h4 v-if="hasRetries(object)">
 				{{ t('dossiq', 'Retries') }}
 			</h4>
-			<table v-if="hasRetries(row)" class="stuf-audit-log__retries">
+			<table v-if="hasRetries(object)" class="stuf-audit-log__retries">
 				<thead>
 					<tr>
 						<th scope="col">{{ t('dossiq', 'Attempt') }}</th>
@@ -40,7 +41,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(retry, index) in row.retries" :key="index">
+					<tr v-for="(retry, index) in object.retries" :key="index">
 						<td>{{ retry.attempt }}</td>
 						<td>{{ retry.timestamp }}</td>
 						<td>{{ retry.httpStatus || '—' }}</td>
@@ -48,11 +49,11 @@
 					</tr>
 				</tbody>
 			</table>
-			<h4 v-if="row.fout">
+			<h4 v-if="object.fout">
 				{{ t('dossiq', 'Error') }}
 			</h4>
-			<pre v-if="row.fout" class="stuf-audit-log__pre">{{
-				pretty(row.fout)
+			<pre v-if="object.fout" class="stuf-audit-log__pre">{{
+				pretty(object.fout)
 			}}</pre>
 		</div>
 	</NcDialog>
@@ -65,7 +66,8 @@ export default {
 	name: 'StufEnvelopeDialog',
 	components: { NcDialog },
 	props: {
-		row: { type: Object, required: true },
+		/** The log row, as the audit log's row action `inspect` hands it over. */
+		object: { type: Object, required: true },
 	},
 
 	emits: ['close'],
