@@ -8894,10 +8894,10 @@
 					},
 					{
 						"id": "case-type-translations",
-						"type": "custom",
+						"type": "object-translations",
 						"title": "Translations",
 						"icon": "Translate",
-						"_note": "The case type's labels in every language the register declares, and a chip per language saying how many are still missing. Custom because the library cannot express it: @conduction/nextcloud-vue 3.4.0 contains no reference to `translatable`, `languageMeta` or `sourceLanguage`, so no `data` widget renders a language tab, and OpenRegister renders nothing into a leaf app's page. The chip counts a stale label as missing, which OpenRegister's own `completeness` does not: `getCompletenessByObject()` counts every non-empty row and never reads its status. Same LAYOUT placement and same reason as case-type-blueprint above."
+						"_note": "The case type's labels in every language the register declares, and a chip per language saying how many are still missing. The library widget `object-translations` (CnObjectTranslationsWidget) over OpenRegister's translation engine: it offers only what `_meta.languageMeta` reports as translatable, counts a stale label as missing (OpenRegister's own `completeness` does not), and writes each label back as a whole language map. The widget id is unchanged so stored layouts keep it."
 					},
 					{
 						"id": "case-type-list-layout",
@@ -9736,7 +9736,6 @@
 			},
 			"slots": {
 				"widget-case-type-blueprint": "CaseTypeBlueprintWidget",
-				"widget-case-type-translations": "CaseTypeTranslationsWidget",
 				"widget-case-type-portal": "CaseTypePortalWidget",
 				"widget-case-type-party-kinds": "CaseTypePartyKindsWidget",
 				"widget-case-type-workflow-editor": "CaseTypeWorkflowEditorWidget",

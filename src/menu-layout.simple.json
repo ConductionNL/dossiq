@@ -4885,7 +4885,7 @@
 						"type": "CaseTypeBlueprintWidget"
 					},
 					"case-type-translations": {
-						"type": "CaseTypeTranslationsWidget"
+						"type": "object-translations"
 					},
 					"case-type-portal": {
 						"type": "CaseTypePortalWidget"

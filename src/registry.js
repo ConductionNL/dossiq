@@ -98,7 +98,6 @@ import CaseTypeRulesWidget from './components/caseType/CaseTypeRulesWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
 // @spec openspec/specs/case-configuration-i18n/spec.md
-import CaseTypeTranslationsWidget from './components/caseType/CaseTypeTranslationsWidget.vue'
 import CaseTypeWorkflowEditorWidget from './components/caseType/CaseTypeWorkflowEditorWidget.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
@@ -431,15 +430,6 @@ const registry = {
 		component: CaseTypeBlueprintWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail: what the type actually offers, over /api/case-types/{id}/blueprint, with an Inherited badge on every row that came from the parent and a Shared badge on every attribute that belongs to no type. In the LAYOUT rather than inside a tab strip on purpose: a type:"custom" widget named as a tab CHILD resolves by registry type, finds nothing and renders an empty panel without logging anything.',
-	},
-	// --- A case type's labels in every language (case-type-labels-are-translatable). ---
-	// @spec openspec/specs/case-configuration-i18n/spec.md
-	CaseTypeTranslationsWidget: {
-		// @custom-widget-ratchet exclude the library has no translatable-property surface at all: @conduction/nextcloud-vue 3.4.0 contains no reference to translatable, languageMeta or sourceLanguage, so no declared widget can render a language tab or a completeness chip
-		kind: 'widget',
-		component: CaseTypeTranslationsWidget,
-		...PANEL_WIDGET_META,
-		_note: "CaseTypeDetail: one chip per language the register declares, and an editor per language for the labels OpenRegister holds as translatable. It counts a stale label as missing, which OpenRegister's own completeness does not: getCompletenessByObject() counts every non-empty row and never reads its status. It writes the WHOLE language map and sends no X-Translation-Target-Language: normalizeTranslationsForSave() refuses a language keyed body that arrives with that header and keeps one that arrives without it.",
 	},
 	// --- What a case type opens to its applicant (portal-citizen-writes-on-the-case D3). ---
 	// @spec openspec/specs/portal-contribution/spec.md
