@@ -14,7 +14,9 @@ The AI oversight tab becomes a stack:
   moment, user, question or suggestion, outcome (approved = used, overridden = adapted, denied = rejected), model.
   Requires hermiq.
 - `case-macros`: the library `macros` widget over the case schema's declared macros.
-- `case-assistant-chat`: the embedded chat, until the per-tab side column lets it sit beside the tab as the board draws.
+- `case-assistant-chat` (the embedded chat) leaves the panel for the side column, shown only while this tab is open
+  (`tabs: ["ai-oversight"]`, the side cards per tab nextcloud-vue already has). It follows the four generic side
+  cards; the board draws it alone in the column, which would need `tabs` on every other side card.
 
 ## Backing sources and their gaps
 

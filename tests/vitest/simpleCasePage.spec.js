@@ -778,8 +778,15 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 		expect(tab).toMatchObject({ label: 'AI oversight', overflow: true })
 	})
 
-	it('stacks what the assistant did, the macros and the chat in that tab, as the board does', () => {
-		expect(tab.widgetIds).toEqual(['case-ai-activity', 'case-macros', 'case-assistant-chat'])
+	it('stacks what the assistant did and the macros in that tab, as the board does', () => {
+		expect(tab.id).toBe('ai-oversight')
+		expect(tab.widgetIds).toEqual(['case-ai-activity', 'case-macros'])
+	})
+
+	it('puts the chat in the side column, after the generic cards, while that tab is open', () => {
+		const ids = page.config.sideColumn.map((entry) => (typeof entry === 'string' ? entry : entry.id))
+		expect(ids.indexOf('case-assistant-chat')).toBe(ids.indexOf('side-work-instruction') + 1)
+		expect(widget.tabs).toEqual(['ai-oversight'])
 	})
 
 	it('lists hermiq\'s advisory decisions on this case, newest first, needing hermiq', () => {
