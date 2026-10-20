@@ -220,10 +220,11 @@ describe('my work tables', () => {
 		// the store behind it had stopped being written, so the failure was
 		// invisible: a full table of rows nothing updates.
 		const w = widgetById('my-work')
-		expect(w.type).toBe('custom')
+		// The library `tasks` widget reads the engine inbox itself.
+		expect(w.type).toBe('tasks')
 		expect(
 			Object.hasOwn(w.content, 'source'),
-			'a custom widget declares no object source',
+			'the task widget declares no object source',
 		).toBe(false)
 		expect(JSON.stringify(w.content)).not.toContain('caseTask')
 	})

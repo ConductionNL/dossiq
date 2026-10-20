@@ -178,11 +178,11 @@
 </template>
 
 <script>
+import { CnIntegrationWidget } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
 import { generateUrl } from '@nextcloud/router'
-import { CnIntegrationWidget } from '@conduction/nextcloud-vue'
 import {
 	NcButton,
 	NcModal,

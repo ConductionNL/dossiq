@@ -15,7 +15,6 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-
 const panels = require('./helpers/casePanels.js')
 
 const ROOT = path.resolve(__dirname, '../..')

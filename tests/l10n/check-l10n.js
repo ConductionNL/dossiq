@@ -266,7 +266,9 @@ function recordManifestStrings (node, file, trail) {
 					used.get(text).add(`${path.relative(ROOT, file)}:${where}.${mapKey}`)
 				}
 			}
-		} else if (MANIFEST_TEXT_FIELDS.has(key) && typeof value === 'string' && value.trim()) {
+		} else if (MANIFEST_TEXT_FIELDS.has(key) && typeof value === 'string' && value.trim() && !value.startsWith('@')) {
+			// A value starting with `@` is a token the renderer reads from the
+			// record (`"label": "@object.subjectLabel"`), not text to translate.
 			const k = value
 			if (!used.has(k)) {
 				used.set(k, new Set())
