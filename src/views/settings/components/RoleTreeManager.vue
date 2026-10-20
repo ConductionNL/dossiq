@@ -5,7 +5,7 @@
 <template>
 	<div class="role-manager">
 		<div class="role-manager__toolbar">
-			<NcButton type="primary" @click="openEditor(null)">
+			<NcButton variant="primary" @click="openEditor(null)">
 				<template #icon>
 					<Plus :size="18" />
 				</template>
@@ -37,7 +37,7 @@
 			:expandedIds="expandedIds"
 			:expandLabel="t('dossiq', 'Expand')"
 			:collapseLabel="t('dossiq', 'Collapse')"
-			@update:expanded-ids="expandedIds = $event">
+			@update:expandedIds="expandedIds = $event">
 			<template #actions="{ node }">
 				<span v-if="node.role.type" class="role-manager__pill">{{ node.role.type }}</span>
 				<span v-if="node.role.mandateLevel" class="role-manager__pill role-manager__pill--alt">{{
@@ -49,7 +49,7 @@
 					<NcButton size="small" @click.stop="openEditor(node.role)">
 						{{ t('dossiq', 'Edit') }}
 					</NcButton>
-					<NcButton size="small" type="error" @click.stop="confirmDelete(node.role)">
+					<NcButton size="small" variant="error" @click.stop="confirmDelete(node.role)">
 						{{ t('dossiq', 'Delete') }}
 					</NcButton>
 				</span>
@@ -231,7 +231,7 @@ export default {
 				}
 				this.closeEditor()
 				this.$emit('reload')
-			} catch (e) {
+			} catch {
 				// Surface in dialog; leave open.
 			}
 		},
@@ -246,7 +246,7 @@ export default {
 							+ encodeURIComponent(this.deleting.id),
 					),
 				)
-			} catch (e) {
+			} catch {
 				/* silent — user can retry */
 			}
 			this.deleting = null

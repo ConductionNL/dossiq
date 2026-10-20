@@ -234,9 +234,11 @@ export default {
 										enum: t('dossiq', 'Multiple choice'),
 										photo: t('dossiq', 'Photo'),
 									},
+
 									default: 'boolean',
 									order: 2,
 								},
+
 								required: { type: 'boolean', title: t('dossiq', 'Required'), default: false, order: 3 },
 								weight: { type: 'integer', title: t('dossiq', 'Weight'), minimum: 0, maximum: 100, default: 1, order: 4 },
 							},
@@ -277,7 +279,7 @@ export default {
 			try {
 				const response = await axios.get(generateUrl(COLLECTION_URL))
 				this.checklists = asChecklistArray(response.data)
-			} catch (e) {
+			} catch {
 				showError(t('dossiq', 'Failed to load checklists'))
 			} finally {
 				this.loading = false
@@ -384,7 +386,7 @@ export default {
 				showSuccess(t('dossiq', 'Checklist deleted'))
 				this.showDeleteConfirm = false
 				await this.loadChecklists()
-			} catch (e) {
+			} catch {
 				showError(t('dossiq', 'Failed to delete checklist'))
 				this.$refs.deleteConfirmDialog.setResult({
 					error: t('dossiq', 'Failed to delete checklist'),

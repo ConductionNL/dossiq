@@ -130,12 +130,12 @@ final class RenamedLayoutIds {
 
 		$out = [];
 		foreach ($value as $childKey => $child) {
-			$newKey = $childKey;
-			if (is_string($childKey) === true && isset(self::IDS[$childKey]) === true) {
-				$newKey = self::IDS[$childKey];
+			if (is_int($childKey) === true) {
+				$out[$childKey] = self::rewrite(value: $child);
+				continue;
 			}
 
-			$out[$newKey] = self::rewrite(value: $child, key: (is_string($childKey) === true ? $childKey : null));
+			$out[(self::IDS[$childKey] ?? $childKey)] = self::rewrite(value: $child, key: $childKey);
 		}
 
 		return $out;
@@ -153,7 +153,15 @@ final class RenamedLayoutIds {
 			return $list;
 		}
 
-		return array_map(static fn (mixed $id): mixed => (is_string($id) === true ? (self::IDS[$id] ?? $id) : $id), $list);
+		$out = [];
+		foreach ($list as $index => $id) {
+			$out[$index] = $id;
+			if (is_string($id) === true) {
+				$out[$index] = (self::IDS[$id] ?? $id);
+			}
+		}
+
+		return $out;
 	}//end renameList()
 
 	/**

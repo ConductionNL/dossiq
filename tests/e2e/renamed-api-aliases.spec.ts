@@ -11,7 +11,9 @@
  * is compared on status AND on answering JSON.
  */
 
-import { type APIRequestContext, expect, test } from '@playwright/test'
+import type {APIRequestContext} from '@playwright/test';
+
+import { expect, test } from '@playwright/test'
 import { getRequestToken } from './helpers/fixtures.ts'
 
 const API = '/index.php/apps/dossiq/api'

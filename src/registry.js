@@ -218,6 +218,7 @@ import EndOfDayView from './views/queue/EndOfDayView.vue'
 // One personal queue fed by the declared sources (one-personal-queue).
 // @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 import PersonalQueueView from './views/queue/PersonalQueueView.vue'
+import DocumentReviewReportsView from './views/reports/DocumentReviewReportsView.vue'
 import StoreGallery from './views/store/StoreGallery.vue'
 // The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
 // `type: "detail"` page when remove-casetask took the caseTask schema away:
@@ -229,7 +230,6 @@ import TaskDetailView from './views/tasks/TaskDetailView.vue'
 // @spec openspec/specs/dashboard/spec.md
 import FirstTodayWidget from './views/widgets/FirstTodayWidget.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
-import DocumentReviewReportsView from './views/reports/DocumentReviewReportsView.vue'
 import WorkloadSummaryBar from './views/WorkloadSummaryBar.vue'
 import { leafTab } from './integrations/leafTabs.js'
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
