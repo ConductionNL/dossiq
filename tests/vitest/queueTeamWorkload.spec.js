@@ -25,10 +25,13 @@ function readJson(...parts) {
 	return JSON.parse(fs.readFileSync(path.join(ROOT, ...parts), 'utf8'))
 }
 
-const simple = readJson('src', 'menu-layout.simple.json')
-const card = simple.pages
-	.flatMap((page) => (Array.isArray(page.config?.sidePanel) ? page.config.sidePanel : []))
-	.find((widget) => widget.id === 'queue-team-today')
+// The team queue is the Cases page's `team-queue` view; its side cards are
+// the view's overrides.
+const manifest = readJson('src', 'manifest.json')
+const card = manifest.pages
+	.find((page) => page.id === 'Cases')
+	.config.defaultSavedViews.find((view) => view.slug === 'team-queue')
+	.overrides.sidePanel.find((widget) => widget.id === 'queue-team-today')
 
 describe('the queue\'s Team today card', () => {
 	it('is the library team workload widget over the workload endpoint', () => {

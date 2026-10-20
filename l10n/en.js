@@ -9307,6 +9307,7 @@ OC.L10N.register(
         "Uncategorised": "Uncategorised",
         "Uncategorized": "Uncategorized",
         "Unclaimed": "Unclaimed",
+        "Unclaimed, due this week": "Unclaimed, due this week",
         "Unclaimed, overdue": "Unclaimed, overdue",
         "Undo move": "Undo move",
         "Unique contract number": "Unique contract number",

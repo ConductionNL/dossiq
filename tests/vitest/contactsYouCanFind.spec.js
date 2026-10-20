@@ -124,11 +124,11 @@ describe('where the organisations index sits', () => {
 			'Dashboard',
 			'WorkGroup',
 			'Contacts',
-			'CaseObjectsMenu',
 		])
 		// ADR-097 allows six. Contacts spent the fifth as the gate counts it;
-		// this change spends none, so the arithmetic is unchanged.
-		expect(mainEntries.length).toBe(4)
+		// this change spends none. Objects moved under settings (Ruben,
+		// 20 October 2026), which freed one.
+		expect(mainEntries.length).toBe(3)
 		expect(built.menu.some((m) => m.id === 'OrganisationsMenu')).toBe(false)
 	})
 

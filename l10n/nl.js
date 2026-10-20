@@ -9307,6 +9307,7 @@ OC.L10N.register(
         "Uncategorised": "Zonder categorie",
         "Uncategorized": "Ongecategoriseerd",
         "Unclaimed": "Niet toegewezen",
+        "Unclaimed, due this week": "Niet toegewezen, deze week",
         "Unclaimed, overdue": "Niet toegewezen, te laat",
         "Undo move": "Verplaatsen ongedaan maken",
         "Unique contract number": "Uniek contractnummer",

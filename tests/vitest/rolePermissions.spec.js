@@ -25,7 +25,6 @@ const { currentPermissions, permits, ROLE_PERMISSIONS } = await import('../../sr
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/manifest.json'), 'utf8'))
-const privacy = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/manifest.d/70-privacy-and-procurement.json'), 'utf8'))
 const php = fs.readFileSync(path.join(ROOT, 'lib/Service/Access/RolePermissions.php'), 'utf8')
 
 /**
@@ -79,8 +78,9 @@ describe('the pages the roles open', () => {
 		expect(permits('privacy', ['user', 'sociaal-domein'])).toBe(false)
 	})
 
-	it('shows the Data breaches tab on the Privacy page only to them', () => {
-		const tab = privacy.pages[0].config.pageTabs.find((entry) => entry.route === 'AvgIncidents')
+	it('shows the Data breaches tab on the data subject requests view only to them', () => {
+		const view = page('Cases').config.defaultSavedViews.find((entry) => entry.slug === 'data-subject-requests')
+		const tab = view.overrides.pageTabs.find((entry) => entry.route === 'AvgIncidents')
 		expect(tab.permission).toBe('privacy')
 	})
 

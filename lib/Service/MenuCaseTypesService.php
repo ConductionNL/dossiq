@@ -165,9 +165,34 @@ class MenuCaseTypesService {
 	}//end visibleCaseTypes()
 
 	/**
+	 * The current case types with one of the given identifiers, keyed by
+	 * identifier, for views an instance names by identifier.
+	 *
+	 * @param array<int, string> $identifiers The case type identifiers.
+	 *
+	 * @return array<string, array{id: string, title: string}> The case types found.
+	 *
+	 * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
+	 */
+	public function byIdentifier(array $identifiers): array {
+		if ($identifiers === []) {
+			return [];
+		}
+
+		$found = [];
+		foreach ($this->currentCaseTypes() as $row) {
+			if ($row['identifier'] !== '' && in_array($row['identifier'], $identifiers, true) === true) {
+				$found[$row['identifier']] = ['id' => $row['id'], 'title' => $row['title']];
+			}
+		}
+
+		return $found;
+	}//end byIdentifier()
+
+	/**
 	 * The current visible case types with their handling teams, sorted by title.
 	 *
-	 * @return array<int, array{id: string, title: string, teams: array<int, string>}> The case types.
+	 * @return array<int, array{id: string, title: string, identifier: string, teams: array<int, string>}> The case types.
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
@@ -215,6 +240,7 @@ class MenuCaseTypesService {
 			$caseTypes[$uuid] = [
 				'id' => $uuid,
 				'title' => $title,
+				'identifier' => (string)($row['identifier'] ?? ''),
 				'teams' => $handling->teams(caseType: $row),
 			];
 		}

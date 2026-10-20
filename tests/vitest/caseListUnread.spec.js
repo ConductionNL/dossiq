@@ -133,17 +133,11 @@ describe('the Unread lens on the Cases index', () => {
 		expect(defaults[0].label).toBe('All')
 	})
 
-	it('leaves the Queue page without a chip of its own', () => {
-		// The Queue's base filter IS the page. A chip narrowing it further
-		// would leave a reader unable to tell an empty queue from an empty
-		// lens, and the base filter is what makes the queue trustworthy.
-		expect(page('Queue').config.quickFilters).toBeUndefined()
-	})
 })
 
 describe('the Unread column on both case lists', () => {
-	it('sits first on Cases and on Queue', () => {
-		for (const id of ['Cases', 'Queue']) {
+	it('sits first on Cases', () => {
+		for (const id of ['Cases']) {
 			const first = page(id).config.columns[0]
 			expect(typeof first).toBe('object')
 			expect(first.key).toBe('@self.unread')
@@ -151,7 +145,7 @@ describe('the Unread column on both case lists', () => {
 	})
 
 	it('renders through a cell widget that is registered', () => {
-		for (const id of ['Cases', 'Queue']) {
+		for (const id of ['Cases']) {
 			expect(unreadColumn(id).widget).toBe('unreadIndicator')
 		}
 		expect(cellWidgetsSource).toMatch(
@@ -163,7 +157,7 @@ describe('the Unread column on both case lists', () => {
 	})
 
 	it('is not sortable, because there is no column to sort on', () => {
-		for (const id of ['Cases', 'Queue']) {
+		for (const id of ['Cases']) {
 			expect(unreadColumn(id).sortable).toBe(false)
 		}
 	})
@@ -198,8 +192,8 @@ describe('an absent unread flag reads as read', () => {
 })
 
 describe('both marks are offered on a row', () => {
-	it('declares them on Cases and on Queue', () => {
-		for (const id of ['Cases', 'Queue']) {
+	it('declares them on Cases', () => {
+		for (const id of ['Cases']) {
 			const unread = action(page(id).config.actions, 'mark-unread')
 			expect(unread.type).toBe('handler')
 			expect(unread.handler).toBe('markCaseUnread')
@@ -213,7 +207,7 @@ describe('both marks are offered on a row', () => {
 	})
 
 	it('names icons that are registered', () => {
-		for (const id of ['Cases', 'Queue']) {
+		for (const id of ['Cases']) {
 			for (const actionId of ['mark-unread', 'mark-read']) {
 				const icon = action(page(id).config.actions, actionId).icon
 				expect(
