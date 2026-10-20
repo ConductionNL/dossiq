@@ -4,13 +4,13 @@
   "version": "1.0.0",
   "description": "Template voor handhavingszaken (VTH module)",
   "statusTypes": [
-    {"name": "Constatering", "order": 1, "isFinal": false},
-    {"name": "Vooraankondiging", "order": 2, "isFinal": false},
-    {"name": "Zienswijze", "order": 3, "isFinal": false},
-    {"name": "Handhavingsbesluit", "order": 4, "isFinal": false},
-    {"name": "Begunstigingstermijn", "order": 5, "isFinal": false},
-    {"name": "Hercontrole", "order": 6, "isFinal": false},
-    {"name": "Afgehandeld", "order": 7, "isFinal": true}
+    {"name": "Constatering", "colour": "purple", "order": 1, "isFinal": false},
+    {"name": "Vooraankondiging", "colour": "orange", "order": 2, "isFinal": false},
+    {"name": "Zienswijze", "colour": "orange", "order": 3, "isFinal": false},
+    {"name": "Handhavingsbesluit", "colour": "teal", "order": 4, "isFinal": false},
+    {"name": "Begunstigingstermijn", "colour": "orange", "order": 5, "isFinal": false},
+    {"name": "Hercontrole", "colour": "purple", "order": 6, "isFinal": false},
+    {"name": "Afgehandeld", "colour": "green", "order": 7, "isFinal": true}
   ],
   "documentTypes": [
     {"name": "Constateringsrapport"},
