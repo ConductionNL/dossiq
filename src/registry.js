@@ -114,8 +114,10 @@ import CaseListExportAction from './components/export/CaseListExportAction.vue'
 import FileSetItems from './components/fileSet/FileSetItems.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
-import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
 import RequesterProjection from './components/initiator/RequesterProjection.vue'
+// Ask whether this case already exists, before it does.
+// @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+import PartySearchField from './components/party/PartySearchField.vue'
 // A search openregister refused, said where the term was typed.
 // @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
 import CaseTypeFieldFilters from './components/search/CaseTypeFieldFilters.vue'
@@ -217,7 +219,6 @@ import DeelzaakList from './views/cases/DeelzaakList.vue'
 import DeletedCasesView from './views/cases/DeletedCasesView.vue'
 import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
 import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
-import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
 import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
@@ -225,7 +226,6 @@ import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
-import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
 import PmDwellByAssigneeWidget from './views/processMining/PmDwellByAssigneeWidget.vue'
 import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
 import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
@@ -252,8 +252,6 @@ import FirstTodayWidget from './views/widgets/FirstTodayWidget.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
 import WooReportsView from './views/woo/WooReportsView.vue'
 import { leafTab } from './integrations/leafTabs.js'
-// Ask whether this case already exists, before it does.
-// @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
 import {
 	extendTermSelection,
@@ -826,7 +824,7 @@ const registry = {
 	// @spec openspec/specs/initiator-selection/spec.md
 	InitiatorPicker: {
 		kind: 'form-field',
-		component: InitiatorPicker,
+		component: PartySearchField,
 		appliesTo: [
 			'case.requester',
 			'contactmoment.contact',
@@ -1549,17 +1547,12 @@ const registry = {
 	},
 
 	// --- Dashboard-page slots: Processing time, Deadline monitoring, Process
-	//     mining. Each page owns its heading and its filters; these fill its
-	//     `slots` map. A filter lands in `header-actions` and is therefore an
-	//     `actions` kind; the rest are widgets, carrying the grid metadata the
-	//     validator asks of every widget even though the page's own slot map
-	//     positions them.
+	//     mining. Each page owns its heading and its filters (a case-type
+	//     filter is a pageFilters entry reading its options from the register);
+	//     these fill its `slots` map, carrying the grid metadata the validator
+	//     asks of every widget even though the page's own slot map positions
+	//     them.
 	// @spec openspec/specs/doorlooptijd-dashboard/spec.md
-	DtCaseTypeFilter: {
-		kind: 'actions',
-		component: DtCaseTypeFilter,
-		_note: 'header-actions slot: SLA-bearing case types only. A component rather than a declarative pageFilter because the options are fetched.',
-	},
 	DtChartsWidget: {
 		kind: 'widget',
 		component: DtChartsWidget,
@@ -1599,11 +1592,6 @@ const registry = {
 	// The process-mining page owns the heading and both filters — a widget that
 	// drew its own heading would be the dashboard-in-dashboard antipattern
 	// (hydra#316).
-	PmCaseTypeFilter: {
-		kind: 'actions',
-		component: PmCaseTypeFilter,
-		_note: 'header-actions slot: case-type filter (pageFilters cannot bind dynamic options).',
-	},
 	PmKpiWidget: {
 		kind: 'widget',
 		component: PmKpiWidget,

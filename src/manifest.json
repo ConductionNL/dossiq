@@ -5357,6 +5357,23 @@
 			"title": "Processing time",
 			"_note": "Processing time as drawn on the DqDoorlooptijd board: four figures, the average per month and the share within the norm per case type, read from /api/doorlooptijd/metrics (its `summary` block), then the compliance charts, the Woo deadlines, the cases at risk and the breakdown, which read the shared store (src/store/modules/doorlooptijd.js). The period and case type filters write the workspace, which both halves read.",
 			"config": {
+				"pageFilters": [
+					{
+						"key": "caseType",
+						"label": "Filter by case type",
+						"clearable": true,
+						"placeholder": "All case types",
+						"optionsFrom": {
+							"register": "dossiq",
+							"schema": "caseType",
+							"filter": {
+								"processingDeadline": {
+									"isnull": false
+								}
+							}
+						}
+					}
+				],
 				"_headerNote": "Board DqDoorlooptijd's header has no Actions menu and no way back to the dashboard beside the menu's own Dashboard entry. The case type filter stays: it is how this page narrows to one case type. There is no in-page Edit button: changing the layout is buildiq's, under the buildiq button (Ruben, 18 Oct).",
 				"allowEdit": false,
 				"showActionsMenu": false,
@@ -5700,7 +5717,6 @@
 				}
 			},
 			"slots": {
-				"header-actions": "DtCaseTypeFilter",
 				"widget-dt-charts": "DtChartsWidget",
 				"widget-dt-woo": "DtWooWidget",
 				"widget-dt-atrisk": "DtAtRiskWidget",
@@ -5760,6 +5776,16 @@
 								"label": "All time"
 							}
 						]
+					},
+					{
+						"key": "caseType",
+						"label": "Filter by case type",
+						"clearable": true,
+						"placeholder": "All case types",
+						"optionsFrom": {
+							"register": "dossiq",
+							"schema": "caseType"
+						}
 					}
 				],
 				"widgets": [
@@ -5960,7 +5986,6 @@
 				"documentationUrl": "https://dossiq.conduction.nl"
 			},
 			"slots": {
-				"header-actions": "PmCaseTypeFilter",
 				"widget-pm-kpis": "PmKpiWidget",
 				"widget-pm-dwell": "PmDwellChartWidget",
 				"widget-pm-throughput": "PmThroughputChartWidget",
