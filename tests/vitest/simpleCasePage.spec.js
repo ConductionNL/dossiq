@@ -566,7 +566,6 @@ describe('the tabs', () => {
 			'money-payments': 0,
 			'money-contract': 6,
 			'family-plan-panel': 0,
-			'work-projects': 6,
 			'documents-merge-to-pdf': 0,
 		}
 		for (const entry of simple.layout) {
@@ -624,7 +623,7 @@ describe('the header and the side column', () => {
 		expect(onTheCase(simple.typePill.field)).toBe(true)
 		// The cards every case shows; the case-type cards are gated and checked below.
 		const cards = simple.sideColumn.filter((card) => typeof card === 'object' && !card.visibleWhen)
-		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Work instruction'])
+		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Linked', 'Work instruction'])
 		const shown = []
 		for (const card of cards) {
 			// The requester is a facts card (a lead, as DqZaak draws it), the
