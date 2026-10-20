@@ -33,6 +33,8 @@
         "%n documents selected": "%n documenten geselecteerd",
         "%n documents sent": "%n documenten verstuurd",
         "%n documents, in the order they are submitted": "%n documenten, in de volgorde waarin ze worden ingediend",
+        "%n item": "%n onderdeel",
+        "%n items": "%n onderdelen",
         "%n logged processing found for this subject.": "%n gelogde verwerking gevonden voor deze betrokkene.",
         "%n logged processings found for this subject.": "%n gelogde verwerkingen gevonden voor deze betrokkene.",
         "%n more result. Narrow your terms to see it.": "Nog %n resultaat. Maak uw zoektermen nauwkeuriger om het te zien.",
@@ -106,6 +108,10 @@
         "_%n day late_::_%n days late_": [
             "%n dag te laat",
             "%n dagen te laat"
+        ],
+        "_%n item_::_%n items_": [
+            "%n onderdeel",
+            "%n onderdelen"
         ],
         "_%n more in My work_::_%n more in My work_": [
             "%n meer in Mijn werk",
