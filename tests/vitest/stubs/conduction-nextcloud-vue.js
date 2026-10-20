@@ -18,6 +18,7 @@
  * dashboard-widget usage of this package).
  */
 
+import { validateStateMachine as validateStateMachineForStub } from '@conduction/nextcloud-vue/src/utils/stateMachineValidation.js'
 import { h } from 'vue'
 
 /**
@@ -334,3 +335,71 @@ export {
 	dispatchObjectsChanged,
 	OBJECTS_CHANGED_EVENT,
 } from '@conduction/nextcloud-vue/src/utils/objectSignals.js'
+
+// The library's state machine validator itself, not a stand-in: dossiq's
+// workflow validation is configuration over it (src/utils/workflowGraphValidation.js),
+// and only the real rules can say whether that configuration is right.
+export { validateStateMachine } from '@conduction/nextcloud-vue/src/utils/stateMachineValidation.js'
+
+/**
+ * Stand-in for `CnStateMachineEditor`.
+ *
+ * Reproduces what a host depends on: the records and config it was handed,
+ * the events it answers (a spec emits them from the stub), and `validate()`,
+ * which runs the real validator the way the editor does so a host's publish
+ * path is tested against real rules. Drawing the canvas is the library's.
+ */
+export const CnStateMachineEditor = {
+	name: 'CnStateMachineEditor',
+	props: {
+		states: { type: Array, default: () => [] },
+		transitions: { type: Array, default: () => [] },
+		steps: { type: Array, default: () => [] },
+		positions: { type: Object, default: () => ({}) },
+		config: { type: Object, default: () => ({}) },
+		optionSets: { type: Object, default: () => ({}) },
+		locked: { type: Boolean, default: false },
+		readOnly: { type: Boolean, default: false },
+		translate: { type: Function, default: null },
+	},
+	emits: [
+		'state-add',
+		'state-move',
+		'state-update',
+		'state-remove',
+		'transition-add',
+		'transition-update',
+		'transition-remove',
+		'step-add',
+		'step-update',
+		'step-remove',
+		'step-reorder',
+		'validated',
+	],
+	data() {
+		return { issues: [] }
+	},
+	methods: {
+		validate() {
+			const keys = this.config.keys || {}
+			this.issues = validateStateMachineForStub(
+				{ states: this.states, transitions: this.transitions },
+				{
+					keys: { label: keys.stateLabel, final: keys.stateFinal, from: keys.transitionFrom, to: keys.transitionTo, transitionLabel: keys.transitionLabel },
+					messages: this.config.messages,
+					translate: this.translate || ((text) => text),
+				},
+			)
+			const blocking = this.config.blockOnWarnings === true
+				? this.issues
+				: this.issues.filter((issue) => issue.type === 'error')
+			return blocking.length === 0
+		},
+	},
+	render() {
+		return h('div', { 'data-testid': 'cn-state-machine-editor' }, [
+			...this.states.map((state) => h('div', { class: 'state-stub', 'data-id': state.id }, String(state[(this.config.keys || {}).stateLabel || 'label'] ?? ''))),
+			...this.issues.map((issue) => h('p', { class: 'issue-stub' }, issue.message)),
+		])
+	},
+}

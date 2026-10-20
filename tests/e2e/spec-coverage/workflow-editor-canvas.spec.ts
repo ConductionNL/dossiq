@@ -4,8 +4,8 @@
  *
  * Gate-19 spec-coverage tests for the visual workflow editor
  * (`workflow-editor-integration`): the case type's Workflow tab renders
- * the canonical canvas (`WorkflowEditor.vue`, the single surviving
- * editor after the dead `@vue-flow`-based duplicate was deleted), and its
+ * the canonical canvas (nc-vue's CnStateMachineEditor inside
+ * `WorkflowTab.vue`, configured by the widget's content.editor), and its
  * keyboard-operable controls (WCAG 2.1.1 Keyboard) work.
  *
  * ⚠️ WHY THIS FILE SEEDS ITS OWN CASE TYPE
@@ -31,15 +31,15 @@
  * Owning the case type also changes what may be clicked. The old header
  * called this file "deliberately non-destructive" because it drove the FIRST
  * case type on a shared register, where adding a status node persists a real
- * `statusType` immediately (`WorkflowEditor.vue::onAddStatusKeyboard()` saves
+ * `statusType` immediately (`WorkflowTab.vue::onStateAdd()` saves
  * it before the template is saved). On a throwaway type that write is safe,
  * so the "Add status node" test now activates the button and proves the
  * statusType lands, and teardown removes it with the rest.
  *
  * The open-edit-save-reopen round trip and blocked-save-on-invalid behaviour
  * are proven directly against the real component in
- * `tests/vitest/workflowEditorSmoke.spec.js` (renders a definition,
- * `validate()` blocks the exact gate `WorkflowTab.vue::publish()` calls)
+ * `tests/vitest/workflowTabEditor.spec.js` (hands a definition to the
+ * editor, `validate()` blocks the exact gate `WorkflowTab.vue::publish()` calls)
  * and `tests/vitest/workflowGraphValidation.spec.js` (every validation
  * rule + a serialization round-trip).
  *
@@ -96,11 +96,11 @@ async function statusTypesOf(caseTypeId: string): Promise<any[]> {
  * defect in the surface, and it should read as one.
  *
  * @param page The page.
- * @return The `.workflow-editor` root of the seeded type's canvas.
+ * @return The `.cn-state-machine-editor` root of the seeded type's canvas.
  */
 async function openSeededWorkflowTab(page: Page): Promise<Locator> {
 	await openCaseTypeTab(page, machine.caseTypeTitle, /^(Phases and tasks|Fasen en taken)/)
-	const editor = page.locator('.workflow-editor')
+	const editor = page.locator('.cn-state-machine-editor')
 	await expect(editor).toBeVisible({ timeout: 60_000 })
 	return editor
 }
@@ -110,7 +110,7 @@ async function openSeededWorkflowTab(page: Page): Promise<Locator> {
  * carries (`Status: {name}`). Exact, so the node's own actions menu, which
  * is named "Actions for status {name}", can never be the match.
  *
- * @param editor The `.workflow-editor` root.
+ * @param editor The `.cn-state-machine-editor` root.
  * @param suffix The seeded status name after `RUN_PREFIX`.
  * @return The node locator.
  */
@@ -202,11 +202,11 @@ test.describe('Visual workflow editor canvas (workflow-editor-integration)', () 
 		})
 		await expect(seededNode(editor, 'In behandeling')).toBeVisible()
 		await expect(seededNode(editor, 'Afgehandeld')).toBeVisible()
-		await expect(editor.locator('.workflow-node')).toHaveCount(3)
+		await expect(editor.locator('.cn-flow-node')).toHaveCount(3)
 
 		// "...and their transitions": the template carries t1 and t2, drawn
 		// as one arrow group each on the SVG layer.
-		await expect(editor.locator('.workflow-transition')).toHaveCount(2)
+		await expect(editor.locator('.vue-flow__edge')).toHaveCount(2)
 	})
 
 	// @e2e openspec/specs/visual-workflow-editor/spec.md#scenario-keyboard-node-selection
@@ -226,11 +226,11 @@ test.describe('Visual workflow editor canvas (workflow-editor-integration)', () 
 		// the selection MOVES rather than piling up.
 		await received.focus()
 		await page.keyboard.press('Enter')
-		await expect(received).toHaveClass(/workflow-node--selected/)
+		await expect(received).toHaveClass(/cn-flow-node--selected/)
 		await inProgress.focus()
 		await page.keyboard.press('Space')
-		await expect(inProgress).toHaveClass(/workflow-node--selected/)
-		await expect(received).not.toHaveClass(/workflow-node--selected/)
+		await expect(inProgress).toHaveClass(/cn-flow-node--selected/)
+		await expect(received).not.toHaveClass(/cn-flow-node--selected/)
 
 		// The actions menu (Connect to…/Disconnect from…/Add step/Delete
 		// status) is a separate focusable control from the node's own
@@ -239,7 +239,7 @@ test.describe('Visual workflow editor canvas (workflow-editor-integration)', () 
 		// "Delete status" is one of the items, and this test is about
 		// reaching the menu, not about what its items do.
 		const actionsTrigger = received
-			.locator('.workflow-node__actions button')
+			.locator('.cn-sm-node__menu button')
 			.first()
 		await expect(actionsTrigger).toBeVisible()
 		await actionsTrigger.focus()
@@ -254,7 +254,7 @@ test.describe('Visual workflow editor canvas (workflow-editor-integration)', () 
 		page,
 	}) => {
 		const editor = await openSeededWorkflowTab(page)
-		const nodes = editor.locator('.workflow-node')
+		const nodes = editor.locator('.cn-flow-node')
 		await expect(nodes).toHaveCount(3, { timeout: 30_000 })
 
 		// Keyboard only: focus the native <button>, then Enter. A click would

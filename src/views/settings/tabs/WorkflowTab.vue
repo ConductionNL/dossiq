@@ -3,8 +3,9 @@
 		<!-- Version selector and actions -->
 		<div class="workflow-tab__toolbar">
 			<div class="workflow-tab__version-selector">
-				<label>{{ t('dossiq', 'Version:') }}</label>
+				<label for="workflow-tab-version">{{ t('dossiq', 'Version:') }}</label>
 				<select
+					id="workflow-tab-version"
 					v-model="selectedVersionId"
 					class="workflow-tab__select"
 					@change="onVersionChange">
@@ -20,7 +21,7 @@
 				<!-- Create new workflow if none exists -->
 				<NcButton
 					v-if="versions.length === 0"
-					type="primary"
+					variant="primary"
 					@click="createWorkflow">
 					{{ t('dossiq', 'Create workflow') }}
 				</NcButton>
@@ -28,7 +29,7 @@
 				<!-- Publish draft -->
 				<NcButton
 					v-if="currentIsDraft"
-					type="secondary"
+					variant="secondary"
 					:disabled="publishing"
 					@click="publish">
 					<template v-if="publishing" #icon>
@@ -40,7 +41,7 @@
 				<!-- Edit published (create draft copy) -->
 				<NcButton
 					v-if="currentIsPublished && !hasDraft"
-					type="secondary"
+					variant="secondary"
 					@click="editPublished">
 					{{ t('dossiq', 'Edit') }}
 				</NcButton>
@@ -48,7 +49,7 @@
 				<!-- Save -->
 				<NcButton
 					v-if="currentIsDraft && dirty"
-					type="primary"
+					variant="primary"
 					:disabled="saving"
 					@click="save">
 					<template v-if="saving" #icon>
@@ -58,10 +59,10 @@
 				</NcButton>
 
 				<!-- Import / Export -->
-				<NcButton type="tertiary" @click="exportWorkflow">
+				<NcButton variant="tertiary" @click="exportWorkflow">
 					{{ t('dossiq', 'Export') }}
 				</NcButton>
-				<NcButton type="tertiary" @click="triggerImport">
+				<NcButton variant="tertiary" @click="triggerImport">
 					{{ t('dossiq', 'Import') }}
 				</NcButton>
 				<input
@@ -98,7 +99,7 @@
 					{{ t('dossiq', 'Missing role type: {name}', { name: type }) }}
 				</li>
 			</ul>
-			<NcButton type="secondary" @click="importReport = null">
+			<NcButton variant="secondary" @click="importReport = null">
 				{{ t('dossiq', 'Cancel import') }}
 			</NcButton>
 		</div>
@@ -108,13 +109,31 @@
 			{{ versionNotice }}
 		</div>
 
-		<!-- Editor -->
-		<WorkflowEditor
-			v-if="selectedVersionId"
+		<!-- Editor: the library's state machine editor, configured by the
+		     manifest widget's `content.editor`. Statuses are the states,
+		     the template's transitions and steps the rest. -->
+		<CnStateMachineEditor
+			v-if="selectedVersionId && typesLoaded"
 			ref="editor"
-			:caseTypeId="caseTypeId"
-			:templateId="selectedVersionId"
-			@dirty="dirty = true" />
+			class="workflow-tab__editor"
+			:states="statusNodes"
+			:transitions="workflowStore.parsedTransitions"
+			:steps="workflowStore.parsedSteps"
+			:positions="workflowStore.parsedNodePositions"
+			:config="editorConfig"
+			:optionSets="optionSets"
+			:locked="isPublished"
+			:translate="translateLabel"
+			@stateAdd="onStateAdd"
+			@stateMove="onStateMove"
+			@stateRemove="onStateRemove"
+			@transitionAdd="onTransitionAdd"
+			@transitionUpdate="onTransitionUpdate"
+			@transitionRemove="onTransitionRemove"
+			@stepAdd="onStepAdd"
+			@stepUpdate="onStepUpdate"
+			@stepRemove="onStepRemove"
+			@stepReorder="onStepReorder" />
 
 		<!-- Empty state -->
 		<div v-if="versions.length === 0 && !loading" class="workflow-tab__empty">
@@ -134,28 +153,48 @@
 </template>
 
 <script>
+import { CnStateMachineEditor } from '@conduction/nextcloud-vue'
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
-import WorkflowEditor from '../WorkflowEditor.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 import { useWorkflowStore } from '../../../store/modules/workflow.js'
 
+/**
+ * The workflow of a case type: its versions, publishing, import and export
+ * around the library's state machine editor. Registered as the
+ * `CaseTypeWorkflowEditorWidget` widget on CaseTypeDetail; the editor's fields
+ * and texts come from the widget's `content.editor` in the manifest.
+ */
 export default {
 	name: 'WorkflowTab',
 	components: {
+		CnStateMachineEditor,
 		NcButton,
 		NcLoadingIcon,
-		WorkflowEditor,
 	},
 
 	props: {
-		caseTypeId: {
+		/** The case type, from the widget host. */
+		objectId: {
 			type: String,
-			required: true,
+			default: '',
+		},
+
+		/** The manifest widget's content; `editor` configures the canvas. */
+		content: {
+			type: Object,
+			default: () => ({}),
 		},
 	},
 
 	data() {
 		return {
+			/** @type {Array} The case type's statusType objects, the machine's states. */
+			statusNodes: [],
+			/** @type {Array} The case type's roleType objects. */
+			roleTypes: [],
+			/** @type {Array} The case type's documentType objects. */
+			documentTypes: [],
+			typesLoaded: false,
 			selectedVersionId: null,
 			loading: false,
 			saving: false,
@@ -167,6 +206,48 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The case type this widget is bound to: the host's object, else the route's id.
+		 *
+		 * @return {string} The case type id.
+		 * @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+		 */
+		caseTypeId() {
+			return String(this.objectId || this.$route?.params?.id || '')
+		},
+
+		/**
+		 * @return {object} The editor's config from the manifest widget.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md
+		 */
+		editorConfig() {
+			return this.content?.editor || {}
+		},
+
+		/**
+		 * The option lists the editor's fields point at.
+		 *
+		 * @return {object} Roles by id, document types by name.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md
+		 */
+		optionSets() {
+			return {
+				roles: this.roleTypes.map((role) => ({ value: role.id, label: role.name })),
+				documentTypeNames: this.documentTypes.map((type) => ({ value: type.name, label: type.name })),
+			}
+		},
+
+		/**
+		 * A published (not draft) version: its step SLA, required fields and
+		 * escalation are read-only (process-step-configuration REQ-PSC-7-002).
+		 *
+		 * @return {boolean} Whether the loaded template is published.
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
+		isPublished() {
+			return this.workflowStore.currentTemplate?.isDraft === false
+		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
@@ -224,10 +305,205 @@ export default {
 	},
 
 	async mounted() {
-		await this.loadVersions()
+		await Promise.all([this.loadTypes(), this.loadVersions()])
+		this.ensureNodePositions()
 	},
 
 	methods: {
+		/**
+		 * Translate a text from the manifest in dossiq's domain.
+		 *
+		 * @param {string} text The English source text.
+		 * @return {string} The translation.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md
+		 */
+		translateLabel(text) {
+			return t('dossiq', text)
+		},
+
+		/**
+		 * Load the case type's statuses, roles and document types.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
+		async loadTypes() {
+			const [statusNodes, roleTypes, documentTypes] = await Promise.all([
+				this.objectStore.fetchCollection('statusType', {
+					caseType: this.caseTypeId,
+					_limit: 100,
+					_order: { order: 'asc' },
+				}),
+				this.objectStore.fetchCollection('roleType', { caseType: this.caseTypeId, _limit: 100 }),
+				this.objectStore.fetchCollection('documentType', { caseType: this.caseTypeId, _limit: 100 }),
+			])
+			this.statusNodes = statusNodes || []
+			this.roleTypes = roleTypes || []
+			this.documentTypes = documentTypes || []
+			this.typesLoaded = true
+		},
+
+		/**
+		 * Give every status without a stored position its grid slot, so the
+		 * template saves the layout the canvas shows.
+		 *
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
+		ensureNodePositions() {
+			const template = this.workflowStore.currentTemplate
+			if (!template) return
+			const positions = { ...this.workflowStore.parsedNodePositions }
+			let changed = false
+			this.statusNodes.forEach((status, index) => {
+				if (!positions[status.id]) {
+					positions[status.id] = {
+						x: 100 + (index % 4) * 250,
+						y: 100 + Math.floor(index / 4) * 200,
+					}
+					changed = true
+				}
+			})
+			if (changed) {
+				template.nodePositions = JSON.stringify(positions)
+			}
+		},
+
+		/**
+		 * A status dropped on the canvas, or added from the keyboard.
+		 *
+		 * @param {{position: object, done: (id: string) => void}} payload Where, and the callback.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas
+		 */
+		async onStateAdd({ position, done }) {
+			const statusType = await this.objectStore.saveObject('statusType', {
+				name: t('dossiq', 'New status'),
+				caseType: this.caseTypeId,
+				order: this.statusNodes.length + 1,
+				isFinal: false,
+			})
+			if (!statusType) return
+			this.statusNodes.push(statusType)
+			this.workflowStore.updateNodePosition(statusType.id, position.x, position.y)
+			this.dirty = true
+			done(statusType.id)
+		},
+
+		/**
+		 * @param {{id: string, x: number, y: number}} move The status and its new place.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas
+		 */
+		onStateMove({ id, x, y }) {
+			const current = this.workflowStore.parsedNodePositions[id]
+			const next = { x: Math.max(0, x), y: Math.max(0, y) }
+			if (current && current.x === next.x && current.y === next.y) return
+			this.workflowStore.updateNodePosition(id, next.x, next.y)
+			this.dirty = true
+		},
+
+		/**
+		 * Delete a status the user confirmed: the statusType object, then its
+		 * steps, transitions and position in the working copy. The editor has
+		 * already refused to delete the last final status.
+		 *
+		 * @param {{id: string, done: (ok: boolean) => void}} payload The status and the callback.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas
+		 */
+		async onStateRemove({ id, done }) {
+			const ok = await this.objectStore.deleteObject('statusType', id)
+			if (!ok) {
+				done(false)
+				return
+			}
+			this.workflowStore.removeStatusNode(id)
+			this.statusNodes = this.statusNodes.filter((status) => status.id !== id)
+			this.dirty = true
+			done(true)
+		},
+
+		/**
+		 * @param {{from: string, to: string}} transition The new transition's ends.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
+		 */
+		onTransitionAdd({ from, to }) {
+			this.workflowStore.addTransition(from, to)
+			this.dirty = true
+		},
+
+		/**
+		 * @param {object} transition The edited transition, complete.
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
+		onTransitionUpdate(transition) {
+			const current = this.workflowStore.parsedTransitions.find((candidate) => candidate.id === transition.id)
+			this.workflowStore.updateTransition(transition.id, this.replacing(current, transition))
+			this.dirty = true
+		},
+
+		/**
+		 * @param {string} id The transition.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
+		 */
+		onTransitionRemove(id) {
+			this.workflowStore.removeTransition(id)
+			this.dirty = true
+		},
+
+		/**
+		 * @param {{state: string, done: (id: string) => void}} payload The status and the callback.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-step-configuration-panel
+		 */
+		onStepAdd({ state, done }) {
+			const step = this.workflowStore.addStep(state)
+			this.dirty = true
+			done(step.id)
+		},
+
+		/**
+		 * @param {object} step The edited step, complete.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-step-configuration-panel
+		 */
+		onStepUpdate(step) {
+			const current = this.workflowStore.parsedSteps.find((candidate) => candidate.id === step.id)
+			this.workflowStore.updateStep(step.id, this.replacing(current, step))
+			this.dirty = true
+		},
+
+		/**
+		 * @param {string} id The step.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-step-configuration-panel
+		 */
+		onStepRemove(id) {
+			this.workflowStore.removeStep(id)
+			this.dirty = true
+		},
+
+		/**
+		 * @param {{state: string, ids: Array<string>}} payload A status's steps in their new order.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-step-configuration-panel
+		 */
+		onStepReorder({ ids }) {
+			ids.forEach((id, index) => this.workflowStore.updateStep(id, { order: index + 1 }))
+			this.dirty = true
+		},
+
+		/**
+		 * The update that makes a record equal `next`: the store merges, so a key
+		 * the editor dropped (an emptied step config) is set to undefined, which
+		 * the JSON the template stores leaves out.
+		 *
+		 * @param {object|undefined} current The stored record.
+		 * @param {object} next The edited record.
+		 * @return {object} The update.
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-step-configuration-panel
+		 */
+		replacing(current, next) {
+			const update = { ...next }
+			Object.keys(current || {}).forEach((key) => {
+				if (!(key in update)) update[key] = undefined
+			})
+			return update
+		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async loadVersions() {
 			this.loading = true
@@ -248,6 +524,7 @@ export default {
 		async onVersionChange() {
 			if (this.selectedVersionId) {
 				await this.workflowStore.getTemplate(this.selectedVersionId)
+				this.ensureNodePositions()
 				this.dirty = false
 				this.publishErrors = []
 			}
@@ -294,7 +571,7 @@ export default {
 
 			const result = await this.workflowStore.publishVersion(
 				this.selectedVersionId,
-				this.$refs.editor?.statusNodes || [],
+				this.statusNodes,
 			)
 			if (!result) {
 				this.publishErrors = this.workflowStore.validationErrors

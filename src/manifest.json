@@ -8933,7 +8933,493 @@
 						"type": "custom",
 						"title": "Workflow",
 						"icon": "Sitemap",
-						"_note": "The workflow canvas, rehosted from the retired admin-settings editor (CaseTypeWorkflowEditorWidget)."
+						"_note": "The workflow canvas: nc-vue's CnStateMachineEditor inside WorkflowTab (CaseTypeWorkflowEditorWidget), which keeps the versions, publishing, import and export. content.editor says what a step and a transition carry and every text the editor shows; the statuses are the states.",
+						"content": {
+							"editor": {
+								"keys": {
+									"stateLabel": "name",
+									"stateFinal": "isFinal",
+									"transitionFrom": "fromStatus",
+									"transitionTo": "toStatus",
+									"transitionLabel": "label",
+									"stepState": "status",
+									"stepTitle": "title",
+									"stepOrder": "order",
+									"stepRequired": "isRequired",
+									"stepBadge": "checklist"
+								},
+								"blockOnWarnings": true,
+								"labels": {
+									"paletteTitle": "Elements",
+									"paletteItem": "Status node",
+									"addState": "Add status node",
+									"controlsTitle": "Controls",
+									"final": "Final",
+									"stateAria": "Status: {name}",
+									"stateActions": "Actions for status {name}",
+									"connectTo": "Connect to {name}",
+									"disconnectFrom": "Disconnect from {name}",
+									"addStep": "Add step",
+									"deleteState": "Delete status",
+									"stepPanelTitle": "Step configuration",
+									"closeStepPanel": "Close step configuration",
+									"deleteStep": "Delete step",
+									"transitionPanelTitle": "Transition configuration",
+									"closeTransitionPanel": "Close transition configuration",
+									"deleteTransition": "Delete transition",
+									"deleteTransitionConfirm": "Are you sure you want to delete this transition?",
+									"deleteStateConfirm": "Delete status \"{name}\"? This also removes its steps and transitions.",
+									"needsFinal": "At least one status must be marked as final",
+									"deleteStateFailed": "Failed to delete status",
+									"dismiss": "Dismiss"
+								},
+								"paletteHelp": [
+									"Drag a status node onto the canvas to add it, or use the \"Add status node\" button.",
+									"Connect nodes by dragging from one port to another, or use a node's keyboard actions menu.",
+									"Click a node to select it, double-click a transition to edit."
+								],
+								"controlsHelp": [
+									{
+										"term": "Pan",
+										"text": "Click and drag on empty canvas"
+									},
+									{
+										"term": "Zoom",
+										"text": "Scroll wheel"
+									}
+								],
+								"messages": {
+									"NO_FINAL_STATE": "Workflow has no final status defined",
+									"UNREACHABLE_FINAL": "Final status \"{name}\" cannot be reached from any starting status",
+									"DANGLING_TRANSITION": "Transition \"{label}\" references a status that no longer exists",
+									"DUPLICATE_TRANSITION": "Duplicate transition from \"{from}\" to \"{to}\"",
+									"ORPHAN_STATE": "Status \"{name}\" has no transitions connecting it to the rest of the workflow",
+									"CYCLE_NO_EXIT": "Cycle detected with no exit to a final status: {names}"
+								},
+								"stepFields": [
+									{
+										"key": "title",
+										"type": "text",
+										"label": "Title"
+									},
+									{
+										"key": "description",
+										"type": "textarea",
+										"rows": 3,
+										"label": "Description"
+									},
+									{
+										"key": "isRequired",
+										"type": "checkbox",
+										"label": "Required step (blocks status transition)"
+									},
+									{
+										"key": "assigneeRole",
+										"type": "select",
+										"label": "Assignee role",
+										"optionSet": "roles",
+										"emptyOption": {
+											"value": null,
+											"label": "Any role"
+										}
+									},
+									{
+										"key": "checklist",
+										"type": "list",
+										"section": true,
+										"label": "Checklist",
+										"itemType": "object",
+										"itemKey": "label",
+										"idKey": "id",
+										"idPrefix": "check-",
+										"newItem": {
+											"label": "",
+											"description": ""
+										},
+										"itemLabel": "Checklist item",
+										"addLabel": "Add checklist item",
+										"removeLabel": "Remove checklist item",
+										"reorderable": true
+									},
+									{
+										"type": "group",
+										"section": true,
+										"label": "Advanced",
+										"collapsible": true,
+										"lockable": true,
+										"lockedNotice": "Published versions are not editable. Clone a new version first.",
+										"fields": [
+											{
+												"key": "config",
+												"type": "group",
+												"prune": true,
+												"omitWhenEmpty": true,
+												"fields": [
+													{
+														"key": "sla",
+														"type": "group",
+														"requireAll": true,
+														"defaults": {
+															"value": null,
+															"unit": ""
+														},
+														"fields": [
+															{
+																"type": "row",
+																"fields": [
+																	{
+																		"key": "value",
+																		"type": "number",
+																		"label": "SLA",
+																		"min": 1,
+																		"max": 10000,
+																		"width": "narrow"
+																	},
+																	{
+																		"key": "unit",
+																		"type": "select",
+																		"label": "SLA unit",
+																		"options": [
+																			{
+																				"value": "",
+																				"label": "No SLA"
+																			},
+																			{
+																				"value": "hours",
+																				"label": "hours"
+																			},
+																			{
+																				"value": "businessDays",
+																				"label": "working days"
+																			},
+																			{
+																				"value": "calendarDays",
+																				"label": "calendar days"
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													},
+													{
+														"key": "requiredFields",
+														"type": "list",
+														"label": "Required fields on completion",
+														"itemLabel": "Field name (property path)",
+														"addLabel": "Add field",
+														"removeLabel": "Remove required field"
+													},
+													{
+														"key": "escalationRule",
+														"type": "group",
+														"optional": true,
+														"toggleLabel": "Enable escalation",
+														"defaults": {
+															"trigger": "preBreach",
+															"offset": 0,
+															"offsetUnit": "businessDays",
+															"notifyRole": "",
+															"escalateToRole": "",
+															"openIncident": false
+														},
+														"fields": [
+															{
+																"key": "trigger",
+																"type": "select",
+																"label": "Escalation moment",
+																"options": [
+																	{
+																		"value": "preBreach",
+																		"label": "Vóór deadline (pre-breach)"
+																	},
+																	{
+																		"value": "slaBreached",
+																		"label": "Na deadline (sla-breached)"
+																	}
+																]
+															},
+															{
+																"type": "row",
+																"fields": [
+																	{
+																		"key": "offset",
+																		"type": "number",
+																		"label": "Escalation offset",
+																		"min": 0,
+																		"width": "narrow"
+																	},
+																	{
+																		"key": "offsetUnit",
+																		"type": "select",
+																		"label": "Escalation offset unit",
+																		"options": [
+																			{
+																				"value": "hours",
+																				"label": "hours"
+																			},
+																			{
+																				"value": "businessDays",
+																				"label": "working days"
+																			}
+																		]
+																	}
+																]
+															},
+															{
+																"key": "notifyRole",
+																"type": "text",
+																"label": "Warn role (UUID)"
+															},
+															{
+																"key": "escalateToRole",
+																"type": "text",
+																"label": "Escalate to role (UUID)"
+															},
+															{
+																"key": "openIncident",
+																"type": "checkbox",
+																"label": "Also create an incident"
+															}
+														]
+													}
+												]
+											}
+										]
+									},
+									{
+										"key": "automaticActions",
+										"type": "typed-list",
+										"section": true,
+										"label": "Automatic actions on completion",
+										"typeLabel": "Action",
+										"addLabel": "Add action",
+										"removeLabel": "Remove action",
+										"newItem": {
+											"type": "createTask",
+											"title": ""
+										},
+										"types": [
+											{
+												"value": "createTask",
+												"label": "Create task",
+												"fields": [
+													{
+														"key": "title",
+														"type": "text",
+														"label": "Task title"
+													}
+												]
+											},
+											{
+												"value": "notify",
+												"label": "Send notification",
+												"fields": [
+													{
+														"key": "message",
+														"type": "text",
+														"label": "Notification message"
+													}
+												]
+											},
+											{
+												"value": "webhook",
+												"label": "Webhook URL",
+												"hidden": true,
+												"fields": [
+													{
+														"key": "url",
+														"type": "text",
+														"inputType": "url",
+														"label": "Webhook URL"
+													}
+												]
+											}
+										]
+									}
+								],
+								"transitionFields": [
+									{
+										"key": "label",
+										"type": "text",
+										"label": "Label",
+										"placeholder": "e.g. Goedkeuren, Afwijzen"
+									},
+									{
+										"key": "explanation",
+										"type": "textarea",
+										"rows": 2,
+										"label": "Explanation",
+										"placeholder": "What a handler should know before taking this step",
+										"hint": "Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there."
+									},
+									{
+										"key": "allowedRoles",
+										"type": "checkboxes",
+										"label": "Allowed roles (empty = all roles)",
+										"optionSet": "roles"
+									},
+									{
+										"key": "guards",
+										"type": "typed-list",
+										"section": true,
+										"label": "Pre-conditions (guards)",
+										"typeLabel": "Guard",
+										"addLabel": "Add guard",
+										"removeLabel": "Remove guard",
+										"newItem": {
+											"type": "checklist"
+										},
+										"types": [
+											{
+												"value": "checklist",
+												"label": "Checklist complete"
+											},
+											{
+												"value": "requiredField",
+												"label": "Required field",
+												"fields": [
+													{
+														"key": "fieldName",
+														"type": "text",
+														"label": "Field name (e.g. result)"
+													}
+												]
+											},
+											{
+												"value": "requiredDocument",
+												"label": "Required document",
+												"fields": [
+													{
+														"key": "documentTypeName",
+														"type": "select",
+														"label": "Document type",
+														"optionSet": "documentTypeNames",
+														"emptyOption": {
+															"value": "",
+															"label": "Select document type"
+														}
+													}
+												]
+											},
+											{
+												"value": "roleGuard",
+												"label": "Role check",
+												"fields": [
+													{
+														"key": "roleTypeId",
+														"type": "select",
+														"label": "Role",
+														"optionSet": "roles",
+														"emptyOption": {
+															"value": "",
+															"label": "Select role"
+														}
+													}
+												]
+											}
+										]
+									},
+									{
+										"key": "automaticActions",
+										"type": "typed-list",
+										"section": true,
+										"label": "Automatic actions",
+										"typeLabel": "Action",
+										"addLabel": "Add action",
+										"removeLabel": "Remove action",
+										"newItem": {
+											"type": "notify",
+											"message": ""
+										},
+										"types": [
+											{
+												"value": "sendEmail",
+												"label": "Send email",
+												"fields": [
+													{
+														"key": "recipient",
+														"type": "text",
+														"label": "Recipient (role name or email)"
+													},
+													{
+														"key": "subject",
+														"type": "text",
+														"label": "Subject template"
+													},
+													{
+														"key": "template",
+														"type": "textarea",
+														"rows": 3,
+														"label": "Email template (use {{case.title}}, {{transition.label}})"
+													}
+												]
+											},
+											{
+												"value": "createTask",
+												"label": "Create task",
+												"fields": [
+													{
+														"key": "title",
+														"type": "text",
+														"label": "Task title"
+													},
+													{
+														"key": "description",
+														"type": "text",
+														"label": "Task description"
+													}
+												]
+											},
+											{
+												"value": "createSubCase",
+												"label": "Create sub-case"
+											},
+											{
+												"value": "webhook",
+												"label": "Webhook URL",
+												"hidden": true,
+												"fields": [
+													{
+														"key": "url",
+														"type": "text",
+														"inputType": "url",
+														"label": "Webhook URL"
+													}
+												]
+											},
+											{
+												"value": "setField",
+												"label": "Set field value",
+												"fields": [
+													{
+														"key": "fieldName",
+														"type": "text",
+														"label": "Field name"
+													},
+													{
+														"key": "value",
+														"type": "text",
+														"label": "Value"
+													}
+												]
+											},
+											{
+												"value": "notify",
+												"label": "Send notification",
+												"fields": [
+													{
+														"key": "message",
+														"type": "text",
+														"label": "Notification message"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						}
 					},
 					{
 						"id": "case-type-statuses-editor",

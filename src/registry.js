@@ -17,12 +17,9 @@
 // is resolved by name, never mounted.
 //
 // Migration notes:
-// - The visual workflow editor (`WorkflowEditor.vue`) is not a registry entry
-//   — it is a plain child component mounted by `WorkflowTab.vue` inside the
-//   case-type detail page's "Workflow" tab, not a manifest `type:"custom"`
-//   page or sidebar-tab component. See openspec/specs/visual-workflow-editor.
-//   A second, @vue-flow-based implementation (Vue-3-only, incompatible with
-//   this app's Vue 2.7 build) was removed by workflow-editor-integration.
+// - The visual workflow editor is nc-vue's CnStateMachineEditor, mounted by
+//   `WorkflowTab.vue` (the CaseTypeWorkflowEditorWidget entry) and configured
+//   by the widget's content.editor. See openspec/specs/visual-workflow-editor.
 
 // The AI features a case type switched on, and the report group the case is in
 // (ai-features-on-the-case-consume-hermiq, board DqZaakAssistent).
@@ -99,7 +96,6 @@ import CaseTypeRulesWidget from './components/caseType/CaseTypeRulesWidget.vue'
 // (case-type-labels-are-translatable, row 11.13).
 // @spec openspec/specs/case-configuration-i18n/spec.md
 import CaseTypeTranslationsWidget from './components/caseType/CaseTypeTranslationsWidget.vue'
-import CaseTypeWorkflowEditorWidget from './components/caseType/CaseTypeWorkflowEditorWidget.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
 // export-leaf URL client-side; no dossiq-side serialization (ADR-022).
@@ -227,6 +223,7 @@ import EndOfDayView from './views/queue/EndOfDayView.vue'
 // One personal queue fed by the declared sources (one-personal-queue).
 // @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 import PersonalQueueView from './views/queue/PersonalQueueView.vue'
+import WorkflowTab from './views/settings/tabs/WorkflowTab.vue'
 import StoreGallery from './views/store/StoreGallery.vue'
 import SubstitutedWork from './views/SubstitutedWork.vue'
 // The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
@@ -454,11 +451,11 @@ const registry = {
 	// on CaseTypeDetail while their forms have no declarative equivalent. ---
 	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
 	CaseTypeWorkflowEditorWidget: {
-		// @custom-widget-ratchet exclude a visual canvas of statuses, transitions, steps and guards with a version selector and publish; no declared widget draws or edits a graph
+		// @custom-widget-ratchet exclude the version selector, publish, import and export of a workflow template around the library's CnStateMachineEditor; the editor itself is configured by the widget's content.editor
 		kind: 'widget',
-		component: CaseTypeWorkflowEditorWidget,
+		component: WorkflowTab,
 		...PANEL_WIDGET_META,
-		_note: 'CaseTypeDetail Phases and tasks: the workflow canvas, kept by decision when the admin-settings editor was retired.',
+		_note: "CaseTypeDetail Phases and tasks: the workflow template's versions around nc-vue's CnStateMachineEditor. The statuses are the states, the template's transitions and steps the rest; which fields a step and a transition carry, and every text, is the manifest widget's content.editor.",
 	},
 	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
 	CaseTypeMessagesEditorWidget: {
@@ -791,9 +788,8 @@ const registry = {
 	// TaskWaitingCaseSection is NOT a registry entry any more, and neither is
 	// TaskCaseCard. Both were resolved through TaskDetail's `slots` map while
 	// that page was `type: "detail"`; the page is now `type: "custom"` and
-	// mounts them as plain child components of TaskDetailView, the same way
-	// WorkflowTab mounts WorkflowEditor. A registry entry no manifest names
-	// resolves for nobody and is dead configuration.
+	// mounts them as plain child components of TaskDetailView. A registry
+	// entry no manifest names resolves for nobody and is dead configuration.
 
 	// --- Send digital post, the CaseDetail header action (digital-post-consumes-integriq). ---
 	// @spec openspec/specs/berichtenbox-integration/spec.md

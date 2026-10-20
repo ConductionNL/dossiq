@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
