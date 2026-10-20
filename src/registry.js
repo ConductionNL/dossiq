@@ -180,7 +180,6 @@ import DocumentMetadataDialog from './modals/DocumentMetadataDialog.vue'
 import DossierExportPanel from './modals/DossierExportPanel.vue'
 import FileRequestDialog from './modals/FileRequestDialog.vue'
 import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
-import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 import CaseRedactionView from './views/cases/CaseRedactionView.vue'
 // VTH-specific case detail panels
 // Federated case sharing/transfer/activity — federated-case-collaboration.
@@ -390,15 +389,6 @@ const registry = {
 		kind: 'page',
 		component: SubstitutedWork,
 		_note: 'Before-collection slot: the cases an active substitution routes to the reader, marked with whose they are and until when, hideable. Not a filter on the list, because these cases are not assigned to the reader.',
-	},
-
-	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
-	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
-	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
-	SubstitutionAdminView: {
-		kind: 'page',
-		component: SubstitutionAdminView,
-		_note: 'Coordinator substitution admin + bulk reassignment + capacity action list. Coordinator-gated server-side.',
 	},
 
 	// --- The case's lifecycle on the case page (case-lifecycle-on-the-page). ---

@@ -481,15 +481,6 @@
 			"permission": "privacy"
 		},
 		{
-			"id": "SubstitutionAdminMenu",
-			"label": "Substitutions & reassignment",
-			"icon": "AccountSwitchOutline",
-			"route": "SubstitutionAdmin",
-			"section": "settings",
-			"order": 94,
-			"permission": "admin"
-		},
-		{
 			"id": "IntegrationsMenu",
 			"label": "Integrations",
 			"icon": "PowerPlugOutline",
@@ -8556,15 +8547,6 @@
 				"widget-td-quarterly": "TdQuarterlyWidget",
 				"widget-td-annual": "TdAnnualWidget"
 			}
-		},
-		{
-			"id": "SubstitutionAdmin",
-			"route": "/substitution-admin",
-			"type": "custom",
-			"title": "Substitutions & reassignment",
-			"permission": "admin",
-			"component": "SubstitutionAdminView",
-			"_note": "Coordinator substitution console: a filterable list of all substitutions plus register-on-behalf, revoke, inspect-capacity-stamped-actions, and bulk-reassignment actions (the latter two open dedicated modals). Coordinator role is enforced server-side. The standard list type cannot host the on-behalf-of register flow, the action-list inspection, or the bulk-reassign operation over the listed objects."
 		},
 		{
 			"id": "CaseTypes",

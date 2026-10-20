@@ -12,7 +12,6 @@
 		"Analytics",
 		"TermijnDashboardMenu",
 		"ProcessMiningDashboardMenu",
-		"SubstitutionAdminMenu",
 		"BezwaarCommitteesMenu",
 		"PersonalQueueMenu",
 		"MyWork",
@@ -23,14 +22,12 @@
 		"Analytics": "Reports",
 		"TermijnDashboardMenu": "Reports",
 		"ProcessMiningDashboardMenu": "Reports",
-		"SubstitutionAdminMenu": "Cases",
 		"BezwaarCommitteesMenu": "decidiq:GovernanceBodies"
 	},
 	"settingsSection": [
 		"WmsLayersMenu",
 		"LhsRecommendationsMenu",
 		"BezwaarCommitteesMenu",
-		"SubstitutionAdminMenu",
 		"IntegrationsMenu",
 		"CasesDeletedMenu",
 		"CaseObjectsMenu",

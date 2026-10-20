@@ -66,8 +66,12 @@ export const VIEW_OVERRIDES_APPLIED = true
  */
 export const SubstitutionPersonalSettings = '/apps/dossiq/#user-settings'
 
-/** `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console (manifest page `SubstitutionAdmin`). */
-export const SubstitutionAdmin = '/substitution-admin'
+/**
+ * `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console,
+ * the Substitution tab of the admin settings (its own page `/substitution-admin`
+ * retired on 20 Oct 2026 and redirects here). Prefix with `/index.php` only.
+ */
+export const SubstitutionAdmin = '/settings/admin/dossiq?tab=substitution'
 
 /** Manifest `type: "dashboard"` page — bottleneck analysis; heading comes from the page title, widgets from `src/views/processMining/`. */
 export const ProcessMiningDashboard = '/process-mining'
