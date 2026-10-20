@@ -123,6 +123,15 @@ export default {
 			type: String,
 			default: '',
 		},
+
+		/**
+		 * The task uuid as a manifest detail page hands it to a widget: the
+		 * record in view on `entitySource: "tasks"`. `taskId` wins when set.
+		 */
+		objectId: {
+			type: [String, Number],
+			default: '',
+		},
 	},
 
 	data() {
@@ -144,8 +153,20 @@ export default {
 		}
 	},
 
+	computed: {
+		/**
+		 * The task the leaf hangs on: `taskId`, else the page's record id.
+		 *
+		 * @return {string} The uuid, or ''.
+		 * @spec openspec/changes/task-page-on-the-manifest/specs/task-management/spec.md#requirement-the-task-page-is-a-manifest-detail-page
+		 */
+		anchorId() {
+			return String(this.taskId || this.objectId || '').trim()
+		},
+	},
+
 	watch: {
-		taskId: {
+		anchorId: {
 			immediate: false,
 			/**
 			 * The page re-bound to another task.
@@ -185,7 +206,7 @@ export default {
 		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async load() {
-			const id = String(this.taskId ?? '').trim()
+			const id = this.anchorId
 			if (id === '') {
 				this.notes = []
 				return
@@ -215,7 +236,7 @@ export default {
 			this.busy = true
 			try {
 				const outcome = await useEngineTaskStore().writeNote(
-					this.taskId,
+					this.anchorId,
 					text,
 				)
 				if (outcome.note === null) {
@@ -244,7 +265,7 @@ export default {
 			this.busy = true
 			try {
 				const outcome = await useEngineTaskStore().removeNote(
-					this.taskId,
+					this.anchorId,
 					note?.id,
 				)
 				if (outcome.removed === false) {

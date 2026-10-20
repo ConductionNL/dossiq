@@ -56,6 +56,17 @@ export default {
 		CheckboxMarkedCircleOutline,
 	},
 
+	props: {
+		/**
+		 * The task uuid as a manifest detail page hands it to a widget. Empty
+		 * reads the `/tasks/:id` route parameter.
+		 */
+		objectId: {
+			type: [String, Number],
+			default: '',
+		},
+	},
+
 	data() {
 		return {
 			task: null,
@@ -121,7 +132,7 @@ export default {
 		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async load() {
-			const taskId = this.$route?.params?.id
+			const taskId = String(this.objectId || this.$route?.params?.id || '').trim()
 			if (!taskId) {
 				return
 			}

@@ -41,9 +41,9 @@
 -->
 <template>
 	<section class="task-audit-leaf" data-testid="task-audit-leaf">
-		<component :is="open ? 'div' : 'details'" class="task-audit-leaf__disclosure">
+		<component :is="showsOpen ? 'div' : 'details'" class="task-audit-leaf__disclosure">
 			<summary
-				v-if="!open"
+				v-if="!showsOpen"
 				class="task-audit-leaf__summary"
 				data-testid="task-audit-leaf-toggle"
 				@click="loadOnce">
@@ -94,6 +94,21 @@ export default {
 			default: '',
 		},
 
+		/**
+		 * The task uuid as a manifest detail page hands it to a widget: the
+		 * record in view on `entitySource: "tasks"`. `taskId` wins when set.
+		 */
+		objectId: {
+			type: [String, Number],
+			default: '',
+		},
+
+		/** The widget's manifest `content`; `open: true` shows the entries straight away. */
+		content: {
+			type: Object,
+			default: () => ({}),
+		},
+
 		/** Show the entries straight away, without the disclosure, read on mount. */
 		open: {
 			type: Boolean,
@@ -112,8 +127,30 @@ export default {
 		}
 	},
 
+	computed: {
+		/**
+		 * The task the leaf hangs on: `taskId`, else the page's record id.
+		 *
+		 * @return {string} The uuid, or ''.
+		 * @spec openspec/changes/task-page-on-the-manifest/specs/task-management/spec.md#requirement-the-task-page-is-a-manifest-detail-page
+		 */
+		anchorId() {
+			return String(this.taskId || this.objectId || '').trim()
+		},
+
+		/**
+		 * Whether the entries show straight away: the `open` prop, or
+		 * `content.open` on a manifest widget.
+		 *
+		 * @return {boolean}
+		 */
+		showsOpen() {
+			return this.open === true || this.content?.open === true
+		},
+	},
+
 	watch: {
-		taskId: {
+		anchorId: {
 			immediate: false,
 			/**
 			 * The page re-bound to another task: drop the previous task's
@@ -128,7 +165,7 @@ export default {
 				this.entries = []
 				this.error = ''
 				this.loaded = false
-				if (wasLoaded === true || this.open) {
+				if (wasLoaded === true || this.showsOpen) {
 					this.load()
 				}
 			},
@@ -142,7 +179,7 @@ export default {
 	 * @spec openspec/specs/task-management/spec.md
 	 */
 	mounted() {
-		if (this.open) {
+		if (this.showsOpen) {
 			this.loadOnce()
 		}
 	},
@@ -172,7 +209,7 @@ export default {
 		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async load() {
-			const id = String(this.taskId ?? '').trim()
+			const id = this.anchorId
 			if (id === '') {
 				return
 			}
