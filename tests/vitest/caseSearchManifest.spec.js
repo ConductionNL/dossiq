@@ -35,22 +35,14 @@ const registry = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const casesPage = manifest.pages.find((page) => page.id === 'Cases')
 
 describe('the Cases page and a refused search', () => {
-	it('mounts the refusal above the list, where the search box is', () => {
-		// `after-search` joined it with #3001: the filters a case type's own
-		// fields offer sit under the search box, beside the refusal that says
-		// when one of them was turned down. Asserted as the whole map rather
-		// than as one entry, so a third slot has to be a deliberate edit here.
+	it('leaves the refusal to the library index page, which draws it where the search box is', () => {
+		// CnIndexPage says where a refused search stopped by itself, so the
+		// page mounts only the case type's field filters. Asserted as the
+		// whole map, so another slot has to be a deliberate edit here.
 		expect(casesPage.slots).toEqual({
-			'below-header': 'CaseSearchRefusal',
 			'after-search': 'CaseTypeFieldFilters',
 		})
-	})
-
-	it('names a component the registry actually resolves', () => {
-		expect(registry).toContain('CaseSearchRefusal: {')
-		expect(registry).toContain(
-			"from './components/search/CaseSearchRefusal.vue'",
-		)
+		expect(registry).not.toContain('CaseSearchRefusal: {')
 	})
 })
 

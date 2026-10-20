@@ -90,17 +90,17 @@ test.describe('One personal queue', () => {
 		await navToRoute(page, '/my-queue')
 
 		await expect(
-			page.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`),
+			page.getByTestId(`cn-work-queue-item-assigned-cases:case:${cases.mine}`),
 		).toBeVisible(PAGE_LOAD)
 		await expect(
-			page.getByTestId(`queue-item-tasks:task:${tasks.open}`),
+			page.getByTestId(`cn-work-queue-item-tasks:task:${tasks.open}`),
 		).toBeVisible()
 
 		// Two mechanisms, two groups, one page. The assertion is on the GROUPS
 		// rather than on a row count: a queue that merged everything into one
 		// heading would still show both rows.
-		await expect(page.getByTestId('queue-group-assigned-cases')).toBeVisible()
-		await expect(page.getByTestId('queue-group-tasks')).toBeVisible()
+		await expect(page.getByTestId('cn-work-queue-group-assigned-cases')).toBeVisible()
+		await expect(page.getByTestId('cn-work-queue-group-tasks')).toBeVisible()
 
 		expect(errors, errors.join('\n')).toEqual([])
 	})
@@ -109,7 +109,7 @@ test.describe('One personal queue', () => {
 	test('Each group says what takes its items off the queue', async ({ page }) => {
 		await navToRoute(page, '/my-queue')
 
-		const group = page.getByTestId('queue-group-tasks')
+		const group = page.getByTestId('cn-work-queue-group-tasks')
 		await expect(group).toBeVisible(PAGE_LOAD)
 		await expect(group).toContainText(
 			'A task leaves when it is completed or cancelled.',
@@ -124,7 +124,7 @@ test.describe('One personal queue', () => {
 	}) => {
 		await navToRoute(page, '/my-queue')
 		await expect(
-			page.getByTestId(`queue-item-tasks:task:${tasks.closing}`),
+			page.getByTestId(`cn-work-queue-item-tasks:task:${tasks.closing}`),
 		).toBeVisible(PAGE_LOAD)
 
 		const api = await playwright.request.newContext({ baseURL })
@@ -135,12 +135,12 @@ test.describe('One personal queue', () => {
 
 		await navToRoute(page, '/my-queue')
 		await expect(
-			page.getByTestId(`queue-item-tasks:task:${tasks.closing}`),
+			page.getByTestId(`cn-work-queue-item-tasks:task:${tasks.closing}`),
 		).toHaveCount(0)
 		// The OTHER task is still there, so the row did not vanish because the
 		// whole list failed to load.
 		await expect(
-			page.getByTestId(`queue-item-tasks:task:${tasks.open}`),
+			page.getByTestId(`cn-work-queue-item-tasks:task:${tasks.open}`),
 		).toBeVisible()
 	})
 
@@ -149,7 +149,7 @@ test.describe('One personal queue', () => {
 		page,
 	}) => {
 		await navToRoute(page, '/my-queue')
-		const item = page.getByTestId(`queue-item-assigned-cases:case:${cases.live}`)
+		const item = page.getByTestId(`cn-work-queue-item-assigned-cases:case:${cases.live}`)
 		await expect(item).toBeVisible(PAGE_LOAD)
 
 		// There is no per-item remove control at all. The offer is the group.
@@ -158,17 +158,17 @@ test.describe('One personal queue', () => {
 		).toHaveCount(0)
 
 		await page
-			.getByTestId('queue-group-assigned-cases')
+			.getByTestId('cn-work-queue-group-assigned-cases')
 			.getByRole('button', { name: /hide until tomorrow|verberg tot morgen/i })
 			.click()
 
-		await expect(page.getByTestId('queue-group-assigned-cases')).toHaveCount(0)
-		await expect(page.getByTestId('queue-hidden-assigned-cases')).toBeVisible()
+		await expect(page.getByTestId('cn-work-queue-group-assigned-cases')).toHaveCount(0)
+		await expect(page.getByTestId('cn-work-queue-show-assigned-cases')).toBeVisible()
 
 		// Hidden is not gone: showing it again brings back the same live work.
-		await page.getByTestId('queue-hidden-assigned-cases').click()
+		await page.getByTestId('cn-work-queue-show-assigned-cases').click()
 		await expect(
-			page.getByTestId(`queue-item-assigned-cases:case:${cases.live}`),
+			page.getByTestId(`cn-work-queue-item-assigned-cases:case:${cases.live}`),
 		).toBeVisible()
 	})
 
@@ -178,7 +178,7 @@ test.describe('One personal queue', () => {
 	}) => {
 		await navToRoute(page, '/my-queue')
 		await expect(
-			page.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`),
+			page.getByTestId(`cn-work-queue-item-assigned-cases:case:${cases.mine}`),
 		).toBeVisible(PAGE_LOAD)
 
 		// The queue is not empty, so the person who owns it is due a digest.
@@ -207,7 +207,7 @@ test.describe('One personal queue', () => {
 		// gesture that makes it appear.
 		await navToRoute(page, '/my-queue')
 		await page
-			.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`)
+			.getByTestId(`cn-work-queue-item-assigned-cases:case:${cases.mine}`)
 			.getByRole('link')
 			.click()
 		await page.waitForLoadState('domcontentloaded')
@@ -224,7 +224,7 @@ test.describe('One personal queue', () => {
 	}) => {
 		await navToRoute(page, '/my-queue')
 		await page
-			.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`)
+			.getByTestId(`cn-work-queue-item-assigned-cases:case:${cases.mine}`)
 			.getByRole('link')
 			.click()
 		await page.waitForLoadState('domcontentloaded')
@@ -280,7 +280,7 @@ test.describe('One personal queue', () => {
 			.fill('2026-12-01T09:00')
 		await dialog.getByRole('button', { name: /schedule it|plan it|plan het in|inplannen/i }).click()
 
-		await expect(page.getByTestId('queue-group-planned-items')).toBeVisible(
+		await expect(page.getByTestId('cn-work-queue-group-planned-items')).toBeVisible(
 			PAGE_LOAD,
 		)
 
