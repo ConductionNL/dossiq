@@ -10,7 +10,10 @@
 -->
 <template>
 	<div class="ai-suggestion-decision" :data-testid="testid">
-		<p v-if="decided" class="ai-suggestion-decision__done" :data-testid="`${testid}-done`">
+		<p
+			v-if="decided"
+			class="ai-suggestion-decision__done"
+			:data-testid="`${testid}-done`">
 			{{ decided }}
 		</p>
 		<template v-else>
@@ -39,9 +42,7 @@
 						@click="decide('accepted')">
 						{{ t('dossiq', 'Use this') }}
 					</NcButton>
-					<NcButton
-						:data-testid="`${testid}-adapt`"
-						@click="startEditing">
+					<NcButton :data-testid="`${testid}-adapt`" @click="startEditing">
 						{{ t('dossiq', 'Adapt') }}
 					</NcButton>
 				</template>
@@ -65,7 +66,11 @@ export default {
 	components: { NcButton },
 
 	props: {
-		/** The suggestion as shown. */
+		/**
+		 * The suggestion as shown.
+		 *
+		 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
+		 */
 		text: {
 			type: String,
 			required: true,
@@ -89,6 +94,11 @@ export default {
 	},
 
 	watch: {
+		/**
+		 * A new suggestion starts undecided.
+		 *
+		 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
+		 */
 		text() {
 			this.editing = false
 			this.draft = ''
@@ -125,7 +135,11 @@ export default {
 			})
 			this.decided = {
 				accepted: t('dossiq', 'Used. Copied to your clipboard.'),
-				modified: t('dossiq', 'Your version is used. Copied to your clipboard.'),
+				modified: t(
+					'dossiq',
+					'Your version is used. Copied to your clipboard.',
+				),
+
 				rejected: t('dossiq', 'Rejected.'),
 			}[userAction]
 			if (userAction === 'rejected') {
@@ -135,9 +149,10 @@ export default {
 			try {
 				await navigator.clipboard.writeText(used)
 			} catch {
-				this.decided = userAction === 'modified'
-					? t('dossiq', 'Your version is used.')
-					: t('dossiq', 'Used.')
+				this.decided =
+					userAction === 'modified'
+						? t('dossiq', 'Your version is used.')
+						: t('dossiq', 'Used.')
 			}
 		},
 	},

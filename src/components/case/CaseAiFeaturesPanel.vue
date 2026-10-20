@@ -313,6 +313,12 @@ export default {
 		}
 	},
 
+	/**
+	 * Start tracking the suggestions shown on this case, and report the
+	 * undecided ones as closed when the page is left.
+	 *
+	 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
+	 */
 	created() {
 		this.tracker = createSuggestionTracker({ caseId: this.objectId })
 		this.onPageHide = () => this.tracker.closeAll({ leaving: true })
@@ -323,6 +329,11 @@ export default {
 		await this.load()
 	},
 
+	/**
+	 * Report the undecided suggestions as closed when the panel closes.
+	 *
+	 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
+	 */
 	beforeUnmount() {
 		window.removeEventListener('pagehide', this.onPageHide)
 		this.tracker.closeAll()

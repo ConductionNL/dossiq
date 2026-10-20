@@ -29,6 +29,7 @@ export const SUGGESTION_LIFETIME_MS = 30 * 60 * 1000
  * @param {boolean} options.leaving True while the page unloads: the request
  *   then uses `fetch` with `keepalive`, which outlives the page.
  * @return {Promise<void>}
+ * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
  */
 export async function postDecision(body, { leaving = false } = {}) {
 	const url = generateUrl('/apps/dossiq/api/ai/record-action')
@@ -61,6 +62,7 @@ export async function postDecision(body, { leaving = false } = {}) {
  * @param {function(function(): void, number): number} [options.setTimer] Timer factory, for tests.
  * @param {function(number): void} [options.clearTimer] Timer cancel, for tests.
  * @return {object} The tracker: show, decide, dismiss, closeAll, pending.
+ * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
  */
 export function createSuggestionTracker({
 	caseId,
@@ -79,6 +81,7 @@ export function createSuggestionTracker({
 	 * @param {object} decision `{userAction, unusedBecause?, actualValue?, reason?}`.
 	 * @param {object} options Passed to report.
 	 * @return {Promise<void>}
+	 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
 	 */
 	function settle(slot, decision, options = {}) {
 		const shown = pending.get(slot)
@@ -112,6 +115,7 @@ export function createSuggestionTracker({
 		 * @param {string} slot The slot key.
 		 * @param {object} suggestion `{type, text, prompt?, model?, documentId?}`.
 		 * @return {string} The suggestion id.
+		 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
 		 */
 		show(slot, suggestion) {
 			settle(slot, { userAction: 'ignored', unusedBecause: 'superseded' })
@@ -131,6 +135,7 @@ export function createSuggestionTracker({
 		 * @param {string} userAction accepted, modified or rejected.
 		 * @param {object} [extra] `{actualValue?, reason?}`.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
 		 */
 		decide(slot, userAction, extra = {}) {
 			return settle(slot, { userAction, ...extra })
@@ -142,6 +147,7 @@ export function createSuggestionTracker({
 		 * @param {string} slot The slot key.
 		 * @param {string} because closed, expired or superseded.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
 		 */
 		dismiss(slot, because) {
 			return settle(slot, { userAction: 'ignored', unusedBecause: because })
@@ -152,12 +158,17 @@ export function createSuggestionTracker({
 		 *
 		 * @param {object} [options] `{leaving}` while the page unloads.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
 		 */
 		closeAll(options = {}) {
 			const slots = [...pending.keys()]
 			return Promise.all(
 				slots.map((slot) =>
-					settle(slot, { userAction: 'ignored', unusedBecause: 'closed' }, options),
+					settle(
+						slot,
+						{ userAction: 'ignored', unusedBecause: 'closed' },
+						options,
+					),
 				),
 			).then(() => undefined)
 		},
@@ -167,6 +178,7 @@ export function createSuggestionTracker({
 		 *
 		 * @param {string} slot The slot key.
 		 * @return {boolean} True while undecided.
+		 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
 		 */
 		pending(slot) {
 			return pending.has(slot)

@@ -380,9 +380,15 @@ describe('CaseAiFeaturesPanel', () => {
 
 		await wrapper.find('[data-testid="case-ai-question-p-1"]').trigger('click')
 		await flushPromises()
-		await wrapper.find('[data-testid="case-ai-question-decision-adapt"]').trigger('click')
-		await wrapper.find('[data-testid="case-ai-question-decision-draft"]').setValue('Ja, mits.')
-		await wrapper.find('[data-testid="case-ai-question-decision-use-adapted"]').trigger('click')
+		await wrapper
+			.find('[data-testid="case-ai-question-decision-adapt"]')
+			.trigger('click')
+		await wrapper
+			.find('[data-testid="case-ai-question-decision-draft"]')
+			.setValue('Ja, mits.')
+		await wrapper
+			.find('[data-testid="case-ai-question-decision-use-adapted"]')
+			.trigger('click')
 		await flushPromises()
 
 		expect(decisions()[0]).toMatchObject({

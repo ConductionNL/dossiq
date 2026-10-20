@@ -62,7 +62,9 @@ describe('createSuggestionTracker', () => {
 		const { tracker, reports } = setup()
 		tracker.show('question', ANSWER)
 
-		await tracker.decide('question', 'modified', { actualValue: 'Net binnen de termijn.' })
+		await tracker.decide('question', 'modified', {
+			actualValue: 'Net binnen de termijn.',
+		})
 
 		expect(reports[0].body.userAction).toBe('modified')
 		expect(reports[0].body.actualValue).toBe('Net binnen de termijn.')
@@ -85,7 +87,10 @@ describe('createSuggestionTracker', () => {
 	it('leaves other slots alone when one is superseded', () => {
 		const { tracker, reports } = setup()
 		tracker.show('question', ANSWER)
-		tracker.show('feature:summary', { type: 'decision_support', text: 'Verleend.' })
+		tracker.show('feature:summary', {
+			type: 'decision_support',
+			text: 'Verleend.',
+		})
 
 		expect(reports).toHaveLength(0)
 	})
@@ -96,7 +101,10 @@ describe('createSuggestionTracker', () => {
 
 		timers[0]()
 
-		expect(reports[0].body).toMatchObject({ userAction: 'ignored', unusedBecause: 'expired' })
+		expect(reports[0].body).toMatchObject({
+			userAction: 'ignored',
+			unusedBecause: 'expired',
+		})
 	})
 
 	it('reports nothing when a decided suggestion expires', async () => {
@@ -112,7 +120,10 @@ describe('createSuggestionTracker', () => {
 	it('reports every undecided suggestion closed, keeping the page alive when leaving', async () => {
 		const { tracker, reports } = setup()
 		tracker.show('question', ANSWER)
-		tracker.show('feature:summary', { type: 'decision_support', text: 'Verleend.' })
+		tracker.show('feature:summary', {
+			type: 'decision_support',
+			text: 'Verleend.',
+		})
 
 		await tracker.closeAll({ leaving: true })
 
