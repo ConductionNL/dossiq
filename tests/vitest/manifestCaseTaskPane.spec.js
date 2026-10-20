@@ -115,8 +115,9 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
 const CUSTOM_PAGE_COUNT_BEFORE = 9
 const CUSTOM_PAGE_COUNT_AFTER = 10
 // Custom pages moved onto manifest config since, each one unit off the ratchet
-// (end-of-day-manifest: Close out your day is a dashboard).
-const CUSTOM_PAGES_RETIRED_SINCE = ['EndOfDay']
+// (end-of-day-manifest: Close out your day is a dashboard; the personal queue
+// is library config).
+const CUSTOM_PAGES_RETIRED_SINCE = ['EndOfDay', 'PersonalQueue']
 
 /**
  * One page as the manifest declares it.
