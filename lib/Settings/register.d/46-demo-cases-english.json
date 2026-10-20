@@ -7,8 +7,10 @@
 	"components": {
 		"objects": [
 			{
-				"@self": { "register": "dossiq", "schema": "caseType", "slug": "building-permit-type", "version": "1.1.0" },
+				"@self": { "register": "dossiq", "schema": "caseType", "slug": "building-permit-type", "version": "1.1.1" },
 				"title": "Building Permit",
+				"colour": "teal",
+				"icon": "OfficeBuildingOutline",
 				"category": "Permits",
 				"identifier": "building-permit",
 				"description": "Environmental building permits (Baugenehmigung): construction, extensions and alterations.",
@@ -31,8 +33,10 @@
 			{ "@self": { "register": "dossiq", "schema": "statusType", "slug": "bp-completed" }, "name": "Completed", "description": "Case completed and archived.", "caseType": "@ref:caseType:building-permit-type", "order": 4, "isFinal": true, "colour": "green", "hiddenInLists": true, "publicLabel": "Completed", "publicDescription": "Your application has been handled." },
 
 			{
-				"@self": { "register": "dossiq", "schema": "caseType", "slug": "grant-application-type", "version": "1.1.0" },
+				"@self": { "register": "dossiq", "schema": "caseType", "slug": "grant-application-type", "version": "1.1.1" },
 				"title": "Grant application",
+				"colour": "teal",
+				"icon": "CashMultiple",
 				"category": "Grants",
 				"identifier": "grant-application",
 				"description": "Applications for public grants and subsidies (Förderantrag).",
@@ -56,8 +60,10 @@
 			{ "@self": { "register": "dossiq", "schema": "statusType", "slug": "grant-completed" }, "name": "Completed", "description": "Case completed and archived.", "caseType": "@ref:caseType:grant-application-type", "order": 5, "isFinal": true, "colour": "green", "hiddenInLists": true, "publicLabel": "Completed", "publicDescription": "Your application has been handled." },
 
 			{
-				"@self": { "register": "dossiq", "schema": "caseType", "slug": "citizen-complaint-type", "version": "1.1.0" },
+				"@self": { "register": "dossiq", "schema": "caseType", "slug": "citizen-complaint-type", "version": "1.1.1" },
 				"title": "Citizen Complaint",
+				"colour": "orange",
+				"icon": "MessageAlertOutline",
 				"category": "Complaints",
 				"identifier": "citizen-complaint",
 				"description": "Complaints submitted by citizens about public services (Bürgerbeschwerde).",
@@ -80,8 +86,10 @@
 			{ "@self": { "register": "dossiq", "schema": "statusType", "slug": "complaint-completed" }, "name": "Completed", "description": "Case completed and archived.", "caseType": "@ref:caseType:citizen-complaint-type", "order": 4, "isFinal": true, "colour": "green", "hiddenInLists": true, "publicLabel": "Completed", "publicDescription": "Your complaint has been handled." },
 
 			{
-				"@self": { "register": "dossiq", "schema": "caseType", "slug": "foi-request-type", "version": "1.1.0" },
+				"@self": { "register": "dossiq", "schema": "caseType", "slug": "foi-request-type", "version": "1.1.1" },
 				"title": "Freedom of Information Request",
+				"colour": "red",
+				"icon": "FileDocumentOutline",
 				"category": "Information requests",
 				"identifier": "foi-request",
 				"description": "Requests for access to government information (IFG / Informationsfreiheitsgesetz).",

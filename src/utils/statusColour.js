@@ -5,7 +5,7 @@
 //
 // `statusType.colour` is a NAME from the NL Design System palette, never a hex
 // value, so a themed install repoints one token and every badge, every board
-// column header and every stepper step follows. The names are the twelve the
+// column header and every stepper step follows. The names are the fourteen the
 // schema enumerates; anything else — an empty colour, a value from an older
 // row, a typo — resolves to grey rather than to nothing, because a badge with
 // no colour at all reads as a rendering fault rather than as an unconfigured
@@ -32,6 +32,8 @@ export const STATUS_COLOURS = [
 	'red-light',
 	'purple',
 	'purple-light',
+	'teal',
+	'teal-light',
 	'grey',
 	'grey-light',
 ]
@@ -54,6 +56,8 @@ const FALLBACK = {
 	'red-light': '#fbe9e8',
 	purple: '#762f8e',
 	'purple-light': '#f2eaf5',
+	teal: '#1d5e66',
+	'teal-light': '#e3f1f3',
 	grey: '#696969',
 	'grey-light': '#f0f0f0',
 }
@@ -181,6 +185,8 @@ export const STATUS_COLOUR_BADGE_VARIANTS = Object.freeze({
 	'red-light': 'error',
 	purple: 'purple',
 	'purple-light': 'purple',
+	teal: 'teal',
+	'teal-light': 'teal',
 	grey: 'default',
 	'grey-light': 'default',
 })
