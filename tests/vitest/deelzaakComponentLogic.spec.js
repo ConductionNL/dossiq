@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Component-logic unit tests for the NEW sub-case + case-email UI.
+ * Component-logic unit tests for the sub-case UI.
  *
  * Dossiq's Vitest project runs in the `node` environment with no Vue mount
  * harness installed (see vitest.config.js), so we cannot full-mount the .vue
@@ -13,8 +13,6 @@
  *   - DeelzaakList.rollUpText       (completed/total roll-up)
  *   - DeelzaakList.canCreate        (gating: closed / grandchild / no allowed types)
  *   - DeelzaakCreateModal.availableCaseTypes (filter to parent.subCaseTypes)
- *   - CaseEmailTab.applyCaseObject  (caseType + isFinal extraction)
- *   - CaseEmailTab.draftButtonLabel / formatVariable
  *
  * Each function below is a faithful copy of the component's computed/method
  * body (kept in lock-step with the source). Behavioural drift in the source
@@ -22,7 +20,6 @@
  *
  * @spec openspec/changes/deelzaak-support/tasks.md#T05
  * @spec openspec/changes/deelzaak-support/tasks.md#T08
- * @spec openspec/changes/case-email-integration/tasks.md#T12
  */
 
 import { describe, expect, it } from 'vitest'
@@ -74,22 +71,6 @@ function availableCaseTypes(caseTypes, parentCaseType) {
 			|| allowedSet.has(String(ct.slug))
 			|| allowedSet.has(String(ct.uuid)),
 	)
-}
-
-// --- CaseEmailTab.applyCaseObject (verbatim extraction) ---------------------
-function applyCaseObject(caseObj) {
-	if (!caseObj) return { caseTypeId: null, isFinal: false }
-	const inner = caseObj['@self'] ? caseObj : caseObj
-	return {
-		caseTypeId: inner.caseType || inner['@self']?.caseType || null,
-		isFinal: !!(inner.endDate || inner['@self']?.endDate),
-	}
-}
-
-// --- CaseEmailTab.draftButtonLabel / formatVariable -------------------------
-const formatVariable = (name) => `{{${name}}}`
-function draftButtonLabel(selectedTemplate) {
-	return selectedTemplate ? 'Open draft from template' : 'Open empty draft'
 }
 
 describe('DeelzaakList.sortedSubCases', () => {
@@ -196,45 +177,5 @@ describe('DeelzaakCreateModal.availableCaseTypes', () => {
 	it('returns empty when the parent allows nothing', () => {
 		expect(availableCaseTypes(caseTypes, { subCaseTypes: [] })).toEqual([])
 		expect(availableCaseTypes(caseTypes, null)).toEqual([])
-	})
-})
-
-describe('CaseEmailTab.applyCaseObject', () => {
-	it('reads caseType + closed flag from a flat case object', () => {
-		expect(applyCaseObject({ caseType: 'ct-9', endDate: '2026-01-01' })).toEqual(
-			{ caseTypeId: 'ct-9', isFinal: true },
-		)
-	})
-
-	it('treats an open case (no endDate) as not final', () => {
-		expect(applyCaseObject({ caseType: 'ct-9' })).toEqual({
-			caseTypeId: 'ct-9',
-			isFinal: false,
-		})
-	})
-
-	it('falls back to @self for caseType + endDate', () => {
-		expect(
-			applyCaseObject({
-				'@self': { caseType: 'ct-7', endDate: '2026-02-02' },
-			}),
-		).toEqual({ caseTypeId: 'ct-7', isFinal: true })
-	})
-
-	it('returns safe defaults for a null object', () => {
-		expect(applyCaseObject(null)).toEqual({ caseTypeId: null, isFinal: false })
-	})
-})
-
-describe('CaseEmailTab label + variable helpers', () => {
-	it('formats a template variable with double braces', () => {
-		expect(formatVariable('caseNumber')).toBe('{{caseNumber}}')
-	})
-
-	it('labels the compose button by template selection', () => {
-		expect(draftButtonLabel(null)).toBe('Open empty draft')
-		expect(draftButtonLabel({ id: 't1', name: 'Acknowledgement' })).toBe(
-			'Open draft from template',
-		)
 	})
 })

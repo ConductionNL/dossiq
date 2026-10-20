@@ -92,14 +92,12 @@ import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
-import CaseTypeFieldsEditorWidget from './components/caseType/CaseTypeFieldsEditorWidget.vue'
 import CaseTypeMessagesEditorWidget from './components/caseType/CaseTypeMessagesEditorWidget.vue'
 // The party kinds a case type accepts, declared into pipelinq
 // (parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype).
 import CaseTypePartyKindsWidget from './components/caseType/CaseTypePartyKindsWidget.vue'
 import CaseTypePortalWidget from './components/caseType/CaseTypePortalWidget.vue'
 import CaseTypeRulesWidget from './components/caseType/CaseTypeRulesWidget.vue'
-import CaseTypeStatusesEditorWidget from './components/caseType/CaseTypeStatusesEditorWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
 // @spec openspec/specs/case-configuration-i18n/spec.md
@@ -194,12 +192,7 @@ import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
 // Case-assistant chat panel — conversational assistance delegated to Hermiq
 // (fleet rule: AI functionality lives in Hermiq; dossiq is a thin consumer).
 // @spec openspec/specs/case-assistant-via-hermiq/spec.md
-// Case-email integration — leaf-first per ADR-022. The sidebar tab
-// wraps the EmailThread component (display only), reuses NC Mail as
-// the email engine, and triggers prefillDraft via the case-email API.
-// @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseConversationsPanel from './views/cases/components/CaseConversationsPanel.vue'
-import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
@@ -474,22 +467,6 @@ const registry = {
 		component: CaseTypeWorkflowEditorWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail Phases and tasks: the workflow canvas, kept by decision when the admin-settings editor was retired.',
-	},
-	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
-	CaseTypeStatusesEditorWidget: {
-		// @custom-widget-ratchet exclude a status carries a checklist and field rules (arrays of objects with a field picker over the type's own fields) and the list reorders by drag; the generic form edits neither
-		kind: 'widget',
-		component: CaseTypeStatusesEditorWidget,
-		...PANEL_WIDGET_META,
-		_note: 'CaseTypeDetail Statuses: add, edit, delete and drag statuses into order, with the checklist and field rules editors.',
-	},
-	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
-	CaseTypeFieldsEditorWidget: {
-		// @custom-widget-ratchet exclude a field is typed against OpenRegister's property vocabulary, with a choice-list editor, concept schemes and requiredAtStatus limited to the type's own statuses; a declared form offers free text for all of them
-		kind: 'widget',
-		component: CaseTypeFieldsEditorWidget,
-		...PANEL_WIDGET_META,
-		_note: 'CaseTypeDetail Fields: the type\'s own fields, grouped by category, edited against the property vocabulary.',
 	},
 	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
 	CaseTypeMessagesEditorWidget: {
@@ -996,14 +973,6 @@ const registry = {
 	// by component name instead.
 	// @spec openspec/specs/case-dashboard-view/spec.md
 	// @spec openspec/specs/case-dashboard-view/spec.md
-	'case-email-pane': {
-		// @custom-widget-ratchet exclude the surface is a LEAF, not a collection of OpenRegister objects: CaseEmailTab consumes the mail leaf and calls prefillDraft to compose, and a built-in object-list takes a register and a schema, which email threads do not have. There is no `integration` id for mail either, so `type: "integration"` cannot reach it. This entry is deleted the day the library ships a mail widget type or OpenRegister exposes an email integration leaf
-		kind: 'widget',
-		component: CaseEmailTab,
-		...PANEL_WIDGET_META,
-		_note: 'The Email tab of the case panels: correspondence linked to the case, consuming the mail leaf. Was a sidebar tab; moved into the strip so the two logs a handler reads, email and contact moments, sit beside each other rather than one in each chrome.',
-	},
-
 	// @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
 	'case-conversations-pane': {
 		// @custom-widget-ratchet exclude the surface is an ACT, not a collection of OpenRegister objects: it starts a Talk room, declares the case major and opens the one channel that declaration made, and a built-in object-list takes a register and a schema and offers no button. The records it lists live on the case itself as `case.conversations`, which no widget type can read as a collection either. Deleted the day the library ships a widget type that posts to an app endpoint and renders the array a field holds
@@ -1124,14 +1093,6 @@ const registry = {
 		kind: 'page',
 		component: DeelzaakDetail,
 		_note: 'Sub-case detail with parent breadcrumb; mounted under /cases/:parentId/deelzaken/:id.',
-	},
-
-	// --- Case-email sidebar tab — leaf-first per ADR-022. ---
-	// @spec openspec/changes/case-email-integration/tasks.md#T12
-	CaseEmailTab: {
-		kind: 'page',
-		component: CaseEmailTab,
-		_note: 'Sidebar tab that surfaces email correspondence linked to the case; consumes the email leaf for display + uses prefillDraft for compose.',
 	},
 
 	// --- Case-appointment (internal calendar) sidebar tab — leaf-first per ADR-022. ---
@@ -1495,7 +1456,7 @@ const registry = {
 	CaseTimelineTab: {
 		kind: 'page',
 		component: CaseTimelineTab,
-		_note: 'The same component `case-timeline-pane` above mounts, under its COMPONENT name, for a manifest that names it as a sidebar tab rather than as a tab-widget type. The pair `case-email-pane` / `CaseEmailTab` carries the same two keys for the same reason.',
+		_note: 'The same component `case-timeline-pane` above mounts, under its COMPONENT name, for a manifest that names it as a sidebar tab rather than as a tab-widget type.',
 	},
 
 	// --- Named behaviours: a manifest `handler` string, not a component. ---
