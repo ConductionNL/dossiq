@@ -57,14 +57,16 @@ describe('the parts of a case type', () => {
 		}
 	})
 
-	it('edits statuses, fields, messages, the workflow and the rules in their rehosted editors', () => {
+	it('edits messages, the workflow and the rules in their rehosted editors, statuses and fields as lists', () => {
 		const tabs = appended('case-type-panels').content.tabs
 		const holds = (label) => tabs.find((tab) => tab.label === label).widgetIds
 		expect(holds('Fields')).toEqual(expect.arrayContaining(['case-type-fields-editor', 'case-type-rules']))
 		expect(holds('Phases and tasks')).toEqual(expect.arrayContaining(['case-type-workflow-editor', 'case-type-messages-editor']))
 		const types = overlay.configPatch.widgets
-		expect(types['case-type-statuses-editor'].type).toBe('CaseTypeStatusesEditorWidget')
-		expect(types['case-type-fields-editor'].type).toBe('CaseTypeFieldsEditorWidget')
+		expect(types['case-type-statuses-editor']).toBeUndefined()
+		expect(types['case-type-fields-editor']).toBeUndefined()
+		expect(baseWidget('case-type-statuses-editor').type).toBe('object-list')
+		expect(baseWidget('case-type-fields-editor').type).toBe('object-list')
 		expect(types['case-type-messages-editor'].type).toBe('CaseTypeMessagesEditorWidget')
 		expect(types['case-type-workflow-editor'].type).toBe('CaseTypeWorkflowEditorWidget')
 		expect(types['case-type-rules'].type).toBe('CaseTypeRulesWidget')

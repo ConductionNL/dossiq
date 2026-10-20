@@ -8277,17 +8277,564 @@
 					},
 					{
 						"id": "case-type-statuses-editor",
-						"type": "custom",
+						"type": "object-list",
 						"title": "Statuses",
 						"icon": "ListStatus",
-						"_note": "The statuses with their checklist and field rules, rehosted from the retired admin-settings editor (CaseTypeStatusesEditorWidget)."
+						"_note": "The statuses of this case type, as manifest config over the library's object list (case-type-status-field-lists-as-config). Drag a row, or Move up and Move down, and the list writes `order` alone on the rows whose number changed. Edit opens the same form as Add on the row and saves a PATCH of the keys it changed, so `capacity`, `phaseTermDays` and `phaseTermShare` and every other key the form does not touch survive (what 07560b78b fixed in the rehosted editor). The checklist, the field rules and the derived conditions are lists inside the status, edited with the library's sub-objects editor; a rule's condition is an optional object behind 'Only in some cases'. The guard that a case type keeps one final status stays on the server; the dialog and the list show its refusal.",
+						"content": {
+							"register": "dossiq",
+							"schema": "statusType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"reorder": {
+								"field": "order"
+							},
+							"editable": true,
+							"limit": 50,
+							"columns": [
+								{
+									"key": "order",
+									"label": "#"
+								},
+								{
+									"key": "name",
+									"label": "Status"
+								},
+								{
+									"key": "role",
+									"label": "Role"
+								},
+								{
+									"key": "waitingOn",
+									"label": "Waiting on"
+								},
+								{
+									"key": "isFinal",
+									"label": "Final"
+								}
+							],
+							"addLabel": "Add status",
+							"emptyText": "This case type has no statuses yet",
+							"formSize": "large",
+							"formColumns": 2,
+							"formIncludeFields": [
+								"name",
+								"order",
+								"description",
+								"colour",
+								"role",
+								"waitingOn",
+								"maximumDwell",
+								"isFinal",
+								"hiddenInLists",
+								"publicLabel",
+								"publicDescription",
+								"capacity",
+								"phaseTermDays",
+								"phaseTermShare",
+								"checklist",
+								"fieldRules",
+								"derivedWhen"
+							],
+							"formFieldOverrides": {
+								"order": {
+									"unique": {
+										"filter": {
+											"caseType": "@objectId"
+										}
+									}
+								},
+								"description": {
+									"widget": "textarea"
+								},
+								"colour": {
+									"enumLabels": {
+										"blue": "Blue",
+										"blue-light": "Light blue",
+										"green": "Green",
+										"green-light": "Light green",
+										"orange": "Orange",
+										"orange-light": "Light orange",
+										"red": "Red",
+										"red-light": "Light red",
+										"purple": "Purple",
+										"purple-light": "Light purple",
+										"grey": "Grey",
+										"grey-light": "Light grey"
+									},
+									"optionSwatches": {
+										"blue": "var(--nl-color-blue, #0b71ab)",
+										"blue-light": "var(--nl-color-blue-light, #e5f1f8)",
+										"green": "var(--nl-color-green, #39870c)",
+										"green-light": "var(--nl-color-green-light, #eaf5e4)",
+										"orange": "var(--nl-color-orange, #e17000)",
+										"orange-light": "var(--nl-color-orange-light, #fdf2e5)",
+										"red": "var(--nl-color-red, #d52b1e)",
+										"red-light": "var(--nl-color-red-light, #fbe9e8)",
+										"purple": "var(--nl-color-purple, #762f8e)",
+										"purple-light": "var(--nl-color-purple-light, #f2eaf5)",
+										"grey": "var(--nl-color-grey, #696969)",
+										"grey-light": "var(--nl-color-grey-light, #f0f0f0)"
+									}
+								},
+								"role": {
+									"enumLabels": {
+										"intake": "Intake",
+										"pending-info": "Waiting for information",
+										"in-progress": "In progress",
+										"review": "Review",
+										"closed": "Closed",
+										"stranded": "Stranded"
+									}
+								},
+								"waitingOn": {
+									"enumLabels": {
+										"us": "Us",
+										"applicant": "The applicant",
+										"thirdParty": "Someone outside the organisation"
+									}
+								},
+								"publicLabel": {
+									"placeholderFrom": "name",
+									"section": "For the applicant"
+								},
+								"publicDescription": {
+									"widget": "textarea",
+									"section": "For the applicant"
+								},
+								"capacity": {
+									"section": "Planning",
+									"sectionCollapsed": true
+								},
+								"phaseTermDays": {
+									"section": "Planning",
+									"sectionCollapsed": true
+								},
+								"phaseTermShare": {
+									"section": "Planning",
+									"sectionCollapsed": true
+								},
+								"checklist": {
+									"widget": "sub-objects",
+									"section": "Checklist",
+									"itemLabel": "Checklist item",
+									"addLabel": "Add a checklist item",
+									"emptyText": "No checklist items yet",
+									"newItem": {
+										"required": false
+									},
+									"pruneWhen": {
+										"blank": [
+											"title"
+										]
+									}
+								},
+								"fieldRules": {
+									"widget": "sub-objects",
+									"section": "Fields in this status",
+									"itemLabel": "Field rule",
+									"addLabel": "Add a field rule",
+									"emptyText": "No field rules yet",
+									"newItem": {
+										"rule": "required"
+									},
+									"pruneWhen": {
+										"invalid": true
+									},
+									"itemOverrides": {
+										"rule": {
+											"enumLabels": {
+												"required": "Must be filled in",
+												"readOnly": "Cannot be changed",
+												"hidden": "Not shown"
+											}
+										},
+										"field": {
+											"optionsFrom": {
+												"register": "dossiq",
+												"schema": "propertyDefinition",
+												"filter": {
+													"caseType": "@objectId"
+												},
+												"valueField": "name",
+												"labelField": "name"
+											}
+										},
+										"groups": {
+											"widget": "group-multiselect"
+										},
+										"message": {
+											"widget": "textarea"
+										},
+										"condition": {
+											"widget": "object-switch",
+											"label": "Only in some cases",
+											"defaults": {
+												"kind": "fieldPresent"
+											}
+										},
+										"condition.kind": {
+											"label": "Applies when",
+											"enumLabels": {
+												"fieldPresent": "a field is filled in",
+												"fieldEquals": "a field has a value",
+												"documentPresent": "a document is on the case"
+											},
+											"visibleWhen": {
+												"field": "condition",
+												"truthy": true
+											}
+										},
+										"condition.field": {
+											"optionsFrom": {
+												"register": "dossiq",
+												"schema": "propertyDefinition",
+												"filter": {
+													"caseType": "@objectId"
+												},
+												"valueField": "name",
+												"labelField": "name"
+											},
+											"label": "Reading this field",
+											"visibleWhen": {
+												"field": "condition.kind",
+												"in": [
+													"fieldPresent",
+													"fieldEquals"
+												]
+											}
+										},
+										"condition.value": {
+											"label": "Value",
+											"visibleWhen": {
+												"field": "condition.kind",
+												"equals": "fieldEquals"
+											}
+										},
+										"condition.documentType": {
+											"optionsFrom": {
+												"register": "dossiq",
+												"schema": "documentType",
+												"filter": {
+													"caseType": "@objectId"
+												},
+												"labelField": "name"
+											},
+											"label": "Document type",
+											"visibleWhen": {
+												"field": "condition.kind",
+												"equals": "documentPresent"
+											}
+										}
+									}
+								},
+								"derivedWhen": {
+									"widget": "sub-objects",
+									"section": "Fields in this status",
+									"itemLabel": "Condition",
+									"addLabel": "Add a condition",
+									"emptyText": "No conditions yet",
+									"newItem": {
+										"kind": "fieldPresent"
+									},
+									"pruneWhen": {
+										"invalid": true
+									},
+									"itemOverrides": {
+										"kind": {
+											"enumLabels": {
+												"fieldPresent": "a field is filled in",
+												"fieldEquals": "a field has a value",
+												"documentPresent": "a document is on the case"
+											}
+										},
+										"field": {
+											"optionsFrom": {
+												"register": "dossiq",
+												"schema": "propertyDefinition",
+												"filter": {
+													"caseType": "@objectId"
+												},
+												"valueField": "name",
+												"labelField": "name"
+											},
+											"visibleWhen": {
+												"field": "kind",
+												"in": [
+													"fieldPresent",
+													"fieldEquals"
+												]
+											},
+											"clearWhenHidden": true
+										},
+										"value": {
+											"visibleWhen": {
+												"field": "kind",
+												"equals": "fieldEquals"
+											},
+											"clearWhenHidden": true
+										},
+										"documentType": {
+											"optionsFrom": {
+												"register": "dossiq",
+												"schema": "documentType",
+												"filter": {
+													"caseType": "@objectId"
+												},
+												"labelField": "name"
+											},
+											"visibleWhen": {
+												"field": "kind",
+												"equals": "documentPresent"
+											},
+											"clearWhenHidden": true
+										}
+									}
+								}
+							},
+							"rowActions": [
+								{
+									"id": "case-type-statuses-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
 					},
 					{
 						"id": "case-type-fields-editor",
-						"type": "custom",
+						"type": "object-list",
 						"title": "Fields",
 						"icon": "FormatListBulletedType",
-						"_note": "The type's own fields against the property vocabulary, rehosted from the retired admin-settings editor (CaseTypeFieldsEditorWidget)."
+						"_note": "The type's own fields, as manifest config over the library's object list (case-type-status-field-lists-as-config). The type select reads OpenRegister's property vocabulary, grouped by category; the format select reads the formats of the chosen type and is left out when it has none. A constraint shows only for the types it applies to and is written empty when the type changes away from them. 'Choice list' is not stored: it starts on for an enum or when choices exist, shows the choices one per line, and turning it off clears them; the choices are required unless a concept scheme is set, and a note says the scheme wins when both are. Edit saves a PATCH of the keys it changed.",
+						"content": {
+							"register": "dossiq",
+							"schema": "propertyDefinition",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"editable": true,
+							"sort": {
+								"field": "category",
+								"dir": "asc"
+							},
+							"limit": 100,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Field"
+								},
+								{
+									"key": "category",
+									"label": "Category"
+								},
+								{
+									"key": "propertyType",
+									"label": "Type"
+								},
+								{
+									"key": "isRequired",
+									"label": "Required"
+								}
+							],
+							"addLabel": "Add field",
+							"emptyText": "This case type has no fields of its own yet",
+							"formSize": "large",
+							"formColumns": 2,
+							"formIncludeFields": [
+								"name",
+								"category",
+								"propertyType",
+								"format",
+								"maxLength",
+								"pattern",
+								"minimum",
+								"maximum",
+								"choiceList",
+								"enumValues",
+								"conceptScheme",
+								"description",
+								"definition",
+								"isRequired",
+								"requiredAtStatus",
+								"hideOnCreate",
+								"defaultValue",
+								"ref",
+								"propertySource",
+								"calculation"
+							],
+							"formFieldOverrides": {
+								"category": {
+									"default": "Uncategorised"
+								},
+								"propertyType": {
+									"optionsFrom": {
+										"url": "/apps/openregister/api/schemas/property-vocabulary",
+										"responsePath": "types",
+										"valueField": "type",
+										"labelField": "type",
+										"groupField": "category"
+									}
+								},
+								"format": {
+									"optionsFrom": {
+										"url": "/apps/openregister/api/schemas/property-vocabulary",
+										"responsePath": "types",
+										"where": {
+											"type": "@answer.propertyType"
+										},
+										"itemsPath": "formats",
+										"hideWhenEmpty": true
+									},
+									"clearWhenHidden": true
+								},
+								"maxLength": {
+									"visibleWhen": {
+										"field": "propertyType",
+										"in": [
+											"string",
+											"email",
+											"url"
+										]
+									},
+									"clearWhenHidden": true
+								},
+								"pattern": {
+									"visibleWhen": {
+										"field": "propertyType",
+										"in": [
+											"string",
+											"email",
+											"url"
+										]
+									},
+									"clearWhenHidden": true
+								},
+								"minimum": {
+									"visibleWhen": {
+										"field": "propertyType",
+										"in": [
+											"number",
+											"integer"
+										]
+									},
+									"clearWhenHidden": true
+								},
+								"maximum": {
+									"visibleWhen": {
+										"field": "propertyType",
+										"in": [
+											"number",
+											"integer"
+										]
+									},
+									"clearWhenHidden": true
+								},
+								"choiceList": {
+									"stored": false,
+									"label": "Choice list",
+									"widget": "switch",
+									"initialWhen": {
+										"any": [
+											{
+												"field": "propertyType",
+												"equals": "enum"
+											},
+											{
+												"field": "enumValues",
+												"notEmpty": true
+											}
+										]
+									}
+								},
+								"enumValues": {
+									"label": "Choices",
+									"widget": "lines",
+									"visibleWhen": {
+										"field": "choiceList",
+										"truthy": true
+									},
+									"clearWhenHidden": true,
+									"requiredWhen": {
+										"all": [
+											{
+												"field": "choiceList",
+												"truthy": true
+											},
+											{
+												"field": "conceptScheme",
+												"empty": true
+											}
+										]
+									},
+									"warnWhen": {
+										"when": {
+											"all": [
+												{
+													"field": "conceptScheme",
+													"notEmpty": true
+												},
+												{
+													"field": "enumValues",
+													"notEmpty": true
+												}
+											]
+										},
+										"text": "The concept scheme wins over these choices."
+									}
+								},
+								"conceptScheme": {
+									"visibleWhen": {
+										"field": "choiceList",
+										"truthy": true
+									}
+								},
+								"description": {
+									"label": "Help text"
+								},
+								"requiredAtStatus": {
+									"optionsFrom": {
+										"register": "dossiq",
+										"schema": "statusType",
+										"filter": {
+											"caseType": "@objectId"
+										},
+										"labelField": "name"
+									}
+								},
+								"defaultValue": {
+									"section": "More options",
+									"sectionCollapsed": true
+								},
+								"ref": {
+									"section": "More options",
+									"sectionCollapsed": true
+								},
+								"propertySource": {
+									"section": "More options",
+									"sectionCollapsed": true
+								},
+								"calculation": {
+									"widget": "json",
+									"section": "More options",
+									"sectionCollapsed": true
+								}
+							},
+							"rowActions": [
+								{
+									"id": "case-type-fields-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
 					},
 					{
 						"id": "case-type-messages-editor",
@@ -8531,8 +9078,6 @@
 				"widget-case-type-portal": "CaseTypePortalWidget",
 				"widget-case-type-party-kinds": "CaseTypePartyKindsWidget",
 				"widget-case-type-workflow-editor": "CaseTypeWorkflowEditorWidget",
-				"widget-case-type-statuses-editor": "CaseTypeStatusesEditorWidget",
-				"widget-case-type-fields-editor": "CaseTypeFieldsEditorWidget",
 				"widget-case-type-messages-editor": "CaseTypeMessagesEditorWidget",
 				"widget-case-type-rules": "CaseTypeRulesWidget"
 			},

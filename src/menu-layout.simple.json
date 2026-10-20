@@ -4817,12 +4817,6 @@
 					"case-type-workflow-editor": {
 						"type": "CaseTypeWorkflowEditorWidget"
 					},
-					"case-type-statuses-editor": {
-						"type": "CaseTypeStatusesEditorWidget"
-					},
-					"case-type-fields-editor": {
-						"type": "CaseTypeFieldsEditorWidget"
-					},
 					"case-type-messages-editor": {
 						"type": "CaseTypeMessagesEditorWidget"
 					},
