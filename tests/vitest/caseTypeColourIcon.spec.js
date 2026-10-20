@@ -64,6 +64,14 @@ describe('case type colour and icon', () => {
 		}
 	})
 
+	it('resolves the type pill on every case board card', () => {
+		const boards = manifest.pages.map((entry) => entry.config && entry.config.board).filter((board) => board && board.card && board.card.pill === 'caseType')
+		expect(boards.length).toBeGreaterThan(0)
+		for (const board of boards) {
+			expect(board.card.resolve).toEqual(RESOLVE)
+		}
+	})
+
 	it('offers colour and icon on the case type form and card, with swatches and icons', () => {
 		const list = page(manifest, 'CaseTypes').config
 		const detail = page(manifest, 'CaseTypeDetail').config
