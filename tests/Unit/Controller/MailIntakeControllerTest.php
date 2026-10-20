@@ -47,6 +47,7 @@ use OCA\Dossiq\Service\Email\JunkRules;
 use OCA\Dossiq\Service\Email\MoveAction;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -157,6 +158,9 @@ final class MailIntakeControllerTest extends TestCase {
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('getDateTime')->willReturn(new DateTime('2026-09-14T12:00:00+00:00'));
 
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(fn (string $text): string => $text);
+
 		return new MailIntakeController(
 			$this->createMock(IRequest::class),
 			$this->log,
@@ -169,6 +173,7 @@ final class MailIntakeControllerTest extends TestCase {
 			$session,
 			$time,
 			$this->caseAccessGuard,
+			$l10n,
 		);
 	}//end controller()
 
@@ -244,6 +249,49 @@ final class MailIntakeControllerTest extends TestCase {
 		self::assertSame(['blocked-sender', 'auto-reply'], $body['filterOrder']);
 		self::assertSame('spam-header', $body['junkRules'][0]['name'], 'A junk rule is readable.');
 	}//end testTheLogAnswersTheFilterOrderAndTheRules()
+
+	/**
+	 * A reader without the role is told why, in a sentence the page can show.
+	 *
+	 * @return void
+	 */
+	public function testTheLogRefusalSaysWhy(): void {
+		$this->policy = $this->createMock(IntakePolicy::class);
+		$this->policy->method('mayRunIntake')->willReturn(false);
+
+		$response = $this->controller()->index();
+
+		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		self::assertStringContainsString('You do not have the intake role', $response->getData()['message']);
+	}//end testTheLogRefusalSaysWhy()
+
+	/**
+	 * A row is answered as the log shows it: a missing check reads
+	 * `unavailable`, the deciding filter is named or said to be none, and a
+	 * junk verdict names its rule in words.
+	 *
+	 * @return void
+	 */
+	public function testARowIsAnsweredAsTheLogShowsIt(): void {
+		$this->log = $this->createMock(IntakeLog::class);
+		$this->log->method('search')->willReturn(
+			[
+				['sender' => 'a@voorbeeld.nl', 'spfResult' => 'pass', 'dkimResult' => '', 'junkRule' => 'spam-header'],
+				['sender' => 'b@voorbeeld.nl', 'decidingFilter' => 'auto-reply', 'dmarcResult' => 'weird'],
+			]
+		);
+
+		$rows = $this->controller()->index()->getData()['results'];
+
+		self::assertSame('pass', $rows[0]['spfResult']);
+		self::assertSame('unavailable', $rows[0]['dkimResult'], 'A blank check is not a pass.');
+		self::assertSame('unavailable', $rows[0]['threadingResult'], 'An absent check is not a pass.');
+		self::assertSame('unavailable', $rows[1]['dmarcResult']);
+		self::assertSame('none, accepted by default', $rows[0]['decided']);
+		self::assertSame('auto-reply', $rows[1]['decided']);
+		self::assertSame('spam-header: The mail server marked it as spam.', $rows[0]['junkReason']);
+		self::assertSame('', $rows[1]['junkReason']);
+	}//end testARowIsAnsweredAsTheLogShowsIt()
 
 	/**
 	 * Searching by sender narrows the read to that address.

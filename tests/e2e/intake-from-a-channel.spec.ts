@@ -126,9 +126,9 @@ test.describe('A message from a channel', () => {
 	}) => {
 		await navToRoute(page, LOG_ROUTE)
 
-		await page.locator('input[data-testid="intake-log-sender"]').fill(SENDER)
+		await page.locator('input.cn-actions-bar__search-input').fill(SENDER)
 
-		const row = page.locator(`[data-testid="intake-log-row-${entries.refused}"]`)
+		const row = page.locator(`[data-testid="cn-object-row"][data-testid-row-id="${entries.refused}"]`)
 		await expect(row).toBeVisible({ timeout: 30_000 })
 
 		// The reason is the whole point. A row that shows only "refused" sends
@@ -140,13 +140,13 @@ test.describe('A message from a channel', () => {
 	test('a channel message that opened a case says which one', async ({ page }) => {
 		await navToRoute(page, LOG_ROUTE)
 
-		await page.locator('input[data-testid="intake-log-sender"]').fill(SENDER)
+		await page.locator('input.cn-actions-bar__search-input').fill(SENDER)
 
 		const opened = page.locator(
-			`[data-testid="intake-log-row-${entries.opened}"]`,
+			`[data-testid="cn-object-row"][data-testid-row-id="${entries.opened}"]`,
 		)
 		const refused = page.locator(
-			`[data-testid="intake-log-row-${entries.refused}"]`,
+			`[data-testid="cn-object-row"][data-testid-row-id="${entries.refused}"]`,
 		)
 
 		// BOTH DIRECTIONS. One row visible proves nothing about a filter or a

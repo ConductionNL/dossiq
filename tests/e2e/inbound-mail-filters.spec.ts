@@ -158,9 +158,9 @@ test.describe('Inbound mail filters', () => {
 	}) => {
 		await navToRoute(page, LOG_ROUTE)
 
-		await page.locator('input[data-testid="intake-log-sender"]').fill(SENDER)
+		await page.locator('input.cn-actions-bar__search-input').fill(SENDER)
 
-		const row = page.locator(`[data-testid="intake-log-row-${entries.found}"]`)
+		const row = page.locator(`[data-testid="cn-object-row"][data-testid-row-id="${entries.found}"]`)
 		await expect(row).toBeVisible({ timeout: 30_000 })
 		await expect(row).toContainText('waiting in the intake inbox')
 
@@ -173,9 +173,9 @@ test.describe('Inbound mail filters', () => {
 	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#an-administrator-reads-why-a-message-was-junked
 	test('a junk verdict names the rule behind it', async ({ page }) => {
 		await navToRoute(page, LOG_ROUTE)
-		await page.locator('input[data-testid="intake-log-sender"]').fill(SENDER)
+		await page.locator('input.cn-actions-bar__search-input').fill(SENDER)
 
-		const row = page.locator(`[data-testid="intake-log-row-${entries.junked}"]`)
+		const row = page.locator(`[data-testid="cn-object-row"][data-testid-row-id="${entries.junked}"]`)
 		await expect(row).toBeVisible({ timeout: 30_000 })
 		await expect(row).toContainText('spam-header')
 	})
@@ -187,13 +187,15 @@ test.describe('Inbound mail filters', () => {
 		baseURL,
 	}) => {
 		await navToRoute(page, LOG_ROUTE)
-		await page.locator('input[data-testid="intake-log-sender"]').fill(SENDER)
+		await page.locator('input.cn-actions-bar__search-input').fill(SENDER)
 
 		const button = page.locator(
-			`[data-testid="intake-log-not-junk-${entries.junked}"]`,
+			`[data-testid="cn-object-row"][data-testid-row-id="${entries.junked}"] [data-testid="cn-cell-action-not-junk"]`,
 		)
 		await expect(button).toBeVisible({ timeout: 30_000 })
 		await button.click()
+		// The act is confirmed in CnActionDialog, which shows a refusal.
+		await page.locator('[data-testid="cn-action-dialog-confirm"]').click()
 
 		// Asserted on the STORED entry: the toast is translated, the row may
 		// have moved, and neither says whether anything was written.
@@ -222,13 +224,15 @@ test.describe('Inbound mail filters', () => {
 		baseURL,
 	}) => {
 		await navToRoute(page, LOG_ROUTE)
-		await page.locator('input[data-testid="intake-log-sender"]').fill(SENDER)
+		await page.locator('input.cn-actions-bar__search-input').fill(SENDER)
 
 		const button = page.locator(
-			`[data-testid="intake-log-release-${entries.held}"]`,
+			`[data-testid="cn-object-row"][data-testid-row-id="${entries.held}"] [data-testid="cn-cell-action-release"]`,
 		)
 		await expect(button).toBeVisible({ timeout: 30_000 })
 		await button.click()
+		// The act is confirmed in CnActionDialog, which shows a refusal.
+		await page.locator('[data-testid="cn-action-dialog-confirm"]').click()
 
 		const api = await playwright.request.newContext({ baseURL })
 		await expect

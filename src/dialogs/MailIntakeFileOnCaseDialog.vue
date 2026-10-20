@@ -4,9 +4,9 @@
 
   File one received message on a case by hand.
 
-  Lifted out of MailIntakeLogView, which had it inline. ADR-004 wants a dialog
-  in its own file: inline, its state is the list view's state, so the two
-  cannot be reasoned about or reused apart.
+  Opened by the intake log's row action `file-on-case` (type open-modal), with
+  the row as `object` and its id as `objectId`. When it filed, it signals
+  `cn:page:refresh` so the log reads its rows again, and closes.
 
   🔴 IT RECORDS ONE CORRECTION, NOT A RULE. Filing a message somewhere the
   matcher did not put it says what this person did with this message. It
@@ -26,12 +26,12 @@
 		data-testid="intake-log-file-dialog"
 		@closing="$emit('close')">
 		<div class="intake-log-file-on-case">
-			<NcNoteCard v-if="entry.case" type="info">
+			<NcNoteCard v-if="object.case" type="info">
 				{{
 					t(
 						'dossiq',
 						'The matcher filed this message on {case}. Filing it elsewhere records that you overrode it; it changes no matching rule.',
-						{ case: entry.case },
+						{ case: object.case },
 					)
 				}}
 			</NcNoteCard>
@@ -69,6 +69,7 @@
 </template>
 
 <script>
+import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -88,14 +89,14 @@ export default {
 
 	props: {
 		/** The log entry being filed. */
-		entry: {
+		object: {
 			type: Object,
 			required: true,
 		},
 
 		/** The entry's id, as the list reads it. */
-		entryId: {
-			type: String,
+		objectId: {
+			type: [String, Number],
 			required: true,
 		},
 	},
@@ -108,7 +109,7 @@ export default {
 			// correcting a match, and a handler who has to retype the right
 			// case beside a field that forgot the wrong one cannot see what
 			// they are changing.
-			caseId: String(this.entry.case || ''),
+			caseId: String(this.object.case || ''),
 			reason: '',
 			error: '',
 			busy: false,
@@ -134,7 +135,7 @@ export default {
 			try {
 				const response = await fetch(
 					generateUrl(
-						`/apps/dossiq/api/mail-intake/log/${this.entryId}/file-on-case`,
+						`/apps/dossiq/api/mail-intake/log/${encodeURIComponent(String(this.objectId))}/file-on-case`,
 					),
 					{
 						method: 'POST',
@@ -165,6 +166,8 @@ export default {
 				}
 
 				this.$emit('filed')
+				emit('cn:page:refresh', {})
+				this.$emit('close')
 			} catch {
 				this.error = t('dossiq', 'The message was not filed.')
 			} finally {

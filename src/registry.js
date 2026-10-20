@@ -213,7 +213,7 @@ import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
 //     customComponents map, plus the handlers a manifest names by string. ---
-import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
+import MailIntakeFileOnCaseDialog from './dialogs/MailIntakeFileOnCaseDialog.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
 import PmDwellByAssigneeWidget from './views/processMining/PmDwellByAssigneeWidget.vue'
 import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
@@ -1355,10 +1355,11 @@ const registry = {
 
 	// --- Pages that were only ever in the legacy customComponents map. ---
 	//
-	MailIntakeLogView: {
-		kind: 'page',
-		component: MailIntakeLogView,
-		_note: 'Named by src/manifest.d/37-mail-intake.json. A custom page because the intake-role check lives in MailIntakeController, and an index page would read the generic object endpoint and show every processed message original to anyone the register lets read.',
+	MailIntakeFileOnCaseDialog: {
+		kind: 'modal',
+		component: MailIntakeFileOnCaseDialog,
+		propsSchema: {},
+		_note: 'Row action file-on-case of the intake log (src/manifest.d/37-mail-intake.json): files one message on a case the handler picks, pre-filled with where the matcher put it, with a required reason. Its fields and the 403 for a case the caller may not read do not fit CnActionDialog.',
 	},
 	WooReportsView: {
 		kind: 'page',

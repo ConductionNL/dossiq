@@ -51,6 +51,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Throwable;
@@ -87,6 +88,18 @@ class MailIntakeController extends Controller {
 	private const PAGE_SIZE = 100;
 
 	/**
+	 * The authentication results a row carries, each one of
+	 * {@see self::AUTH_RESULTS}.
+	 */
+	private const AUTH_FIELDS = ['spfResult', 'dkimResult', 'dmarcResult', 'threadingResult'];
+
+	/**
+	 * The results a check can have. Anything else, absence included, is a
+	 * check nobody made.
+	 */
+	private const AUTH_RESULTS = ['pass', 'fail', 'none', 'unavailable'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest          $request     Inbound request.
@@ -100,6 +113,7 @@ class MailIntakeController extends Controller {
 	 * @param IUserSession      $userSession The caller.
 	 * @param ITimeFactory      $time        Clock.
 	 * @param CaseAccessGuard   $caseAccessGuard Per-case authorization, for the case a handler picks.
+	 * @param IL10N             $l10n        The sentences the log is said in.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -113,6 +127,7 @@ class MailIntakeController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,
 		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -123,13 +138,29 @@ class MailIntakeController extends Controller {
 	 * @param string $sender  Narrow to one sender address.
 	 * @param string $outcome Narrow to one outcome.
 	 *
-	 * @return JSONResponse The entries, or 403 when the caller lacks the intake role.
+	 * Each row is answered as the log shows it: a missing authentication result
+	 * reads `unavailable`, never blank, so it cannot be taken for a pass; the
+	 * deciding filter is named, or said to be none; and a junk verdict carries
+	 * its rule in words (`junkReason`).
+	 *
+	 * @return JSONResponse The entries, or 403 with the sentence the log says it in.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $sender = '', string $outcome = ''): JSONResponse {
 		$refusal = $this->requireIntakeRole();
+		if ($refusal !== null && $refusal->getStatus() === Http::STATUS_FORBIDDEN) {
+			return new JSONResponse(
+				[
+					'message' => $this->l10n->t(
+						'You do not have the intake role, so you cannot read this log. It holds the original of every message the mailbox received. Ask an administrator to add you to the intake group.'
+					),
+				],
+				Http::STATUS_FORBIDDEN
+			);
+		}
+
 		if ($refusal !== null) {
 			return $refusal;
 		}
@@ -143,14 +174,53 @@ class MailIntakeController extends Controller {
 			$filters['outcome'] = $outcome;
 		}
 
+		$rules = $this->junkRules->rules();
+
 		return new JSONResponse(
 			[
-				'results' => $this->log->search(filters: $filters),
+				'results' => array_map(
+					fn (array $entry): array => $this->presented(entry: $entry, rules: $rules),
+					$this->log->search(filters: $filters)
+				),
 				'filterOrder' => $this->pipeline->declaredOrder(),
-				'junkRules' => $this->junkRules->rules(),
+				'junkRules' => $rules,
 			]
 		);
 	}//end index()
+
+	/**
+	 * One log row as the log shows it.
+	 *
+	 * @param array<string, mixed>                           $entry The stored entry.
+	 * @param array<int, array{name: string, description: string}> $rules The readable junk rules.
+	 *
+	 * @return array<string, mixed> The row.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function presented(array $entry, array $rules): array {
+		foreach (self::AUTH_FIELDS as $field) {
+			if (in_array(($entry[$field] ?? null), self::AUTH_RESULTS, true) === false) {
+				$entry[$field] = 'unavailable';
+			}
+		}
+
+		$decidingFilter = (string) ($entry['decidingFilter'] ?? '');
+		$entry['decided'] = $decidingFilter;
+		if ($decidingFilter === '') {
+			$entry['decided'] = $this->l10n->t('none, accepted by default');
+		}
+
+		$junkRule = (string) ($entry['junkRule'] ?? '');
+		$entry['junkReason'] = $junkRule;
+		foreach ($rules as $rule) {
+			if ($rule['name'] === $junkRule) {
+				$entry['junkReason'] = $rule['name'] . ': ' . $rule['description'];
+			}
+		}
+
+		return $entry;
+	}//end presented()
 
 	/**
 	 * One entry, original included.

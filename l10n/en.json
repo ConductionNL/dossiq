@@ -10828,6 +10828,10 @@
         "{value} of your cases are past their deadline or end today.": "{value} of your cases are past their deadline or end today.",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Release this message?": "Release this message?",
+        "The message went on into a case.": "The message went on into a case.",
+        "This message is not junk?": "This message is not junk?",
+        "The message goes through the filters again.": "The message goes through the filters again."
     }
 }

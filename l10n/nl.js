@@ -1,6 +1,10 @@
 OC.L10N.register(
     "dossiq",
     {
+        "Release this message?": "Dit bericht teruggeven?",
+        "The message went on into a case.": "Het bericht is als zaak verder gegaan.",
+        "This message is not junk?": "Is dit bericht niet ongewenst?",
+        "The message goes through the filters again.": "Het bericht gaat opnieuw door de filters.",
         " days": " dagen",
         "\"{doc}\" is {class} but has no weigeringsgrond selected.": "\"{doc}\" is {class} maar heeft geen weigeringsgrond geselecteerd.",
         "#": "#",

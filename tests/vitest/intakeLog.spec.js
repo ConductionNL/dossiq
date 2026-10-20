@@ -1,353 +1,140 @@
-// @vitest-environment jsdom
 /**
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
  * The intake log as a surface: what the mailbox processed, what decided, and
- * why a message became no case.
+ * why a message became no case. It is a manifest index over dossiq's own
+ * endpoint; these assertions pin the declaration that keeps what the page did.
  *
  * 🔴 THE ASSERTION THAT CARRIES THIS SPEC IS THE ONE ON `unavailable`. A check
- * nobody made and a check that passed are different facts, and a table that
- * renders an absent SPF header as a blank cell invites a reader to take it for
- * a pass. So the row is asserted on the WORDS it shows and on the class that
- * colours it, not on the value being non-empty.
+ * nobody made and a check that passed are different facts, so every result
+ * column says pass, fail, no policy and not checked in four different words,
+ * and the server answers a missing check as `unavailable` (pinned in
+ * MailIntakeControllerTest), never blank.
  *
  * The second is the refusal. The log holds the original of every message the
- * mailbox received, so a reader without the intake role must see a refusal and
- * no table at all, rather than an empty one they could read as "nothing came
- * in".
+ * mailbox received, so the page reads the endpoint that checks the intake
+ * role, never the generic object endpoint, and a reader without the role sees
+ * the refusal sentence instead of an empty log.
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */
 
-import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { h } from 'vue'
+import fs from 'fs'
+import path from 'path'
+import { describe, expect, it } from 'vitest'
 
-/**
- * A stub that renders its default slot inside a tag.
- *
- * @param {string} name The component name.
- * @param {string} tag  The element to render.
- * @return {object} The stub component.
- */
-function boxStub(name, tag = 'div') {
-	return {
-		name,
-		props: {
-			type: { type: String, default: '' },
-			variant: { type: String, default: '' },
-			name: { type: String, default: '' },
-			description: { type: String, default: '' },
-		},
-		emits: ['click'],
-		render() {
-			return h(
-				tag,
-				{
-					class: name,
-					'data-type': this.type,
-					onClick: () => this.$emit('click'),
-				},
-				this.$slots.default
-					? this.$slots.default()
-					: [this.name, this.description].filter(Boolean),
-			)
-		},
-	}
-}
+const ROOT = path.resolve(__dirname, '../..')
+const fragment = JSON.parse(
+	fs.readFileSync(path.join(ROOT, 'src', 'manifest.d', '37-mail-intake.json'), 'utf8'),
+)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
+const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
 
-vi.mock('@nextcloud/vue', () => ({
-	NcAppContent: boxStub('NcAppContent'),
-	NcButton: boxStub('NcButton', 'button'),
-	// The file-on-a-case form arrived in a dialog. A component the view
-	// imports and this mock does not declare takes the WHOLE file down at
-	// collection time, which reads as a spec nobody wrote rather than as one
-	// component short.
-	NcDialog: boxStub('NcDialog'),
-	NcEmptyContent: boxStub('NcEmptyContent'),
-	NcLoadingIcon: boxStub('NcLoadingIcon', 'span'),
-	NcNoteCard: boxStub('NcNoteCard'),
-	NcSelect: {
-		name: 'NcSelect',
-		props: {
-			modelValue: { type: Object, default: null },
-			options: { type: Array, default: () => [] },
-			inputLabel: { type: String, default: '' },
-		},
-		render() {
-			return h('select', { class: 'NcSelect' })
-		},
-	},
-	NcTextField: {
-		name: 'NcTextField',
-		props: { modelValue: { type: String, default: '' } },
-		emits: ['update:modelValue'],
-		render() {
-			return h('input', {
-				class: 'NcTextField',
-				value: this.modelValue,
-				onInput: (event) =>
-					this.$emit('update:modelValue', event.target.value),
-			})
-		},
-	},
-}))
-
-const MailIntakeLogView = (
-	await import('../../src/views/intake/MailIntakeLogView.vue')
-).default
-
-const MailIntakeFileOnCaseDialog = (
-	await import('../../src/dialogs/MailIntakeFileOnCaseDialog.vue')
-).default
-
-/**
- * One log entry, as the endpoint answers it.
- *
- * @param {object} overrides Fields to override.
- * @return {object} The entry.
- */
-function entry(overrides = {}) {
-	return {
-		'@self': { id: 'entry-1' },
-		sender: 'aanvrager@voorbeeld.nl',
-		subject: 'Bezwaar tegen het besluit',
-		decidingFilter: '',
-		spfResult: 'pass',
-		dkimResult: 'pass',
-		dmarcResult: 'pass',
-		threadingResult: 'none',
-		outcome: 'case',
-		reason: 'Became case ZAAK-2026-0001.',
-		junkRule: '',
-		...overrides,
-	}
+/** @return {object} The log page as the fragment declares it. */
+function logPage() {
+	return fragment.pages.find((page) => page.id === 'MailIntakeLog')
 }
 
 /**
- * The calls the component made, and the answers it got.
+ * One column of the log.
  *
- * @type {Array<{url: string, options: object}>}
+ * @param {string} key The column key.
+ * @return {object} The column.
  */
-let calls = []
-
-/**
- * Answer every read with this payload.
- *
- * @param {object} payload   The body the log endpoint returns.
- * @param {number} status    The status the log endpoint returns.
- * @return {void}
- */
-function serve(payload, status = 200) {
-	calls = []
-	globalThis.fetch = vi.fn(async (url, options = {}) => {
-		calls.push({ url: String(url), options })
-
-		return {
-			status,
-			json: async () => payload,
-		}
-	})
+function column(key) {
+	return logPage().config.columns.find((col) => col.key === key)
 }
 
-/**
- * Mount the view and let its mounted read settle.
- *
- * @return {Promise<object>} The wrapper.
- */
-async function mountLog() {
-	const wrapper = mount(MailIntakeLogView)
-	await flushPromises()
-
-	return wrapper
+/** @return {object} The row actions by id. */
+function actions() {
+	return Object.fromEntries(logPage().config.actions.map((action) => [action.id, action]))
 }
 
 describe('the intake log', () => {
-	beforeEach(() => {
-		globalThis.OC = { requestToken: 'token' }
-		calls = []
+	it('reads the endpoint that checks the intake role, not the object endpoint', () => {
+		const page = logPage()
+
+		expect(page.route).toBe('/mail-intake-log')
+		expect(page.type).toBe('index')
+		expect(page.config.entitySource).toBe('endpoint')
+		expect(page.config.sourceConfig).toMatchObject({ url: '/apps/dossiq/api/mail-intake/log', rowsPath: 'results' })
+		expect(page.config.register).toBeUndefined()
+		expect(registrySource).not.toContain('MailIntakeLogView')
 	})
 
-	it('names a check nobody made rather than leaving it blank', async () => {
-		serve({
-			results: [
-				entry({
-					spfResult: 'unavailable',
-					dmarcResult: 'unavailable',
-					dkimResult: 'fail',
-				}),
-			],
-		})
-
-		const row = (await mountLog()).find('[data-testid="intake-log-row-entry-1"]')
-		const cells = row.findAll('td')
-
-		expect(cells[3].text()).toBe('not checked')
-		expect(cells[3].text()).not.toBe('passed')
-		expect(cells[3].classes()).toContain('intake-log__result--unknown')
-		expect(cells[5].text()).toBe('not checked')
-		expect(cells[4].text()).toBe('failed')
-		expect(cells[4].classes()).toContain('intake-log__result--fail')
+	it('names a check nobody made rather than leaving it blank', () => {
+		for (const key of ['spfResult', 'dkimResult', 'dmarcResult', 'threadingResult']) {
+			const col = column(key)
+			expect(col.widget).toBe('badge')
+			expect(col.enumLabels).toEqual({ pass: 'passed', fail: 'failed', none: 'no policy published', unavailable: 'not checked' })
+			expect(new Set(Object.values(col.enumLabels)).size).toBe(4)
+			// Colour says it too, but never alone: the word is in the badge.
+			expect(col.colorMap).toMatchObject({ pass: 'success', fail: 'error' })
+			expect(col.colorMap.unavailable).not.toBe('success')
+		}
 	})
 
-	it('refuses a reader without the intake role instead of showing an empty log', async () => {
-		serve({}, 403)
+	it('refuses a reader without the intake role in a sentence, in Dutch too', () => {
+		const refusedText = logPage().config.sourceConfig.refusedText
 
-		const wrapper = await mountLog()
-
-		expect(wrapper.find('[data-testid="intake-log-forbidden"]').exists()).toBe(
-			true,
-		)
-		expect(wrapper.find('[data-testid="intake-log-table"]').exists()).toBe(false)
-		expect(wrapper.find('[data-testid="intake-log-sender"]').exists()).toBe(
-			false,
-		)
+		expect(refusedText).toContain('You do not have the intake role')
+		expect(nl[refusedText]).toBeTruthy()
 	})
 
-	it('finds a message by its sender', async () => {
-		serve({ results: [entry()] })
-
-		const wrapper = await mountLog()
-		await wrapper
-			.find('input[data-testid="intake-log-sender"]')
-			.setValue('aanvrager@voorbeeld.nl')
-		await flushPromises()
-
-		expect(calls.at(-1).url).toContain('sender=aanvrager%40voorbeeld.nl')
+	it('finds a message by its sender', () => {
+		expect(logPage().config.inlineSearch).toBe(true)
+		expect(logPage().config.sourceConfig.searchParam).toBe('sender')
 	})
 
-	it('names the rule that junked a message', async () => {
-		serve({
-			results: [
-				entry({
-					outcome: 'refused',
-					junkRule: 'spam-header',
-					reason: 'Refused as junk.',
-				}),
-			],
-			junkRules: [
-				{
-					name: 'spam-header',
-					description: 'The mail server marked it as spam in X-Spam-Flag.',
-				},
-			],
-		})
+	it('narrows by outcome with a tab per outcome', () => {
+		const filters = logPage().config.quickFilters
 
-		const row = (await mountLog()).find('[data-testid="intake-log-row-entry-1"]')
-
-		expect(row.findAll('td')[8].text()).toBe(
-			'spam-header: The mail server marked it as spam in X-Spam-Flag.',
-		)
+		expect(filters[0]).toMatchObject({ label: 'Every outcome', filter: {}, default: true })
+		expect(filters.slice(1).map((tab) => tab.filter.outcome)).toEqual(['case', 'quarantined', 'released', 'inbox', 'refused', 'forwarded', 'moved'])
+		expect(Object.keys(column('outcome').enumLabels)).toEqual(filters.slice(1).map((tab) => tab.filter.outcome))
 	})
 
-	it('lets a person correct a wrong junk verdict', async () => {
-		serve({ results: [entry({ junkRule: 'spam-header' })] })
-
-		const wrapper = await mountLog()
-		await wrapper
-			.find('[data-testid="intake-log-not-junk-entry-1"]')
-			.trigger('click')
-		await flushPromises()
-
-		const correction = calls.find((call) => call.url.includes('/junk'))
-		expect(correction).toBeTruthy()
-		expect(correction.options.method).toBe('POST')
-		expect(JSON.parse(correction.options.body)).toEqual({ junk: false })
+	it('names the rule that junked a message under its reason', () => {
+		expect(column('reason').secondary).toBe('{junkReason}')
+		expect(column('decided').label).toBe('Deciding filter')
 	})
 
-	it('offers release on a held message and on nothing else', async () => {
-		serve({
-			results: [
-				entry({ '@self': { id: 'held' }, outcome: 'quarantined' }),
-				entry({ '@self': { id: 'filed' }, outcome: 'case' }),
-			],
-		})
+	it('says the order the filters ran in', () => {
+		expect(logPage().config.sourceConfig).toMatchObject({ notePath: 'filterOrder', noteText: 'Filters run in this order: {order}' })
+		expect(nl['Filters run in this order: {order}']).toBeTruthy()
+	})
 
-		const wrapper = await mountLog()
-		expect(
-			wrapper.find('[data-testid="intake-log-release-held"]').exists(),
-		).toBe(true)
-		expect(
-			wrapper.find('[data-testid="intake-log-release-filed"]').exists(),
-		).toBe(false)
+	it('does not read an empty log as a mailbox that filtered something', () => {
+		expect(logPage().config.emptyText).toContain('filtered before it reached the folder')
+	})
 
-		await wrapper
-			.find('[data-testid="intake-log-release-held"]')
-			.trigger('click')
-		await flushPromises()
+	it('offers release on a held message and on nothing else', () => {
+		const release = actions().release
 
-		expect(calls.some((call) => call.url.endsWith('/held/release'))).toBe(true)
+		expect(release.visibleWhen).toEqual({ field: 'outcome', op: 'eq', value: 'quarantined' })
+		expect(release).toMatchObject({ type: 'open-modal', target: 'CnActionDialog' })
+		expect(release.props.config.confirm.request).toEqual({ method: 'POST', url: '/apps/dossiq/api/mail-intake/log/@objectId/release' })
+	})
+
+	it('lets a person correct a wrong junk verdict', () => {
+		const notJunk = actions()['not-junk']
+
+		expect(notJunk.visibleWhen).toEqual({ field: 'junkRule', op: 'notEmpty' })
+		expect(notJunk.props.config.confirm.request).toEqual({ method: 'POST', url: '/apps/dossiq/api/mail-intake/log/@objectId/junk', body: { junk: false } })
 	})
 
 	// 🔴 UNLIKE RELEASE, THIS ONE IS ON EVERY ROW, and that is the point of it.
-	// Release files a message on the case the matcher already chose, so a
-	// handler who knew it belonged on 2026-114 could do nothing with that
-	// knowledge. A wrong match is the common reason somebody reaches for this,
-	// and an entry that became 2026-090 when it belonged on 2026-114 looks
-	// exactly like a successful match until a person reads it.
+	// A wrong match is the common reason somebody reaches for this, and an
+	// entry that became 2026-090 when it belonged on 2026-114 looks exactly
+	// like a successful match until a person reads it.
 	// @spec openspec/specs/case-email-integration/spec.md
-	it('offers File on a case on every entry, matched or not', async () => {
-		serve({
-			results: [
-				entry({
-					'@self': { id: 'wrong' },
-					outcome: 'case',
-					case: '2026-090',
-				}),
-				entry({ '@self': { id: 'nowhere' }, outcome: 'inbox', case: '' }),
-			],
-		})
+	it('offers File on a case on every entry, matched or not', () => {
+		const file = actions()['file-on-case']
 
-		const wrapper = await mountLog()
-
-		expect(
-			wrapper.find('[data-testid="intake-log-file-on-case-wrong"]').exists(),
-		).toBe(true)
-		expect(
-			wrapper.find('[data-testid="intake-log-file-on-case-nowhere"]').exists(),
-		).toBe(true)
-		// Found by COMPONENT, not by its `data-testid`: the dialog's own
-		// NcDialog teleports its markup to the body, so a DOM query on this
-		// wrapper answers false whether the dialog opened or not.
-		expect(wrapper.findComponent(MailIntakeFileOnCaseDialog).exists()).toBe(
-			false,
-		)
-
-		await wrapper
-			.find('[data-testid="intake-log-file-on-case-wrong"]')
-			.trigger('click')
-		await flushPromises()
-
-		// The dialog opens on the entry that was clicked, carrying where the
-		// matcher put it. Nothing is posted until the handler confirms.
-		const dialog = wrapper.findComponent(MailIntakeFileOnCaseDialog)
-		expect(dialog.exists()).toBe(true)
-		expect(dialog.props('entryId')).toBe('wrong')
-		expect(dialog.props('entry').case).toBe('2026-090')
-		expect(calls.some((call) => call.url.includes('/file-on-case'))).toBe(false)
-	})
-
-	it('says the order the filters ran in', async () => {
-		serve({
-			results: [entry()],
-			filterOrder: ['blocked-sender', 'auto-reply', 'bounce-notification'],
-		})
-
-		const wrapper = await mountLog()
-
-		expect(wrapper.find('[data-testid="intake-log-order"]').text()).toContain(
-			'blocked-sender, auto-reply, bounce-notification',
-		)
-	})
-
-	it('does not read an empty log as a mailbox that filtered something', async () => {
-		serve({ results: [] })
-
-		const wrapper = await mountLog()
-		const empty = wrapper.find('.NcEmptyContent')
-
-		expect(empty.exists()).toBe(true)
-		expect(empty.text()).toContain('filtered before it reached the folder')
+		expect(file).toMatchObject({ type: 'open-modal', target: 'MailIntakeFileOnCaseDialog' })
+		expect(file.visibleWhen).toBeUndefined()
+		expect(column('actions').widgetProps.actions).toEqual(['release', 'not-junk', 'file-on-case'])
+		expect(registrySource).toMatch(/MailIntakeFileOnCaseDialog: \{\n\t\tkind: 'modal'/)
 	})
 })

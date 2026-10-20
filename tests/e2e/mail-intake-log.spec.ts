@@ -74,12 +74,12 @@ test.describe('a handler files a logged message on a case they pick', () => {
 		// never rendered. Without this line the second reads as the first,
 		// which is exactly what the wrong URL above did for as long as it
 		// shipped.
-		await expect(page.locator('[data-testid="intake-log-sender"]')).toBeVisible()
+		await expect(page.locator('input.cn-actions-bar__search-input')).toBeVisible()
 
 		// An instance with no processed mail renders the empty state, and that
 		// is a pass for THIS assertion only if the act is absent for the right
 		// reason. So the presence of a row is asserted first: no row, no claim.
-		const row = page.locator('[data-testid^="intake-log-file-on-case-"]')
+		const row = page.locator('[data-testid="cn-cell-action-file-on-case"]')
 		const rows = await row.count()
 		if (rows === 0) {
 			test.skip(

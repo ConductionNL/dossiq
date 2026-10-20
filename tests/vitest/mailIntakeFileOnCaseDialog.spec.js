@@ -26,7 +26,11 @@
 
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import MailIntakeFileOnCaseDialog from '../../src/dialogs/MailIntakeFileOnCaseDialog.vue'
+
+const mockEmit = vi.hoisted(() => vi.fn())
+vi.mock('@nextcloud/event-bus', () => ({ emit: mockEmit, subscribe: vi.fn(), unsubscribe: vi.fn() }))
+
+const MailIntakeFileOnCaseDialog = (await import('../../src/dialogs/MailIntakeFileOnCaseDialog.vue')).default
 
 const stubs = {
 	NcDialog: {
@@ -69,7 +73,7 @@ const ENTRY = {
  */
 function mountDialog(entry = ENTRY) {
 	return mount(MailIntakeFileOnCaseDialog, {
-		props: { entry, entryId: 'entry-1' },
+		props: { object: entry, objectId: 'entry-1' },
 		global: { stubs },
 	})
 }
@@ -153,6 +157,9 @@ describe('filing a logged message on a case the handler picks', () => {
 			reason: 'Hoort bij 2026-114.',
 		})
 		expect(wrapper.emitted('filed')).toBeTruthy()
+		// The log reads its rows again and the app root's modal host closes it.
+		expect(mockEmit).toHaveBeenCalledWith('cn:page:refresh', {})
+		expect(wrapper.emitted('close')).toBeTruthy()
 	})
 
 	it('🔴 keeps the dialog open on a 403 and says the message did not move', async () => {
