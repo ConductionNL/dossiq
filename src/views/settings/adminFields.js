@@ -138,3 +138,15 @@ export function kadasterFields(t) {
 		]
 	})
 }
+
+/**
+ * The tone of each connection status on the integrations table: a working
+ * connection is green, a failing one red, the rest neutral.
+ *
+ * @type {Readonly<Record<string, string>>}
+ * @spec openspec/specs/admin-settings/spec.md
+ */
+export const CONNECTION_STATUS_TONES = Object.freeze({
+	configured: 'success',
+	error: 'error',
+})
