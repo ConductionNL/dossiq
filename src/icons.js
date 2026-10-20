@@ -198,6 +198,7 @@ import RoutesClock from 'vue-material-design-icons/RoutesClock.vue'
 import ScaleBalance from 'vue-material-design-icons/ScaleBalance.vue'
 import ScriptText from 'vue-material-design-icons/ScriptText.vue'
 import Send from 'vue-material-design-icons/Send.vue'
+import SendOutline from 'vue-material-design-icons/SendOutline.vue'
 import ShapeOutline from 'vue-material-design-icons/ShapeOutline.vue'
 import ShareVariant from 'vue-material-design-icons/ShareVariant.vue'
 import ShieldAccountOutline from 'vue-material-design-icons/ShieldAccountOutline.vue'
@@ -422,6 +423,7 @@ export default {
 	ScaleBalance,
 	ScriptText,
 	Send,
+	SendOutline,
 	ShapeOutline,
 	ShareVariant,
 	ShieldAccountOutline,

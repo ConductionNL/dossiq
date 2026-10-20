@@ -28,16 +28,9 @@ const get = vi.fn()
 vi.mock('@nextcloud/axios', () => ({ default: { get: (...args) => get(...args) } }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (url) => url }))
 
-const {
-	fetchCaseParties,
-	indicatorVerdict,
-	indicatorsOf,
-	partiesInOrder,
-	publicationRefusal,
-	resolvePartyByAddress,
-	roleLabel,
-	rolesInOrder,
-} = await import('../../src/services/caseParties.js')
+const { fetchCaseParties, resolvePartyByAddress } = await import(
+	'../../src/services/caseParties.js'
+)
 
 /** A listing with a primary party in the second role the grouping names. */
 const LISTING = {
@@ -63,32 +56,9 @@ beforeEach(() => {
 })
 
 describe('the parties of a case', () => {
-	it('puts the primary party first, and its role group first', () => {
-		const groups = rolesInOrder(LISTING)
-
-		expect(groups[0].key).toBe('aanvrager')
-		expect(groups[0].parties[0].displayName).toBe('Jan de Vries')
-		expect(groups[1].key).toBe('belanghebbende')
-	})
-
-	it('leaves the order alone when no party is primary', () => {
-		const groups = rolesInOrder({ ...LISTING, primary: null })
-
-		expect(groups[0].key).toBe('belanghebbende')
-		expect(groups[0].parties[0].displayName).toBe('De buurman')
-		expect(partiesInOrder(LISTING.byRole.aanvrager, null)[0].partyUuid).toBe(
-			'p-mr',
-		)
-	})
-
-	it('labels a generic role in the reader language and a role type from the schema', () => {
-		expect(roleLabel('gemachtigde', LISTING.roles)).toBe(
-			'Authorised representative',
-		)
-		expect(roleLabel('rt-1', LISTING.roles)).toBe('Behandelaar')
-		expect(roleLabel('rt-9', LISTING.roles)).toBe('rt-9')
-	})
-
+	// Grouping by role, the primary party first and the role labels are the
+	// library parties widget's now (nextcloud-vue objectParties, with these
+	// cases ported to its spec). dossiq keeps the read the document dialog uses.
 	it('answers null when the listing could not be read, never an empty case', async () => {
 		get.mockRejectedValueOnce(new Error('OpenRegister is down'))
 
@@ -104,50 +74,6 @@ describe('the parties of a case', () => {
 			'/apps/openregister/api/objects/dossiq/case/case-1/parties',
 		)
 		expect(listing.primary).toBe('p-jan')
-	})
-})
-
-describe('what an indicator refuses', () => {
-	it('names the act for each effect, and warns on one it does not know', () => {
-		expect(indicatorVerdict({ effect: 'refuse-publication' }).severity).toBe(
-			'error',
-		)
-		expect(indicatorVerdict({ effect: 'refuse-send' }).severity).toBe('error')
-		// An indicator with an effect this version does not know warns. It
-		// never vanishes.
-		expect(indicatorVerdict({ effect: 'embargo', label: 'Embargo' })).toEqual({
-			effect: 'embargo',
-			severity: 'warning',
-			label: 'Embargo',
-			verdict: 'Read this before acting on the case',
-		})
-	})
-
-	it('finds the indicator that refuses publication, and stamps its party', () => {
-		const indicators = indicatorsOf([
-			{
-				id: 'p-jan',
-				name: 'Jan de Vries',
-				indicators: [{ key: 'x', effect: 'warn' }],
-			},
-			{
-				id: 'p-buur',
-				name: 'De buurman',
-				indicators: [
-					{
-						key: 'geheim',
-						label: 'Geheimhouding',
-						effect: 'refuse-publication',
-					},
-				],
-			},
-		])
-
-		const refusal = publicationRefusal(indicators)
-
-		expect(refusal.label).toBe('Geheimhouding')
-		expect(refusal.partyName).toBe('De buurman')
-		expect(publicationRefusal([])).toBeNull()
 	})
 })
 

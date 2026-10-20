@@ -144,6 +144,24 @@ function newerSchemaVersion() {
 }
 
 /**
+ * The page type an `enum` error on `/pages/<n>/type` rejected, when the vendored
+ * newer schema lists it; '' for any other error.
+ *
+ * @param {object} err      An Ajv error.
+ * @param {object} manifest The manifest under validation.
+ * @return {string} The page type, or ''.
+ */
+function newerPageType(err, manifest) {
+	const match = /^\/pages\/(\d+)\/type$/.exec(String(err.instancePath || ''))
+	if (err.keyword !== 'enum' || !match) {
+		return ''
+	}
+	const type = manifest?.pages?.[Number(match[1])]?.type
+	const listed = newerSchema()?.$defs?.page?.properties?.type?.enum
+	return typeof type === 'string' && Array.isArray(listed) && listed.includes(type) ? type : ''
+}
+
+/**
  * Whether the vendored newer schema declares `property` at `instancePath`.
  *
  * 🔑 IT RESOLVES THE PATH RATHER THAN SEARCHING FOR THE NAME. `_note` is
@@ -439,6 +457,13 @@ function main() {
 			&& newerSchemaAccepts(err.instancePath, property)
 		) {
 			lagged.push({ err, property })
+			continue
+		}
+		// A page TYPE only the newer schema lists (`redaction`, schema 2.137.0)
+		// is the same lag, one level down: the enum, not a property.
+		const pageType = newerPageType(err, manifest)
+		if (pageType !== '') {
+			lagged.push({ err, property: `type: ${pageType}` })
 			continue
 		}
 		real.push(err)

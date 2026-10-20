@@ -3108,7 +3108,8 @@
 								},
 								{
 									"widgetId": "case-files",
-									"label": "Files"
+									"label": "Files",
+									"unreadKey": "files"
 								},
 								{
 									"widgetId": "case-document-review",
@@ -3116,7 +3117,8 @@
 								},
 								{
 									"widgetId": "case-notes-panel",
-									"label": "Notes"
+									"label": "Notes",
+									"unreadKey": "notes"
 								},
 								{
 									"widgetId": "case-timeline-panel",
@@ -3162,7 +3164,8 @@
 									"widgetId": "case-knowledge-panel",
 									"label": "Knowledge"
 								}
-							]
+							],
+							"badgeSource": "readState"
 						}
 					},
 					{
@@ -3341,13 +3344,30 @@
 									"label": "Locations",
 									"widget": {
 										"id": "case-location-map",
-										"type": "case-location-map",
+										"type": "map",
 										"title": "Locations",
-										"_note": "The case on a map, replacing the Locations LIST that was the second section of the retired Objects and locations tab. case-location already carries latitude and longitude, so that list was a table of coordinates nobody could picture. Bespoke rather than the library map type because that one cannot be scoped to a single case: its dataSource takes a register and a schema with no filter, and it resolves no manifest tokens, so either route plots every case-location in the register as this case. See registry.js and nextcloud-vue#1139.",
+										"_note": "The case on a map: the case-location objects that point at this case (`filter: case = @objectId`), drawn by the library map. An empty answer and a failed read say so in words, a point at (0, 0) is not plotted, and saving a location (CaseLocationDialog emits dossiq:case-location:saved with the caseId) reads the markers again.",
 										"content": {
 											"height": "260px",
-											"limit": 100,
-											"emptyText": "No locations linked to this case yet"
+											"autoFit": true,
+											"ariaLabel": "Locations on this case",
+											"markers": {
+												"dataSource": {
+													"register": "dossiq",
+													"schema": "case-location",
+													"filter": {
+														"case": "@objectId"
+													},
+													"limit": 100
+												},
+												"latField": "latitude",
+												"lngField": "longitude",
+												"popupField": "label"
+											},
+											"emptyText": "No locations linked to this case yet",
+											"errorText": "The locations could not be loaded.",
+											"refreshOn": "dossiq:case-location:saved",
+											"refreshMatch": "caseId"
 										}
 									}
 								}
@@ -3570,9 +3590,26 @@
 					},
 					{
 						"id": "case-notes-panel",
-						"type": "case-notes-pane",
+						"type": "integration",
+						"integrationId": "notes",
 						"title": "Notes",
-						"_note": "The Notes tab of the case panels, beside Documents: the same mention-aware notes surface the sidebar offers, registered as a widget TYPE (`case-notes-pane` in registry.js) because a tab child renders by type. The sidebar tab stays: one reads the notes while working in the tabs, the other while the sidebar is open on any tab. The strip's ceiling moved from six to seven for it (Ruben, 2026-09-12)."
+						"_note": "The Notes tab of the case panels: the library notes tab with @mentions posted to dossiq's notification endpoint and the one act dossiq adds to a note, sending it to the neighbouring register (NotePush). The endpoint answers sent, failed, not-sent or no-register with its own sentence. The sidebar Notes tab stays.",
+						"props": {
+							"mentionUrl": "/apps/dossiq/api/notes/mention",
+							"noteActions": [
+								{
+									"id": "push-to-neighbouring-register",
+									"label": "Send to the neighbouring register",
+									"icon": "SendOutline",
+									"endpoint": "/apps/dossiq/api/cases/{objectId}/notes/push",
+									"messages": {
+										"sent": "Note sent to the neighbouring register",
+										"failed": "The note could not be sent",
+										"other": "This note stays here"
+									}
+								}
+							]
+						}
 					},
 					{
 						"id": "case-people-panel",
@@ -3595,9 +3632,90 @@
 									"label": "Roles",
 									"widget": {
 										"id": "case-party-roles",
-										"type": "case-party-roles",
+										"type": "parties",
 										"title": "Roles",
-										"_note": "The party model OpenRegister shipped in #3761, which is the half the Parties section below cannot carry: a melder with no Nextcloud account, a gemachtigde acting for the applicant under Awb 2:1, an organisation naming a parent, and the indicators any of them hold. It reads GET /api/objects/{r}/{s}/{id}/parties, which answers the links grouped by role together with the kinds and roles the case schema declares, so a role renders under its label rather than under its key. The primary party is rendered first and its role group first, because the primary party is the one the case is filed against and a handler opening this tab is looking for that name before any other. TYPE names the registry key rather than \"custom\": a tab child renders through CnTabsWidget, which resolves cnRegistry[widget.type] and renders nothing at all, logging nothing, when no key answers. It sits BESIDE Parties and does not replace it: the contacts integration renders the person links people-on-the-case (#2683) writes, and a party with no account is invisible to it."
+										"_note": "The party model OpenRegister shipped in #3761 (`/parties` of this case), by role with the primary party first. A gemachtigde names whom they act for (role rows, `representedParty`). The accepted kinds and the writing language come from pipelinq through dossiq's endpoints; a kind is marked not accepted only when pipelinq answered the kinds. Every indicator carries its verdict, and a blocking one is also a note above the list. A failed read says so and is never \"no parties\".",
+										"content": {
+											"rolesObjects": {
+												"register": "dossiq",
+												"schema": "role",
+												"field": "case"
+											},
+											"roleLabels": {
+												"aanvrager": "Requester",
+												"gemachtigde": "Authorised representative",
+												"belanghebbende": "Interested party",
+												"afzender": "Sender",
+												"geadresseerde": "Addressee",
+												"locatie": "Location"
+											},
+											"kindsSource": {
+												"url": "/apps/dossiq/api/cases/@objectId/pipelinq/party-kinds",
+												"enforce": "pipelinq",
+												"sourceText": {
+													"pipelinq": "Kinds from pipelinq, in the order of the case type",
+													"default": "Dossiq's own kinds: pipelinq is not installed on this instance"
+												}
+											},
+											"extraLines": [
+												{
+													"endpoint": "/apps/dossiq/api/cases/@objectId/pipelinq/parties/{party}/language",
+													"valueLabels": {
+														"language": {
+															"nl": "Dutch",
+															"en": "English",
+															"de": "German",
+															"fr": "French",
+															"fy": "Frisian"
+														}
+													},
+													"lines": [
+														{
+															"when": {
+																"field": "available",
+																"op": "neq",
+																"value": true
+															},
+															"text": "Writing language: {language}. No preference can be read on this instance."
+														},
+														{
+															"when": {
+																"field": "stated",
+																"op": "eq",
+																"value": true
+															},
+															"text": "Writing language: {language}. Asked for by the party."
+														},
+														{
+															"when": {
+																"field": "rule",
+																"op": "eq",
+																"value": "instanceDefault"
+															},
+															"text": "Writing language: {language}. No preference recorded, so the default language of this instance."
+														},
+														{
+															"text": "Writing language: {language}. No preference recorded."
+														}
+													]
+												}
+											],
+											"correspondence": {
+												"endpoint": "/apps/dossiq/api/cases/@objectId/dossier",
+												"path": "informatieobjecten"
+											},
+											"labels": {
+												"failed": "The parties of this case could not be read",
+												"failedDetail": "OpenRegister did not answer. Nothing has been removed from the case.",
+												"empty": "No parties on this case yet",
+												"emptyDetail": "Add a party to record who the case is for and who acts on it.",
+												"accepted": "This case type accepts",
+												"notAccepted": "Kind not accepted by this case type",
+												"verdictPublication": "Publishing a file on this case is refused",
+												"verdictWarn": "Read this before acting on the case",
+												"sentencePublication": "Publishing a file on this case is refused, because of {party}."
+											}
+										}
 									}
 								},
 								{
@@ -3636,15 +3754,6 @@
 												}
 											}
 										}
-									}
-								},
-								{
-									"label": "Followers",
-									"widget": {
-										"id": "case-followers",
-										"type": "case-followers",
-										"title": "Followers",
-										"_note": "case-followers, row 13.18. Who is watching this case, over OpenRegister's GET /api/objects/{register}/{schema}/{id}/watchers (object-watchers). It sits LAST on this tab because the three sections above it say who the case is about and this one says who is reading over their shoulder: a teamleider following a sensitive case holds no role on it and appears here and nowhere else. TYPE names the registry key rather than \"custom\": a tab child resolves from cnRegistry[widget.type] and renders nothing at all, logging nothing, when no key answers. Reading the list needs `update` on the case, so a reader without it is told that in words rather than shown an empty list, which would be a claim about the audience nobody made to them. No remove button: taking off somebody else's subscription needs `manage`, and you stop following from the strip on the case page, which acts on your own row only."
 									}
 								}
 							]
@@ -3701,9 +3810,85 @@
 									"label": "Customer record",
 									"widget": {
 										"id": "case-pipelinq-contact-moments",
-										"type": "case-pipelinq-contact-moments",
+										"type": "record-list",
 										"title": "Contact moments in the customer record",
-										"_note": "parties-and-contact-moments-consume-pipelinq 2.2 and 2.3, board DqZaakContactmomenten: pipelinq's contact moments read by MEMBERSHIP of this case, with the line saying a moment is also on other cases (a case the reader may not open counted, not named), and the two filing acts. It sits under dossiq's own Communication list rather than replacing it, because that list is dossiq's record and the one an instance without pipelinq has; this section says in words when pipelinq is absent. Rendered by TYPE (registry key case-pipelinq-contact-moments), as a section child resolves from the registry and an unknown type draws nothing."
+										"_note": "parties-and-contact-moments-consume-pipelinq 2.2 and 2.3, board DqZaakContactmomenten: pipelinq's contact moments read by MEMBERSHIP of this case through dossiq's endpoint, newest first. Absent (pipelinq not installed), empty and failed are three answers. A moment also on other cases says so and links them; filing it on another case opens FileContactMomentDialog, taking it off calls the endpoint and shows pipelinq's refusal. The id stays `case-pipelinq-contact-moments` until L7 renames it with a repair step.",
+										"content": {
+											"endpointSource": {
+												"url": "/apps/dossiq/api/cases/@objectId/pipelinq/contact-moments",
+												"responsePath": "moments"
+											},
+											"requiresApp": "pipelinq",
+											"absentText": "Pipelinq is not installed on this instance. The contact moments dossiq logs itself are in the Communication list.",
+											"intro": "From pipelinq: every contact moment on this case, also when it is on more cases. Newest first.",
+											"emptyText": "No contact moments in the customer record for this case yet",
+											"errorText": "The customer record could not be read",
+											"footnote": "One conversation about three cases is one contact moment. Filing and taking off go through pipelinq, which records who did it and when.",
+											"presentation": "rows",
+											"limit": 100,
+											"title": [
+												"{summary}",
+												"{subject}"
+											],
+											"meta": "{occurredAt|datetime}",
+											"badges": [
+												{
+													"field": "channel"
+												},
+												{
+													"field": "direction",
+													"labels": {
+														"inbound": "Inbound",
+														"outbound": "Outbound"
+													}
+												},
+												{
+													"field": "alsoOnCases",
+													"kind": "count",
+													"one": "Also on {count} other case",
+													"other": "Also on {count} other cases"
+												},
+												{
+													"field": "alsoOnHiddenCount",
+													"kind": "count",
+													"one": "Also on {count} case you may not see",
+													"other": "Also on {count} cases you may not see"
+												}
+											],
+											"links": {
+												"field": "alsoOnCases",
+												"label": "Also on:",
+												"fallback": "case",
+												"route": {
+													"name": "CaseDetail",
+													"params": {
+														"id": "{value}"
+													}
+												},
+												"labelSource": {
+													"register": "dossiq",
+													"schema": "case",
+													"template": "{identifier} {title}"
+												}
+											},
+											"rowActionsLabel": "Actions for this contact moment",
+											"rowActions": [
+												{
+													"label": "Also file on another case",
+													"type": "open-modal",
+													"target": "FileContactMomentDialog",
+													"props": {
+														"caseId": "@objectId"
+													}
+												},
+												{
+													"label": "Take off this case",
+													"endpoint": "/apps/dossiq/api/cases/@objectId/pipelinq/contact-moments/{id}",
+													"method": "DELETE",
+													"errorText": "The contact moment could not be taken off this case."
+												}
+											]
+										}
 									}
 								},
 								{
@@ -3904,18 +4089,223 @@
 									"label": "Related cases",
 									"widget": {
 										"id": "case-related",
-										"type": "case-related-planned",
+										"type": "related",
 										"title": "Case type, parent & related cases",
-										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26) and the series among them (planned-case-series, row 1.8). A series row carries its next occurrence, the cases it has already opened (filtered on `handoffSource` = `planned-series:<flowId>`, which every occurrence carries) and a Stop series action; stopping switches the flow off and leaves those cases alone. A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3). Waits on and blokkeert appear here with no section of their own: the pair is declared on the case schema as `x-openregister-relation-types`, and this widget groups by the label OpenRegister answers per direction. A hand-written section for either half would list the same links a second time, under a name this file chose rather than the one the schema did."
+										"_note": "The Related cases tab: the library related widget with three sections it reads from dossiq (case-actions-menu A26, planned-case-series 1.8). Planned follow-ups are scheduled FLOWS, not cases, so they open nothing; a series lists the cases it already opened and offers Stop series, which switches the flow off and leaves those cases alone. Typed relations come grouped by the label the server answers per direction (displayLabel, else the ZGW aard), a row only with a readable title. The parent case shows only with a readable title. Plan follow-up opens CasePlanFollowUpDialog. A read that fails is logged and leaves the rest alone.",
+										"content": {
+											"showObjects": false,
+											"extraSources": [
+												{
+													"key": "planned",
+													"label": "Planned cases",
+													"icon": "CalendarClock",
+													"endpoint": "/apps/dossiq/api/case/@objectId/planned",
+													"path": "results",
+													"itemLabel": {
+														"parts": [
+															"{title}",
+															"{recurrence|lower}",
+															"next on {date}",
+															"{occurrences|count} opened so far"
+														],
+														"separator": ", "
+													},
+													"valueLabels": {
+														"recurrence": {
+															"none": "",
+															"monthly": "Every month",
+															"quarterly": "Every quarter",
+															"halfYearly": "Every half year",
+															"yearly": "Every year"
+														}
+													},
+													"static": true,
+													"rowActions": [
+														{
+															"label": "Stop series",
+															"endpoint": "/apps/dossiq/api/case/@objectId/planned/{id}/stop",
+															"when": {
+																"field": "recurrence",
+																"op": "neq",
+																"value": "none"
+															}
+														}
+													],
+													"children": {
+														"path": "occurrences",
+														"label": "{title}",
+														"route": {
+															"name": "CaseDetail",
+															"params": {
+																"id": "{id}"
+															}
+														}
+													}
+												},
+												{
+													"key": "relations",
+													"endpoint": "/apps/dossiq/api/cases/@objectId/relations",
+													"path": "results",
+													"icon": "LinkVariant",
+													"groupBy": [
+														"{displayLabel}",
+														"{aardRelatie}"
+													],
+													"groupLabels": {
+														"vervolg": "Follow-up",
+														"subject": "Subject",
+														"bijdrage": "Contribution",
+														"samenhang": "Related"
+													},
+													"itemLabel": [
+														"{title} ({notes})",
+														"{title}"
+													],
+													"requireLabel": true,
+													"rowRoute": {
+														"name": "CaseDetail",
+														"params": {
+															"id": "{caseId}"
+														}
+													}
+												}
+											],
+											"referenceSections": [
+												{
+													"key": "parent",
+													"label": "Parent case",
+													"icon": "FileTreeOutline",
+													"field": "parentCase",
+													"register": "dossiq",
+													"schema": "case",
+													"route": {
+														"name": "CaseDetail",
+														"params": {
+															"id": "{id}"
+														}
+													}
+												}
+											],
+											"footerActions": [
+												{
+													"label": "Plan follow-up",
+													"icon": "CalendarClock",
+													"type": "open-modal",
+													"target": "CasePlanFollowUpDialog",
+													"props": {
+														"caseId": "@objectId"
+													}
+												}
+											]
+										}
 									}
 								},
 								{
 									"label": "Programme",
 									"widget": {
 										"id": "case-programme",
-										"type": "case-programme",
+										"type": "facts",
 										"title": "Programme",
-										"_note": "parties-and-contact-moments-consume-pipelinq 7.1, board DqZaakPartijen (the Programma card): the pipelinq programme this case hangs under, found by the work item that names it `dossiq:case`, with its progress and the mode that produced it, and the link dialog that shows pipelinq's refusal naming the holding programme. On the Related tab because a programme is a relation upward, like a parent case. Dossiq holds no programme and no budget. Rendered by TYPE (registry key case-programme)."
+										"_note": "parties-and-contact-moments-consume-pipelinq 7.1, board DqZaakPartijen (the Programma card): the pipelinq programme this case hangs under, with its progress and the mode that produced it (never zero for an uncomputable figure), or the Link to a programme action, which opens LinkProgrammeDialog with the case and its title. Shown only where pipelinq is installed. Dossiq holds no programme and no budget.",
+										"visibleWhen": {
+											"appInstalled": "pipelinq"
+										},
+										"content": {
+											"source": {
+												"url": "/apps/dossiq/api/cases/@objectId/pipelinq/programme",
+												"path": "programme"
+											},
+											"fields": [
+												{
+													"as": "title",
+													"path": "name"
+												},
+												{
+													"as": "progress",
+													"key": "progress",
+													"label": "Progress of the programme",
+													"path": "progress.progress",
+													"barWhen": {
+														"field": "progress.computable",
+														"op": "eq",
+														"value": true
+													},
+													"lines": [
+														{
+															"when": {
+																"field": "progress",
+																"op": "empty"
+															},
+															"text": "Progress cannot be read on this instance."
+														},
+														{
+															"when": {
+																"field": "progress.available",
+																"op": "eq",
+																"value": false
+															},
+															"text": "Progress cannot be read on this instance."
+														},
+														{
+															"when": {
+																"field": "progress.computable",
+																"op": "neq",
+																"value": true
+															},
+															"text": "Progress cannot be computed: {progress.sentence}"
+														},
+														{
+															"when": {
+																"field": "progress.computable",
+																"op": "neq",
+																"value": true
+															},
+															"text": "Progress cannot be computed."
+														},
+														{
+															"when": {
+																"field": "progress.mode",
+																"op": "eq",
+																"value": "manual"
+															},
+															"text": "{progress.progress} percent done, entered by hand."
+														},
+														{
+															"when": {
+																"field": "progress.mode",
+																"op": "eq",
+																"value": "fromTasks"
+															},
+															"text": "{progress.progress} percent done, measured by the closed tasks of the programme."
+														},
+														{
+															"when": {
+																"field": "progress.mode",
+																"op": "eq",
+																"value": "fromEffort"
+															},
+															"text": "{progress.progress} percent done, measured by the hours booked against the estimate."
+														},
+														{
+															"text": "{progress.progress} percent done."
+														}
+													]
+												}
+											],
+											"emptyText": "This case does not hang under a programme.",
+											"emptyActions": [
+												{
+													"label": "Link to a programme",
+													"type": "open-modal",
+													"target": "LinkProgrammeDialog",
+													"props": {
+														"caseId": "@objectId",
+														"caseTitle": "@object.title"
+													}
+												}
+											],
+											"errorText": "The programme could not be read"
+										}
 									}
 								},
 								{
@@ -4040,9 +4430,84 @@
 					},
 					{
 						"id": "case-banner-stack",
-						"type": "case-banner-stack",
+						"type": "sections",
 						"title": "Case banners",
-						"_note": "Archived, Follow, New since you last looked, What this status asks for and Attention in ONE row rather than six. Four of the six are a root v-if, so six rows reserved four empty ones on an ordinary case — open, nothing new, nothing flagged, status fine — and left a visible gap where they were. A grid row is reserved from the LAYOUT before the component renders and decides it has nothing to say, and GridStack positions items absolutely from gridY/gridHeight, so collapsing an empty one in CSS hides it without moving anything below it: the row has to not be there, or its height has to come from its content. This is both — one row, carrying `sizeToContent` so it is as tall as whatever actually rendered, down to nothing. The six widget TYPES stay in registry.js: they are still valid placements, this is just the one this page uses."
+						"_note": "What this case is, what this status asks and what is flagged, in ONE size-to-content row (case-banners in the layout). A grid row is reserved from the layout before a widget decides it has nothing to say, so the strips share one row whose height comes from what rendered. A `sections` widget over three sibling definitions, stacked as strips (`dividers: false`): case-archived (a banner on the record's own @self.archived), case-status-declaration (status-explainer over /available-transitions) and case-attention (attention-flag). An empty section takes no space. What is new since the reader last looked is on the tabs themselves (case-panels `badgeSource: readState`), and Following is the header control only (Ruben, 20 Oct 2026).",
+						"content": {
+							"dividers": false,
+							"sections": [
+								{
+									"widgetId": "case-archived"
+								},
+								{
+									"widgetId": "case-status-declaration"
+								},
+								{
+									"widgetId": "case-attention"
+								}
+							]
+						}
+					},
+					{
+						"id": "case-archived",
+						"type": "banner",
+						"title": "Archived",
+						"_note": "archived-cases-leave-the-lenses REQ-CM-43. The state is `@self.archived`, the marker every list excludes on, and not the ZGW `archiveStatus`: the strip must not disagree with the lists. Silent on a case that is not archived. Restore is an entry of the Lifecycle menu, not a button here. A marker that names nobody (an import, a job) says the shorter sentence.",
+						"content": {
+							"icon": "ArchiveOutline",
+							"lead": "This case is archived. {subject.@self.archived.by} filed it on {subject.@self.archived.at|date}. You can read it, and changes are refused.",
+							"fallbackLead": "This case is archived. You can read it, and changes are refused.",
+							"text": "{subject.@self.archived.reason}",
+							"visibleWhen": {
+								"field": "@self.archived",
+								"op": "notEmpty"
+							}
+						}
+					},
+					{
+						"id": "case-status-declaration",
+						"type": "status-explainer",
+						"title": "What this status asks for",
+						"_note": "status-transition-engine and what-a-transition-declares. One round trip to /available-transitions, where the engine publishes what a derived status still misses, the withheld moves with their reasons, who the case waits on and the dwell. The field rules ride on the case (`@self.fieldRules`), so they show also when the engine refuses. Silent on a case with nothing to say.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case/@objectId/available-transitions"
+							},
+							"labels": {
+								"derivationHeading": "This case moves to {status} once these are on file",
+								"fieldRulesHeading": "What this status asks of the case"
+							}
+						}
+					},
+					{
+						"id": "case-attention",
+						"type": "attention-flag",
+						"title": "Attention",
+						"_note": "markers-and-assessments-on-the-case. A flag a PERSON raised (CaseAttentionFlagService, a reason both ways), markers the SYSTEM raised against a panel, and the assessment the ORGANISATION made, kept apart. A reader without the permission gets a case without `riskAssessment`, so the assessment is absent rather than blank.",
+						"content": {
+							"endpoint": "/apps/dossiq/api/case/@objectId/attention",
+							"raisePath": "/raise",
+							"clearPath": "/clear",
+							"markersPath": "attentionMarkers",
+							"panelLabels": {
+								"case-data-panel": "Data",
+								"case-files": "Files",
+								"case-notes-panel": "Notes",
+								"case-people-panel": "People",
+								"case-communication-panel": "Communication",
+								"case-email-panel": "Email",
+								"case-work-panel": "Work",
+								"case-decisions-panel": "Decisions",
+								"case-related-panel": "Related"
+							},
+							"assessment": {
+								"path": "riskAssessment",
+								"reviewDateField": "reviewDate"
+							},
+							"labels": {
+								"reasonRaise": "Why this case needs attention"
+							}
+						}
 					},
 					{
 						"id": "case-document-review",
@@ -4053,11 +4518,84 @@
 					},
 					{
 						"id": "family-plan",
-						"type": "family-plan",
+						"type": "sections",
 						"title": "Family plan",
-						"_note": "the-social-domain-plan-and-its-grounds REQ-CPN-01 and REQ-CPN-03, rows 14.1 and 5.18. The Jeugdwet gezinsplan: the goals this household agreed to work on, the interventions under each with their provider and their target date, and what is late. NOT the adaptive case plan: `cmmn-case-plan` renders OpenRegister\u2019s case layer, the stages and milestones of any case, and this is what was agreed with one family. Two things called a plan, and confusing them would put a household\u2019s goals in a widget every case type shows. The register declared `gezinsplan.goals` and `deploymentTrajectories` as plain string arrays and nothing read them, so the plan a family is worked to did not exist as data at all; that is why the row was rated `no` and not `partial`. TYPE is a registry key rather than a declarative widget because the plan is THREE schemas read together, `gezinsplan` with its `casePlanGoal` rows and the `intervention` rows under those, with `overdue` and `dueForReview` computed server-side against today; no widget type joins three schemas, and a `data` widget over `gezinsplan` would render the plan\u2019s own fields and none of its goals. Silent on a case that names no plan, which is every case outside Jeugdwet.",
-						"content": {},
-						"visibleWhen": {"any": [{"field": "gezinsplanId", "op": "notEmpty"}, {"field": "@context.caseType.category", "op": "in", "value": ["Sociaal domein", "Jeugd", "Jeugdhulp"]}]},
+						"_note": "the-social-domain-plan-and-its-grounds REQ-CPN-01 and REQ-CPN-03: the goals a household agreed to work on, the interventions under each with their provider and target date, and what is late, read from one endpoint (`gezinsplanId` names the plan; the data field stays frozen). Library config: a review-due banner over the same endpoint and grouped cards that join the interventions to their goal. It FAILS CLOSED with a retry: an unreachable register and a plan without goals must not look alike, or a consulent writes a second plan over the first. The widget id `family-plan` stays until L7 renames it (`goal-plan`) with a repair step for stored layouts.",
+						"content": {
+							"dividers": false,
+							"sections": [
+								{
+									"widget": {
+										"id": "family-plan-review-due",
+										"type": "banner",
+										"content": {
+											"variant": "warning",
+											"text": "This plan was due for review on {subject.plan.reviewDate|date}. A plan that is not revisited stops describing the household it is about.",
+											"visibleWhen": {
+												"endpoint": "/apps/dossiq/api/family-plans/@object.gezinsplanId",
+												"field": "dueForReview",
+												"op": "eq",
+												"value": true
+											}
+										}
+									}
+								},
+								{
+									"widget": {
+										"id": "family-plan-goals",
+										"type": "grouped-cards",
+										"content": {
+											"endpointSource": {
+												"url": "/apps/dossiq/api/family-plans/@object.gezinsplanId"
+											},
+											"groupsPath": "goals",
+											"itemsPath": "interventions",
+											"itemGroupField": "goal",
+											"groupTitle": "{title}",
+											"groupLines": [
+												"Met when: {metWhen}",
+												"Closed on {closedDate}: {closedObservation}"
+											],
+											"itemTitle": "{title}",
+											"itemMeta": [
+												[
+													"{providerParty.displayName} ({providerParty.telephone})",
+													"{providerParty.displayName}",
+													"{providerName}",
+													"No provider recorded"
+												],
+												"By {targetDate}"
+											],
+											"itemFlag": {
+												"field": "overdue",
+												"label": "Overdue"
+											},
+											"ungroupedTitle": "Not tied to a goal",
+											"columns": 1,
+											"emptyText": "This plan has no goals yet. Write down what this household wants to change, and what would be true if it had.",
+											"errorText": "The family plan could not be read."
+										}
+									}
+								}
+							]
+						},
+						"visibleWhen": {
+							"any": [
+								{
+									"field": "gezinsplanId",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@context.caseType.category",
+									"op": "in",
+									"value": [
+										"Sociaal domein",
+										"Jeugd",
+										"Jeugdhulp"
+									]
+								}
+							]
+						},
 						"_visibleWhenNote": "Only where a family plan applies: a case that names a plan, or a case whose case type sits in the social domain or youth care folder. On a Woo request, a permit or a complaint the panel is absent rather than an empty card."
 					},
 					{
@@ -4095,9 +4633,24 @@
 									"label": "How we handle this kind of case",
 									"widget": {
 										"id": "case-work-instruction",
-										"type": "case-work-instruction",
+										"type": "facts",
 										"title": "How we handle this kind of case",
-										"_note": "REQ-CKB-01: the work instruction the case type names, on every case of that type, with nobody linking anything per case. A component and not a declared field because the value is one reference away: `CnDetailPage` reads no `extend` (measured against the installed @conduction/nextcloud-vue 3.4.0, where the string does not occur in CnDetailPage.vue), so the case's `caseType` is a bare uuid on the page and a dotted path over it resolves to nothing. It draws a LINK and never the article: dossiq fetches no page body and stores none, so who may read it stays the collective's own business. Nothing renders when the type names no page, and a lookup that FAILED says so with a retry, because a blank panel would read as a case type nobody wrote an instruction for."
+										"_note": "REQ-CKB-01: the work instruction the case type names (`knowledgeBasePage`), on every case of that type. A link and never the article: a page path opens in Collectives, an http(s) URL as is, any other scheme not at all. Silent when the type names no page; a failed lookup says so with a retry, because a blank card would read as a type nobody wrote an instruction for.",
+										"content": {
+											"source": {
+												"register": "dossiq",
+												"schema": "caseType",
+												"id": "@object.caseType"
+											},
+											"link": {
+												"label": "Read how we handle this kind of case",
+												"icon": "BookOpenPageVariant",
+												"href": "{knowledgeBasePage}",
+												"hrefBase": "/apps/collectives/",
+												"target": "_blank"
+											},
+											"errorText": "The work instruction for this case type could not be looked up."
+										}
 									}
 								},
 								{
@@ -5030,30 +5583,57 @@
 		{
 			"id": "CaseRedaction",
 			"route": "/cases/:id/redact",
-			"type": "custom",
+			"type": "redaction",
 			"title": "Redact documents",
-			"component": "CaseRedactionView",
-			"_note": "The redaction page of a case (board DqLakken): the case's partly public documents one by one, the text with its passages marked and the proposal beside it. The case page's Redact documents action navigates here. The config carries the routes and the passage type labels the panel reads.",
+			"_note": "The redaction page of a case (board DqLakken): the case's partly public documents one by one, the text with its passages marked and the proposal beside it, drawn by the library redaction editor. The case page's Redact documents action navigates here. The trail leads back through the case, named by its identifier.",
 			"config": {
-				"urls": {
-					"list": "/apps/dossiq/api/cases/{recordId}/redactions",
-					"detect": "/apps/dossiq/api/cases/{recordId}/redactions/{documentRef}/detect",
-					"check": "/apps/dossiq/api/cases/{recordId}/redactions/{documentRef}/check",
-					"redact": "/apps/dossiq/api/cases/{recordId}/redactions/{documentRef}/redact",
-					"upload": "/apps/dossiq/api/cases/{recordId}/redactions/{documentRef}/upload"
+				"recordId": "@route.id",
+				"recordSource": {
+					"register": "dossiq",
+					"schema": "case"
 				},
-				"groundsPath": "weigeringsgronden",
-				"typeLabels": {
-					"PERSON": "Name",
-					"PHONE": "Phone number",
-					"EMAIL": "Email address",
-					"BSN": "BSN",
-					"IBAN": "Bank account",
-					"ADDRESS": "Address",
-					"POSTCODE": "Postcode",
-					"AMOUNT": "Amount",
-					"ORGANIZATION": "Organisation",
-					"UNKNOWN": "Other passage"
+				"breadcrumbs": [
+					{
+						"label": "All cases",
+						"route": {
+							"name": "Cases"
+						}
+					},
+					{
+						"label": "{identifier}",
+						"fallback": "Case",
+						"route": {
+							"name": "CaseDetail",
+							"params": {
+								"id": "{recordId}"
+							}
+						}
+					},
+					{
+						"label": "Redact"
+					}
+				],
+				"config": {
+					"urls": {
+						"list": "/apps/dossiq/api/cases/{recordId}/redactions",
+						"detect": "/apps/dossiq/api/cases/{recordId}/redactions/{documentRef}/detect",
+						"check": "/apps/dossiq/api/cases/{recordId}/redactions/{documentRef}/check",
+						"redact": "/apps/dossiq/api/cases/{recordId}/redactions/{documentRef}/redact",
+						"upload": "/apps/dossiq/api/cases/{recordId}/redactions/{documentRef}/upload"
+					},
+					"groundsPath": "weigeringsgronden",
+					"typeLabels": {
+						"PERSON": "Name",
+						"PHONE": "Phone number",
+						"EMAIL": "Email address",
+						"BSN": "BSN",
+						"IBAN": "Bank account",
+						"ADDRESS": "Address",
+						"POSTCODE": "Postcode",
+						"AMOUNT": "Amount",
+						"ORGANIZATION": "Organisation",
+						"UNKNOWN": "Other passage"
+					}
 				}
 			}
 		},

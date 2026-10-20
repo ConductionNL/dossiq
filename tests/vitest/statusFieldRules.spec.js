@@ -11,8 +11,6 @@
 import { describe, expect, it } from 'vitest'
 import {
 	fieldRule,
-	fieldRulesOf,
-	hasFieldRules,
 	normaliseGroups,
 	pruneFieldRules,
 	stateFieldRefusal,
@@ -76,30 +74,6 @@ describe('the rules a status declares', () => {
 
 	it('drops the blank and repeated group names', () => {
 		expect(normaliseGroups(['a', ' a ', '', null, 'b'])).toEqual(['a', 'b'])
-	})
-})
-
-describe('what the platform decided about this case', () => {
-	it('reads the answer off the object rather than deciding again', () => {
-		const rules = fieldRulesOf({
-			'@self': {
-				fieldRules: {
-					state: 's2',
-					hidden: ['qualityScore'],
-					readOnly: ['confidentiality'],
-					required: ['motivering'],
-				},
-			},
-		})
-
-		expect(rules.state).toBe('s2')
-		expect(rules.required).toEqual(['motivering'])
-		expect(hasFieldRules(rules)).toBe(true)
-	})
-
-	it('says nothing about a case whose read carries no answer', () => {
-		expect(hasFieldRules(fieldRulesOf({}))).toBe(false)
-		expect(fieldRulesOf(undefined).state).toBe('')
 	})
 })
 

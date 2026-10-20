@@ -110,6 +110,8 @@
         "Agenda",
         "In status",
         "{candidateGroups}",
-        "{label}"
+        "{label}",
+        "{identifier}",
+        "{subject.title}"
     ]
 }

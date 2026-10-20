@@ -348,7 +348,6 @@ describe('the container type this change depends on', () => {
 		// and renders nothing, silently, when the key is missing, and these
 		// components were registered only as sidebar `component:` entries.
 		const PANES = {
-			'case-notes-panel': 'case-notes-pane',
 			'case-decisions-panel': 'case-decisions-pane',
 			// Timeline arrived with #2846: every note, call and message on the
 			// case in one order. A single surface, keyed by TYPE like the three
@@ -386,6 +385,9 @@ describe('the container type this change depends on', () => {
 		// empty tab and logs nothing.
 		const LEAVES = {
 			'case-files': 'files',
+			// Notes is the library notes leaf, wired by the manifest with the
+			// mention endpoint and the one note action dossiq adds.
+			'case-notes-panel': 'notes',
 			'case-change-proposals': 'portaliq-change-proposal-queue',
 		}
 

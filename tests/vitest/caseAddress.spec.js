@@ -73,15 +73,3 @@ describe('the simple profile\'s map list', () => {
 		expect(lists(layout)[0].pills).toEqual([{ path: 'caseType', formatter: 'caseTypeName' }, { path: 'status', formatter: 'statusTypeName', resolve: { schema: 'statusType', colorField: 'colour' } }])
 	})
 })
-
-/**
- * @spec openspec/changes/zakenkaart-map-list/specs/zakenkaart-map-list/spec.md#requirement-the-empty-locations-line-sits-on-the-cards-inset
- */
-describe('CaseLocationMap empty line', () => {
-	it('has no padding of its own', () => {
-		const sfc = fs.readFileSync(path.join(__dirname, '../../src/components/case/CaseLocationMap.vue'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
-		const body = (sfc.match(/\.case-location-map__empty\s*\{([^}]*)\}/) || [])[1] || ''
-		expect(body).toContain('font-size: 14px;')
-		expect(body).not.toContain('padding')
-	})
-})

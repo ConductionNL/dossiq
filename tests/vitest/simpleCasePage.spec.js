@@ -409,8 +409,9 @@ describe('the tabs', () => {
 		// The parties by role lead, as Partijen; the linked contacts follow (DqZaakBetrokkenen).
 		expect(peopleTab.widgetIds[0]).toBe('case-party-roles-card')
 		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Case parties')
-		// Seats and followers share a row, as the board draws them.
-		expect(peopleTab.layout).toEqual([{ widgetId: 'case-seats-card', gridWidth: 6 }, { widgetId: 'case-followers-card', gridWidth: 6 }])
+		// Followers are the header popover only (Ruben, 20 Oct 2026), so the seats have the row to themselves.
+		expect(peopleTab.layout).toBeUndefined()
+		expect(peopleTab.widgetIds).not.toContain('case-followers-card')
 		for (const id of widgetIds(tabsOf(original)).filter((id) => !unfolded.includes(id))) {
 			expect(shown, id).toContain(id)
 		}
@@ -505,7 +506,7 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-followers-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-assistant-chat']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-assistant-chat']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
@@ -664,9 +665,10 @@ describe('the header and the side column', () => {
 		const shown = []
 		for (const card of cards) {
 			// The requester is a facts card (a lead, as DqZaak draws it), the
-			// handling a read-only data card, the work instruction its own pane.
+			// handling a read-only data card, the work instruction a facts card
+			// over the case TYPE (a link only, no fields of the case).
 			const fields = card.type === 'facts'
-				? card.content.fields.map((entry) => entry.path)
+				? (card.content.fields || []).map((entry) => entry.path)
 				: card.type === 'data' ? card.content.include : []
 			if (card.type === 'data') {
 				expect(card.content.editable).toBe(false)

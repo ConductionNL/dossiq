@@ -108,9 +108,13 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  *
  * Moved 13 -> 12 by `lists-are-views`: the custom MyWork page is a view of
  * the Cases list. Both numbers drop, for the same reason as above.
+ *
+ * Moved 12 -> 11 by DQ-ABSTRACT L4: the redaction page of a case is the
+ * library `redaction` page type now, configured in the manifest. Both
+ * numbers drop.
  */
-const CUSTOM_PAGE_COUNT_BEFORE = 11
-const CUSTOM_PAGE_COUNT_AFTER = 12
+const CUSTOM_PAGE_COUNT_BEFORE = 10
+const CUSTOM_PAGE_COUNT_AFTER = 11
 
 /**
  * One page as the manifest declares it.
