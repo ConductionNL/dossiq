@@ -1775,6 +1775,21 @@
 									"_note": "DqZaakContact: the communication panel's sections as the board's cards, contact moments first, then the receipt confirmation, the live conversation and the customer record from pipelinq."
 								},
 								{
+									"widgetId": "case-change-proposals",
+									"label": "Proposals",
+									"visibleWhen": {
+										"appInstalled": "portaliq",
+										"endpoint": "/apps/portaliq/api/proposals?register=dossiq&schema=case&id=@objectId",
+										"field": "proposals",
+										"op": "notEmpty"
+									},
+									"countFrom": {
+										"endpoint": "/apps/portaliq/api/proposals?register=dossiq&schema=case&id=@objectId",
+										"field": "proposals"
+									},
+									"_note": "PtVoorstelBeoordelen: while proposals wait on the case, Proposals takes a place in the strip with their count, and the last tab that would not fit goes under More. The question goes to portaliq's own queue route, the one the panel reads, so it answers only for a reader who may review here; without waiting proposals, without the right or without portaliq the tab is absent and the strip is as before. Needs the nextcloud-vue release that resolves @objectId in an endpoint condition and counts an endpoint's list, so it lands with that bump: on an older release the condition sends the literal token, fails safe and the tab is absent."
+								},
+								{
 									"label": "Tasks",
 									"widgetIds": [
 										"case-tasks-card",
@@ -1859,11 +1874,6 @@
 								{
 									"widgetId": "case-knowledge-panel",
 									"label": "Knowledge",
-									"overflow": true
-								},
-								{
-									"widgetId": "case-change-proposals",
-									"label": "Proposals",
 									"overflow": true
 								},
 								{
