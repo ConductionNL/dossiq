@@ -705,9 +705,10 @@ test.describe('Case detail — the Parties tab', () => {
 			'the own role type must have been created',
 		).toBeTruthy()
 
-		// The offer, computed the way `src/services/roleTypeOptions.js` does:
-		// this case type's own rows, then the generic rows whose key nobody
-		// claimed. The rule is unit-tested in tests/vitest/gemachtigdeRole.spec.js;
+		// The offer, computed the way the Role field's CnResourceSelect `scope`
+		// does: this case type's own rows, then the generic rows whose key
+		// nobody claimed. The rule is unit-tested in the library's
+		// tests/components/CnResourceSelectScope.spec.js;
 		// what this asserts is that the instance's real rows exercise it, which
 		// a unit test on invented rows cannot say.
 		const rows = await listObjects(api, 'roleType', { _limit: '200' })

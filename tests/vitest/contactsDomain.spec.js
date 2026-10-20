@@ -274,7 +274,7 @@ describe.each([
 		expect(a.props).toEqual({ requester: '@objectId' })
 		// A prefill of a field the form does not ask for is dropped silently.
 		expect(a.includeFields).toContain('requester')
-		expect(a.fieldOverrides.requester.widget).toBe('InitiatorPicker')
+		expect(a.fieldOverrides.requester.widget).toBe('party')
 	})
 
 	it('logs a contact moment against this contact', () => {

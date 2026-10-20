@@ -149,7 +149,7 @@
 						"widget": "textarea"
 					},
 					"requester": {
-						"widget": "InitiatorPicker",
+						"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 						"label": "Requester"
 					},
 					"confidentiality": {
@@ -2070,7 +2070,7 @@
 									"editable": false
 								},
 								"requester": {
-									"widget": "InitiatorPicker",
+									"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 									"label": "Requester",
 									"formatter": "requesterName",
 									"order": 4
@@ -3864,7 +3864,7 @@
 								"order": 5
 							},
 							"requester": {
-								"widget": "InitiatorPicker",
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester",
 								"order": 3
 							},

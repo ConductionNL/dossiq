@@ -26,7 +26,7 @@ const stubs = {
 	NcTextArea: { name: 'NcTextArea', props: ['modelValue', 'label'], template: '<textarea class="text-area" :value="modelValue" />' },
 	NcSelect: true,
 	NcNoteCard: true,
-	TemplatePicker: true,
+	CnTemplateSelect: true,
 	FolderOutline: true,
 }
 

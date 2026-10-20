@@ -409,13 +409,18 @@ describe('the case type party kinds', () => {
 		})
 		await flushPromises()
 
-		expect(wrapper.vm.rows.map((row) => [row.code, row.accepted])).toEqual([
-			['gemachtigde', true],
-			['aanvrager', true],
-			['vereniging', false],
+		// The ordered list is the library's CnOrderedListField: the declared
+		// kinds are its rows in their order, every kind is a choice.
+		const list = wrapper.findComponent({ name: 'CnOrderedListField' })
+		expect(list.props('modelValue')).toEqual(['gemachtigde', 'aanvrager'])
+		expect(list.props('options').map((o) => o.value)).toEqual([
+			'aanvrager',
+			'gemachtigde',
+			'vereniging',
 		])
+		expect(list.props('disabled')).toBe(false)
 
-		wrapper.vm.move('aanvrager', -1)
+		list.vm.$emit('update:modelValue', ['aanvrager', 'gemachtigde'])
 		await wrapper.vm.save()
 
 		expect(axios.put).toHaveBeenCalledWith(
@@ -439,6 +444,9 @@ describe('the case type party kinds', () => {
 		await flushPromises()
 
 		expect(wrapper.vm.editable).toBe(false)
+		expect(
+			wrapper.findComponent({ name: 'CnOrderedListField' }).props('disabled'),
+		).toBe(true)
 		expect(
 			wrapper.find('[data-testid="case-type-party-kinds-save"]').exists(),
 		).toBe(false)

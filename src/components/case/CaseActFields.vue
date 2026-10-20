@@ -45,13 +45,15 @@
 		</section>
 	</template>
 
-	<TemplatePicker
+	<CnTemplateSelect
 		v-if="inputs.result"
-		kind="result"
-		:caseType="caseType"
-		:caseId="caseId"
-		:label="t('dossiq', 'Result template')"
-		@apply="$emit('applyTemplate', $event)" />
+		url="/apps/dossiq/api/content-templates/result"
+		:params="{ caseType, case: caseId }"
+		:mapOption="contentTemplateOption"
+		:inputLabel="t('dossiq', 'Result template')"
+		:placeholder="t('dossiq', 'Start from a template')"
+		data-testid="template-picker"
+		@apply="applyTemplate" />
 
 	<NcSelect
 		v-if="inputs.reason && picksPauseReason"
@@ -142,14 +144,15 @@
 </template>
 
 <script>
+import { CnTemplateSelect } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
-import TemplatePicker from '../TemplatePicker.vue'
 import { formatDate } from '../../utils/caseHelpers.js'
+import { contentTemplateOption } from '../../utils/templatePicker.js'
 import {
 	asksReasonText,
 	offersPauseReasons,
@@ -165,8 +168,8 @@ export default {
 		NcNoteCard,
 		NcSelect,
 		NcTextArea,
+		CnTemplateSelect,
 		NcTextField,
-		TemplatePicker,
 	},
 
 	props: {
@@ -285,6 +288,22 @@ export default {
 
 	methods: {
 		t,
+		contentTemplateOption,
+
+		/**
+		 * Hand a chosen template's presets and body to the dialog; clearing
+		 * the select changes nothing already typed.
+		 *
+		 * @param {object|null} option The chosen template.
+		 * @return {void}
+		 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
+		 */
+		applyTemplate(option) {
+			if (!option) {
+				return
+			}
+			this.$emit('applyTemplate', { id: option.id, presets: option.presets, body: option.body })
+		},
 	},
 }
 </script>

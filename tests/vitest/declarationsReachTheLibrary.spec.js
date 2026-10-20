@@ -37,7 +37,6 @@ import { contextOf } from '@conduction/nextcloud-vue/src/utils/sentinelTokens.js
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import { buildRelatedFilters } from '../../src/utils/caseTypeFieldFilters.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 
@@ -142,10 +141,15 @@ describe('row 11.9: a case type layout survives the library that reads it', () =
 })
 
 describe('row 9.2: the field filters have to leave the browser', () => {
-	const compiled = buildRelatedFilters([
-		{ definitionId: 'pd-1', value: { gte: '100000' } },
-		{ definitionId: 'pd-4', value: { eq: 'Noord' } },
-	])
+	// What CnRelatedFieldFilters compiles for two filled fields under the
+	// Cases page's `relatedFieldFilters` (asserted in the library's own
+	// tests/utils/relatedFieldFilters.spec.js).
+	const compiled = {
+		'_related[caseProperty][case][0][propertyDefinition]': 'pd-1',
+		'_related[caseProperty][case][0][value][gte]': '100000',
+		'_related[caseProperty][case][1][propertyDefinition]': 'pd-4',
+		'_related[caseProperty][case][1][value]': 'Noord',
+	}
 
 	it('is dropped by the route-query reader, so the route cannot be the transport', () => {
 		const query = { caseType: 'ct-1', ...compiled }
