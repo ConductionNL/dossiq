@@ -33,6 +33,8 @@
         "%n documents selected": "%n documents selected",
         "%n documents sent": "%n documents sent",
         "%n documents, in the order they are submitted": "%n documents, in the order they are submitted",
+        "%n item": "%n item",
+        "%n items": "%n items",
         "%n logged processing found for this subject.": "%n logged processing found for this subject.",
         "%n logged processings found for this subject.": "%n logged processings found for this subject.",
         "%n more result. Narrow your terms to see it.": "%n more result. Narrow your terms to see it.",
@@ -106,6 +108,10 @@
         "_%n day late_::_%n days late_": [
             "%n day late",
             "%n days late"
+        ],
+        "_%n item_::_%n items_": [
+            "%n item",
+            "%n items"
         ],
         "_%n more in My work_::_%n more in My work_": [
             "%n more in My work",
