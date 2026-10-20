@@ -474,7 +474,7 @@
 								"id": "simple-my-tasks",
 								"type": "tasks",
 								"title": "My tasks",
-								"_note": "The library's `tasks` widget with `variant: list` is the board's My tasks card (a box, the task, its case on a muted second line, the due date on the right); ticking a box completes the task through the engine. It replaced the app's own MyWorkWidget here, which keeps the table, the substitution toggle and the full profile's My work page. The header link is the placement's `headerLink`.",
+								"_note": "The library's `tasks` widget with `variant: list` is the board's My tasks card (a box, the task, its case on a muted second line, the due date on the right); ticking a box completes the task through the engine. The full profile's My work page shows the same library widget in its compact rows. The header link is the placement's `headerLink`.",
 								"content": {
 									"scope": "assigned",
 									"variant": "list",
