@@ -3654,6 +3654,7 @@
 				],
 				"showTitle": true,
 				"countSubtitle": "{total} cases",
+				"defaultOrder": "deadline",
 				"countText": "{shown} of {total} open cases in your teams, sorted by deadline",
 				"footerNote": "click a column header to sort",
 				"bulkHint": "See what changes first, then carry it out.",
