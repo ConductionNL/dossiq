@@ -642,7 +642,9 @@ describe('the tabs', () => {
 			field: 'caseType',
 			resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title', colorField: 'colour', iconField: 'icon' },
 		})
-		expect(simple.sideColumn[0]).toBe('case-tile-deadline')
+		// The advice notice opens the column while advice is still asked; the deadline is the first card.
+		expect(simple.sideColumn[0].id).toBe('side-advice-requested')
+		expect(simple.sideColumn[1]).toBe('case-tile-deadline')
 		const placed = simple.layout.map((entry) => entry.widgetId)
 		expect(placed).not.toContain('case-tile-deadline')
 		expect(
@@ -657,7 +659,7 @@ describe('the header and the side column', () => {
 		expect(onTheCase(simple.breadcrumb.currentField)).toBe(true)
 		expect(onTheCase(simple.typePill.field)).toBe(true)
 		// The cards every case shows; the case-type cards are gated and checked below.
-		const cards = simple.sideColumn.filter((card) => typeof card === 'object' && !card.visibleWhen)
+		const cards = simple.sideColumn.filter((card) => typeof card === 'object' && !card.visibleWhen && card.type !== 'banner')
 		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Linked', 'Work instruction'])
 		const shown = []
 		for (const card of cards) {
