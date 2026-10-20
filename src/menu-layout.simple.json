@@ -969,8 +969,11 @@
 							]
 						},
 						"in-progress": {
-							"title": "What now? Handle the case",
-							"after": "Then: the decision",
+							"title": [
+								"What now? Step 2: {statusPublicLabel|lower}",
+								"What now? Handle the case"
+							],
+							"after": "Then: on to step 3, the decision",
 							"checklist": [
 								{
 									"label": "Choose a handler",
@@ -1026,6 +1029,32 @@
 				"_sideColumnFromNote": "Side cards per case type (Ruben, 18 October 2026): a case type that lists `sideCards` shows those cards in that order, a case type that lists none shows the column below. The list names ids of this column. Needs nextcloud-vue detail-side-column-from; on an older release the key is ignored and every case shows the column below.",
 				"sideColumnFrom": "@context.caseType.sideCards",
 				"sideColumn": [
+					{
+						"id": "side-advice-requested",
+						"type": "banner",
+						"_note": "DqZaak Advies gevraagd: the notice at the top of the side column while advice is still asked on this case. It shows while an open advice request (adviesAanvraag, status requested) points at this case, and names the first one, the soonest due. Needs nextcloud-vue notice-scoped-to-the-record (the @objectId token in a banner source); on an older release the token stays unresolved, the query finds nothing and the notice stays hidden.",
+						"content": {
+							"variant": "warning",
+							"lead": "Advice requested",
+							"text": "to {subject.advisor}. Answer due {subject.deadline|longdate}. Closing waits until then.",
+							"visibleWhen": {
+								"source": {
+									"register": "dossiq",
+									"schema": "adviesAanvraag",
+									"filter": {
+										"case": "@objectId",
+										"status": "requested"
+									},
+									"order": {
+										"deadline": "asc"
+									}
+								},
+								"field": "@total",
+								"op": "gt",
+								"value": 0
+							}
+						}
+					},
 					"case-tile-deadline",
 					{
 						"id": "side-requester",
@@ -1079,6 +1108,15 @@
 								}
 							],
 							"emptyText": "Nobody handles this case yet"
+						}
+					},
+					{
+						"id": "side-linked",
+						"type": "linked",
+						"title": "Linked",
+						"_note": "DqZaak Gekoppeld: what other apps hold for this case, in one card (nextcloud-vue linked-integrations-card). Each app's leaf is mounted out of sight and reports a summary: the linked ones list their rows, the rest share one line \"Documents, fees and payments, contract and projects: nothing linked\" with their actions (planninq's New project and Open in Planninq). It replaces the standalone Projects widget in the grid. The ids are the RENDER leaves the apps register (shillinq's `-panel` ids, not its `shillinq-payment-requests` data leaf). An app that is absent registers no leaf and is left out of the line.",
+						"content": {
+							"leaves": ["filinq-documents", "shillinq-payment-requests-panel", "shillinq-contracts-panel", "planninq-projects"]
 						}
 					},
 					{
@@ -1249,6 +1287,87 @@
 								"field": "status"
 							},
 							"emptyText": "No bids yet"
+						}
+					},
+					{
+						"id": "side-special-data-health",
+						"type": "banner",
+						"title": "Special categories of personal data",
+						"_note": "DqSociaalDomein: the warning at the top of the side column when the case type processes this special category of personal data (caseType.specialDataCategories). A case type lists the card in its sideCards to show it.",
+						"visibleWhen": {
+							"field": "@context.caseType.specialDataCategories",
+							"op": "contains",
+							"value": "health"
+						},
+						"content": {
+							"variant": "warning",
+							"icon": "AlertOutline",
+							"lead": "Special categories of personal data:",
+							"text": "health."
+						}
+					},
+					{
+						"id": "side-special-data-ethnicity",
+						"type": "banner",
+						"title": "Special categories of personal data",
+						"visibleWhen": {
+							"field": "@context.caseType.specialDataCategories",
+							"op": "contains",
+							"value": "ethnicity"
+						},
+						"content": {
+							"variant": "warning",
+							"icon": "AlertOutline",
+							"lead": "Special categories of personal data:",
+							"text": "racial or ethnic origin."
+						}
+					},
+					{
+						"id": "side-special-data-religion",
+						"type": "banner",
+						"title": "Special categories of personal data",
+						"visibleWhen": {
+							"field": "@context.caseType.specialDataCategories",
+							"op": "contains",
+							"value": "religion"
+						},
+						"content": {
+							"variant": "warning",
+							"icon": "AlertOutline",
+							"lead": "Special categories of personal data:",
+							"text": "religion or belief."
+						}
+					},
+					{
+						"id": "side-special-data-politicalOpinion",
+						"type": "banner",
+						"title": "Special categories of personal data",
+						"visibleWhen": {
+							"field": "@context.caseType.specialDataCategories",
+							"op": "contains",
+							"value": "politicalOpinion"
+						},
+						"content": {
+							"variant": "warning",
+							"icon": "AlertOutline",
+							"lead": "Special categories of personal data:",
+							"text": "political opinions."
+						}
+					},
+					{
+						"id": "side-special-data-criminal",
+						"type": "banner",
+						"title": "Special categories of personal data",
+						"visibleWhen": {
+							"field": "@context.caseType.specialDataCategories",
+							"op": "contains",
+							"value": "criminal"
+						},
+						"content": {
+							"variant": "warning",
+							"icon": "AlertOutline",
+							"lead": "Special categories of personal data:",
+							"text": "criminal convictions and offences."
 						}
 					},
 					"case-banner-stack"
@@ -1432,7 +1551,13 @@
 								"kind": "lifecycle"
 							},
 							"unreachableReason": "Not possible from the current status",
-							"variant": "bars"
+							"variant": "bars",
+							"datesSource": {
+								"url": "/apps/dossiq/api/case-types/@object.caseType/blueprint?case=@objectId",
+								"path": "statusTypes",
+								"idField": "id",
+								"dateField": "reachedAt"
+							}
 						}
 					},
 					"case-panels": {
@@ -1678,7 +1803,17 @@
 										"case-seats-card",
 										"case-followers-card"
 									],
-									"_note": "DqZaakBetrokkenen: the people panel's sections as the board's cards, the parties first, then roles, seats and followers."
+									"layout": [
+										{
+											"widgetId": "case-seats-card",
+											"gridWidth": 6
+										},
+										{
+											"widgetId": "case-followers-card",
+											"gridWidth": 6
+										}
+									],
+									"_note": "DqZaakBetrokkenen: the people panel's sections as the board's cards: the parties by role first (Partijen), the linked contacts, then seats and followers side by side, half a row each."
 								},
 								{
 									"label": "Email",
@@ -1740,6 +1875,12 @@
 									"widgetId": "case-document-review",
 									"label": "Review",
 									"overflow": true
+								},
+								{
+									"widgetId": "case-assistant-chat",
+									"label": "AI oversight",
+									"overflow": true,
+									"_note": "DqZaakAssistent: the assistant is drawn in the case page, as the AI-toezicht tab, not only behind the launcher hex. The tab holds the same AI Chat Companion the hex opens, embedded (nextcloud-vue `ai-chat`), with the case as its context. It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip, before Historie, while it is open, as the board draws it. The hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
 								}
 							]
 						}
@@ -1850,19 +1991,14 @@
 						"gridWidth": 6,
 						"gridHeight": 4
 					},
-					"work-projects": {
-						"gridX": 6,
-						"gridY": 48,
-						"gridWidth": 6,
-						"gridHeight": 4
-					},
 					"documents-merge-to-pdf": {
 						"gridX": 0,
 						"gridY": 56,
 						"gridWidth": 6,
 						"gridHeight": 4
 					},
-					"case-banners": null
+					"case-banners": null,
+					"full-linked": null
 				}
 			},
 			"configAppend": {
@@ -2292,47 +2428,29 @@
 					},
 					{
 						"id": "case-tasks-card",
-						"type": "case-task-pane",
+						"type": "tasks",
 						"title": "Tasks on this case",
-						"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon and the tab entry are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column. `register` and `schema` are NOT kept, and that is remove-casetask 4.2: the component reads the task engine and has ignored both keys since dossiq#2357, so the pair named a schema that no longer exists and claimed a binding the widget does not make. The day the swap back happens, the list the widget goes back to is the engine's, not an object list, so neither key comes back.",
+						"_note": "DqZaakTaken: the case's tasks as the library task table (CnTasksWidget `variant: table`): every task on the case from OpenRegister's task engine, open first and finished struck through, with the summary under the title and New task in the card header. Claim, complete (also a colleague's task, the engine decides), cancel and adding a task stay on the case page; a task's form, candidates and notes are on its own page, which the task title opens (rowRoute TaskDetail). This replaces the case-task-pane widget in the table mode, which drew the same table with dossiq's own component.",
 						"content": {
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "dueDate",
-								"dir": "asc"
-							},
+							"variant": "table",
+							"objectUuid": "@objectId",
+							"includeDone": true,
 							"limit": 25,
-							"columns": [
-								{
-									"key": "title",
-									"label": "Title"
-								},
-								{
-									"key": "status",
-									"label": "Status"
-								},
-								{
-									"key": "assignee",
-									"label": "Assignee"
-								},
-								{
-									"key": "dueDate",
-									"label": "Due"
-								},
-								{
-									"key": "priority",
-									"label": "Priority"
-								}
-							],
-							"rowRoute": "TaskDetail",
-							"viewAllRoute": "Tasks",
-							"viewAllQuery": {
-								"case": "@objectId"
+							"create": {
+								"appId": "dossiq"
 							},
+							"completeAny": true,
+							"cancel": true,
+							"rowRoute": "TaskDetail",
+							"viewAllRoute": {
+								"name": "Tasks",
+								"query": {
+									"case": "@objectId"
+								}
+							},
+							"viewAllLabel": "All tasks of this case in Tasks",
 							"emptyText": "No tasks for this case yet",
-							"mode": "table"
+							"pollSeconds": 30
 						}
 					},
 					{
@@ -3185,6 +3303,16 @@
 									"open": true
 								}
 							}
+						}
+					},
+					{
+						"id": "case-assistant-chat",
+						"type": "ai-chat",
+						"title": "Assistant",
+						"requiredApp": "hermiq",
+						"_note": "The AI Chat Companion embedded in the Assistant tab (DqZaakAssistent). The library widget renders the companion the launcher hex opens, always open and without the hex; it reads the page context CnDetailPage provides, so the agents offered are the ones relevant to a case. Without hermiq the widget says it is not installed rather than leaving an empty tab. Needs the nextcloud-vue release with the `ai-chat` widget (ai-chat-widget).",
+						"content": {
+							"chatAppId": "hermiq"
 						}
 					},
 					{
@@ -4141,6 +4269,7 @@
 						"id": "side-case-type-versions",
 						"type": "record-list",
 						"title": "Versions",
+						"tabs": ["overview", "statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "history"],
 						"content": {
 							"register": "dossiq",
 							"schema": "caseType",
@@ -4186,6 +4315,7 @@
 						"id": "side-case-type-facts",
 						"type": "facts",
 						"title": "Data",
+						"tabs": ["statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "history"],
 						"content": {
 							"fields": [
 								{
@@ -4210,6 +4340,49 @@
 								}
 							]
 						}
+					},
+					{
+						"id": "side-case-type-check",
+						"type": "record-list",
+						"title": "Check",
+						"_note": "DqZaaktypeOverzicht Controle, beside the Overview tab only (`tabs`): the warnings publishing would give for this case type (GET /api/case-types/{id}/publish/validate answers warnings as plain strings), as one warning notice. The side cards per tab follow the boards: Overview Versions and Check, Phases and tasks Versions, Data and History, Fields the parent type.",
+						"tabs": ["overview"],
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/publish/validate",
+								"responsePath": "warnings"
+							},
+							"presentation": "notice",
+							"variant": "warning",
+							"lead": "Warnings ({total}):",
+							"limit": 1,
+							"emptyText": "No warnings"
+						}
+					},
+					{
+						"id": "side-case-type-parent",
+						"type": "facts",
+						"title": "Parent type",
+						"tabs": ["fields"],
+						"content": {
+							"fields": [
+								{
+									"label": "Inherits from",
+									"path": "parentCaseType",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "caseType"
+									}
+								}
+							],
+							"emptyText": "This case type inherits from no parent type"
+						}
+					},
+					{
+						"id": "side-case-type-history",
+						"type": "audit-trail",
+						"title": "History",
+						"tabs": ["phases"]
 					}
 				],
 				"layout": [
@@ -4235,19 +4408,22 @@
 							"ariaLabel": "Case type parts",
 							"tabs": [
 								{
+									"id": "overview",
 									"label": "Overview",
 									"widgetIds": [
-										"case-type-check",
 										"case-type-statuses",
-										"case-type-rights"
+										"case-type-rules-summary",
+										"case-type-rights",
+										"case-type-privacy",
+										"case-type-translations"
 									],
 									"layout": [
 										{
-											"widgetId": "case-type-check",
+											"widgetId": "case-type-statuses",
 											"gridWidth": 12
 										},
 										{
-											"widgetId": "case-type-statuses",
+											"widgetId": "case-type-rules-summary",
 											"gridWidth": 12
 										},
 										{
@@ -4265,6 +4441,7 @@
 									]
 								},
 								{
+									"id": "fields",
 									"label": "Fields",
 									"widgetIds": [
 										"case-type-fields-editor",
@@ -4282,6 +4459,7 @@
 									}
 								},
 								{
+									"id": "statuses",
 									"label": "Statuses",
 									"widgetIds": [
 										"case-type-statuses-editor",
@@ -4296,6 +4474,7 @@
 									}
 								},
 								{
+									"id": "phases",
 									"label": "Phases and tasks",
 									"widgetIds": [
 										"case-type-phase-board",
@@ -4308,6 +4487,7 @@
 									]
 								},
 								{
+									"id": "rights",
 									"label": "Rights",
 									"widgetIds": [
 										"case-type-rights",
@@ -4315,14 +4495,17 @@
 									]
 								},
 								{
+									"id": "privacy",
 									"label": "Privacy",
 									"widgetId": "case-type-privacy"
 								},
 								{
+									"id": "translations",
 									"label": "Translations",
 									"widgetId": "case-type-translations"
 								},
 								{
+									"id": "versions",
 									"label": "Versions",
 									"widgetIds": [
 										"case-type-chain",
@@ -4337,6 +4520,7 @@
 									}
 								},
 								{
+									"id": "portal",
 									"label": "Portal",
 									"widgetIds": [
 										"case-type-portal",
@@ -4344,10 +4528,39 @@
 									]
 								},
 								{
+									"id": "history",
 									"widgetId": "case-type-history",
 									"label": "Record history"
 								}
 							]
+						}
+					},
+					{
+						"id": "case-type-rules-summary",
+						"type": "record-list",
+						"title": "Rules",
+						"_note": "DqZaaktypeOverzicht Regels: the rules OpenRegister holds for the case schema (GET /apps/openregister/api/schemas/case/rules, the inventory the Fields tab's rules widget reads), one row each with whether it is on. The rules belong to the case schema, not to one case type, which is why every case type lists the same ones. Adding a rule happens on OpenRegister's schema page, so there is no Add here.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/openregister/api/schemas/case/rules",
+								"responsePath": "rules"
+							},
+							"presentation": "rows",
+							"title": "{label}",
+							"meta": "{kind}",
+							"pill": {
+								"field": "enabled",
+								"labels": {
+									"true": "On",
+									"false": "Off"
+								},
+								"colorMap": {
+									"true": "success",
+									"false": "default"
+								}
+							},
+							"limit": 5,
+							"emptyText": "No rules for cases yet"
 						}
 					},
 					{
@@ -4462,6 +4675,13 @@
 						"id": "case-type-phase-board",
 						"type": "grouped-cards",
 						"title": "Phases and tasks",
+						"headerLink": {
+							"label": "View as flow",
+							"route": "WorkflowDefinitionDetail",
+							"params": {
+								"id": "@object.workflowDefinition"
+							}
+						},
 						"_note": "DqZaaktype Fasen en taken: the case type's statuses as phases, each with the tasks its active workflow runs, and the acts available in every phase, from GET /api/case-types/{id}/phases (the steps are a JSON string no declarative widget can group).",
 						"content": {
 							"endpointSource": {
@@ -4487,23 +4707,6 @@
 							},
 							"emptyText": "This case type has no phases yet",
 							"groupEmptyText": "No tasks in this phase"
-						}
-					},
-					{
-						"id": "case-type-check",
-						"type": "record-list",
-						"title": "Check",
-						"_note": "DqZaaktypeOverzicht Controle, on the Overview tab only (a side card would show on every tab): the warnings publishing would give for this case type (GET /api/case-types/{id}/publish/validate answers warnings as plain strings), as one warning notice.",
-						"content": {
-							"endpointSource": {
-								"url": "/apps/dossiq/api/case-types/@objectId/publish/validate",
-								"responsePath": "warnings"
-							},
-							"presentation": "notice",
-							"variant": "warning",
-							"lead": "Warnings ({total}):",
-							"limit": 1,
-							"emptyText": "No warnings"
 						}
 					},
 					{

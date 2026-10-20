@@ -25,41 +25,23 @@
 			</template>
 		</NcEmptyContent>
 
+		<!-- The library's list rows (board DqVthInstellingen): the name over its
+		     version and size, the state as a status pill, Edit and Delete in the
+		     row's menu. -->
 		<div v-if="!loading && !editing" class="checklists-tab__list">
-			<div
-				v-for="checklist in checklists"
-				:key="checklist.id"
-				class="checklists-tab__item">
-				<div class="checklists-tab__item-info">
-					<strong>{{ checklist.name }}</strong>
-					<span
-						class="checklists-tab__badge"
-						:class="
-							checklist.active
-								? 'checklists-tab__badge--active'
-								: 'checklists-tab__badge--inactive'
-						">
-						{{
-							checklist.active
-								? t('dossiq', 'Active')
-								: t('dossiq', 'Inactive')
-						}}
-					</span>
-					<span class="checklists-tab__meta"
-						>v{{ checklist.version || 1 }} &bull;
-						{{ (checklist.items || []).length }}
-						{{ t('dossiq', 'items') }}</span
-					>
-				</div>
-				<div class="checklists-tab__item-actions">
-					<NcButton @click="openEditor(checklist)">
-						{{ t('dossiq', 'Edit') }}
-					</NcButton>
-					<NcButton variant="error" @click="confirmDelete(checklist)">
-						{{ t('dossiq', 'Delete') }}
-					</NcButton>
-				</div>
-			</div>
+			<CnObjectRow
+				v-for="row in rows"
+				:key="row.id"
+				class="checklists-tab__item"
+				:object="row"
+				:config="rowConfig">
+				<template #actions>
+					<CnRowActions
+						:actions="rowActions"
+						:row="row.checklist"
+						:rowLabel="row.name" />
+				</template>
+			</CnObjectRow>
 		</div>
 
 		<InspectionChecklistEditor
@@ -86,7 +68,7 @@
 </template>
 
 <script>
-import { CnConfirmDialog } from '@conduction/nextcloud-vue'
+import { CnConfirmDialog, CnObjectRow, CnRowActions } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
@@ -156,6 +138,8 @@ export default {
 		NcIconSvgWrapper,
 		InspectionChecklistEditor,
 		CnConfirmDialog,
+		CnObjectRow,
+		CnRowActions,
 	},
 
 	props: {
@@ -181,6 +165,43 @@ export default {
 			clipboardIcon:
 				'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19,3H14.82C14.25,1.44 12.53,0.64 11,1.2C10.14,1.5 9.5,2.16 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7Z" /></svg>',
 		}
+	},
+
+	computed: {
+		/**
+		 * The checklists as list rows: the name, its version and size, and its
+		 * state as a status pill (success when active, warning when not).
+		 *
+		 * @return {Array<object>} One row per checklist.
+		 * @spec openspec/changes/vth-checklists-as-rows/specs/vth-checklists-as-rows/spec.md#requirement-the-vth-checklists-are-library-rows-with-a-status-pill
+		 */
+		rows() {
+			return this.checklists.map((checklist) => {
+				const items = Array.isArray(checklist.items) ? checklist.items.length : 0
+				return {
+					id: checklist.id,
+					name: checklist.name,
+					subtitle: t('dossiq', 'Version {version}', { version: checklist.version || 1 })
+						+ ' · ' + n('dossiq', '%n item', '%n items', items),
+					state: checklist.active ? t('dossiq', 'Active') : t('dossiq', 'Inactive'),
+					tone: checklist.active ? 'success' : 'warning',
+					checklist,
+				}
+			})
+		},
+
+		/** @return {object} Which row fields CnObjectRow draws where. */
+		rowConfig() {
+			return { titleField: 'name', subtitleField: 'subtitle', badgeField: 'state', badgeVariantField: 'tone' }
+		},
+
+		/** @return {Array<object>} The row menu: Edit, then Delete. */
+		rowActions() {
+			return [
+				{ id: 'edit', label: t('dossiq', 'Edit'), handler: (checklist) => this.openEditor(checklist) },
+				{ id: 'delete', label: t('dossiq', 'Delete'), destructive: true, handler: (checklist) => this.confirmDelete(checklist) },
+			]
+		},
 	},
 
 	mounted() {
@@ -312,45 +333,12 @@ export default {
 	margin-bottom: 16px;
 }
 
-.checklists-tab__item {
+.checklists-tab__list {
 	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding: 12px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
-	margin-bottom: 8px;
+	flex-direction: column;
 }
 
-.checklists-tab__item-info {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-}
-
-.checklists-tab__item-actions {
-	display: flex;
-	gap: 8px;
-}
-
-.checklists-tab__badge {
-	padding: 2px 8px;
-	border-radius: 12px;
-	font-size: 0.8em;
-}
-
-.checklists-tab__badge--active {
-	background: var(--color-success);
-	color: var(--color-success-text);
-}
-
-.checklists-tab__badge--inactive {
-	background: var(--color-warning);
-	color: var(--color-warning-text);
-}
-
-.checklists-tab__meta {
-	color: var(--color-text-maxcontrast);
-	font-size: 0.9em;
+.checklists-tab__item + .checklists-tab__item {
+	border-top: 1px solid var(--color-border);
 }
 </style>

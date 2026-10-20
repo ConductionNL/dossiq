@@ -361,6 +361,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\NormaliseCommunicationChannelValues</step>
             <!--
+                After the import, so statusType declares teal: the statuses
+                dossiq seeded take the colour their boards draw, unless an
+                administrator chose another (status-type-board-colours).
+            -->
+            <step>OCA\Dossiq\Repair\RecolourShippedStatusTypes</step>
+            <!--
                 After the import, so resultType declares the archival action
                 enum: the retain and destroy the retired admin editor stored
                 become bewaren and vernietigen.

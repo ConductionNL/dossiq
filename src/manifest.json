@@ -2964,16 +2964,25 @@
 					{
 						"id": "case-payment-requests",
 						"type": "integration",
-						"integrationId": "shillinq-payment-requests",
+						"integrationId": "shillinq-payment-requests-panel",
 						"title": "Fees and payments",
-						"_note": "fees-and-payments-on-the-case D-1 and D-3. The money lives in shillinq, so shillinq renders it: this is a PLACEMENT of the `shillinq-payment-requests` leaf, the same shape as the humaniq hours leaf beside it, and not a query against another app's register. What the panel shows is the requests raised on this case, the amount, and the article of the legesverordening the amount rests on, because a citizen may ask why they are being charged and \"because the configuration says so\" is not an answer a gemeente may give. It also carries the acts: raise the leges for this case's intake channel, send the payment link, and record money that arrived another way. THE COUNTER PAYMENT IS DELIBERATELY NOT A DOSSIQ ACT. shillinq puts it behind its own `payment.administer` permission, so the authority that owns the money decides who may say it arrived; a second dossiq path to the same fact would be a second answer with a second rights matrix behind it. dossiq's own half is the word on the case (`paymentState`), refreshed hourly for the list and read live whenever an act must be refused or allowed. A leaf whose app is absent is never registered, so on an install without shillinq this panel is missing rather than empty."
+						"_note": "fees-and-payments-on-the-case D-1 and D-3. The money lives in shillinq, so shillinq renders it: this is a PLACEMENT of the `shillinq-payment-requests-panel` leaf, the same shape as the humaniq hours leaf beside it, and not a query against another app's register. What the panel shows is the requests raised on this case, the amount, and the article of the legesverordening the amount rests on, because a citizen may ask why they are being charged and \"because the configuration says so\" is not an answer a gemeente may give. It also carries the acts: raise the leges for this case's intake channel, send the payment link, and record money that arrived another way. THE COUNTER PAYMENT IS DELIBERATELY NOT A DOSSIQ ACT. shillinq puts it behind its own `payment.administer` permission, so the authority that owns the money decides who may say it arrived; a second dossiq path to the same fact would be a second answer with a second rights matrix behind it. dossiq's own half is the word on the case (`paymentState`), refreshed hourly for the list and read live whenever an act must be refused or allowed. A leaf whose app is absent is never registered, so on an install without shillinq this panel is missing rather than empty."
 					},
 					{
 						"id": "case-contract",
 						"type": "integration",
-						"integrationId": "shillinq-contracts",
+						"integrationId": "shillinq-contracts-panel",
 						"title": "Contract",
 						"_note": "fees-and-payments-on-the-case D-5. The case names the contract it is handled under and reads its term, its counterparty and what is left of its value from shillinq, which flags a contract that is expiring, expired or terminated because those change what the handler should do next. NOTHING OF THE CONTRACT IS COPIED ONTO THE CASE: a copied term goes stale and then alerts on the wrong date, and the alert before a contract lapses is shillinq's anyway. The case carries one field, `contract`, which is the reference; the other direction is shillinq's `linkedObjects`, which is how a contract lists the cases raised under it."
+					},
+					{
+						"id": "case-linked",
+						"type": "linked",
+						"title": "Linked",
+						"_note": "DqZaak Gekoppeld in the FULL profile, which has no side column: the same card the simple profile places after Handling (side-linked), here in the grid cell the standalone Projects widget had, so no profile loses the projects. nextcloud-vue linked-integrations-card mounts each leaf out of sight and lists the linked ones' rows, then one \"...: nothing linked\" line with the rest's actions. The simple profile drops this cell (`full-linked: null`) because its side column carries the card.",
+						"content": {
+							"leaves": ["filinq-documents", "shillinq-payment-requests-panel", "shillinq-contracts-panel", "planninq-projects"]
+						}
 					},
 					{
 						"id": "case-change-proposals",
@@ -2981,15 +2990,6 @@
 						"integrationId": "portaliq-change-proposal-queue",
 						"title": "Proposed changes",
 						"_note": "portal-change-proposals-on-the-case D2, placed as the Proposals tab of the case panels as board PtVoorstelBeoordelen draws it (Voorstellen). A resident proposes a corrected title or description in the portal (the proposeCaseChange action); portaliq queues it and renders the queue here, where the handler accepts or rejects it. Accepting writes the case as the reviewer with RBAC on, so it is refused wherever the reviewer could not edit the case by hand. dossiq keeps no copy of a proposal. A leaf whose app is absent is never registered, so without portaliq the panel is missing rather than empty, and no requiredApp is declared."
-					},
-					{
-						"id": "case-projects",
-						"type": "integration",
-						"integrationId": "planninq-projects",
-						"title": "Projects",
-						"_note": "projects-from-planninq-on-the-case D1 (dossiq#3190). The projects run for this case live in planninq, so planninq renders them: a PLACEMENT of its planninq-projects leaf, beside the shillinq panels. The leaf scopes to projects whose caseReference is this case's uuid because the host forwards register dossiq and schema case (planninq src/integrations/projectScope.js), and its New project action opens planninq's dialog with the case linked. dossiq keeps no copy of a project. A leaf whose app is absent is never registered, so without planninq the panel is missing rather than empty, and no requiredApp is declared.",
-						"visibleWhen": {"field": "@context.caseType.category", "op": "in", "value": ["Vergunningen", "Toezicht en handhaving", "Subsidies", "Inkoop en leveranciers", "Permits", "Grants"]},
-						"_visibleWhenNote": "Projects run for cases whose work is a project: permits and their supervision, subsidies and grants, procurement. A Woo request, an objection or a complaint has none, so the panel is absent there rather than empty. The list names case type categories as this register seeds them; an organisation that files case types under its own folder names adds them here."
 					},
 					{
 						"id": "case-merge-to-pdf",
@@ -4243,8 +4243,8 @@
 						"showTitle": true
 					},
 					{
-						"id": "work-projects",
-						"widgetId": "case-projects",
+						"id": "full-linked",
+						"widgetId": "case-linked",
 						"gridX": 0,
 						"gridY": 27,
 						"gridWidth": 6,
@@ -5819,30 +5819,30 @@
 			"title": "Processing time",
 			"_note": "Processing time as drawn on the DqDoorlooptijd board: four figures, the average per month and the share within the norm per case type, read from /api/doorlooptijd/metrics (its `summary` block), then the compliance charts, the Woo deadlines, the cases at risk and the breakdown, which read the shared store (src/store/modules/doorlooptijd.js). The period and case type filters write the workspace, which both halves read.",
 			"config": {
-				"pageFilters": [
-					{
-						"key": "caseType",
-						"label": "Filter by case type",
-						"clearable": true,
-						"placeholder": "All case types",
-						"optionsFrom": {
-							"register": "dossiq",
-							"schema": "caseType",
-							"filter": {
-								"processingDeadline": {
-									"isnull": false
-								}
-							}
-						}
-					}
-				],
 				"_headerNote": "Board DqDoorlooptijd's header has no Actions menu and no way back to the dashboard beside the menu's own Dashboard entry. The case type filter stays: it is how this page narrows to one case type. There is no in-page Edit button: changing the layout is buildiq's, under the buildiq button (Ruben, 18 Oct).",
 				"allowEdit": false,
 				"showActionsMenu": false,
 				"appId": "dossiq",
 				"pageId": "Doorlooptijd",
 				"showWidgetActions": false,
-				"description": "All case types",
+				"_pageFiltersNote": "The case type choice sits on the description line, before the period group, as the DqDoorlooptijd board draws it (\"alle zaaktypen\"). Only case types that declare a processing deadline are offered: a type without one gives a dashboard that can say nothing. Clearing it reads every case type.",
+				"pageFilters": [
+					{
+						"key": "caseType",
+						"label": "Filter by case type",
+						"placement": "description",
+						"clearable": true,
+						"placeholder": "All case types",
+						"optionsFrom": {
+							"register": "dossiq",
+							"schema": "caseType",
+							"filter": {
+								"processingDeadline_isnull": false
+							},
+							"labelField": "title"
+						}
+					}
+				],
 				"widgets": [
 					{
 						"id": "dt-avg",
@@ -5981,7 +5981,8 @@
 						"title": "Average processing time per month",
 						"content": {
 							"chartKind": "line",
-							"height": 260,
+							"_heightNote": "No height: on a dashboard a chart without one fits its tile (nextcloud-vue CnDashboardPage). A pinned 260px plot was taller than the gridHeight 4 tile and the tile cut it off and scrolled (DqDoorlooptijd).",
+							"footnote": "Chart from the OpenRegister analysis layer. Dossiq works out the norm and what counts as within it.",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
@@ -6007,8 +6008,7 @@
 									"enabled": false
 								}
 							}
-						},
-						"subtitle": "Chart from the OpenRegister analysis layer. Dossiq works out the norm and what counts as within it."
+						}
 					},
 					{
 						"id": "dt-within-by-type",

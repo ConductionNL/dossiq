@@ -148,9 +148,12 @@ describe('the vendored schema never falls behind the installed one', () => {
 
 		// The trap in one assertion: `_note` is all over this schema, and not
 		// here. A classifier that searched for the name would forgive it.
+		// An action's fields live in $defs/actionFields; $defs/action closes
+		// them with unevaluatedProperties.
+		expect(vendored.$defs.actionFields.properties).not.toHaveProperty('_note')
+		expect(installed.$defs.actionFields.properties).not.toHaveProperty('_note')
 		expect(vendored.$defs.action.properties).not.toHaveProperty('_note')
-		expect(installed.$defs.action.properties).not.toHaveProperty('_note')
-		expect(vendored.$defs.action.additionalProperties).toBe(false)
+		expect(vendored.$defs.action.unevaluatedProperties).toBe(false)
 	})
 })
 

@@ -166,6 +166,29 @@
 			}
 		},
 		{
+			"key": "persoon-sanne",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:sanne.bsn}}",
+				"name": {
+					"givenNames": "{{cast:sanne.givenName}}",
+					"surname": "{{cast:sanne.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:sanne.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:sanne.address.street}}",
+					"houseNumber": "{{cast:sanne.address.number}}",
+					"postcode": "{{cast:sanne.address.postcode}}",
+					"city": "{{cast:sanne.address.city}}"
+				},
+				"displayName": "{{cast:sanne.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
 			"key": "persoon-fatima",
 			"register": "dossiq",
 			"schema": "brpPerson",
@@ -1930,6 +1953,27 @@
 				"dueAt": "{{date:-13}}",
 				"completedAt": "{{datetime:-14 09:30}}",
 				"completedBy": "{{cast:thomas.uid}}"
+			}
+		}
+	],
+	"views": [
+		{
+			"key": "zoek-lindelaan",
+			"data": {
+				"name": "Lindelaan",
+				"description": "Alles over de Lindelaan: zaken, objecten en documenten.",
+				"owner": "{{cast:thomas.uid}}",
+				"isPublic": true,
+				"query": {
+					"filters": {},
+					"search": "Lindelaan",
+					"sort": null,
+					"scope": "source:search"
+				},
+				"alert": {
+					"operator": "gte",
+					"threshold": 12
+				}
 			}
 		}
 	],
