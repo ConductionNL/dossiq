@@ -61,7 +61,8 @@
 				"title": "Example data",
 				"required": false,
 				"body": "Want to look around with example cases first? You can delete them afterwards.",
-				"note": "Example data uses fictional people and organisations only."
+				"note": "Example data uses fictional people and organisations only.",
+				"noteStyle": "card"
 			},
 			{
 				"id": "done",
