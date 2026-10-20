@@ -9,5 +9,5 @@
 ### Task 2: TaskDetail is a manifest detail page
 - **spec_ref**: `openspec/changes/task-page-on-the-manifest/specs/task-management/spec.md#requirement-the-task-page-is-a-manifest-detail-page`
 - **files**: `src/manifest.json`, `src/registry.js`, `src/views/tasks/TaskDetailView.vue`
-- [ ] Implement: the `TaskDetail` page as `type: "detail"` with `entitySource: "tasks"`; TaskDetailView removed
-- [ ] Test: `tests/vitest/taskDetailManifestPage.spec.js`
+- [x] Implement: the `TaskDetail` page as `type: "detail"` with `entitySource: "tasks"`; TaskDetailView removed
+- [x] Test: `tests/vitest/taskDetailManifestPage.spec.js`

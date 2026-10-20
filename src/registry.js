@@ -234,12 +234,6 @@ import EndOfDayView from './views/queue/EndOfDayView.vue'
 import PersonalQueueView from './views/queue/PersonalQueueView.vue'
 import StoreGallery from './views/store/StoreGallery.vue'
 import SubstitutedWork from './views/SubstitutedWork.vue'
-// The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
-// `type: "detail"` page when remove-casetask took the caseTask schema away:
-// CnDetailPage has no entity-source mode, so a detail page can only bind a
-// register and a schema. Route and page id unchanged, so deep links resolve.
-// @spec openspec/specs/task-management/spec.md
-import TaskDetailView from './views/tasks/TaskDetailView.vue'
 import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
 import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // The Dashboard's My work tile, over OpenRegister's task engine.
@@ -970,14 +964,6 @@ const registry = {
 		component: CaseLocationMap,
 		...PANEL_WIDGET_META,
 		_note: 'Replaces the Locations list that was the second section of the retired Objects and locations tab. `case-location` already carries latitude and longitude, so the addresses were a table of coordinates nobody could picture. A row with no usable pair is skipped rather than plotted at (0, 0), which is open water and looks like a real pin.',
-	},
-
-	// --- The task page (`/tasks/:id`), over the engine (remove-casetask 2.1). ---
-	// @spec openspec/specs/task-management/spec.md
-	TaskDetailView: {
-		kind: 'page',
-		component: TaskDetailView,
-		_note: "The task page reads OpenRegister's task ENGINE, which is not an OpenRegister object, and there is no typed page that can. CnDetailPage takes objectType/objectId and resolves them through the object store; it has no entitySource mode, so a type:detail page can only bind a register and a schema, and the schema it bound is the one remove-casetask deletes. The route, the page id and every deep link are unchanged. It mounts TaskCaseCard and TaskWaitingCaseSection as plain children, reads the notes, appointments and history leaves from the task-anchored endpoints (the object-anchored library widgets have no object to read), and drives the lifecycle with the engine's own verbs through invoke(uuid, verb): CnLifecycleActions asks /api/objects/{uuid}/available-actions, which 404s for a task.",
 	},
 
 	// --- The Dashboard's My work tile (remove-casetask 2.3). ---
