@@ -162,6 +162,9 @@ import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
 import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
+// --- Pages and dashboard slots that were only ever in the legacy
+//     customComponents map, plus the handlers a manifest names by string. ---
+import MailIntakeFileOnCaseDialog from './dialogs/MailIntakeFileOnCaseDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
 // Remind a colleague about this case on a date (case-reminder-as-task).
 // @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
@@ -211,9 +214,6 @@ import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
 import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
 import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
-// --- Pages and dashboard slots that were only ever in the legacy
-//     customComponents map, plus the handlers a manifest names by string. ---
-import MailIntakeFileOnCaseDialog from './dialogs/MailIntakeFileOnCaseDialog.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
 import PmDwellByAssigneeWidget from './views/processMining/PmDwellByAssigneeWidget.vue'
 import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
