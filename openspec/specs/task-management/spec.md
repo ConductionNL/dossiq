@@ -1020,8 +1020,11 @@ old spelling `assignee = "IS NULL"` asked one of the two facts, of a column
 this page no longer reads. The scenario below still asks the old question, and
 is left byte-identical for the reason given under REQ-TASK-014.
 
-Saved views are off (`allowSavedViews: false`) and the schema facets are gone
-with the schema. The sidebar itself stays, with `showMetadata: true`. What a
+Saved views are on (`allowSavedViews: true`), as on every index page, and
+scoped to the inbox by `savedViewsScope: "source:tasks"` because the page has
+no register and schema to scope them by. A view keeps the sidebar's fields and
+the search term. The schema facets are gone with the schema. The sidebar
+itself stays, with `showMetadata: true`. What a
 reader lost is the Team facet: it stood on `caseTask.assigneeGroup` being
 `facetable`, and the engine models the same idea as `candidateGroups`, a list,
 with no single value for a facet or a column to read.
