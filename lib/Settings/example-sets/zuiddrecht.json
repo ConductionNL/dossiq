@@ -619,6 +619,69 @@
 			}
 		},
 		{
+			"key": "kapvergunning-molenweg",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Kapvergunning Molenweg 4",
+				"description": "Een bewoner wil twee essen in de achtertuin aan de Molenweg laten kappen. De bomen staan te dicht bij de schuur.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henk.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henk.displayName}}",
+				"portalSubject": "{{cast:henk.uid}}",
+				"portalParty": "subject:{{cast:henk.uid}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "openbaar",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-19}}",
+				"receivedAt": "{{datetime:-19 09:00}}",
+				"currentStatusEnteredAt": "{{datetime:-17 10:30}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-19 09:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-17 10:30}}"
+					}
+				],
+				"tags": [
+					"molenweg",
+					"kap"
+				]
+			}
+		},
+		{
 			"key": "woo-zaaksysteem",
 			"register": "dossiq",
 			"schema": "case",
@@ -719,7 +782,11 @@
 				"tags": [
 					"woo",
 					"inkoop"
-				]
+				],
+				"endingAct": "finish",
+				"archiveNomination": "vernietigen",
+				"archiveActionDate": "{{date:1806}}",
+				"archiveStatus": "nog_te_archiveren"
 			}
 		},
 		{
@@ -851,7 +918,7 @@
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Besluit"
+						"name": "Beoordeling ontvankelijkheid"
 					}
 				}
 			},
@@ -893,7 +960,7 @@
 				"assignedGroup": "behandelaars",
 				"startDate": "{{date:-14}}",
 				"receivedAt": "{{datetime:-14 09:12}}",
-				"currentStatusEnteredAt": "{{datetime:-2 11:00}}",
+				"currentStatusEnteredAt": "{{datetime:-13 10:05}}",
 				"statusHistory": [
 					{
 						"status": "{{lookup:ontvangst}}",
@@ -901,7 +968,7 @@
 					},
 					{
 						"status": "{{lookup:status}}",
-						"enteredAt": "{{datetime:-2 11:00}}"
+						"enteredAt": "{{datetime:-13 10:05}}"
 					}
 				],
 				"wooRequest": {
@@ -918,7 +985,6 @@
 					"verzoekerEmail": "{{cast:linda.email}}",
 					"verzoekerType": "persoon"
 				},
-				"wooPublicationStatus": "ready",
 				"tags": [
 					"woo",
 					"openbare-ruimte"
@@ -926,9 +992,393 @@
 			}
 		},
 		{
+			"key": "woo-lindelaan-telefoon",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "inbound",
+				"startTime": "{{datetime:-14 09:12}}",
+				"endTime": "{{datetime:-14 09:24}}",
+				"durationSeconds": 720,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:linda.bsn}}",
+				"kccEmployeeId": "{{cast:thomas.uid}}",
+				"case": "{{object:woo-lindelaan.id}}",
+				"nature": "new_request",
+				"summary": "Vraag over de stukken van het fietspad. Het Woo-verzoek samen opgenomen.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "woo-lindelaan-uitleg",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "webformulier",
+				"direction": "outbound",
+				"startTime": "{{datetime:-13 10:24}}",
+				"endTime": "{{datetime:-13 10:26}}",
+				"durationSeconds": 120,
+				"kccEmployeeId": "{{cast:thomas.uid}}",
+				"case": "{{object:woo-lindelaan.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Uitgelegd dat de aanleg in maart begint.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "woo-lindelaan-reactie",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "webformulier",
+				"direction": "inbound",
+				"startTime": "{{datetime:-13 10:52}}",
+				"endTime": "{{datetime:-13 10:54}}",
+				"durationSeconds": 120,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:linda.bsn}}",
+				"kccEmployeeId": "{{cast:thomas.uid}}",
+				"case": "{{object:woo-lindelaan.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Wil graag alle stukken over de verlichting zien.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "woo-lindelaan-aanvulling",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "email",
+				"direction": "inbound",
+				"startTime": "{{datetime:-12 09:15}}",
+				"endTime": "{{datetime:-12 09:17}}",
+				"durationSeconds": 120,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:linda.bsn}}",
+				"kccEmployeeId": "{{cast:thomas.uid}}",
+				"case": "{{object:woo-lindelaan.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Vult het verzoek aan met de offertes voor de lantaarnpalen.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "iot-woo-document",
+			"register": "dossiq",
+			"schema": "informatieobjecttype",
+			"data": {
+				"description": "Woo-document",
+				"informatieobjectcategorie": "internal",
+				"vertrouwelijkheidaanduiding": "intern",
+				"schema": "informatieobject",
+				"startValidity": "{{date:-365}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-verzoek",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/01-verzoek-om-informatie.pdf",
+					"title": "Verzoek om informatie"
+				}
+			],
+			"data": {
+				"title": "Verzoek om informatie",
+				"fileName": "01-verzoek-om-informatie.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"creatiedatum": "{{date:-52}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-verzoek",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-verzoek.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-leidraad",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/02-aanbestedingsleidraad.pdf",
+					"title": "Aanbestedingsleidraad zaaksysteem"
+				}
+			],
+			"data": {
+				"title": "Aanbestedingsleidraad zaaksysteem",
+				"fileName": "02-aanbestedingsleidraad.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-230}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-leidraad",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-leidraad.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-proces-verbaal",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/03-proces-verbaal-opening.pdf",
+					"title": "Proces-verbaal opening inschrijvingen"
+				}
+			],
+			"data": {
+				"title": "Proces-verbaal opening inschrijvingen",
+				"fileName": "03-proces-verbaal-opening.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-160}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-proces-verbaal",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-proces-verbaal.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-gunningsadvies",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/04-gunningsadvies.pdf",
+					"title": "Gunningsadvies zaaksysteem"
+				}
+			],
+			"data": {
+				"title": "Gunningsadvies zaaksysteem",
+				"fileName": "04-gunningsadvies.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-120}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-gunningsadvies",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-gunningsadvies.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-inschrijving",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/05-inschrijving-andere-partij.pdf",
+					"title": "Inschrijving van een andere partij"
+				}
+			],
+			"data": {
+				"title": "Inschrijving van een andere partij",
+				"fileName": "05-inschrijving-andere-partij.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"creatiedatum": "{{date:-165}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-inschrijving",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-inschrijving.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-interne-mail",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/06-interne-mail-gunning.eml",
+					"title": "Interne e-mail over de gunning"
+				}
+			],
+			"data": {
+				"title": "Interne e-mail over de gunning",
+				"fileName": "06-interne-mail-gunning.eml",
+				"format": "message/rfc822",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-100}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-interne-mail",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-interne-mail.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-besluitbrief",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-zaaksysteem/07-woo-besluit-aanbesteding.pdf",
+					"title": "Woo-besluit aanbesteding zaaksysteem"
+				}
+			],
+			"data": {
+				"title": "Woo-besluit aanbesteding zaaksysteem",
+				"fileName": "07-woo-besluit-aanbesteding.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "outgoing",
+				"creatiedatum": "{{date:-20}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-zio-besluitbrief",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"informatieobject": "{{object:woo-zaaksysteem-doc-besluitbrief.id}}",
+				"registrationDate": "{{datetime:-30 10:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-leidraad-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-zaaksysteem.id}}",
+				"documentRef": "{{object:woo-zaaksysteem-doc-leidraad.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-24 14:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-proces-verbaal-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-zaaksysteem.id}}",
+				"documentRef": "{{object:woo-zaaksysteem-doc-proces-verbaal.id}}",
+				"classification": "deels_openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-24 14:00}}",
+				"weigeringsgronden": [
+					"5.1.1.c",
+					"5.1.2.e"
+				]
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-gunningsadvies-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-zaaksysteem.id}}",
+				"documentRef": "{{object:woo-zaaksysteem-doc-gunningsadvies.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-24 14:00}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-inschrijving-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-zaaksysteem.id}}",
+				"documentRef": "{{object:woo-zaaksysteem-doc-inschrijving.id}}",
+				"classification": "niet_openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-24 14:00}}",
+				"weigeringsgronden": [
+					"5.1.1.c"
+				]
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-doc-interne-mail-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-zaaksysteem.id}}",
+				"documentRef": "{{object:woo-zaaksysteem-doc-interne-mail.id}}",
+				"classification": "niet_openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-24 14:00}}",
+				"weigeringsgronden": [
+					"5.2.1"
+				]
+			}
+		},
+		{
 			"key": "woo-lindelaan-advies",
 			"register": "dossiq",
-			"schema": "document",
+			"schema": "informatieobject",
 			"files": [
 				{
 					"path": "zuiddrecht/woo-lindelaan/02-advies-verlichting-fietspad.pdf",
@@ -939,16 +1389,60 @@
 				"title": "Advies verlichting fietspad",
 				"fileName": "02-advies-verlichting-fietspad.pdf",
 				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
 				"status": "final",
-				"confidentiality": "intern",
-				"language": "nld",
-				"creationDate": "{{date:-30}}"
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-30}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-lindelaan-zio-advies",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-lindelaan.id}}",
+				"informatieobject": "{{object:woo-lindelaan-advies.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
+			}
+		},
+		{
+			"key": "woo-lindelaan-mail",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-lindelaan/06-mail-aannemer-planning.eml",
+					"title": "Mail aannemer over planning"
+				}
+			],
+			"data": {
+				"title": "Mail aannemer over planning",
+				"fileName": "06-mail-aannemer-planning.eml",
+				"format": "message/rfc822",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"creatiedatum": "{{date:-222}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-lindelaan-zio-mail",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-lindelaan.id}}",
+				"informatieobject": "{{object:woo-lindelaan-mail.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
 			}
 		},
 		{
 			"key": "woo-lindelaan-raadsvoorstel",
 			"register": "dossiq",
-			"schema": "document",
+			"schema": "informatieobject",
 			"files": [
 				{
 					"path": "zuiddrecht/woo-lindelaan/03-raadsvoorstel-fietspad-lindelaan.pdf",
@@ -959,36 +1453,60 @@
 				"title": "Raadsvoorstel fietspad Lindelaan",
 				"fileName": "03-raadsvoorstel-fietspad-lindelaan.pdf",
 				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
 				"status": "final",
-				"confidentiality": "intern",
-				"language": "nld",
-				"creationDate": "{{date:-30}}"
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-30}}",
+				"taal": "nld"
 			}
 		},
 		{
-			"key": "woo-lindelaan-offerte",
+			"key": "woo-lindelaan-zio-raadsvoorstel",
 			"register": "dossiq",
-			"schema": "document",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-lindelaan.id}}",
+				"informatieobject": "{{object:woo-lindelaan-raadsvoorstel.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
+			}
+		},
+		{
+			"key": "woo-lindelaan-klachtenlijst",
+			"register": "dossiq",
+			"schema": "informatieobject",
 			"files": [
 				{
-					"path": "zuiddrecht/woo-lindelaan/04-offerte-verlichting.pdf",
-					"title": "Offerte verlichting"
+					"path": "zuiddrecht/woo-lindelaan/07-klachtenlijst-bewoners-lindelaan.csv",
+					"title": "Klachtenlijst bewoners Lindelaan"
 				}
 			],
 			"data": {
-				"title": "Offerte verlichting",
-				"fileName": "04-offerte-verlichting.pdf",
-				"format": "application/pdf",
+				"title": "Klachtenlijst bewoners Lindelaan",
+				"fileName": "07-klachtenlijst-bewoners-lindelaan.csv",
+				"format": "text/csv",
+				"vertrouwelijkheidaanduiding": "intern",
 				"status": "final",
-				"confidentiality": "intern",
-				"language": "nld",
-				"creationDate": "{{date:-30}}"
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-504}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-lindelaan-zio-klachtenlijst",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-lindelaan.id}}",
+				"informatieobject": "{{object:woo-lindelaan-klachtenlijst.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
 			}
 		},
 		{
 			"key": "woo-lindelaan-notitie",
 			"register": "dossiq",
-			"schema": "document",
+			"schema": "informatieobject",
 			"files": [
 				{
 					"path": "zuiddrecht/woo-lindelaan/05-interne-notitie-budget.pdf",
@@ -999,10 +1517,86 @@
 				"title": "Interne notitie budget",
 				"fileName": "05-interne-notitie-budget.pdf",
 				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
 				"status": "final",
-				"confidentiality": "intern",
-				"language": "nld",
-				"creationDate": "{{date:-30}}"
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-30}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-lindelaan-zio-notitie",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-lindelaan.id}}",
+				"informatieobject": "{{object:woo-lindelaan-notitie.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
+			}
+		},
+		{
+			"key": "woo-lindelaan-offerte",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-lindelaan/04-offerte-verlichting.pdf",
+					"title": "Offerte verlichting"
+				}
+			],
+			"data": {
+				"title": "Offerte verlichting",
+				"fileName": "04-offerte-verlichting.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-30}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-lindelaan-zio-offerte",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-lindelaan.id}}",
+				"informatieobject": "{{object:woo-lindelaan-offerte.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
+			}
+		},
+		{
+			"key": "woo-lindelaan-plattegrond",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-lindelaan/08-plattegrond-lichtmasten.pdf",
+					"title": "Plattegrond lichtmasten"
+				}
+			],
+			"data": {
+				"title": "Plattegrond lichtmasten",
+				"fileName": "08-plattegrond-lichtmasten.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-315}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-lindelaan-zio-plattegrond",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-lindelaan.id}}",
+				"informatieobject": "{{object:woo-lindelaan-plattegrond.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
 			}
 		},
 		{
@@ -1018,6 +1612,21 @@
 			}
 		},
 		{
+			"key": "woo-lindelaan-mail-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-lindelaan.id}}",
+				"documentRef": "{{object:woo-lindelaan-mail.id}}",
+				"classification": "deels_openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-3 14:00}}",
+				"weigeringsgronden": [
+					"5.1.2.e"
+				]
+			}
+		},
+		{
 			"key": "woo-lindelaan-raadsvoorstel-beoordeling",
 			"register": "dossiq",
 			"schema": "wooDocumentAssessment",
@@ -1030,73 +1639,18 @@
 			}
 		},
 		{
-			"key": "woo-lindelaan-offerte-beoordeling",
+			"key": "woo-lindelaan-klachtenlijst-beoordeling",
 			"register": "dossiq",
 			"schema": "wooDocumentAssessment",
 			"data": {
 				"caseRef": "{{object:woo-lindelaan.id}}",
-				"documentRef": "{{object:woo-lindelaan-offerte.id}}",
-				"classification": "deels_openbaar",
+				"documentRef": "{{object:woo-lindelaan-klachtenlijst.id}}",
+				"classification": "niet_openbaar",
 				"assessedBy": "{{cast:thomas.uid}}",
 				"assessedAt": "{{datetime:-3 14:00}}",
 				"weigeringsgronden": [
 					"5.1.2.e"
 				]
-			}
-		},
-		{
-			"key": "woo-lindelaan-notitie-beoordeling",
-			"register": "dossiq",
-			"schema": "wooDocumentAssessment",
-			"data": {
-				"caseRef": "{{object:woo-lindelaan.id}}",
-				"documentRef": "{{object:woo-lindelaan-notitie.id}}",
-				"classification": "niet_openbaar",
-				"assessedBy": "{{cast:thomas.uid}}",
-				"assessedAt": "{{datetime:-3 14:00}}",
-				"weigeringsgronden": [
-					"5.2.1"
-				]
-			}
-		},
-		{
-			"key": "woo-lindelaan-besluit",
-			"register": "dossiq",
-			"schema": "decision",
-			"lookups": {
-				"caseType": {
-					"schema": "caseType",
-					"where": {
-						"identifier": "woo-verzoek"
-					}
-				},
-				"decisionType": {
-					"schema": "decisionType",
-					"where": {
-						"caseType": "{{lookup:caseType}}"
-					}
-				}
-			},
-			"data": {
-				"title": "Woo-besluit verlichting fietspad Lindelaan",
-				"case": "{{object:woo-lindelaan.id}}",
-				"description": "Besluit op het Woo-verzoek over de verlichting van het fietspad Lindelaan.",
-				"decisionType": "{{lookup:decisionType}}",
-				"responsibleOrganisation": "Gemeente Zuiddrecht",
-				"governingBody": "Het college van burgemeester en wethouders",
-				"decisionDate": "{{date:-1}}",
-				"effectiveDate": "{{date:-1}}",
-				"explanation": "Het advies en het raadsvoorstel zijn openbaar. In de offerte zijn de prijs en de contactgegevens van de leverancier gelakt. De interne notitie over het budget blijft geheim.",
-				"wooSummary": {
-					"openbaar": 2,
-					"deels_openbaar": 1,
-					"niet_openbaar": 1
-				},
-				"weigeringsgronden": [
-					"5.1.2.e",
-					"5.2.1"
-				],
-				"decidedBy": "{{cast:thomas.uid}}"
 			}
 		},
 		{
@@ -1126,6 +1680,19 @@
 			}
 		},
 		{
+			"key": "termijn-kapvergunning-molenweg",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:kapvergunning-molenweg.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-19 09:00}}",
+				"endDateCalculated": "{{date:23}}",
+				"endDateCurrent": "{{date:23}}",
+				"status": "lopend"
+			}
+		},
+		{
 			"key": "termijn-woo-lindelaan",
 			"register": "dossiq",
 			"schema": "deadlineInstance",
@@ -1151,12 +1718,12 @@
 			}
 		},
 		{
-			"key": "ingebrekestelling-woo-lindelaan",
+			"key": "ingebrekestelling-kapvergunning-molenweg",
 			"register": "dossiq",
 			"schema": "noticeOfDefault",
 			"data": {
-				"deadlineInstance": "{{object:termijn-woo-lindelaan.id}}",
-				"receiptDate": "{{date:-2}}",
+				"deadlineInstance": "{{object:termijn-kapvergunning-molenweg.id}}",
+				"receiptDate": "{{date:-14}}",
 				"notificationChannel": "post",
 				"gevalideerd": true,
 				"validityStatus": "premaat"
@@ -1297,7 +1864,10 @@
 			"schema": "case",
 			"object": "woo-zaaksysteem",
 			"set": {
-				"result": "{{object:woo-zaaksysteem-resultaat.id}}"
+				"result": "{{object:woo-zaaksysteem-resultaat.id}}",
+				"decisions": [
+					"{{object:woo-zaaksysteem-besluit.id}}"
+				]
 			}
 		}
 	]
