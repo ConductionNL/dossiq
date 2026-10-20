@@ -191,10 +191,12 @@
 				"viewLinks": [
 					{
 						"label": "Your queue",
+						"icon": "ClipboardListOutline",
 						"route": "PersonalQueue"
 					},
 					{
 						"label": "Assigned to me",
+						"icon": "ClipboardAccountOutline",
 						"route": {
 							"name": "Cases",
 							"query": {
@@ -204,6 +206,7 @@
 					},
 					{
 						"label": "Close out your day",
+						"icon": "ClipboardCheckOutline",
 						"route": "EndOfDay"
 					}
 				],
