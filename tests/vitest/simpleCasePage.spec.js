@@ -553,8 +553,9 @@ describe('the tabs', () => {
 		// The stages (`3`) sit in the header card (`config.headerWidget`) and the
 		// banner stack in the side column, so neither keeps a grid cell.
 		// The plan, terms, flows and hours are cards of the Overview tab now, as
-		// DqZaak draws them, so they keep no grid cell either.
-		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6']
+		// DqZaak draws them, so they keep no grid cell either. The Linked card
+		// is in the side column, so its full-profile cell goes too.
+		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6', 'full-linked']
 		expect(simple.layout.map((entry) => entry.id)).toEqual(
 			original.layout
 				.map((entry) => entry.id)
@@ -570,7 +571,6 @@ describe('the tabs', () => {
 			'money-payments': 0,
 			'money-contract': 6,
 			'family-plan-panel': 0,
-			'work-projects': 6,
 			'documents-merge-to-pdf': 0,
 		}
 		for (const entry of simple.layout) {
@@ -629,7 +629,7 @@ describe('the header and the side column', () => {
 		expect(onTheCase(simple.typePill.field)).toBe(true)
 		// The cards every case shows; the case-type cards are gated and checked below.
 		const cards = simple.sideColumn.filter((card) => typeof card === 'object' && !card.visibleWhen)
-		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Work instruction'])
+		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Linked', 'Work instruction'])
 		const shown = []
 		for (const card of cards) {
 			// The requester is a facts card (a lead, as DqZaak draws it), the
