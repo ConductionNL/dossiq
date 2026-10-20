@@ -9292,6 +9292,7 @@
 								"category",
 								"propertyType",
 								"format",
+								"items",
 								"maxLength",
 								"pattern",
 								"minimum",
@@ -9331,6 +9332,17 @@
 										},
 										"itemsPath": "formats",
 										"hideWhenEmpty": true
+									},
+									"clearWhenHidden": true
+								},
+								"items": {
+									"label": "Type of each entry",
+									"widget": "json",
+									"visibleWhen": {
+										"field": "propertyType",
+										"in": [
+											"array"
+										]
 									},
 									"clearWhenHidden": true
 								},
