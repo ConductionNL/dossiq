@@ -59,8 +59,10 @@ describe('no page declares that its saved views are places', () => {
 		).toEqual([])
 	})
 
-	it('leaves Tasks out of saved views entirely, because its list is the engine inbox', () => {
-		expect(pageById('Tasks').config.allowSavedViews).toBe(false)
+	it('gives Tasks saved views too, scoped to the engine inbox it lists', () => {
+		expect(pageById('Tasks').config.allowSavedViews).toBe(true)
+		expect(pageById('Tasks').config.savedViewsScope).toBe('source:tasks')
+		expect(pageById('Tasks').savedViewPlaces).toBeUndefined()
 	})
 })
 

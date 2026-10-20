@@ -104,27 +104,6 @@ export async function saveGrouping(groupBy) {
 }
 
 /**
- * Plan an item on the reader's own agenda, with no case behind it.
- *
- * @param {object} item The item.
- * @param {string} item.title What it is.
- * @param {string} item.startsAt When it starts.
- * @param {string} item.template Which template it came from.
- * @return {Promise<object>} What was planned.
- *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
- */
-export async function planItem({ title, startsAt, template = '' }) {
-	const { data } = await axios.post(generateUrl(`${BASE}/planned-items`), {
-		title,
-		startsAt,
-		template,
-	})
-
-	return data
-}
-
-/**
  * The reader's own stage on one case.
  *
  * @param {string} caseId The case.

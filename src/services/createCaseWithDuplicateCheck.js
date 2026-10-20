@@ -28,11 +28,8 @@
  * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
  */
 
-import { useObjectStore } from '@conduction/nextcloud-vue'
-import { translate as t } from '@nextcloud/l10n'
-import { createApp } from 'vue'
-import DuplicateWarningModal from '../modals/DuplicateWarningModal.vue'
-import { affordancesFor, candidateFrom } from '../utils/duplicateWarning.js'
+import { candidateWithoutBlanks, duplicateAffordances, openDuplicateWarning, useObjectStore } from '@conduction/nextcloud-vue'
+import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { normaliseDeclaration } from '../utils/intakeRequirements.js'
 import { checkForDuplicates, fetchMatchedCases } from './duplicateCheckApi.js'
 import { fetchIntakeRequirements } from './intakeTriageApi.js'
@@ -44,11 +41,9 @@ export const FIELD_REASON = 'duplicateOverrideReason'
 export const FIELD_OVER = 'duplicateOverrideOf'
 
 /**
- * Ask the handler what to do about the matches.
- *
- * Resolves with the decision, or with null when they cancelled. Mounted the way
- * `customComponents.js` mounts its bulk dialogs, for the same reason: the
- * library's declarative modal path emits `open-modal` and nothing consumes it.
+ * Ask the handler what to do about the matches, in the library's duplicate
+ * warning, worded for a case. It is mounted from code because the create
+ * flow is the library's create-override, not a page that hosts a dialog.
  *
  * @param {object} state What to show.
  * @param {Array<object>} state.matches The scored matches.
@@ -60,33 +55,23 @@ export const FIELD_OVER = 'duplicateOverrideOf'
  * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
  */
 export function askAboutDuplicates(state) {
-	return new Promise((resolve) => {
-		const host = document.createElement('div')
-		document.body.appendChild(host)
-
-		let app = null
-
-		/**
-		 * Tear the mounted modal down and answer once.
-		 *
-		 * @param {object|null} decision What the handler chose.
-		 * @return {void}
-		 */
-		function close(decision) {
-			app.unmount()
-			host.remove()
-			resolve(decision)
-		}
-
-		app = createApp(DuplicateWarningModal, {
-			matches: state.matches,
-			cases: state.cases,
-			policy: state.policy,
-			mayOverride: state.mayOverride,
-			onClose: () => close(null),
-			onFile: (decision) => close(decision),
-		})
-		app.mount(host)
+	return openDuplicateWarning({
+		matches: state.matches,
+		records: state.cases,
+		policy: state.policy,
+		mayOverride: state.mayOverride,
+		recordUrl: '/apps/dossiq/cases/{uuid}',
+		fieldLabels: {
+			requester: t('dossiq', 'Requester'),
+			title: t('dossiq', 'Subject'),
+			permitApplicationRef: t('dossiq', 'Permit reference'),
+			caseType: t('dossiq', 'Case type'),
+		},
+		title: t('dossiq', 'This case may already exist'),
+		headline: n('dossiq', '%n open case looks like this one.', '%n open cases look like this one.', state.matches.length),
+		blockedText: t('dossiq', 'This case type does not let the same case be filed twice. Open the case it matches, or ask a coordinator.'),
+		reasonLabel: t('dossiq', 'Why file this case anyway'),
+		continueLabel: t('dossiq', 'File it anyway'),
 	})
 }
 
@@ -137,11 +122,11 @@ export async function createCaseWithDuplicateCheck(payload, context) {
 	const candidate = { ...payload }
 
 	const [{ matches, checked }, policy] = await Promise.all([
-		checkForDuplicates(candidateFrom(candidate)),
+		checkForDuplicates(candidateWithoutBlanks(candidate)),
 		duplicatePolicyFor(candidate.caseType),
 	])
 
-	const affordances = affordancesFor({
+	const affordances = duplicateAffordances({
 		matches,
 		checked,
 		policy: policy.policy,

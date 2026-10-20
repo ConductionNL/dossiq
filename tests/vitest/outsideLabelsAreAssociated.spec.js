@@ -18,7 +18,6 @@ const ROOT = path.resolve(__dirname, '../..')
 const FILES = [
 	'src/dialogs/AssessmentDecisionDialog.vue',
 	'src/dialogs/BerichtenboxComposeDialog.vue',
-	'src/dialogs/CaseHandoverDialog.vue',
 	'src/components/case/CaseActFields.vue',
 	'src/views/queue/EndOfDayView.vue',
 ]

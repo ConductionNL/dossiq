@@ -19,6 +19,7 @@
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
+import { BUILT_IN_MODALS } from '@conduction/nextcloud-vue/src/utils/builtInModals.js'
 import {
 	groupMenuEntries,
 	resolveNextStep,
@@ -145,9 +146,12 @@ describe('the stage', () => {
 				continue
 			}
 			expect(entry.type, stage).toBe('open-modal')
-			expect(registrySource, `${stage} -> ${entry.target}`).toContain(
-				`\n\t${entry.target}: {`,
-			)
+			// The app's registry, or a dialog the library opens by name.
+			if (!Object.hasOwn(BUILT_IN_MODALS, entry.target)) {
+				expect(registrySource, `${stage} -> ${entry.target}`).toContain(
+					`\n\t${entry.target}: {`,
+				)
+			}
 			expect(
 				ids.has(entry.id),
 				`${entry.id} collides with a header action`,
@@ -170,7 +174,7 @@ describe('the stage', () => {
 				}
 				// The closed stage opens the archive dialog (board DqArchiveren);
 				// every other stage opens the Lifecycle dialog.
-				expect(entry.target, stage).toBe(stage === 'closed' ? 'CaseArchiveDialog' : 'CaseLifecycleMenuDialog')
+				expect(entry.target, stage).toBe(stage === 'closed' ? 'CnActionDialog' : 'CaseLifecycleMenuDialog')
 				continue
 			}
 			const action = original.headerActions.find((item) => item.id === entry)

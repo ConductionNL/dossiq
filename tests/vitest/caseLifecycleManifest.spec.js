@@ -73,7 +73,7 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		const entry = widget('case-stages')
 		expect(entry).toBeTruthy()
 		expect(entry.type).toBe('stages')
-		expect(caseDetail().slots['widget-case-stages']).toBeUndefined()
+		expect((caseDetail().slots || {})['widget-case-stages']).toBeUndefined()
 	})
 
 	it('reads the case type blueprint, not the type own status rows', () => {
@@ -129,7 +129,7 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		expect(caseDetail().actionsComponent ?? '').not.toBe('CaseTransitionsWidget')
 		expect(widget('case-transitions')).toBeUndefined()
 		expect(cells('case-transitions')).toHaveLength(0)
-		expect(caseDetail().slots['widget-case-transitions']).toBeUndefined()
+		expect((caseDetail().slots || {})['widget-case-transitions']).toBeUndefined()
 		expect(registrySource).not.toContain('CaseTransitionsWidget.vue')
 		expect(registrySource).not.toContain('CaseTransitionsWidget: {')
 	})
@@ -137,7 +137,7 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 	it('has retired the custom stepper and its component', () => {
 		expect(widget('case-steps')).toBeUndefined()
 		expect(cells('case-steps')).toHaveLength(0)
-		expect(caseDetail().slots['widget-case-steps']).toBeUndefined()
+		expect((caseDetail().slots || {})['widget-case-steps']).toBeUndefined()
 		expect(registrySource).not.toContain('CaseStepsWidget.vue')
 		expect(registrySource).not.toContain('CaseStepsWidget: {')
 	})
