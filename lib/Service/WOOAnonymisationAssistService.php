@@ -159,6 +159,8 @@ class WOOAnonymisationAssistService {
 		$proposal['proposedAt'] = date('c');
 		$proposal['status'] = 'pending_review';
 
+		$this->reportSupersededProposal(caseId: $caseId, documentRef: $documentRef, userId: $userId);
+
 		$saved = $this->assessmentService->saveRedactionProposal(
 			caseId: $caseId,
 			documentRef: $documentRef,
@@ -244,10 +246,16 @@ class WOOAnonymisationAssistService {
 				proposal: $proposal
 			);
 
+			$this->reportDecision(caseId: $caseId, documentRef: $documentRef, proposal: $proposal, userAction: 'rejected', userId: $reviewerId);
+
 			return ($saved['redactionProposal'] ?? $proposal);
 		}
 
 		$approvedSpans = ($editedSpans ?? $proposal['spans']);
+		$userAction = 'accepted';
+		if ($approvedSpans !== $proposal['spans']) {
+			$userAction = 'modified';
+		}
 
 		$proposal['status'] = 'approved';
 		$proposal['approvedSpans'] = $approvedSpans;
@@ -260,8 +268,78 @@ class WOOAnonymisationAssistService {
 			proposal: $proposal
 		);
 
+		$this->reportDecision(caseId: $caseId, documentRef: $documentRef, proposal: $proposal, userAction: $userAction, userId: $reviewerId);
+
 		return ($saved['redactionProposal'] ?? $proposal);
 	}//end reviewProposal()
+
+	/**
+	 * Report a person's decision on a proposal to the AI oversight trail.
+	 *
+	 * @param string               $caseId      The case UUID.
+	 * @param string               $documentRef The document UUID.
+	 * @param array<string, mixed> $proposal    The proposal as decided.
+	 * @param string               $userAction  accepted, modified, rejected or ignored.
+	 * @param string               $userId      The person.
+	 * @param string               $because     Why an ignored proposal went unused.
+	 *
+	 * @return void
+	 */
+	private function reportDecision(
+		string $caseId,
+		string $documentRef,
+		array $proposal,
+		string $userAction,
+		string $userId,
+		string $because = '',
+	): void {
+		$actualValue = null;
+		if ($userAction === 'modified') {
+			$actualValue = ['spans' => ($proposal['approvedSpans'] ?? [])];
+		}
+
+		$this->auditService->recordUserAction(
+			caseId: $caseId,
+			type: 'extraction',
+			userAction: $userAction,
+			suggestion: ['spans' => ($proposal['spans'] ?? [])],
+			actualValue: $actualValue,
+			reason: null,
+			userId: $userId,
+			context: [
+				'unusedBecause' => $because,
+				'model' => 'hermiq',
+				'documentId' => $documentRef,
+				'suggestionId' => $documentRef . '@' . (string)($proposal['proposedAt'] ?? ''),
+			],
+		);
+	}//end reportDecision()
+
+	/**
+	 * Report a still-pending proposal that a new one is about to replace.
+	 *
+	 * @param string $caseId      The case UUID.
+	 * @param string $documentRef The document UUID.
+	 * @param string $userId      The person asking for the new proposal.
+	 *
+	 * @return void
+	 */
+	private function reportSupersededProposal(string $caseId, string $documentRef, string $userId): void {
+		$existing = $this->assessmentService->findAssessment(caseId: $caseId, documentRef: $documentRef);
+		$previous = ($existing['redactionProposal'] ?? null);
+		if (is_array($previous) === false || ($previous['status'] ?? null) !== 'pending_review') {
+			return;
+		}
+
+		$this->reportDecision(
+			caseId: $caseId,
+			documentRef: $documentRef,
+			proposal: $previous,
+			userAction: 'ignored',
+			userId: (string)($previous['proposedBy'] ?? $userId),
+			because: 'superseded'
+		);
+	}//end reportSupersededProposal()
 
 	/**
 	 * The rules floor and Hermiq's spans for a document's text, merged, without saving a proposal.

@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Ai;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -61,6 +62,7 @@ class AiOversightDelegationService {
 		'accepted' => 'accepted',
 		'rejected' => 'rejected',
 		'modified' => 'overridden',
+		'ignored' => 'ignored',
 	];
 
 	/**
@@ -122,7 +124,7 @@ class AiOversightDelegationService {
 		try {
 			$event = new $eventClass(
 				[
-					'originApp' => 'procest',
+					'originApp' => Application::APP_ID,
 					'subjectType' => $subjectType,
 					'subjectId' => $subjectId,
 					'humanAction' => self::ACTION_MAP[$userAction],
@@ -137,6 +139,7 @@ class AiOversightDelegationService {
 					'actualValue' => $this->flatten(value: ($entry['actualValue'] ?? '')),
 					'reason' => (string)($entry['reason'] ?? ''),
 					'responseTimeMs' => ($entry['responseTimeMs'] ?? null),
+					'unusedBecause' => (string)($entry['unusedBecause'] ?? ''),
 					// Idempotency: replaying the same entry through the repair
 					// step must not double-record it.
 					'externalRef' => $this->reference(entry: $entry, subjectId: $subjectId),
@@ -191,6 +194,11 @@ class AiOversightDelegationService {
 	 * @return string The reference.
 	 */
 	private function reference(array $entry, string $subjectId): string {
+		$suggestionRef = (string)($entry['suggestionRef'] ?? '');
+		if ($suggestionRef !== '') {
+			return 'dossiq:suggestion:' . $suggestionRef;
+		}
+
 		$uuid = (string)($entry['id'] ?? ($entry['uuid'] ?? ''));
 		if ($uuid !== '') {
 			return 'procest:aiAuditEntry:' . $uuid;
