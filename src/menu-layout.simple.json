@@ -2244,47 +2244,29 @@
 					},
 					{
 						"id": "case-tasks-card",
-						"type": "case-task-pane",
+						"type": "tasks",
 						"title": "Tasks on this case",
-						"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon and the tab entry are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column. `register` and `schema` are NOT kept, and that is remove-casetask 4.2: the component reads the task engine and has ignored both keys since dossiq#2357, so the pair named a schema that no longer exists and claimed a binding the widget does not make. The day the swap back happens, the list the widget goes back to is the engine's, not an object list, so neither key comes back.",
+						"_note": "DqZaakTaken: the case's tasks as the library task table (CnTasksWidget `variant: table`): every task on the case from OpenRegister's task engine, open first and finished struck through, with the summary under the title and New task in the card header. Claim, complete (also a colleague's task, the engine decides), cancel and adding a task stay on the case page; a task's form, candidates and notes are on its own page, which the task title opens (rowRoute TaskDetail). This replaces the case-task-pane widget in the table mode, which drew the same table with dossiq's own component.",
 						"content": {
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "dueDate",
-								"dir": "asc"
-							},
+							"variant": "table",
+							"objectUuid": "@objectId",
+							"includeDone": true,
 							"limit": 25,
-							"columns": [
-								{
-									"key": "title",
-									"label": "Title"
-								},
-								{
-									"key": "status",
-									"label": "Status"
-								},
-								{
-									"key": "assignee",
-									"label": "Assignee"
-								},
-								{
-									"key": "dueDate",
-									"label": "Due"
-								},
-								{
-									"key": "priority",
-									"label": "Priority"
-								}
-							],
-							"rowRoute": "TaskDetail",
-							"viewAllRoute": "Tasks",
-							"viewAllQuery": {
-								"case": "@objectId"
+							"create": {
+								"appId": "dossiq"
 							},
+							"completeAny": true,
+							"cancel": true,
+							"rowRoute": "TaskDetail",
+							"viewAllRoute": {
+								"name": "Tasks",
+								"query": {
+									"case": "@objectId"
+								}
+							},
+							"viewAllLabel": "All tasks of this case in Tasks",
 							"emptyText": "No tasks for this case yet",
-							"mode": "table"
+							"pollSeconds": 30
 						}
 					},
 					{

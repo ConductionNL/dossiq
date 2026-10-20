@@ -441,6 +441,21 @@ describe('the tabs', () => {
 		}
 	})
 
+	it('shows the case\'s tasks as the library task table (DqZaakTaken)', () => {
+		const tasks = simple.widgets.find((widget) => widget.id === 'case-tasks-card')
+		expect(tasks.type).toBe('tasks')
+		expect(tasks.content).toMatchObject({
+			variant: 'table',
+			objectUuid: '@objectId',
+			includeDone: true,
+			create: { appId: 'dossiq' },
+			completeAny: true,
+			cancel: true,
+			rowRoute: 'TaskDetail',
+			viewAllRoute: { name: 'Tasks', query: { case: '@objectId' } },
+		})
+	})
+
 	it('turns the stages horizontal and leaves every other widget of the page as it was', () => {
 		const find = (config, id) =>
 			config.widgets.find((widget) => widget.id === id)
