@@ -11,3 +11,9 @@
 - **files**: `lib/Settings/example-sets/zuiddrecht.json`, `lib/Settings/example-sets/zuiddrecht/woo-lindelaan/`
 - [x] Implement: informatieobjecten with zaakinformatieobject rows, three new fictional files, the decision and notice of default dropped
 - [x] Test: `tests/Unit/Settings/ZuiddrechtWooLindelaanInProgressTest.php`
+
+### Task 3: The premature notice of default sits on Kapvergunning Molenweg 4
+- **spec_ref**: `openspec/changes/example-set-lindelaan-in-progress/specs/example-set-lindelaan-in-progress/spec.md#requirement-the-premature-notice-of-default-sits-on-kapvergunning-molenweg-4`
+- **files**: `lib/Settings/example-sets/zuiddrecht.json`
+- [x] Implement: the case, its running term, the premature notice
+- [x] Test: `tests/Unit/Settings/ZuiddrechtPrematureNoticeOfDefaultTest.php`

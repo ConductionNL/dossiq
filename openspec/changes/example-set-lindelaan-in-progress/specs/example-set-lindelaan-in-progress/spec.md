@@ -26,3 +26,14 @@ as a concept still to sign, and DqTermijnen draws its notices on other cases.
 
 - **GIVEN** the Zuiddrecht example set installed
 - **THEN** the case's documents read "4 van 7 beoordeeld" and the case has no decision
+
+### Requirement: The premature notice of default sits on Kapvergunning Molenweg 4
+
+The set SHALL seed the case "Kapvergunning Molenweg 4" (omgevingsvergunning, in behandeling) with a running statutory
+term, and on that term the set's only premature notice of default (`validityStatus: premaat`), received while the term
+runs, as DqTermijnen draws "Te vroeg: termijn loopt nog".
+
+#### Scenario: the installed set
+
+- **GIVEN** the Zuiddrecht example set installed
+- **THEN** the deadline monitoring page lists the Molenweg 4 notice as premature, with no penalty

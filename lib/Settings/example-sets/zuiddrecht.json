@@ -619,6 +619,69 @@
 			}
 		},
 		{
+			"key": "kapvergunning-molenweg",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Kapvergunning Molenweg 4",
+				"description": "Een bewoner wil twee essen in de achtertuin aan de Molenweg laten kappen. De bomen staan te dicht bij de schuur.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henk.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henk.displayName}}",
+				"portalSubject": "{{cast:henk.uid}}",
+				"portalParty": "subject:{{cast:henk.uid}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "openbaar",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-19}}",
+				"receivedAt": "{{datetime:-19 09:00}}",
+				"currentStatusEnteredAt": "{{datetime:-17 10:30}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-19 09:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-17 10:30}}"
+					}
+				],
+				"tags": [
+					"molenweg",
+					"kap"
+				]
+			}
+		},
+		{
 			"key": "woo-zaaksysteem",
 			"register": "dossiq",
 			"schema": "case",
@@ -1319,6 +1382,19 @@
 			}
 		},
 		{
+			"key": "termijn-kapvergunning-molenweg",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:kapvergunning-molenweg.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-19 09:00}}",
+				"endDateCalculated": "{{date:23}}",
+				"endDateCurrent": "{{date:23}}",
+				"status": "lopend"
+			}
+		},
+		{
 			"key": "termijn-woo-lindelaan",
 			"register": "dossiq",
 			"schema": "deadlineInstance",
@@ -1341,6 +1417,18 @@
 				"notificationChannel": "email",
 				"gevalideerd": true,
 				"validityStatus": "valid"
+			}
+		},
+		{
+			"key": "ingebrekestelling-kapvergunning-molenweg",
+			"register": "dossiq",
+			"schema": "noticeOfDefault",
+			"data": {
+				"deadlineInstance": "{{object:termijn-kapvergunning-molenweg.id}}",
+				"receiptDate": "{{date:-14}}",
+				"notificationChannel": "post",
+				"gevalideerd": true,
+				"validityStatus": "premaat"
 			}
 		},
 		{
