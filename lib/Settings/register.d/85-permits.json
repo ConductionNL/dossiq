@@ -262,7 +262,8 @@
         "isFinal": false,
         "role": "intake",
         "publicLabel": "Ontvangen",
-        "publicDescription": "Uw aanvraag is binnen."
+        "publicDescription": "Uw aanvraag is binnen.",
+        "colour": "blue"
       },
       {
         "@self": {
@@ -279,7 +280,8 @@
         "isFinal": false,
         "role": "in-progress",
         "publicLabel": "In behandeling",
-        "publicDescription": "Wij beoordelen uw aanvraag."
+        "publicDescription": "Wij beoordelen uw aanvraag.",
+        "colour": "purple"
       },
       {
         "@self": {
@@ -296,7 +298,8 @@
         "isFinal": true,
         "role": "closed",
         "publicLabel": "Afgehandeld",
-        "publicDescription": "Wij hebben op uw aanvraag besloten."
+        "publicDescription": "Wij hebben op uw aanvraag besloten.",
+        "colour": "green"
       },
       {
         "@self": {
@@ -341,7 +344,8 @@
         "isFinal": false,
         "role": "intake",
         "publicLabel": "Ontvangen",
-        "publicDescription": "Uw aanvraag is binnen."
+        "publicDescription": "Uw aanvraag is binnen.",
+        "colour": "blue"
       },
       {
         "@self": {
@@ -358,7 +362,8 @@
         "isFinal": false,
         "role": "in-progress",
         "publicLabel": "In behandeling",
-        "publicDescription": "Wij beoordelen uw aanvraag."
+        "publicDescription": "Wij beoordelen uw aanvraag.",
+        "colour": "purple"
       },
       {
         "@self": {
@@ -375,7 +380,8 @@
         "isFinal": true,
         "role": "closed",
         "publicLabel": "Afgehandeld",
-        "publicDescription": "Wij hebben op uw aanvraag besloten."
+        "publicDescription": "Wij hebben op uw aanvraag besloten.",
+        "colour": "green"
       },
       {
         "@self": {

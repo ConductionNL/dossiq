@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.59"
+        "version": "0.20.60"
     },
     "x-openregister": {
         "type": "application",
@@ -949,7 +949,7 @@
                     }
                 },
                 "icon": "ListStatus",
-                "version": "1.7.3",
+                "version": "1.7.4",
                 "searchable": false,
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
@@ -12810,7 +12810,7 @@
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
-                "colour": "orange",
+                "colour": "purple",
                 "publicLabel": "In behandeling",
                 "publicDescription": "Wij toetsen uw aanvraag aan de regels."
             },
@@ -12826,7 +12826,7 @@
                 "order": 3,
                 "isFinal": false,
                 "role": "review",
-                "colour": "purple",
+                "colour": "teal",
                 "publicLabel": "Besluit",
                 "publicDescription": "Wij nemen een besluit op uw aanvraag."
             },
@@ -12875,7 +12875,7 @@
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
-                "colour": "orange",
+                "colour": "purple",
                 "publicLabel": "In behandeling",
                 "publicDescription": "Wij toetsen uw aanvraag aan de subsidieregels."
             },
@@ -12891,7 +12891,7 @@
                 "order": 3,
                 "isFinal": false,
                 "role": "review",
-                "colour": "purple",
+                "colour": "teal",
                 "publicLabel": "Besluit",
                 "publicDescription": "Wij nemen een besluit op uw aanvraag."
             },
@@ -12940,7 +12940,7 @@
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
-                "colour": "orange",
+                "colour": "purple",
                 "publicLabel": "In behandeling",
                 "publicDescription": "Wij onderzoeken uw klacht en vragen u om uw kant van het verhaal."
             },
@@ -12989,7 +12989,7 @@
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
-                "colour": "orange",
+                "colour": "purple",
                 "publicLabel": "In behandeling",
                 "publicDescription": "Wij werken aan uw melding."
             },

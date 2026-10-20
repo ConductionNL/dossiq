@@ -38,7 +38,8 @@
       "order": 1,
       "isFinal": false,
       "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
-      "role": "intake"
+      "role": "intake",
+      "colour": "blue"
     },
     {
       "id": "cea85ff4-c209-5d71-8a3b-c835c46ea3f1",
@@ -47,7 +48,8 @@
       "order": 2,
       "isFinal": false,
       "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
-      "role": "in-progress"
+      "role": "in-progress",
+      "colour": "purple"
     },
     {
       "id": "7f5bc6ef-3623-5fcf-a9b1-dd0091fbae30",
@@ -55,7 +57,8 @@
       "description": "De indicatie voor jeugdhulp wordt opgesteld.",
       "order": 3,
       "isFinal": false,
-      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "colour": "purple"
     },
     {
       "id": "c868dd79-7253-5f14-82ca-ef591d2fac19",
@@ -63,7 +66,8 @@
       "description": "Het multidisciplinair overleg bespreekt de indicatie en het gezinsplan.",
       "order": 4,
       "isFinal": false,
-      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "colour": "purple"
     },
     {
       "id": "4543667e-c21a-54fa-a323-b3e81292e5a7",
@@ -71,7 +75,8 @@
       "description": "Het besluit over de jeugdhulp is genomen en verzonden.",
       "order": 5,
       "isFinal": false,
-      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "colour": "teal"
     },
     {
       "id": "79596e50-469e-577f-a661-fc5fb5c48d93",
@@ -80,7 +85,8 @@
       "order": 6,
       "isFinal": true,
       "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
-      "role": "closed"
+      "role": "closed",
+      "colour": "green"
     },
     {
       "id": "189ed7f4-456a-5f45-b2df-fd2371ef389b",
@@ -88,7 +94,8 @@
       "description": "De melding of hulpvraag is ingetrokken.",
       "order": 90,
       "isFinal": true,
-      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "colour": "grey"
     }
   ],
   "roleTypes": [
