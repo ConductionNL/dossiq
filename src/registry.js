@@ -87,7 +87,6 @@ import CaseWorkInstructionPanel from './components/case/CaseWorkInstructionPanel
 import DocumentReviewPanel from './components/case/DocumentReviewPanel.vue'
 // A reviewer's own pending archival decisions, on My Work.
 // @spec openspec/specs/archief-edepot-handover/spec.md
-import MyArchivalReviews from './components/case/MyArchivalReviews.vue'
 import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
@@ -119,7 +118,6 @@ import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
 import RequesterProjection from './components/initiator/RequesterProjection.vue'
 // A search openregister refused, said where the term was typed.
 // @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
-import CaseSearchRefusal from './components/search/CaseSearchRefusal.vue'
 import CaseTypeFieldFilters from './components/search/CaseTypeFieldFilters.vue'
 // "Besluitvorming" decision-making is owned by decidesk and surfaced here as
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
@@ -370,14 +368,6 @@ const HEADLESS_WIDGET_META = {
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
-	// --- A refused search, said rather than rendered as an empty list. ---
-	// @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
-	CaseSearchRefusal: {
-		kind: 'page',
-		component: CaseSearchRefusal,
-		_note: "Cases-page below-header slot. OpenRegister refuses a malformed _search term with 400 {error, position, term} rather than running it as a literal, precisely because a literal returns zero rows and reads as an honest empty result. useObjectStore.fetchCollection() then records the refusal on errors['dossiq-case'] and returns [] anyway, so CnIndexPage draws its empty state over it and the reader retypes a word that was never the problem. Mounted through pages[].slots because the search box is CnIndexPage's; deleted the day the library renders the store's own error above the list.",
-	},
-
 	// --- The filters a case type's own fields offer. ---
 	// @spec openspec/specs/case-search-via-or-unified-search/spec.md
 	CaseTypeFieldFilters: {
@@ -804,19 +794,6 @@ const registry = {
 		component: CaseWorkInstructionPanel,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Knowledge tab, first section: the Collectives page that explains how this municipality handles this kind of case, followed one reference from the case to its type. dossiq stores no article text and fetches no article body, so a handler whose role group is not in the collective\'s team meets Collectives\' own refusal on the page rather than a copy dossiq made. Nothing renders when the type names no page, because most types will not for a while and a heading over "no work instruction" is a reproach for something an administrator has not done. A lookup that FAILED says so with a retry: a blank panel would read as a type without an instruction.',
-	},
-
-	// --- A reviewer's own pending archival decisions (My Work). ---
-	// `/archival/reviews/pending` reads the session user id, so nothing is narrowed
-	// in the browser. A filter over a wider list would be a weaker thing wearing
-	// the same label.
-	// @spec openspec/specs/archief-edepot-handover/spec.md
-	MyArchivalReviews: {
-		// @custom-widget-ratchet exclude a destruction list entry is not a dossiq object: it lives on openregister's destruction list and no declarative widget reads that surface, and each of the three answers carries a reason, with retain also carrying a new date, collected before the post. Deleted the day the manifest vocabulary has a worklist widget over a leaf endpoint
-		kind: 'widget',
-		component: MyArchivalReviews,
-		...DASHBOARD_TILE_META,
-		_note: 'My Work: the destruction list entries the signed-in person has to sign off, with destroy, retain and transfer, each carrying a reason. An answered entry leaves the list without a reload. An empty list reads as nothing to sign off; a failed read reads as an error with a retry, because the two look identical from an empty array.',
 	},
 
 	// --- Plan a follow-up case (case-actions-menu, row A26). ---

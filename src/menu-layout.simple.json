@@ -578,9 +578,49 @@
 							},
 							{
 								"id": "archival-reviews",
-								"type": "custom",
+								"type": "decision-list",
 								"title": "My archival reviews",
-								"icon": "ArchiveOutline"
+								"icon": "ArchiveOutline",
+								"content": {
+									"source": {
+										"url": "/apps/openregister/api/archival/reviews/pending"
+									},
+									"itemsPath": "results",
+									"idField": "entryId",
+									"title": "{title}",
+									"meta": "{archiefactiedatum}",
+									"answers": [
+										{
+											"value": "destroy"
+										},
+										{
+											"value": "retain",
+											"fields": [
+												{
+													"field": "newArchiefactiedatum",
+													"type": "date",
+													"label": "New disposal date"
+												}
+											]
+										},
+										{
+											"value": "transfer"
+										}
+									],
+									"answerLabel": "Your answer",
+									"reason": {
+										"label": "Why?"
+									},
+									"submit": {
+										"label": "Record this decision",
+										"request": {
+											"method": "POST",
+											"url": "/apps/openregister/api/archival/destruction-lists/{listId}/entries/{entryId}/decision"
+										}
+									},
+									"emptyText": "You hold no archival decisions right now.",
+									"errorTitle": "Your archival reviews are unavailable"
+								}
 							},
 							{
 								"id": "simple-recent-activity",

@@ -420,7 +420,7 @@ describe('the landing page', () => {
 		expect(widget('archival-reviews')).toEqual(
 			withoutNotes(base.find((w) => w.id === 'archival-reviews')),
 		)
-		expect(simple.slots['widget-archival-reviews']).toBe('MyArchivalReviews')
+		expect(widget('archival-reviews').type).toBe('decision-list')
 	})
 
 	it('draws the cases you follow as rows, and loses nothing the table had', () => {

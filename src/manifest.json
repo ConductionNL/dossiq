@@ -1371,10 +1371,50 @@
 							},
 							{
 								"id": "archival-reviews",
-								"type": "custom",
+								"type": "decision-list",
 								"title": "My archival reviews",
 								"icon": "ArchiveOutline",
-								"_note": "The destruction list entries this person has to sign off, read from openregister's /archival/reviews/pending (page slot widget-archival-reviews -> MyArchivalReviews). That endpoint reads the session user id, so no id is sent and nothing is narrowed in the browser: a filter over a wider list would be a different, weaker thing wearing the same label. It fails CLOSED. A failed read draws an error with a retry, never an empty list, because a reviewer with nothing to sign off and an unreachable openregister look identical from an empty array, and only one of them means somebody's work is invisible. It is a custom widget and not an object-table because a destruction list entry is not a dossiq object: it lives on openregister's destruction list, and each of the three answers carries a reason that has to be collected before the post."
+								"_note": "The destruction list entries this person has to sign off (library widget type decision-list -> CnDecisionListWidget), read from openregister's /archival/reviews/pending, which reads the session user: no id is sent and nothing is narrowed in the browser. It fails CLOSED: a failed read is an error with a retry, never an empty list. Each entry takes destroy, retain or transfer with a reason; retain also asks the new disposal date, which openregister refuses the decision without. An entry leaves the list when its answer lands.",
+								"content": {
+									"source": {
+										"url": "/apps/openregister/api/archival/reviews/pending"
+									},
+									"itemsPath": "results",
+									"idField": "entryId",
+									"title": "{title}",
+									"meta": "{archiefactiedatum}",
+									"answers": [
+										{
+											"value": "destroy"
+										},
+										{
+											"value": "retain",
+											"fields": [
+												{
+													"field": "newArchiefactiedatum",
+													"type": "date",
+													"label": "New disposal date"
+												}
+											]
+										},
+										{
+											"value": "transfer"
+										}
+									],
+									"answerLabel": "Your answer",
+									"reason": {
+										"label": "Why?"
+									},
+									"submit": {
+										"label": "Record this decision",
+										"request": {
+											"method": "POST",
+											"url": "/apps/openregister/api/archival/destruction-lists/{listId}/entries/{entryId}/decision"
+										}
+									},
+									"emptyText": "You hold no archival decisions right now.",
+									"errorTitle": "Your archival reviews are unavailable"
+								}
 							}
 						],
 						"layout": [
@@ -1731,8 +1771,7 @@
 				"documentationUrl": "https://dossiq.conduction.nl"
 			},
 			"slots": {
-				"widget-my-work": "MyWorkWidget",
-				"widget-archival-reviews": "MyArchivalReviews"
+				"widget-my-work": "MyWorkWidget"
 			}
 		},
 		{
@@ -1940,7 +1979,6 @@
 			"manualOrder": true,
 			"actionsComponent": "CaseListExportAction",
 			"slots": {
-				"below-header": "CaseSearchRefusal",
 				"after-search": "CaseTypeFieldFilters"
 			},
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
