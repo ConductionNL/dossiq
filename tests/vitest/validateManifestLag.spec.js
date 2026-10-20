@@ -244,7 +244,7 @@ describe('check:manifest tells a lag from a defect', () => {
 	}, 30000)
 
 	// @spec openspec/changes/case-type-colour-icon/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
-	it('a pill resolve key only the newer schema declares is a lag, and an unknown one is not', () => {
+	it('a pill resolve key or a view icon only the newer schema declares is a lag, and an unknown one is not', () => {
 		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
 		expect(Object.hasOwn(vendored.$defs.headerPill.properties.resolve.properties, 'colorField')).toBe(true)
 
@@ -253,6 +253,10 @@ describe('check:manifest tells a lag from a defect', () => {
 		)
 		const page = manifest.pages.find((candidate) => candidate.type === 'detail')
 		page.config.typePill = { field: 'caseType', resolve: { register: 'dossiq', schema: 'caseType', colorField: 'colour', iconField: 'icon' } }
+		expect(validate(manifest).code).toBe(0)
+
+		const cases = manifest.pages.find((candidate) => Array.isArray(candidate?.config?.defaultSavedViews))
+		cases.config.defaultSavedViews[0].icon = 'FileDocumentOutline'
 		expect(validate(manifest).code).toBe(0)
 
 		page.config.typePill.resolve.thisKeyExistsNowhere = true

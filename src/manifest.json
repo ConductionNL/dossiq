@@ -1992,7 +1992,7 @@
 					{ "slug": "mine-overdue", "name": "Mine, overdue", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
 					{ "slug": "mine-due-this-week", "name": "Mine, due this week", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
 					{ "slug": "unclaimed-overdue", "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
-					{ "slug": "woo-requests", "name": "Woo requests", "filters": { "caseType": "3c0f5a00-0000-4000-a000-00000000a001", "statusHiddenInLists": false, "isDraft": false } }
+					{ "slug": "woo-requests", "name": "Woo requests", "icon": "FileDocumentOutline", "filters": { "caseType": "3c0f5a00-0000-4000-a000-00000000a001", "statusHiddenInLists": false, "isDraft": false } }
 				],
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "Same create form as the Queue page; see its `_formNote`.",

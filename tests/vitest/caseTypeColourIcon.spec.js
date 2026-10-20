@@ -84,6 +84,14 @@ describe('case type colour and icon', () => {
 		}
 	})
 
+	it('shows the Woo request icon on the shipped Woo view, as on its case type', () => {
+		const view = page(manifest, 'Cases').config.defaultSavedViews.find((entry) => entry.slug === 'woo-requests')
+		const woo = readJson('lib', 'Settings', 'register.d', '81-woo-verzoek.json').components.objects
+			.find((row) => row['@self'] && row['@self'].slug === 'woo-verzoek')
+		expect(view.icon).toBe(woo.icon)
+		expect(icons).toContain(`\t${view.icon},\n`)
+	})
+
 	it('paints teal statuses on the board columns and map markers too', () => {
 		const text = JSON.stringify(manifest)
 		const maps = text.match(/"purple-light":"var\(--nl-color-purple-light, #f2eaf5\)"/g) || []

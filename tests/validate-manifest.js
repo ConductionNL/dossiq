@@ -210,6 +210,17 @@ function newerSchemaAccepts(instancePath, property) {
 		def = schema.$defs.headerPill?.properties?.resolve ?? null
 	}
 
+	// A page's default saved view (its `icon`, pill-color-field, schema 2.134.0).
+	if (
+		def === null
+		&& segments.length === 5
+		&& segments[0] === 'pages'
+		&& segments[2] === 'config'
+		&& segments[3] === 'defaultSavedViews'
+	) {
+		def = schema.$defs.page?.properties?.config?.properties?.defaultSavedViews?.items ?? null
+	}
+
 	// A walkthrough tour is declared inline, not under $defs. Resolved by
 	// its path like the others (the-getting-started-tour-starts-on-the-
 	// dashboard, `startOn` in schema 2.94.0).
