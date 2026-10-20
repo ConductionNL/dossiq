@@ -229,7 +229,7 @@ import TaskDetailView from './views/tasks/TaskDetailView.vue'
 // @spec openspec/specs/dashboard/spec.md
 import FirstTodayWidget from './views/widgets/FirstTodayWidget.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
-import WooReportsView from './views/woo/WooReportsView.vue'
+import MailPartiesReportWidget from './views/reports/MailPartiesReportWidget.vue'
 import WorkloadSummaryBar from './views/WorkloadSummaryBar.vue'
 import { leafTab } from './integrations/leafTabs.js'
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
@@ -1349,10 +1349,11 @@ const registry = {
 		component: MailIntakeLogView,
 		_note: 'Named by src/manifest.d/37-mail-intake.json. A custom page because the intake-role check lives in MailIntakeController, and an index page would read the generic object endpoint and show every processed message original to anyone the register lets read.',
 	},
-	WooReportsView: {
-		kind: 'page',
-		component: WooReportsView,
-		_note: 'Named by src/manifest.d/86-woo-reports.json. A custom page because the reader-group check and the audit record of every read live in WooReportController.',
+	MailPartiesReportWidget: {
+		kind: 'widget',
+		component: MailPartiesReportWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'The mail parties report on the reports dashboard (src/manifest.d/86-woo-reports.json): CnCountTablesReport configured for one case. A registry widget because the report body asks for its case before it reads.',
 	},
 	StoreGallery: {
 		kind: 'page',

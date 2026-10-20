@@ -100,6 +100,7 @@ OC.L10N.register(
         "8 weeks": "8 weken",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> van de oudere checklist waaruit dit sjabloon is overgenomen, zodat de overname één keer per bron loopt",
         "> 90 dagen": "> 90 dagen",
+        "Assessments per reviewer per day": "Beoordelingen per beoordelaar per dag",
         "Data warnings": "Gegevenswaarschuwingen",
         "In {jaar}": "In {jaar}",
         "No cases at risk": "Geen zaken met risico",

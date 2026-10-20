@@ -11,6 +11,9 @@
 
 import axios from '@nextcloud/axios'
 import { flushPromises, mount } from '@vue/test-utils'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 
@@ -128,10 +131,12 @@ async function flipThroughputOn(wrapper) {
 const tab = await import('../../src/views/settings/tabs/WooReportsSettingsTab.vue')
 const WooReportsSettingsTab = tab.default
 const { isSwitchedOn } = tab
-const view = await import('../../src/views/woo/WooReportsView.vue')
-const WooReportsView = view.default
-const { throughputUrl } = view
-const { mailPartiesReport } = await import('../../src/views/woo/mailPartiesReport.js')
+const { mailPartiesReport } = await import('../../src/views/reports/mailPartiesReport.js')
+const { default: MailPartiesReportWidget } = await import('../../src/views/reports/MailPartiesReportWidget.vue')
+const reportsPage = JSON.parse(
+	readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../../src/manifest.d/86-woo-reports.json'), 'utf8'),
+).pages[0]
+const pageWidget = (id) => reportsPage.config.widgets.find((w) => w.id === id)
 
 describe('Woo report switches (REQ-WRR-001)', () => {
 	beforeEach(() => {
@@ -223,122 +228,54 @@ describe('Woo report switches (REQ-WRR-001)', () => {
 	})
 })
 
-describe('Woo throughput screen (REQ-WRR-002)', () => {
-	beforeEach(() => {
-		vi.clearAllMocks()
-		offered.throughput = true
-		offered.parties = true
-	})
+describe('Woo throughput on the reports page (REQ-WRR-002)', () => {
+	const table = pageWidget('throughput')
+	const source = table.content.endpointSource
 
-	it('asks for the period, and for the CSV of the same period', () => {
-		expect(throughputUrl('2026-11-01', '2026-11-30')).toContain(
-			'/apps/dossiq/api/woo/reports/throughput?from=2026-11-01&to=2026-11-30',
-		)
-		expect(throughputUrl('2026-11-01', '2026-11-30', true)).toContain(
-			'&format=csv',
-		)
-	})
-
-	it('shows one table row per reviewer per day', async () => {
-		axios.get.mockResolvedValue({
-			data: {
-				rows: [
-					{
-						reviewer: 'a',
-						displayName: 'Anna de Wit',
-						day: '2026-11-10',
-						openbaar: 3,
-						deels_openbaar: 0,
-						niet_openbaar: 1,
-						total: 4,
-					},
-					{
-						reviewer: 'b',
-						displayName: 'Bram',
-						day: '2026-11-10',
-						openbaar: 0,
-						deels_openbaar: 2,
-						niet_openbaar: 0,
-						total: 2,
-					},
-				],
-				truncated: false,
-			},
+	it('reads the period the page shows, from the throughput endpoint', () => {
+		expect(table.type).toBe('object-table')
+		expect(source).toMatchObject({
+			url: '/apps/dossiq/api/woo/reports/throughput',
+			params: { from: '@workspace.dateFrom', to: '@workspace.dateTo' },
+			responsePath: 'rows',
 		})
-		const wrapper = mount(WooReportsView)
-		await wrapper.find('[data-testid="woo-throughput-show"]').trigger('click')
-		await flushPromises()
-
-		const rows = wrapper.findAll('tbody tr')
-		expect(rows).toHaveLength(2)
-		expect(rows[0].text()).toContain('Anna de Wit')
-		expect(rows[0].findAll('td').map((cell) => cell.text())).toEqual([
-			'Anna de Wit',
-			'2026-11-10',
-			'3',
-			'0',
-			'1',
-			'4',
-		])
+		expect(reportsPage.type).toBe('dashboard')
+		expect(reportsPage.config.dateRange.enabled).toBe(true)
 	})
 
-	it('shows the refusal and no rows when the server refuses', async () => {
-		axios.get.mockRejectedValue({
-			response: {
-				status: 403,
-				data: {
-					message: 'Your organisation has not switched this report on.',
-				},
-			},
-		})
-		const wrapper = mount(WooReportsView)
-		await wrapper.find('[data-testid="woo-throughput-show"]').trigger('click')
-		await flushPromises()
+	it('reads only when asked, so opening the page records nothing on the audit trail', () => {
+		expect(source.loadOn).toBe('request')
+		expect(source.requestLabel).toBe('Show')
+		expect(source.requestHint).toContain('it is recorded')
+	})
 
-		expect(wrapper.text()).toContain(
-			'Your organisation has not switched this report on.',
-		)
-		expect(wrapper.findAll('tbody tr')).toHaveLength(0)
+	it('shows one row per reviewer per day with the three verdicts and the total', () => {
+		expect(table.content.columns.map((c) => c.key)).toEqual(['displayName', 'day', 'openbaar', 'deels_openbaar', 'niet_openbaar', 'total'])
+		expect(table.content.emptyText).toBe('No assessments in this period')
+		expect(source.truncatedText).toBe('This period holds more assessments than one report reads. Choose a shorter period.')
+	})
+
+	it('downloads the CSV of the same period from the header', () => {
+		const csv = reportsPage.config.headerActions.find((a) => a.id === 'throughput-csv')
+		expect(csv.href).toBe('/apps/dossiq/api/woo/reports/throughput?format=csv&from=@workspace.dateFrom&to=@workspace.dateTo')
 	})
 })
 
-describe('The reports screen draws the halves on offer (REQ-WRR-001)', () => {
-	beforeEach(() => {
-		vi.clearAllMocks()
-		offered.throughput = true
-		offered.parties = true
+describe('The reports page draws the halves on offer (REQ-WRR-001)', () => {
+	it('shows the throughput table and its CSV only while the throughput report is offered', () => {
+		const gate = { endpoint: '/apps/dossiq/api/reports/offered', field: 'throughput', op: 'eq', value: true }
+		expect(pageWidget('throughput').visibleWhen).toEqual(gate)
+		expect(reportsPage.config.headerActions[0].visibleWhen).toEqual(gate)
 	})
 
-	it('draws both halves when both are offered', () => {
-		const wrapper = mount(WooReportsView)
-
-		expect(wrapper.find('[data-testid="woo-throughput"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="case-mail-parties"]').exists()).toBe(true)
+	it('shows the mail parties report only while it is offered, through its registered widget', () => {
+		expect(pageWidget('mail-parties').visibleWhen).toMatchObject({ field: 'parties', value: true })
+		expect(reportsPage.slots['widget-mail-parties']).toBe('MailPartiesReportWidget')
+		expect(reportsPage.config.layout.map((l) => l.widgetId)).toEqual(['throughput', 'mail-parties'])
 	})
 
-	it('leaves the throughput half out for somebody outside the reader group', () => {
-		offered.throughput = false
-		const wrapper = mount(WooReportsView)
-
-		expect(wrapper.find('[data-testid="woo-throughput"]').exists()).toBe(false)
-		expect(wrapper.find('[data-testid="woo-throughput-show"]').exists()).toBe(
-			false,
-		)
-		expect(wrapper.find('[data-testid="case-mail-parties"]').exists()).toBe(true)
-	})
-
-	it('leaves the parties half out while that report is off', () => {
-		offered.parties = false
-		const wrapper = mount(WooReportsView)
-
-		expect(wrapper.find('[data-testid="woo-throughput"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="case-mail-parties"]').exists()).toBe(
-			false,
-		)
-	})
-
-	it('starts the parties half on the case the address names', () => {
-		const wrapper = mount(WooReportsView, {
+	it('starts the parties report on the case the address names', () => {
+		const wrapper = mount(MailPartiesReportWidget, {
 			global: { mocks: { $route: { query: { case: 'case-7' } } } },
 		})
 
@@ -369,9 +306,8 @@ describe('Mail parties of a case (REQ-WRR-004)', () => {
 		expect(mailPartiesReport.emptyText).toBe('No mail collected on this case')
 	})
 
-	it('hands the report its config on the reports screen', () => {
-		offered.parties = true
-		const wrapper = mount(WooReportsView, {
+	it('hands the report its config', () => {
+		const wrapper = mount(MailPartiesReportWidget, {
 			global: { mocks: { $route: { query: { case: 'case-7' } } } },
 		})
 		const report = wrapper.findComponent({ name: 'CnCountTablesReport' })
