@@ -612,15 +612,25 @@
 						'Who takes over the cases of an absent handler, and the bulk reassignment of their work.',
 					)
 				">
-				<SubstitutionAdmin />
+				<CnIndexPage v-bind="substitutionIndex" />
 			</CnSettingsSection>
 		</template>
 	</CnAdminSettingsShell>
+
+	<!-- The admin page has no CnAppRoot, so it hosts the modals its lists
+	     open (a row action of type open-modal, a header action). -->
+	<component
+		:is="adminModalComponent"
+		v-if="adminModalComponent"
+		v-bind="adminModal.props"
+		@close="adminModal = null" />
 </template>
 
 <script>
 import {
+	CnActionDialog,
 	CnAdminSettingsShell,
+	CnIndexPage,
 	CnRegisterMapping,
 	CnSettingsFieldsSection,
 	CnSettingsSection,
@@ -633,7 +643,9 @@ import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
-import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
+import SubstitutionActionsDialog from '../../dialogs/SubstitutionActionsDialog.vue'
+import BulkReassignModal from '../../modals/BulkReassignModal.vue'
+import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
 import ShippedConfiguration from './ShippedConfiguration.vue'
 import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
@@ -668,6 +680,19 @@ import {
 	storeRegistryFields,
 	textsAndAccessFields,
 } from './adminFields.js'
+import { substitutionIndex } from './adminLists.js'
+
+/**
+ * The modals the admin page's lists open, by the name a declaration uses.
+ *
+ * @type {Record<string, object>}
+ */
+const ADMIN_MODALS = {
+	BulkReassignModal,
+	CnActionDialog,
+	SubstitutionActionsDialog,
+	SubstitutionFormModal,
+}
 
 export default {
 	name: 'AdminRoot',
@@ -692,7 +717,7 @@ export default {
 		StufAuditLog,
 		NcButton,
 		NcNoteCard,
-		SubstitutionAdmin,
+		CnIndexPage,
 	},
 
 	/**
@@ -706,6 +731,7 @@ export default {
 	provide() {
 		return {
 			cnTranslate: (key, vars) => this.t('dossiq', key, vars),
+			cnOpenModal: (key, props = {}) => this.openAdminModal(key, props),
 			// Cell formatters for the admin tables. A connection's title and
 			// description arrive in English from integriq's registry, which
 			// stores dossiq's declaration as written.
@@ -724,6 +750,8 @@ export default {
 			registerConfiguration: {},
 			registerSaving: false,
 			activeTab: 'general',
+			// The modal a list on this page opened: `{ key, props }`, or null.
+			adminModal: null,
 			tabCounts: {},
 			ownerApps: loadState('dossiq', 'ownerApps', {
 				integriq: true,
@@ -733,6 +761,26 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The substitution console's list.
+		 *
+		 * @return {object} The CnIndexPage props.
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
+		substitutionIndex() {
+			return substitutionIndex(this.t, (key, props) => this.openAdminModal(key, props))
+		},
+
+		/**
+		 * The component of the open modal, or null.
+		 *
+		 * @return {object|null} The component.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		adminModalComponent() {
+			return this.adminModal ? ADMIN_MODALS[this.adminModal.key] || null : null
+		},
+
 		/**
 		 * The tabs of the page, in the order the board draws them. Every
 		 * section the page had before sits on one of them. Integrations and
@@ -1240,6 +1288,23 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Open one of the page's modals; an unknown key opens nothing.
+		 *
+		 * @param {string} key The modal's name.
+		 * @param {object} [props] Its props.
+		 * @return {void}
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		openAdminModal(key, props = {}) {
+			if (!ADMIN_MODALS[key]) {
+				// eslint-disable-next-line no-console
+				console.warn(`[AdminRoot] "${key}" is not a modal of the admin page.`)
+				return
+			}
+			this.adminModal = { key, props }
+		},
+
 		/**
 		 * Add the known counts to the tabs.
 		 *

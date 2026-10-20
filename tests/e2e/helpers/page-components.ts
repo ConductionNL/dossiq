@@ -67,7 +67,7 @@ export const VIEW_OVERRIDES_APPLIED = true
 export const SubstitutionPersonalSettings = '/apps/dossiq/#user-settings'
 
 /**
- * `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console,
+ * The coordinator substitution console: a CnIndexPage over /api/substitutions in
  * the Substitution tab of the admin settings (its own page `/substitution-admin`
  * retired on 20 Oct 2026 and redirects here). Prefix with `/index.php` only.
  */

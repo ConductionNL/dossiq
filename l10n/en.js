@@ -1,6 +1,9 @@
 OC.L10N.register(
     "dossiq",
     {
+        "Revoke this substitution?": "Revoke this substitution?",
+        "The substitution is revoked.": "The substitution is revoked.",
+        "The actions could not be read.": "The actions could not be read.",
         " days": " days",
         "\"{doc}\" is {class} but has no weigeringsgrond selected.": "\"{doc}\" is {class} but has no weigeringsgrond selected.",
         "#": "#",

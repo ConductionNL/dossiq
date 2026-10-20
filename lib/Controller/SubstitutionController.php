@@ -80,20 +80,35 @@ class SubstitutionController extends Controller {
 	 * List substitutions visible to the current user.
 	 *
 	 * Coordinators see all; a regular user sees only substitutions where they
-	 * are the absentee or the substitute.
+	 * are the absentee or the substitute. `handler` narrows the list to the
+	 * substitutions whose absentee or substitute contains it, ignoring case.
+	 *
+	 * @param string $handler Part of a handler's user id, or '' for all.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	#[NoAdminRequired]
-	public function index(): JSONResponse {
+	public function index(string $handler = ''): JSONResponse {
 		$userId = $this->accessGuard->currentUid();
 		if ($userId === '') {
 			return $this->accessGuard->forbidden(message: 'Not authenticated');
 		}
 
-		return new JSONResponse(['results' => $this->accessGuard->listVisibleTo(userId: $userId)]);
+		$rows   = $this->accessGuard->listVisibleTo(userId: $userId);
+		$needle = mb_strtolower(trim($handler));
+		if ($needle !== '') {
+			$rows = array_values(
+				array_filter(
+					$rows,
+					fn (array $row): bool => str_contains(mb_strtolower((string) ($row['absentee'] ?? '')), $needle)
+						|| str_contains(mb_strtolower((string) ($row['substitute'] ?? '')), $needle)
+				)
+			);
+		}
+
+		return new JSONResponse(['results' => $rows]);
 	}//end index()
 
 	/**

@@ -44,6 +44,6 @@ describe('substitution admin in one place', () => {
 	it('keeps the admin settings tab that the address opens', () => {
 		const adminRoot = read('src', 'views', 'settings', 'AdminRoot.vue')
 		expect(adminRoot).toContain("{ id: 'substitution', label: this.t('dossiq', 'Substitution') }")
-		expect(adminRoot).toContain('<SubstitutionAdmin />')
+		expect(adminRoot).toContain('<CnIndexPage v-bind="substitutionIndex" />')
 	})
 })

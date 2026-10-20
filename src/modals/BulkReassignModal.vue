@@ -44,7 +44,7 @@
 			</div>
 
 			<NcButton
-				type="secondary"
+				variant="secondary"
 				:disabled="!fromUser || loadingPreview"
 				@click="loadPreview">
 				<template v-if="loadingPreview" #icon>
@@ -132,10 +132,10 @@
 		</div>
 
 		<template #actions>
-			<NcButton type="tertiary" @click="$emit('close')">
+			<NcButton variant="tertiary" @click="$emit('close')">
 				{{ t('dossiq', 'Close') }}
 			</NcButton>
-			<NcButton type="primary" :disabled="!canExecute" @click="execute">
+			<NcButton variant="primary" :disabled="!canExecute" @click="execute">
 				<template v-if="executing" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
@@ -146,6 +146,7 @@
 </template>
 
 <script>
+import { emit } from '@nextcloud/event-bus'
 import {
 	NcButton,
 	NcDialog,
@@ -291,6 +292,9 @@ export default {
 				)
 				this.preview = null
 				this.$emit('reassigned', this.results)
+				// A list hosting this modal reads its rows again; the host closes it.
+				emit('cn:page:refresh', {})
+				this.$emit('close')
 			} catch (err) {
 				this.serverError =
 					err?.response?.data?.error

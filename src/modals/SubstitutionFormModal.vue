@@ -103,10 +103,10 @@
 		</div>
 
 		<template #actions>
-			<NcButton type="tertiary" @click="$emit('close')">
+			<NcButton variant="tertiary" @click="$emit('close')">
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
-			<NcButton type="primary" :disabled="saving" @click="submit">
+			<NcButton variant="primary" :disabled="saving" @click="submit">
 				<template v-if="saving" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
@@ -117,6 +117,7 @@
 </template>
 
 <script>
+import { emit } from '@nextcloud/event-bus'
 import {
 	NcButton,
 	NcDialog,
@@ -247,6 +248,9 @@ export default {
 				}
 				const created = await createSubstitution(payload)
 				this.$emit('created', created)
+				// A list hosting this modal reads its rows again; the host closes it.
+				emit('cn:page:refresh', {})
+				this.$emit('close')
 			} catch (err) {
 				this.serverError =
 					err?.response?.data?.error

@@ -158,6 +158,30 @@ class SubstitutionControllerContractTest extends TestCase {
 	}//end testBothReadEndpointsRefuseASessionLessCallerWith403()
 
 	/**
+	 * The console's search narrows the visible list to the substitutions
+	 * whose absentee or substitute contains the term, ignoring case.
+	 *
+	 * @return void
+	 */
+	public function testIndexNarrowsTheVisibleListByHandler(): void {
+		$guard = $this->createMock(originalClassName: SubstitutionAccessGuard::class);
+		$guard->method('currentUid')->willReturn('coordinator');
+		$guard->method('listVisibleTo')->willReturn(
+			[
+				['id' => 'v-1', 'absentee' => 'jan', 'substitute' => 'piet'],
+				['id' => 'v-2', 'absentee' => 'klaas', 'substitute' => 'Janneke'],
+				['id' => 'v-3', 'absentee' => 'marie', 'substitute' => 'kees'],
+			]
+		);
+
+		$controller = $this->controller($guard);
+
+		$ids = array_column($controller->index(handler: 'JAN')->getData()['results'], 'id');
+		$this->assertSame(expected: ['v-1', 'v-2'], actual: $ids);
+		$this->assertCount(expectedCount: 3, haystack: $controller->index()->getData()['results']);
+	}//end testIndexNarrowsTheVisibleListByHandler()
+
+	/**
 	 * The substituted-work list is resolved for the SESSION uid.
 	 *
 	 * @return void
