@@ -160,8 +160,8 @@ export function asTaskRow(row) {
 	// `id` (the database primary key) beside `uuid`, so `row.id ?? row.uuid`
 	// never once reached the uuid and this mapping was a no-op on real data.
 	// No route or verb accepts the numeric key: `/tasks/:id` and every
-	// `/api/flow-tasks/{uuid}/…` verb take the uuid, so three surfaces
-	// (MyTasksWidget, TaskRemindersWidget, CaseTasksTab) built a deep link
+	// `/api/flow-tasks/{uuid}/…` verb take the uuid, so the surfaces
+	// (MyTasksWidget, TaskRemindersWidget) built a deep link
 	// like `/apps/dossiq/tasks/153` that resolves to nothing. It answered no
 	// error, it just went nowhere. `taskIdOf()` in `caseTaskPaneHelpers.js`
 	// already reads uuid first, and this is the same precedence in the one

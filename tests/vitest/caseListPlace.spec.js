@@ -141,3 +141,22 @@ describe('the retired workflow board address', () => {
 		)
 	})
 })
+
+describe('the retired case map address', () => {
+	it('opens the Cases list in map view', async () => {
+		const { createMemoryHistory, createRouter } = await import('vue-router')
+		const router = createRouter({
+			history: createMemoryHistory(),
+			routes: routesFromManifest(manifest, STUB),
+		})
+		await router.push('/map')
+		expect(router.currentRoute.value.name).toBe('Cases')
+		expect(router.currentRoute.value.query).toEqual({ _view: 'map' })
+	})
+
+	it('is no page of its own any more', () => {
+		expect((manifest.pages || []).map((entry) => entry.id)).not.toContain(
+			'CaseMap',
+		)
+	})
+})

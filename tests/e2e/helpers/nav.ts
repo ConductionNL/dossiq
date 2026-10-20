@@ -260,6 +260,29 @@ export async function navToRoute(page: Page, route: string): Promise<void> {
 }
 
 /**
+ * Open one case type on the Case types page and switch to one of its tabs.
+ *
+ * The case type is found on the list by its title and opened by clicking the
+ * title, which is how an administrator reaches it; the tab is the page's own
+ * tab strip (`role="tab"`).
+ *
+ * @param page  The page.
+ * @param title The case type's title.
+ * @param tab   The tab's label, English or Dutch.
+ * @return Resolves once the tab is selected.
+ */
+export async function openCaseTypeTab(page: Page, title: string, tab: RegExp): Promise<void> {
+	await navToRoute(page, '/settings/case-types')
+	const row = page.getByRole('row').filter({ hasText: title })
+	await expect(row.first(), `the case type list should offer ${title}`).toBeVisible({ timeout: 120_000 })
+	await row.first().getByText(title, { exact: true }).first().click()
+	await expect(page).toHaveURL(/\/settings\/case-types\/[^/]+$/, { timeout: 60_000 })
+	const strip = page.getByRole('tab', { name: tab })
+	await expect(strip.first()).toBeVisible({ timeout: 60_000 })
+	await strip.first().click()
+}
+
+/**
  * The dossiq admin settings page (`/settings/admin/dossiq`) renders its many
  * sections progressively — the lower ones (Case Email: Shared Mailbox,
  * KCC-werkplek Integration, …) only mount once scrolled near. Scroll to the

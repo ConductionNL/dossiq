@@ -111,7 +111,7 @@
 						<td>{{ task.assignee || t('dossiq', 'Unassigned') }}</td>
 						<td>{{ formatDate(task.dueDate) }}</td>
 						<td>
-							<span class="case-task-pane__state" :data-state="stateOf(task)">{{ stateLabel(task) }}</span>
+							<span class="case-task-pane__state cn-status-badge cn-status-badge--default" :data-state="stateOf(task)">{{ stateLabel(task) }}</span>
 						</td>
 						<td>
 							<NcButton
@@ -1088,11 +1088,7 @@ export default {
 	}
 
 	&__state {
-		padding: 2px 8px;
-		border-radius: var(--border-radius-pill);
 		background: var(--color-background-dark);
-		font-weight: bold;
-		font-size: 0.9em;
 	}
 }
 </style>

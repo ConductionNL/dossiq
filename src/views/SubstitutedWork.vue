@@ -34,9 +34,9 @@
 					<span class="substituted-work__card-title">{{ row.title || row.identifier || t('dossiq', 'Untitled case') }}</span>
 					<span class="substituted-work__meta">
 						<span v-if="row.identifier" class="substituted-work__ref">{{ row.identifier }}</span>
-						<span v-if="nameOf('caseTypeName', row.caseType)" class="substituted-work__chip" :title="nameOf('caseTypeName', row.caseType)">{{ nameOf('caseTypeName', row.caseType) }}</span>
-						<span v-if="nameOf('statusTypeName', row.status)" class="substituted-work__chip">{{ nameOf('statusTypeName', row.status) }}</span>
-						<span class="substituted-work__chip substituted-work__chip--marker" data-testid="substituted-marker">{{ markerOf(row) }}</span>
+						<span v-if="nameOf('caseTypeName', row.caseType)" class="substituted-work__chip cn-status-badge cn-status-badge--default" :title="nameOf('caseTypeName', row.caseType)">{{ nameOf('caseTypeName', row.caseType) }}</span>
+						<span v-if="nameOf('statusTypeName', row.status)" class="substituted-work__chip cn-status-badge cn-status-badge--default">{{ nameOf('statusTypeName', row.status) }}</span>
+						<span class="substituted-work__chip cn-status-badge cn-status-badge--warning substituted-work__chip--marker" data-testid="substituted-marker">{{ markerOf(row) }}</span>
 					</span>
 				</button>
 			</li>
@@ -245,15 +245,6 @@ export default {
 	max-width: 100%;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	padding: 1px 8px;
-	border-radius: var(--border-radius-pill, 16px);
-	background: var(--color-background-dark);
-	color: var(--color-main-text);
-	font-size: 0.8rem;
 	white-space: nowrap;
-
-	&--marker {
-		background: var(--color-warning-element-light, var(--color-background-dark));
-	}
 }
 </style>

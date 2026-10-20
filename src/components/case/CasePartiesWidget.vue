@@ -21,8 +21,8 @@
 	indicator that only renders is an indicator somebody misses. Each one says
 	what it does: warn the reader, refuse publishing a file on the case, or
 	refuse a message to that party. The refusals are ALSO enforced where the
-	act happens — the publication in `BesluitPublicatiePanel`, the send in
-	`FileRequestService`, and both again inside OpenRegister — because a
+	act happens — the send in `FileRequestService`, and both again inside
+	OpenRegister — because a
 	verdict drawn in a widget is a verdict a second caller does not have.
 
 	WHY A FAILED READ SAYS SO. A case with nobody on it is a real answer and
@@ -68,7 +68,7 @@
 				<span
 					v-for="(kind, index) in caseKinds.kinds"
 					:key="kindCode(kind)"
-					class="case-parties__accepted-kind"
+					class="case-parties__accepted-kind cn-status-badge cn-status-badge--default"
 					data-testid="case-parties-accepted-kind"
 					>{{ index + 1 }}. {{ kind.label || kindCode(kind) }}</span
 				>
@@ -112,7 +112,7 @@
 						</span>
 						<span
 							v-if="party.partyUuid === primary"
-							class="case-parties__primary"
+							class="case-parties__primary cn-status-badge cn-status-badge--primary"
 							data-testid="case-parties-primary">
 							{{ t('dossiq', 'Primary party') }}
 						</span>
@@ -121,7 +121,7 @@
 						</span>
 						<span
 							v-if="notAccepted(party)"
-							class="case-parties__not-accepted"
+							class="case-parties__not-accepted cn-status-badge cn-status-badge--warning"
 							data-testid="case-parties-not-accepted">
 							{{ t('dossiq', 'Kind not accepted by this case type') }}
 						</span>
@@ -153,7 +153,7 @@
 						<span
 							v-for="indicator in indicatorsFor(party)"
 							:key="`${party.partyUuid}-${indicator.key}`"
-							class="case-parties__indicator"
+							class="case-parties__indicator cn-status-badge cn-status-badge--default"
 							:class="`case-parties__indicator--${indicator.severity}`"
 							:data-effect="indicator.effect"
 							data-testid="case-parties-indicator"
@@ -689,40 +689,30 @@ export default {
 	}
 
 	&__accepted-kind {
-		padding: 0 calc(var(--default-grid-baseline) * 2);
 		border: 1px solid var(--color-border-dark);
-		border-radius: var(--border-radius-pill);
-		font-weight: 600;
 	}
 
 	&__not-accepted {
-		padding: 0 calc(var(--default-grid-baseline) * 2);
-		border-radius: var(--border-radius-pill);
 		background-color: var(--color-warning);
-		color: var(--color-warning-text, var(--color-main-text));
-		font-size: 0.85em;
+		--cn-status-badge-ink: var(--color-warning-text, var(--color-main-text));
+		color: var(--cn-status-badge-ink);
 	}
 
 	&__primary {
-		padding: 0 calc(var(--default-grid-baseline) * 2);
-		border-radius: var(--border-radius-pill);
 		background-color: var(--color-primary-element-light);
-		font-size: 0.85em;
 	}
 
 	&__indicator {
-		padding: 0 calc(var(--default-grid-baseline) * 2);
-		border-radius: var(--border-radius-pill);
-		font-size: 0.85em;
-
 		&--warning {
 			background-color: var(--color-warning);
-			color: var(--color-warning-text, var(--color-main-text));
+			--cn-status-badge-ink: var(--color-warning-text, var(--color-main-text));
+			color: var(--cn-status-badge-ink);
 		}
 
 		&--error {
 			background-color: var(--color-error);
-			color: var(--color-error-text, var(--color-primary-element-text));
+			--cn-status-badge-ink: var(--color-error-text, var(--color-primary-element-text));
+			color: var(--cn-status-badge-ink);
 		}
 	}
 }

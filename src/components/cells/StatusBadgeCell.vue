@@ -33,7 +33,7 @@
 -->
 <template>
 	<span
-		class="status-badge"
+		class="status-badge cn-status-badge cn-status-badge--default"
 		:style="style"
 		:data-colour="colour"
 		data-testid="status-badge">
@@ -113,7 +113,8 @@ export default {
 		 * @spec openspec/specs/case-types/spec.md
 		 */
 		style() {
-			return statusBadgeStyle(this.colour)
+			const style = statusBadgeStyle(this.colour)
+			return { ...style, '--cn-status-badge-ink': style.color }
 		},
 
 		/**
@@ -138,10 +139,6 @@ export default {
 	display: inline-block;
 	max-width: 100%;
 	overflow: hidden;
-	padding: 2px 10px;
-	border-radius: var(--border-radius-pill, 100px);
-	font-size: 0.9em;
-	line-height: 1.4;
 	white-space: nowrap;
 	text-overflow: ellipsis;
 }

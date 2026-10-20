@@ -64,7 +64,7 @@
 						<span class="case-type-blueprint__name">{{ row.name }}</span>
 						<span
 							v-if="row.badge"
-							class="case-type-blueprint__badge"
+							class="case-type-blueprint__badge cn-status-badge cn-status-badge--default"
 							:data-origin="row.origin"
 							:title="row.badgeTitle">
 							{{ row.badge }}
@@ -244,11 +244,9 @@ export default {
 }
 
 .case-type-blueprint__badge {
-	padding: 0 8px;
-	border-radius: var(--border-radius-pill, 100px);
 	background-color: var(--color-background-dark);
-	color: var(--color-text-maxcontrast);
-	font-size: 0.8em;
+	--cn-status-badge-ink: var(--color-text-maxcontrast);
+	color: var(--cn-status-badge-ink);
 }
 
 .case-type-blueprint__empty {

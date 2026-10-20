@@ -24,7 +24,6 @@
 //   A second, @vue-flow-based implementation (Vue-3-only, incompatible with
 //   this app's Vue 2.7 build) was removed by workflow-editor-integration.
 
-import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
 // The AI features a case type switched on, and the report group the case is in
 // (ai-features-on-the-case-consume-hermiq, board DqZaakAssistent).
 import CaseAiFeaturesPanel from './components/case/CaseAiFeaturesPanel.vue'
@@ -93,14 +92,17 @@ import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
+import CaseTypeMessagesEditorWidget from './components/caseType/CaseTypeMessagesEditorWidget.vue'
 // The party kinds a case type accepts, declared into pipelinq
 // (parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype).
 import CaseTypePartyKindsWidget from './components/caseType/CaseTypePartyKindsWidget.vue'
 import CaseTypePortalWidget from './components/caseType/CaseTypePortalWidget.vue'
+import CaseTypeRulesWidget from './components/caseType/CaseTypeRulesWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
 // @spec openspec/specs/case-configuration-i18n/spec.md
 import CaseTypeTranslationsWidget from './components/caseType/CaseTypeTranslationsWidget.vue'
+import CaseTypeWorkflowEditorWidget from './components/caseType/CaseTypeWorkflowEditorWidget.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
 // export-leaf URL client-side; no dossiq-side serialization (ADR-022).
@@ -121,9 +123,7 @@ import CaseTypeFieldFilters from './components/search/CaseTypeFieldFilters.vue'
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
-import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
-import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // Send digital post — the CaseDetail header action's compose surface.
 // @spec openspec/specs/berichtenbox-integration/spec.md
@@ -186,20 +186,13 @@ import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 import CaseRedactionView from './views/cases/CaseRedactionView.vue'
 // VTH-specific case detail panels
-import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
-import AdviesPanel from './views/cases/components/AdviesPanel.vue'
 // Federated case sharing/transfer/activity — federated-case-collaboration.
 // @spec openspec/specs/federated-case-collaboration/spec.md
 import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
 // Case-assistant chat panel — conversational assistance delegated to Hermiq
 // (fleet rule: AI functionality lives in Hermiq; dossiq is a thin consumer).
 // @spec openspec/specs/case-assistant-via-hermiq/spec.md
-// Case-email integration — leaf-first per ADR-022. The sidebar tab
-// wraps the EmailThread component (display only), reuses NC Mail as
-// the email engine, and triggers prefillDraft via the case-email API.
-// @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseConversationsPanel from './views/cases/components/CaseConversationsPanel.vue'
-import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
@@ -210,7 +203,6 @@ import DataSubjectRequestTab from './views/cases/components/DataSubjectRequestTa
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
-import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
 import InspectionPanel from './views/cases/components/InspectionPanel.vue'
 import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // Deelzaak (sub-case) full-page views — wired via manifest routes
@@ -220,17 +212,10 @@ import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // @spec openspec/changes/deelzaak-support/tasks.md#T06
 import DeelzaakList from './views/cases/DeelzaakList.vue'
 import DeletedCasesView from './views/cases/DeletedCasesView.vue'
-// Cases-on-map — full-screen multi-object overview. Consumes OpenRegister's
-// page-level maps-overview leaf (OR #154): OR owns the geometry extraction,
-// RBAC scoping, and base-layer config; the markers render through the lib's
-// `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in dossiq (ADR-022).
-// @spec openspec/specs/case-map-overview/spec.md
-import CasesOnMapView from './views/CasesOnMapView.vue'
 import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
 import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
 import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
 import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
-import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
 //     customComponents map, plus the handlers a manifest names by string. ---
@@ -257,8 +242,6 @@ import SubstitutedWork from './views/SubstitutedWork.vue'
 // @spec openspec/specs/task-management/spec.md
 import TaskDetailView from './views/tasks/TaskDetailView.vue'
 import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
-import TdCaseTypeFilter from './views/termijn/TdCaseTypeFilter.vue'
-import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
 import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // The Dashboard's My work tile, over OpenRegister's task engine.
 // @spec openspec/specs/dashboard/spec.md
@@ -435,14 +418,6 @@ const registry = {
 		_note: 'Before-collection slot: the cases an active substitution routes to the reader, marked with whose they are and until when, hideable. Not a filter on the list, because these cases are not assigned to the reader.',
 	},
 
-	// --- Cases-on-map overview (case-map-overview). ---
-	// @spec openspec/specs/case-map-overview/spec.md
-	CasesOnMapView: {
-		kind: 'page',
-		component: CasesOnMapView,
-		_note: "Full-screen multi-object cases-on-map overview. Markers come from OpenRegister's page-level maps-overview surface (RBAC-scoped, OR #154) and render through the lib's CnMapWidget — no bespoke Leaflet/WMS/WFS plumbing (ADR-022).",
-	},
-
 	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
 	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
@@ -490,6 +465,32 @@ const registry = {
 		component: CaseTypePortalWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail: the Portal section. Reads the case type and its blueprint statuses, writes portalWritable, both windows and portalWithdrawal in one PATCH, and shows the sentence CaseTypePortalWithdrawalListener refuses an unreachable withdrawal with.',
+	},
+	// --- The editors of the retired admin-settings case type editor, rehosted
+	// on CaseTypeDetail while their forms have no declarative equivalent. ---
+	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+	CaseTypeWorkflowEditorWidget: {
+		// @custom-widget-ratchet exclude a visual canvas of statuses, transitions, steps and guards with a version selector and publish; no declared widget draws or edits a graph
+		kind: 'widget',
+		component: CaseTypeWorkflowEditorWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail Phases and tasks: the workflow canvas, kept by decision when the admin-settings editor was retired.',
+	},
+	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+	CaseTypeMessagesEditorWidget: {
+		// @custom-widget-ratchet exclude a message is edited with the case variables to insert and a live preview that flags an unresolved variable; no declared form offers either
+		kind: 'widget',
+		component: CaseTypeMessagesEditorWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail Phases and tasks: the messages to the applicant through the email template endpoints, so each change is a new version (EmailTemplateVersionListener keeps that on the object API too).',
+	},
+	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+	CaseTypeRulesWidget: {
+		// @custom-widget-ratchet exclude the rules are read from OpenRegister's rules vocabulary and evaluated against a pasted case; no declared widget evaluates a rule
+		kind: 'widget',
+		component: CaseTypeRulesWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail Fields: the OpenRegister rules of the case schema with a try-it. They belong to the case schema rather than to one case type, so this is a candidate to move to OpenRegister\'s schema page.',
 	},
 	// @spec openspec/specs/zaaktype-versioning/spec.md
 	CaseTypePublishDialog: {
@@ -980,14 +981,6 @@ const registry = {
 	// by component name instead.
 	// @spec openspec/specs/case-dashboard-view/spec.md
 	// @spec openspec/specs/case-dashboard-view/spec.md
-	'case-email-pane': {
-		// @custom-widget-ratchet exclude the surface is a LEAF, not a collection of OpenRegister objects: CaseEmailTab consumes the mail leaf and calls prefillDraft to compose, and a built-in object-list takes a register and a schema, which email threads do not have. There is no `integration` id for mail either, so `type: "integration"` cannot reach it. This entry is deleted the day the library ships a mail widget type or OpenRegister exposes an email integration leaf
-		kind: 'widget',
-		component: CaseEmailTab,
-		...PANEL_WIDGET_META,
-		_note: 'The Email tab of the case panels: correspondence linked to the case, consuming the mail leaf. Was a sidebar tab; moved into the strip so the two logs a handler reads, email and contact moments, sit beside each other rather than one in each chrome.',
-	},
-
 	// @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
 	'case-conversations-pane': {
 		// @custom-widget-ratchet exclude the surface is an ACT, not a collection of OpenRegister objects: it starts a Talk room, declares the case major and opens the one channel that declaration made, and a built-in object-list takes a register and a schema and offers no button. The records it lists live on the case itself as `case.conversations`, which no widget type can read as a collection either. Deleted the day the library ships a widget type that posts to an app endpoint and renders the array a field holds
@@ -1064,11 +1057,6 @@ const registry = {
 	// The agenda compiler and the vergadering detail view were retired: decidiq
 	// owns agenda-building and meetings, and surfaces them on a case through the
 	// `decidesk-decisions` integration leaf rather than through pages here.
-	BesluitPublicatiePanel: {
-		kind: 'page',
-		component: BesluitPublicatiePanel,
-		_note: 'DROP/LVBB publication status + retry; embeddable as a case-detail sidebar tab component.',
-	},
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
 	// The bespoke public case-view (PublicCaseView) was removed by
@@ -1096,20 +1084,10 @@ const registry = {
 	// These resolve when a sidebarTab uses `component: "<key>"` instead of
 	// a `widgets[]` array. CnDetailPage injects the resolved component into
 	// the tab panel slot.
-	CaseTasksTab: {
-		kind: 'page',
-		component: CaseTasksTab,
-		_note: 'Tasks where task.case === parent.id',
-	},
 	// CaseDecisionsTab was retired by dossiq-decisions-to-decidiq: it offered
 	// create/edit/delete of local decision records while mounted on no page.
 	// Decisions are authored in decidiq (besluitvorming leaf); the read-only
 	// case-decisions widget displays the outcomes stored on the case.
-	CaseDocumentsTab: {
-		kind: 'page',
-		component: CaseDocumentsTab,
-		_note: 'Documents where document.case === parent.id',
-	},
 
 	// --- Deelzaak (sub-case) full-page views — manifest routes. ---
 	// @spec openspec/changes/deelzaak-support/tasks.md#T05
@@ -1123,14 +1101,6 @@ const registry = {
 		kind: 'page',
 		component: DeelzaakDetail,
 		_note: 'Sub-case detail with parent breadcrumb; mounted under /cases/:parentId/deelzaken/:id.',
-	},
-
-	// --- Case-email sidebar tab — leaf-first per ADR-022. ---
-	// @spec openspec/changes/case-email-integration/tasks.md#T12
-	CaseEmailTab: {
-		kind: 'page',
-		component: CaseEmailTab,
-		_note: 'Sidebar tab that surfaces email correspondence linked to the case; consumes the email leaf for display + uses prefillDraft for compose.',
 	},
 
 	// --- Case-appointment (internal calendar) sidebar tab — leaf-first per ADR-022. ---
@@ -1293,7 +1263,7 @@ const registry = {
 		chrome: 'card',
 		component: CasePartiesWidget,
 		...PANEL_WIDGET_META,
-		_note: 'CaseDetail People tab, the Roles section: the parties of the case grouped by role with the primary party first, which on a case is the initiator. It is the half the contacts integration beside it cannot carry -- a melder with no Nextcloud account, a gemachtigde acting for the applicant, and the indicators a party holds. An indicator renders WITH its verdict (warn, refuse publication, refuse send) because an indicator that only renders is one somebody misses; the two refusals are enforced again where the act happens, in BesluitPublicatiePanel and FileRequestService, and once more inside OpenRegister. A failed read says so in words rather than drawing an empty party list, which would read as a case whose parties had been removed.',
+		_note: 'CaseDetail People tab, the Roles section: the parties of the case grouped by role with the primary party first, which on a case is the initiator. It is the half the contacts integration beside it cannot carry -- a melder with no Nextcloud account, a gemachtigde acting for the applicant, and the indicators a party holds. An indicator renders WITH its verdict (warn, refuse publication, refuse send) because an indicator that only renders is one somebody misses; the two refusals are enforced again where the act happens, in FileRequestService, and once more inside OpenRegister. A failed read says so in words rather than drawing an empty party list, which would read as a case whose parties had been removed.',
 	},
 
 	'case-timeline-pane': {
@@ -1389,11 +1359,6 @@ const registry = {
 		component: CaseSharingTab,
 		_note: 'Partner + federated case sharing, transfer and activity — container that wires ShareTab/CreateShareDialog/CaseTransferDialog/CreateFederatedShareDialog/FederatedActivityPanel to the backend API.',
 	},
-	AdviesPanel: {
-		kind: 'page',
-		component: AdviesPanel,
-		_note: 'Advice/advies panel used in CaseDetail and BezwaarDetail sidebar tabs',
-	},
 
 	// --- Besluitvorming (decision-making) sidebar tab — decidesk leaf. ---
 	// "decidesk owns it; dossiq shows a leaf" (ADR-019 / ADR-022). The
@@ -1413,16 +1378,6 @@ const registry = {
 
 	// --- VTH module: case detail sidebar tabs. ---
 	// @spec openspec/changes/vth-module/tasks.md#task-7
-	AdviceRequestPanel: {
-		kind: 'page',
-		component: AdviceRequestPanel,
-		_note: 'VTH advice request panel — shows open/received/overdue adviesAanvragen on VTH case detail',
-	},
-	InspectionChecklistPanel: {
-		kind: 'page',
-		component: InspectionChecklistPanel,
-		_note: 'VTH checklist panel — shows inspection checklist completion status on Toezichtzaak',
-	},
 	InspectionPanel: {
 		kind: 'page',
 		component: InspectionPanel,
@@ -1454,9 +1409,8 @@ const registry = {
 	// (MapsProvider / CnMapsTab): the leaf owns tiles, layers, zoom and
 	// marker interaction and fetches straight from OpenRegister using the
 	// objectId/register/schema/apiBase CnObjectSidebar injects. Replaces the
-	// bespoke per-case Leaflet surface (LocationTab → CaseMap). The
-	// multi-object cases-on-map overview (CasesOnMapView / /map page) is OUT
-	// OF SCOPE here — tracked as a separate OR maps-overview follow-up.
+	// bespoke per-case Leaflet surface (LocationTab → CaseMap). The map of
+	// many cases is the Cases index's own map view (`/cases?_view=map`).
 	// @spec openspec/changes/migrate-maps-to-maps-leaf/tasks.md#P1.2
 	MapsLeafTab: {
 		kind: 'page',
@@ -1510,7 +1464,7 @@ const registry = {
 	CaseTimelineTab: {
 		kind: 'page',
 		component: CaseTimelineTab,
-		_note: 'The same component `case-timeline-pane` above mounts, under its COMPONENT name, for a manifest that names it as a sidebar tab rather than as a tab-widget type. The pair `case-email-pane` / `CaseEmailTab` carries the same two keys for the same reason.',
+		_note: 'The same component `case-timeline-pane` above mounts, under its COMPONENT name, for a manifest that names it as a sidebar tab rather than as a tab-widget type.',
 	},
 
 	// --- Named behaviours: a manifest `handler` string, not a component. ---
@@ -1615,12 +1569,6 @@ const registry = {
 		component: DtCaseTypeFilter,
 		_note: 'header-actions slot: SLA-bearing case types only. A component rather than a declarative pageFilter because the options are fetched.',
 	},
-	DtKpiWidget: {
-		kind: 'widget',
-		component: DtKpiWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'KPI row + the three guidance states.',
-	},
 	DtChartsWidget: {
 		kind: 'widget',
 		component: DtChartsWidget,
@@ -1644,17 +1592,6 @@ const registry = {
 		component: DtBreakdownWidget,
 		...DASHBOARD_TILE_META,
 		_note: 'Per-case-type performance table.',
-	},
-	TdCaseTypeFilter: {
-		kind: 'actions',
-		component: TdCaseTypeFilter,
-		_note: 'header-actions slot: case-type filter.',
-	},
-	TdKpiWidget: {
-		kind: 'widget',
-		component: TdKpiWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Headline KPI tiles (CnKpiGrid + CnStatsBlock).',
 	},
 	TdQuarterlyWidget: {
 		kind: 'widget',

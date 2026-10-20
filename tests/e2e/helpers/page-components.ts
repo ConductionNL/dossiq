@@ -38,9 +38,6 @@
  * `page.goto()` prefix them with `/index.php/apps/dossiq`.
  */
 
-/** `src/views/CasesOnMapView.vue` — the Cases map view (manifest page `CaseMap`). */
-export const CasesOnMapView = '/map'
-
 /**
  * A default view of the Cases index (manifest page `Cases`, `defaultSavedViews`):
  * `my-work`, `team-queue`, `data-subject-requests`, `woo-requests`.

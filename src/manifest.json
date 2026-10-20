@@ -330,13 +330,6 @@
 			"order": 56
 		},
 		{
-			"id": "CaseMap",
-			"label": "Map",
-			"icon": "MapOutline",
-			"route": "CaseMap",
-			"order": 60
-		},
-		{
 			"id": "SettingsGroup",
 			"label": "Settings",
 			"icon": "CogOutline",
@@ -1930,6 +1923,12 @@
 						"slug": "team-queue",
 						"name": "Team queue",
 						"filters": {},
+						"sort": [
+							{
+								"key": "startDate",
+								"order": "asc"
+							}
+						],
 						"overrides": {
 							"lockedFilters": {
 								"assignee": "IS NULL",
@@ -1999,7 +1998,6 @@
 								}
 							],
 							"quickFilterMaxVisible": 4,
-							"quickFilterPlacement": "toolbar",
 							"quickFiltersFrom": {
 								"field": "caseType",
 								"register": "dossiq",
@@ -2010,25 +2008,20 @@
 							"sidePanel": [
 								{
 									"id": "queue-team-today",
-									"type": "record-list",
+									"type": "team-workload",
 									"title": "Team today",
 									"content": {
-										"endpointSource": {
+										"source": {
 											"url": "/apps/dossiq/api/work-queue/workload",
-											"responsePath": "handlers"
+											"responsePath": "handlers",
+											"userField": "handler",
+											"countField": "openCaseCount"
 										},
-										"presentation": "rows",
-										"avatar": "{displayName}",
-										"title": "{displayName}",
-										"bar": {
-											"valueField": "openCaseCount"
-										},
-										"trailing": [
-											"{openCaseCount} cases"
-										],
-										"limit": 5,
-										"emptyText": "Nobody in your teams has open cases",
-										"errorText": "Only a coordinator sees the team's workload"
+										"capacity": 12,
+										"countLabel": {
+											"one": "{count} case",
+											"other": "{count} cases"
+										}
 									}
 								},
 								{
@@ -2040,11 +2033,25 @@
 											"url": "/apps/dossiq/api/dashboard/kpis",
 											"responsePath": "queueByType"
 										},
-										"presentation": "rows",
-										"title": "{title}",
-										"trailing": [
-											"{open} open · {waiting} waiting"
+										"presentation": "table",
+										"columns": [
+											{
+												"label": "Case type",
+												"value": "{title}"
+											},
+											{
+												"label": "Open now",
+												"value": "{open}",
+												"align": "end"
+											},
+											{
+												"label": "Queued",
+												"value": "{waiting}",
+												"align": "end",
+												"alertAbove": 0
+											}
 										],
+										"footnote": "Open with the team, and how many of those have no handler yet",
 										"emptyText": "No open cases"
 									}
 								}
@@ -2103,13 +2110,75 @@
 											},
 											{
 												"op": "lte",
-												"value": 5,
+												"value": 7,
 												"variant": "warning"
 											}
 										]
 									}
 								}
 							],
+							"viewModes": [
+								"list",
+								"table",
+								"cards",
+								"board",
+								"map"
+							],
+							"viewMode": "list",
+							"listConfig": {
+								"titleField": "title",
+								"subtitleTemplate": "{identifier} · {initiatorDisplayName} · {priority}",
+								"leading": {
+									"key": "startDate",
+									"widget": "age",
+									"width": "96px"
+								},
+								"trailing": [
+									{
+										"key": "caseType",
+										"formatter": "caseTypeName",
+										"widget": "badge",
+										"widgetProps": {
+											"variant": "info"
+										},
+										"width": "200px"
+									},
+									{
+										"key": "deadline",
+										"widget": "date",
+										"width": "140px",
+										"widgetProps": {
+											"due": {
+												"todayLabel": "Today",
+												"overdueLabel": {
+													"one": "{count} day overdue",
+													"other": "{count} days overdue"
+												},
+												"upcomingLabel": {
+													"one": "{count} day left",
+													"other": "{count} days left"
+												},
+												"upcomingWeeksLabel": {
+													"one": "{count} week left",
+													"other": "{count} weeks left"
+												}
+											},
+											"variantWhen": [
+												{
+													"op": "lt",
+													"value": 0,
+													"variant": "error"
+												},
+												{
+													"op": "lte",
+													"value": 7,
+													"variant": "warning"
+												}
+											]
+										}
+									}
+								]
+							},
 							"countText": "{shown} of {total} open cases without a handler · oldest first",
 							"footerNote": "a case leaves the queue as soon as someone picks it up",
 							"headerButtons": [
@@ -2137,8 +2206,37 @@
 									"icon": "Plus"
 								}
 							],
-							"emptyText": "Nothing is waiting. Every open case has someone on it.",
-							"folderSidebar": null
+							"folderSidebar": null,
+							"cardLayout": {
+								"headPill": {
+									"field": "deadline",
+									"due": {
+										"soonWithin": 7
+									},
+									"labels": {
+										"overdue": "Late",
+										"soon": "Almost due"
+									}
+								},
+								"number": "identifier",
+								"title": "title",
+								"meta": [
+									{
+										"field": "caseType",
+										"formatter": "caseTypeName"
+									},
+									"initiatorDisplayName"
+								],
+								"footerPill": {
+									"field": "statusPublicLabel",
+									"variant": "info"
+								},
+								"footerDate": {
+									"field": "deadline",
+									"label": "Deadline"
+								}
+							},
+							"emptyText": "Nothing is waiting. Every open case has someone on it."
 						}
 					},
 					{ "slug": "unclaimed-due-this-week", "name": "Unclaimed, due this week", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
@@ -2373,6 +2471,10 @@
 					"geoField": "geometry",
 					"popupField": "title",
 					"center": [52.1326, 5.2913],
+					"_parityNote": "What the retired /map page did, now as configuration: every case that matches the filters is plotted (up to 500, with a note past that), each marker takes the colour of its status type, as the board's columns do, and a line says how many cases have a place.",
+					"plotAll": true,
+					"count": "Showing {located} of {total} located cases",
+					"markerColor": { "field": "status", "source": { "schema": "statusType", "colorField": "colour" }, "colorMap": {"blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)"} },
 					"_basemapNote": "EVERY ENTRY CARRIES `options.referrerPolicy` AND MUST KEEP IT. Nextcloud sends `Referrer-Policy: no-referrer` on every page (server/lib/OC.php), Leaflet draws a tile as a plain `<img>`, and OpenStreetMap's CDN answers a refererless tile request with an \"App is not following the tile usage policy\" image carrying `x-blocked: Access denied` — a grey map rather than an error, which is why it reads as working-but-empty. An `<img>`-level policy overrides the document's, and `strict-origin-when-cross-origin` sends the instance origin but never the path, which is where a case id would be. nextcloud-vue's CnMapWidget defaults the same value, so this is belt-and-braces for as long as dossiq resolves a library release that predates that default. THE `{s}` SUBDOMAIN FORM IS ALSO LOAD-BEARING: MapCspRegistrar allowlists `https://*.tile.openstreetmap.org`, and a CSP wildcard does NOT match the bare host, so rewriting these to OSM's modern `tile.openstreetmap.org` would trade a policy block for a CSP block.",
 					"basemaps": [
 						{
@@ -3612,9 +3714,17 @@
 					},
 					{
 						"id": "case-email-panel",
-						"type": "case-email-pane",
+						"type": "mail",
 						"title": "Email",
-						"_note": "The Email tab: correspondence linked to the case, through the mail leaf. A sidebar tab until the sidebar copies of Notes, Email and Besluitvorming were retired, so this is the only place it reads now. Rendered by TYPE (case-email-pane in registry.js): a tab child resolves from the widget registry, and CaseEmailTab was registered only as a sidebar component:, which draws an empty panel and logs nothing."
+						"content": {
+							"hint": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.",
+							"templates": { "url": "/apps/dossiq/api/casetypes/@object.caseType/email-templates", "responsePath": "results", "labelField": "name", "idField": "id" },
+							"noTemplatesText": "No templates for this case type yet",
+							"draft": { "url": "/apps/dossiq/api/cases/@objectId/email-templates/{templateId}/draft", "blankTemplateId": "blank" },
+							"closedWhen": { "field": "endDate", "op": "notEmpty" },
+							"linkedMail": true
+						},
+						"_note": "The Email tab: a draft in Nextcloud Mail from one of the case type's templates or empty, above the mail linked to the case. The library mail widget; dossiq owns the two endpoints (EmailTemplateService::prefillDraft creates the draft, dossiq never sends mail). A closed case drafts nothing."
 					},
 					{
 						"id": "case-decisions-panel",
@@ -5448,18 +5558,6 @@
 			}
 		},
 		{
-			"id": "CaseMap",
-			"route": "/map",
-			"type": "custom",
-			"title": "Case map",
-			"component": "CasesOnMapView",
-			"_note": "Full-screen split view: a filter sidebar (case type + status) beside a CnMapWidget rendering RBAC-scoped case markers with clustering and auto-fit. Markers and overview are sourced from OpenRegister's maps-overview leaf (ADR-022, OR #154). No standard page type offers the sidebar-plus-map layout or the maps-overview declaration/points fetch lifecycle.",
-			"config": {
-				"register": "dossiq",
-				"schema": "case"
-			}
-		},
-		{
 			"id": "AdviceDetail",
 			"route": "/advice/:id",
 			"type": "detail",
@@ -6516,32 +6614,39 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "workflowTemplate",
-				"_note": "CASE-TYPE / WORKFLOW-DEFINITION archetype (the state machine that drives cases of a caseType), ADR-062 round 2. No comms. The schema splits into two genuinely distinct groups: 'Definition' (identity + versioning — title, description, caseType, version, lifecycleStatus, isActive, isDraft, parentWorkflow) and 'State machine' (the two defining graph payloads — steps[] with stages/roles/SLAs/checklists, transitions[] with from/to/guards/actions, plus editor nodePositions). Cases driven by this workflow are reached through their caseType index rather than a direct FK (case.workflowTemplate stores a version reference, not this object's id), so no object-list is scoped here. Publish/Deprecate/Clone admin actions are preserved as page actions and lifecycleActions drive the lifecycleStatus. Audit history (version changes) is a sidebar tab.",
-				"actions": [
+				"_note": "CASE-TYPE / WORKFLOW-DEFINITION archetype (the state machine that drives cases of a caseType), ADR-062 round 2. No comms. The schema splits into two genuinely distinct groups: 'Definition' (identity + versioning — title, description, caseType, version, lifecycleStatus, isActive, isDraft, parentWorkflow) and 'State machine' (the two defining graph payloads — steps[] with stages/roles/SLAs/checklists, transitions[] with from/to/guards/actions, plus editor nodePositions). Cases driven by this workflow are reached through their caseType index rather than a direct FK (case.workflowTemplate stores a version reference, not this object's id), so no object-list is scoped here. Publish, Deprecate and Clone are header api-calls on POST /api/workflow-definitions/{id}/publish|deprecate|clone, each behind AuthorizedAdminSetting; lifecycleActions drive the lifecycleStatus. Audit history (version changes) is a sidebar tab.",
+				"headerActions": [
 					{
-						"id": "publish",
+						"id": "workflow-publish",
+						"type": "api-call",
 						"label": "Publish",
 						"icon": "CloudUploadOutline",
-						"permission": "admin",
-						"primary": true,
-						"handler": "emit",
-						"type": "handler"
+						"url": "/apps/dossiq/api/workflow-definitions/@objectId/publish",
+						"method": "POST",
+						"confirm": true,
+						"successMessage": "The workflow is published.",
+						"errorMessage": "The workflow was not published."
 					},
 					{
-						"id": "deprecate",
+						"id": "workflow-deprecate",
+						"type": "api-call",
 						"label": "Deprecate",
 						"icon": "Close",
-						"permission": "admin",
-						"handler": "emit",
-						"type": "handler"
+						"url": "/apps/dossiq/api/workflow-definitions/@objectId/deprecate",
+						"method": "POST",
+						"confirm": true,
+						"successMessage": "The workflow is deprecated.",
+						"errorMessage": "The workflow was not deprecated."
 					},
 					{
-						"id": "clone",
+						"id": "workflow-clone",
+						"type": "api-call",
 						"label": "Clone",
 						"icon": "Plus",
-						"permission": "admin",
-						"handler": "emit",
-						"type": "handler"
+						"url": "/apps/dossiq/api/workflow-definitions/@objectId/clone",
+						"method": "POST",
+						"successMessage": "A draft copy of the workflow was made.",
+						"errorMessage": "The workflow was not copied."
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
@@ -8298,7 +8403,12 @@
 					"parentCaseType",
 					"description",
 					"purpose",
-					"trigger"
+					"trigger",
+					"subject",
+					"origin",
+					"responsibleUnit",
+					"serviceTarget",
+					"notificationDomain"
 				],
 				"_includeFieldsNote": "Twelve of the forty-one, and every one of them is also on CaseTypeDetail, so nothing here becomes unreachable by being left off the create form. The cut follows the detail page's own grouping: this is `case-type-core` (title, identifier, description, category, parentCaseType, purpose, trigger, handlingModel, confidentiality, isDraft) plus the two facts from `case-type-terms` that a type cannot sensibly start life without, its statutory `processingDeadline` and the `validFrom` it takes effect on. What is deliberately NOT here: the versioning trio (version, previousVersion, supersededBy) is written by the publish action, not typed; the relation lists (subCaseTypes, decisionTypes, relatedCaseTypes, startableFlows) are built up on the detail page once the thing they point at exists; the AVG block (case-type-privacy) is a data protection officer's pass over an existing type rather than an author's first screen; and the remaining specialist codings (layerIds, iv3TaskField, selectionListProcessType, referenceProcess, verwerkingsactiviteit) are lookups nobody has to hand while naming a new type. `initialStatus` is excluded for a HARDER reason, the same one the CaseTypes-adjacent `case` form records for `status`: it is a $ref to a statusType filtered by `caseType`, and at create time this case type has no id and therefore no statuses, so the picker would fetch unfiltered and offer every OTHER type's statuses. Half of those are called `Received` or `In progress`, which makes them both indistinguishable and wrong. A type's statuses are authored on its detail page, after it exists.",
 				"fieldOverrides": {
@@ -8308,12 +8418,17 @@
 					"handlingModel": { "order": 4 },
 					"confidentiality": { "order": 5 },
 					"processingDeadline": { "order": 6 },
+					"serviceTarget": { "order": 6.5 },
 					"validFrom": { "order": 7 },
 					"isDraft": { "order": 8 },
 					"parentCaseType": { "order": 9 },
 					"description": { "order": 10, "widget": "textarea" },
 					"purpose": { "order": 11, "widget": "textarea" },
-					"trigger": { "order": 12, "widget": "textarea" }
+					"trigger": { "order": 12, "widget": "textarea" },
+					"subject": { "order": 13 },
+					"origin": { "order": 14 },
+					"responsibleUnit": { "order": 15 },
+					"notificationDomain": { "order": 16 }
 				},
 				"_fieldOverridesNote": "`order` is set here rather than on the register because fieldsFromSchema resolves an override's `order` AHEAD of the property's own, so one manifest map orders every schema-driven surface without a data-model change. It is not cosmetic: not one of caseType's 41 properties carries an `order`, so the sort falls through to alphabetical and a form that opens on `Category` puts `Title` TENTH. The three prose fields are declared `textarea` because caseType leaves them as plain strings with no maxLength, so resolveWidget renders a single-line input for what is a paragraph. That also decides the layout: CnFormDialog spans a textarea across BOTH columns (WIDE_WIDGETS), so the nine single-line fields pair up into rows first and the three prose fields follow full width, which is why the order puts them last. Interleaved, each one would leave the column beside it empty.",
 				"_folderSidebarNote": "`source: \"field\"` and not `source: \"facet\"`. CnIndexPage still resolves exactly four sources, register, field, custom and files, and CnFolderSidebar's own validator takes only custom, field and files, so a sidebar declared as a facet falls through to `custom`, finds the (absent) `folders` array and renders an empty pane. THE SECOND HALF OF THIS NOTE WAS TRUE UNTIL nextcloud-vue 2.42.0 AND IS NOT ANY MORE: `field` no longer derives the folders from the distinct `category` values of the loaded rows. Since #1036 it prefers the FACET for `field`, which is computed over the whole query with pagination stripped, and only groups the rows when no facet arrives. That is what makes a category reachable when every row carrying it sits on a later page, and it is why no manifest change is wanted here: `facetable: true` on the property plus `source: \"field\"` is the whole contract, and the object store adds `_facets=extend` on its own once the fetched schema has any facetable property. `x-openregister-facet` is still read by nothing. ⚠️ The facet ARRIVES an hour stale, because OpenRegister caches the response and no object write invalidates it, so a category added today gets no folder today: OpenRegister#3560, and the reason the folder e2e test is parked.",
@@ -8414,11 +8529,20 @@
 								"parentCaseType",
 								"purpose",
 								"trigger",
+								"origin",
+								"initiatorAction",
+								"responsibleUnit",
+								"referenceProcess",
+								"keywords",
+								"publicationText",
 								"handlingModel",
 								"confidentiality",
+								"notificationDomain",
 								"coordinatorRequiredBeforeSigning",
-								"isDraft",
-								"knowledgeBasePage"
+								"knowledgeBasePage",
+								"subject",
+								"handlerAction",
+								"publicationRequired"
 							],
 							"hideEmpty": false
 						}
@@ -8433,11 +8557,15 @@
 							"columns": 2,
 							"include": [
 								"processingDeadline",
+								"serviceTarget",
 								"suspensionAllowed",
 								"extensionAllowed",
 								"extensionPeriod",
+								"maxExtensions",
 								"validFrom",
-								"validUntil"
+								"validUntil",
+								"queueWarningDays",
+								"queueCriticalDays"
 							],
 							"hideEmpty": false
 						}
@@ -8581,6 +8709,588 @@
 						"title": "Party kinds",
 						"icon": "AccountGroupOutline",
 						"_note": "parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype (Partijsoorten): which kinds of party a case of this type accepts, in the order handlers see them, declared into pipelinq as `dossiq:case:<case type uuid>` through PipelinqCaseController and PartyKindConsumer (a re-declaration patches pipelinq's row, never replaces it). Custom because the vocabulary is pipelinq's and the write is a declaration in another app's register, which no declared form can make; without pipelinq it lists dossiq's own three kinds read only and says nothing can be saved."
+					},
+					{
+						"id": "case-type-workflow-editor",
+						"type": "custom",
+						"title": "Workflow",
+						"icon": "Sitemap",
+						"_note": "The workflow canvas, rehosted from the retired admin-settings editor (CaseTypeWorkflowEditorWidget)."
+					},
+					{
+						"id": "case-type-statuses-editor",
+						"type": "object-list",
+						"title": "Statuses",
+						"icon": "ListStatus",
+						"_note": "The statuses of this case type, as manifest config over the library's object list (case-type-status-field-lists-as-config). Drag a row, or Move up and Move down, and the list writes `order` alone on the rows whose number changed. Edit opens the same form as Add on the row and saves a PATCH of the keys it changed, so `capacity`, `phaseTermDays` and `phaseTermShare` and every other key the form does not touch survive (what 07560b78b fixed in the rehosted editor). The checklist, the field rules and the derived conditions are lists inside the status, edited with the library's sub-objects editor; a rule's condition is an optional object behind 'Only in some cases'. The guard that a case type keeps one final status stays on the server; the dialog and the list show its refusal.",
+						"content": {
+							"register": "dossiq",
+							"schema": "statusType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"reorder": {
+								"field": "order"
+							},
+							"editable": true,
+							"limit": 50,
+							"columns": [
+								{
+									"key": "order",
+									"label": "#"
+								},
+								{
+									"key": "name",
+									"label": "Status"
+								},
+								{
+									"key": "role",
+									"label": "Role"
+								},
+								{
+									"key": "waitingOn",
+									"label": "Waiting on"
+								},
+								{
+									"key": "isFinal",
+									"label": "Final"
+								}
+							],
+							"addLabel": "Add status",
+							"emptyText": "This case type has no statuses yet",
+							"formSize": "large",
+							"formColumns": 2,
+							"formIncludeFields": [
+								"name",
+								"order",
+								"description",
+								"colour",
+								"role",
+								"waitingOn",
+								"maximumDwell",
+								"isFinal",
+								"hiddenInLists",
+								"publicLabel",
+								"publicDescription",
+								"capacity",
+								"phaseTermDays",
+								"phaseTermShare",
+								"checklist",
+								"fieldRules",
+								"derivedWhen"
+							],
+							"formFieldOverrides": {
+								"order": {
+									"unique": {
+										"filter": {
+											"caseType": "@objectId"
+										}
+									}
+								},
+								"description": {
+									"widget": "textarea"
+								},
+								"colour": {
+									"enumLabels": {
+										"blue": "Blue",
+										"blue-light": "Light blue",
+										"green": "Green",
+										"green-light": "Light green",
+										"orange": "Orange",
+										"orange-light": "Light orange",
+										"red": "Red",
+										"red-light": "Light red",
+										"purple": "Purple",
+										"purple-light": "Light purple",
+										"grey": "Grey",
+										"grey-light": "Light grey"
+									},
+									"optionSwatches": {
+										"blue": "var(--nl-color-blue, #0b71ab)",
+										"blue-light": "var(--nl-color-blue-light, #e5f1f8)",
+										"green": "var(--nl-color-green, #39870c)",
+										"green-light": "var(--nl-color-green-light, #eaf5e4)",
+										"orange": "var(--nl-color-orange, #e17000)",
+										"orange-light": "var(--nl-color-orange-light, #fdf2e5)",
+										"red": "var(--nl-color-red, #d52b1e)",
+										"red-light": "var(--nl-color-red-light, #fbe9e8)",
+										"purple": "var(--nl-color-purple, #762f8e)",
+										"purple-light": "var(--nl-color-purple-light, #f2eaf5)",
+										"grey": "var(--nl-color-grey, #696969)",
+										"grey-light": "var(--nl-color-grey-light, #f0f0f0)"
+									}
+								},
+								"role": {
+									"enumLabels": {
+										"intake": "Intake",
+										"pending-info": "Waiting for information",
+										"in-progress": "In progress",
+										"review": "Review",
+										"closed": "Closed",
+										"stranded": "Stranded"
+									}
+								},
+								"waitingOn": {
+									"enumLabels": {
+										"us": "Us",
+										"applicant": "The applicant",
+										"thirdParty": "Someone outside the organisation"
+									}
+								},
+								"publicLabel": {
+									"placeholderFrom": "name",
+									"section": "For the applicant"
+								},
+								"publicDescription": {
+									"widget": "textarea",
+									"section": "For the applicant"
+								},
+								"capacity": {
+									"section": "Planning",
+									"sectionCollapsed": true
+								},
+								"phaseTermDays": {
+									"section": "Planning",
+									"sectionCollapsed": true
+								},
+								"phaseTermShare": {
+									"section": "Planning",
+									"sectionCollapsed": true
+								},
+								"checklist": {
+									"widget": "sub-objects",
+									"section": "Checklist",
+									"itemLabel": "Checklist item",
+									"addLabel": "Add a checklist item",
+									"emptyText": "No checklist items yet",
+									"newItem": {
+										"required": false
+									},
+									"pruneWhen": {
+										"blank": [
+											"title"
+										]
+									}
+								},
+								"fieldRules": {
+									"widget": "sub-objects",
+									"section": "Fields in this status",
+									"itemLabel": "Field rule",
+									"addLabel": "Add a field rule",
+									"emptyText": "No field rules yet",
+									"newItem": {
+										"rule": "required"
+									},
+									"pruneWhen": {
+										"invalid": true
+									},
+									"itemOverrides": {
+										"rule": {
+											"enumLabels": {
+												"required": "Must be filled in",
+												"readOnly": "Cannot be changed",
+												"hidden": "Not shown"
+											}
+										},
+										"field": {
+											"optionsFrom": {
+												"register": "dossiq",
+												"schema": "propertyDefinition",
+												"filter": {
+													"caseType": "@objectId"
+												},
+												"valueField": "name",
+												"labelField": "name"
+											}
+										},
+										"groups": {
+											"widget": "group-multiselect"
+										},
+										"message": {
+											"widget": "textarea"
+										},
+										"condition": {
+											"widget": "object-switch",
+											"label": "Only in some cases",
+											"defaults": {
+												"kind": "fieldPresent"
+											}
+										},
+										"condition.kind": {
+											"label": "Applies when",
+											"enumLabels": {
+												"fieldPresent": "a field is filled in",
+												"fieldEquals": "a field has a value",
+												"documentPresent": "a document is on the case"
+											},
+											"visibleWhen": {
+												"field": "condition",
+												"truthy": true
+											}
+										},
+										"condition.field": {
+											"optionsFrom": {
+												"register": "dossiq",
+												"schema": "propertyDefinition",
+												"filter": {
+													"caseType": "@objectId"
+												},
+												"valueField": "name",
+												"labelField": "name"
+											},
+											"label": "Reading this field",
+											"visibleWhen": {
+												"field": "condition.kind",
+												"in": [
+													"fieldPresent",
+													"fieldEquals"
+												]
+											}
+										},
+										"condition.value": {
+											"label": "Value",
+											"visibleWhen": {
+												"field": "condition.kind",
+												"equals": "fieldEquals"
+											}
+										},
+										"condition.documentType": {
+											"optionsFrom": {
+												"register": "dossiq",
+												"schema": "documentType",
+												"filter": {
+													"caseType": "@objectId"
+												},
+												"labelField": "name"
+											},
+											"label": "Document type",
+											"visibleWhen": {
+												"field": "condition.kind",
+												"equals": "documentPresent"
+											}
+										}
+									}
+								},
+								"derivedWhen": {
+									"widget": "sub-objects",
+									"section": "Fields in this status",
+									"itemLabel": "Condition",
+									"addLabel": "Add a condition",
+									"emptyText": "No conditions yet",
+									"newItem": {
+										"kind": "fieldPresent"
+									},
+									"pruneWhen": {
+										"invalid": true
+									},
+									"itemOverrides": {
+										"kind": {
+											"enumLabels": {
+												"fieldPresent": "a field is filled in",
+												"fieldEquals": "a field has a value",
+												"documentPresent": "a document is on the case"
+											}
+										},
+										"field": {
+											"optionsFrom": {
+												"register": "dossiq",
+												"schema": "propertyDefinition",
+												"filter": {
+													"caseType": "@objectId"
+												},
+												"valueField": "name",
+												"labelField": "name"
+											},
+											"visibleWhen": {
+												"field": "kind",
+												"in": [
+													"fieldPresent",
+													"fieldEquals"
+												]
+											},
+											"clearWhenHidden": true
+										},
+										"value": {
+											"visibleWhen": {
+												"field": "kind",
+												"equals": "fieldEquals"
+											},
+											"clearWhenHidden": true
+										},
+										"documentType": {
+											"optionsFrom": {
+												"register": "dossiq",
+												"schema": "documentType",
+												"filter": {
+													"caseType": "@objectId"
+												},
+												"labelField": "name"
+											},
+											"visibleWhen": {
+												"field": "kind",
+												"equals": "documentPresent"
+											},
+											"clearWhenHidden": true
+										}
+									}
+								}
+							},
+							"rowActions": [
+								{
+									"id": "case-type-statuses-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-fields-editor",
+						"type": "object-list",
+						"title": "Fields",
+						"icon": "FormatListBulletedType",
+						"_note": "The type's own fields, as manifest config over the library's object list (case-type-status-field-lists-as-config). The type select reads OpenRegister's property vocabulary, grouped by category; the format select reads the formats of the chosen type and is left out when it has none. A constraint shows only for the types it applies to and is written empty when the type changes away from them. 'Choice list' is not stored: it starts on for an enum or when choices exist, shows the choices one per line, and turning it off clears them; the choices are required unless a concept scheme is set, and a note says the scheme wins when both are. Edit saves a PATCH of the keys it changed.",
+						"content": {
+							"register": "dossiq",
+							"schema": "propertyDefinition",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"editable": true,
+							"sort": {
+								"field": "category",
+								"dir": "asc"
+							},
+							"limit": 100,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Field"
+								},
+								{
+									"key": "category",
+									"label": "Category"
+								},
+								{
+									"key": "propertyType",
+									"label": "Type"
+								},
+								{
+									"key": "isRequired",
+									"label": "Required"
+								}
+							],
+							"addLabel": "Add field",
+							"emptyText": "This case type has no fields of its own yet",
+							"formSize": "large",
+							"formColumns": 2,
+							"formIncludeFields": [
+								"name",
+								"category",
+								"propertyType",
+								"format",
+								"maxLength",
+								"pattern",
+								"minimum",
+								"maximum",
+								"choiceList",
+								"enumValues",
+								"conceptScheme",
+								"description",
+								"definition",
+								"isRequired",
+								"requiredAtStatus",
+								"hideOnCreate",
+								"defaultValue",
+								"ref",
+								"propertySource",
+								"calculation"
+							],
+							"formFieldOverrides": {
+								"category": {
+									"default": "Uncategorised"
+								},
+								"propertyType": {
+									"optionsFrom": {
+										"url": "/apps/openregister/api/schemas/property-vocabulary",
+										"responsePath": "types",
+										"valueField": "type",
+										"labelField": "type",
+										"groupField": "category"
+									}
+								},
+								"format": {
+									"optionsFrom": {
+										"url": "/apps/openregister/api/schemas/property-vocabulary",
+										"responsePath": "types",
+										"where": {
+											"type": "@answer.propertyType"
+										},
+										"itemsPath": "formats",
+										"hideWhenEmpty": true
+									},
+									"clearWhenHidden": true
+								},
+								"maxLength": {
+									"visibleWhen": {
+										"field": "propertyType",
+										"in": [
+											"string",
+											"email",
+											"url"
+										]
+									},
+									"clearWhenHidden": true
+								},
+								"pattern": {
+									"visibleWhen": {
+										"field": "propertyType",
+										"in": [
+											"string",
+											"email",
+											"url"
+										]
+									},
+									"clearWhenHidden": true
+								},
+								"minimum": {
+									"visibleWhen": {
+										"field": "propertyType",
+										"in": [
+											"number",
+											"integer"
+										]
+									},
+									"clearWhenHidden": true
+								},
+								"maximum": {
+									"visibleWhen": {
+										"field": "propertyType",
+										"in": [
+											"number",
+											"integer"
+										]
+									},
+									"clearWhenHidden": true
+								},
+								"choiceList": {
+									"stored": false,
+									"label": "Choice list",
+									"widget": "switch",
+									"initialWhen": {
+										"any": [
+											{
+												"field": "propertyType",
+												"equals": "enum"
+											},
+											{
+												"field": "enumValues",
+												"notEmpty": true
+											}
+										]
+									}
+								},
+								"enumValues": {
+									"label": "Choices",
+									"widget": "lines",
+									"visibleWhen": {
+										"field": "choiceList",
+										"truthy": true
+									},
+									"clearWhenHidden": true,
+									"requiredWhen": {
+										"all": [
+											{
+												"field": "choiceList",
+												"truthy": true
+											},
+											{
+												"field": "conceptScheme",
+												"empty": true
+											}
+										]
+									},
+									"warnWhen": {
+										"when": {
+											"all": [
+												{
+													"field": "conceptScheme",
+													"notEmpty": true
+												},
+												{
+													"field": "enumValues",
+													"notEmpty": true
+												}
+											]
+										},
+										"text": "The concept scheme wins over these choices."
+									}
+								},
+								"conceptScheme": {
+									"visibleWhen": {
+										"field": "choiceList",
+										"truthy": true
+									}
+								},
+								"description": {
+									"label": "Help text"
+								},
+								"requiredAtStatus": {
+									"optionsFrom": {
+										"register": "dossiq",
+										"schema": "statusType",
+										"filter": {
+											"caseType": "@objectId"
+										},
+										"labelField": "name"
+									}
+								},
+								"defaultValue": {
+									"section": "More options",
+									"sectionCollapsed": true
+								},
+								"ref": {
+									"section": "More options",
+									"sectionCollapsed": true
+								},
+								"propertySource": {
+									"section": "More options",
+									"sectionCollapsed": true
+								},
+								"calculation": {
+									"widget": "json",
+									"section": "More options",
+									"sectionCollapsed": true
+								}
+							},
+							"rowActions": [
+								{
+									"id": "case-type-fields-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-messages-editor",
+						"type": "custom",
+						"title": "Messages to the applicant",
+						"icon": "EmailOutline",
+						"_note": "The messages through the email template endpoints with variables and preview, rehosted from the retired admin-settings editor (CaseTypeMessagesEditorWidget)."
+					},
+					{
+						"id": "case-type-rules",
+						"type": "custom",
+						"title": "Rules",
+						"icon": "ScaleBalance",
+						"_note": "The OpenRegister rules of the case schema with a try-it, rehosted from the retired admin-settings editor (CaseTypeRulesWidget); a candidate to move to OpenRegister's schema page."
 					}
 				],
 				"layout": [
@@ -8673,6 +9383,51 @@
 						"gridWidth": 12,
 						"gridHeight": 6,
 						"showTitle": true
+					},
+					{
+						"id": "11",
+						"widgetId": "case-type-workflow-editor",
+						"gridX": 0,
+						"gridY": 47,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": true
+					},
+					{
+						"id": "12",
+						"widgetId": "case-type-statuses-editor",
+						"gridX": 0,
+						"gridY": 59,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": true
+					},
+					{
+						"id": "13",
+						"widgetId": "case-type-fields-editor",
+						"gridX": 0,
+						"gridY": 71,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": true
+					},
+					{
+						"id": "14",
+						"widgetId": "case-type-messages-editor",
+						"gridX": 0,
+						"gridY": 83,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": true
+					},
+					{
+						"id": "15",
+						"widgetId": "case-type-rules",
+						"gridX": 0,
+						"gridY": 95,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": true
 					}
 				],
 				"_headerActionsNote": "There is no `run-action` header-action type. The manifest schema enumerates handler, open-modal, open-page, navigate, object-op, export, open-form, refresh, api-call, agent and toggle, and CnActionButtons resolves exactly those; the design's `run-action` would have been refused by `npm run check:manifest` and, had it slipped through, rendered a button that dispatches nothing. Export is an `api-call` with `download: true`, which is the shape that asks for the response as a blob and hands it to the browser -- the endpoint already answers a DataDownloadResponse. The other three are dialogs, each for a reason a declarative action cannot meet: Import takes a FILE (a confirm gate has no fields and an api-call sends JSON), Publish must show the validation findings BEFORE asking for a change note, and Duplicate must land on the copy rather than refresh the page you are already on. Every icon here is registered in src/icons.js (gate-60); a name that is not renders no icon at all. The three dialogs read the case type off the ROUTE and not off their props: `open-modal` forwards props verbatim, so a `@objectId` token would arrive as that literal string. case-type-version-chain adds two. NEW VERSION is a dialog and not the api-call its tasks named, for the reason Duplicate is one: an api-call refreshes the page you are already on, so the person who asked for a new version would be left on the old one with the draft nowhere in sight. It also says what a version IS before making one, because the gesture beside it is Duplicate: a duplicate is a second case type, a version is this one later on, same name, same identifier, and today's running cases stay where they are. DEPRECATE is an api-call to a dossiq endpoint and NOT the `object-op` the design named. An object-op merges its `values` into the row verbatim: `validUntil: \"@today\"` is not token-resolved for that action type, so the literal string `@today` would have been written into a date field and stored without complaint. The day comes from the server's clock instead, and the server also refuses to close a version nothing has replaced. Its `visibleWhen` is a SOURCE query rather than a local field test, because the local operator set is eq/neq/gt/gte/lt/lte with no is-set, and `supersededBy neq null` reads TRUE on an unset field, which is the opposite of what it means. Counting the published rows whose `previousVersion` is this one asks the same question and can answer it.",
@@ -8763,7 +9518,10 @@
 				"widget-case-type-blueprint": "CaseTypeBlueprintWidget",
 				"widget-case-type-translations": "CaseTypeTranslationsWidget",
 				"widget-case-type-portal": "CaseTypePortalWidget",
-				"widget-case-type-party-kinds": "CaseTypePartyKindsWidget"
+				"widget-case-type-party-kinds": "CaseTypePartyKindsWidget",
+				"widget-case-type-workflow-editor": "CaseTypeWorkflowEditorWidget",
+				"widget-case-type-messages-editor": "CaseTypeMessagesEditorWidget",
+				"widget-case-type-rules": "CaseTypeRulesWidget"
 			},
 			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here. `case-type-authoring-extras` put the type's own content on the page: what it inherits from a parent, what it actually offers, the personal data it processes, and the four gestures that were API-only. NO TAB STRIP: `case-type-one-authoring-surface` owns that, and building one here would be the second strip the moment it lands. These are layout cells, and they become that strip's children when it arrives -- except `case-type-blueprint`, which cannot be a tab child while it is `type: \"custom\"`."
 		},

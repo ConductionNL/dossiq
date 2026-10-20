@@ -59,7 +59,22 @@ Closed with nextcloud-vue saved-view-overrides v2 (library batch 18, schema
   `overdueVariant: error`.
 - The urgency order: `sortOption: urgency` selects the sidebar sort entry.
 
+Merged with development (dq batches 12 to 15, nextcloud-vue ^2.109,
+schema 2.133.0): the team-queue view carries batch 12's Queue page. In the
+simple profile that is its list view (`listConfig`, opening on `list`,
+oldest first as the view's `sort` on `startDate`), its columns, counts,
+chips and header, the library team workload card "Team today" and the
+per-type card in `sidePanel`; in both profiles its record card
+(`cardLayout`) and empty text. The full profile's patch carries that page's
+columns, view modes (opening on the table), folders and title.
+
 What still differs from the pages:
+
+- The Queue page's own `mapConfig` and `board` are not overridable; the view
+  uses the Cases page's, which are the same board and the newer map.
+- Assigned to me's New case dialog is the Cases one (normal size, one
+  column); the old page opened it large in two columns and its edit action
+  opened the case page (`editOpensDetail`). Neither key is overridable.
 
 - The full profile's team queue also shows the simple look's counts, case
   type chips and side cards, which its Queue page did not have. That adds

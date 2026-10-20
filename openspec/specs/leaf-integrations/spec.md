@@ -83,7 +83,7 @@ Neither the listener nor the service MAY import or type hint a class from `OCA\F
 
 ### Requirement: REQ-LEAF-104 — Maps leaf on the VTH inspection surfaces
 
-Dossiq MUST add `maps` to the `configuration.linkedTypes` of `fieldInspection` (`lib/Settings/register.d/40-mobiel-inspectie-offline.json` — creating the `configuration` object, which the fragment currently lacks) and of `inspectionChecklistRun` (`lib/Settings/dossiq_register.json`, alongside its existing `["forms", "photos"]`). Leaf-side behaviour (providers, layers, clustering, the multi-object overview) is owned by OpenRegister's `integration-maps` change and MUST NOT be duplicated or modified here; the existing per-case `MapsLeafTab` and the `CasesOnMapView` overview are unchanged.
+Dossiq MUST add `maps` to the `configuration.linkedTypes` of `fieldInspection` (`lib/Settings/register.d/40-mobiel-inspectie-offline.json` — creating the `configuration` object, which the fragment currently lacks) and of `inspectionChecklistRun` (`lib/Settings/dossiq_register.json`, alongside its existing `["forms", "photos"]`). Leaf-side behaviour (providers, layers, clustering, the multi-object overview) is owned by OpenRegister's `integration-maps` change and MUST NOT be duplicated or modified here; the existing per-case `MapsLeafTab` and the multi-case map, which is the Cases index in map view (`/cases?_view=map`, configured through `mapConfig`), are unchanged.
 
 The declaration is the whole of this requirement. Neither schema has a dossiq detail page to put a tab on, so the leaf surfaces on OpenRegister's own object page; giving `fieldInspection` a page of its own is a new surface and belongs to `no-schema-without-a-surface`.
 
@@ -97,7 +97,7 @@ The declaration is the whole of this requirement. Neither schema has a dossiq de
 @e2e exclude structural; this change touches no file under OpenRegister or nextcloud-vue, which the PR diff shows
 
 - **WHEN** this change is fully applied
-- **THEN** no file under OpenRegister's maps provider or the nextcloud-vue maps leaf SHALL have been modified by Dossiq, and `CasesOnMapView` SHALL be byte-identical to before
+- **THEN** no file under OpenRegister's maps provider or the nextcloud-vue maps leaf SHALL have been modified by Dossiq, and the Cases index `mapConfig` SHALL be unchanged by it
 
 ### Requirement: REQ-LEAF-105 — Deck coordination boards, decoupled from workflow tasks
 

@@ -99,6 +99,7 @@ import Creation from 'vue-material-design-icons/Creation.vue'
 import CubeOutline from 'vue-material-design-icons/CubeOutline.vue'
 import CurrencyEur from 'vue-material-design-icons/CurrencyEur.vue'
 import DatabaseCogOutline from 'vue-material-design-icons/DatabaseCogOutline.vue'
+import Delete from 'vue-material-design-icons/Delete.vue'
 import DeleteClockOutline from 'vue-material-design-icons/DeleteClockOutline.vue'
 import Domain from 'vue-material-design-icons/Domain.vue'
 import Earth from 'vue-material-design-icons/Earth.vue'
@@ -351,6 +352,7 @@ export default {
 	FileQuestionOutline,
 	FileSign,
 	FileTreeOutline,
+	Delete,
 	DeleteClockOutline,
 	FlagCheckered,
 	FlagOutline,

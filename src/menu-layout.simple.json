@@ -10,7 +10,6 @@
 	},
 	"removals": [
 		"SubsidiesGroup",
-		"CaseMap",
 		"Analytics",
 		"TermijnDashboardMenu",
 		"ProcessMiningDashboardMenu",
@@ -23,7 +22,6 @@
 	],
 	"removalsReplacedBy": {
 		"SubsidiesGroup": "Cases",
-		"CaseMap": "Cases",
 		"Analytics": "Reports",
 		"TermijnDashboardMenu": "Reports",
 		"ProcessMiningDashboardMenu": "Reports",
@@ -1658,9 +1656,27 @@
 						"title": "Record hours"
 					},
 					"case-email-panel": {
-						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the linked mail and the notes stand under it as cards.",
+						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the linked mail and the notes stand under it as cards, so the mail widget leaves its own linked mail list out.",
 						"content": {
-							"variant": "board"
+							"heading": "Email",
+							"description": "Mail linked to this case, also from a shared mailbox",
+							"hint": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.",
+							"templates": {
+								"url": "/apps/dossiq/api/casetypes/@object.caseType/email-templates",
+								"responsePath": "results",
+								"labelField": "name",
+								"idField": "id"
+							},
+							"noTemplatesText": "No templates for this case type yet",
+							"draft": {
+								"url": "/apps/dossiq/api/cases/@objectId/email-templates/{templateId}/draft",
+								"blankTemplateId": "blank"
+							},
+							"closedWhen": {
+								"field": "endDate",
+								"op": "notEmpty"
+							},
+							"linkedMail": false
 						}
 					}
 				},
@@ -3376,7 +3392,7 @@
 				"searchPlaceholder": "Search by case, number or requester",
 				"quickFilterMaxVisible": 5,
 				"folderSidebar": null,
-				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The board's address line under each title needs an address text the case does not carry, so the line is the case number.",
+				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The board's address line under each title needs an address text the case does not carry, so the line is the case number. Markers take their status type's colour and a line counts the located cases, as in the full profile. `plotAll` is left out on purpose: the map shows the current page, so the numbered list stays a page long.",
 				"mapConfig": {
 					"geoField": "geometry",
 					"popupField": "title",
@@ -3384,6 +3400,28 @@
 						52.1326,
 						5.2913
 					],
+					"count": "Showing {located} of {total} located cases",
+					"markerColor": {
+						"field": "status",
+						"source": {
+							"schema": "statusType",
+							"colorField": "colour"
+						},
+						"colorMap": {
+							"blue": "var(--nl-color-blue, #0b71ab)",
+							"blue-light": "var(--nl-color-blue-light, #e5f1f8)",
+							"green": "var(--nl-color-green, #39870c)",
+							"green-light": "var(--nl-color-green-light, #eaf5e4)",
+							"orange": "var(--nl-color-orange, #e17000)",
+							"orange-light": "var(--nl-color-orange-light, #fdf2e5)",
+							"red": "var(--nl-color-red, #d52b1e)",
+							"red-light": "var(--nl-color-red-light, #fbe9e8)",
+							"purple": "var(--nl-color-purple, #762f8e)",
+							"purple-light": "var(--nl-color-purple-light, #f2eaf5)",
+							"grey": "var(--nl-color-grey, #696969)",
+							"grey-light": "var(--nl-color-grey-light, #f0f0f0)"
+						}
+					},
 					"basemaps": [
 						{
 							"name": "Standard",
@@ -4080,8 +4118,9 @@
 								{
 									"label": "Fields",
 									"widgetIds": [
-										"case-type-fields",
+										"case-type-fields-editor",
 										"case-type-field-rules",
+										"case-type-rules",
 										"case-type-core",
 										"case-type-list-layout"
 									],
@@ -4095,7 +4134,10 @@
 								},
 								{
 									"label": "Statuses",
-									"widgetId": "case-type-statuses-list",
+									"widgetIds": [
+										"case-type-statuses-editor",
+										"case-type-results"
+									],
 									"countFrom": {
 										"register": "dossiq",
 										"schema": "statusType",
@@ -4109,13 +4151,19 @@
 									"widgetIds": [
 										"case-type-phase-board",
 										"case-type-terms",
-										"case-type-messages",
-										"case-type-blueprint"
+										"case-type-workflow-editor",
+										"case-type-messages-editor",
+										"case-type-blueprint",
+										"case-type-document-types",
+										"case-type-decision-types"
 									]
 								},
 								{
 									"label": "Rights",
-									"widgetId": "case-type-rights"
+									"widgetIds": [
+										"case-type-rights",
+										"case-type-roles"
+									]
 								},
 								{
 									"label": "Privacy",
@@ -4181,110 +4229,6 @@
 								"variant": "neutral"
 							},
 							"emptyText": "This case type has no statuses yet"
-						}
-					},
-					{
-						"id": "case-type-statuses-list",
-						"type": "object-list",
-						"title": "Statuses",
-						"content": {
-							"register": "dossiq",
-							"schema": "statusType",
-							"filter": {
-								"caseType": "@objectId"
-							},
-							"sort": {
-								"field": "order",
-								"dir": "asc"
-							},
-							"limit": 50,
-							"columns": [
-								{
-									"key": "order",
-									"label": "Order"
-								},
-								{
-									"key": "name",
-									"label": "Status"
-								},
-								{
-									"key": "publicLabel",
-									"label": "Public label"
-								},
-								{
-									"key": "isFinal",
-									"label": "Final"
-								}
-							],
-							"emptyText": "This case type has no statuses yet"
-						}
-					},
-					{
-						"id": "case-type-fields",
-						"type": "object-list",
-						"title": "Fields",
-						"content": {
-							"register": "dossiq",
-							"schema": "propertyDefinition",
-							"filter": {
-								"caseType": "@objectId"
-							},
-							"sort": {
-								"field": "name",
-								"dir": "asc"
-							},
-							"limit": 50,
-							"columns": [
-								{
-									"key": "name",
-									"label": "Field"
-								},
-								{
-									"key": "propertyType",
-									"label": "Type"
-								},
-								{
-									"key": "isRequired",
-									"label": "Required"
-								},
-								{
-									"key": "propertySource",
-									"label": "Origin"
-								},
-								{
-									"key": "filterable",
-									"label": "In the list"
-								}
-							],
-							"emptyText": "This case type has no fields of its own yet"
-						}
-					},
-					{
-						"id": "case-type-messages",
-						"type": "object-list",
-						"title": "Messages to the applicant",
-						"content": {
-							"register": "dossiq",
-							"schema": "emailTemplate",
-							"filter": {
-								"caseType": "@objectId"
-							},
-							"limit": 25,
-							"columns": [
-								{
-									"key": "messageCategory",
-									"label": "Moment"
-								},
-								{
-									"key": "name",
-									"label": "Message"
-								},
-								{
-									"key": "subject",
-									"label": "Subject"
-								}
-							],
-							"emptyText": "This case type sends no messages of its own"
 						}
 					},
 					{
@@ -4412,6 +4356,174 @@
 							"limit": 1,
 							"emptyText": "No warnings"
 						}
+					},
+					{
+						"id": "case-type-results",
+						"type": "object-list",
+						"title": "Results",
+						"content": {
+							"register": "dossiq",
+							"schema": "resultType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Result"
+								},
+								{
+									"key": "archivalAction",
+									"label": "Archival action"
+								},
+								{
+									"key": "archivalPeriod",
+									"label": "Archival period"
+								}
+							],
+							"emptyText": "This case type has no results yet",
+							"rowRoute": "ResultTypeDetail",
+							"rowActions": [
+								{
+									"id": "case-type-results-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-roles",
+						"type": "object-list",
+						"title": "Roles",
+						"content": {
+							"register": "dossiq",
+							"schema": "roleType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Role"
+								},
+								{
+									"key": "genericRole",
+									"label": "Generic role"
+								}
+							],
+							"emptyText": "This case type has no roles yet",
+							"rowRoute": "RoleTypeDetail",
+							"rowActions": [
+								{
+									"id": "case-type-roles-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-document-types",
+						"type": "object-list",
+						"title": "Document types",
+						"content": {
+							"register": "dossiq",
+							"schema": "documentType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Document type"
+								},
+								{
+									"key": "category",
+									"label": "Category"
+								},
+								{
+									"key": "confidentiality",
+									"label": "Confidentiality"
+								},
+								{
+									"key": "isRequired",
+									"label": "Required"
+								}
+							],
+							"emptyText": "This case type has no document types yet",
+							"rowRoute": "DocumentTypeDetail",
+							"rowActions": [
+								{
+									"id": "case-type-document-types-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-decision-types",
+						"type": "object-list",
+						"title": "Decision types",
+						"content": {
+							"register": "dossiq",
+							"schema": "decisionType",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "name",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "name",
+									"label": "Decision type"
+								},
+								{
+									"key": "publicationRequired",
+									"label": "Publication required"
+								}
+							],
+							"emptyText": "This case type has no decision types yet",
+							"rowRoute": "DecisionTypeDetail",
+							"rowActions": [
+								{
+									"id": "case-type-decision-types-delete",
+									"label": "Delete",
+									"icon": "Delete",
+									"type": "object-op",
+									"op": "delete",
+									"destructive": true
+								}
+							]
+						}
 					}
 				]
 			},
@@ -4428,6 +4540,15 @@
 					},
 					"case-type-party-kinds": {
 						"type": "CaseTypePartyKindsWidget"
+					},
+					"case-type-workflow-editor": {
+						"type": "CaseTypeWorkflowEditorWidget"
+					},
+					"case-type-messages-editor": {
+						"type": "CaseTypeMessagesEditorWidget"
+					},
+					"case-type-rules": {
+						"type": "CaseTypeRulesWidget"
 					}
 				}
 			}
