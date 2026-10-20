@@ -114,6 +114,35 @@ class DoorlooptijdService {
 	}//end getMetrics()
 
 	/**
+	 * The processing-time figures per case type and month, for a download.
+	 *
+	 * Reads the same cases as {@see getMetrics()}: the same case type
+	 * filter and the same period, so a download holds what the page shows.
+	 *
+	 * @param array<string, mixed> $params `caseType` (optional) and `period` (`12m`).
+	 *
+	 * @return list<array{caseType: string, month: string, closed: int, avgDays: int|null, withinNormPercent: int|null}>
+	 *
+	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 */
+	public function getMonthlyRows(array $params): array {
+		$caseTypeFilter = null;
+		if (isset($params['caseType']) === true && is_string($params['caseType']) === true && $params['caseType'] !== '') {
+			$caseTypeFilter = $params['caseType'];
+		}
+
+		$months = 12;
+		if (isset($params['period']) === true && is_string($params['period']) === true && preg_match('/^(\d+)m$/', $params['period'], $match) === 1) {
+			$months = max(1, min(36, (int)$match[1]));
+		}
+
+		$caseTypes = $this->loadCaseTypes();
+		$enriched = $this->caseEnricher->enrichCases(cases: $this->loadCases(caseTypeFilter: $caseTypeFilter), caseTypes: $caseTypes);
+
+		return $this->throughputCalculator->computeMonthlyByCaseType(cases: $enriched, caseTypes: $caseTypes, months: $months);
+	}//end getMonthlyRows()
+
+	/**
 	 * Compute the four headline KPIs.
 	 *
 	 * Delegates to {@see DeadlineComplianceCalculator::computeKpi()}.
