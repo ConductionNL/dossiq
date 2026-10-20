@@ -91,10 +91,14 @@ describe('the one personal settings screen', () => {
 	it.each([
 		'SubstitutionSettings',
 		'CaseEmailMatchSettings',
-		'WorkDigestSettings',
 		'NotificationRoutingSettings',
 	])('keeps a home for %s in the dialog', (section) => {
 		expect(userSettings).toContain(`<${section} />`)
+	})
+
+	it('keeps a home for the daily digest in the dialog, declared as fields', () => {
+		expect(userSettings).toContain(':fields="workDigestFields"')
+		expect(userSettings).toContain('url="/apps/dossiq/api/personal-queue/digest"')
 	})
 
 	it('keeps the library sections beside its own, except the notification pane it replaces', () => {
