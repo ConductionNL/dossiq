@@ -26,6 +26,7 @@ import {
 	stageEntry,
 	stageOf,
 } from '@conduction/nextcloud-vue/src/utils/detailActionModel.js'
+import { firstFilled } from '@conduction/nextcloud-vue/src/utils/fillTemplate.js'
 import { schemaRefSlug } from '@conduction/nextcloud-vue/src/utils/schemaRefSlug.js'
 import { spawnSync } from 'child_process'
 import fs from 'fs'
@@ -227,10 +228,15 @@ describe('the stage', () => {
 				statusRole: 'in-progress',
 				assignee: 'pieter',
 				isIncomplete: true,
+				statusPublicLabel: 'In behandeling',
 			},
 			simple.stageField,
 		)
-		expect(card.title).toBe('What now? Handle the case')
+		// The board's title names the step and the case's public status label,
+		// and falls back to the plain title when the case carries no label.
+		expect(firstFilled(card.title, { statusPublicLabel: 'In behandeling' })).toBe('What now? Step 2: in behandeling')
+		expect(firstFilled(card.title, {})).toBe('What now? Handle the case')
+		expect(card.after).toBe('Then: on to step 3, the decision')
 		expect(card.items.map((item) => [item.label, item.done])).toEqual([
 			['Choose a handler', true],
 			['Complete the case details', false],
@@ -403,6 +409,8 @@ describe('the tabs', () => {
 		// The parties by role lead, as Partijen; the linked contacts follow (DqZaakBetrokkenen).
 		expect(peopleTab.widgetIds[0]).toBe('case-party-roles-card')
 		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Case parties')
+		// Seats and followers share a row, as the board draws them.
+		expect(peopleTab.layout).toEqual([{ widgetId: 'case-seats-card', gridWidth: 6 }, { widgetId: 'case-followers-card', gridWidth: 6 }])
 		for (const id of widgetIds(tabsOf(original)).filter((id) => !unfolded.includes(id))) {
 			expect(shown, id).toContain(id)
 		}
@@ -462,6 +470,12 @@ describe('the tabs', () => {
 					descriptionField: 'description',
 					finalField: 'isFinal',
 					limit: 50,
+				},
+				datesSource: {
+					url: '/apps/dossiq/api/case-types/@object.caseType/blueprint?case=@objectId',
+					path: 'statusTypes',
+					idField: 'id',
+					dateField: 'reachedAt',
 				},
 			},
 		})

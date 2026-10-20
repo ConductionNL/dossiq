@@ -9733,6 +9733,8 @@ OC.L10N.register(
         "What now? Decide": "Wat nu? Besluiten",
         "What now? Deciding asks two things: draft the decision and record it. The letter comes first.": "Wat nu? Besluiten vraagt twee dingen: stel het besluit op en leg het besluit vast. De brief is het eerste.",
         "What now? Handle the case": "Wat nu? Behandelen",
+        "What now? Step 2: {statusPublicLabel|lower}": "Wat nu? Stap 2: {statusPublicLabel|lower}",
+        "Then: on to step 3, the decision": "Daarna: naar stap 3, besluit",
         "What now? Pre-announcement": "Wat nu? Vooraankondiging",
         "What now? Remedial action": "Wat nu? Herstelactie",
         "What now? Take the case on": "Wat nu? In behandeling nemen",
