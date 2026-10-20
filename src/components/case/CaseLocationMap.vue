@@ -284,7 +284,15 @@ export default {
 	width: 100%;
 }
 
-.case-location-map__empty,
+/* The empty line sits on the card's body inset, directly under the title,
+   as a 14px muted line (DqZaakLocatie "Nog geen locatie"); its own 12px
+   top padding put it 24px below the title against the board's 12.
+   @spec openspec/changes/zakenkaart-map-list/specs/zakenkaart-map-list/spec.md#requirement-the-empty-locations-line-sits-on-the-cards-inset */
+.case-location-map__empty {
+	color: var(--color-text-maxcontrast);
+	font-size: 14px;
+}
+
 .case-location-map__banner {
 	padding: 12px 0;
 	color: var(--color-text-maxcontrast);

@@ -19,6 +19,7 @@ import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
 import { formatDuration } from '../utils/durationHelpers.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
+import { caseAddress } from './caseAddress.js'
 import { scanVerdictLabel } from './scanVerdict.js'
 
 // Guard so each lookup collection is fetched at most once per page load.
@@ -109,6 +110,16 @@ export default {
 	 * @return {string}
 	 */
 	caseTypeName: (value) => lookupRelatedName('caseType', value),
+
+	/**
+	 * A case's address, from its first `case-location` ('' while it loads or
+	 * when the case has none), for a list line such as the map list's.
+	 *
+	 * @param {string} value The case id.
+	 * @return {string}
+	 * @spec openspec/changes/zakenkaart-map-list/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
+	 */
+	caseAddress: (value) => caseAddress(value),
 
 	/**
 	 * A number of cases as a phrase ("2 cases").
