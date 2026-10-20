@@ -143,6 +143,7 @@ export default {
 		 * `content.open` on a manifest widget.
 		 *
 		 * @return {boolean}
+		 * @spec openspec/changes/task-page-on-the-manifest/specs/task-management/spec.md#requirement-the-task-page-is-a-manifest-detail-page
 		 */
 		showsOpen() {
 			return this.open === true || this.content?.open === true
