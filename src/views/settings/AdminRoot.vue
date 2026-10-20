@@ -50,17 +50,25 @@
 		<template #tab-system>
 			<Settings />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-menu-structure"
+				appId="dossiq"
 				:name="t('dossiq', 'Menu structure')"
 				:description="
 					t(
 						'dossiq',
 						'Choose how much the menu shows. Simple is the default.',
 					)
-				">
-				<MenuStructureTab />
-			</CnSettingsSection>
+				"
+				valuesPath="config"
+				:autoSave="true"
+				:savedMessage="
+					t(
+						'dossiq',
+						'Saved. People see the change the next time they open Dossiq.',
+					)
+				"
+				:fields="menuStructureFields" />
 
 			<CnSettingsSection
 				id="section-background-service-account"
@@ -99,7 +107,9 @@
 				<AiSettingsTab v-if="storesReady" />
 			</CnSettingsSection>
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
+				id="section-consultation"
+				appId="dossiq"
 				:name="t('dossiq', 'Consultation management')"
 				:description="
 					t(
@@ -107,9 +117,10 @@
 						'Adviesaanvragen: advisory body registry, mandatory-gate config, n8n webhook contracts and external response settings.',
 					)
 				"
-				:loading="!storesReady">
-				<ConsultationSettingsTab v-if="storesReady" />
-			</CnSettingsSection>
+				docUrl="https://dossiq.conduction.nl/docs/n8n-consultation-workflows"
+				valuesPath="config"
+				:saveLabel="t('dossiq', 'Save consultation settings')"
+				:fields="consultationFields" />
 
 			<CnSettingsSection
 				id="section-search-index"
@@ -196,16 +207,25 @@
 				<TermijnDefinitiesTab v-if="storesReady" />
 			</CnSettingsSection>
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
+				id="section-queue-urgency"
+				appId="dossiq"
 				:name="t('dossiq', 'Queue urgency')"
 				:description="
 					t(
 						'dossiq',
 						'When a case counts as critical or almost due, and how much priority and time lying still weigh in the order.',
 					)
-				">
-				<QueueUrgencySettingsTab />
-			</CnSettingsSection>
+				"
+				:detailedDescription="
+					t(
+						'dossiq',
+						'Decides the order of the cases assigned to someone. A case type can set the two thresholds itself.',
+					)
+				"
+				:columns="2"
+				valuesPath="config"
+				:fields="queueUrgencyFields" />
 
 			<CnSettingsSection
 				:name="t('dossiq', 'Mandate matrix: administration')"
@@ -219,7 +239,9 @@
 				<MandaatMatrixTab v-if="storesReady" />
 			</CnSettingsSection>
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
+				id="section-mandate-settings"
+				appId="dossiq"
 				:name="t('dossiq', 'Mandate matrix: system settings')"
 				:description="
 					t(
@@ -227,11 +249,12 @@
 						'Awb art. 10:3 mandate administration: Decidiq import, role hierarchy, waarnemer assignments.',
 					)
 				"
-				:loading="!storesReady">
-				<MandaatMatrixSettingsTab v-if="storesReady" />
-			</CnSettingsSection>
+				docUrl="https://dossiq.conduction.nl/docs/user/mandate-matrix-admin"
+				valuesPath="config"
+				:saveLabel="t('dossiq', 'Save mandate matrix settings')"
+				:fields="mandateSettingsFields" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-archival"
 				:name="t('dossiq', 'Archiving')"
 				:description="
@@ -240,12 +263,13 @@
 						'How often a reviewer is reminded of the archival decisions they hold. The setting lives in OpenRegister, which runs the archiving process; dossiq keeps no copy of it.',
 					)
 				"
-				:loading="!storesReady">
-				<ArchivalSettingsTab v-if="storesReady" />
-			</CnSettingsSection>
+				url="/apps/openregister/api/settings/archival"
+				saveMethod="POST"
+				:fields="archivalFields" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-woo-reports"
+				appId="dossiq"
 				:name="t('dossiq', 'Woo review reports')"
 				:description="
 					t(
@@ -253,9 +277,14 @@
 						'Choose which Woo review reports your organisation uses, and who may read the throughput per reviewer.',
 					)
 				"
-				:loading="!storesReady">
-				<WooReportsSettingsTab v-if="storesReady" />
-			</CnSettingsSection>
+				:detailedDescription="
+					t(
+						'dossiq',
+						'Both reports are off until you switch them on. The throughput report counts what each reviewer did per day, so only the group you name may read it.',
+					)
+				"
+				valuesPath="config"
+				:fields="reviewReportFields" />
 		</template>
 
 		<template #tab-integrations>
@@ -341,8 +370,9 @@
 				"
 				:loading="!storesReady" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-financial"
+				appId="dossiq"
 				:name="t('dossiq', 'Financial integration: dwangsom callback')"
 				:description="
 					t(
@@ -350,9 +380,15 @@
 						'Configure the shared secret used to validate ERP payment-confirmation callbacks for dwangsom (penalty payment) uitbetalingen.',
 					)
 				"
-				:loading="!storesReady">
-				<FinancialIntegrationTab v-if="storesReady" />
-			</CnSettingsSection>
+				:detailedDescription="
+					t(
+						'dossiq',
+						'Configure the shared secret used to validate the X-Procest-Signature HMAC-SHA256 header on the public dwangsom payment-confirmation callback ({endpoint}). Without a configured secret, every callback request is rejected (HTTP 401). An unconfigured secret is never treated as an implicit pass.',
+						{ endpoint: '/apps/dossiq/api/dwangsom/payment-callback' },
+					)
+				"
+				valuesPath="config"
+				:fields="paymentCallbackFields" />
 
 			<CnSettingsSection
 				id="section-stuf"
@@ -379,7 +415,7 @@
 				<StufAuditLog v-if="storesReady" />
 			</CnSettingsSection>
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-store"
 				:name="t('dossiq', 'Store registry')"
 				:description="
@@ -388,9 +424,9 @@
 						'Connect the OpenRegister instance the Store page browses. Without one, dossiq stays offline and shows only its own templates.',
 					)
 				"
-				:loading="!storesReady">
-				<StoreSettingsTab v-if="storesReady" />
-			</CnSettingsSection>
+				url="/apps/dossiq/api/store/settings"
+				:saveLabel="t('dossiq', 'Save store settings')"
+				:fields="storeRegistryFields" />
 		</template>
 
 		<template #tab-mail>
@@ -570,29 +606,29 @@ import ShippedConfiguration from './ShippedConfiguration.vue'
 import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
-import ArchivalSettingsTab from './tabs/ArchivalSettingsTab.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
-import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
-import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import FirstRunTab from './tabs/FirstRunTab.vue'
-import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
-import MenuStructureTab from './tabs/MenuStructureTab.vue'
 import PrerequisitesTab from './tabs/PrerequisitesTab.vue'
-import QueueUrgencySettingsTab from './tabs/QueueUrgencySettingsTab.vue'
 import SearchIndexTab from './tabs/SearchIndexTab.vue'
-import StoreSettingsTab from './tabs/StoreSettingsTab.vue'
 import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
 import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
-import WooReportsSettingsTab from './tabs/WooReportsSettingsTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import manifest from '../../manifest.json'
 import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
 import {
+	archivalFields,
 	CONNECTION_STATUS_TONES,
+	consultationFields,
 	houseStyleFields,
 	kadasterFields,
+	mandateSettingsFields,
+	menuStructureFields,
+	paymentCallbackFields,
+	queueUrgencyFields,
+	reviewReportFields,
+	storeRegistryFields,
 	textsAndAccessFields,
 } from './adminFields.js'
 
@@ -612,18 +648,10 @@ export default {
 		Settings,
 		ZgwMappingSettings,
 		AiSettingsTab,
-		ArchivalSettingsTab,
 		SearchIndexTab,
 		ChecklistsTab,
 		TermijnDefinitiesTab,
-		WooReportsSettingsTab,
-		QueueUrgencySettingsTab,
 		MandaatMatrixTab,
-		MandaatMatrixSettingsTab,
-		MenuStructureTab,
-		ConsultationSettingsTab,
-		StoreSettingsTab,
-		FinancialIntegrationTab,
 		EmailSettings,
 		KccIntegrationSettings,
 		ShippedConfiguration,
@@ -933,6 +961,86 @@ export default {
 		 */
 		textsAndAccessFields() {
 			return textsAndAccessFields(this.t.bind(this))
+		},
+
+		/**
+		 * The menu structure choice.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		menuStructureFields() {
+			return menuStructureFields(this.t.bind(this))
+		},
+
+		/**
+		 * The queue urgency thresholds and weights.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		queueUrgencyFields() {
+			return queueUrgencyFields(this.t.bind(this))
+		},
+
+		/**
+		 * The mandate matrix behaviour.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		mandateSettingsFields() {
+			return mandateSettingsFields(this.t.bind(this))
+		},
+
+		/**
+		 * The consultation behaviour.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		consultationFields() {
+			return consultationFields(this.t.bind(this))
+		},
+
+		/**
+		 * The review report switches and their reader group.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		reviewReportFields() {
+			return reviewReportFields(this.t.bind(this))
+		},
+
+		/**
+		 * The payment callback secret.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		paymentCallbackFields() {
+			return paymentCallbackFields(this.t.bind(this))
+		},
+
+		/**
+		 * The store registry connection.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		storeRegistryFields() {
+			return storeRegistryFields(this.t.bind(this))
+		},
+
+		/**
+		 * OpenRegister's archival reminder interval.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		archivalFields() {
+			return archivalFields(this.t.bind(this))
 		},
 
 		/**
