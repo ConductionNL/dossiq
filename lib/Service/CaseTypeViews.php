@@ -93,12 +93,13 @@ final class CaseTypeViews {
 
 	/**
 	 * The default views to add for the case types a user pinned: one per case
-	 * type, filtering on it with the working-list rule of the Woo view. The
-	 * Woo request case type is left out: the page ships that view itself.
+	 * type, filtering on it with the working-list rule of the Woo view, with
+	 * the case type's icon for its menu entry. The Woo request case type is
+	 * left out: the page ships that view itself.
 	 *
-	 * @param array<int, array{id: string, title: string}> $caseTypes The pinned case types.
+	 * @param array<int, array{id: string, title: string, icon?: string}> $caseTypes The pinned case types.
 	 *
-	 * @return array<int, array{slug: string, name: string, filters: array<string, mixed>}> The views.
+	 * @return array<int, array{slug: string, name: string, filters: array<string, mixed>, icon?: string}> The views.
 	 *
 	 * @spec openspec/changes/case-type-pins-are-views/specs/case-type-navigation/spec.md
 	 */
@@ -110,11 +111,17 @@ final class CaseTypeViews {
 				continue;
 			}
 
-			$views[] = [
+			$view = [
 				'slug' => $this->slugFor(caseTypeId: $id),
 				'name' => (string)$caseType['title'],
 				'filters' => ['caseType' => $id, 'statusHiddenInLists' => false, 'isDraft' => false],
 			];
+			$icon = $this->iconOf(caseType: $caseType);
+			if ($icon !== '') {
+				$view['icon'] = $icon;
+			}
+
+			$views[] = $view;
 		}
 
 		return $views;
@@ -123,20 +130,46 @@ final class CaseTypeViews {
 	/**
 	 * The menu entries for the case types a user pinned, in their order.
 	 *
-	 * @param array<int, array{id: string, title: string}> $caseTypes The pinned case types.
+	 * @param array<int, array{id: string, title: string, icon?: string}> $caseTypes The pinned case types.
 	 *
-	 * @return array<int, array{id: string, page: string, name: string}> The entries.
+	 * @return array<int, array{id: string, page: string, name: string, icon?: string}> The entries.
 	 *
 	 * @spec openspec/changes/case-type-pins-are-views/specs/case-type-navigation/spec.md
 	 */
 	public function menuEntries(array $caseTypes): array {
 		return array_map(
-			fn (array $caseType): array => [
-				'id' => 'default:' . $this->slugFor(caseTypeId: (string)$caseType['id']),
-				'page' => self::PAGE,
-				'name' => (string)$caseType['title'],
-			],
+			function (array $caseType): array {
+				$entry = [
+					'id' => 'default:' . $this->slugFor(caseTypeId: (string)$caseType['id']),
+					'page' => self::PAGE,
+					'name' => (string)$caseType['title'],
+				];
+				$icon = $this->iconOf(caseType: $caseType);
+				if ($icon !== '') {
+					$entry['icon'] = $icon;
+				}
+
+				return $entry;
+			},
 			array_values($caseTypes)
 		);
 	}//end menuEntries()
+
+	/**
+	 * The icon a case type names, or '' when it names none.
+	 *
+	 * @param array<string, mixed> $caseType The case type.
+	 *
+	 * @return string The icon name.
+	 *
+	 * @spec openspec/changes/case-type-colour-icon/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+	 */
+	private function iconOf(array $caseType): string {
+		$icon = ($caseType['icon'] ?? '');
+		if (is_string($icon) === false) {
+			return '';
+		}
+
+		return trim($icon);
+	}//end iconOf()
 }//end class

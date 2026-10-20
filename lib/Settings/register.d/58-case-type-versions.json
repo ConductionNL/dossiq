@@ -6,12 +6,14 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.1.0",
+          "version": "1.1.1",
           "slug": "evenementenvergunning-v1"
         },
         "id": "c4e7e000-0000-4000-a000-000000000101",
         "uuid": "c4e7e000-0000-4000-a000-000000000101",
         "title": "Evenementenvergunning",
+        "colour": "blue",
+        "icon": "Calendar",
         "category": "Vergunningen",
         "identifier": "evenementenvergunning-2024",
         "description": "Vergunning voor het organiseren van een evenement in de openbare ruimte (APV). Versie 1, vervangen door versie 2 per 1 januari 2026.",
@@ -29,12 +31,14 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.1.0",
+          "version": "1.1.1",
           "slug": "evenementenvergunning-v2"
         },
         "id": "c4e7e000-0000-4000-a000-000000000102",
         "uuid": "c4e7e000-0000-4000-a000-000000000102",
         "title": "Evenementenvergunning",
+        "colour": "blue",
+        "icon": "Calendar",
         "category": "Vergunningen",
         "identifier": "evenementenvergunning",
         "description": "Vergunning voor het organiseren van een evenement in de openbare ruimte (APV). Versie 2: de veiligheidstoets is een eigen status geworden.",

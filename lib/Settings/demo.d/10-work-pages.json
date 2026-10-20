@@ -290,6 +290,8 @@
 					"slug": "voorbeeld-avg-verzoek"
 				},
 				"title": "AVG-verzoek",
+				"colour": "purple",
+				"icon": "ShieldAccountOutline",
 				"description": "Behandeling van een verzoek van een betrokkene onder de AVG.",
 				"processingDeadline": "P1M",
 				"confidentiality": "vertrouwelijk",

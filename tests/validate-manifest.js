@@ -198,6 +198,18 @@ function newerSchemaAccepts(instancePath, property) {
 		def = schema.$defs.visibleWhen
 	}
 
+	// A detail header pill's `resolve` (pill-color-field, schema 2.134.0).
+	if (
+		def === null
+		&& segments.length === 5
+		&& segments[0] === 'pages'
+		&& segments[2] === 'config'
+		&& ['typePill', 'statusPill'].includes(segments[3])
+		&& segments[4] === 'resolve'
+	) {
+		def = schema.$defs.headerPill?.properties?.resolve ?? null
+	}
+
 	// A walkthrough tour is declared inline, not under $defs. Resolved by
 	// its path like the others (the-getting-started-tour-starts-on-the-
 	// dashboard, `startOn` in schema 2.94.0).

@@ -243,6 +243,24 @@ describe('check:manifest tells a lag from a defect', () => {
 		expect(bogus.out).toContain('FAIL')
 	}, 30000)
 
+	// @spec openspec/changes/case-type-colour-icon/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+	it('a pill resolve key only the newer schema declares is a lag, and an unknown one is not', () => {
+		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
+		expect(Object.hasOwn(vendored.$defs.headerPill.properties.resolve.properties, 'colorField')).toBe(true)
+
+		const manifest = JSON.parse(
+			fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+		)
+		const page = manifest.pages.find((candidate) => candidate.type === 'detail')
+		page.config.typePill = { field: 'caseType', resolve: { register: 'dossiq', schema: 'caseType', colorField: 'colour', iconField: 'icon' } }
+		expect(validate(manifest).code).toBe(0)
+
+		page.config.typePill.resolve.thisKeyExistsNowhere = true
+		const bogus = validate(manifest)
+		expect(bogus.code).toBe(1)
+		expect(bogus.out).toContain('FAIL')
+	}, 30000)
+
 	it('a key NEITHER schema knows fails, rather than being forgiven as a lag', () => {
 		const manifest = JSON.parse(
 			fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
