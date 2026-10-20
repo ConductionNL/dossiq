@@ -54,6 +54,8 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods) — one action per routed term endpoint
+ *
  * @spec openspec/specs/termijn-binding/spec.md
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */

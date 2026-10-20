@@ -124,7 +124,7 @@
 				<NcButton @click="$emit('close')">
 					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
-				<NcButton type="primary" :disabled="saving" @click="save">
+				<NcButton variant="primary" :disabled="saving" @click="save">
 					<template #icon>
 						<NcLoadingIcon v-if="saving" :size="18" />
 						<ContentSave v-else :size="18" />

@@ -391,6 +391,8 @@ class SettingsService {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) — WooReportSwitches is a pure key map
 	 */
 	public function updateSettings(array $data): array {
 		$data = WooReportSwitches::withCurrentKeys(data: $data);

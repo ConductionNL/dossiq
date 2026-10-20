@@ -5,13 +5,13 @@
 <template>
 	<div class="mandaat-matrix-table">
 		<div class="mandaat-matrix-table__toolbar">
-			<NcButton type="primary" @click="$emit('edit', null)">
+			<NcButton variant="primary" @click="$emit('edit', null)">
 				<template #icon>
 					<Plus :size="18" />
 				</template>
 				{{ t('dossiq', 'New mandaat') }}
 			</NcButton>
-			<NcButton type="secondary" @click="$emit('import')">
+			<NcButton variant="secondary" @click="$emit('import')">
 				<template #icon>
 					<Import :size="18" />
 				</template>

@@ -116,8 +116,8 @@
 </template>
 
 <script>
-import axios from '@nextcloud/axios'
 import { CnCountTablesReport } from '@conduction/nextcloud-vue'
+import axios from '@nextcloud/axios'
 import { loadState } from '@nextcloud/initial-state'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'

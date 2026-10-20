@@ -23,7 +23,7 @@
 			<NcButton
 				v-for="opt in tabOptions"
 				:key="opt.id"
-				:type="active === opt.id ? 'primary' : 'secondary'"
+				:variant="active === opt.id ? 'primary' : 'secondary'"
 				size="small"
 				@click="active = opt.id">
 				{{ opt.label }}
@@ -144,7 +144,7 @@ export default {
 				this.matrices = Array.isArray(res.data)
 					? res.data
 					: res.data?.results || []
-			} catch (e) {
+			} catch {
 				this.matrices = []
 			} finally {
 				this.loading = false
@@ -161,7 +161,7 @@ export default {
 				this.roles = Array.isArray(res.data)
 					? res.data
 					: res.data?.results || []
-			} catch (e) {
+			} catch {
 				this.roles = []
 			} finally {
 				this.loading = false
@@ -178,7 +178,7 @@ export default {
 				this.assignments = Array.isArray(res.data)
 					? res.data
 					: res.data?.results || []
-			} catch (e) {
+			} catch {
 				this.assignments = []
 			} finally {
 				this.loading = false
@@ -233,7 +233,7 @@ export default {
 				}
 				this.closeEditor()
 				this.loadBesluiten()
-			} catch (e) {
+			} catch {
 				// Editor surfaces the error; keep modal open by not closing.
 			}
 		},

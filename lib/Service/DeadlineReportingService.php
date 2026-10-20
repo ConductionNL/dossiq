@@ -46,6 +46,8 @@ use RuntimeException;
 /**
  * Quarterly KPI + annual dwangsom audit + dashboard KPI reports.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ *
  * @spec openspec/specs/termijn-reporting/spec.md
  */
 class DeadlineReportingService {
