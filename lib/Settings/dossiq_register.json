@@ -1834,7 +1834,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.45.0",
+                "version": "1.46.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1896,6 +1896,7 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "exportable": true,
                     "x-openregister-mcp": {
                         "enabled": true,
                         "tools": {

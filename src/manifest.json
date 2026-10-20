@@ -1780,12 +1780,116 @@
 		{
 			"id": "PersonalQueue",
 			"route": "/my-queue",
-			"type": "custom",
+			"type": "dashboard",
 			"title": "Your queue",
-			"component": "PersonalQueueView",
-			"_note": "Everything waiting on the reader, in one place, fed by the declared queue sources. type:\"custom\" and NOT type:\"index\": an index page names one register and one schema, and this list spans cases, engine tasks, consultations, advice requests, mentions, work covered for an absent colleague, and calendar items the reader planned for themselves. No manifest key names a set that crosses four stores and a calendar. It is also not a second index over (dossiq, case), so gate-68 has nothing to answer: the page never reads the case schema directly. READ THE NAME COLLISION: the `Queue` page below is the UNCLAIMED POOL, every open case nobody has picked up, and it is a team surface; this one is personal and nobody else can see it. The component hard-codes NO source. Every group, its heading and the sentence saying what closes it come from the server, which builds them from the declared queue sources, so a ninth mechanism reaches this page by declaring itself rather than by an edit here.",
+			"_note": "Everything waiting on the reader, in one place, fed by the declared queue sources. A dashboard page with ONE `work-queue` widget (the library's CnWorkQueue) and not type:\"index\": an index page names one register and one schema, and this list spans cases, engine tasks, consultations, advice requests, mentions, work covered for an absent colleague, and calendar items the reader planned for themselves. No manifest key names a set that crosses four stores and a calendar. It is also not a second index over (dossiq, case), so gate-68 has nothing to answer: the page never reads the case schema directly. READ THE NAME COLLISION: the team queue is the UNCLAIMED POOL, every open case nobody has picked up, a view of the Cases page; this one is personal and nobody else can see it. The page names NO source. Every group, its heading and the sentence saying what closes it come from the server, which builds them from the declared queue sources, so a ninth mechanism reaches this page by declaring itself rather than by an edit here. Plan an item opens the library's CnActionDialog, which posts the item and fires `cn:page:refresh`; the work queue listens on that channel, so the planned item shows at once.",
 			"config": {
-				"documentationUrl": "https://dossiq.conduction.nl"
+				"allowEdit": false,
+				"appId": "dossiq",
+				"pageId": "PersonalQueue",
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"breadcrumb": {
+					"label": "My work",
+					"route": "MyWorkHome"
+				},
+				"headerActions": [
+					{
+						"id": "plan-item",
+						"type": "open-modal",
+						"target": "CnActionDialog",
+						"label": "Plan an item",
+						"icon": "CalendarClockOutline",
+						"variant": "secondary",
+						"props": {
+							"config": {
+								"title": "Plan an item",
+								"eyebrow": "Your queue · own task",
+								"subtitle": "This goes on your own calendar and on your queue. It is not a case.",
+								"fields": [
+									{
+										"field": "template",
+										"type": "select",
+										"label": "Template",
+										"required": false,
+										"options": [
+											{
+												"value": "call-back",
+												"label": "Call someone back",
+												"fills": {
+													"title": "Call someone back"
+												}
+											},
+											{
+												"value": "prepare-decision",
+												"label": "Prepare a decision",
+												"fills": {
+													"title": "Prepare a decision"
+												}
+											},
+											{
+												"value": "site-visit",
+												"label": "Site visit",
+												"fills": {
+													"title": "Site visit"
+												}
+											},
+											{
+												"value": "catch-up",
+												"label": "Catch up on a case",
+												"fills": {
+													"title": "Catch up on a case"
+												}
+											}
+										]
+									},
+									{
+										"field": "title",
+										"label": "What is it"
+									},
+									{
+										"field": "startsAt",
+										"type": "datetime",
+										"label": "When"
+									}
+								],
+								"confirm": {
+									"label": "Schedule it",
+									"icon": "CalendarClockOutline",
+									"request": {
+										"method": "POST",
+										"url": "/apps/dossiq/api/personal-queue/planned-items"
+									}
+								}
+							}
+						}
+					}
+				],
+				"widgets": [
+					{
+						"id": "personal-queue",
+						"type": "work-queue",
+						"title": "Your queue",
+						"content": {
+							"source": {
+								"url": "/apps/dossiq/api/personal-queue"
+							},
+							"hide": "/apps/dossiq/api/personal-queue/groups/{group}/hide",
+							"show": "/apps/dossiq/api/personal-queue/groups/{group}/show",
+							"emptyText": "Nothing is waiting on you."
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "personal-queue",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": false
+					}
+				]
 			}
 		},
 		{
@@ -1794,12 +1898,13 @@
 			"type": "index",
 			"title": "Cases",
 			"manualOrder": true,
-			"actionsComponent": "CaseListExportAction",
 			"slots": {
 				"after-search": "CaseTypeFieldFilters"
 			},
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
+				"allowExport": true,
+				"_allowExportNote": "case-list-export-via-or-export-leaf. The library's own Export menu (CSV and Excel) on the actions bar; it shows because the case schema is flagged `exportable` in lib/Settings/dossiq_register.json. A click sends the browser to OpenRegister's export leaf with the query the list itself sends (search, sort, facets, the active lens and the case-type folder, without paging), so the file holds the rows the table is filtered to and OpenRegister enforces access as the reader. dossiq serialises nothing (ADR-022).",
 				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are NOT on the case: dossiq stores each declared field as a `caseProperty` row pointing back at it, so the query is openregister's `_related[caseProperty][case][\u2026]` (query-related-schema-rows). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. `after-search` rather than `below-header` for two reasons: it is the actions bar's own slot for inline refinement controls, and `below-header` already holds `CaseSearchRefusal`, which a slot map cannot share.",
 				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/utils/caseBulkActions.js, registered in src/registry.js as `kind: 'handler'` entries, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
@@ -2409,7 +2514,15 @@
 								{
 									"key": "deadline",
 									"label": "Term",
-									"widget": "deadlineCountdown"
+									"widget": "date",
+									"widgetProps": {
+										"due": {
+											"upcomingLabel": {
+												"one": "{count} day left",
+												"other": "{count} days left"
+											}
+										}
+									}
 								},
 								{
 									"key": "status",
@@ -2808,8 +2921,16 @@
 					{
 						"key": "deadline",
 						"label": "Deadline",
-						"widget": "deadlineCountdown",
-						"_note": "one-case-list A22. A raw ISO date makes every reader do the same subtraction once per row and get it wrong on the rows that matter. `deadlineCountdown` (src/services/cellWidgets.js) renders the days left and, past the deadline, the days overdue in the signalering red. A cell WIDGET rather than a `formatter` because a formatter returns a string and a string cannot carry the overdue state; nextcloud-vue 2.41 ships no built-in countdown cell, only `CnCountdownWidget` for a dashboard tile. The column stays sortable: CnDataTable sorts on the stored `deadline`, not on the rendered text."
+						"widget": "date",
+						"widgetProps": {
+							"due": {
+								"upcomingLabel": {
+									"one": "{count} day left",
+									"other": "{count} days left"
+								}
+							}
+						},
+						"_note": "one-case-list A22. A raw ISO date makes every reader do the same subtraction once per row and get it wrong on the rows that matter. The library's `date` cell with `due` renders the days left, \"Due today\" on the last day and, from the day after, the days overdue in the error colour, with the full date as the tooltip; a case without a deadline shows the library's dash. The column stays sortable: CnDataTable sorts on the stored `deadline`, not on the rendered text."
 					},
 					{
 						"key": "currentStatusDwellDays",
