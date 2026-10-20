@@ -64,7 +64,7 @@ async function mountDialog() {
 			stubs: {
 				CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 				CnMapWidget: { template: '<div class="map" />' },
-				AddressSearch: { template: '<div class="search" />' },
+				CnAddressSearch: { template: '<div class="search" />' },
 				NcButton: { template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot /></button>' },
 				NcCheckboxRadioSwitch: { template: '<label><slot /></label>' },
 				NcNoteCard: { template: '<div><slot /></div>' },
