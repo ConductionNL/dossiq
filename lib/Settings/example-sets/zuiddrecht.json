@@ -851,7 +851,7 @@
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Besluit"
+						"name": "Beoordeling ontvankelijkheid"
 					}
 				}
 			},
@@ -893,7 +893,7 @@
 				"assignedGroup": "behandelaars",
 				"startDate": "{{date:-14}}",
 				"receivedAt": "{{datetime:-14 09:12}}",
-				"currentStatusEnteredAt": "{{datetime:-2 11:00}}",
+				"currentStatusEnteredAt": "{{datetime:-13 10:05}}",
 				"statusHistory": [
 					{
 						"status": "{{lookup:ontvangst}}",
@@ -901,7 +901,7 @@
 					},
 					{
 						"status": "{{lookup:status}}",
-						"enteredAt": "{{datetime:-2 11:00}}"
+						"enteredAt": "{{datetime:-13 10:05}}"
 					}
 				],
 				"wooRequest": {
@@ -918,11 +918,88 @@
 					"verzoekerEmail": "{{cast:linda.email}}",
 					"verzoekerType": "persoon"
 				},
-				"wooPublicationStatus": "ready",
 				"tags": [
 					"woo",
 					"openbare-ruimte"
 				]
+			}
+		},
+		{
+			"key": "woo-lindelaan-telefoon",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "inbound",
+				"startTime": "{{datetime:-14 09:12}}",
+				"endTime": "{{datetime:-14 09:24}}",
+				"durationSeconds": 720,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:linda.bsn}}",
+				"kccEmployeeId": "{{cast:thomas.uid}}",
+				"case": "{{object:woo-lindelaan.id}}",
+				"nature": "new_request",
+				"summary": "Vraag over de stukken van het fietspad. Het Woo-verzoek samen opgenomen.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "woo-lindelaan-uitleg",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "webformulier",
+				"direction": "outbound",
+				"startTime": "{{datetime:-13 10:24}}",
+				"endTime": "{{datetime:-13 10:26}}",
+				"durationSeconds": 120,
+				"kccEmployeeId": "{{cast:thomas.uid}}",
+				"case": "{{object:woo-lindelaan.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Uitgelegd dat de aanleg in maart begint.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "woo-lindelaan-reactie",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "webformulier",
+				"direction": "inbound",
+				"startTime": "{{datetime:-13 10:52}}",
+				"endTime": "{{datetime:-13 10:54}}",
+				"durationSeconds": 120,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:linda.bsn}}",
+				"kccEmployeeId": "{{cast:thomas.uid}}",
+				"case": "{{object:woo-lindelaan.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Wil graag alle stukken over de verlichting zien.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "woo-lindelaan-aanvulling",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "email",
+				"direction": "inbound",
+				"startTime": "{{datetime:-12 09:15}}",
+				"endTime": "{{datetime:-12 09:17}}",
+				"durationSeconds": 120,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:linda.bsn}}",
+				"kccEmployeeId": "{{cast:thomas.uid}}",
+				"case": "{{object:woo-lindelaan.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Vult het verzoek aan met de offertes voor de lantaarnpalen.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
 			}
 		},
 		{
