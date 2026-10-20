@@ -590,6 +590,7 @@ import manifest from '../../manifest.json'
 import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
 import {
+	CONNECTION_STATUS_TONES,
 	houseStyleFields,
 	kadasterFields,
 	textsAndAccessFields,
@@ -806,6 +807,7 @@ export default {
 					key: 'status',
 					label: this.t('dossiq', 'Status'),
 					widget: 'badge',
+					widgetProps: { colorMap: CONNECTION_STATUS_TONES },
 					enum: [
 						'configured',
 						'unconfigured',

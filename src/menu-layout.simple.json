@@ -3789,8 +3789,8 @@
 							"colorMap": {
 								"Ready to claim": "info",
 								"Klaar om op te pakken": "info",
-								"In progress": "primary",
-								"In behandeling": "primary",
+								"In progress": "purple",
+								"In behandeling": "purple",
 								"Completed": "success",
 								"Afgerond": "success",
 								"Terminated": "error",
