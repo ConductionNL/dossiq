@@ -2,21 +2,13 @@
  * OpenRegister archival client for dossiq.
  *
  * The archiving process lives in openregister (decision D7). dossiq reads what
- * openregister decided and relays a reviewer's answer; it derives nothing here.
+ * openregister decided; it derives nothing here. A reviewer's pending entries
+ * and their answers are the library's decision-list widget on My Work.
  *
- *   GET  /apps/openregister/api/archival/reviews/pending
- *        — the signed-in person's own undecided destruction list entries.
- *   POST /apps/openregister/api/archival/destruction-lists/{list}/entries/{entry}/decision
- *        — destroy, retain or transfer, with a reason.
  *   POST /apps/openregister/api/archival/objects/{id}/nomination/recompute
  *        — recompute a nomination, archivist or admin, reason required.
  *   GET  /apps/openregister/api/settings/archival
  *        — the archival settings, including reviewReminderFrequency.
- *
- * 🔑 THE WORKLIST IS NOT FILTERED HERE. `/archival/reviews/pending` reads the
- * session user id, so there is no id in the request to tamper with. Narrowing a
- * wider list in the browser would be a different, weaker thing wearing the same
- * label, and it is deliberately not done.
  *
  * Nothing in this file swallows a failure into an empty list. An outage and a
  * reviewer with nothing to sign off look identical from the browser, and only
@@ -32,71 +24,6 @@ import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
 const API = '/apps/openregister/api'
-
-/**
- * The three answers a reviewer may give, as openregister spells them.
- *
- * A fourth answer is refused with a 400, so the list is closed on purpose.
- *
- * @type {string[]}
- */
-export const ANSWERS = ['destroy', 'retain', 'transfer']
-
-/**
- * The signed-in person's own pending archival reviews.
- *
- * @return {Promise<Array<object>>} The caller's undecided entries.
- * @throws {Error} When openregister cannot be read.
- *
- * @spec openspec/specs/archief-edepot-handover/spec.md
- */
-export async function pendingReviews() {
-	const { data } = await axios.get(generateUrl(`${API}/archival/reviews/pending`))
-
-	const results = data?.results ?? data?.entries ?? []
-
-	return Array.isArray(results) ? results : []
-}
-
-/**
- * Answer one destruction list entry.
- *
- * `retain` carries the new archiefactiedatum, which openregister requires and
- * refuses the decision without. It is passed through rather than defaulted: a
- * date this app invented would be recorded as the reviewer's.
- *
- * @param {object} decision The answer.
- * @param {string} decision.listId The destruction list uuid.
- * @param {string} decision.entryId The record's uuid, which is the entry id.
- * @param {string} decision.answer One of destroy, retain or transfer.
- * @param {string} decision.reason Why, required by openregister.
- * @param {string} [decision.newArchiefactiedatum] The new date, for retain.
- * @return {Promise<object>} The recorded decision.
- * @throws {Error} When openregister refuses the answer.
- *
- * @spec openspec/specs/archief-edepot-handover/spec.md
- */
-export async function decide({
-	listId,
-	entryId,
-	answer,
-	reason,
-	newArchiefactiedatum = null,
-}) {
-	const body = { answer, reason }
-	if (newArchiefactiedatum) {
-		body.newArchiefactiedatum = newArchiefactiedatum
-	}
-
-	const { data } = await axios.post(
-		generateUrl(
-			`${API}/archival/destruction-lists/${listId}/entries/${entryId}/decision`,
-		),
-		body,
-	)
-
-	return data
-}
 
 /**
  * Ask openregister to derive this record's nomination again.

@@ -38,9 +38,6 @@
  * `page.goto()` prefix them with `/index.php/apps/dossiq`.
  */
 
-/** `src/views/CasesOnMapView.vue` — the Cases map view (manifest page `CaseMap`). */
-export const CasesOnMapView = '/map'
-
 /** `src/views/MyWorkCards.vue` — the personal workload cards (manifest page `MyWork`). */
 export const MyWorkCards = '/my-work'
 

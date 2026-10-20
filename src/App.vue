@@ -85,8 +85,7 @@ import { supportDialogForThisLoad } from './utils/onboardingOrder.js'
 import { currentPermissions } from './utils/permissions.js'
 
 /**
- * The location hash that opens the user settings dialog. The "My case types"
- * caption's pencil links here (ManifestController::USER_SETTINGS_HREF).
+ * The location hash that opens the user settings dialog.
  */
 const USER_SETTINGS_HASH = '#user-settings'
 

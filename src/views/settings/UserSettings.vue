@@ -21,23 +21,6 @@
 -->
 <template>
 	<!-- Order, names and descriptions follow board DqPersoonlijkeInstellingen. -->
-	<NcAppSettingsSection
-		id="menu-case-types"
-		:name="t('dossiq', 'Case types in my menu')">
-		<template #icon>
-			<FormatListBulletedType :size="18" />
-		</template>
-		<p class="dossiq-user-settings__intro">
-			{{
-				t(
-					'dossiq',
-					'These case types are in your dossiq menu, under My case types. One click opens their case list. Drag a handle to change the order.',
-				)
-			}}
-		</p>
-		<MenuCaseTypesSettings />
-	</NcAppSettingsSection>
-
 	<NcAppSettingsSection id="notification-routing" :name="t('dossiq', 'Notices')">
 		<template #icon>
 			<BellOutline :size="18" />
@@ -99,9 +82,7 @@ import AccountSwitchOutline from 'vue-material-design-icons/AccountSwitchOutline
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import EmailArrowRightOutline from 'vue-material-design-icons/EmailArrowRightOutline.vue'
 import EmailNewsletter from 'vue-material-design-icons/EmailNewsletter.vue'
-import FormatListBulletedType from 'vue-material-design-icons/FormatListBulletedType.vue'
 import CaseEmailMatchSettings from './CaseEmailMatchSettings.vue'
-import MenuCaseTypesSettings from './MenuCaseTypesSettings.vue'
 import NotificationRoutingSettings from './NotificationRoutingSettings.vue'
 import SubstitutionSettings from './SubstitutionSettings.vue'
 import WorkDigestSettings from './WorkDigestSettings.vue'
@@ -114,9 +95,7 @@ export default {
 		BellOutline,
 		EmailArrowRightOutline,
 		EmailNewsletter,
-		FormatListBulletedType,
 		CaseEmailMatchSettings,
-		MenuCaseTypesSettings,
 		NcAppSettingsSection,
 		NotificationRoutingSettings,
 		SubstitutionSettings,

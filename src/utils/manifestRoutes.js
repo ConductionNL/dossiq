@@ -29,6 +29,10 @@ export const RETIRED_ROUTES = [
 		path: '/workflow-board',
 		redirect: { name: 'Cases', query: { _view: 'board' } },
 	},
+	{
+		path: '/map',
+		redirect: { name: 'Cases', query: { _view: 'map' } },
+	},
 ]
 
 /**

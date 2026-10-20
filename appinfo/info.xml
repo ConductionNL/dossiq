@@ -862,6 +862,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 Post-migration only: a fresh install has no records.
             -->
             <step>OCA\Dossiq\Repair\ReconcileCaseRecordGrants</step>
+            <!--
+                The case types each user pinned become views in their menu
+                (case-type-pins-are-views), once per user; reads the case
+                types, so it runs after the import.
+            -->
+            <step>OCA\Dossiq\Repair\PinCaseTypesAsViews</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
