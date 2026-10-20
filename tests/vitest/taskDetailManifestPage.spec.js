@@ -5,7 +5,7 @@
  * The task page is a manifest detail page (task-page-on-the-manifest).
  *
  * TaskDetailView was a custom view of about 1,000 lines. Every function it
- * offered is now page config over library widgets and four dossiq widgets;
+ * offered is now page config over library widgets;
  * these assertions are the no-loss list from the change's proposal, read off
  * the manifest. The library behaviour behind each key (the tasks record
  * source, its verbs, the checklist widget, the pill `values`) is specified and
@@ -66,9 +66,11 @@ describe('the TaskDetail manifest page', () => {
 		])
 		expect(widget('task-description')).toMatchObject({ type: 'facts', visibleWhen: { field: 'description', op: 'notEmpty' } })
 		expect(widget('task-checklist')).toMatchObject({ type: 'checklist', content: { path: 'checklist' } })
-		expect(widget('task-appointments').type).toBe('task-events')
-		expect(widget('task-notes').type).toBe('task-notes')
-		expect(widget('task-history')).toMatchObject({ type: 'task-audit', content: { open: true } })
+		// The leaves are the library cards on the task's engine endpoints
+		// (`source: flow-task`), with dossiq's empty lines kept.
+		expect(widget('task-appointments')).toMatchObject({ type: 'events', content: { source: { kind: 'flow-task' }, emptyText: 'Nobody has booked an appointment on this task' } })
+		expect(widget('task-notes')).toMatchObject({ type: 'integration', integrationId: 'notes', props: { source: { kind: 'flow-task', id: '@objectId' } } })
+		expect(widget('task-history')).toMatchObject({ type: 'audit-trail', content: { source: { kind: 'flow-task' }, emptyText: 'Nothing has happened to this task yet' } })
 	})
 
 	it('has the task facts, the case card, the waiting-case card and the history beside the body', () => {
@@ -78,12 +80,25 @@ describe('the TaskDetail manifest page', () => {
 		])
 		expect(widget('side-case')).toMatchObject({ type: 'facts', visibleWhen: { field: 'objectUuid', op: 'notEmpty' } })
 		expect(widget('side-case').content.link.route).toEqual({ name: 'CaseDetail', params: { id: '@object.objectUuid' } })
-		expect(widget('side-waiting')).toMatchObject({ type: 'task-waiting-case', visibleWhen: { field: 'runUuid', op: 'notEmpty' } })
-		expect(widget('side-history')).toMatchObject({ type: 'task-audit', content: { open: true } })
+		// The case a flow run waits on: a library notice linking the case, by
+		// its title, and "Open the case" when the title is not known.
+		expect(widget('side-waiting')).toMatchObject({
+			type: 'notice',
+			visibleWhen: { field: 'runUuid', op: 'notEmpty' },
+			content: {
+				title: 'A case is waiting on this task',
+				text: 'Complete the task and the case moves on.',
+				link: { route: 'CaseDetail', params: { id: '@object.objectUuid' }, label: '@object.subjectLabel', fallbackLabel: 'Open the case' },
+			},
+		})
+		expect(widget('side-history')).toMatchObject({ type: 'audit-trail', content: { source: { kind: 'flow-task' } } })
 	})
 
-	it('names only widget types the library or the registry answers', () => {
-		const library = ['tabs', 'facts', 'checklist']
+	it('names only widget types the library answers, with no dossiq task widget left', () => {
+		const library = ['tabs', 'facts', 'checklist', 'events', 'integration', 'audit-trail', 'notice']
+		for (const key of ['task-notes', 'task-events', 'task-audit', 'task-waiting-case']) {
+			expect(registrySource).not.toMatch(new RegExp(`^\\t'${key}': \\{`, 'm'))
+		}
 		for (const entry of [...config.widgets, ...config.sideColumn]) {
 			if (library.includes(entry.type)) {
 				continue

@@ -149,11 +149,16 @@
 				  metadata the same person maintains, which is why it is here
 				  rather than on a tab of its own.
 				-->
-				<ApprovalChainLeafTab
+				<CnIntegrationWidget
+					only="decidiq-approval-chain"
+					surface="detail-page"
+					leafSurface="sidebar-tab"
 					register="dossiq"
 					schema="informatieobject"
 					:objectId="recordId"
-					:title="title" />
+					:objectLabel="title"
+					appName="Decidiq"
+					appIcon="CheckDecagramOutline" />
 			</section>
 
 			<div class="dossier-metadata-dialog__actions">
@@ -177,6 +182,7 @@ import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
 import { generateUrl } from '@nextcloud/router'
+import { CnIntegrationWidget } from '@conduction/nextcloud-vue'
 import {
 	NcButton,
 	NcModal,
@@ -185,7 +191,6 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
-import ApprovalChainLeafTab from '../components/tabs/ApprovalChainLeafTab.vue'
 import { fetchCaseParties } from '../services/caseParties.js'
 import {
 	allowedFor,
@@ -221,7 +226,7 @@ import {
 export default {
 	name: 'DocumentMetadataDialog',
 	components: {
-		ApprovalChainLeafTab,
+		CnIntegrationWidget,
 		NcButton,
 		NcModal,
 		NcProgressBar,

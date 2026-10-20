@@ -142,77 +142,49 @@ function widget(pageId, widgetId) {
 	return page(pageId).config.widgets.find((entry) => entry.id === widgetId)
 }
 
-/**
- * The registry entry body for a key, as it is written in the source.
- *
- * @param {string} key The registry key.
- * @return {string} The entry's source text, up to its closing brace.
- */
-function registryEntry(key) {
-	const source = registrySource()
-	const opener = source.indexOf(`\n\t'${key}': {`)
-	const named = source.indexOf(`\n\t${key}: {`)
-	const start = opener !== -1 ? opener : named
-	expect(start, `registry has no entry for ${key}`).toBeGreaterThan(-1)
-	const end = source.indexOf('\n\t},', start)
-	expect(end).toBeGreaterThan(start)
-	return source.slice(start, end)
-}
-
-describe('the CaseTaskPane registry binding', () => {
-	it('answers the widget type by the key CnDetailWidgetHost looks up', () => {
-		// `cnRegistry[widget.type]` is the ONLY resolution a tab child gets. A
-		// key spelled after the component (`CaseTaskPane`) would satisfy a
-		// page slot and leave the tab panel blank.
-		const entry = registryEntry('case-task-pane')
-		expect(entry).toContain("kind: 'widget'")
-		expect(entry).toContain('component: CaseTaskPane')
+describe('the case-tasks widget on the library task widget', () => {
+	it('has no dossiq component or registry key behind it any more', () => {
+		// CaseTaskPane drew the first open task, its verbs and its form with
+		// dossiq's own component; the library CnTasksWidget does it now
+		// (`variant: focus`), so the key and the file are gone.
+		expect(registrySource()).not.toMatch(/^\t'case-task-pane': \{/m)
+		expect(fs.existsSync(path.join(ROOT, 'src/components/tasks/CaseTaskPane.vue'))).toBe(false)
+		expect(fs.existsSync(path.join(ROOT, 'src/components/tasks/TaskFormFields.vue'))).toBe(false)
+		expect(fs.existsSync(path.join(ROOT, 'src/utils/caseTaskPaneHelpers.js'))).toBe(false)
 	})
 
-	it('carries a _note and a reason-bearing ratchet exclusion', () => {
-		// Gate 29 (custom-widget-ratchet) fails a kind:"widget" entry with no
-		// `_note`, and fails the app when the count grows without a reason.
-		const entry = registryEntry('case-task-pane')
-		expect(entry).toContain('_note:')
-		expect(entry).toMatch(/@custom-widget-ratchet exclude \S+ \S+/)
-		expect(entry).toContain('CnObjectListWidget has no rowActions')
-	})
-
-	it('imports the component from a file that exists', () => {
-		const match = registrySource().match(/^import CaseTaskPane from '(.+)'$/m)
-		expect(match, 'CaseTaskPane must be imported').not.toBeNull()
-		expect(
-			fs.existsSync(path.join(ROOT, 'src', match[1].replace(/^\.\//, ''))),
-		).toBe(true)
-	})
-})
-
-describe('the case-tasks widget after the retype', () => {
-	it('keeps its id, title and every content key, and draws no title icon', () => {
+	it('keeps its id and title, and declares the first open task with its verbs', () => {
 		const pane = widget('CaseDetail', 'case-tasks')
 		expect(pane).toBeDefined()
-		expect(pane.type).toBe('case-task-pane')
+		expect(pane.type).toBe('tasks')
 		expect(pane.title).toBe('Tasks')
 		expect(pane.icon).toBeUndefined()
-		// The content is what the widget goes back to reading the day
-		// CnObjectListWidget grows a lifecycle column. Dropping a key here
-		// would make the swap back a second change rather than a revert.
-		//
-		// `register` and `schema` ARE dropped, and their absence is asserted
-		// below. The component has read the task engine since dossiq#2357 and
-		// ignored both, so the pair named a schema that no longer exists and
-		// claimed a binding the widget never made.
 		expect(pane.content).toMatchObject({
-			filter: { case: '@objectId' },
-			sort: { field: 'dueDate', dir: 'asc' },
+			variant: 'focus',
+			objectUuid: '@objectId',
+			cancel: true,
 			rowRoute: 'TaskDetail',
-			viewAllRoute: 'Tasks',
-			viewAllQuery: { case: '@objectId' },
+			viewAllRoute: { name: 'Tasks', query: { case: '@objectId' } },
+			emptyText: 'No open tasks on this case',
 		})
-		expect(Array.isArray(pane.content.columns)).toBe(true)
-		expect(typeof pane.content.emptyText).toBe('string')
+		// Every task on the case, not the reader's: the library reads `scope:
+		// all` for a record, so no `scope` is declared.
+		expect(pane.content.scope).toBeUndefined()
 		expect(pane.content.register).toBeUndefined()
 		expect(pane.content.schema).toBeUndefined()
+	})
+
+	it('completes through dossiq and claims only where the engine can', () => {
+		// dossiq's completion route applies the case type's form and effect
+		// refusals before the engine completes; the capability probe keeps
+		// Claim off where the engine has no claim act.
+		const pane = widget('CaseDetail', 'case-tasks')
+		expect(pane.content.completeUrl).toBe('/apps/dossiq/api/case-tasks/{id}/complete')
+		expect(pane.content.claimCapabilityUrl).toBe('/apps/dossiq/api/case-tasks/capabilities')
+	})
+
+	it('drops the stale note that pointed at nextcloud-vue#1033', () => {
+		expect(JSON.stringify(widget('CaseDetail', 'case-tasks'))).not.toContain('1033')
 	})
 
 	it('stays inside the tabs strip and out of the layout', () => {
@@ -331,12 +303,12 @@ describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
 	})
 
 	it('carries every widget the custom view mounted', () => {
-		// The notes, appointments and history leaves and the waiting-case
-		// section are dossiq widgets; the case card is the library facts
-		// widget reading the case.
+		// The notes, appointments and history are the library cards reading
+		// the task's engine endpoints, the waiting case is a library notice;
+		// the case card is the library facts widget reading the case.
 		const config = page('TaskDetail').config
 		const types = [...config.widgets, ...config.sideColumn].map((widget) => widget.type)
-		for (const type of ['task-notes', 'task-events', 'task-audit', 'task-waiting-case', 'checklist']) {
+		for (const type of ['integration', 'events', 'audit-trail', 'notice', 'checklist']) {
 			expect(types, `${type} must be on the page`).toContain(type)
 		}
 		const caseCard = config.sideColumn.find((widget) => widget.id === 'side-case')
@@ -354,10 +326,11 @@ describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
 		expect(config.verbEndpoints).toEqual({ complete: '/apps/dossiq/api/case-tasks/{id}/complete' })
 	})
 
-	it('names the waiting-case section as a widget, and the case card is the library widget', () => {
+	it('needs no dossiq widget for the waiting case or the case card', () => {
 		// TaskCaseCard is gone: the card is CnFactsWidget over the case.
 		expect(registrySource()).not.toMatch(/^\tTaskCaseCard: \{/m)
-		expect(registrySource()).toMatch(/^\t'task-waiting-case': \{/m)
+		expect(registrySource()).not.toMatch(/^\t'task-waiting-case': \{/m)
+		expect(fs.existsSync(path.join(ROOT, 'src/components/flow/TaskWaitingCaseSection.vue'))).toBe(false)
 		expect(
 			fs.existsSync(path.join(ROOT, 'src/components/tasks/TaskCaseCard.vue')),
 		).toBe(false)
