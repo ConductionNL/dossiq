@@ -4234,7 +4234,6 @@
 						"icon": "ViewDashboard",
 						"content": {
 							"ariaLabel": "Case type parts",
-							"variant": "segmented",
 							"tabs": [
 								{
 									"label": "Overview",
