@@ -1749,6 +1749,12 @@
 									"widgetId": "case-document-review",
 									"label": "Review",
 									"overflow": true
+								},
+								{
+									"widgetId": "case-assistant-chat",
+									"label": "AI oversight",
+									"overflow": true,
+									"_note": "DqZaakAssistent: the assistant is drawn in the case page, as the AI-toezicht tab, not only behind the launcher hex. The tab holds the same AI Chat Companion the hex opens, embedded (nextcloud-vue `ai-chat`), with the case as its context. It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip, before Historie, while it is open, as the board draws it. The hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
 								}
 							]
 						}
@@ -3189,6 +3195,16 @@
 									"open": true
 								}
 							}
+						}
+					},
+					{
+						"id": "case-assistant-chat",
+						"type": "ai-chat",
+						"title": "Assistant",
+						"requiredApp": "hermiq",
+						"_note": "The AI Chat Companion embedded in the Assistant tab (DqZaakAssistent). The library widget renders the companion the launcher hex opens, always open and without the hex; it reads the page context CnDetailPage provides, so the agents offered are the ones relevant to a case. Without hermiq the widget says it is not installed rather than leaving an empty tab. Needs the nextcloud-vue release with the `ai-chat` widget (ai-chat-widget).",
+						"content": {
+							"chatAppId": "hermiq"
 						}
 					},
 					{
