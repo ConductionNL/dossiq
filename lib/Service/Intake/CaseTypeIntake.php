@@ -127,7 +127,11 @@ class CaseTypeIntake {
 
 		$value = ($this->answersOf(case: $case, config: $config)[$config['dossierAnswer']] ?? '');
 
-		return is_scalar($value) === true ? trim((string)$value) : '';
+		if (is_scalar($value) === false) {
+			return '';
+		}
+
+		return trim((string)$value);
 	}//end dossierOf()
 
 	/**
@@ -163,7 +167,11 @@ class CaseTypeIntake {
 	 */
 	private function copyOf(mixed $copy): array {
 		$map = [];
-		foreach ((is_array($copy) === true ? $copy : []) as $answer => $field) {
+		if (is_array($copy) === false) {
+			return [];
+		}
+
+		foreach ($copy as $answer => $field) {
 			$answerName = $this->name(value: $answer);
 			$fieldName  = $this->name(value: $field);
 			if ($answerName !== '' && $fieldName !== '') {
@@ -188,8 +196,11 @@ class CaseTypeIntake {
 		}
 
 		$answers = ($case[$config['answersAt']] ?? []);
+		if (is_array($answers) === false) {
+			return [];
+		}
 
-		return is_array($answers) === true ? $answers : [];
+		return $answers;
 	}//end answersOf()
 
 	/**
@@ -201,8 +212,11 @@ class CaseTypeIntake {
 	 */
 	private function entriesOf(array $case): array {
 		$entries = ($case['properties'] ?? []);
+		if (is_array($entries) === false) {
+			return [];
+		}
 
-		return is_array($entries) === true ? array_values($entries) : [];
+		return array_values($entries);
 	}//end entriesOf()
 
 	/**
@@ -232,8 +246,15 @@ class CaseTypeIntake {
 	 * @return string
 	 */
 	private function name(mixed $value): string {
-		$name = trim((string)(is_scalar($value) === true ? $value : ''));
+		if (is_scalar($value) === false) {
+			return '';
+		}
 
-		return preg_match(self::NAME, $name) === 1 ? $name : '';
+		$name = trim((string)$value);
+		if (preg_match(self::NAME, $name) !== 1) {
+			return '';
+		}
+
+		return $name;
 	}//end name()
 }//end class

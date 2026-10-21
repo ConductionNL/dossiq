@@ -95,6 +95,7 @@ class ObjectListenerRegistrar {
 			);
 		}
 		(new IntakeListenerRegistrar())->register(context: $context);
+		(new CaseTypeIntakeListenerRegistrar())->register(context: $context);
 		(new ContactListenerRegistrar())->register(context: $context);
 		(new DocumentListenerRegistrar())->register(context: $context);
 		(new PersonListenerRegistrar())->register(context: $context);

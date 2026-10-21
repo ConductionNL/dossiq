@@ -56,9 +56,13 @@ class CaseTypeIntakeListenerTest extends TestCase {
 
 		$types = $this->createMock(originalClassName: CaseTypeResolver::class);
 		$types->method('effectiveCaseType')->willReturnCallback(
-			static fn (string $caseTypeId): array => $caseTypeId === 'ct-woo'
-				? ['portalIntake' => ['answersAt' => 'wooRequest', 'origin' => 'portal', 'party' => true, 'dossierAnswer' => 'collectionId']]
-				: ['title' => 'Bezwaar']
+			static function (string $caseTypeId): array {
+				if ($caseTypeId !== 'ct-woo') {
+					return ['title' => 'Bezwaar'];
+				}
+
+				return ['portalIntake' => ['answersAt' => 'wooRequest', 'origin' => 'portal', 'party' => true, 'dossierAnswer' => 'collectionId']];
+			}
 		);
 
 		$queue = $this->createMock(originalClassName: CollectionLinkQueue::class);

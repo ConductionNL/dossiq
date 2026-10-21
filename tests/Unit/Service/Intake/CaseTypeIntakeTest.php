@@ -60,11 +60,18 @@ class CaseTypeIntakeTest extends TestCase {
 		);
 
 		$this->assertSame(
-			expected: ['verzoekerNaam' => 'Sanne de Vries', 'collectionId' => 'd-1', 'origin' => 'portal', 'onderwerp' => 'Verlichting fietspad', 'omschrijving' => 'Alle stukken'],
+			expected: [
+				'verzoekerNaam' => 'Sanne de Vries',
+				'collectionId' => 'd-1',
+				'origin' => 'portal',
+				'onderwerp' => 'Verlichting fietspad',
+				'omschrijving' => 'Alle stukken',
+			],
 			actual: $changes['wooRequest']
 		);
 		$this->assertSame(expected: 'subject:sanne.devries', actual: $changes['portalParty']);
-		$this->assertSame(expected: [['propertyDefinition' => 'pd-1', 'name' => 'verzoekerNaam', 'value' => 'Sanne de Vries']], actual: $changes['properties']);
+		$entry = ['propertyDefinition' => 'pd-1', 'name' => 'verzoekerNaam', 'value' => 'Sanne de Vries'];
+		$this->assertSame(expected: [$entry], actual: $changes['properties']);
 		$this->assertSame(expected: $changes['wooRequest'], actual: $asked, message: 'the properties read the completed answers');
 		$this->assertSame(expected: 'd-1', actual: $intake->dossierOf(case: $case, config: $config));
 		$this->assertSame(expected: ['onderwerp' => 'title', 'omschrijving' => 'description'], actual: $config['copy']);
@@ -102,7 +109,8 @@ class CaseTypeIntakeTest extends TestCase {
 		$config = $intake->configOf(caseType: ['title' => 'Bezwaar']);
 
 		$this->assertSame(expected: [], actual: $config);
-		$this->assertSame(expected: [], actual: $intake->changesFor(case: ['portalSubject' => 's'], config: $config, propertiesOf: static fn (): array => []));
+		$changes = $intake->changesFor(case: ['portalSubject' => 's'], config: $config, propertiesOf: static fn (): array => []);
+		$this->assertSame(expected: [], actual: $changes);
 		$this->assertSame(expected: '', actual: $intake->dossierOf(case: ['collectionId' => 'd'], config: $config));
 	}//end testACaseTypeWithoutAnIntakeChangesNothing()
 }//end class
