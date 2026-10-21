@@ -30,7 +30,7 @@ describe('the related cases card (DqZaakGerelateerd)', () => {
 
 	it('lists the typed relations from the relations endpoint, each linking to its case', () => {
 		expect(card.type).toBe('record-list')
-		expect(card.content.endpointSource).toEqual({ url: '/apps/dossiq/api/cases/@objectId/relations', responsePath: 'results' })
+		expect(card.content.endpointSource).toEqual({ url: '/apps/dossiq/api/cases/@objectId/relations?planned=1', responsePath: 'results' })
 		expect(card.content.rowRoute).toBe('CaseDetail')
 		expect(card.content.rowIdField).toBe('caseId')
 	})
@@ -40,13 +40,22 @@ describe('the related cases card (DqZaakGerelateerd)', () => {
 		expect(card.content.meta[0]).toBe('{identifier} · {caseTypeTitle} · {assigneeName}')
 	})
 
-	it('groups by the relation type, in the board order, with a heading for every type', () => {
-		expect(card.content.groupBy).toBe('aardRelatie')
-		expect([...card.content.groupOrder].sort()).toEqual([...relationTypes].sort())
+	it('groups by what the relation is to this case, with a heading for every relation type', () => {
+		expect(card.content.groupBy).toBe('group')
 		for (const type of relationTypes) {
-			expect(nl[card.content.valueLabels.aardRelatie[type]], type).toBeTruthy()
+			expect(nl[card.content.valueLabels.group[type]], type).toBeTruthy()
 		}
 		expect(nl['Subject of this case']).toBe('Onderwerp van deze zaak')
+	})
+
+	it('ends with the planned follow-ups under Gepland vervolg, with Plan follow-up and Stop series', () => {
+		expect(card.content.endpointSource.url).toContain('?planned=1')
+		expect(nl[card.content.valueLabels.group.planned]).toBe('Gepland vervolg')
+		expect(card.content.footerAction).toMatchObject({ type: 'open-modal', target: 'CasePlanFollowUpDialog' })
+		expect(card.content.rowActions[0]).toMatchObject({ label: 'Stop series', endpoint: '/apps/dossiq/api/case/@objectId/planned/{id}/stop', method: 'POST' })
+		for (const kind of ['flow', 'series']) {
+			expect(nl[card.content.valueLabels.plannedKind[kind]], kind).toBeTruthy()
+		}
 	})
 
 	it('draws a status pill for every role a status can have', () => {
@@ -55,8 +64,9 @@ describe('the related cases card (DqZaakGerelateerd)', () => {
 		}
 	})
 
-	it('leaves the relations out of the planned cases card, so no relation is listed twice', () => {
-		const planned = widgets.find((widget) => widget.id === 'case-related-card')
-		expect(planned.content.extraSources.map((source) => source.key)).toEqual(['planned'])
+	it('leaves the relations and the planned cases out of the parent case card, so nothing is listed twice', () => {
+		const parent = widgets.find((widget) => widget.id === 'case-related-card')
+		expect(parent.content.extraSources).toBeUndefined()
+		expect(parent.content.referenceSections[0].field).toBe('parentCase')
 	})
 })

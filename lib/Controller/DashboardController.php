@@ -186,9 +186,29 @@ class DashboardController extends Controller {
 			'staff_app_name',
 			$this->appConfig->getValueString(app: Application::APP_ID, key: 'staff_app_name', default: '')
 		);
+		$this->initialState->provideInitialState('config', $this->listConfig());
 
 		return new TemplateResponse($this->appName, 'index');
 	}//end renderIndex()
+
+	/**
+	 * The app config the pages resolve `@config.<key>` tokens against.
+	 *
+	 * The contacts and organisations lists open on the municipality's own city
+	 * (`@config.municipalityCity`). An empty value tells the bundle to leave
+	 * that lens out rather than filter on nothing.
+	 *
+	 * @return array{municipalityCity: string} The config.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function listConfig(): array {
+		return [
+			'municipalityCity' => trim(
+				$this->appConfig->getValueString(app: Application::APP_ID, key: 'municipality_city', default: '')
+			),
+		];
+	}//end listConfig()
 
 	/**
 	 * The dossiq version Nextcloud has installed.

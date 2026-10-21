@@ -942,8 +942,15 @@
 					"showHelpLinks": false,
 					"label": "More"
 				},
+				"_pillsNote": "DqZaak: the pills above the title in their records' own tones and without an icon. The type pill takes the case type's colour (the icon stays on the case type's menu entry and the list tags); the status pill names the status the case sits in and takes that status type's colour (In behandeling purple, Ontvangen blue, Afgehandeld green).",
 				"statusPill": {
-					"field": "statusPublicLabel"
+					"field": "status",
+					"resolve": {
+						"register": "dossiq",
+						"schema": "statusType",
+						"labelField": "name",
+						"colorField": "colour"
+					}
 				},
 				"nextStep": {
 					"stages": {
@@ -1079,17 +1086,9 @@
 							"fields": [
 								{
 									"as": "lead",
-									"path": "initiatorDisplayName",
+									"title": "initiatorDisplayName",
+									"subtitle": { "path": "initiatorType", "map": { "person": "Person", "company": "Company", "contact": "Contact" } },
 									"initialsPath": "initiatorDisplayName"
-								},
-								{
-									"path": "initiatorType",
-									"label": "Initiator type",
-									"map": {
-										"person": "Person",
-										"company": "Company",
-										"contact": "Contact"
-									}
 								},
 								{
 									"path": "intakeChannel",
@@ -1423,8 +1422,7 @@
 						"register": "dossiq",
 						"schema": "caseType",
 						"labelField": "title",
-						"colorField": "colour",
-						"iconField": "icon"
+						"colorField": "colour"
 					}
 				}
 			},
@@ -1611,6 +1609,7 @@
 										"case-objection-grounds",
 										"case-objection-advice-card",
 										"case-summary",
+										"case-household-cases-card",
 										"goal-plan",
 										"case-grant-decisions-card",
 										"case-request",
@@ -1889,10 +1888,9 @@
 										"case-related-card",
 										"case-sub-cases-card",
 										"case-objects-card",
-										"case-programme-card",
-										"case-object-types-link-card"
+										"case-programme-card"
 									],
-									"_note": "DqZaakGerelateerd: the related panel's sections as the board's cards, related cases first, then sub-cases and objects; the programme and the object-type link follow, so nothing the panel showed is lost."
+									"_note": "DqZaakGerelateerd: the typed related cases first, then the related panel's sections as the board's cards: the parent case, sub-cases and objects, then the programme. The object-type link is a link under the objects (footerLinks, administrators only), as the board draws it, so nothing the panel showed is lost."
 								},
 								{
 									"label": "Fees and payments",
@@ -2780,6 +2778,92 @@
 						}
 					},
 					{
+						"id": "case-household-cases-card",
+						"type": "record-list",
+						"title": "Other cases in this household",
+						"subtitle": "Contents only with a purpose and consent",
+						"_note": "DqSociaalDomein Andere zaken van dit huishouden. The household is the people in the case's family plan. Cases in this case's own domain that the reader may open come in full (number, title, case type, status, a link); another domain's cases appear only after Look up in other domains on a chosen ground (the cross-domain lookup dialog in household mode, one logged lookup per person) and carry exists, domain and contact only. GET/POST /api/cases/{id}/household-cases; dossiq-sensitive only. Shown where the report is shown: a case with a plan or of the social domain.",
+						"visibleWhen": {
+							"any": [
+								{
+									"field": "gezinsplanId",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@context.caseType.category",
+									"op": "in",
+									"value": [
+										"Sociaal domein",
+										"Jeugd",
+										"Jeugdhulp"
+									]
+								}
+							]
+						},
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/household-cases",
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"title": [
+								"{identifier} {title}",
+								"{domain}"
+							],
+							"meta": [
+								"{caseTypeTitle}",
+								"Contact: {contact}"
+							],
+							"pill": {
+								"field": "statusRole",
+								"labels": {
+									"intake": "Received",
+									"pending-info": "Waiting for information",
+									"in-progress": "In progress",
+									"review": "In review",
+									"closed": "Closed",
+									"stranded": "Stranded"
+								},
+								"colorMap": {
+									"intake": "default",
+									"pending-info": "warning",
+									"in-progress": "purple",
+									"review": "purple",
+									"closed": "success",
+									"stranded": "error"
+								}
+							},
+							"badges": [
+								{
+									"field": "access",
+									"labels": {
+										"full": "Visible to you: yes"
+									},
+									"variant": "success"
+								},
+								{
+									"field": "exists",
+									"labels": {
+										"true": "Visible to you: only that it exists"
+									},
+									"variant": "default"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"rowIdField": "caseId",
+							"emptyText": "No other cases in this household that you may see",
+							"footerAction": {
+								"type": "open-modal",
+								"target": "CrossDomainLookupDialog",
+								"label": "Look up in other domains",
+								"icon": "AccountSearchOutline",
+								"props": {
+									"household": true
+								}
+							}
+						}
+					},
+					{
 						"id": "case-grant-decisions-card",
 						"type": "object-list",
 						"title": "Grant decisions",
@@ -3410,10 +3494,10 @@
 						"type": "record-list",
 						"title": "Related cases",
 						"subtitle": "Typed per the RGBZ, kept in both directions",
-						"_note": "DqZaakGerelateerd Gerelateerde zaken: the case's typed peer relations, grouped by the relation type, in the board's order, each under its heading (`groupBy` with `groupOrder` and `valueLabels`), each with the other case's initials, number, case type and handler and its status. The rows come from /api/cases/{id}/relations, which adds those details only for a case the reader may open.",
+						"_note": "DqZaakGerelateerd Gerelateerde zaken: the case's typed peer relations grouped by what they are to this case (the label this side of the relation reads, else the relation type), each with the other case's initials, number, case type and handler and its status, then the planned follow-ups (planned flows and series) under Gepland vervolg. The rows come from /api/cases/{id}/relations?planned=1, which adds the case details only for a case the reader may open. `groupBy` is nextcloud-vue's record-list group headings (d45d382846); on an older library the rows stand ungrouped. A planned row opens no case, so it carries the Stop series menu; Plan follow-up ends the card.",
 						"content": {
 							"endpointSource": {
-								"url": "/apps/dossiq/api/cases/@objectId/relations",
+								"url": "/apps/dossiq/api/cases/@objectId/relations?planned=1",
 								"responsePath": "results"
 							},
 							"presentation": "rows",
@@ -3422,7 +3506,8 @@
 							"meta": [
 								"{identifier} · {caseTypeTitle} · {assigneeName}",
 								"{identifier} · {caseTypeTitle}",
-								"{caseTypeTitle}"
+								"{caseTypeTitle}",
+								"{plannedKind} · {date}"
 							],
 							"pill": {
 								"field": "statusRole",
@@ -3432,7 +3517,8 @@
 									"in-progress": "In progress",
 									"review": "In review",
 									"closed": "Closed",
-									"stranded": "Stranded"
+									"stranded": "Stranded",
+									"planned": "Planned"
 								},
 								"colorMap": {
 									"intake": "default",
@@ -3440,88 +3526,51 @@
 									"in-progress": "purple",
 									"review": "purple",
 									"closed": "success",
-									"stranded": "error"
+									"stranded": "error",
+									"planned": "info"
 								}
 							},
-							"groupBy": "aardRelatie",
-							"groupOrder": [
-								"subject",
-								"waitsOn",
-								"vervolg",
-								"bijdrage",
-								"samenhang"
-							],
+							"groupBy": "group",
+							"rowRoute": "CaseDetail",
+							"rowIdField": "caseId",
+							"emptyText": "No related cases yet",
 							"valueLabels": {
-								"aardRelatie": {
+								"group": {
 									"subject": "Subject of this case",
 									"waitsOn": "Waits on",
 									"vervolg": "Follow-up",
 									"bijdrage": "Contribution",
-									"samenhang": "Related"
+									"samenhang": "Related",
+									"planned": "Planned follow-up"
+								},
+								"plannedKind": {
+									"flow": "Planned flow",
+									"series": "Series"
 								}
 							},
-							"rowRoute": "CaseDetail",
-							"rowIdField": "caseId",
-							"emptyText": "No related cases yet"
+							"rowActions": [
+								{
+									"label": "Stop series",
+									"endpoint": "/apps/dossiq/api/case/@objectId/planned/{id}/stop",
+									"method": "POST"
+								}
+							],
+							"footerAction": {
+								"type": "open-modal",
+								"target": "CasePlanFollowUpDialog",
+								"label": "Plan follow-up",
+								"icon": "CalendarClock"
+							}
 						}
 					},
 					{
 						"id": "case-related-card",
 						"type": "related",
-						"title": "Related cases",
+						"title": "Parent case",
 						"icon": "LinkVariant",
-						"_note": "The Related cases tab: the library related widget with three sections it reads from dossiq (case-actions-menu A26, planned-case-series 1.8). Planned follow-ups are scheduled FLOWS, not cases, so they open nothing; a series lists the cases it already opened and offers Stop series, which switches the flow off and leaves those cases alone. Typed relations come grouped by the label the server answers per direction (displayLabel, else the ZGW aard), a row only with a readable title. The parent case shows only with a readable title. Plan follow-up opens CasePlanFollowUpDialog. A read that fails is logged and leaves the rest alone.",
+						"_note": "The Related cases tab: the library related widget with three sections it reads from dossiq (case-actions-menu A26, planned-case-series 1.8). Planned follow-ups are scheduled FLOWS, not cases, so they open nothing; a series lists the cases it already opened and offers Stop series, which switches the flow off and leaves those cases alone. Typed relations come grouped by the label the server answers per direction (displayLabel, else the ZGW aard), a row only with a readable title. The parent case shows only with a readable title. Plan follow-up opens CasePlanFollowUpDialog. A read that fails is logged and leaves the rest alone. The planned follow-ups and the typed relations moved to case-related-cases-card, so this card keeps the parent case.",
 						"content": {
 							"showObjects": false,
-							"extraSources": [
-								{
-									"key": "planned",
-									"label": "Planned cases",
-									"icon": "CalendarClock",
-									"endpoint": "/apps/dossiq/api/case/@objectId/planned",
-									"path": "results",
-									"itemLabel": {
-										"parts": [
-											"{title}",
-											"{recurrence|lower}",
-											"next on {date}",
-											"{occurrences|count} opened so far"
-										],
-										"separator": ", "
-									},
-									"valueLabels": {
-										"recurrence": {
-											"none": "",
-											"monthly": "Every month",
-											"quarterly": "Every quarter",
-											"halfYearly": "Every half year",
-											"yearly": "Every year"
-										}
-									},
-									"static": true,
-									"rowActions": [
-										{
-											"label": "Stop series",
-											"endpoint": "/apps/dossiq/api/case/@objectId/planned/{id}/stop",
-											"when": {
-												"field": "recurrence",
-												"op": "neq",
-												"value": "none"
-											}
-										}
-									],
-									"children": {
-										"path": "occurrences",
-										"label": "{title}",
-										"route": {
-											"name": "CaseDetail",
-											"params": {
-												"id": "{id}"
-											}
-										}
-									}
-								}
-							],
 							"referenceSections": [
 								{
 									"key": "parent",
@@ -3660,6 +3709,9 @@
 									"label": "Link"
 								}
 							],
+							"footerLinks": [
+								{ "label": "Manage object types", "href": "/index.php/apps/openregister/#/registers/dossiq", "note": "(administrators only)", "group": "admin" }
+							],
 							"emptyText": "No objects linked to this case yet"
 						}
 					},
@@ -3767,28 +3819,6 @@
 								}
 							],
 							"errorText": "The programme could not be read"
-						}
-					},
-					{
-						"id": "case-object-types-link-card",
-						"type": "nav-card-grid",
-						"_note": "The way from a case's objects to the schemas behind them (data-model-link, REQ-ADMIN-023). A SECTION and not a page-level `widgets[]` entry: a detail page carrying both spellings is the render-path shadowing gate-55 refuses. `nav-card-grid` resolves here because `registerCaseSections.js` adds it to the shared catalog, which is the only catalog CnDetailWidgetHost reads. Gated by `visibleIf` against `manifest.runtime.user.isAdmin`, not `permission`: CnNavCardGrid declares `permission` and reads it nowhere.",
-						"content": {
-							"title": "",
-							"widgetId": "case-object-types-link",
-							"entries": [
-								{
-									"id": "manage-object-types",
-									"label": "Manage object types",
-									"description": "An object type is an OpenRegister schema. Add one, or change its fields, on the register page.",
-									"icon": "DatabaseCogOutline",
-									"href": "/apps/openregister/#/registers/dossiq",
-									"visibleIf": {
-										"appInstalled": "openregister",
-										"user.isAdmin": true
-									}
-								}
-							]
 						}
 					},
 					{
@@ -4909,7 +4939,7 @@
 						"id": "side-case-type-facts",
 						"type": "facts",
 						"title": "Data",
-						"tabs": ["statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "history"],
+						"tabs": ["statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "history"],
 						"content": {
 							"fields": [
 								{
@@ -4917,20 +4947,58 @@
 									"path": "category"
 								},
 								{
-									"label": "Subject",
-									"path": "subject"
+									"label": "Origin",
+									"when": {
+										"field": "@self.owner",
+										"op": "eq",
+										"value": "__system__"
+									},
+									"parts": [
+										{
+											"text": "Shipped"
+										},
+										{
+											"path": "subject"
+										}
+									]
 								},
 								{
-									"label": "Handling model",
-									"path": "handlingModel"
+									"label": "Origin",
+									"when": {
+										"field": "@self.owner",
+										"op": "neq",
+										"value": "__system__"
+									},
+									"parts": [
+										{
+											"text": "Own case type"
+										}
+									]
 								},
 								{
-									"label": "Confidentiality",
-									"path": "confidentiality"
+									"label": "Form",
+									"when": {
+										"field": "intakeFormRef",
+										"op": "notEmpty"
+									},
+									"parts": [
+										{
+											"text": "A Nextcloud Forms form opens cases"
+										}
+									]
 								},
 								{
-									"label": "Identifier",
-									"path": "identifier"
+									"label": "Handling teams",
+									"parts": [
+										{
+											"path": "handling.defaultGroup"
+										},
+										{
+											"path": "handling.teams",
+											"format": "list"
+										}
+									],
+									"separator": ", "
 								}
 							]
 						}
@@ -5040,7 +5108,6 @@
 									"widgetIds": [
 										"case-type-fields-editor",
 										"case-type-field-rules",
-										"case-type-rules",
 										"case-type-core",
 										"case-type-list-layout"
 									],
@@ -5057,7 +5124,10 @@
 									"label": "Statuses",
 									"widgetIds": [
 										"case-type-statuses-editor",
-										"case-type-results"
+										"case-type-results",
+										"case-type-document-types",
+										"case-type-decision-types",
+										"case-type-blueprint"
 									],
 									"countFrom": {
 										"register": "dossiq",
@@ -5072,12 +5142,16 @@
 									"label": "Phases and tasks",
 									"widgetIds": [
 										"case-type-phase-board",
-										"case-type-terms",
-										"case-type-workflow-editor",
-										"case-type-messages-editor",
-										"case-type-blueprint",
-										"case-type-document-types",
-										"case-type-decision-types"
+										"case-type-variants",
+										"case-type-terms-written",
+										"case-type-messages-editor"
+									]
+								},
+								{
+									"id": "rules",
+									"label": "Rules",
+									"widgetIds": [
+										"case-type-rules"
 									]
 								},
 								{
@@ -5116,6 +5190,7 @@
 								{
 									"id": "portal",
 									"label": "Portal",
+									"overflow": true,
 									"widgetIds": [
 										"case-type-portal",
 										"case-type-party-kinds"
@@ -5269,11 +5344,12 @@
 						"id": "case-type-phase-board",
 						"type": "grouped-cards",
 						"title": "Phases and tasks",
+						"subtitle": "Every task has its own role, term and form. Running cases keep their version.",
 						"headerLink": {
 							"label": "View as flow",
-							"route": "WorkflowDefinitionDetail",
+							"route": "CaseTypeFlow",
 							"params": {
-								"id": "@object.workflowDefinition"
+								"id": "@objectId"
 							}
 						},
 						"_note": "DqZaaktype Fasen en taken: the case type's statuses as phases, each with the tasks its active workflow runs, and the acts available in every phase, from GET /api/case-types/{id}/phases (the steps are a JSON string no declarative widget can group).",
@@ -5298,6 +5374,13 @@
 								"title": "Available in every phase",
 								"path": "alwaysAvailable",
 								"itemText": "{label}"
+							},
+							"groupAction": {
+								"id": "case-type-phase-add-task",
+								"type": "navigate",
+								"label": "Add a task",
+								"icon": "Plus",
+								"target": "/settings/case-types/@group.caseTypeId/flow"
 							},
 							"emptyText": "This case type has no phases yet",
 							"groupEmptyText": "No tasks in this phase"
@@ -5469,6 +5552,82 @@
 									"destructive": true
 								}
 							]
+						}
+					},
+					{
+						"id": "case-type-variants",
+						"type": "field-list",
+						"title": "Variants",
+						"subtitle": "Routes through the same case type; a case picks one when it is made",
+						"_note": "DqZaaktype Varianten (case-type-page-follows-its-boards, REQ-CTB-3): caseType.variants, declared in lib/Settings/register.d/68-case-type-variants.json.",
+						"content": {
+							"field": "variants",
+							"key": "name",
+							"row": {
+								"title": "name",
+								"meta": ["description"],
+								"pill": {
+									"path": "isDefault",
+									"map": {
+										"true": "Default",
+										"false": "Rule"
+									},
+									"variantMap": {
+										"true": "info",
+										"false": "default"
+									}
+								}
+							},
+							"add": {
+								"label": "Add a variant",
+								"trigger": "button",
+								"placement": "header",
+								"unique": true,
+								"fields": [
+									{
+										"key": "name",
+										"label": "Name",
+										"required": true
+									},
+									{
+										"key": "description",
+										"label": "Description"
+									}
+								],
+								"defaults": {
+									"isDefault": false
+								}
+							},
+							"remove": {
+								"label": "Remove"
+							},
+							"emptyText": "This case type has one route, no variants"
+						}
+					},
+					{
+						"id": "case-type-terms-written",
+						"type": "facts",
+						"title": "Terms",
+						"_note": "DqZaaktype Termijnen (case-type-page-follows-its-boards, REQ-CTB-4): the terms as sentences from GET /api/case-types/{id}/terms, because the stored values are ISO durations and flags a facts card would show as P56D. The raw fields stay editable through the page's Edit dialog.",
+						"content": {
+							"source": {
+								"url": "/apps/dossiq/api/case-types/@objectId/terms"
+							},
+							"fields": [
+								{
+									"label": "Decision term",
+									"path": "decisionTerm"
+								},
+								{
+									"label": "Suspension",
+									"path": "suspension"
+								},
+								{
+									"label": "Service target",
+									"path": "serviceTarget"
+								}
+							],
+							"emptyText": "This case type sets no terms yet"
 						}
 					}
 				]

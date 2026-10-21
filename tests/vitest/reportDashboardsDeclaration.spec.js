@@ -153,20 +153,37 @@ describe('deadline reports', () => {
 		expect(keys.averageProcessingDays).toBeTruthy()
 	})
 
-	it('shows the annual audit as tiles over the summary keys', () => {
-		const fields = { 'deadline-report-annual': 'summary.totalEuros', 'deadline-report-annual-payments': 'summary.count', 'deadline-report-annual-warnings': 'summary.warningCount' }
-		for (const [id, field] of Object.entries(fields)) {
+	it('draws each report card with its own form, as board DqTermijnen does', () => {
+		expect(page('TermijnDashboard').config.pageFilters).toBeUndefined()
+		const forms = { 'deadline-report-quarter-form': ['quarter', 'Load report'], 'deadline-report-year-form': ['year', 'Load audit'] }
+		for (const [id, [type, submit]] of Object.entries(forms)) {
 			const w = widget('TermijnDashboard', id)
-			expect(w.type).toBe('stat')
-			expect(w.content.endpointSource.params.year).toBe('@workspace.year')
-			expect(w.content.valueField).toBe(field)
+			expect(w.type).toBe('workspace-filter')
+			expect(w.content).toMatchObject({ style: 'input', inputType: type, writes: `@workspace.${type}`, submitLabel: submit })
+		}
+		const cards = {
+			'deadline-report-quarterly-card': ['deadline-report-quarter-form', 'deadline-report-quarterly'],
+			'deadline-report-annual-card': ['deadline-report-year-form', 'deadline-report-annual-summary', 'deadline-report-annual-payments-list', 'deadline-report-annual-warnings'],
+		}
+		for (const [id, children] of Object.entries(cards)) {
+			const w = widget('TermijnDashboard', id)
+			expect(w.type).toBe('sections')
+			expect(w.content.sections.map((s) => s.widgetId)).toEqual(children)
 			expect(onGrid('TermijnDashboard', id)).toBe(true)
+			for (const child of children) {
+				expect(onGrid('TermijnDashboard', child)).toBe(false)
+			}
 		}
 	})
 
-	it('offers the quarter and the year as page filters', () => {
-		const types = page('TermijnDashboard').config.pageFilters.map((f) => [f.key, f.type])
-		expect(types).toEqual([['quarter', 'quarter'], ['year', 'year']])
+	it('lists the forfeited payments by case, with the year\'s total above them', () => {
+		const list = widget('TermijnDashboard', 'deadline-report-annual-payments-list')
+		expect(list.content.endpointSource).toMatchObject({ url: '/apps/dossiq/api/deadlines/reports/penalty-payments', params: { year: '@workspace.year' }, responsePath: 'rows' })
+		expect(list.content.columns.map((c) => c.key)).toEqual(['caseIdentifier', 'caseTypeTitle', 'requester', 'forfeitDate', 'amountEuros', 'paymentStatus'])
+		const summary = widget('TermijnDashboard', 'deadline-report-annual-summary')
+		expect(summary.content.endpointSource.responsePath).toBe('summaryRows')
+		expect(summary.content.title).toContain('{totalEuros|currency:EUR}')
+		expect(widget('TermijnDashboard', 'deadline-report-annual-warnings').content.valueField).toBe('summary.warningCount')
 	})
 })
 

@@ -142,6 +142,7 @@ import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
 import MailPartiesReportWidget from './views/reports/MailPartiesReportWidget.vue'
+import CaseTypeFlowView from './views/settings/CaseTypeFlowView.vue'
 import WorkloadSummaryBar from './views/WorkloadSummaryBar.vue'
 import { leafTab } from './integrations/leafTabs.js'
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
@@ -878,6 +879,11 @@ const registry = {
 
 	// --- Pages that were only ever in the legacy customComponents map. ---
 	//
+	CaseTypeFlowView: {
+		kind: 'page',
+		component: CaseTypeFlowView,
+		_note: 'The workflow canvas of one case type, opened from View as flow and Add a task on its Phases and tasks tab (case-type-page-follows-its-boards).',
+	},
 	MailIntakeLogView: {
 		kind: 'page',
 		component: MailIntakeLogView,

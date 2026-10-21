@@ -31,7 +31,7 @@ export function looksLikeMail(node) {
 }
 
 /**
- * The case the Files tab is open on.
+ * The case page that is open, read from the address.
  *
  * Read from the route rather than from the action's props, for the reason
  * every other dialog on this page reads it there: `open-modal` and `handler`
@@ -40,7 +40,7 @@ export function looksLikeMail(node) {
  *
  * @return {string} The case uuid, or ''.
  */
-function caseIdFromLocation() {
+export function caseIdFromLocation() {
 	const match = String(window?.location?.pathname || '').match(
 		/\/apps\/dossiq\/cases\/([^/?#]+)/,
 	)

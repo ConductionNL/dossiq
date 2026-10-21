@@ -64,6 +64,13 @@ describe('the general admin sections', () => {
 		expect(logo.initialsFrom).toBe('organisationName')
 	})
 
+	it('asks for the municipality city the contacts and organisations lists open on', () => {
+		const city = fields.find((field) => field.key === 'municipality_city')
+		expect(city).toBeTruthy()
+		expect(city.url).toBeUndefined()
+		expect(configKeys).toContain("'municipality_city',")
+	})
+
 	it('only points at the CORS setting, which the portal owns', () => {
 		const cors = fields.find((field) => field.key === 'allowedWebsites')
 		expect(cors.readOnly).toBe(true)

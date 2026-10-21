@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour.",
+	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour.",
 	"after": [
 		"opencatalogi"
 	],
@@ -69,6 +69,10 @@
 		{
 			"key": "woo_publication_catalog_slug",
 			"value": "zuiddrecht"
+		},
+		{
+			"key": "municipality_city",
+			"value": "Zuiddrecht"
 		}
 	],
 	"userPreferences": [
@@ -403,6 +407,66 @@
 				"case": "{{object:parkeren-henk.id}}",
 				"nature": "new_request",
 				"summary": "Meneer Bakker wil een bewonersvergunning voor het Kerkplein. Hij heeft geen computer. Kenteken en adres samen doorgenomen en de aanvraag voor hem ingevoerd. Hij krijgt het besluit per post.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "parkeren-henk-terugbellen",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "outbound",
+				"startTime": "{{datetime:-33 11:20}}",
+				"endTime": "{{datetime:-33 11:26}}",
+				"durationSeconds": 360,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:henk.bsn}}",
+				"kccEmployeeId": "{{cast:esra.uid}}",
+				"case": "{{object:parkeren-henk.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Meneer Bakker teruggebeld: het kenteken in de aanvraag klopte niet met het kentekenbewijs. Hij brengt het bewijs langs bij de balie.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "parkeren-henk-balie",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "balie",
+				"direction": "inbound",
+				"startTime": "{{datetime:-31 09:40}}",
+				"endTime": "{{datetime:-31 09:52}}",
+				"durationSeconds": 720,
+				"identificationMethod": "bsn_verificatie",
+				"geidentificeerdeBurgerId": "{{cast:henk.bsn}}",
+				"kccEmployeeId": "{{cast:daan.uid}}",
+				"case": "{{object:parkeren-henk.id}}",
+				"nature": "new_request",
+				"summary": "Meneer Bakker kwam met zijn kentekenbewijs aan de balie. Kenteken gecorrigeerd en een kopie van het bewijs bij de zaak gevoegd.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "parkeren-henk-status",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "inbound",
+				"startTime": "{{datetime:-26 14:05}}",
+				"endTime": "{{datetime:-26 14:09}}",
+				"durationSeconds": 240,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:henk.bsn}}",
+				"kccEmployeeId": "{{cast:daan.uid}}",
+				"case": "{{object:parkeren-henk.id}}",
+				"nature": "statusverzoek",
+				"summary": "Meneer Bakker vroeg wanneer de vergunning komt. Het besluit is gisteren per post verstuurd; hij heeft het binnen twee dagen.",
 				"firstTimeFix": false,
 				"visibleToApplicant": true
 			}
@@ -1408,6 +1472,54 @@
 				],
 				"photos": []
 			}
+		},
+		{
+			"key": "inspectie-vandaag-molenweg",
+			"register": "dossiq",
+			"schema": "fieldInspection",
+			"data": {
+				"caseRef": "{{object:kapvergunning-molenweg.id}}",
+				"inspectorRef": "{{cast:pieter.uid}}",
+				"scheduledAt": "{{datetime:0 09:30}}",
+				"status": "synced",
+				"startedAt": "{{datetime:0 09:31}}",
+				"completedAt": "{{datetime:0 10:12}}",
+				"syncedAt": "{{datetime:0 10:14}}"
+			}
+		},
+		{
+			"key": "inspectie-vandaag-kerkplein",
+			"register": "dossiq",
+			"schema": "fieldInspection",
+			"data": {
+				"caseRef": "{{object:parkeren-henk.id}}",
+				"inspectorRef": "{{cast:pieter.uid}}",
+				"scheduledAt": "{{datetime:0 10:45}}",
+				"status": "in_progress",
+				"startedAt": "{{datetime:0 10:47}}"
+			}
+		},
+		{
+			"key": "inspectie-vandaag-dorpsstraat",
+			"register": "dossiq",
+			"schema": "fieldInspection",
+			"data": {
+				"caseRef": "{{object:terras-slagerij.id}}",
+				"inspectorRef": "{{cast:pieter.uid}}",
+				"scheduledAt": "{{datetime:0 13:15}}",
+				"status": "planned"
+			}
+		},
+		{
+			"key": "inspectie-vandaag-havenstraat",
+			"register": "dossiq",
+			"schema": "fieldInspection",
+			"data": {
+				"caseRef": "{{object:melding-fatima.id}}",
+				"inspectorRef": "{{cast:pieter.uid}}",
+				"scheduledAt": "{{datetime:0 15:00}}",
+				"status": "planned"
+			}
 		}
 	],
 	"views": [
@@ -1464,6 +1576,42 @@
 						"case"
 					]
 				}
+			}
+		}
+	],
+	"tasks": [
+		{
+			"key": "hoorzitting-inplannen",
+			"data": {
+				"title": "Hoorzitting inplannen",
+				"description": "Plan de hoorzitting met de indiener en de commissie.",
+				"objectUuid": "{{object:kapvergunning-molenweg.id}}",
+				"state": "active",
+				"assignee": "{{cast:pieter.uid}}",
+				"priority": "high",
+				"dueAt": "{{date:0}}",
+				"checklist": [
+					{
+						"id": "datum",
+						"label": "Datum met de bezwaarcommissie afstemmen",
+						"checked": true
+					},
+					{
+						"id": "zaal",
+						"label": "Zaal reserveren in het stadskantoor",
+						"checked": true
+					},
+					{
+						"id": "uitnodiging",
+						"label": "Uitnodiging naar de indiener, minstens 1 week vooraf",
+						"checked": false
+					},
+					{
+						"id": "stukken",
+						"label": "Stukken een week vooraf ter inzage leggen",
+						"checked": false
+					}
+				]
 			}
 		}
 	],

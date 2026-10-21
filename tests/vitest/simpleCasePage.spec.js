@@ -402,8 +402,11 @@ describe('the tabs', () => {
 		// The typed related cases lead (DqZaakGerelateerd), then the related panel's sections.
 		expect(relatedTab.widgetIds[0]).toBe('case-related-cases-card')
 		const sectionCards = relatedTab.widgetIds.slice(1)
-		expect(sectionCards.map((id) => id.replace(/-card$/, ''))).toEqual(['case-related', 'case-sub-cases', 'case-objects', 'case-programme', 'case-object-types-link'])
-		expect(sectionCards.map((id) => id.replace(/-card$/, '')).sort()).toEqual([...relatedSections].sort())
+		expect(sectionCards.map((id) => id.replace(/-card$/, ''))).toEqual(['case-related', 'case-sub-cases', 'case-objects', 'case-programme'])
+		// The object-type link is a link under the objects, as the board draws it.
+		expect(sectionCards.map((id) => id.replace(/-card$/, '')).concat('case-object-types-link').sort()).toEqual([...relatedSections].sort())
+		const objectsCard = simple.widgets.find((widget) => widget.id === 'case-objects-card')
+		expect(objectsCard.content.footerLinks[0]).toMatchObject({ label: 'Manage object types', group: 'admin' })
 		// The Besluiten tab: the decisions, then the decision letter and the advice on the case (DqZaakBesluiten).
 		expect(strip.tabs.find((tab) => tab.label === 'Decisions').widgetIds).toEqual(['case-decisions-panel', 'case-decision-letter', 'case-advice-requests'])
 		const advice = simple.widgets.find((widget) => widget.id === 'case-advice-requests')
@@ -465,7 +468,7 @@ describe('the tabs', () => {
 		expect(fees.widgetIds).toEqual(['case-payment-requests', 'case-contract'])
 		expect(strip.tabs.find((tab) => tab.label === 'Merge into one PDF').widgetId).toBe('case-merge-to-pdf')
 		const overview = strip.tabs.find((tab) => tab.label === 'Overview').widgetIds
-		expect(overview.indexOf('goal-plan')).toBe(overview.indexOf('case-summary') + 1)
+		expect(overview.indexOf('goal-plan')).toBe(overview.indexOf('case-household-cases-card') + 1)
 		// The family plan keeps its own condition: only where a plan applies.
 		expect(find(simple, 'goal-plan').visibleWhen).toEqual(find(original, 'goal-plan').visibleWhen)
 		expect(find(simple, 'goal-plan').visibleWhen).toBeDefined()
@@ -534,7 +537,7 @@ describe('the tabs', () => {
 		// DqZaak titles them; the cards the simple page adds are its own.
 		// The banner stack is titled Status, as the side card DqZaak draws.
 		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-banner-stack', 'case-attention']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
@@ -671,10 +674,15 @@ describe('the tabs', () => {
 		// widget is still placed in the grid, so nothing renders twice.
 		expect(simple.breadcrumb.currentField).toBe('identifier')
 		// The pill above the title names the case type, as DqZaak draws "Woo-verzoek",
-		// in the case type's own colour and icon.
+		// in the case type's own colour and, as the board draws it, without an icon.
 		expect(simple.typePill).toEqual({
 			field: 'caseType',
-			resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title', colorField: 'colour', iconField: 'icon' },
+			resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title', colorField: 'colour' },
+		})
+		// The status pill names the status and takes its status type's tone ("In behandeling" purple).
+		expect(simple.statusPill).toEqual({
+			field: 'status',
+			resolve: { register: 'dossiq', schema: 'statusType', labelField: 'name', colorField: 'colour' },
 		})
 		// The advice notice opens the column while advice is still asked; the deadline is the first card.
 		expect(simple.sideColumn[0].id).toBe('side-advice-requested')
@@ -701,7 +709,7 @@ describe('the header and the side column', () => {
 			// handling a read-only data card, the work instruction a facts card
 			// over the case TYPE (a link only, no fields of the case).
 			const fields = card.type === 'facts'
-				? (card.content.fields || []).map((entry) => entry.path)
+				? (card.content.fields || []).flatMap((entry) => (entry.as === 'lead' ? [entry.title, entry.subtitle?.path] : [entry.path])).filter(Boolean)
 				: card.type === 'data' ? card.content.include : []
 			if (card.type === 'data') {
 				expect(card.content.editable).toBe(false)

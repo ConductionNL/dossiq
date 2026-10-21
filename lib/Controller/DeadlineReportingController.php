@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Service\DeadlineReportingService;
 use OCA\Dossiq\Service\Reporting\ReportingAudience;
 use OCA\Dossiq\Service\Term\FirstResponseOutcome;
+use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -57,6 +58,7 @@ class DeadlineReportingController extends Controller {
 	 * @param LoggerInterface $logger Logger.
 	 * @param ReportingAudience $audience Who may read a figure about every case.
 	 * @param FirstResponseOutcome|null $firstResponse The first-response figures.
+	 * @param PenaltyPaymentRows|null   $penaltyPayments The forfeited penalty payments by case.
 	 *        Nullable so an instance that never wired it answers "not available"
 	 *        rather than failing to construct the three reports beside it.
 	 */
@@ -68,6 +70,7 @@ class DeadlineReportingController extends Controller {
 		private readonly LoggerInterface $logger,
 		private readonly ReportingAudience $audience,
 		private readonly ?FirstResponseOutcome $firstResponse = null,
+		private readonly ?PenaltyPaymentRows $penaltyPayments = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -265,6 +268,40 @@ class DeadlineReportingController extends Controller {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end annualStatement()
+
+	/**
+	 * The penalty payments forfeited in a year, each named by its case.
+	 *
+	 * @param int $year Year.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/penalty-payment-rows/specs/termijn-reporting/spec.md#requirement-the-annual-audit-lists-the-forfeited-payments-by-case
+	 */
+	public function penaltyPayments(int $year = 0): JSONResponse {
+		$denied = $this->ensureMayReadReports();
+		if ($denied !== null) {
+			return $denied;
+		}
+
+		if ($this->penaltyPayments === null) {
+			return new JSONResponse(['message' => 'Not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		if ($year < 2020 || $year > 2100) {
+			return new JSONResponse(['message' => 'year is required and must be between 2020 and 2100'], Http::STATUS_BAD_REQUEST);
+		}
+
+		try {
+			return new JSONResponse($this->penaltyPayments->forYear(year: $year));
+		} catch (Throwable $e) {
+			$this->logger->error('Penalty payment report failed', ['error' => $e->getMessage()]);
+
+			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}//end penaltyPayments()
 
 	/**
 	 * dashboard() on its old address.
