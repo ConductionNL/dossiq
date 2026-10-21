@@ -6917,6 +6917,7 @@
 							"source": {
 								"kind": "flow-task"
 							},
+							"headerActions": ["link", "create"],
 							"emptyText": "Nobody has booked an appointment on this task"
 						}
 					},
