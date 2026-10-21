@@ -8053,6 +8053,7 @@
 									"watch": "warning"
 								}
 							},
+							"density": "compact",
 							"emptyText": "No phase stands out in this period",
 							"limit": 3
 						}
@@ -10713,6 +10714,8 @@
 									}
 								}
 							],
+							"rowRoute": "CaseDetail",
+							"rowIdField": "caseId",
 							"emptyText": "No penalty was forfeited in this year"
 						}
 					},
