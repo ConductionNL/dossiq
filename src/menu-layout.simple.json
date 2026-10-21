@@ -3212,7 +3212,11 @@
 										{"field": "endDate", "op": "empty"},
 										{"field": "parentCase", "op": "empty"}
 									]
-								}
+								},
+								"hiddenNote": [
+									{"when": {"field": "parentCase", "op": "notEmpty"}, "text": "Sub-cases cannot themselves have sub-cases."},
+									{"when": {"field": "endDate", "op": "notEmpty"}, "text": "This case is closed; sub-cases can no longer be added."}
+								]
 							},
 							"summary": {
 								"text": "({completed}/{total} completed)",

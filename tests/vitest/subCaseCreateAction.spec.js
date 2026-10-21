@@ -9,8 +9,8 @@
  * DeelzaakCreateModal instead of the list's own create form, because the
  * modal creates through /api/deelzaken and the sub-case then inherits what
  * case.parentCase declares; a direct save inherits nothing. The action shows
- * only on an open case that is not itself a sub-case, and the modal still
- * says why when it is reached on one. `summary` is the completion roll-up.
+ * only on an open case that is not itself a sub-case; elsewhere its
+ * `hiddenNote` says why in its place, and so does the modal if reached. `summary` is the completion roll-up.
  *
  * Both structure profiles carry the same declaration, so a person on the
  * simple profile does not lose the action.
@@ -97,6 +97,13 @@ describe.each(PROFILES)('the Sub-cases section on %s', (_, widget) => {
 				{ field: 'parentCase', op: 'empty' },
 			],
 		})
+	})
+
+	it('says why where it is withheld, as the old list did', () => {
+		expect(widget.content.createAction.hiddenNote).toEqual([
+			{ when: { field: 'parentCase', op: 'notEmpty' }, text: 'Sub-cases cannot themselves have sub-cases.' },
+			{ when: { field: 'endDate', op: 'notEmpty' }, text: 'This case is closed; sub-cases can no longer be added.' },
+		])
 	})
 
 	it('rolls up how many sub-cases are completed', () => {
