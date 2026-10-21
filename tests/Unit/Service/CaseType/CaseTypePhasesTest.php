@@ -89,6 +89,7 @@ class CaseTypePhasesTest extends TestCase {
 		$result = $this->phases(caseType: ['id' => 'ct'], statuses: $this->statuses(), template: $template)->phasesFor(caseTypeId: 'ct');
 
 		$this->assertSame(['s1', 's2'], array_column($result['phases'], 'id'));
+		$this->assertSame(['ct', 'ct'], array_column($result['phases'], 'caseTypeId'));
 		$this->assertSame(['Volledigheid toetsen', 'Ontvangstbevestiging'], array_column($result['phases'][0]['tasks'], 'title'));
 		$this->assertSame(5, $result['phases'][0]['tasks'][0]['leadTimeDays']);
 		$this->assertSame(['Intaker'], $result['phases'][0]['tasks'][0]['candidateGroups']);
