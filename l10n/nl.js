@@ -4720,6 +4720,7 @@ OC.L10N.register(
         "Needs assessment": "Indicatiestelling",
         "Needs assessments": "Indicatiestellingen",
         "Needs attention": "Aandacht nodig",
+        "Flag the case with a reason. It then comes first under Needs attention, in All cases.": "Markeer de zaak met een reden. Hij komt dan bovenaan bij Aandacht nodig, in Alle zaken.",
         "Negatief": "Negatief",
         "Negative": "Negatief",
         "Neighborhood Team": "Wijkteam",
