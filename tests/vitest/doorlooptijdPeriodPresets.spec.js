@@ -29,6 +29,11 @@ describe('the processing-time period switch', () => {
 		expect(range.presets.map((preset) => preset.id)).toContain(range.default.preset)
 	})
 
+	it('opens on Maand, as board DqDoorlooptijd does (Ruben, 21 Oct)', () => {
+		const opening = range.presets.find((preset) => preset.id === range.default.preset)
+		expect(opening.label).toBe('Month')
+	})
+
 	it('carries a Dutch translation for every word suffix on its tiles', () => {
 		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
 		const suffixes = page.config.widgets
