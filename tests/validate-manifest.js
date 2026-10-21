@@ -270,6 +270,25 @@ function newerSchemaAccepts(instancePath, property) {
 	return Object.hasOwn(def.properties, property)
 }
 
+/**
+ * Compare two `major.minor.patch` versions.
+ *
+ * @param {string} left The left version.
+ * @param {string} right The right version.
+ * @return {number} Negative when left is older, 0 when equal, positive when newer.
+ */
+function compareSchemaVersions(left, right) {
+	const a = String(left).split('.').map(Number)
+	const b = String(right).split('.').map(Number)
+	for (let i = 0; i < Math.max(a.length, b.length); i++) {
+		const diff = (a[i] || 0) - (b[i] || 0)
+		if (diff !== 0) {
+			return diff
+		}
+	}
+	return 0
+}
+
 function loadAjv() {
 	// The canonical schema uses JSON Schema draft 2020-12 (`$schema`:
 	// "https://json-schema.org/draft/2020-12/schema"). Standard Ajv (v7+)
@@ -469,6 +488,34 @@ function main() {
 		real.push(err)
 	}
 
+	// The same question for a VALUE or a branch the newer schema allows (a new
+	// enum value, a new anyOf branch): there is no property name to look up,
+	// so the newer schema is asked directly. An error is a lag only when the
+	// newer schema reports nothing at its path, below it or above it; any
+	// newer error near it keeps it a defect.
+	const newer = newerSchema()
+	if (newer && real.length > 0 && compareSchemaVersions(schemaVersion(newer), schemaVersion(schema)) > 0) {
+		const newerAjv = new Ajv({ allErrors: true, strict: false })
+		if (addFormats) {
+			try {
+				addFormats(newerAjv)
+			} catch (_) {
+				// formats are not what tells a lag from a defect
+			}
+		}
+		const validateNewer = newerAjv.compile(newer)
+		validateNewer(manifest)
+		const newerPaths = (validateNewer.errors || []).map((e) => e.instancePath || '')
+		const near = (at) => newerPaths.some((p) => p === at || p.startsWith(at + '/') || at.startsWith(p + '/') || p === '')
+		for (let i = real.length - 1; i >= 0; i--) {
+			const at = real[i].instancePath || ''
+			if (at !== '' && !near(at)) {
+				lagged.push({ err: real[i], property: real[i].keyword })
+				real.splice(i, 1)
+			}
+		}
+	}
+
 	// A shape checked inside an `if`/`then` (a board under `type: index`)
 	// reports its lag twice: the property, and the `then` it sits under on an
 	// ancestor path. The wrapper is that same lag, not a defect of its own; a
@@ -488,7 +535,7 @@ function main() {
 		)
 		for (const { err, property } of lagged) {
 			console.warn(
-				`  ~ ${err.instancePath || '(root)'} uses "${property}", which schema ${newerSchemaVersion()} declares and the installed ${schemaVersion(schema)} does not`,
+				`  ~ ${err.instancePath || '(root)'} uses "${property}", which schema ${newerSchemaVersion()} accepts and the installed ${schemaVersion(schema)} does not`,
 			)
 		}
 		console.warn(

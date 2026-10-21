@@ -158,6 +158,29 @@ class DeadlineReportingServiceTest extends TestCase {
 	}//end testNoTermIsReportedUnderUnknown()
 
 	/**
+	 * The quarterly figures also come as a list a table draws: each row named
+	 * by the case type's title, or by its key without one, with the penalty
+	 * total in euros beside the cents.
+	 *
+	 * @return void
+	 */
+	public function testQuarterlyRowsNameEachCaseType(): void {
+		$this->q4Term('w1', 'ct-woo');
+		$this->q4Term('orphan', null);
+
+		$rows = array_column($this->service->generateQuarterlyReport('2026-Q4')['rows'], null, 'caseType');
+
+		self::assertSame('Woo-verzoek', $rows['woo-verzoek']['caseTypeTitle']);
+		self::assertSame(1, $rows['woo-verzoek']['totaal']);
+		self::assertSame('unresolved', $rows['unresolved']['caseTypeTitle']);
+		self::assertEqualsWithDelta(
+			$rows['woo-verzoek']['dwangsomTotalCents'] / 100,
+			$rows['woo-verzoek']['penaltyTotalEuros'],
+			0.001
+		);
+	}//end testQuarterlyRowsNameEachCaseType()
+
+	/**
 	 * REQ-WTR-005: one met, one two days late, one running, one suspended.
 	 *
 	 * @return void
@@ -297,5 +320,7 @@ class DeadlineReportingServiceTest extends TestCase {
 		$report = $this->service->generateDwangsomAuditReport(2026);
 		self::assertSame(1, $report['summary']['count']);
 		self::assertSame(35700, $report['summary']['totalCents']);
+		self::assertSame(357.0, $report['summary']['totalEuros']);
+		self::assertSame(count($report['warnings']), $report['summary']['warningCount']);
 	}
 }

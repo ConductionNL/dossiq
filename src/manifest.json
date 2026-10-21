@@ -7224,7 +7224,7 @@
 			"route": "/doorlooptijd",
 			"type": "dashboard",
 			"title": "Processing time",
-			"_note": "Processing time as drawn on the DqDoorlooptijd board: four figures, the average per month and the share within the norm per case type, read from /api/doorlooptijd/metrics (its `summary` block), then the compliance charts, the Woo deadlines, the cases at risk and the breakdown, which read the shared store (src/store/modules/doorlooptijd.js). The period and case type filters write the workspace, which both halves read.",
+			"_note": "Processing time as drawn on the DqDoorlooptijd board: four figures, the average per month and the share within the norm per case type, read from /api/doorlooptijd/metrics (its `summary` block), then the four compliance charts, the deadline list of one configured case type, the cases at risk and the breakdown, which read /api/reports/processing-time (one `view` per widget; the server shapes every figure, the browser no longer loads every case). The period and case type filters write the workspace, which both halves read.",
 			"config": {
 				"_headerNote": "Board DqDoorlooptijd's header has no Actions menu and no way back to the dashboard beside the menu's own Dashboard entry. The case type filter stays: it is how this page narrows to one case type. There is no in-page Edit button: changing the layout is buildiq's, under the buildiq button (Ruben, 18 Oct).",
 				"allowEdit": false,
@@ -7462,8 +7462,138 @@
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
-						"title": "Compliance",
-						"type": "custom"
+						"type": "chart",
+						"title": "Compliance by Case Type",
+						"content": {
+							"chartKind": "donut",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/processing-time",
+								"params": {
+									"period": "@workspace.datePreset?",
+									"caseType": "@workspace.caseType?",
+									"view": "sla"
+								},
+								"responsePath": "sla",
+								"labelsPath": "name",
+								"series": [
+									{
+										"name": "Within SLA",
+										"path": "withinSla"
+									}
+								]
+							},
+							"emptyLabel": "No data available"
+						}
+					},
+					{
+						"id": "dt-charts-distribution",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-charts-distribution",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "chart",
+						"title": "Processing Time Distribution",
+						"content": {
+							"chartKind": "bar",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/processing-time",
+								"params": {
+									"period": "@workspace.datePreset?",
+									"caseType": "@workspace.caseType?",
+									"view": "distribution"
+								},
+								"responsePath": "distribution",
+								"labelsPath": "label",
+								"series": [
+									{
+										"name": "Cases",
+										"path": "count"
+									}
+								]
+							},
+							"emptyLabel": "No data available"
+						}
+					},
+					{
+						"id": "dt-charts-trend",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-charts-trend",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "chart",
+						"title": "Monthly SLA Trend",
+						"content": {
+							"chartKind": "line",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/processing-time",
+								"params": {
+									"period": "@workspace.datePreset?",
+									"caseType": "@workspace.caseType?",
+									"view": "trend"
+								},
+								"responsePath": "trend",
+								"labelsPath": "month",
+								"series": [
+									{
+										"name": "SLA Compliance %",
+										"path": "rate"
+									}
+								]
+							},
+							"valueFormat": {
+								"name": "number",
+								"suffix": " %"
+							},
+							"referenceLines": [
+								{
+									"value": 100,
+									"label": "100% target",
+									"color": "var(--color-success)"
+								}
+							],
+							"emptyLabel": "No trend data available"
+						}
+					},
+					{
+						"id": "dt-charts-throughput",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-charts-throughput",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "chart",
+						"title": "Throughput (cases closed per week)",
+						"content": {
+							"chartKind": "line",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/processing-time",
+								"params": {
+									"period": "@workspace.datePreset?",
+									"caseType": "@workspace.caseType?",
+									"view": "throughput"
+								},
+								"responsePath": "throughput",
+								"labelsPath": "weekLabel",
+								"series": [
+									{
+										"name": "Cases closed",
+										"path": "count"
+									}
+								]
+							},
+							"emptyLabel": "No completed cases in the selected range"
+						}
 					},
 					{
 						"id": "dt-woo",
@@ -7475,8 +7605,63 @@
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "object-table",
 						"title": "Woo statutory deadlines",
-						"type": "custom"
+						"_caseTypeNote": "The case type is configuration: this table is the at-risk table narrowed to one case type (by id or slug) with threshold 1, so it lists every open case of that type with its countdown. It replaces selecting cases whose case-type TITLE contains a word.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/processing-time",
+								"params": {
+									"view": "atRisk",
+									"threshold": 1,
+									"caseType": "woo-verzoek"
+								},
+								"responsePath": "atRisk"
+							},
+							"columns": [
+								{
+									"key": "identifier",
+									"label": "Number"
+								},
+								{
+									"key": "title",
+									"label": "Title"
+								},
+								{
+									"key": "deadline",
+									"label": "Deadline",
+									"format": "date"
+								},
+								{
+									"key": "remainingLabel",
+									"label": "Remaining"
+								},
+								{
+									"key": "severity",
+									"label": "Status",
+									"enum": [
+										"overdue",
+										"critical",
+										"warning",
+										"ok"
+									],
+									"enumLabels": {
+										"overdue": "Overdue",
+										"critical": "Critical",
+										"warning": "At risk",
+										"ok": "On track"
+									},
+									"colorMap": {
+										"overdue": "error",
+										"critical": "error",
+										"warning": "warning",
+										"ok": "success"
+									}
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"emptyText": "No open Woo requests"
+						}
 					},
 					{
 						"id": "dt-atrisk",
@@ -7488,8 +7673,69 @@
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "object-table",
 						"title": "Cases at risk",
-						"type": "custom"
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/processing-time",
+								"params": {
+									"caseType": "@workspace.caseType?",
+									"view": "atRisk"
+								},
+								"responsePath": "atRisk"
+							},
+							"columns": [
+								{
+									"key": "title",
+									"label": "Title"
+								},
+								{
+									"key": "caseTypeName",
+									"label": "Case type"
+								},
+								{
+									"key": "remainingLabel",
+									"label": "Remaining"
+								},
+								{
+									"key": "severity",
+									"label": "Status",
+									"enum": [
+										"overdue",
+										"critical",
+										"warning",
+										"ok"
+									],
+									"enumLabels": {
+										"overdue": "Overdue",
+										"critical": "Critical",
+										"warning": "At risk",
+										"ok": "On track"
+									},
+									"colorMap": {
+										"overdue": "error",
+										"critical": "error",
+										"warning": "warning",
+										"ok": "success"
+									}
+								},
+								{
+									"key": "percentUsedDisplay",
+									"label": "Term used",
+									"widget": "progress",
+									"widgetProps": {
+										"max": 100,
+										"lowerIsBetter": true,
+										"thresholds": {
+											"good": 50,
+											"warn": 25
+										}
+									}
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"emptyText": "No cases at risk"
+						}
 					},
 					{
 						"id": "dt-breakdown",
@@ -7501,8 +7747,73 @@
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "object-table",
 						"title": "Performance by case type",
-						"type": "custom"
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/processing-time",
+								"params": {
+									"period": "@workspace.datePreset?",
+									"caseType": "@workspace.caseType?",
+									"view": "breakdown"
+								},
+								"responsePath": "breakdown"
+							},
+							"columns": [
+								{
+									"key": "name",
+									"label": "Case Type",
+									"sortable": true
+								},
+								{
+									"key": "targetDays",
+									"label": "Target (days)",
+									"sortable": true
+								},
+								{
+									"key": "avgActualDays",
+									"label": "Avg Actual (days)",
+									"sortable": true
+								},
+								{
+									"key": "complianceRate",
+									"label": "Compliance %",
+									"sortable": true,
+									"format": {
+										"style": "decimal",
+										"decimals": 0,
+										"suffix": " %"
+									}
+								},
+								{
+									"key": "total",
+									"label": "Cases",
+									"sortable": true
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"enum": [
+										"good",
+										"warning",
+										"critical",
+										"no-target"
+									],
+									"enumLabels": {
+										"good": "On track",
+										"warning": "Needs attention",
+										"critical": "Critical",
+										"no-target": "No target"
+									},
+									"colorMap": {
+										"good": "success",
+										"warning": "warning",
+										"critical": "error",
+										"no-target": "default"
+									}
+								}
+							]
+						}
 					}
 				],
 				"layout": [
@@ -7527,8 +7838,32 @@
 						"widgetId": "dt-charts",
 						"gridX": 0,
 						"gridY": 7,
-						"gridWidth": 12,
-						"gridHeight": 8
+						"gridWidth": 6,
+						"gridHeight": 4
+					},
+					{
+						"id": 7,
+						"widgetId": "dt-charts-distribution",
+						"gridX": 6,
+						"gridY": 7,
+						"gridWidth": 6,
+						"gridHeight": 4
+					},
+					{
+						"id": 8,
+						"widgetId": "dt-charts-trend",
+						"gridX": 0,
+						"gridY": 11,
+						"gridWidth": 6,
+						"gridHeight": 4
+					},
+					{
+						"id": 9,
+						"widgetId": "dt-charts-throughput",
+						"gridX": 6,
+						"gridY": 11,
+						"gridWidth": 6,
+						"gridHeight": 4
 					},
 					{
 						"id": 4,
@@ -7584,12 +7919,6 @@
 						}
 					]
 				}
-			},
-			"slots": {
-				"widget-dt-charts": "DtChartsWidget",
-				"widget-dt-woo": "DtWooWidget",
-				"widget-dt-atrisk": "DtAtRiskWidget",
-				"widget-dt-breakdown": "DtBreakdownWidget"
 			}
 		},
 		{
@@ -7597,7 +7926,7 @@
 			"route": "/process-mining",
 			"type": "dashboard",
 			"title": "Process analysis",
-			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from a dedicated ProcessMiningService aggregation endpoint, not a register query, so the widgets are type:custom and read one shared store (src/store/modules/processMining.js) rather than a register/schema binding. The page owns the heading, the period presets and the case-type filter; each widget renders content only — a widget that drew its own page heading would be the dashboard-in-dashboard antipattern (hydra#316).",
+			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from the ProcessMiningService aggregation endpoint, shaped on the server: each widget reads one `view` of /api/reports/process-mining (summary, dwell, throughput, bottlenecks, byAssignee) through its endpointSource. The duration column titles and the dwell series name come from the report (`labels`), because they say which clock the numbers are on. The page owns the heading, the period presets and the case-type filter; each widget renders content only (hydra#316).",
 			"config": {
 				"allowEdit": false,
 				"appId": "dossiq",
@@ -7738,8 +8067,121 @@
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
-						"title": "Overview",
-						"type": "custom"
+						"type": "stat",
+						"title": "Cases analysed",
+						"content": {
+							"label": "Cases analysed",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?",
+									"view": "summary"
+								}
+							},
+							"valueField": "summary.totalCases",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							}
+						}
+					},
+					{
+						"id": "pm-kpis-case-types",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-kpis-case-types",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
+						"type": "stat",
+						"title": "Case types",
+						"content": {
+							"label": "Case types",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?",
+									"view": "summary"
+								}
+							},
+							"valueField": "summary.caseTypeCount",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							}
+						}
+					},
+					{
+						"id": "pm-kpis-rework",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-kpis-rework",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
+						"type": "stat",
+						"title": "Overall rework rate",
+						"content": {
+							"label": "Overall rework rate",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?",
+									"view": "summary"
+								}
+							},
+							"valueField": "summary.overallReworkPercent",
+							"format": {
+								"style": "decimal",
+								"decimals": 1,
+								"suffix": " %"
+							},
+							"caption": "{summary.reworkNotice}",
+							"captionVariant": "warning"
+						}
+					},
+					{
+						"id": "pm-kpis-bottleneck",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-kpis-bottleneck",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
+						"type": "stat",
+						"title": "Top bottleneck",
+						"content": {
+							"label": "Top bottleneck",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?",
+									"view": "summary"
+								}
+							},
+							"valueField": "summary.topBottleneck.medianHours",
+							"format": {
+								"style": "decimal",
+								"decimals": 0,
+								"suffix": " h"
+							},
+							"caption": "{summary.topBottleneck.statusName}",
+							"captionVariant": "error"
+						}
 					},
 					{
 						"id": "pm-dwell",
@@ -7751,8 +8193,29 @@
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
+						"type": "chart",
 						"title": "Dwell time by status",
-						"type": "custom"
+						"content": {
+							"chartKind": "bar",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?",
+									"view": "dwell"
+								},
+								"responsePath": "dwell",
+								"labelsPath": "statusName",
+								"series": [
+									{
+										"name": "Hours, wall clock",
+										"namePath": "labels.workingHours",
+										"path": "hours"
+									}
+								]
+							},
+							"emptyLabel": "No dwell-time data available"
+						}
 					},
 					{
 						"id": "pm-throughput",
@@ -7764,8 +8227,28 @@
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
+						"type": "chart",
 						"title": "Throughput (cases closed per week)",
-						"type": "custom"
+						"content": {
+							"chartKind": "line",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?",
+									"view": "throughput"
+								},
+								"responsePath": "throughput",
+								"labelsPath": "week",
+								"series": [
+									{
+										"name": "Cases closed",
+										"path": "count"
+									}
+								]
+							},
+							"emptyLabel": "No completed cases in the selected range"
+						}
 					},
 					{
 						"id": "pm-bottlenecks",
@@ -7777,8 +8260,49 @@
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
+						"type": "object-table",
 						"title": "Bottleneck ranking",
-						"type": "custom"
+						"subtitle": "Ranked by median dwell time × case volume: the statuses most worth investigating first.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?",
+									"view": "bottlenecks"
+								},
+								"responsePath": "bottlenecks"
+							},
+							"columns": [
+								{
+									"key": "caseTypeTitle",
+									"label": "Case type"
+								},
+								{
+									"key": "statusName",
+									"label": "Status"
+								},
+								{
+									"key": "medianWorkingHours",
+									"label": "Hours, wall clock",
+									"labelPath": "labels.workingHours"
+								},
+								{
+									"key": "medianHours",
+									"label": "Wall-clock hours",
+									"labelPath": "labels.wallHours"
+								},
+								{
+									"key": "visitCount",
+									"label": "Visits"
+								},
+								{
+									"key": "score",
+									"label": "Score"
+								}
+							],
+							"emptyText": "No bottleneck data for the selected period."
+						}
 					},
 					{
 						"id": "pm-dwell-by-assignee",
@@ -7790,8 +8314,41 @@
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell time PER HANDLER: the one tile on this dashboard that names people, and the reason the rest of the page is declared for the reporting audience rather than left open. It arrived on the integration branch while this change was in flight and the structural test caught it on the merge, which is exactly what that test is for.",
+						"type": "object-table",
 						"title": "Dwell time by handler",
-						"type": "custom"
+						"subtitle": "The same time the phase table counts, grouped by who held the case. Time no status record attributed is listed as not recorded.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?",
+									"view": "byAssignee"
+								},
+								"responsePath": "byAssignee"
+							},
+							"columns": [
+								{
+									"key": "actorLabel",
+									"label": "Handler"
+								},
+								{
+									"key": "workingHours",
+									"label": "Hours, wall clock",
+									"labelPath": "labels.workingHours"
+								},
+								{
+									"key": "wallHours",
+									"label": "Wall-clock hours",
+									"labelPath": "labels.wallHours"
+								},
+								{
+									"key": "visitCount",
+									"label": "Visits"
+								}
+							],
+							"emptyText": "No dwell time by handler for the selected period."
+						}
 					}
 				],
 				"layout": [
@@ -7816,7 +8373,31 @@
 						"widgetId": "pm-kpis",
 						"gridX": 0,
 						"gridY": 8,
-						"gridWidth": 12,
+						"gridWidth": 3,
+						"gridHeight": 3
+					},
+					{
+						"id": 7,
+						"widgetId": "pm-kpis-case-types",
+						"gridX": 3,
+						"gridY": 8,
+						"gridWidth": 3,
+						"gridHeight": 3
+					},
+					{
+						"id": 8,
+						"widgetId": "pm-kpis-rework",
+						"gridX": 6,
+						"gridY": 8,
+						"gridWidth": 3,
+						"gridHeight": 3
+					},
+					{
+						"id": 9,
+						"widgetId": "pm-kpis-bottleneck",
+						"gridX": 9,
+						"gridY": 8,
+						"gridWidth": 3,
 						"gridHeight": 3
 					},
 					{
@@ -7853,13 +8434,6 @@
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
-			},
-			"slots": {
-				"widget-pm-kpis": "PmKpiWidget",
-				"widget-pm-dwell": "PmDwellChartWidget",
-				"widget-pm-throughput": "PmThroughputChartWidget",
-				"widget-pm-bottlenecks": "PmBottleneckTableWidget",
-				"widget-pm-dwell-by-assignee": "PmDwellByAssigneeWidget"
 			}
 		},
 		{
@@ -9733,6 +10307,21 @@
 				"pageId": "TermijnDashboard",
 				"showWidgetActions": false,
 				"description": "Running terms, all teams",
+				"_pageFiltersNote": "The quarter and year the quarterly report and the annual audit read (`@workspace.quarter`, `@workspace.year`). Both are generated by the page filter type and seeded with the current one, so the two reports load without asking first. DEPENDS ON nextcloud-vue schema 2.139.0 (branch feature/dq-abstract-l6-dash), which adds the quarter and year types; until a release carries it the installed schema refuses them, and tests/validate-manifest.js reads that as a lag against the vendored tests/schemas copy. Bump @conduction/nextcloud-vue and re-vendor the schema when it is released.",
+				"pageFilters": [
+					{
+						"key": "quarter",
+						"label": "Quarter",
+						"type": "quarter",
+						"count": 8
+					},
+					{
+						"key": "year",
+						"label": "Year",
+						"type": "year",
+						"count": 5
+					}
+				],
 				"widgets": [
 					{
 						"id": "td-running",
@@ -9959,8 +10548,63 @@
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
+						"type": "object-table",
 						"title": "Quarterly report",
-						"type": "custom"
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/reports/kwartaal",
+								"params": {
+									"periode": "@workspace.quarter"
+								},
+								"responsePath": "rows"
+							},
+							"columns": [
+								{
+									"key": "caseTypeTitle",
+									"label": "Case type"
+								},
+								{
+									"key": "totaal",
+									"label": "Total"
+								},
+								{
+									"key": "binnenTermijnPct",
+									"label": "Within deadline",
+									"format": {
+										"style": "decimal",
+										"decimals": 1,
+										"suffix": " %"
+									}
+								},
+								{
+									"key": "overschrijdingen",
+									"label": "Overruns"
+								},
+								{
+									"key": "gemiddeldeDoorlooptijdDagen",
+									"label": "Avg. duration"
+								},
+								{
+									"key": "verlengingen",
+									"label": "Extensions"
+								},
+								{
+									"key": "ingebrekestellingen",
+									"label": "Notices of default"
+								},
+								{
+									"key": "penaltyTotalEuros",
+									"label": "Total penalty payment",
+									"format": {
+										"style": "currency",
+										"currency": "EUR"
+									}
+								}
+							],
+							"exportCsv": true,
+							"exportFileName": "deadline-report",
+							"emptyText": "No terms started in this quarter."
+						}
 					},
 					{
 						"id": "td-annual",
@@ -9972,8 +10616,81 @@
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
-						"title": "Annual dwangsom audit",
-						"type": "custom"
+						"type": "stat",
+						"title": "Total dwangsom in the year",
+						"content": {
+							"label": "Total dwangsom in the year",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/reports/jaarrekening",
+								"params": {
+									"jaar": "@workspace.year"
+								}
+							},
+							"valueField": "summary.totalEuros",
+							"format": {
+								"style": "currency",
+								"currency": "EUR",
+								"decimals": 2
+							},
+							"caption": "In {jaar}"
+						}
+					},
+					{
+						"id": "td-annual-payments",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-annual-payments",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
+						"type": "stat",
+						"title": "Payments",
+						"content": {
+							"label": "Payments",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/reports/jaarrekening",
+								"params": {
+									"jaar": "@workspace.year"
+								}
+							},
+							"valueField": "summary.count",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							}
+						}
+					},
+					{
+						"id": "td-annual-warnings",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-annual-warnings",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
+						"type": "stat",
+						"title": "Data warnings",
+						"content": {
+							"label": "Data warnings",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/reports/jaarrekening",
+								"params": {
+									"jaar": "@workspace.year"
+								}
+							},
+							"valueField": "summary.warningCount",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							}
+						}
 					}
 				],
 				"layout": [
@@ -10006,7 +10723,23 @@
 						"widgetId": "td-annual",
 						"gridX": 0,
 						"gridY": 14,
-						"gridWidth": 12,
+						"gridWidth": 4,
+						"gridHeight": 4
+					},
+					{
+						"id": 5,
+						"widgetId": "td-annual-payments",
+						"gridX": 4,
+						"gridY": 14,
+						"gridWidth": 4,
+						"gridHeight": 4
+					},
+					{
+						"id": 6,
+						"widgetId": "td-annual-warnings",
+						"gridX": 8,
+						"gridY": 14,
+						"gridWidth": 4,
 						"gridHeight": 4
 					}
 				],
@@ -10059,10 +10792,6 @@
 						}
 					]
 				}
-			},
-			"slots": {
-				"widget-td-quarterly": "TdQuarterlyWidget",
-				"widget-td-annual": "TdAnnualWidget"
 			}
 		},
 		{

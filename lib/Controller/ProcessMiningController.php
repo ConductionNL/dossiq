@@ -31,7 +31,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\ProcessMining\ReportViews;
 use OCA\Dossiq\Service\ProcessMiningService;
+use OCA\Dossiq\Service\Reporting\ReportPeriod;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -66,6 +69,9 @@ class ProcessMiningController extends Controller {
 	 * @param IGroupManager $groupManager Group manager (for RBAC check).
 	 * @param ProcessMiningService $processMiningService Report aggregation service.
 	 * @param LoggerInterface $logger PSR-3 logger.
+	 * @param ReportViews $views Shapes the display blocks.
+	 * @param ReportPeriod $periods Resolves a period preset.
+	 * @param CaseDateNormaliser $dates The tenant's today.
 	 */
 	public function __construct(
 		string $appName,
@@ -74,12 +80,20 @@ class ProcessMiningController extends Controller {
 		private readonly IGroupManager $groupManager,
 		private readonly ProcessMiningService $processMiningService,
 		private readonly LoggerInterface $logger,
+		private readonly ReportViews $views,
+		private readonly ReportPeriod $periods,
+		private readonly CaseDateNormaliser $dates,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
 	/**
 	 * Return the process-mining bottleneck report.
+	 *
+	 * `period` (a {@see ReportPeriod} preset) sets `from` when `from` is not
+	 * given. Without `view` the whole report is answered with every display
+	 * block of {@see ReportViews} beside it; `view` narrows the answer to that
+	 * block plus `period`, `clock`, `labels` and `truncated`.
 	 *
 	 * @return JSONResponse Report body, 401 when unauthenticated, 403 when
 	 *                      the caller lacks the controller/beheerder/admin
@@ -97,16 +111,30 @@ class ProcessMiningController extends Controller {
 		$from = $this->request->getParam('from');
 		$to = $this->request->getParam('to');
 		$caseType = $this->request->getParam('caseType');
+		$period = $this->request->getParam('period');
+		$view = $this->request->getParam('view');
 
-		$invalid = $this->validateFilters(from: $from, to: $to, caseType: $caseType);
+		$invalid = ($this->validateFilters(from: $from, to: $to, caseType: $caseType) ?? $this->validateDisplay(period: $period, view: $view));
 		if ($invalid !== null) {
 			return $invalid;
 		}
 
-		$params = $this->buildFilters(from: $from, to: $to, caseType: $caseType);
+		$params = $this->buildFilters(from: ($from ?? $this->periodStart(period: $period)), to: $to, caseType: $caseType);
 
 		try {
-			return new JSONResponse($this->processMiningService->getReport(params: $params));
+			$report = $this->processMiningService->getReport(params: $params);
+			if (is_string($view) === true && $view !== '') {
+				return new JSONResponse(
+					[
+						'period' => ($report['period'] ?? null),
+						'clock' => ($report['clock'] ?? null),
+						'truncated' => ($report['truncated'] ?? null),
+						...$this->views->shape(report: $report, view: $view),
+					]
+				);
+			}
+
+			return new JSONResponse([...$report, ...$this->views->shape(report: $report, view: null)]);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: process-mining report generation failed', ['exception' => $e->getMessage()]);
 			return new JSONResponse(['message' => 'Report generation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
@@ -140,6 +168,55 @@ class ProcessMiningController extends Controller {
 
 		return null;
 	}//end validateFilters()
+
+	/**
+	 * Validate the optional display parameters.
+	 *
+	 * @param mixed $period Raw `period` request parameter.
+	 * @param mixed $view Raw `view` request parameter.
+	 *
+	 * @return JSONResponse|null A 400 response for an unknown preset or view, or null.
+	 */
+	private function validateDisplay(mixed $period, mixed $view): ?JSONResponse {
+		if ($period !== null && $period !== '' && $this->periods->isPreset(preset: $period) === false) {
+			return new JSONResponse(
+				['message' => 'period must be one of '.implode(', ', ReportPeriod::PRESETS)],
+				Http::STATUS_BAD_REQUEST
+			);
+		}
+
+		if ($view !== null && $view !== '' && in_array($view, ReportViews::VIEWS, true) === false) {
+			return new JSONResponse(
+				['message' => 'view must be one of '.implode(', ', ReportViews::VIEWS)],
+				Http::STATUS_BAD_REQUEST
+			);
+		}
+
+		return null;
+	}//end validateDisplay()
+
+	/**
+	 * The `from` date a period preset stands for.
+	 *
+	 * The report reads twelve months when `from` is absent, so `all` is sent
+	 * as the earliest date rather than as no date.
+	 *
+	 * @param mixed $period A validated preset, or null.
+	 *
+	 * @return string|null The date as `Y-m-d`, or null without a preset.
+	 */
+	private function periodStart(mixed $period): ?string {
+		if (is_string($period) === false || $period === '') {
+			return null;
+		}
+
+		$from = $this->periods->from(preset: $period, today: $this->dates->today());
+		if ($from === null) {
+			return '1970-01-01';
+		}
+
+		return $from->format('Y-m-d');
+	}//end periodStart()
 
 	/**
 	 * Assemble the service filter map from the validated request parameters.

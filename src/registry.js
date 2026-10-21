@@ -136,24 +136,13 @@ import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
 // The AVG panel on a data subject request case
 // (data-subject-requests-drive-the-platform).
 import DataSubjectRequestTab from './views/cases/components/DataSubjectRequestTab.vue'
-import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
-import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
-import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
-import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Pages and dashboard slots that were only ever in the legacy
 //     customComponents map, plus the handlers a manifest names by string. ---
 import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
-import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
-import PmDwellByAssigneeWidget from './views/processMining/PmDwellByAssigneeWidget.vue'
-import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
-import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
-import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidget.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
-import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
-import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
-import WooReportsView from './views/woo/WooReportsView.vue'
+import MailPartiesReportWidget from './views/reports/MailPartiesReportWidget.vue'
 import WorkloadSummaryBar from './views/WorkloadSummaryBar.vue'
 import { leafTab } from './integrations/leafTabs.js'
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
@@ -258,8 +247,8 @@ const HEADLESS_WIDGET_META = {
  */
 const registry = {
 	// --- Genuine exceptions: no abstract manifest analogue. ---
-	// The Assigned to me view's two slots (Cases `defaultSavedViews` my-work
-	// `overrides.slots`): the list itself is manifest config.
+	// The Assigned to me view's below-header slot (Cases `defaultSavedViews`
+	// my-work `overrides.slots`): the list itself is manifest config.
 	WorkloadSummaryBar: {
 		kind: 'page',
 		component: WorkloadSummaryBar,
@@ -903,10 +892,11 @@ const registry = {
 		component: MailIntakeLogView,
 		_note: 'Named by src/manifest.d/37-mail-intake.json. A custom page because the intake-role check lives in MailIntakeController, and an index page would read the generic object endpoint and show every processed message original to anyone the register lets read.',
 	},
-	WooReportsView: {
-		kind: 'page',
-		component: WooReportsView,
-		_note: 'Named by src/manifest.d/86-woo-reports.json. A custom page because the reader-group check and the audit record of every read live in WooReportController.',
+	MailPartiesReportWidget: {
+		kind: 'widget',
+		component: MailPartiesReportWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'The mail parties report on the reports dashboard (src/manifest.d/86-woo-reports.json): CnCountTablesReport configured for one case. A registry widget because the report body asks for its case before it reads.',
 	},
 	// The token-addressed advice-response page is gone with
 	// case-sharing-mints-access-links: nothing ever minted the token it read,
@@ -1003,82 +993,6 @@ const registry = {
 		_note: "The case Files tab's read-as-message row action. A function because CnFilesBrowser's row-action vocabulary is `open-modal` and `handler` and has no `api-call`, so a declared POST would render a menu item that does nothing when clicked; and because the browser has NO per-row condition, so the check that this row is a mail file at all lives in the handler and answers with a sentence rather than by being absent.",
 	},
 
-	// --- Dashboard-page slots: Processing time, Deadline monitoring, Process
-	//     mining. Each page owns its heading and its filters (a case-type
-	//     filter is a pageFilters entry reading its options from the register);
-	//     these fill its `slots` map, carrying the grid metadata the validator
-	//     asks of every widget even though the page's own slot map positions
-	//     them.
-	// @spec openspec/specs/doorlooptijd-dashboard/spec.md
-	DtChartsWidget: {
-		kind: 'widget',
-		component: DtChartsWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Donut / histogram / trend / throughput.',
-	},
-	DtWooWidget: {
-		kind: 'widget',
-		component: DtWooWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Woo statutory-deadline panel.',
-	},
-	DtAtRiskWidget: {
-		kind: 'widget',
-		component: DtAtRiskWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Open cases within 25% of deadline.',
-	},
-	DtBreakdownWidget: {
-		kind: 'widget',
-		component: DtBreakdownWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Per-case-type performance table.',
-	},
-	TdQuarterlyWidget: {
-		kind: 'widget',
-		component: TdQuarterlyWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Quarterly report table + CSV export.',
-	},
-	TdAnnualWidget: {
-		kind: 'widget',
-		component: TdAnnualWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Annual dwangsom audit summary.',
-	},
-	// The process-mining page owns the heading and both filters — a widget that
-	// drew its own heading would be the dashboard-in-dashboard antipattern
-	// (hydra#316).
-	PmKpiWidget: {
-		kind: 'widget',
-		component: PmKpiWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Headline KPI tiles (CnKpiGrid + CnStatsBlock).',
-	},
-	PmDwellChartWidget: {
-		kind: 'widget',
-		component: PmDwellChartWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Dwell time by status (CnChartWidget bar).',
-	},
-	PmDwellByAssigneeWidget: {
-		kind: 'widget',
-		component: PmDwellByAssigneeWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'The same dwell intervals keyed by who held them (dwell-time-on-the-working-calendar).',
-	},
-	PmThroughputChartWidget: {
-		kind: 'widget',
-		component: PmThroughputChartWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Weekly throughput (CnChartWidget line).',
-	},
-	PmBottleneckTableWidget: {
-		kind: 'widget',
-		component: PmBottleneckTableWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Bottleneck ranking (ad-hoc row shape, no object-list leaf applies).',
-	},
 }
 
 export default registry

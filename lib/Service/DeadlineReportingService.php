@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Reporting\PerTypeRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Termijn\TermCaseTypeResolver;
@@ -73,6 +74,13 @@ class DeadlineReportingService {
 	private readonly TermOutcome $outcomes;
 
 	/**
+	 * Lists per-type figures as table rows.
+	 *
+	 * @var PerTypeRows
+	 */
+	private readonly PerTypeRows $perTypeRows;
+
+	/**
 	 * The running figures and the share on time the deadline dashboard shows.
 	 *
 	 * @var TermDashboardFigures
@@ -93,6 +101,7 @@ class DeadlineReportingService {
 	) {
 		$this->caseTypes = ($caseTypes ?? new TermCaseTypeResolver(settingsService: $settingsService));
 		$this->outcomes = new TermOutcome();
+		$this->perTypeRows = new PerTypeRows();
 		$this->figures = new TermDashboardFigures(settingsService: $settingsService, caseTypes: $this->caseTypes);
 	}//end __construct()
 
@@ -137,6 +146,7 @@ class DeadlineReportingService {
 			'from' => $bounds['from'],
 			'until' => $bounds['until'],
 			'perType' => $perType,
+			'rows' => $this->perTypeRows->listOf(perType: $perType),
 			'metadata' => [
 				'generatedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 				'rowsScanned' => count($rows),
@@ -287,13 +297,13 @@ class DeadlineReportingService {
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
 		if ($objectService === null || $register === '' || $uSchema === '') {
-			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0]];
+			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
 		}
 
 		try {
 			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: []);
 		} catch (\Throwable $e) {
-			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0]];
+			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
 		}
 
 		$yearPrefix = (string)$year;
@@ -328,7 +338,12 @@ class DeadlineReportingService {
 		return [
 			'jaar' => $year,
 			'rows' => $outRows,
-			'summary' => ['count' => count($outRows), 'totalCents' => $total],
+			'summary' => [
+				'count' => count($outRows),
+				'totalCents' => $total,
+				'totalEuros' => round($total / 100, 2),
+				'warningCount' => count($warnings),
+			],
 			'warnings' => $warnings,
 		];
 	}//end generateDwangsomAuditReport()

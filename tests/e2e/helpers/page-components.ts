@@ -73,7 +73,7 @@ export const SubstitutionPersonalSettings = '/apps/dossiq/#user-settings'
  */
 export const SubstitutionAdmin = '/settings/admin/dossiq?tab=substitution'
 
-/** Manifest `type: "dashboard"` page — bottleneck analysis; heading comes from the page title, widgets from `src/views/processMining/`. */
+/** Manifest `type: "dashboard"` page — bottleneck analysis; heading comes from the page title, widgets are library charts, stats and tables over `/api/reports/process-mining`. */
 export const ProcessMiningDashboard = '/process-mining'
 
 /**
