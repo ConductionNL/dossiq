@@ -139,9 +139,10 @@
 				:disabled="!canConfirm"
 				:aria-busy="busy ? 'true' : null"
 				@click="confirm">
-				<template v-if="busy || form.confirmIcon" #icon>
+				<template v-if="busy || form.confirmIcon || actIcon" #icon>
 					<NcLoadingIcon v-if="busy" :size="20" data-testid="case-acts-confirm-busy" />
-					<component :is="form.confirmIcon" v-else :size="20" />
+					<component :is="form.confirmIcon" v-else-if="form.confirmIcon" :size="20" />
+					<CnIcon v-else :name="actIcon" :size="20" />
 				</template>
 				{{ label(chosen) }}
 			</NcButton>
@@ -150,7 +151,7 @@
 </template>
 
 <script>
-import { CnChoiceCards, CnDialog, CnTransitionInputFields, readTransitionInputs } from '@conduction/nextcloud-vue'
+import { CnChoiceCards, CnDialog, CnIcon, CnTransitionInputFields, readTransitionInputs } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showSuccess, showWarning } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
@@ -181,6 +182,7 @@ export default {
 	components: {
 		CnChoiceCards,
 		CnDialog,
+		CnIcon,
 		CnTransitionInputFields,
 		NcButton,
 		NcLoadingIcon,
@@ -315,6 +317,16 @@ export default {
 				disabled: Boolean(entry.disabled),
 				disabledReason: this.refusalOn(entry),
 			}))
+		},
+
+		/**
+		 * The icon the chosen act's card shows, for its confirm button.
+		 *
+		 * @return {string} A registered icon name, '' when none is chosen.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		actIcon() {
+			return this.chosen === null ? '' : iconFor(this.chosen)
 		},
 
 		/**
