@@ -138,6 +138,16 @@ describe('process mining', () => {
 		expect(w.subtitle).toContain('not recorded')
 		expect(onGrid('ProcessMiningDashboard', 'pm-dwell-by-assignee')).toBe(true)
 	})
+	it('puts the measure, the period and the case type on the description line, in the board\'s order', () => {
+		// DqProcesanalyse: "… · [Gemiddeld | Mediaan] [Laatste 12 maanden]
+		// [Alle zaaktypen]", with no filter row under the header.
+		const filters = page('ProcessMiningDashboard').config.pageFilters
+		expect(filters.map((f) => f.key)).toEqual(['statistic', 'period', 'caseType'])
+		for (const filter of filters) {
+			expect(filter.placement, filter.key).toBe('description')
+		}
+		expect(filters.find((f) => f.key === 'caseType').placeholder).toBe('All case types')
+	})
 })
 
 describe('deadline reports', () => {

@@ -8012,6 +8012,7 @@
 					{
 						"key": "period",
 						"label": "Period",
+						"placement": "description",
 						"default": "12m",
 						"options": [
 							{
@@ -8035,6 +8036,7 @@
 					{
 						"key": "caseType",
 						"label": "Filter by case type",
+						"placement": "description",
 						"clearable": true,
 						"placeholder": "All case types",
 						"optionsFrom": {
