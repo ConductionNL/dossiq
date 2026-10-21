@@ -103,10 +103,6 @@ OC.L10N.register(
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> van de oudere checklist waaruit dit sjabloon is overgenomen, zodat de overname één keer per bron loopt",
         "> 90 dagen": "> 90 dagen",
         "_%n case_::_%n cases_": ["%n zaak","%n zaken"],
-        "Restore this case?": "Deze zaak herstellen?",
-        "Destroy this case?": "Deze zaak vernietigen?",
-        "Destroying cannot be undone. The record that the case existed stays.": "Vernietigen kan niet ongedaan worden gemaakt. Het gegeven dat de zaak bestond, blijft bewaard.",
-        "_%n day left_::_%n days left_": ["nog %n dag","nog %n dagen"],
         "_%n day late_::_%n days late_": ["%n dag te laat","%n dagen te laat"],
         "_%n item_::_%n items_": ["%n onderdeel","%n onderdelen"],
         "_%n more in My work_::_%n more in My work_": ["%n meer in Mijn werk","%n meer in Mijn werk"],
@@ -10823,7 +10819,11 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Restore this case?": "Deze zaak herstellen?",
+        "Destroy this case?": "Deze zaak vernietigen?",
+        "Destroying cannot be undone. The record that the case existed stays.": "Vernietigen kan niet ongedaan worden gemaakt. Het gegeven dat de zaak bestond, blijft bewaard.",
+        "_%n day left_::_%n days left_": ["nog %n dag","nog %n dagen"]
     },
     "nplurals=2; plural=(n != 1);"
 )

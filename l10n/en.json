@@ -109,6 +109,10 @@
             "%n day late",
             "%n days late"
         ],
+        "_%n day left_::_%n days left_": [
+            "%n day left",
+            "%n days left"
+        ],
         "_%n item_::_%n items_": [
             "%n item",
             "%n items"
@@ -2387,6 +2391,8 @@
         "Destination team": "Destination team",
         "Destroy": "Destroy",
         "destroy": "destroy",
+        "Destroy this case?": "Destroy this case?",
+        "Destroying cannot be undone. The record that the case existed stays.": "Destroying cannot be undone. The record that the case existed stays.",
         "Destroying role": "Destroying role",
         "Destruction Date": "Destruction Date",
         "Destruction date": "Destruction date",
@@ -6737,6 +6743,7 @@
         "Restitutiebedrag": "Refund amount",
         "Restore": "Restore",
         "Restore from the archive": "Restore from the archive",
+        "Restore this case?": "Restore this case?",
         "Restricted": "Restricted",
         "Restricted public": "Restricted public",
         "Resubmission/amendment count": "Resubmission/amendment count",
