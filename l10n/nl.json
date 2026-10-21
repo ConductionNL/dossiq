@@ -101,6 +101,7 @@
         "8 weeks": "8 weken",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> van de oudere checklist waaruit dit sjabloon is overgenomen, zodat de overname één keer per bron loopt",
         "> 90 dagen": "> 90 dagen",
+        "Including work you cover": "Inclusief werk waarvoor u waarneemt",
         "_%n case_::_%n cases_": [
             "%n zaak",
             "%n zaken"
