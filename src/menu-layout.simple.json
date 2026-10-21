@@ -3681,10 +3681,10 @@
 		},
 		{
 			"id": "Cases",
-			"_note": "The cases list in the simple structure (openspec/changes/archive/2026-10-10-simple-list-and-dashboard). FIVE VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests. The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day AFTER it ends (`lt 0`) and amber on its last day, the same rule the board and the week strip use: a term is not late on its last day (one-term-engine, REQ-OTE-05).",
+			"_note": "The cases list in the simple structure (openspec/changes/archive/2026-10-10-simple-list-and-dashboard). SIX VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests, Suspended (DqZaken). The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day AFTER it ends (`lt 0`) and amber on its last day, the same rule the board and the week strip use: a term is not late on its last day (one-term-engine, REQ-OTE-05).",
 			"config": {
 				"searchPlaceholder": "Search by case, number or requester",
-				"quickFilterMaxVisible": 5,
+				"quickFilterMaxVisible": 6,
 				"folderSidebar": null,
 				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The line under each title is the case's address and number (`caseAddress` reads the case's first case-location; a case without one shows its number only), and the pills name the case type and the status, the status pill in its status type's colour (`resolve.colorField`). Markers take their status type's colour and a line counts the located cases, as in the full profile. `plotAll` is left out on purpose: the map shows the current page, so the numbered list stays a page long.",
 				"mapConfig": {
@@ -3870,6 +3870,9 @@
 					},
 					"Waiting on the applicant": {
 						"showCount": true
+					},
+					"Suspended": {
+						"showCount": true
 					}
 				}
 			},
@@ -3972,7 +3975,8 @@
 					"Mine",
 					"Due this week",
 					"Waiting on the applicant",
-					"Woo requests"
+					"Woo requests",
+					"Suspended"
 				]
 			},
 			"title": "All cases"

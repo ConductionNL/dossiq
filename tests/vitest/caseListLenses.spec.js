@@ -180,6 +180,10 @@ const CASE_LENSES = [
 	// what this case is waiting on before it can move.
 	'Awaiting payment',
 	'Stuck',
+	// The cases whose term stands still (DqZaken "Opgeschort"): a term clock of
+	// the case is paused under Awb 4:5. Last, because it is the newest lens and
+	// the full structure shows only the first four.
+	'Suspended',
 ]
 
 /**
@@ -220,11 +224,23 @@ const CASES_ONLY = [
 	// payment of its own and nothing on the Tasks list could answer this.
 	'Awaiting payment',
 	'Stuck',
+	// A pause belongs to a case's term; a task has no term of its own to pause.
+	'Suspended',
 ]
 
 describe('Cases index lenses', () => {
 	it('declares the seventeen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
+	})
+
+	it('narrows Suspended on a paused term of the open case, through the term rows that point at it', () => {
+		const suspended = chip('Cases', 'Suspended')
+		expect(suspended.filter).toEqual({
+			'_related[deadlineInstance][case][status]': 'paused',
+			isFinalStatus: false,
+			statusHiddenInLists: false,
+			isDraft: false,
+		})
 	})
 
 	it('shows four chips and hands the rest to the overflow chip', () => {
