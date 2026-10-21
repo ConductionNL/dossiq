@@ -145,6 +145,7 @@
             "%n year",
             "%n years"
         ],
+        "_related[caseObject][case][objectUrl]": "Object",
         "_This case type names a change nobody recognises as a reason to mark a case unread: %s. Nothing watches it, so the case type behaves as if it had named nothing._::_This case type names %n changes nobody recognises as a reason to mark a case unread: %s. Nothing watches them, so the case type behaves as if it had named nothing._": [
             "This case type names a change nobody recognises as a reason to mark a case unread: %s. Nothing watches it, so the case type behaves as if it had named nothing.",
             "This case type names %n changes nobody recognises as a reason to mark a case unread: %s. Nothing watches them, so the case type behaves as if it had named nothing."
@@ -3907,6 +3908,7 @@
         "Initiator ID": "Initiator ID",
         "Initiator source id": "Initiator source id",
         "Initiator type": "Initiator type",
+        "initiatorDisplayName": "initiatorDisplayName",
         "Input Entries": "Input Entries",
         "Input identifier referenced positionally by rules[].inputEntries": "Input identifier referenced positionally by rules[].inputEntries",
         "Input Label": "Input Label",
@@ -4737,6 +4739,7 @@
         "Naam verordening": "Ordinance name",
         "Nader investigation": "Nader investigation",
         "Name": "Name",
+        "name": "name",
         "Name an existing reader group before switching the throughput report on.": "Name an existing reader group before switching the throughput report on.",
         "Name at least one person or function whose files are searched.": "Name at least one person or function whose files are searched.",
         "Name block per Haal Centraal naming (voornamen, voorvoegsel, geslachtsnaam).": "Name block per Haal Centraal naming (voornamen, voorvoegsel, geslachtsnaam).",
