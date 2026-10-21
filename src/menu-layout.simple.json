@@ -3593,6 +3593,85 @@
 							],
 							"footerActions": [
 								{
+									"label": "Link case",
+									"icon": "LinkVariant",
+									"type": "open-modal",
+									"target": "CnActionDialog",
+									"props": {
+										"objectId": "@objectId",
+										"config": {
+											"title": "Link case",
+											"eyebrow": "Related · {identifier}",
+											"subtitle": "Pick the case and how it relates to this one. The link shows on both cases.",
+											"summary": {
+												"source": {
+													"url": "/apps/openregister/api/objects/dossiq/case/@objectId"
+												},
+												"title": "{title}",
+												"meta": "{identifier}"
+											},
+											"fields": [
+												{
+													"field": "targetId",
+													"type": "search",
+													"label": "Case",
+													"required": true,
+													"source": {
+														"register": "dossiq",
+														"schema": "case"
+													},
+													"optionLabel": "{title}",
+													"optionSecondary": "{identifier}",
+													"excludeSelf": true
+												},
+												{
+													"field": "aardRelatie",
+													"type": "select",
+													"label": "Relation type",
+													"required": true,
+													"options": [
+														{
+															"value": "vervolg",
+															"label": "Follow-up"
+														},
+														{
+															"value": "subject",
+															"label": "Subject"
+														},
+														{
+															"value": "bijdrage",
+															"label": "Contribution"
+														},
+														{
+															"value": "samenhang",
+															"label": "Related"
+														},
+														{
+															"value": "waitsOn",
+															"label": "Waits on"
+														}
+													]
+												},
+												{
+													"field": "notes",
+													"type": "text",
+													"label": "Note",
+													"required": false
+												}
+											],
+											"confirm": {
+												"label": "Link it",
+												"icon": "LinkVariant",
+												"request": {
+													"method": "POST",
+													"url": "/apps/dossiq/api/cases/@objectId/relations"
+												}
+											},
+											"doneText": "The case is linked."
+										}
+									}
+								},
+								{
 									"label": "Plan follow-up",
 									"icon": "CalendarClock",
 									"type": "open-modal",
