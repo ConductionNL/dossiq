@@ -180,6 +180,101 @@ class CaseTypeThroughputCalculator {
 	}//end computeWithinNormByCaseType()
 
 	/**
+	 * Per case type and per month of the period: how many cases closed, the
+	 * rounded average days they took, and the share of them closed within
+	 * their deadline. A month in which a case type closed nothing is left out;
+	 * a case without a deadline counts for the average and not for the share.
+	 *
+	 * @param array<int, array<string, mixed>> $cases     Enriched cases.
+	 * @param array<int, array<string, mixed>> $caseTypes Case types.
+	 * @param int                              $months    How many months back from this one.
+	 * @param DateTimeImmutable|null           $today     The day the figures are read on; now when absent.
+	 *
+	 * @return list<array{caseType: string, month: string, closed: int, avgDays: int|null, withinNormPercent: int|null}>
+	 *
+	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 */
+	public function computeMonthlyByCaseType(array $cases, array $caseTypes, int $months, ?DateTimeImmutable $today=null): array {
+		$titles = $this->titlesById(caseTypes: $caseTypes);
+		$first = ($today ?? new DateTimeImmutable())->modify('first day of this month');
+		$inPeriod = [];
+		for ($i = ($months - 1); $i >= 0; $i--) {
+			$inPeriod[$first->modify('-' . $i . ' month')->format('Y-m')] = true;
+		}
+
+		$rows = [];
+		foreach ($this->bucketByCaseTypeAndMonth(cases: $cases, inPeriod: $inPeriod) as $caseTypeId => $byMonth) {
+			ksort($byMonth);
+			foreach ($byMonth as $month => $bucket) {
+				$rows[] = [
+					'caseType' => ($titles[$caseTypeId] ?? (string)$caseTypeId),
+					'month' => (string)$month,
+					'closed' => count($bucket['days']),
+					'avgDays' => (int)round(array_sum($bucket['days']) / count($bucket['days'])),
+					'withinNormPercent' => $this->share(met: $bucket['met'], judged: $bucket['judged']),
+				];
+			}
+		}
+
+		usort($rows, static fn (array $left, array $right): int => [$left['caseType'], $left['month']] <=> [$right['caseType'], $right['month']]);
+
+		return $rows;
+	}//end computeMonthlyByCaseType()
+
+	/**
+	 * The closed cases inside the period, grouped by case type and month: the
+	 * days each took, and how many of those with a deadline met it.
+	 *
+	 * @param array<int, array<string, mixed>> $cases    Enriched cases.
+	 * @param array<string, bool>              $inPeriod The months of the period, `Y-m` as key.
+	 *
+	 * @return array<string, array<string, array{days: list<int>, met: int, judged: int}>>
+	 */
+	private function bucketByCaseTypeAndMonth(array $cases, array $inPeriod): array {
+		$buckets = [];
+		foreach ($cases as $caseData) {
+			$end = ($caseData['_endDate'] ?? null);
+			$caseTypeId = (string)($caseData['caseType'] ?? '');
+			if (($caseData['_isOpen'] ?? false) === true || $end === null || ($caseData['_throughputDays'] ?? null) === null || $caseTypeId === '') {
+				continue;
+			}
+
+			$month = substr((string)$end, 0, 7);
+			if (isset($inPeriod[$month]) === false) {
+				continue;
+			}
+
+			$bucket = ($buckets[$caseTypeId][$month] ?? ['days' => [], 'met' => 0, 'judged' => 0]);
+			$bucket['days'][] = (int)$caseData['_throughputDays'];
+			$deadline = ($caseData['_deadline'] ?? null);
+			if ($deadline !== null) {
+				$bucket['judged']++;
+				$bucket['met'] += (int)($end <= $deadline);
+			}
+
+			$buckets[$caseTypeId][$month] = $bucket;
+		}//end foreach
+
+		return $buckets;
+	}//end bucketByCaseTypeAndMonth()
+
+	/**
+	 * The rounded percentage met of judged, or null when nothing was judged.
+	 *
+	 * @param int $met    How many met their deadline.
+	 * @param int $judged How many had a deadline.
+	 *
+	 * @return int|null
+	 */
+	private function share(int $met, int $judged): ?int {
+		if ($judged === 0) {
+			return null;
+		}
+
+		return (int)round(($met / $judged) * 100);
+	}//end share()
+
+	/**
 	 * The title of every case type, by its id.
 	 *
 	 * @param array<int, array<string, mixed>> $caseTypes Case types.

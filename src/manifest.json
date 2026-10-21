@@ -7250,6 +7250,25 @@
 						}
 					}
 				],
+				"_headerActionsNote": "Board DqDoorlooptijd Downloaden: the figures this page shows, per case type and month (closed cases, average days, share within the norm), for the chosen period and case type, as CSV from the metrics endpoint (format=csv). Same audience as the page: the endpoint refuses a reader outside it.",
+				"headerActions": [
+					{
+						"id": "download-processing-time",
+						"type": "api-call",
+						"label": "Download",
+						"icon": "TrayArrowDown",
+						"method": "GET",
+						"url": "/apps/dossiq/api/doorlooptijd/metrics",
+						"params": {
+							"format": "csv",
+							"period": "@workspace.datePreset?",
+							"caseType": "@workspace.caseType?"
+						},
+						"download": true,
+						"filename": "doorlooptijd.csv",
+						"successMessage": "Download started"
+					}
+				],
 				"widgets": [
 					{
 						"id": "processing-time-average",
