@@ -167,6 +167,7 @@ import {
 	awaitingApprovals,
 } from '../utils/caseAwaitingApproval.js'
 import {
+	archiveNotice,
 	buildTransitionPayload,
 	extensionNotice,
 	refusalMessage,
@@ -221,6 +222,7 @@ export default {
 				until: '',
 				days: '14',
 				pauseReason: '',
+				notifyRequester: true,
 			},
 
 			pauseReasons: [],
@@ -251,7 +253,11 @@ export default {
 		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 		 */
 		form() {
-			return actForm(this.chosen, { caseType: this.caseType, caseId: this.targetCaseId })
+			return actForm(this.chosen, {
+				caseType: this.caseType,
+				caseId: this.targetCaseId,
+				requester: String(this.kase?.initiatorDisplayName ?? ''),
+			})
 		},
 
 		/**
@@ -725,9 +731,10 @@ export default {
 							until: sent.until,
 							days: Number(sent.days) || 0,
 							pauseReason: sent.pauseReason,
+							...(this.chosen.id === 'archive' ? { notifyRequester: this.values.notifyRequester === true } : {}),
 						},
 					)
-					this.sayWhetherTheRequesterWasTold(data)
+					this.sayWhetherTheRequesterWasTold(data, this.chosen.id)
 				}
 				emit(PAGE_REFRESH, {})
 				this.$emit('close')
@@ -759,18 +766,20 @@ export default {
 		},
 
 		/**
-		 * After an extension, say whether the requester was told.
+		 * After an extension or an archive, say whether the requester was told.
 		 *
 		 * The extension stands either way and the dialog closes. A notice that
 		 * did not go out is a warning with its reason, so the handler can tell
 		 * the requester another way. An act that answers no notice says nothing.
 		 *
 		 * @param {object} data The act's response body.
+		 * @param {string} [act] The act that answered.
 		 * @return {void}
 		 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-an-extension-answers-whether-the-requester-was-told-req-tel-002
 		 */
-		sayWhetherTheRequesterWasTold(data) {
-			const notice = extensionNotice(data, (s) => t('dossiq', s))
+		sayWhetherTheRequesterWasTold(data, act = '') {
+			const translate = (s) => t('dossiq', s)
+			const notice = act === 'archive' ? archiveNotice(data, translate) : extensionNotice(data, translate)
 			if (notice === null) {
 				return
 			}

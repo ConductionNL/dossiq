@@ -133,6 +133,31 @@ export function extensionNotice(body, translate) {
 }
 
 /**
+ * Whether the requester was told that the archived case is completed, as one sentence.
+ *
+ * @param {object|null} body The archive answer (`{..., notice: {noticeStatus, noticeReason}}`).
+ * @param {(key: string) => string} translate The bound t(), taking one string.
+ * @return {{told: boolean, text: string}|null} The sentence, or null when the answer carries no notice.
+ * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+ */
+export function archiveNotice(body, translate) {
+	const t = typeof translate === 'function' ? translate : (s) => s
+	const notice = body?.notice
+	if (!notice || typeof notice !== 'object') {
+		return null
+	}
+
+	if (String(notice.noticeStatus ?? '') === 'sent') {
+		return { told: true, text: t('The case is archived. The requester was told.') }
+	}
+
+	const reason = String(notice.noticeReason ?? '').trim()
+	const text = t('The case is archived. The requester was not told.')
+
+	return { told: false, text: reason === '' ? text : text + ' ' + t(reason) }
+}
+
+/**
  * Turn a server refusal into a sentence.
  *
  * @param {object} body The refusal body ({message, error, code, failedGuards, errors}).
