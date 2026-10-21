@@ -2668,6 +2668,7 @@
 						"id": "case-incidents-card",
 						"type": "object-list",
 						"title": "Incidents",
+						"subtitle": "Reports within this case, such as a complaint about how it is handled",
 						"_note": "splitting-a-case-and-its-incidents REQ-CM-53. Several dated reports inside one case, which is how repeat reports on one address are handled: the case holds the address and the history, and each report is a record with its own reporter, its own owner and its own outcome. SORTED BY `eventDate` AND NOT BY THE RECORDING MOMENT (D-6): a report written up three weeks late belongs where it happened, and `createdAt` order would quietly rewrite the sequence the case is about. It sits in the Work tab rather than in a tab of its own, because the strip is already eleven entries and an incident is work on the case; `recordedAt` is a column beside the event date so the delay between the two is visible rather than hidden. NOT a deelzaak: an incident has no number, no term and no decision, and making one would give every report a beslistermijn it does not have (D-4).",
 						"content": {
 							"register": "dossiq",
@@ -3604,6 +3605,7 @@
 						"id": "case-sub-cases-card",
 						"type": "object-list",
 						"title": "Sub-cases",
+						"subtitle": "Cases that hang under this case",
 						"icon": "FileTreeOutline",
 						"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Rows deep-link to CaseDetail because a sub-case IS a case. `createAction` opens DeelzaakCreateModal and `summary` is the completion roll-up, as on the full profile's case-sub-cases.",
 						"content": {
@@ -3669,6 +3671,7 @@
 						"id": "case-objects-card",
 						"type": "object-list",
 						"title": "Objects",
+						"subtitle": "What this case is about, with what the object now says about itself",
 						"icon": "CubeOutline",
 						"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose, because a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
 						"_lensNote": "The Object and Object status columns are LENSES, not stored fields. `objectTitle` and `objectStatus` are declared in `x-openregister-lenses` on the `caseObject` schema and resolved by OpenRegister on every read, so the tab shows what the linked object says about itself now rather than what somebody typed when they linked it. Nothing writes them: OpenRegister refuses a write that names a lens with a 400. They carry `widget: lensedValue` because an unreadable value arrives as `{\"@withheld\": true}`, an object, and the default cell would print `[object Object]`; a blank cell would be worse still, because blank reads as \"there is no object\". CnObjectListWidget forwards `widget` and `widgetProps` to CnCellRenderer, which resolves the name against the app's `cnCellWidgets`, so this needs no change in the library.",
