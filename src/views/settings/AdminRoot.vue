@@ -1128,7 +1128,12 @@ export default {
 			return contactCentreFields(this.t.bind(this))
 		},
 
-		/** @return {string} The group the background service account joins. */
+		/**
+		 * The group the background service account joins.
+		 *
+		 * @return {string} The group id.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
 		backgroundServiceGroup() {
 			return BACKGROUND_SERVICE_GROUP
 		},
