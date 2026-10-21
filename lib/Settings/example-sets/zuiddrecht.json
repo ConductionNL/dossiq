@@ -1426,6 +1426,39 @@
 					"threshold": 12
 				}
 			}
+		},
+		{
+			"key": "pieter-termijn-deze-week",
+			"data": {
+				"name": "Termijn deze week",
+				"description": "Mijn zaken, termijn binnen 7 dagen",
+				"owner": "{{cast:pieter.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"assignee": "@me",
+						"isFinalStatus": false,
+						"statusHiddenInLists": false,
+						"isDraft": false,
+						"deadline[gte]": "@today",
+						"deadline[lt]": "@today+7d"
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
 		}
 	],
 	"changes": [

@@ -207,7 +207,8 @@ describe('the Objects tab on the case page', () => {
 
 		const map = panels.caseWidget('case-location-map')
 		expect(map, 'the locations map is not on the page').toBeTruthy()
-		expect(map.type).toBe('case-location-map')
+		expect(map.type).toBe('map')
+		expect(map.content.markers.dataSource.filter).toEqual({ case: '@objectId' })
 		expect(panels.caseTabOf('case-location-map').tab).toBe('Data')
 	})
 

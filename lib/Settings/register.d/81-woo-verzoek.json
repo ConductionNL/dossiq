@@ -112,9 +112,13 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.11",
+          "version": "1.4.12",
           "slug": "woo-verzoek"
         },
+        "macros": [
+          "finish-woo-request",
+          "suspend-for-supplement"
+        ],
         "title": "Woo-verzoek",
         "colour": "red",
         "icon": "FileDocumentOutline",

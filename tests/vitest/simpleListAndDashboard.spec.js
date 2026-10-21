@@ -605,18 +605,17 @@ describe('the landing page', () => {
 		}
 	})
 
-	it('names ONE case in First today, through its own widget, with the case page as the primary act', () => {
+	it('names ONE case in First today, through the library banner, with the case page as the primary act', () => {
 		// DqMijnWerk: "Vandaag eerst" names the case furthest past its
-		// deadline. The library banner counts and cannot name one.
-		expect(widget('simple-first-today').type).toBe('custom')
-		expect(simple.slots['widget-simple-first-today']).toBe('FirstTodayWidget')
-		expect(registrySource).toContain('FirstTodayWidget')
-		const source = read('src', 'views', 'widgets', 'FirstTodayWidget.vue')
-		expect(source).toMatch(/primary: true,\s+route: \{ name: 'CaseDetail'/)
-		expect(source).toContain('pastTermFilter')
-		expect(
-			widget('simple-first-today').content.visibleWhen.source.filter,
-		).toHaveProperty(['deadline[lt]'], '@today+1d')
+		// deadline: the first row of the ordered query is the banner's subject.
+		const card = widget('simple-first-today')
+		expect(card.type).toBe('banner')
+		expect(simple.slots?.['widget-simple-first-today']).toBeUndefined()
+		expect(registrySource).not.toContain('FirstTodayWidget')
+		const open = card.content.actions.find((action) => action.primary === true)
+		expect(open.route).toEqual({ name: 'CaseDetail', params: { id: '@subject.id' } })
+		expect(card.content.visibleWhen.source.order).toEqual({ deadline: 'asc' })
+		expect(card.content.visibleWhen.source.filter).toHaveProperty(['deadline[lt]'], '@today+1d')
 	})
 
 	it('places every widget of every grid, and no two cards of one grid overlap', () => {
@@ -703,10 +702,11 @@ describe('the landing page', () => {
 		expect(tile.route.query['deadline[gte]']).toBe('@today')
 		expect(tile.route.query['deadline[lt]']).toBe('@today+7d')
 
-		// First today lists everything past its deadline, today included, and
-		// its link opens exactly those cases (the widget's own query).
-		const source = read('src', 'views', 'widgets', 'FirstTodayWidget.vue')
-		expect(source).toContain('this.content?.actions?.[0]?.route')
+		// First today counts everything past its deadline, today included, and
+		// its first link opens exactly those cases (the same filter).
+		const card = widget('simple-first-today').content
+		expect(card.visibleWhen.source.filter['deadline[lt]']).toBe('@today+1d')
+		expect(card.actions[0].route.query['deadline[lt]']).toBe('@today+1d')
 	})
 
 	it('keeps the tile labels short enough to read', () => {
@@ -722,7 +722,7 @@ describe('the landing page', () => {
 
 	it('places my tasks as the library tasks widget in its list variant', () => {
 		expect(widget('simple-my-tasks').type).toBe('tasks')
-		expect(simple.slots).not.toHaveProperty('widget-simple-my-tasks')
+		expect(simple.slots?.['widget-simple-my-tasks']).toBeUndefined()
 		// The full My work view keeps the app's own tile (a table, with the
 		// substitution toggle); only the simple profile uses the list variant.
 		const onMyWork = pageView(original('MyWorkHome'), 'mine').widgets.find(
@@ -818,7 +818,8 @@ describe('the case type list', () => {
 		// in no catalogue, so the library drew it as written.
 		const nl = JSON.parse(read('l10n', 'nl.json')).translations
 		expect(nl[list.config.headerMeta]).toBe('{total} zaaktypen')
-		expect(nl[list.config.searchPlaceholder]).toBe('Zoeken in deze lijst')
+		// DqZaaktypen draws the field as "Zoek een zaaktype".
+		expect(nl[list.config.searchPlaceholder]).toBe('Zoek een zaaktype')
 	})
 
 	it('has an Actions menu with the import dialog the case type page already owns', () => {

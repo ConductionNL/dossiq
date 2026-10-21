@@ -202,6 +202,8 @@ class ProcessMiningService {
 			// than being assumed by the reader.
 			'clock' => $this->dwellTimeAnalyzer->clock(),
 			'caseTypeFilter' => $caseTypeFilter,
+			// The load stops at its limit, so a report that reached it is short.
+			'truncated' => (count($cases) >= ProcessMiningDataLoader::CASE_LIMIT),
 			'caseTypes' => $caseTypeReports,
 			'throughputTrend' => $this->throughputCalculator->computeThroughputTrend(cases: $casesById, from: $from, to: $to),
 		];

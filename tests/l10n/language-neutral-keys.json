@@ -46,6 +46,7 @@
         "Links",
         "Mail",
         "Manager",
+        "Model",
         "Moment",
         "Nextcloud",
         "OK",
@@ -111,6 +112,10 @@
         "Agenda",
         "In status",
         "{candidateGroups}",
-        "{label}"
+        "{label}",
+        "Actor type",
+        "Override",
+        "{identifier}",
+        "{subject.title}"
     ]
 }

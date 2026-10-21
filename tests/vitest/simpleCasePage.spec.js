@@ -412,8 +412,9 @@ describe('the tabs', () => {
 		// The parties by role lead, as Partijen; the linked contacts follow (DqZaakBetrokkenen).
 		expect(peopleTab.widgetIds[0]).toBe('case-party-roles-card')
 		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Case parties')
-		// Seats and followers share a row, as the board draws them.
-		expect(peopleTab.layout).toEqual([{ widgetId: 'case-seats-card', gridWidth: 6 }, { widgetId: 'case-followers-card', gridWidth: 6 }])
+		// Followers are the header popover only (Ruben, 20 Oct 2026), so the seats have the row to themselves.
+		expect(peopleTab.layout).toBeUndefined()
+		expect(peopleTab.widgetIds).not.toContain('case-followers-card')
 		for (const id of widgetIds(tabsOf(original)).filter((id) => !unfolded.includes(id))) {
 			expect(shown, id).toContain(id)
 		}
@@ -508,7 +509,7 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-followers-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-assistant-chat']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
@@ -667,9 +668,10 @@ describe('the header and the side column', () => {
 		const shown = []
 		for (const card of cards) {
 			// The requester is a facts card (a lead, as DqZaak draws it), the
-			// handling a read-only data card, the work instruction its own pane.
+			// handling a read-only data card, the work instruction a facts card
+			// over the case TYPE (a link only, no fields of the case).
 			const fields = card.type === 'facts'
-				? card.content.fields.map((entry) => entry.path)
+				? (card.content.fields || []).map((entry) => entry.path)
 				: card.type === 'data' ? card.content.include : []
 			if (card.type === 'data') {
 				expect(card.content.editable).toBe(false)
@@ -805,7 +807,8 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 	const layout = JSON.parse(fs.readFileSync(path.join(__dirname, '../../src/menu-layout.simple.json'), 'utf8'))
 	const page = layout.pages.find((entry) => entry.id === 'CaseDetail')
 	const widget = page.configAppend.widgets.find((entry) => entry.id === 'case-assistant-chat')
-	const tab = page.configPatch.widgets['case-panels'].content.tabs.find((entry) => entry.widgetId === 'case-assistant-chat')
+	const tab = page.configPatch.widgets['case-panels'].content.tabs.find((entry) => entry.label === 'AI oversight')
+	const byId = (id) => page.configAppend.widgets.find((entry) => entry.id === id)
 
 	it('places the AI chat the launcher opens, embedded, needing hermiq', () => {
 		expect(widget).toMatchObject({ type: 'ai-chat', requiredApp: 'hermiq', content: { chatAppId: 'hermiq' } })
@@ -813,5 +816,41 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 
 	it('gives it the AI oversight tab, under Acties until it is opened', () => {
 		expect(tab).toMatchObject({ label: 'AI oversight', overflow: true })
+	})
+
+	it('stacks what the assistant did and the macros in that tab, as the board does', () => {
+		expect(tab.id).toBe('ai-oversight')
+		expect(tab.widgetIds).toEqual(['case-ai-activity', 'case-macros'])
+	})
+
+	it('stands the four generic side cards aside on that tab, so the chat is alone as the board draws it', () => {
+		const side = page.config.sideColumn.filter((entry) => typeof entry === 'object')
+		for (const id of ['side-requester', 'side-handling', 'side-work-instruction']) {
+			expect(side.find((entry) => entry.id === id).notTabs).toEqual(['ai-oversight'])
+		}
+		expect(page.configPatch.widgets['case-tile-deadline'].notTabs).toEqual(['ai-oversight'])
+	})
+
+	it('puts the chat in the side column, after the generic cards, while that tab is open', () => {
+		const ids = page.config.sideColumn.map((entry) => (typeof entry === 'string' ? entry : entry.id))
+		expect(ids.indexOf('case-assistant-chat')).toBe(ids.indexOf('side-work-instruction') + 1)
+		expect(widget.tabs).toEqual(['ai-oversight'])
+	})
+
+	it('lists hermiq\'s oversight records of this case through hermiq, needing hermiq', () => {
+		const activity = byId('case-ai-activity')
+		expect(activity).toMatchObject({ type: 'object-list', requiredApp: 'hermiq', subtitle: 'Every suggestion is recorded, also when nobody uses it' })
+		expect(activity.content.endpointSource).toEqual({
+			url: '/apps/hermiq/api/ai-oversight/subject',
+			params: { originApp: 'dossiq', subjectId: '@objectId', limit: 25 },
+		})
+		expect(activity.content.register).toBeUndefined()
+		expect(activity.content.columns.map((column) => column.key)).toEqual(['decidedAt', 'decidedBy', 'prompt', 'status', 'advisoryContext.model'])
+		expect(activity.content.columns[3].enumLabels).toEqual({ approved: 'Used', overridden: 'Adapted', unused: 'Not used', denied: 'Rejected' })
+	})
+
+	it('places the case schema\'s macros through the library macros widget', () => {
+		expect(byId('case-macros')).toMatchObject({ type: 'macros', title: 'Macros' })
+		expect(byId('case-macros').content.macrosFrom).toBe('@context.caseType.macros')
 	})
 })

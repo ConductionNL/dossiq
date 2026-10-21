@@ -136,29 +136,6 @@ export async function setFollowing(
 }
 
 /**
- * The people following an object.
- *
- * Needs `update` on the object. A reader without it gets 403, which the caller
- * has to tell apart from an empty list.
- *
- * @param {string} id       The object uuid.
- * @param {string} register The register slug.
- * @param {string} schema   The schema slug.
- * @return {Promise<Array<object>>} One row per follower.
- *
- * @spec openspec/changes/case-followers/specs/case-management/spec.md
- */
-export async function listFollowers(
-	id,
-	register = CASE_REGISTER,
-	schema = CASE_SCHEMA,
-) {
-	const { data } = await axios.get(`${objectUrl(id, register, schema)}/watchers`)
-
-	return Array.isArray(data?.results) ? data.results : []
-}
-
-/**
  * Whether a row the page already fetched is followed by this reader.
  *
  * `@self.watching` rides every read and every list row, and is OMITTED for an

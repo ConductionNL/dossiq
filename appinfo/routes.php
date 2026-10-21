@@ -352,6 +352,9 @@ $extra = [
         // Process mining bottleneck report — dwell-time, bottleneck ranking,
         // transition matrix + rework detection, throughput trend.
     ['name' => 'processMining#report', 'url' => '/api/reports/process-mining', 'verb' => 'GET'],
+        // Processing-time report: target compliance, distribution, trend,
+        // throughput, records at risk and the per-type breakdown.
+    ['name' => 'processingTimeReport#show', 'url' => '/api/reports/processing-time', 'verb' => 'GET'],
 
         // Deelzaak (sub-case) parent-child relations.
     ['name' => 'deelzaak#counts',   'url' => '/api/deelzaken/counts',                'verb' => 'GET'],
@@ -821,6 +824,7 @@ $extra = [
     ['name' => 'remedy#lodge', 'url' => '/api/cases/{id}/remedy', 'verb' => 'POST'],
     // Woo review reports (woo-review-reports): opt-in per organisation, the reader check is in the body.
     ['name' => 'wooReport#throughput', 'url' => '/api/woo/reports/throughput', 'verb' => 'GET'],
+    ['name' => 'wooReport#offered', 'url' => '/api/reports/offered', 'verb' => 'GET'],
     ['name' => 'mailPartiesReport#show', 'url' => '/api/cases/{id}/reports/mail-parties', 'verb' => 'GET'],
     // Woo review (woo-review-triage): relevance apart from the verdict, and the case summary.
     ['name' => 'documentReview#summary',   'url' => '/api/cases/{id}/review/summary', 'verb' => 'GET'],

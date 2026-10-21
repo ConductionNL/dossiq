@@ -10,6 +10,10 @@
 			"reason": "This notification IS the digest. It reports the queue rather than adding to it, and a source for it would put every morning's digest on the queue it summarises."
 		},
 		{
+			"mechanism": "flow:DossiqTxSuspendTermNode",
+			"reason": "Suspends the case term through DeadlinePauseService and asks nobody for anything. In a macro the step after it (dossiq.askPerson) is what asks the handler, and that node is covered by its own queue source."
+		},
+		{
 			"mechanism": "flow:DossiqTxBesluitvormingPublishNode",
 			"reason": "Publishes a decision that has already been taken. The approval that preceded it is what asked a person, and Decidiq's request-decision step carries that mechanism."
 		},

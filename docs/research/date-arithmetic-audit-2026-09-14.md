@@ -126,6 +126,7 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Kcc/CallbackRetrySchedule.php` | 71 | neither | | the wait before the next callback attempt, 15 minutes doubling to a day. It replaced `Kcc/SlaCalculator.php` (retired by `termijnbewaking-op-engine-timers` 4.1), whose channel SLAs nothing read; a retry wait is not a deadline and has no calendar |
 | `lib/Service/Money/AccrualNoticeService.php` | 188 | statutory | engine calendar | Awb 4:17: the grace period whose end opens the dwangsom window |
 | `lib/Service/ProcessMining/ThroughputTrendCalculator.php` | 109 | neither | | weekly buckets for a throughput trend |
+| `lib/Service/Reporting/ProcessingTimeCalculator.php` | 306 | neither | | weekly and monthly buckets for the processing-time charts |
 | `lib/Service/ProcessMiningService.php` | 93, 96 | neither | | a twelve month reporting window |
 | `lib/Service/Recycle/RetentionClocks.php` | 144 | neither | | a lawful-purpose retention counted in months (AVG art. 5.1e), where a weekend cannot move the answer; the same verdict `ArchivalNominationDeriver` carries for the Archiefwet side |
 | `lib/Service/Import/CaseRecordImport.php` | 311-312 | neither | | converts the case type's declared ISO extension period (`P14D`) into a number of days, measured from a fixed day, to hand to the term carry-over. No date anyone is held to is computed here: the extended end is the carried source term's own, and the term engine rolls it (case-record-import, REQ-CRI-002) |

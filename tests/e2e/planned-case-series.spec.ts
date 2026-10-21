@@ -361,11 +361,11 @@ test.describe('A planned follow-up that repeats', () => {
 
 		// Stop series is offered on the series row, and only on a row that
 		// repeats: a single follow-up has nothing to stop.
-		const stop = page.getByTestId(`case-planned-stop-${flowId}`)
+		const stop = page.getByTestId('cn-related-row-action').filter({ hasText: 'Stop series' })
 		await expect(stop).toBeVisible({ timeout: 30_000 })
 		for (const id of occurrences) {
 			await expect(
-				page.getByTestId(`case-planned-occurrence-${id}`),
+				page.locator(`[data-testid="cn-related-children"] a[href*="${id}"]`),
 			).toBeVisible({ timeout: 30_000 })
 		}
 
