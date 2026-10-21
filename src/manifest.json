@@ -12083,6 +12083,13 @@
 				"app": "dossiq",
 				"palette": "column",
 				"listLabel": "Settings / Flows",
+				"_testSubjectNote": "Board DqFlow: Testen met een zaak. The button tries the saved flow with a picked case through OpenRegister's dry-run, which changes and sends nothing, and shows each step beside the canvas (nextcloud-vue feat/flow-page-dry-run, openregister#4753).",
+				"testSubject": {
+					"register": "dossiq",
+					"schema": "case",
+					"labelField": "title",
+					"label": "Test with a case"
+				},
 				"pill": "Case type flow",
 				"notice": "This flow is how its case type works. The case runs the steps; old webhook steps now run as an external call through Integriq.",
 				"paletteFootnote": "dossiq only offers steps a case can do itself. The rest comes from the app that does it."
