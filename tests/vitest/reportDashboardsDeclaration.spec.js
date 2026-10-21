@@ -34,7 +34,7 @@ describe('processing time', () => {
 
 	it('draws the four compliance charts from the server report, one view each', () => {
 		const views = {
-			'dt-charts': ['donut', 'sla'],
+			'dt-charts': ['bar-list', 'sla'],
 			'dt-charts-distribution': ['bar', 'distribution'],
 			'dt-charts-trend': ['line', 'trend'],
 			'dt-charts-throughput': ['line', 'throughput'],
@@ -47,8 +47,31 @@ describe('processing time', () => {
 			expect(w.content.endpointSource.params.view).toBe(view)
 			expect(w.content.endpointSource.responsePath).toBe(view)
 			expect(w.content.endpointSource.params.period).toBe('@workspace.datePreset?')
-			expect(onGrid('Doorlooptijd', id)).toBe(true)
+			expect(onGrid('Doorlooptijd', id)).toBe(false)
 		}
+	})
+
+	it('groups the four compliance charts as small cards in one card, three to a row (DqDoorlooptijd Naleving)', () => {
+		const group = widget('Doorlooptijd', 'dt-compliance')
+		expect(group.type).toBe('sections')
+		expect(group.title).toBe('Compliance')
+		expect(group.roles).toEqual(['controllers', 'beheerders', 'admin'])
+		expect(group.visibleWhen.field).toBe('visible.dt-compliance')
+		expect(group.content.cards).toBe(true)
+		expect(group.content.columns).toBe(3)
+		expect(group.content.footnote).toBeTruthy()
+		expect(group.content.sections.map((s) => s.widgetId)).toEqual(['dt-charts', 'dt-charts-distribution', 'dt-charts-trend', 'dt-charts-throughput'])
+		for (const section of group.content.sections) {
+			expect(section.title).toBe(widget('Doorlooptijd', section.widgetId).title)
+		}
+		expect(onGrid('Doorlooptijd', 'dt-compliance')).toBe(true)
+	})
+
+	it('draws compliance per case type as a bar list of the share within the norm', () => {
+		const w = widget('Doorlooptijd', 'dt-charts')
+		expect(w.content.barMax).toBe(100)
+		expect(w.content.valueFormat.suffix).toBe(' %')
+		expect(w.content.endpointSource.series[0].path).toBe('rate')
 	})
 
 	it('lists the cases at risk with the severity as text beside its colour, rows opening the case', () => {

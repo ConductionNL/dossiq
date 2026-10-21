@@ -7465,7 +7465,12 @@
 						"type": "chart",
 						"title": "Compliance by Case Type",
 						"content": {
-							"chartKind": "donut",
+							"chartKind": "bar-list",
+							"barMax": 100,
+							"valueFormat": {
+								"name": "number",
+								"suffix": " %"
+							},
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
@@ -7478,7 +7483,7 @@
 								"series": [
 									{
 										"name": "Within SLA",
-										"path": "withinSla"
+										"path": "rate"
 									}
 								]
 							},
@@ -7499,6 +7504,7 @@
 						"title": "Processing Time Distribution",
 						"content": {
 							"chartKind": "bar",
+							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
@@ -7532,6 +7538,7 @@
 						"title": "Monthly SLA Trend",
 						"content": {
 							"chartKind": "line",
+							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
@@ -7576,6 +7583,7 @@
 						"title": "Throughput (cases closed per week)",
 						"content": {
 							"chartKind": "line",
+							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
@@ -7593,6 +7601,32 @@
 								]
 							},
 							"emptyLabel": "No completed cases in the selected range"
+						}
+					},
+					{
+						"id": "dt-compliance",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-compliance",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"_note": "Board DqDoorlooptijd draws the four compliance charts as small cards in one card, three to a row, with the norm explained under them. The charts keep their own definitions and visibility; this card names them. DEPENDS ON nextcloud-vue feature/sections-card-grid (sections `columns` and `footnote`).",
+						"type": "sections",
+						"title": "Compliance",
+						"subtitle": "Within the norm per case type, the distribution of the processing time, the SLA trend per month and the throughput",
+						"content": {
+							"cards": true,
+							"columns": 3,
+							"footnote": "The norm per case type is set on the case type; dossiq works out what counts as within the norm.",
+							"sections": [
+								{ "title": "Compliance by Case Type", "widgetId": "dt-charts" },
+								{ "title": "Processing Time Distribution", "widgetId": "dt-charts-distribution" },
+								{ "title": "Monthly SLA Trend", "widgetId": "dt-charts-trend" },
+								{ "title": "Throughput (cases closed per week)", "widgetId": "dt-charts-throughput" }
+							]
 						}
 					},
 					{
@@ -7835,41 +7869,17 @@
 					},
 					{
 						"id": 3,
-						"widgetId": "dt-charts",
+						"widgetId": "dt-compliance",
 						"gridX": 0,
 						"gridY": 7,
-						"gridWidth": 6,
-						"gridHeight": 4
-					},
-					{
-						"id": 7,
-						"widgetId": "dt-charts-distribution",
-						"gridX": 6,
-						"gridY": 7,
-						"gridWidth": 6,
-						"gridHeight": 4
-					},
-					{
-						"id": 8,
-						"widgetId": "dt-charts-trend",
-						"gridX": 0,
-						"gridY": 11,
-						"gridWidth": 6,
-						"gridHeight": 4
-					},
-					{
-						"id": 9,
-						"widgetId": "dt-charts-throughput",
-						"gridX": 6,
-						"gridY": 11,
-						"gridWidth": 6,
-						"gridHeight": 4
+						"gridWidth": 12,
+						"gridHeight": 6
 					},
 					{
 						"id": 4,
 						"widgetId": "dt-woo",
 						"gridX": 0,
-						"gridY": 15,
+						"gridY": 13,
 						"gridWidth": 12,
 						"gridHeight": 5
 					},
@@ -7877,7 +7887,7 @@
 						"id": 5,
 						"widgetId": "dt-atrisk",
 						"gridX": 0,
-						"gridY": 20,
+						"gridY": 18,
 						"gridWidth": 6,
 						"gridHeight": 6
 					},
@@ -7885,7 +7895,7 @@
 						"id": 6,
 						"widgetId": "dt-breakdown",
 						"gridX": 6,
-						"gridY": 20,
+						"gridY": 18,
 						"gridWidth": 6,
 						"gridHeight": 6
 					}
