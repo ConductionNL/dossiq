@@ -58,7 +58,7 @@ const ASSESSED = [
  * @param {Array<object>|Error} answers.assessed The stored assessments, or the failure.
  * @return {Promise<{wrapper: object, axios: object}>} The mounted dialog and the axios double.
  */
-async function mountDialog({ outstanding = [], assessed = ASSESSED, letter = null } = {}) {
+async function mountDialog({ outstanding = [], assessed = ASSESSED, letter = null, kase = null, statusTypes = null } = {}) {
 	const axios = (await import('@nextcloud/axios')).default
 	axios.get.mockImplementation((url, config) => {
 		if (String(url).includes('/document-assessments/outstanding')) {
@@ -88,6 +88,12 @@ async function mountDialog({ outstanding = [], assessed = ASSESSED, letter = nul
 					document: letter,
 				},
 			})
+		}
+		if (kase && String(url).includes(`/apps/openregister/api/objects/dossiq/case/${CASE_ID}`)) {
+			return Promise.resolve({ data: kase })
+		}
+		if (statusTypes && String(url).includes(`/apps/dossiq/api/case-types/${kase?.caseType}/blueprint`)) {
+			return Promise.resolve({ data: { statusTypes } })
 		}
 		return Promise.reject(new Error('unexpected GET ' + url))
 	})
@@ -143,6 +149,44 @@ describe('AssessmentDecisionDialog', () => {
 		const cards = wrapper.find('cn-choice-cards-stub')
 		expect(cards.attributes('readonly')).toBeDefined()
 		expect(cards.attributes('disabled')).toBeUndefined()
+	})
+
+	it('says which step the case moves to, from the case type\'s statuses (board: "De zaak gaat naar stap 3, besluit.")', async () => {
+		const { wrapper } = await mountDialog({
+			kase: { id: CASE_ID, identifier: '2026-0082', caseType: 'ct-woo', status: 'st-2' },
+			statusTypes: [
+				{ id: 'st-3', name: 'Besluit', order: 3 },
+				{ id: 'st-1', name: 'Ontvangen', order: 1 },
+				{ id: 'st-2', name: 'In behandeling', order: 2 },
+				{ id: 'st-4', name: 'Afgehandeld', order: 4, isFinal: true },
+			],
+		})
+
+		expect(wrapper.vm.subtitle).toBe('The case moves to step 3, besluit. The decision is built from the %n assessed documents.')
+	})
+
+	it('keeps the subtitle as it was when the step cannot be read', async () => {
+		const { wrapper } = await mountDialog({
+			kase: { id: CASE_ID, identifier: '2026-0082', caseType: 'ct-woo', status: 'st-2' },
+		})
+
+		expect(wrapper.vm.subtitle).toBe('The decision is built from the %n assessed documents.')
+	})
+
+	it('points to decidiq for a decision by the board or the mayor, only where decidiq is installed', async () => {
+		globalThis.OC = { appswebroots: {} }
+		const without = (await mountDialog()).wrapper
+		expect(without.find('[data-testid="assessment-decision-aside"]').exists()).toBe(false)
+
+		globalThis.OC = { appswebroots: { decidesk: '/apps/decidesk' } }
+		const withApp = (await mountDialog()).wrapper
+		expect(withApp.find('[data-testid="assessment-decision-aside"]').text()).toBe(
+			'Does the board or the mayor decide? Then you make a proposal in decidiq, on the Decisions tab (Make proposal). The decision then arrives on this case by itself.',
+		)
+
+		globalThis.OC = { appswebroots: { decidiq: '/apps/decidiq' } }
+		expect((await mountDialog()).wrapper.find('[data-testid="assessment-decision-aside"]').exists()).toBe(true)
+		delete globalThis.OC
 	})
 
 	it('testOutstandingDocumentsBlockSubmit', async () => {

@@ -5760,6 +5760,11 @@
 							"mixedOutcome": "deels_openbaar",
 							"noteHeading": "Publishing comes afterwards",
 							"letterPurpose": "decision",
+							"stepsUrl": "/apps/dossiq/api/case-types/{caseType}/blueprint?case={caseId}",
+							"aside": {
+								"text": "Does the board or the mayor decide? Then you make a proposal in decidiq, on the Decisions tab (Make proposal). The decision then arrives on this case by itself.",
+								"whenApp": ["decidiq", "decidesk"]
+							},
 							"note": "Once the decision is recorded the publication is ready. Publish (Woo) under More sends the public and partly public documents to the reading room. What is not public never goes along.",
 							"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
 							"decideUrl": "/apps/dossiq/api/cases/{caseId}/woo/decision",

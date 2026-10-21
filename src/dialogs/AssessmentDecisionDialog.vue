@@ -169,6 +169,14 @@
 					</div>
 				</template>
 
+				<div
+					v-if="asideShown"
+					class="assessment-decision__aside"
+					data-testid="assessment-decision-aside">
+					<AccountGroupOutline :size="20" class="assessment-decision__aside-icon" />
+					<span>{{ t('dossiq', aside.text) }}</span>
+				</div>
+
 				<NcNoteCard v-if="note" type="info" :heading="noteHeading ? t('dossiq', noteHeading) : undefined">
 					{{ t('dossiq', note) }}
 				</NcNoteCard>
@@ -223,10 +231,12 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import AccountGroupOutline from 'vue-material-design-icons/AccountGroupOutline.vue'
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
 import BeschikkingComposerDialog from './BeschikkingComposerDialog.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
+import { nextStepOf } from '../utils/caseNextStep.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -246,6 +256,7 @@ export default {
 	name: 'AssessmentDecisionDialog',
 
 	components: {
+		AccountGroupOutline,
 		BeschikkingComposerDialog,
 		CnChoiceCards,
 		FileDocumentCheckOutline,
@@ -327,6 +338,24 @@ export default {
 			type: String,
 			default: '',
 		},
+
+		/**
+		 * A pointer beside the form, `{ text, whenApp? }`: an i18n key, shown
+		 * only while an app `whenApp` names (an id or a list of ids) is installed.
+		 */
+		aside: {
+			type: Object,
+			default: null,
+		},
+
+		/**
+		 * Where the case type's statuses are read, with `{caseType}` and
+		 * `{caseId}`. Set, the subtitle names the step the case moves to.
+		 */
+		stepsUrl: {
+			type: String,
+			default: '',
+		},
 	},
 
 	emits: ['close'],
@@ -351,6 +380,7 @@ export default {
 			letterReadError: false,
 			drafting: false,
 			composing: false,
+			nextStep: null,
 		}
 	},
 
@@ -363,7 +393,27 @@ export default {
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
 		subtitle() {
 			const total = Object.values(this.tally).reduce((sum, count) => sum + count, 0)
-			return n('dossiq', 'The decision is built from the %n assessed document.', 'The decision is built from the %n assessed documents.', total)
+			const built = n('dossiq', 'The decision is built from the %n assessed document.', 'The decision is built from the %n assessed documents.', total)
+			if (this.nextStep === null) {
+				return built
+			}
+			const step = t('dossiq', 'The case moves to step {number}, {status}.', { number: this.nextStep.number, status: this.nextStep.name.toLowerCase() })
+			return step + ' ' + built
+		},
+
+		/**
+		 * Whether the aside is shown: configured, and its app installed when it names one.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
+		 */
+		asideShown() {
+			if (!this.aside || !this.aside.text) {
+				return false
+			}
+			const apps = [].concat(this.aside.whenApp ?? []).map(String).filter(Boolean)
+			const roots = globalThis.OC?.appswebroots ?? {}
+			return apps.length === 0 || apps.some((app) => Boolean(roots[app]))
 		},
 
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
@@ -476,6 +526,7 @@ export default {
 		this.load()
 		this.loadLetter()
 		this.kase = await fetchCaseSummary(this.targetCaseId)
+		this.loadNextStep()
 	},
 
 	methods: {
@@ -490,6 +541,26 @@ export default {
 		formatDate(value) {
 			const date = new Date(String(value).slice(0, 10) + 'T00:00:00')
 			return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString(getCanonicalLocale() || undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+		},
+
+		/**
+		 * Read the case type's statuses and keep the step after the case's own.
+		 * Unreadable, the subtitle stays as it was.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
+		 */
+		async loadNextStep() {
+			const caseType = String(this.kase?.caseType ?? '')
+			if (this.stepsUrl === '' || caseType === '') {
+				return
+			}
+			try {
+				const { data } = await axios.get(this.urlOf(this.stepsUrl.replace('{caseType}', encodeURIComponent(caseType))))
+				this.nextStep = nextStepOf(data?.statusTypes, String(this.kase?.status ?? ''))
+			} catch {
+				this.nextStep = null
+			}
 		},
 
 		/**
@@ -791,6 +862,21 @@ export default {
 
 	&__error {
 		color: var(--color-error-text);
+	}
+
+	&__aside {
+		display: flex;
+		gap: 10px;
+		align-items: flex-start;
+		padding: 12px 14px;
+		border-radius: var(--border-radius-large);
+		background: var(--color-background-dark);
+		color: var(--color-main-text);
+	}
+
+	&__aside-icon {
+		flex: none;
+		color: var(--color-text-maxcontrast);
 	}
 }
 </style>
