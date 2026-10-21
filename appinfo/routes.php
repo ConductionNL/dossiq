@@ -397,7 +397,7 @@ $extra = [
         // One personal queue, fed by the declared sources (one-personal-queue).
         // Nothing here takes a user id: every endpoint answers for the caller.
     ['name' => 'personalQueue#index',              'url' => '/api/personal-queue',                   'verb' => 'GET'],
-    ['name' => 'personalQueue#endOfDay',           'url' => '/api/personal-queue/end-of-day',        'verb' => 'GET'],
+    ['name' => 'endOfDay#show',                     'url' => '/api/personal-queue/end-of-day',        'verb' => 'GET'],
     ['name' => 'personalQueue#setGrouping',        'url' => '/api/personal-queue/grouping',          'verb' => 'POST'],
     ['name' => 'personalQueue#hideGroup',          'url' => '/api/personal-queue/groups/{group}/hide', 'verb' => 'POST'],
     ['name' => 'personalQueue#showGroup',          'url' => '/api/personal-queue/groups/{group}/show', 'verb' => 'POST'],
@@ -672,6 +672,8 @@ $extra = [
 
         // Role-based routing engine action — manual recompute of step assignees.
         // CRUD of routing rules themselves lives on workflowTemplate (manifest).
+    // The purpose a reader states before a case with special categories of personal data opens (case-access-purpose).
+    ['name' => 'caseAccessPurpose#record', 'url' => '/api/cases/{id}/access-purpose', 'verb' => 'POST'],
     ['name' => 'routing#reroute', 'url' => '/api/cases/{id}/reroute', 'verb' => 'POST'],
         // Route a case to one person by a rule; arms the rule's take-back window.
     ['name' => 'routing#route', 'url' => '/api/cases/{id}/route', 'verb' => 'POST'],

@@ -108,9 +108,16 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  *
  * Moved 13 -> 12 by `lists-are-views`: the custom MyWork page is a view of
  * the Cases list. Both numbers drop, for the same reason as above.
+ *
+ * Moved 12 -> 10 by the retirement of the custom DeelzaakList and
+ * DeelzaakDetail pages. Both numbers drop.
  */
-const CUSTOM_PAGE_COUNT_BEFORE = 11
-const CUSTOM_PAGE_COUNT_AFTER = 12
+const CUSTOM_PAGE_COUNT_BEFORE = 9
+const CUSTOM_PAGE_COUNT_AFTER = 10
+// Custom pages moved onto manifest config since, each one unit off the ratchet
+// (end-of-day-manifest: Close out your day is a dashboard; the personal queue
+// is library config).
+const CUSTOM_PAGES_RETIRED_SINCE = ['EndOfDay', 'PersonalQueue']
 
 /**
  * One page as the manifest declares it.
@@ -236,7 +243,8 @@ describe('the case-tasks widget after the retype', () => {
 		// page. The one unit above the pre-pane count belongs to TaskDetail,
 		// and to nothing else.
 		const custom = pages.filter((entry) => entry.type === 'custom')
-		expect(custom).toHaveLength(CUSTOM_PAGE_COUNT_AFTER)
+		expect(custom).toHaveLength(CUSTOM_PAGE_COUNT_AFTER - CUSTOM_PAGES_RETIRED_SINCE.length)
+		expect(custom.map((entry) => entry.id)).not.toEqual(expect.arrayContaining(CUSTOM_PAGES_RETIRED_SINCE))
 		expect(CUSTOM_PAGE_COUNT_AFTER - CUSTOM_PAGE_COUNT_BEFORE).toBe(1)
 		expect(custom.map((entry) => entry.id)).toContain('TaskDetail')
 
