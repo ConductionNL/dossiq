@@ -2424,15 +2424,20 @@
 							"columns": [
 								{
 									"key": "startTime",
-									"label": "Date"
+									"label": "Date",
+									"format": "date-time"
 								},
 								{
 									"key": "notificationChannel",
-									"label": "Channel"
+									"label": "Channel",
+									"enum": ["phone", "email", "webformulier", "chat", "social_media", "balie"],
+									"enumLabels": { "phone": "Phone", "email": "Email", "webformulier": "Web form", "chat": "Chat", "social_media": "Social media", "balie": "Desk" }
 								},
 								{
 									"key": "direction",
-									"label": "Direction"
+									"label": "Direction",
+									"enum": ["inbound", "outbound"],
+									"enumLabels": { "inbound": "Incoming", "outbound": "Outgoing" }
 								},
 								{
 									"key": "summary",
