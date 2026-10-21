@@ -2588,6 +2588,8 @@
         "Draft ruling": "Draft ruling",
         "Draft templates cannot be used for new cases (legacy flag; lifecycleStatus is authoritative)": "Draft templates cannot be used for new cases (legacy flag; lifecycleStatus is authoritative)",
         "Draft the letter": "Draft the letter",
+        "Draft the pre-announcement": "Draft the pre-announcement",
+        "Draft the warning": "Draft the warning",
         "Draft until publish() validates required fields and sets publishedAt": "Draft until publish() validates required fields and sets publishedAt",
         "Draft Version": "Draft Version",
         "Drafter": "Drafter",

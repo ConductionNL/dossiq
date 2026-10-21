@@ -65,3 +65,21 @@ describe('enforcement advice page (DqHandhaving)', () => {
 		}
 	})
 })
+
+describe('the Wat nu? button on the enforcement advice (DqHandhaving)', () => {
+	const stages = page.config.nextStep.stages
+
+	it('follows the intervention the advice settles on', () => {
+		expect(page.config.stageField).toBe(page.config.nextStep.field)
+	})
+
+	it('drafts the pre-announcement or the warning, for every stage the card knows', () => {
+		for (const stage of Object.keys(stages)) {
+			const action = page.config.primaryActionByStage[stage]
+			expect(action, stage).toMatchObject({ type: 'open-modal', target: 'BeschikkingComposerDialog', props: { caseId: '@object.case' } })
+			const preAnnouncement = stages[stage].title === 'What now? Pre-announcement'
+			expect(action.label, stage).toBe(preAnnouncement ? 'Draft the pre-announcement' : 'Draft the warning')
+		}
+		expect(nl['Draft the pre-announcement']).toBe('Vooraankondiging opstellen')
+	})
+})
