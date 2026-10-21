@@ -7,7 +7,6 @@
 		:registry="registry"
 		:pageTypes="pageTypes"
 		:formatters="formatters"
-		:cellWidgets="cellWidgets"
 		appId="dossiq"
 		:translate="translateForApp"
 		:notificationLabels="notificationLabels"
@@ -141,18 +140,6 @@ export default {
 		 * pages (see src/services/formatters.js).
 		 */
 		formatters: {
-			type: Object,
-			default: () => ({}),
-		},
-
-		/**
-		 * Cell-widget registry — forwarded to CnAppRoot as `cnCellWidgets`.
-		 * Resolves `pages[].config.columns[].widget` ids to components on
-		 * index pages (see src/services/cellWidgets.js). A formatter shapes a
-		 * value; a cell widget is what a column needs when the cell carries a
-		 * STATE the reader has to see, such as an overdue deadline.
-		 */
-		cellWidgets: {
 			type: Object,
 			default: () => ({}),
 		},

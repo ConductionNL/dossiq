@@ -115,9 +115,16 @@ describe('the lists are keyed so the server can sort them', () => {
 	)
 
 	it.each(['Cases'])(
-		'%s renders the column through the badge widget',
+		'%s shows the word through the library badge, coloured by priority, with the hand-set hint',
 		(id) => {
-			expect(priorityColumn(id).widget).toBe('priorityBadge')
+			const column = priorityColumn(id)
+			expect(column.widget).toBe('badge')
+			expect(column.valueField).toBe('priority')
+			expect(column.colorMap).toEqual({ low: 'default', normal: 'info', high: 'warning', urgent: 'error' })
+			expect(column.widgetProps.titleWhen).toEqual({
+				field: 'priorityOverride',
+				text: 'Priority set by hand, not derived',
+			})
 		},
 	)
 

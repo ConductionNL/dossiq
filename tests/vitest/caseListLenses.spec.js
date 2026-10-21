@@ -40,10 +40,8 @@ import { pageWidgets } from './helpers/pageViews.js'
 const ROOT = path.resolve(__dirname, '../..')
 const MANIFEST_PATH = path.join(ROOT, 'src', 'manifest.json')
 
-const CELL_WIDGETS_PATH = path.join(ROOT, 'src', 'services', 'cellWidgets.js')
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
-const cellWidgetsSource = fs.readFileSync(CELL_WIDGETS_PATH, 'utf8')
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const bulkActionsSource = fs.readFileSync(
 	path.join(ROOT, 'src', 'utils', 'caseBulkActions.js'),
@@ -683,8 +681,8 @@ describe('the Deadline column', () => {
 		}
 	})
 
-	it('no longer names an app cell widget for the deadline', () => {
-		expect(cellWidgetsSource).not.toMatch(/deadlineCountdown/)
+	it('names no app cell widget, so the library draws it', () => {
+		expect(fs.existsSync(path.join(ROOT, 'src', 'services', 'cellWidgets.js'))).toBe(false)
 	})
 
 	it('sorts on the stored deadline, not on the rendered text', () => {
