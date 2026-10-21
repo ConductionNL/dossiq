@@ -27,7 +27,7 @@ const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8')
 const readJson = (...parts) => JSON.parse(read(...parts))
 
 const manifest = readJson('src', 'manifest.json')
-const tab = read('src', 'views', 'settings', 'tabs', 'FirstRunTab.vue')
+const tab = read('src', 'views', 'settings', 'AdminRoot.vue')
 
 /**
  * Every id a tour step could legitimately name: the pages and the menu.

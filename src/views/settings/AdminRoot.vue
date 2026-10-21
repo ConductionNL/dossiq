@@ -176,7 +176,37 @@
 					)
 				"
 				:loading="!storesReady">
-				<FirstRunTab v-if="storesReady" />
+				<template v-if="storesReady">
+					<CnReadinessChecklist
+						data-testid="first-run-readiness"
+						source="/apps/dossiq/api/setup/status"
+						itemsPath="readiness"
+						:fields="{ label: 'title', explanation: 'body', met: 'done', fixHref: 'screen', failure: 'failure' }"
+						:description="
+							t(
+								'dossiq',
+								'What this instance still needs before it can take a case. Nothing here blocks the app: you can leave an item open and carry on.',
+							)
+						"
+						:errorText="t('dossiq', 'The first run status could not be read.')"
+						@loaded="onFirstRunLoaded" />
+					<NcNoteCard
+						v-if="brokenTourSteps.length"
+						type="warning"
+						data-testid="first-run-broken-steps">
+						{{
+							t(
+								'dossiq',
+								'These tour steps point at a screen that is gone, so they teach nobody: {steps}',
+								{
+									steps: brokenTourSteps
+										.map((step) => `${step.step} (${step.surface})`)
+										.join(', '),
+								},
+							)
+						}}
+					</NcNoteCard>
+				</template>
 			</CnSettingsSection>
 
 			<CnSettingsSection
@@ -188,7 +218,12 @@
 						'What dossiq needs to run, and what this instance has. Read live, every time you open this page.',
 					)
 				">
-				<PrerequisitesTab />
+				<CnReadinessChecklist
+					data-testid="prerequisites-block"
+					:items="prerequisiteItems"
+					:groups="prerequisiteGroups"
+					:statusLabels="{ met: t('dossiq', 'present'), unmet: t('dossiq', 'missing') }"
+					:blockingText="t('dossiq', 'Dossiq cannot run until this is installed:')" />
 			</CnSettingsSection>
 
 			<CnSettingsSection
@@ -641,6 +676,7 @@ import {
 	CnActionDialog,
 	CnAdminSettingsShell,
 	CnIndexPage,
+	CnReadinessChecklist,
 	CnRegisterMapping,
 	CnSearchIndexStatus,
 	CnSettingsFieldsSection,
@@ -661,15 +697,14 @@ import BulkReassignModal from '../../modals/BulkReassignModal.vue'
 import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
 import StufEndpoints from './StufEndpoints.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
-import FirstRunTab from './tabs/FirstRunTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
-import PrerequisitesTab from './tabs/PrerequisitesTab.vue'
 import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
 import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import manifest from '../../manifest.json'
 import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
+import { prerequisiteGroups, prerequisiteItems } from '../../utils/prerequisiteItems.js'
 import {
 	aiFields,
 	archivalFields,
@@ -709,8 +744,7 @@ export default {
 	name: 'AdminRoot',
 	components: {
 		Plus,
-		FirstRunTab,
-		PrerequisitesTab,
+		CnReadinessChecklist,
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
 		CnRegisterMapping,
@@ -760,6 +794,10 @@ export default {
 			registerConfiguration: {},
 			registerSaving: false,
 			activeTab: 'general',
+			// Tour steps whose screen is gone, from the first-run status.
+			brokenTourSteps: [],
+			// What the server read about dossiq's prerequisites at page load.
+			prerequisites: loadState('dossiq', 'prerequisites', {}),
 			// The modal a list on this page opened: `{ key, props }`, or null.
 			adminModal: null,
 			tabCounts: {},
@@ -779,6 +817,26 @@ export default {
 		 */
 		substitutionIndex() {
 			return substitutionIndex(this.t, (key, props) => this.openAdminModal(key, props))
+		},
+
+		/**
+		 * The prerequisites as checklist items.
+		 *
+		 * @return {Array<object>} The items.
+		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 */
+		prerequisiteItems() {
+			return prerequisiteItems(this.prerequisites, this.t)
+		},
+
+		/**
+		 * The headings the prerequisites are grouped under.
+		 *
+		 * @return {Array<object>} The groups.
+		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 */
+		prerequisiteGroups() {
+			return prerequisiteGroups(this.t)
 		},
 
 		/**
@@ -1397,6 +1455,17 @@ export default {
 		 */
 		onTabChange(id) {
 			this.activeTab = id
+		},
+
+		/**
+		 * Keep the tour steps whose screen is gone from the first-run status.
+		 *
+		 * @param {object} status The status answer.
+		 * @return {void}
+		 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+		 */
+		onFirstRunLoaded(status) {
+			this.brokenTourSteps = (Array.isArray(status?.tourSteps) ? status.tourSteps : []).filter((step) => step.state === 'missing')
 		},
 
 		/**

@@ -25,7 +25,7 @@ const readJson = (...parts) => JSON.parse(read(...parts))
 const manifest = readJson('src', 'manifest.json')
 const readiness = readJson('lib', 'Settings', 'first_run_readiness.json')
 const adminRoot = read('src', 'views', 'settings', 'AdminRoot.vue')
-const tab = read('src', 'views', 'settings', 'tabs', 'FirstRunTab.vue')
+const tab = read('src', 'views', 'settings', 'AdminRoot.vue')
 const controller = read('lib', 'Controller', 'SetupController.php')
 
 describe('the readiness declaration', () => {
@@ -106,24 +106,26 @@ describe('nothing in the readiness list gates the app', () => {
 describe('the screen an administrator reads it on', () => {
 	it('is a section of admin settings, mounted first', () => {
 		expect(adminRoot).toContain('id="section-first-run"')
-		expect(adminRoot).toContain('<FirstRunTab')
+		expect(adminRoot).toContain('data-testid="first-run-readiness"')
 		expect(adminRoot.indexOf('section-first-run')).toBeLessThan(
 			adminRoot.indexOf(':href="caseTypesUrl"'),
 		)
 	})
 
 	it('reads the status live rather than a stored flag', () => {
-		expect(tab).toContain('/apps/dossiq/api/setup/status')
-		expect(tab).toContain('async reload()')
+		// CnReadinessChecklist reads its source on mount and on return to the tab.
+		expect(tab).toContain('source="/apps/dossiq/api/setup/status"')
+		expect(tab).toContain('itemsPath="readiness"')
 		expect(tab).not.toContain('localStorage')
 	})
 
 	it('shows the failure sentence when a read could not be made', () => {
-		expect(tab).toContain('item.failure')
-		expect(tab).toContain('This could not be read: {reason}')
+		// CnReadinessChecklist says "This could not be read: {reason}" for it.
+		expect(tab).toContain("failure: 'failure'")
+		expect(tab).toContain('The first run status could not be read.')
 	})
 
 	it('links each item to the screen it names', () => {
-		expect(tab).toContain(':href="item.screen"')
+		expect(tab).toContain("fixHref: 'screen'")
 	})
 })

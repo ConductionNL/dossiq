@@ -1,52 +1,22 @@
-// @vitest-environment jsdom
 /**
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The Prerequisites block shows what the SERVER read, present and missing.
- *
- * THE ASSERTION THAT CARRIES THE REQUIREMENT is "an item the server reported
- * absent renders as missing". A block that only proved it can list things
- * would pass against a component that drew every row the same way, which is
- * the whole failure this change exists to end: an administrator learned of a
- * missing extension from a stack trace, and a block that says "present" about
- * everything is no better than the stack trace.
- *
- * The state is mocked rather than the DOM seeded, because `loadState` reads a
- * script tag the settings framework writes, and a component that read the DOM
- * directly is the pattern ADR-004 forbids.
+ * What dossiq needs, and what this instance has: the server's reading
+ * (`Prerequisites::check()`) as CnReadinessChecklist items. The checklist
+ * draws each state as a word (present, missing) and names the unmet blocking
+ * items; this pins what each row says and which rows block.
  *
  * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
  */
 
-import { mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
-import { h } from 'vue'
+import fs from 'fs'
+import path from 'path'
+import { describe, expect, it } from 'vitest'
+import { prerequisiteGroups, prerequisiteItems } from '../../src/utils/prerequisiteItems.js'
 
-/** The state the component is mounted against, swapped per test. */
-let state = {}
-
-vi.mock('@nextcloud/initial-state', () => ({
-	loadState: (app, key, fallback) => (state === null ? fallback : state),
-}))
-
-vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
-	default: {
-		name: 'NcNoteCard',
-		props: { type: { type: String, default: '' } },
-		render() {
-			return h(
-				'div',
-				{ class: 'nc-note-card', 'data-type': this.type },
-				this.$slots.default ? this.$slots.default() : [],
-			)
-		},
-	},
-}))
-
-const PrerequisitesTab = (
-	await import('../../src/views/settings/tabs/PrerequisitesTab.vue')
-).default
+const t = (app, text) => text
+const adminRoot = fs.readFileSync(path.resolve(__dirname, '../../src/views/settings/AdminRoot.vue'), 'utf8')
 
 /**
  * A server reading, in the shape `Prerequisites::check()` answers with.
@@ -57,19 +27,16 @@ const PrerequisitesTab = (
 function reading(overrides = {}) {
 	return {
 		php: { required: '8.3', running: '8.3.6', present: true },
-		nextcloud: { min: '32', max: '34' },
+		nextcloud: { min: '32', max: '34', running: '33', present: true },
 		extensions: [
 			{ name: 'json', why: 'Reads every payload.', present: true },
-			{ name: 'mbstring', why: 'Counts text.', present: true },
-			{ name: 'zip', why: 'Packs an export.', present: true },
+			{ name: 'zip', why: 'Packs an export.', present: false },
 		],
 		apps: {
-			required: [
-				{ id: 'openregister', unlocks: 'Stores every case.', present: true },
-			],
+			required: [{ id: 'openregister', unlocks: 'Stores every case.', present: true }],
 			optional: [
 				{ id: 'humaniq', unlocks: 'Books the hours.', present: false },
-				{ id: 'hermiq', unlocks: 'Answers the AI steps.', present: true },
+				{ id: 'docudesk', name: 'filinq', unlocks: 'Documents.', present: true },
 			],
 		},
 		...overrides,
@@ -77,170 +44,51 @@ function reading(overrides = {}) {
 }
 
 /**
- * Mount the block against one reading.
- *
- * @param {object|null} value The reading, or null for no state at all.
- * @return {object} The mounted wrapper.
+ * @param {object|null} state A reading.
+ * @return {Record<string, object>} The items by id.
  */
-function open(value) {
-	state = value
-	return mount(PrerequisitesTab)
-}
-
-/**
- * The text of one row.
- *
- * @param {object} wrapper The mounted wrapper.
- * @param {string} testid  The row's data-testid.
- * @return {string} Its text.
- */
-function row(wrapper, testid) {
-	const found = wrapper.find(`[data-testid="${testid}"]`)
-	expect(found.exists(), `${testid} must be rendered`).toBe(true)
-	return found.text()
-}
+const items = (state) => Object.fromEntries(prerequisiteItems(state, t).map((item) => [item.id, item]))
 
 describe('The Prerequisites block', () => {
-	it('says missing about an extension the server reported absent', () => {
-		// 🔴 THE ONE THIS BLOCK EXISTS FOR. Both answers are asked for in the
-		// same mount, so a component that drew every row identically fails
-		// here rather than passing on the half it happens to agree with.
-		const wrapper = open(
-			reading({
-				extensions: [
-					{ name: 'json', why: 'Reads every payload.', present: true },
-					{ name: 'zip', why: 'Packs an export.', present: false },
-				],
-			}),
-		)
-
-		expect(row(wrapper, 'prerequisite-ext-zip')).toContain('missing')
-		expect(row(wrapper, 'prerequisite-ext-json')).toContain('present')
+	it('says missing about an extension the server reported absent, and why it is needed', () => {
+		const rows = items(reading())
+		expect(rows['ext-zip']).toMatchObject({ met: false, explanation: 'Packs an export.', group: 'extensions' })
+		expect(rows['ext-json'].met).toBe(true)
 	})
 
-	it('says what each extension is for, so a reader can act on it', () => {
-		const wrapper = open(reading())
-		expect(row(wrapper, 'prerequisite-ext-zip')).toContain('Packs an export.')
+	it('lists an absent optional app with what it would have added, and never blocks on it', () => {
+		const rows = items(reading())
+		expect(rows['app-humaniq']).toMatchObject({ met: false, explanation: 'Books the hours.', blocking: false, group: 'optional' })
 	})
 
-	it('lists an absent optional app with what it would have added', () => {
-		const wrapper = open(reading())
-		const hours = row(wrapper, 'prerequisite-app-humaniq')
-
-		expect(hours).toContain('missing')
-		expect(hours).toContain('Books the hours.')
-		expect(row(wrapper, 'prerequisite-app-hermiq')).toContain('present')
+	it('blocks only on a required app', () => {
+		const rows = items(reading({ apps: { required: [{ id: 'openregister', unlocks: 'x', present: false }], optional: [] } }))
+		expect(rows['app-openregister']).toMatchObject({ met: false, blocking: true, group: 'required' })
 	})
 
-	it('says out loud when the app dossiq cannot run without is absent', () => {
-		const wrapper = open(
-			reading({
-				apps: {
-					required: [
-						{
-							id: 'openregister',
-							unlocks: 'Stores every case.',
-							present: false,
-						},
-					],
-					optional: [],
-				},
-			}),
-		)
-
-		const blocking = wrapper.find('[data-testid="prerequisites-blocking"]')
-		expect(blocking.exists()).toBe(true)
-		expect(blocking.text()).toContain('openregister')
-	})
-
-	it('stays quiet about blocking when everything required is there', () => {
-		const wrapper = open(reading())
-		expect(wrapper.find('[data-testid="prerequisites-blocking"]').exists()).toBe(
-			false,
-		)
-	})
-
-	it('names the running PHP beside the one that is required', () => {
-		const wrapper = open(reading())
-		const php = row(wrapper, 'prerequisite-php')
-
-		// Both numbers, because "PHP 8.3 or higher" on its own tells a reader
-		// nothing about the instance they are looking at.
-		expect(php).toContain('8.3')
-		expect(php).toContain('8.3.6')
-	})
-
-	it('marks the Nextcloud row present or missing, like every other row', () => {
-		// @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
-		// The row had no mark at all, the one row on the page without one.
-		const inRange = row(
-			open(
-				reading({
-					nextcloud: {
-						min: '32',
-						max: '35',
-						running: '34',
-						present: true,
-					},
-				}),
-			),
-			'prerequisite-nextcloud',
-		)
-		expect(inRange).toContain('present')
-		expect(inRange).toContain('34')
-
-		const outOfRange = row(
-			open(
-				reading({
-					nextcloud: {
-						min: '32',
-						max: '35',
-						running: '31',
-						present: false,
-					},
-				}),
-			),
-			'prerequisite-nextcloud',
-		)
-		expect(outOfRange).toContain('missing')
+	it('names the running PHP and Nextcloud beside what is required', () => {
+		const rows = items(reading())
+		expect(rows.php.label).toContain('8.3')
+		expect(rows.php.explanation).toContain('8.3.6')
+		expect(rows.nextcloud.label).toBe('Nextcloud 32 to 34')
+		expect(rows.nextcloud.explanation).toContain('33')
+		expect(items(reading({ nextcloud: { min: '32', max: '34', running: '31', present: false } })).nextcloud.met).toBe(false)
 	})
 
 	it('shows the name the server gives, not the id it looked up', () => {
-		// @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
-		const wrapper = open(
-			reading({
-				apps: {
-					required: [
-						{
-							id: 'openregister',
-							name: 'openregister',
-							unlocks: 'x',
-							present: true,
-						},
-					],
-					optional: [
-						{
-							id: 'docudesk',
-							name: 'filinq',
-							unlocks: 'Documents.',
-							present: false,
-						},
-					],
-				},
-			}),
-		)
-		const filinq = row(wrapper, 'prerequisite-app-docudesk')
-
-		expect(filinq).toContain('filinq')
-		expect(filinq).not.toContain('docudesk')
+		expect(items(reading())['app-docudesk'].label).toBe('filinq')
 	})
 
-	it('renders an empty block rather than throwing on absent state', () => {
-		// A dozen other sections share this page. One of them failing to read
-		// its state must not take the rest of the page with it.
-		const wrapper = open(null)
-		expect(wrapper.find('[data-testid="prerequisites-block"]').exists()).toBe(
-			true,
-		)
+	it('gives an empty reading the platform rows unmet rather than throwing', () => {
+		expect(Object.keys(items(null))).toEqual(['php', 'nextcloud'])
+		expect(items(null).php.met).toBe(false)
+	})
+
+	it('is drawn in four groups, the states said present and missing, the blocking ones named', () => {
+		expect(prerequisiteGroups(t).map((group) => group.id)).toEqual(['platform', 'extensions', 'required', 'optional'])
+		expect(adminRoot).toContain('data-testid="prerequisites-block"')
+		expect(adminRoot).toContain(":statusLabels=\"{ met: t('dossiq', 'present'), unmet: t('dossiq', 'missing') }\"")
+		expect(adminRoot).toContain(":blockingText=\"t('dossiq', 'Dossiq cannot run until this is installed:')\"")
+		expect(adminRoot).toContain("loadState('dossiq', 'prerequisites', {})")
 	})
 })

@@ -103,7 +103,7 @@ test.describe('The Prerequisites block', () => {
 		// The server decided this row. An empty fallback renders the block and
 		// no rows at all, so a row carrying an app id is what separates "the
 		// state arrived" from "the state was never provided".
-		const hours = page.getByTestId('prerequisite-app-humaniq')
+		const hours = page.getByTestId('cn-readiness-item-app-humaniq')
 		await expect(
 			hours,
 			'the hours app must be listed among the optional ones',
@@ -134,12 +134,12 @@ test.describe('The Prerequisites block', () => {
 		// would be as useless as one that reported everything present, and
 		// only asserting both verdicts can tell them apart.
 		await expect(
-			page.getByTestId('prerequisite-app-openregister'),
+			page.getByTestId('cn-readiness-item-app-openregister'),
 		).toContainText('present', { timeout: 20_000 })
 
 		// The extensions are invisible from a browser, so a row about one is
 		// proof the reading came from PHP.
-		await expect(page.getByTestId('prerequisite-ext-zip')).toBeVisible({
+		await expect(page.getByTestId('cn-readiness-item-ext-zip')).toBeVisible({
 			timeout: 20_000,
 		})
 	})
