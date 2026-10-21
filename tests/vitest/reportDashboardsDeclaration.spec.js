@@ -34,7 +34,7 @@ describe('processing time', () => {
 
 	it('draws the four compliance charts from the server report, one view each', () => {
 		const views = {
-			'processing-time-charts': ['donut', 'sla'],
+			'processing-time-charts': ['bar-list', 'sla'],
 			'processing-time-charts-distribution': ['bar', 'distribution'],
 			'processing-time-charts-trend': ['line', 'trend'],
 			'processing-time-charts-throughput': ['line', 'throughput'],
@@ -47,8 +47,30 @@ describe('processing time', () => {
 			expect(w.content.endpointSource.params.view).toBe(view)
 			expect(w.content.endpointSource.responsePath).toBe(view)
 			expect(w.content.endpointSource.params.period).toBe('@workspace.datePreset?')
-			expect(onGrid('Doorlooptijd', id)).toBe(true)
+			expect(onGrid('Doorlooptijd', id)).toBe(false)
 		}
+	})
+
+	it('groups the four compliance charts as small cards in one card, three to a row (DqDoorlooptijd Naleving)', () => {
+		const group = widget('Doorlooptijd', 'processing-time-compliance')
+		expect(group.type).toBe('sections')
+		expect(group.title).toBe('Compliance')
+		expect(group.roles).toEqual(['controllers', 'beheerders', 'admin'])
+		expect(group.visibleWhen.field).toBe('visible.processing-time-compliance')
+		expect(group.content).toMatchObject({ cards: true, columns: 3 })
+		expect(group.content.footnote).toBeTruthy()
+		expect(group.content.sections.map((s) => s.widgetId)).toEqual(['processing-time-charts', 'processing-time-charts-distribution', 'processing-time-charts-trend', 'processing-time-charts-throughput'])
+		for (const section of group.content.sections) {
+			expect(section.title).toBe(widget('Doorlooptijd', section.widgetId).title)
+		}
+		expect(onGrid('Doorlooptijd', 'processing-time-compliance')).toBe(true)
+	})
+
+	it('draws compliance per case type as a bar list of the share within the norm', () => {
+		const w = widget('Doorlooptijd', 'processing-time-charts')
+		expect(w.content.barMax).toBe(100)
+		expect(w.content.valueFormat.suffix).toBe(' %')
+		expect(w.content.endpointSource.series[0].path).toBe('rate')
 	})
 
 	it('lists the cases at risk with the severity as text beside its colour, rows opening the case', () => {
