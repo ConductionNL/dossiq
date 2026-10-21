@@ -1055,6 +1055,9 @@
 					"case-tile-deadline",
 					{
 						"id": "side-requester",
+						"notTabs": [
+							"ai-oversight"
+						],
 						"type": "facts",
 						"title": "Requester",
 						"_note": "DqZaak Verzoeker: the requester as a lead (initials and name), then what kind of requester and the channel, read from the projection the requester picker writes.",
@@ -1084,6 +1087,9 @@
 					},
 					{
 						"id": "side-handling",
+						"notTabs": [
+							"ai-oversight"
+						],
 						"type": "facts",
 						"title": "Handling",
 						"_note": "DqZaak Behandeling: who handles the case, in which team and since when, as label and value rows; the handler reads as the user's display name (facts format user).",
@@ -1118,10 +1124,14 @@
 					},
 					{
 						"id": "side-work-instruction",
+						"notTabs": [
+							"ai-oversight"
+						],
 						"type": "case-work-instruction",
 						"title": "Work instruction",
 						"_note": "DqZaak Werkinstructie: the case type's work instruction beside the case; the Knowledge tab keeps it with the linked pages."
 					},
+					"case-assistant-chat",
 					{
 						"id": "side-objection-appeal",
 						"type": "record-list",
@@ -1499,6 +1509,9 @@
 				},
 				"widgets": {
 					"case-tile-deadline": {
+						"notTabs": [
+							"ai-oversight"
+						],
 						"_note": "The deadline is the first card of the side column, and the card already carries the widget title (Termijn) as its heading, as DqZaak draws it. The countdown's own label would print the same word a second time under it, so the simple structure leaves it out. The rest of the content is the manifest's, repeated because a patch replaces `content` whole. DqZaak draws the card as the headline in days, \"Beslissen uiterlijk <date>\" under it, a bar for the share of the term that has passed since the start date, and Termijn opschorten, which opens the lifecycle dialog on its suspend act (nextcloud-vue countdown board anatomy).",
 						"content": {
 							"field": "deadline",
@@ -1884,10 +1897,14 @@
 									"overflow": true
 								},
 								{
-									"widgetId": "case-assistant-chat",
+									"id": "ai-oversight",
+									"widgetIds": [
+										"case-ai-activity",
+										"case-macros"
+									],
 									"label": "AI oversight",
 									"overflow": true,
-									"_note": "DqZaakAssistent: the assistant is drawn in the case page, as the AI-toezicht tab, not only behind the launcher hex. The tab holds the same AI Chat Companion the hex opens, embedded (nextcloud-vue `ai-chat`), with the case as its context. It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip, before Historie, while it is open, as the board draws it. The hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
+									"_note": "DqZaakAssistent: the AI-toezicht tab. Its panel stacks what the assistant did on this case and the macros; the assistant chat itself stands in the side column while this tab is open (`tabs` on case-assistant-chat, the side cards per tab of nextcloud-vue). It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip while it is open. The launcher hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
 								}
 							]
 						}
@@ -3339,9 +3356,79 @@
 						}
 					},
 					{
+						"id": "case-ai-activity",
+						"type": "object-list",
+						"title": "What the assistant did on this case",
+						"subtitle": "Every suggestion is recorded, also when nobody uses it",
+						"requiredApp": "hermiq",
+						"_note": "DqZaakAssistent \"Wat de assistent op deze zaak deed\": every AI suggestion on this case and what a person did with it, as hermiq records it for EU AI Act art. 14 (an advisory Approval: used, adapted, not used or rejected). Read through hermiq's GET /api/ai-oversight/subject, which first asks OpenRegister whether the reader may open this case (hermiq#1172): the records are readable only through their subject, not through the OpenRegister list. The rows appear once dossiq reports its suggestions to hermiq (AiOversightRecordedEvent).",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/hermiq/api/ai-oversight/subject",
+								"params": {
+									"originApp": "dossiq",
+									"subjectId": "@objectId",
+									"limit": 25
+								}
+							},
+							"columns": [
+								{
+									"key": "decidedAt",
+									"label": "Moment",
+									"format": "date-time"
+								},
+								{
+									"key": "decidedBy",
+									"label": "User",
+									"format": "user"
+								},
+								{
+									"key": "prompt",
+									"label": "Question or suggestion"
+								},
+								{
+									"key": "status",
+									"label": "Outcome",
+									"widget": "badge",
+									"enum": [
+										"approved",
+										"overridden",
+										"unused",
+										"denied"
+									],
+									"enumLabels": {
+										"approved": "Used",
+										"overridden": "Adapted",
+										"unused": "Not used",
+										"denied": "Rejected"
+									}
+								},
+								{
+									"key": "advisoryContext.model",
+									"label": "Model"
+								}
+							],
+							"emptyText": "The assistant has made no suggestions on this case yet"
+						}
+					},
+					{
+						"id": "case-macros",
+						"type": "macros",
+						"title": "Macros",
+						"_note": "DqZaakAssistent \"Macro's\": the macros the case schema declares (OpenRegister declared actions with macro: true and a bound manual flow), narrowed to the ones the case type lists in `macros` (macrosFrom), each run as the handler through the declared-action endpoint. A case type that lists none offers none, so a macro written for Woo requests is not offered on an objection.",
+						"content": {
+							"description": "Several steps at once; then you see what changed",
+							"macrosFrom": "@context.caseType.macros",
+							"emptyText": "No macros are set up for this case type"
+						}
+					},
+					{
 						"id": "case-assistant-chat",
 						"type": "ai-chat",
 						"title": "Assistant",
+						"tabs": [
+							"ai-oversight"
+						],
 						"requiredApp": "hermiq",
 						"_note": "The AI Chat Companion embedded in the Assistant tab (DqZaakAssistent). The library widget renders the companion the launcher hex opens, always open and without the hex; it reads the page context CnDetailPage provides, so the agents offered are the ones relevant to a case. Without hermiq the widget says it is not installed rather than leaving an empty tab. Needs the nextcloud-vue release with the `ai-chat` widget (ai-chat-widget).",
 						"content": {

@@ -612,8 +612,8 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.46.0",
-        "digest": "cd0d3c320dec6f0c4e44d2aabd0b62079ddd66053deff8b942b19dc2dbfdc50d"
+        "version": "1.47.0",
+        "digest": "17f830be27a7fc18e5279c50b88c73eaf49b74a215caaaeb4cb422c6ec3cf1c3"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -1699,6 +1699,10 @@
         "version": "1.1.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-case-macro-rights.json::case": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-case-type-overview-cards.json::caseType": {
         "version": "1.25.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1709,6 +1713,10 @@
     },
     "lib/Settings/register.d/99-case-type-special-data.json::caseType": {
         "version": "1.27.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-type-which-macros.json::caseType": {
+        "version": "1.28.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/dso-omgevingsloket.json::case": {
