@@ -44,6 +44,7 @@ async function mountDialog() {
 		global: {
 			stubs: {
 				CnDialog: { props: ['eyebrow'], template: '<div><p class="eyebrow">{{ eyebrow }}</p><slot /><slot name="actions" /></div>' },
+				CnChoiceCards: { name: 'CnChoiceCards', props: ['options', 'modelValue', 'layout', 'columns', 'label'], template: '<div class="choice-cards" />' },
 				NcButton: { template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot /></button>' },
 				NcCheckboxRadioSwitch: { template: '<label><slot /></label>' },
 				NcNoteCard: { template: '<div><slot /></div>' },
@@ -114,5 +115,26 @@ describe('CaseShareOrganisationDialog', () => {
 		const overlay = simple.pages.find((page) => page.id === 'CaseDetail')
 		const action = overlay.configAppend.headerActions.find((entry) => entry.id === 'share-with-organisation')
 		expect(action).toMatchObject({ type: 'open-modal', target: 'CaseShareOrganisationDialog', group: 'Case' })
+	})
+})
+
+describe('CaseShareOrganisationDialog mode picker', () => {
+	it('offers Share and Hand over as the library choice cards, each with its own line', async () => {
+		const wrapper = await mountDialog()
+		const cards = wrapper.findComponent({ name: 'CnChoiceCards' })
+		expect(cards.exists()).toBe(true)
+		expect(cards.props('options').map((option) => [option.value, option.label, option.description])).toEqual([
+			['share', 'Share', 'You stay the owner; they work along'],
+			['handover', 'Hand over', 'They become the owner; you can still read along'],
+		])
+		expect(cards.props('modelValue')).toBe('share')
+		expect(wrapper.find('.case-share-org__modes').exists()).toBe(false)
+	})
+
+	it('switches the act from the cards', async () => {
+		const wrapper = await mountDialog()
+		wrapper.findComponent({ name: 'CnChoiceCards' }).vm.$emit('update:modelValue', 'handover')
+		await wrapper.vm.$nextTick()
+		expect(wrapper.vm.mode).toBe('handover')
 	})
 })
