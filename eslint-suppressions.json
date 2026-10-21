@@ -232,17 +232,6 @@
       "count": 1
     }
   },
-  "src/views/settings/StufAuditLog.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "eqeqeq": {
-      "count": 1
-    }
-  },
   "src/views/settings/StufEndpoints.vue": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
