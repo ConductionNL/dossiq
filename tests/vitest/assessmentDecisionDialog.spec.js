@@ -100,7 +100,10 @@ async function mountDialog({ outstanding = [], assessed = ASSESSED, letter = nul
 				CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 				CnChoiceCards: true,
 				BeschikkingComposerDialog: true,
-				NcNoteCard: { template: '<div><slot /></div>' },
+				NcNoteCard: {
+					props: ['type', 'heading', 'showAlert'],
+					template: '<div :data-type="type" :data-heading="heading" :data-alert="String(showAlert)"><slot /></div>',
+				},
 				NcButton: {
 					props: ['disabled'],
 					emits: ['click'],
@@ -162,6 +165,20 @@ describe('AssessmentDecisionDialog', () => {
 			.find('[data-testid="assessment-decision-save"]')
 			.trigger('click')
 		expect(axios.post).not.toHaveBeenCalled()
+	})
+
+	it('names the outstanding documents in a warning note card, readable on every theme', async () => {
+		const { wrapper } = await mountDialog({
+			outstanding: [{ id: 'io-3', title: 'Mail aannemer, 3 maart 2026' }],
+		})
+
+		const blocked = wrapper.find('[data-testid="assessment-decision-blocked"]')
+		expect(blocked.attributes('data-type')).toBe('warning')
+		expect(blocked.attributes('data-alert')).toBe('true')
+		expect(blocked.attributes('data-heading')).toBe(
+			'Assess these documents first. The decision covers every document on the case.',
+		)
+		expect(blocked.find('li').text()).toBe('Mail aannemer, 3 maart 2026')
 	})
 
 	it('offers nothing to save when the outstanding list cannot be read', async () => {

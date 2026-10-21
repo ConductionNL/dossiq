@@ -29,7 +29,7 @@ describe('the lifecycle act forms', () => {
 		expect(summary.facts).toEqual([
 			{ label: 'Archive nomination', path: 'kase.archiveNomination', fallback: 'Not set' },
 			{ label: 'Destruction date', path: 'kase.archiveActionDate', fallback: 'Not set' },
-			{ label: 'Archive status afterwards', path: 'kase.archiveStatus', fallback: 'Not set' },
+			{ label: 'Archive status afterwards', fallback: 'Archived' },
 		])
 		expect(notice).toEqual({
 			type: 'info',
@@ -37,6 +37,14 @@ describe('the lifecycle act forms', () => {
 			text: 'Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.',
 		})
 		expect(fieldsOf({ id: 'archive' })).toEqual(['reason'])
+	})
+
+	it('tells under the archive reason how the case comes back, as board DqArchiveren draws it', () => {
+		const reason = actForm({ kind: 'gesture', id: 'archive' }).inputs.find((input) => input.field === 'reason')
+		expect(reason.note).toBe('Goes into the history of the case. To bring it back, use Restore from the archive under Next step.')
+
+		const abort = actForm({ kind: 'gesture', id: 'abort' }).inputs.find((input) => input.field === 'reason')
+		expect(abort.note).toBe('Goes into the history of the case.')
 	})
 
 	it('shows no summary or notice on any other act', () => {

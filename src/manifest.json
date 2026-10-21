@@ -1483,19 +1483,22 @@
 										"isTemplate": false
 									},
 									"limit": 10,
+									"hideHeader": true,
 									"columns": [
 										{
-											"key": "identifier",
-											"label": "Number"
-										},
-										{
 											"key": "title",
-											"label": "Title"
-										},
+											"label": "Case",
+											"cellClass": "cn-cell--strong",
+											"secondary": "{identifier} · {deadline|date}"
+										}
+									],
+									"rowActions": [
 										{
-											"key": "deadline",
-											"label": "Deadline",
-											"format": "date"
+											"id": "claim",
+											"label": "Pick up",
+											"type": "handler",
+											"handler": "claimCase",
+											"variant": "secondary"
 										}
 									],
 									"rowRoute": "CaseDetail",
@@ -1774,6 +1777,7 @@
 			"_note": "Everything waiting on the reader, in one place, fed by the declared queue sources. A dashboard page with ONE `work-queue` widget (the library's CnWorkQueue) and not type:\"index\": an index page names one register and one schema, and this list spans cases, engine tasks, consultations, advice requests, mentions, work covered for an absent colleague, and calendar items the reader planned for themselves. No manifest key names a set that crosses four stores and a calendar. It is also not a second index over (dossiq, case), so gate-68 has nothing to answer: the page never reads the case schema directly. READ THE NAME COLLISION: the team queue is the UNCLAIMED POOL, every open case nobody has picked up, a view of the Cases page; this one is personal and nobody else can see it. The page names NO source. Every group, its heading and the sentence saying what closes it come from the server, which builds them from the declared queue sources, so a ninth mechanism reaches this page by declaring itself rather than by an edit here. Plan an item opens the library's CnActionDialog, which posts the item and fires `cn:page:refresh`; the work queue listens on that channel, so the planned item shows at once.",
 			"config": {
 				"allowEdit": false,
+				"showActionsMenu": false,
 				"appId": "dossiq",
 				"pageId": "PersonalQueue",
 				"documentationUrl": "https://dossiq.conduction.nl",
@@ -1922,6 +1926,7 @@
 					"related": { "schema": "caseProperty", "backref": "case", "definitionKey": "propertyDefinition", "valueKey": "value" }
 				},
 				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are NOT on the case: dossiq stores each declared field as a `caseProperty` row pointing back at it, so the query is openregister's `_related[caseProperty][case][\u2026]` (query-related-schema-rows). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. The library's CnRelatedFieldFilters draws it beside the search (`relatedFieldFilters`), names a refused block's field under the bar, and feeds the list's fetch through `sidebarState.onFilterChange`, since the index page drops `_`-prefixed route keys.",
+				"bulkBandAlways": true,
 				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/utils/caseBulkActions.js, registered in src/registry.js as `kind: 'handler'` entries, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
 					{
@@ -1989,11 +1994,6 @@
 							"headerMeta": "{total} cases in your name · most urgent first",
 							"footerNote": "Urgency follows from the deadline, the priority and how long a case has been idle.",
 							"headerButtons": [
-								{
-									"action": "export",
-									"label": "Download",
-									"icon": "TrayArrowDown"
-								},
 								{
 									"action": "actions-menu",
 									"label": "Actions"
@@ -2155,6 +2155,7 @@
 									}
 								}
 							],
+							"quickFilterPlacement": "toolbar",
 							"quickFilterMaxVisible": 4,
 							"quickFiltersFrom": {
 								"field": "caseType",
@@ -3760,6 +3761,7 @@
 							"selectionLabel": "{count} documents selected",
 							"selectionLabelOne": "{count} document selected",
 							"showClearSelection": false,
+							"sideCardsPlacement": "page-side",
 							"bulkActions": [
 								{
 									"id": "bulk-confidentiality",
@@ -3860,9 +3862,31 @@
 					},
 					{
 						"id": "case-timeline-panel",
-						"type": "case-timeline-pane",
+						"type": "timeline",
 						"title": "Timeline",
-						"_note": "The Timeline tab: one chronological read of every note, logged call, inbound and outbound message and acknowledgement of receipt on this case, from OpenRegister's timeline (timeline-entries-are-records, #3762). It does NOT replace the three tabs beside it. Notes, Communication and Email each remain the place to DO that one thing; this is the only place that puts them in one order, which is the whole of gap-register row 6.4. The audit sidebar keeps the change history, which is the rule case-history-surface already set. Rendered by TYPE (case-timeline-pane in registry.js) because a tab child resolves from cnRegistry[widget.type] and a component:-only entry draws an empty panel and logs nothing, which this page has shipped twice."
+						"_note": "The Timeline tab: one chronological read of every note, logged call, inbound and outbound message and acknowledgement of receipt on this case, from OpenRegister's timeline (timeline-entries-are-records, #3762). It does NOT replace the three tabs beside it. Notes, Communication and Email each remain the place to DO that one thing; this is the only place that puts them in one order, which is the whole of gap-register row 6.4. The audit sidebar keeps the change history, which is the rule case-history-surface already set. The library `timeline` widget in `manage` mode: kind chips, visibility filter, pin, follow-up, a note composer with standard text blocks and CSV export, the write controls drawn only when OpenRegister answers canManage. Reply on a resident's portal message is an entry action opening PortalMessageDialog, which closes that message's follow-up on `sent`.",
+						"content": {
+							"manage": true,
+							"title": "History of the case",
+							"exportName": "case-history",
+							"entryActions": [
+								{
+									"id": "reply",
+									"label": "Reply",
+									"kinds": [
+										"portaalbericht-inkomend"
+									],
+									"modal": "PortalMessageDialog",
+									"props": {
+										"open": true,
+										"caseId": "@objectId",
+										"subject": "@row.fields.subject"
+									},
+									"doneEvent": "sent",
+									"closesFollowUp": true
+								}
+							]
+						}
 					},
 					{
 						"id": "case-notes-panel",
@@ -5302,7 +5326,7 @@
 							"objectId": "@objectId",
 							"config": {
 								"title": "Archive this case",
-								"eyebrow": "Close off",
+								"eyebrow": "Close off · {identifier}",
 								"subtitle": "The case goes to the archive and is only read afterwards.",
 								"summary": {
 									"source": {
@@ -5323,6 +5347,10 @@
 											{
 												"label": "Destruction date",
 												"value": "{archiveActionDate}"
+											},
+											{
+												"label": "Archive status afterwards",
+												"value": "Archived"
 											}
 										]
 									}
@@ -5370,7 +5398,7 @@
 								},
 								"reason": {
 									"label": "Reason",
-									"hint": "Goes into the history of the case."
+									"hint": "Goes into the history of the case. To bring it back, use Restore from the archive under Next step."
 								},
 								"note": {
 									"variant": "info",
@@ -5535,7 +5563,7 @@
 							"objectId": "@objectId",
 							"config": {
 								"title": "Hand this case to another team",
-								"eyebrow": "Hand over",
+								"eyebrow": "Hand over · {identifier}",
 								"subtitle": "The case keeps its number, its history and its term. Only the team changes.",
 								"source": {
 									"url": "/apps/openregister/api/objects/dossiq/case/@objectId"
@@ -7232,6 +7260,7 @@
 				"appId": "dossiq",
 				"pageId": "Doorlooptijd",
 				"showWidgetActions": false,
+				"_granularityNote": "Board DqDoorlooptijd: Maand, Kwartaal and Jaar group the averages per month, quarter or year over a one-year window; they do not shorten the window (Ruben, 21 Oct). The window is the endpoint default, twelve months. The monthly chart sends the grouping as `granularity`.",
 				"_pageFiltersNote": "The case type choice sits on the description line, before the period group, as the DqDoorlooptijd board draws it (\"alle zaaktypen\"). Only case types that declare a processing deadline are offered: a type without one gives a dashboard that can say nothing. Clearing it reads every case type.",
 				"pageFilters": [
 					{
@@ -7248,6 +7277,18 @@
 							},
 							"labelField": "title"
 						}
+					},
+					{
+						"key": "granularity",
+						"label": "Period",
+						"control": "segmented",
+						"placement": "description",
+						"default": "month",
+						"options": [
+							{ "value": "month", "label": "Month" },
+							{ "value": "quarter", "label": "Quarter" },
+							{ "value": "year", "label": "Year" }
+						]
 					}
 				],
 				"_headerActionsNote": "Board DqDoorlooptijd Downloaden: the figures this page shows, per case type and month (closed cases, average days, share within the norm), for the chosen period and case type, as CSV from the metrics endpoint (format=csv). Same audience as the page: the endpoint refuses a reader outside it.",
@@ -7288,7 +7329,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -7319,7 +7359,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -7350,7 +7389,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -7381,7 +7419,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -7412,8 +7449,8 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.datePreset?",
-									"caseType": "@workspace.caseType?"
+									"caseType": "@workspace.caseType?",
+									"granularity": "@workspace.granularity?"
 								},
 								"labelsPath": "summary.monthlyAvgDays.labels",
 								"series": [
@@ -7458,7 +7495,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								},
 								"labelsPath": "summary.withinNormByCaseType.labels",
@@ -7484,11 +7520,15 @@
 						"type": "chart",
 						"title": "Compliance by Case Type",
 						"content": {
-							"chartKind": "donut",
+							"chartKind": "bar-list",
+							"barMax": 100,
+							"valueFormat": {
+								"name": "number",
+								"suffix": " %"
+							},
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "sla"
 								},
@@ -7497,7 +7537,7 @@
 								"series": [
 									{
 										"name": "Within SLA",
-										"path": "withinSla"
+										"path": "rate"
 									}
 								]
 							},
@@ -7518,10 +7558,10 @@
 						"title": "Processing Time Distribution",
 						"content": {
 							"chartKind": "bar",
+							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "distribution"
 								},
@@ -7551,10 +7591,10 @@
 						"title": "Monthly SLA Trend",
 						"content": {
 							"chartKind": "line",
+							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "trend"
 								},
@@ -7595,10 +7635,10 @@
 						"title": "Throughput (cases closed per week)",
 						"content": {
 							"chartKind": "line",
+							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "throughput"
 								},
@@ -7612,6 +7652,32 @@
 								]
 							},
 							"emptyLabel": "No completed cases in the selected range"
+						}
+					},
+					{
+						"id": "processing-time-compliance",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.processing-time-compliance",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"_note": "Board DqDoorlooptijd draws the four compliance charts as small cards in one card, three to a row, with the norm explained under them. The charts keep their own definitions and visibility; this card names them. DEPENDS ON nextcloud-vue feature/sections-card-grid (sections `columns` and `footnote`).",
+						"type": "sections",
+						"title": "Compliance",
+						"subtitle": "Within the norm per case type, the distribution of the processing time, the SLA trend per month and the throughput",
+						"content": {
+							"cards": true,
+							"columns": 3,
+							"footnote": "The norm per case type is set on the case type; dossiq works out what counts as within the norm.",
+							"sections": [
+								{ "title": "Compliance by Case Type", "widgetId": "processing-time-charts" },
+								{ "title": "Processing Time Distribution", "widgetId": "processing-time-charts-distribution" },
+								{ "title": "Monthly SLA Trend", "widgetId": "processing-time-charts-trend" },
+								{ "title": "Throughput (cases closed per week)", "widgetId": "processing-time-charts-throughput" }
+							]
 						}
 					},
 					{
@@ -7772,7 +7838,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "breakdown"
 								},
@@ -7854,41 +7919,17 @@
 					},
 					{
 						"id": 3,
-						"widgetId": "processing-time-charts",
+						"widgetId": "processing-time-compliance",
 						"gridX": 0,
 						"gridY": 7,
-						"gridWidth": 6,
-						"gridHeight": 4
-					},
-					{
-						"id": 7,
-						"widgetId": "processing-time-charts-distribution",
-						"gridX": 6,
-						"gridY": 7,
-						"gridWidth": 6,
-						"gridHeight": 4
-					},
-					{
-						"id": 8,
-						"widgetId": "processing-time-charts-trend",
-						"gridX": 0,
-						"gridY": 11,
-						"gridWidth": 6,
-						"gridHeight": 4
-					},
-					{
-						"id": 9,
-						"widgetId": "processing-time-charts-throughput",
-						"gridX": 6,
-						"gridY": 11,
-						"gridWidth": 6,
-						"gridHeight": 4
+						"gridWidth": 12,
+						"gridHeight": 6
 					},
 					{
 						"id": 4,
 						"widgetId": "processing-time-case-type-deadlines",
 						"gridX": 0,
-						"gridY": 15,
+						"gridY": 13,
 						"gridWidth": 12,
 						"gridHeight": 5
 					},
@@ -7896,7 +7937,7 @@
 						"id": 5,
 						"widgetId": "processing-time-at-risk",
 						"gridX": 0,
-						"gridY": 20,
+						"gridY": 18,
 						"gridWidth": 6,
 						"gridHeight": 6
 					},
@@ -7904,40 +7945,13 @@
 						"id": 6,
 						"widgetId": "processing-time-breakdown",
 						"gridX": 6,
-						"gridY": 20,
+						"gridY": 18,
 						"gridWidth": 6,
 						"gridHeight": 6
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
-				"kpiRow": ["processing-time-average", "processing-time-within-target", "processing-time-over-target", "processing-time-closed"],
-				"dateRange": {
-					"enabled": true,
-					"control": "segmented",
-					"placement": "description",
-					"persistKey": "dossiq-doorlooptijd-range",
-					"_presetNote": "A preset id is what the widgets send as `period` (@workspace.datePreset), and the metrics endpoint reads only a month count such as 12m: an id like `year` is refused with a 400 and every widget on the page stays empty. So the ids are month counts and the label says the period.",
-					"default": {
-						"preset": "12m"
-					},
-					"presets": [
-						{
-							"id": "1m",
-							"label": "Month",
-							"period": "month"
-						},
-						{
-							"id": "3m",
-							"label": "Quarter",
-							"period": "quarter"
-						},
-						{
-							"id": "12m",
-							"label": "Year",
-							"period": "year"
-						}
-					]
-				}
+				"kpiRow": ["processing-time-average", "processing-time-within-target", "processing-time-over-target", "processing-time-closed"]
 			}
 		},
 		{
@@ -9071,6 +9085,16 @@
 				"schema": "lhsRecommendation",
 				"_followNote": "An enforcement advice is a calculated record on a case, not work to follow: board DqHandhaving draws no Follow control. Whoever follows the case hears about it there.",
 				"follow": false,
+				"stageField": "finalIntervention",
+				"_primaryActionByStageNote": "DqHandhaving: the Wat nu? card's button is the act the advice asks for next. A penalty order or administrative enforcement starts with the pre-announcement, a warning or remedial action with the warning letter. Both are a letter for the case from the template library (generate-document's composer), so nothing here is procedure code.",
+				"primaryActionByStage": {
+					"warning": { "id": "lhs-draft-warning", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the warning", "icon": "FileDocumentPlusOutline", "props": { "caseId": "@object.case", "open": true } },
+					"herstelactie": { "id": "lhs-draft-warning", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the warning", "icon": "FileDocumentPlusOutline", "props": { "caseId": "@object.case", "open": true } },
+					"last_under_penaltypayment": { "id": "lhs-draft-pre-announcement", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the pre-announcement", "icon": "FileDocumentPlusOutline", "props": { "caseId": "@object.case", "open": true } },
+					"last_plus_pv": { "id": "lhs-draft-pre-announcement", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the pre-announcement", "icon": "FileDocumentPlusOutline", "props": { "caseId": "@object.case", "open": true } },
+					"bestuursdwang": { "id": "lhs-draft-pre-announcement", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the pre-announcement", "icon": "FileDocumentPlusOutline", "props": { "caseId": "@object.case", "open": true } },
+					"pv_plus_bestuursdwang": { "id": "lhs-draft-pre-announcement", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the pre-announcement", "icon": "FileDocumentPlusOutline", "props": { "caseId": "@object.case", "open": true } }
+				},
 				"_nextStepNote": "DqHandhaving Wat nu?: the next act follows from the intervention the advice settles on (finalIntervention). A penalty order or administrative enforcement starts with a pre-announcement and a two-week period for a view; a warning or remedial action starts with the letter.",
 				"nextStep": {
 					"field": "finalIntervention",
@@ -12085,7 +12109,8 @@
 				"listLabel": "Settings / Flows",
 				"pill": "Case type flow",
 				"notice": "This flow is how its case type works. The case runs the steps; old webhook steps now run as an external call through Integriq.",
-				"paletteFootnote": "dossiq only offers steps a case can do itself. The rest comes from the app that does it."
+				"paletteFootnote": "dossiq only offers steps a case can do itself. The rest comes from the app that does it.",
+				"flowDirection": "down"
 			},
 			"_note": "The shared flow board (CnFlowBoard) over the same native flow store OpenRegister and hermiq use, not an app-owned editor: header, a step palette grouped per providing app, the canvas, and an inspector card for the selected step that replaces the app sidebar (DqFlow)."
 		},

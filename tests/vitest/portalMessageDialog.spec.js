@@ -241,44 +241,24 @@ describe('the Message the applicant header action', () => {
 })
 
 describe('Reply on a resident message in the timeline', () => {
-	it('offers Reply on a resident message only, and closes its follow-up once the answer is sent', async () => {
-		vi.doMock('@nextcloud/l10n', () => ({
-			translate: (a, s) => s,
-			translatePlural: (a, s) => s,
-		}))
-		for (const name of [
-			'NcButton',
-			'NcCheckboxRadioSwitch',
-			'NcEmptyContent',
-			'NcLoadingIcon',
-			'NcNoteCard',
-			'NcSelect',
-		]) {
-			vi.doMock(`@nextcloud/vue/components/${name}`, () => ({
-				default: control(name),
-			}))
-		}
-		const { default: CaseTimelineTab } =
-			await import('../../src/views/cases/components/CaseTimelineTab.vue')
-		const { isResidentMessage, onReplySent } = CaseTimelineTab.methods
+	it('offers Reply on a resident message only, and closes its follow-up once the answer is sent', () => {
+		// The timeline is the library `timeline` widget in manage mode; it
+		// opens the registry modal an entry action names, resolves its props
+		// and closes the entry's open follow-up on the action's done event
+		// (pinned in nextcloud-vue tests/components/CnTimelineManage.spec.js).
+		const pane = manifest.pages
+			.find((page) => page.id === 'CaseDetail')
+			.config.widgets.find((widget) => widget.id === 'case-timeline-panel')
+		const reply = pane.content.entryActions.find((action) => action.id === 'reply')
 
-		expect(isResidentMessage({ kind: 'portaalbericht-inkomend' })).toBe(true)
-		expect(isResidentMessage({ kind: 'portaalbericht' })).toBe(false)
-		expect(isResidentMessage({ kind: 'mail-inkomend' })).toBe(false)
-
-		const question = {
-			id: 'e-1',
-			kind: 'portaalbericht-inkomend',
-			followUp: 'open',
-		}
-		const ctx = {
-			replyTo: question,
-			closeFollowUp: vi.fn().mockResolvedValue(),
-			load: vi.fn().mockResolvedValue(),
-		}
-		await onReplySent.call(ctx)
-
-		expect(ctx.closeFollowUp).toHaveBeenCalledWith(question)
-		expect(ctx.replyTo).toBe(null)
+		expect(reply.kinds).toEqual(['portaalbericht-inkomend'])
+		expect(reply.modal).toBe('PortalMessageDialog')
+		expect(reply.props).toEqual({
+			open: true,
+			caseId: '@objectId',
+			subject: '@row.fields.subject',
+		})
+		expect(reply.doneEvent).toBe('sent')
+		expect(reply.closesFollowUp).toBe(true)
 	})
 })

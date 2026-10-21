@@ -17,7 +17,7 @@ import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
-import { formatDuration } from '../utils/durationHelpers.js'
+import { formatDuration, parseDuration } from '../utils/durationHelpers.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
 import { caseAddress } from './caseAddress.js'
 import { scanVerdictLabel } from './scanVerdict.js'
@@ -33,6 +33,49 @@ const lookupFetchStarted = {}
 const pendingCountIds = new Set()
 let countFlushScheduled = false
 
+
+/**
+ * An ISO duration's parts, with a number of days that is a whole number of
+ * weeks (and nothing else) counted in weeks.
+ *
+ * @param {string} iso The ISO duration.
+ * @return {{years: number, months: number, weeks: number, days: number}|null} The parts, or null when it is not one.
+ */
+function inWholeWeeks(iso) {
+	const parts = parseDuration(iso)
+	if (!parts) {
+		return null
+	}
+	if (!parts.years && !parts.months && !parts.weeks && parts.days > 0 && parts.days % 7 === 0) {
+		return { years: 0, months: 0, weeks: parts.days / 7, days: 0 }
+	}
+	return parts
+}
+
+/**
+ * The one unit a duration is counted in, or null when it uses several.
+ *
+ * @param {{years: number, months: number, weeks: number, days: number}} parts The parts.
+ * @return {{unit: string, count: number}|null} The unit and its count.
+ */
+function singleUnit(parts) {
+	const used = ['years', 'months', 'weeks', 'days'].filter((unit) => parts[unit] > 0)
+	return used.length === 1 ? { unit: used[0], count: parts[used[0]] } : null
+}
+
+/**
+ * Duration parts back as an ISO duration.
+ *
+ * @param {{years: number, months: number, weeks: number, days: number}} parts The parts.
+ * @return {string} The ISO duration.
+ */
+function toIsoDuration(parts) {
+	return 'P'
+		+ (parts.years ? `${parts.years}Y` : '')
+		+ (parts.months ? `${parts.months}M` : '')
+		+ (parts.weeks ? `${parts.weeks}W` : '')
+		+ (parts.days ? `${parts.days}D` : '')
+}
 /**
  * Queue a parent UUID for the next batch sub-case-count fetch and schedule
  * the flush. No-ops when the count is already cached in the store.
@@ -205,9 +248,10 @@ export default {
 
 	/**
 	 * A case type's processing time with the extension it allows, as
-	 * DqZaaktypen draws it ("8 weeks, +6 weeks"). The extension shows only
-	 * when the case type allows one and names its length; otherwise this is
-	 * `isoDuration`.
+	 * DqZaaktypen draws it ("8 weeks, +6"). A whole number of weeks in days
+	 * reads as weeks, and an extension in the same unit as the term is a bare
+	 * number. The extension shows only when the case type allows one and
+	 * names its length.
 	 *
 	 * @param {string} value The ISO processing deadline.
 	 * @param {object} [row] The case type row.
@@ -215,14 +259,22 @@ export default {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	processingTime: (value, row) => {
-		const base = formatDuration(value)
+		const base = inWholeWeeks(value)
+		const time = base ? formatDuration(toIsoDuration(base)) : formatDuration(value)
 		const extension = row?.extensionAllowed === false ? '' : row?.extensionPeriod
-		if (!base || !extension) {
-			return base
+		if (!time || !extension) {
+			return time
 		}
+		const more = inWholeWeeks(extension)
+		if (!more) {
+			return t('dossiq', '{time}, +{extension}', { time, extension: formatDuration(extension) })
+		}
+		const baseUnit = base ? singleUnit(base) : null
+		const moreUnit = singleUnit(more)
+		const sameUnit = baseUnit && moreUnit && baseUnit.unit === moreUnit.unit
 		return t('dossiq', '{time}, +{extension}', {
-			time: base,
-			extension: formatDuration(extension),
+			time,
+			extension: sameUnit ? String(moreUnit.count) : formatDuration(toIsoDuration(more)),
 		})
 	},
 

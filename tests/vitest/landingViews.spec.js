@@ -116,22 +116,22 @@ describe('the landing page in the full structure', () => {
 			)
 			expect(widget, widget.id).toEqual(withoutNotes(source))
 		}
-		// The team queue is the dashboard's own preset: the team queue view's
-		// filter narrowed to the reader's own teams (my-teams-queue).
+		// The team queue asks what the dashboard's own preset asks: the team
+		// queue view's filter narrowed to the reader's own teams
+		// (my-teams-queue). DqMijnTeam draws it as rows with a Pick up
+		// button, so its columns and row actions are its own.
 		const preset = dashboard.config.userWidgets.find(
 			(item) => item.id === 'your-teams-queue',
 		)
-		expect(team[0]).toEqual({ id: preset.id, ...preset.widget })
+		expect(team[0].type).toBe(preset.widget.type)
+		expect(team[0].content.filter).toEqual(preset.widget.content.filter)
 		expect(team[0].content.filter).toEqual({
 			...page(manifest.pages, 'Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters,
 			assignedGroup: '@myGroups',
 		})
 		// The deadline reads as a date, not as the stored ISO string
 		// (my-work-cards-and-team-tiles-read-right, finding F3).
-		const deadline = team[0].content.columns.find(
-			(column) => column.key === 'deadline',
-		)
-		expect(deadline.format).toBe('date')
+		expect(team[0].content.columns[0].secondary).toContain('{deadline|date}')
 	})
 
 	it('gives My team a sentence for when it has nothing to draw', () => {

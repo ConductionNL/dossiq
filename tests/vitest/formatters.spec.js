@@ -102,23 +102,31 @@ describe('the connection formatters the Integrations page reads', () => {
 
 describe('the case type list formatters', () => {
 	it('processingTime adds the extension a case type allows, and only then', () => {
-		const time = formatters.isoDuration('P56D')
-		const extension = formatters.isoDuration('P42D')
 		expect(
 			formatters.processingTime('P56D', {
 				extensionAllowed: true,
 				extensionPeriod: 'P42D',
 			}),
-		).toBe(`${time}, +${extension}`)
+		).toBe('8 weeks, +6')
 		expect(
 			formatters.processingTime('P56D', {
 				extensionAllowed: false,
 				extensionPeriod: 'P42D',
 			}),
-		).toBe(time)
-		expect(formatters.processingTime('P56D', {})).toBe(time)
-		expect(formatters.processingTime('P56D')).toBe(time)
+		).toBe('8 weeks')
+		expect(formatters.processingTime('P56D', {})).toBe('8 weeks')
+		expect(formatters.processingTime('P56D')).toBe('8 weeks')
 		expect(formatters.processingTime('', { extensionPeriod: 'P14D' })).toBe('')
+	})
+
+	it('processingTime writes whole weeks as weeks, and the extension in the same unit as a bare number (DqZaaktypen)', () => {
+		expect(formatters.processingTime('P28D', { extensionPeriod: 'P14D' })).toBe('4 weeks, +2')
+		expect(formatters.processingTime('P1M', { extensionPeriod: 'P2M' })).toBe('1 month, +2')
+		expect(formatters.processingTime('P13W')).toBe('13 weeks')
+		expect(formatters.processingTime('P10D')).toBe('10 days')
+		expect(formatters.processingTime('P56D', { extensionPeriod: 'P1M' })).toBe('8 weeks, +1 month')
+		expect(formatters.processingTime('P56D', { extensionPeriod: 'P10D' })).toBe('8 weeks, +10 days')
+		expect(formatters.processingTime('Termijn van de rechtbank', { extensionPeriod: 'P14D' })).toBe('Termijn van de rechtbank, +2 weeks')
 	})
 
 	it('isoDuration puts a statutory term in words and leaves other text alone', () => {

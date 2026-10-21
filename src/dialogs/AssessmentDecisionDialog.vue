@@ -73,17 +73,13 @@
 					</span>
 				</div>
 
-				<div
+				<NcNoteCard
 					v-if="outstanding.length > 0"
+					type="warning"
+					:showAlert="true"
+					:heading="t('dossiq', 'Assess these documents first. The decision covers every document on the case.')"
 					class="assessment-decision__blocked"
-					role="alert"
 					data-testid="assessment-decision-blocked">
-					<strong>{{
-						t(
-							'dossiq',
-							'Assess these documents first. The decision covers every document on the case.',
-						)
-					}}</strong>
 					<ul>
 						<li v-for="document in outstanding" :key="document.id">
 							{{
@@ -92,7 +88,7 @@
 							}}
 						</li>
 					</ul>
-				</div>
+				</NcNoteCard>
 
 				<template v-else-if="loadError === ''">
 					<div class="assessment-decision__row">
@@ -774,14 +770,6 @@ export default {
 	}
 
 	&__blocked {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		padding: 12px 14px;
-		border-radius: var(--border-radius-large);
-		background: var(--color-warning);
-		color: var(--color-warning-text, var(--color-main-text));
-
 		ul {
 			margin: 0;
 			padding-inline-start: 20px;

@@ -1611,6 +1611,7 @@
 										"case-objection-grounds",
 										"case-objection-advice-card",
 										"case-summary",
+										"goal-plan",
 										"case-grant-decisions-card",
 										"case-request",
 										"case-details",
@@ -1884,6 +1885,7 @@
 									"label": "Related",
 									"overflow": true,
 									"widgetIds": [
+										"case-related-cases-card",
 										"case-related-card",
 										"case-sub-cases-card",
 										"case-objects-card",
@@ -1891,6 +1893,20 @@
 										"case-object-types-link-card"
 									],
 									"_note": "DqZaakGerelateerd: the related panel's sections as the board's cards, related cases first, then sub-cases and objects; the programme and the object-type link follow, so nothing the panel showed is lost."
+								},
+								{
+									"label": "Fees and payments",
+									"overflow": true,
+									"widgetIds": [
+										"case-payment-requests",
+										"case-contract"
+									],
+									"_note": "The fees and the contract shillinq renders for this case, as cards of their own tab. They stood as grid cells under the tab card, outside every tab, so each tab ended in two untitled blocks; the boards draw neither there, and the Linked side card already names both."
+								},
+								{
+									"widgetId": "case-merge-to-pdf",
+									"label": "Merge into one PDF",
+									"overflow": true
 								},
 								{
 									"widgetId": "case-custody-panel",
@@ -1928,6 +1944,39 @@
 									"_note": "DqZaakAssistent: the AI-toezicht tab. Its panel stacks what the assistant did on this case and the macros; the assistant chat itself stands in the side column while this tab is open (`tabs` on case-assistant-chat, the side cards per tab of nextcloud-vue). It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip while it is open. The launcher hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
 								}
 							]
+						}
+					},
+					"case-banner-stack": {
+						"_note": "DqZaak and DqSociaalDomein end the side column with the card \"Status\": what this status asks, the days in it, and why the case needs attention. The banner stack is that card here; nextcloud-vue draws a titled sections widget as one titled card in the side column.",
+						"title": "Status"
+					},
+					"case-attention": {
+						"_note": "DqZaak Status card: \"Why this case needs attention\" as a heading, the hint, and one outlined \"Flag for attention\" button that opens the reason field (nextcloud-vue attention-flag behindButton).",
+						"content": {
+							"endpoint": "/apps/dossiq/api/case/@objectId/attention",
+							"raisePath": "/raise",
+							"clearPath": "/clear",
+							"markersPath": "attentionMarkers",
+							"panelLabels": {
+								"case-data-panel": "Data",
+								"case-files": "Files",
+								"case-notes-panel": "Notes",
+								"case-people-panel": "People",
+								"case-communication-panel": "Communication",
+								"case-email-panel": "Email",
+								"case-work-panel": "Work",
+								"case-decisions-panel": "Decisions",
+								"case-related-panel": "Related"
+							},
+							"assessment": {
+								"path": "riskAssessment",
+								"reviewDateField": "reviewDate"
+							},
+							"labels": {
+								"reasonRaise": "Why this case needs attention",
+								"hintRaise": "Flag the case with a reason. It then comes first under Needs attention, in All cases."
+							},
+							"behindButton": true
 						}
 					},
 					"case-terms": {
@@ -2018,30 +2067,10 @@
 					"11": null,
 					"7": null,
 					"6": null,
-					"money-payments": {
-						"gridX": 0,
-						"gridY": 40,
-						"gridWidth": 6,
-						"gridHeight": 4
-					},
-					"money-contract": {
-						"gridX": 6,
-						"gridY": 40,
-						"gridWidth": 6,
-						"gridHeight": 4
-					},
-					"goal-plan-panel": {
-						"gridX": 0,
-						"gridY": 48,
-						"gridWidth": 6,
-						"gridHeight": 4
-					},
-					"documents-merge-to-pdf": {
-						"gridX": 0,
-						"gridY": 56,
-						"gridWidth": 6,
-						"gridHeight": 4
-					},
+					"money-payments": null,
+					"money-contract": null,
+					"goal-plan-panel": null,
+					"documents-merge-to-pdf": null,
 					"case-banners": null,
 					"full-linked": null
 				}
@@ -2424,15 +2453,20 @@
 							"columns": [
 								{
 									"key": "startTime",
-									"label": "Date"
+									"label": "Date",
+									"format": "date-time"
 								},
 								{
 									"key": "notificationChannel",
-									"label": "Channel"
+									"label": "Channel",
+									"enum": ["phone", "email", "webformulier", "chat", "social_media", "balie"],
+									"enumLabels": { "phone": "Phone", "email": "Email", "webformulier": "Web form", "chat": "Chat", "social_media": "Social media", "balie": "Desk" }
 								},
 								{
 									"key": "direction",
-									"label": "Direction"
+									"label": "Direction",
+									"enum": ["inbound", "outbound"],
+									"enumLabels": { "inbound": "Incoming", "outbound": "Outgoing" }
 								},
 								{
 									"key": "summary",
@@ -3372,6 +3406,66 @@
 						"_note": "DqZaakEmail: the mail linked to the case, with Link mail and Compose mail, from the email integration (Nextcloud Mail). Absent where Mail is not installed."
 					},
 					{
+						"id": "case-related-cases-card",
+						"type": "record-list",
+						"title": "Related cases",
+						"subtitle": "Typed per the RGBZ, kept in both directions",
+						"_note": "DqZaakGerelateerd Gerelateerde zaken: the case's typed peer relations, grouped by the relation type, in the board's order, each under its heading (`groupBy` with `groupOrder` and `valueLabels`), each with the other case's initials, number, case type and handler and its status. The rows come from /api/cases/{id}/relations, which adds those details only for a case the reader may open.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/relations",
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"avatar": "{title}",
+							"title": "{title}",
+							"meta": [
+								"{identifier} · {caseTypeTitle} · {assigneeName}",
+								"{identifier} · {caseTypeTitle}",
+								"{caseTypeTitle}"
+							],
+							"pill": {
+								"field": "statusRole",
+								"labels": {
+									"intake": "Received",
+									"pending-info": "Waiting for information",
+									"in-progress": "In progress",
+									"review": "In review",
+									"closed": "Closed",
+									"stranded": "Stranded"
+								},
+								"colorMap": {
+									"intake": "default",
+									"pending-info": "warning",
+									"in-progress": "purple",
+									"review": "purple",
+									"closed": "success",
+									"stranded": "error"
+								}
+							},
+							"groupBy": "aardRelatie",
+							"groupOrder": [
+								"subject",
+								"waitsOn",
+								"vervolg",
+								"bijdrage",
+								"samenhang"
+							],
+							"valueLabels": {
+								"aardRelatie": {
+									"subject": "Subject of this case",
+									"waitsOn": "Waits on",
+									"vervolg": "Follow-up",
+									"bijdrage": "Contribution",
+									"samenhang": "Related"
+								}
+							},
+							"rowRoute": "CaseDetail",
+							"rowIdField": "caseId",
+							"emptyText": "No related cases yet"
+						}
+					},
+					{
 						"id": "case-related-card",
 						"type": "related",
 						"title": "Related cases",
@@ -3424,33 +3518,6 @@
 											"params": {
 												"id": "{id}"
 											}
-										}
-									}
-								},
-								{
-									"key": "relations",
-									"endpoint": "/apps/dossiq/api/cases/@objectId/relations",
-									"path": "results",
-									"icon": "LinkVariant",
-									"groupBy": [
-										"{displayLabel}",
-										"{aardRelatie}"
-									],
-									"groupLabels": {
-										"vervolg": "Follow-up",
-										"subject": "Subject",
-										"bijdrage": "Contribution",
-										"samenhang": "Related"
-									},
-									"itemLabel": [
-										"{title} ({notes})",
-										"{title}"
-									],
-									"requireLabel": true,
-									"rowRoute": {
-										"name": "CaseDetail",
-										"params": {
-											"id": "{caseId}"
 										}
 									}
 								}

@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Csv\CsvWriter;
+use OCA\Dossiq\Service\Doorlooptijd\DeadlineComplianceCalculator;
 use OCA\Dossiq\Service\DoorlooptijdService;
 use OCA\Dossiq\Service\Reporting\ReportingAudience;
 use OCP\AppFramework\Controller;
@@ -78,6 +79,45 @@ class DoorlooptijdController extends Controller {
 	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
 	 */
 	public function metrics(): JSONResponse|DataDownloadResponse {
+		$denied = $this->refuseReader();
+		if ($denied !== null) {
+			return $denied;
+		}
+
+		$caseType = $this->request->getParam('caseType');
+		$period = $this->request->getParam('period', '12m');
+		$granularity = $this->request->getParam('granularity', 'month');
+		$atRiskRaw = $this->request->getParam('atRiskDays', 5);
+		$format = $this->request->getParam('format', 'json');
+
+		$refusal = (
+			$this->badRequest(caseType: $caseType, period: $period, atRiskRaw: $atRiskRaw)
+			?? $this->refuseChoice(format: $format, granularity: $granularity)
+		);
+
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		if ($format === 'csv') {
+			return $this->csv(caseType: $caseType, period: $period);
+		}
+
+		return new JSONResponse(
+			$this->leadTimeService->getMetrics(
+				params: $this->metricsParams(caseType: $caseType, period: $period, granularity: $granularity, atRiskRaw: $atRiskRaw)
+			)
+		);
+	}//end metrics()
+
+	/**
+	 * Refuse a reader who may not see the organisation's processing times.
+	 *
+	 * @return JSONResponse|null A 401 or 403 response, or null when the reader may see them.
+	 *
+	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 */
+	private function refuseReader(): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
@@ -92,34 +132,55 @@ class DoorlooptijdController extends Controller {
 			return new JSONResponse(['message' => ReportingAudience::REFUSAL], Http::STATUS_FORBIDDEN);
 		}
 
-		$caseType = $this->request->getParam('caseType');
-		$period = $this->request->getParam('period', '12m');
-		$atRiskRaw = $this->request->getParam('atRiskDays', 5);
-		$format = $this->request->getParam('format', 'json');
+		return null;
+	}//end refuseReader()
 
-		$refusal = $this->badRequest(caseType: $caseType, period: $period, atRiskRaw: $atRiskRaw);
-		if ($refusal === null && in_array($format, ['json', 'csv'], true) === false) {
-			$refusal = new JSONResponse(['message' => 'format must be json or csv'], Http::STATUS_BAD_REQUEST);
+	/**
+	 * Refuse a download format or a grouping the metrics do not offer.
+	 *
+	 * @param mixed $format      The requested format.
+	 * @param mixed $granularity The requested grouping.
+	 *
+	 * @return JSONResponse|null A 400 response, or null when both are valid.
+	 *
+	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 */
+	private function refuseChoice(mixed $format, mixed $granularity): ?JSONResponse {
+		if (in_array($format, ['json', 'csv'], true) === false) {
+			return new JSONResponse(['message' => 'format must be json or csv'], Http::STATUS_BAD_REQUEST);
 		}
 
-		if ($refusal !== null) {
-			return $refusal;
+		if (in_array($granularity, DeadlineComplianceCalculator::GRANULARITIES, true) === false) {
+			return new JSONResponse(['message' => 'granularity must be week, month, quarter or year'], Http::STATUS_BAD_REQUEST);
 		}
 
-		if ($format === 'csv') {
-			return $this->csv(caseType: $caseType, period: $period);
-		}
+		return null;
+	}//end refuseChoice()
 
+	/**
+	 * The parameters the metrics service reads, the case type only when one is chosen.
+	 *
+	 * @param mixed  $caseType    The case type filter, already validated.
+	 * @param string $period      The period, already validated.
+	 * @param string $granularity The grouping, already validated.
+	 * @param mixed  $atRiskRaw   The at-risk horizon in days, already validated.
+	 *
+	 * @return array<string, mixed> The parameters.
+	 *
+	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 */
+	private function metricsParams(mixed $caseType, string $period, string $granularity, mixed $atRiskRaw): array {
 		$params = [
 			'period' => $period,
+			'granularity' => $granularity,
 			'atRiskDays' => (int)$atRiskRaw,
 		];
 		if (is_string($caseType) === true && $caseType !== '') {
 			$params['caseType'] = $caseType;
 		}
 
-		return new JSONResponse($this->leadTimeService->getMetrics(params: $params));
-	}//end metrics()
+		return $params;
+	}//end metricsParams()
 
 	/**
 	 * The figures per case type and month as a CSV download, for the same
