@@ -7381,6 +7381,8 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "lhsRecommendation",
+				"_followNote": "An enforcement advice is a calculated record on a case, not work to follow: board DqHandhaving draws no Follow control. Whoever follows the case hears about it there.",
+				"follow": false,
 				"_nextStepNote": "DqHandhaving Wat nu?: the next act follows from the intervention the advice settles on (finalIntervention). A penalty order or administrative enforcement starts with a pre-announcement and a two-week period for a view; a warning or remedial action starts with the letter.",
 				"nextStep": {
 					"field": "finalIntervention",
@@ -7477,7 +7479,7 @@
 						}
 					}
 				},
-				"_note": "ASSESSMENT-RECORD archetype (a per-case LHS intervention recommendation derived from an lhsMatrix), ADR-062 round 2. No comms/documents, no child schemas. The 13-field schema splits into two genuinely distinct groups: 'Recommendation' (the matrix inputs and outcome — case, inspection, ernst, gedrag, actorType, matrixVersion, recommendedInterventie, recommendedBy) paired with the Related panel (parent case and inspection), and 'Override & final' (the accountability-bearing deviation fields — finalIntervention, override, overrideJustification, overrideBy, overrideAuthority) full-width below. No status lifecycle field and no content leaves. Audit history is a sidebar tab.",
+				"_note": "ASSESSMENT-RECORD archetype (a per-case LHS intervention recommendation derived from an lhsMatrix), ADR-062 round 2. No comms/documents, no child schemas. The 13-field schema splits into two genuinely distinct groups: 'Recommendation' (the matrix inputs and outcome — case, inspection, ernst, gedrag, actorType, matrixVersion, recommendedInterventie, recommendedBy) and 'Override & final' (the accountability-bearing deviation fields — finalIntervention, override, overrideJustification, overrideBy, overrideAuthority), both side cards as board DqHandhaving draws them, under the Case and Violation class cards; the main column holds the matrix and the violation. No status lifecycle field and no content leaves. Audit history is a sidebar tab.",
 				"typePill": {
 					"field": "finalIntervention",
 					"labels": {
@@ -7566,9 +7568,143 @@
 						}
 					},
 					{
+						"id": "side-recommendation",
+						"type": "facts",
+						"title": "Recommendation",
+						"_note": "DqHandhaving Aanbeveling: the matrix inputs and the intervention it prescribes, as the side card the board draws. Deviating goes through the header's Deviate with a reason, so the card only reads.",
+						"content": {
+							"fields": [
+								{
+									"label": "Actor type",
+									"path": "actorType",
+									"map": {
+										"burger": "Resident",
+										"bedrijf": "Company",
+										"overheid": "Government",
+										"recidivist": "Repeat offender"
+									}
+								},
+								{
+									"label": "Behaviour",
+									"path": "behaviour",
+									"map": {
+										"goedwillend": "well-meaning",
+										"onverschillig": "indifferent",
+										"calculerend": "calculating",
+										"crimineel": "criminal"
+									}
+								},
+								{
+									"label": "Case",
+									"path": "case",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "case",
+										"labelField": "title"
+									},
+									"route": "CaseDetail"
+								},
+								{
+									"label": "Inspection",
+									"path": "inspection",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "inspectieRapport",
+										"labelField": "title"
+									}
+								},
+								{
+									"label": "Matrix Version",
+									"path": "matrixVersion"
+								},
+								{
+									"label": "Recommended By",
+									"path": "recommendedBy",
+									"format": "user"
+								},
+								{
+									"label": "Recommended Intervention",
+									"path": "recommendedIntervention",
+									"map": {
+										"warning": "Warning",
+										"herstelactie": "Remedial action",
+										"last_under_penaltypayment": "Order subject to a penalty",
+										"last_plus_pv": "Order and official report",
+										"bestuursdwang": "Administrative enforcement",
+										"pv_plus_bestuursdwang": "Official report and administrative enforcement"
+									}
+								},
+								{
+									"label": "Severity",
+									"path": "severity",
+									"map": {
+										"gering": "minor",
+										"aanzienlijk": "considerable",
+										"ernstig": "serious"
+									}
+								},
+								{
+									"as": "line",
+									"text": "The advice follows from the matrix cell. A recommendation stays, even when the decision deviates from it."
+								}
+							]
+						}
+					},
+					{
+						"id": "side-override",
+						"type": "facts",
+						"title": "Override & final",
+						"_note": "DqHandhaving Afwijking en definitief: the intervention actually applied and, when it deviates, who decided it under which authority and why.",
+						"content": {
+							"fields": [
+								{
+									"label": "Final Intervention",
+									"path": "finalIntervention",
+									"map": {
+										"warning": "Warning",
+										"herstelactie": "Remedial action",
+										"last_under_penaltypayment": "Order subject to a penalty",
+										"last_plus_pv": "Order and official report",
+										"bestuursdwang": "Administrative enforcement",
+										"pv_plus_bestuursdwang": "Official report and administrative enforcement"
+									}
+								},
+								{
+									"label": "Override",
+									"path": "override",
+									"map": {
+										"true": "Yes",
+										"false": "No"
+									}
+								},
+								{
+									"label": "Override Authority",
+									"path": "overrideAuthority",
+									"map": {
+										"inspector": "Inspector",
+										"manager": "Manager"
+									}
+								},
+								{
+									"label": "Override By",
+									"path": "overrideBy",
+									"format": "user"
+								},
+								{
+									"label": "Override Justification",
+									"path": "overrideJustification"
+								},
+								{
+									"as": "line",
+									"text": "The final intervention goes to the case; the reason is in the history."
+								}
+							]
+						}
+					},
+					{
 						"id": "side-history",
 						"type": "audit-trail",
-						"title": "History",
+						"title": "Record history",
 						"icon": "History"
 					}
 				],
@@ -7674,53 +7810,6 @@
 								"column": "@object.severity"
 							}
 						}
-					},
-					{
-						"id": "lhsrecommendation-data",
-						"type": "data",
-						"title": "Recommendation",
-						"icon": "Lightbulb",
-						"content": {
-							"title": "Recommendation",
-							"columns": 2,
-							"include": [
-								"case",
-								"inspection",
-								"severity",
-								"behaviour",
-								"actorType",
-								"matrixVersion",
-								"recommendedIntervention",
-								"recommendedBy"
-							],
-							"overrides": {
-								"recommendedBy": {
-									"editable": false
-								}
-							}
-						}
-					},
-					{
-						"id": "lhsrecommendation-override",
-						"type": "data",
-						"title": "Override & final",
-						"icon": "ShieldCheckOutline",
-						"content": {
-							"title": "Override & final",
-							"columns": 2,
-							"include": [
-								"finalIntervention",
-								"override",
-								"overrideJustification",
-								"overrideBy",
-								"overrideAuthority"
-							],
-							"overrides": {
-								"overrideBy": {
-									"editable": false
-								}
-							}
-						}
 					}
 				],
 				"layout": [
@@ -7731,23 +7820,6 @@
 						"gridY": 0,
 						"gridWidth": 12,
 						"gridHeight": 7
-					},
-					{
-						"id": "1",
-						"widgetId": "lhsrecommendation-data",
-						"gridX": 0,
-						"gridY": 12,
-						"gridWidth": 12,
-						"gridHeight": 5,
-						"showTitle": false
-					},
-					{
-						"id": "3",
-						"widgetId": "lhsrecommendation-override",
-						"gridX": 0,
-						"gridY": 17,
-						"gridWidth": 12,
-						"gridHeight": 4
 					},
 					{
 						"id": "violation",
