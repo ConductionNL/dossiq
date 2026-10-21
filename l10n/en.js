@@ -399,6 +399,7 @@ OC.L10N.register(
         "Add comment": "Add comment",
         "Add condition": "Add condition",
         "Add custom bevoegd gezag": "Add custom bevoegd gezag",
+        "Add day": "Add day",
         "Add Decision": "Add Decision",
         "Add decision": "Add decision",
         "Add Decision Table": "Add Decision Table",

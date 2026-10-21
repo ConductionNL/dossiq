@@ -81,4 +81,9 @@ describe('the end-of-day page', () => {
 		expect(widget('eod-open').content.emptyTexts[0].when).toEqual({ endpoint: DAY, field: 'opened', op: 'eq', value: 0 })
 		expect(widget('eod-tomorrow').visibleWhen).toEqual({ endpoint: DAY, field: 'tomorrow', op: 'notEmpty' })
 	})
+
+	it('heads Your day and How this works as side headings, as board DqDagAfsluiten (nextcloud-vue titleTone)', () => {
+		expect(widget('eod-figures').titleTone).toBe('side')
+		expect(widget('eod-how').titleTone).toBe('side')
+	})
 })

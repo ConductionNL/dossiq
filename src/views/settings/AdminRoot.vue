@@ -37,6 +37,7 @@
 
 		<CnSettingsSection
 			id="section-working-days"
+			:actionsInTitle="true"
 			:name="t('dossiq', 'Working days and holidays')"
 			:description="
 				t(
@@ -44,7 +45,15 @@
 					'Red: a holiday or closing day. Terms do not count these days. These days apply to every app that uses the national calendar.',
 				)
 			">
-			<CnWorkingCalendarWidget :content="workingCalendarContent" />
+			<template #actions>
+				<NcButton variant="secondary" data-testid="dossiq-working-days-add" @click="$refs.workingCalendar.openAdd()">
+					<template #icon>
+						<Plus :size="20" />
+					</template>
+					{{ t('dossiq', 'Add day') }}
+				</NcButton>
+			</template>
+			<CnWorkingCalendarWidget ref="workingCalendar" :content="workingCalendarContent" />
 		</CnSettingsSection>
 
 		<template #tab-system>
@@ -497,6 +506,7 @@
 		<template #tab-vth>
 			<CnSettingsSection
 				id="section-intake-activities"
+				:actionsInTitle="true"
 				:wide="true"
 				:name="t('dossiq', 'Activities from the Omgevingsloket')"
 				:description="
@@ -532,6 +542,7 @@
 
 			<CnSettingsSection
 				id="section-fee-schedules"
+				:actionsInTitle="true"
 				:wide="true"
 				:name="t('dossiq', 'Fee rules')"
 				:description="
@@ -566,6 +577,7 @@
 			</CnSettingsSection>
 
 			<CnSettingsSection
+				:actionsInTitle="true"
 				:name="t('dossiq', 'VTH inspection checklists')"
 				:description="
 					t(
@@ -1152,6 +1164,8 @@ export default {
 					schema: 'working-calendar',
 					filter: { slug: 'nl-national' },
 				},
+				// The section's title row draws Add day.
+				addButton: false,
 			}
 		},
 
