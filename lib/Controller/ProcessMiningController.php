@@ -54,6 +54,14 @@ use Throwable;
  * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the report, its period
+ * presets, the display views and the CSV download each own one rule of the
+ * one endpoint; every dependency is used.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) — constructor DI: every
+ * parameter is a distinct collaborator used by this controller.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — the JSON report, its
+ * narrowed views and the CSV download share one route and its validation.
  */
 class ProcessMiningController extends Controller {
 	/**
@@ -127,13 +135,7 @@ class ProcessMiningController extends Controller {
 		$statistic = ($this->request->getParam('statistic') ?? 'mean');
 
 		$invalid = ($this->validateFilters(from: $from, to: $to, caseType: $caseType) ?? $this->validateDisplay(period: $period, view: $view));
-		if ($invalid === null && in_array($format, ['json', 'csv'], true) === false) {
-			$invalid = new JSONResponse(['message' => 'format must be json or csv'], Http::STATUS_BAD_REQUEST);
-		}
-
-		if ($invalid === null && in_array($statistic, ['mean', 'median'], true) === false) {
-			$invalid = new JSONResponse(['message' => 'statistic must be mean or median'], Http::STATUS_BAD_REQUEST);
-		}
+		$invalid = ($invalid ?? $this->validateDownload(format: $format, statistic: $statistic));
 
 		if ($invalid !== null) {
 			return $invalid;
@@ -164,6 +166,28 @@ class ProcessMiningController extends Controller {
 			return new JSONResponse(['message' => 'Report generation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end report()
+
+	/**
+	 * Refuse a download format or statistic the report does not offer.
+	 *
+	 * @param mixed $format    The requested format.
+	 * @param mixed $statistic The requested statistic.
+	 *
+	 * @return JSONResponse|null A 400 response, or null when both are valid.
+	 *
+	 * @spec openspec/changes/procesanalyse-csv/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
+	 */
+	private function validateDownload(mixed $format, mixed $statistic): ?JSONResponse {
+		if (in_array($format, ['json', 'csv'], true) === false) {
+			return new JSONResponse(['message' => 'format must be json or csv'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if (in_array($statistic, ['mean', 'median'], true) === false) {
+			return new JSONResponse(['message' => 'statistic must be mean or median'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return null;
+	}//end validateDownload()
 
 	/**
 	 * The days per phase per case type as a CSV download: a column per

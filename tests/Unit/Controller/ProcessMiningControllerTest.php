@@ -320,6 +320,7 @@ class ProcessMiningControllerTest extends TestCase {
 			views: $this->views(),
 			periods: new ReportPeriod(),
 			dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00'),
+			l10n: $this->createMock(IL10N::class),
 		);
 	}//end adminController()
 

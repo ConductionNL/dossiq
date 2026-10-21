@@ -29,7 +29,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ProcessMiningController;
+use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\ProcessMining\ReportViews;
 use OCA\Dossiq\Service\ProcessMiningService;
+use OCA\Dossiq\Service\Reporting\ReportPeriod;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\IGroupManager;
@@ -105,6 +108,9 @@ class ProcessMiningCsvTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $service,
 			logger: $this->createMock(LoggerInterface::class),
+			views: new ReportViews(l10n: $l10n),
+			periods: new ReportPeriod(),
+			dates: $this->createMock(CaseDateNormaliser::class),
 			l10n: $l10n,
 		);
 	}//end controller()
