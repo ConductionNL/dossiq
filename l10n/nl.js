@@ -104,6 +104,7 @@ OC.L10N.register(
         "> 90 dagen": "> 90 dagen",
         "_%n case_::_%n cases_": ["%n zaak","%n zaken"],
         "_%n day late_::_%n days late_": ["%n dag te laat","%n dagen te laat"],
+        "_%n day left_::_%n days left_": ["nog %n dag","nog %n dagen"],
         "_%n item_::_%n items_": ["%n onderdeel","%n onderdelen"],
         "_%n more in My work_::_%n more in My work_": ["%n meer in Mijn werk","%n meer in Mijn werk"],
         "_%n property_::_%n properties_": ["%n eigenschap","%n eigenschappen"],
@@ -2355,6 +2356,8 @@ OC.L10N.register(
         "Destination team": "Doelteam",
         "Destroy": "Vernietigen",
         "destroy": "vernietigen",
+        "Destroy this case?": "Deze zaak vernietigen?",
+        "Destroying cannot be undone. The record that the case existed stays.": "Vernietigen kan niet ongedaan worden gemaakt. Het gegeven dat de zaak bestond, blijft bewaard.",
         "Destroying role": "Vernietigende rol",
         "Destruction Date": "Vernietigingsdatum",
         "Destruction date": "Vernietigingsdatum",
@@ -6705,6 +6708,7 @@ OC.L10N.register(
         "Restitutiebedrag": "Restitutiebedrag",
         "Restore": "Herstellen",
         "Restore from the archive": "Terughalen uit het archief",
+        "Restore this case?": "Deze zaak herstellen?",
         "Restricted": "Confidentieel",
         "Restricted public": "Beperkt openbaar",
         "Resubmission/amendment count": "Aantal keren opnieuw ingediend of gewijzigd",
@@ -10819,11 +10823,7 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar",
-        "Restore this case?": "Deze zaak herstellen?",
-        "Destroy this case?": "Deze zaak vernietigen?",
-        "Destroying cannot be undone. The record that the case existed stays.": "Vernietigen kan niet ongedaan worden gemaakt. Het gegeven dat de zaak bestond, blijft bewaard.",
-        "_%n day left_::_%n days left_": ["nog %n dag","nog %n dagen"]
+        "{years} years": "{years} jaar"
     },
     "nplurals=2; plural=(n != 1);"
 )

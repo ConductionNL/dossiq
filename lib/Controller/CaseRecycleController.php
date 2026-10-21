@@ -60,6 +60,12 @@ use Throwable;
  * Lists deleted cases, restores one, and destroys one as a second act.
  *
  * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the recycle, destruction,
+ * retention and access services each own one rule of the gesture; the
+ * translator says the list's window note and a refusal in the reader's language.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) — constructor DI: every
+ * parameter is a distinct collaborator used by this controller.
  */
 class CaseRecycleController extends Controller {
 
