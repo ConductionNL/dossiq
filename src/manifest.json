@@ -2857,6 +2857,16 @@
 							"statusDwellBreached": true
 						},
 						"_note": "what-a-status-declares, task 3.2. A lens of its own, deliberately NOT folded into Overdue: a case can breach its status maximum while its statutory term is comfortable, and merging the two would bury exactly the case this lens exists to surface. It narrows on `statusDwellBreached`, which the engine writes on the case, so the page, the total and the facets are resolved by one query rather than by a post-filter over a page of twenty-five. A case in a status that declares no maximum can never carry the flag, so on a fleet that has annotated nothing this lens is simply empty."
+					},
+					{
+						"label": "Suspended",
+						"filter": {
+							"_related[deadlineInstance][case][status]": "paused",
+							"isFinalStatus": false,
+							"statusHiddenInLists": false,
+							"isDraft": false
+						},
+						"_note": "DqZaken \"Opgeschort\": the open cases whose term stands still. A pause under Awb 4:5 is not on the case: it is the `status: paused` of the case's term row (`deadlineInstance`, written by DeadlinePauseService), so the lens asks OpenRegister for the case through the term rows that point at it (`_related`, query-related-schema-rows), the way the organisations list asks for its open cases. The case's lifecycle journal says the same, but a JSON string is nothing a list can narrow on."
 					}
 				],
 				"_quickFilterMaxVisibleNote": "Seventeen pills wrap the actions bar onto a second line and squeeze the 'Showing X of Y' count onto two, so only the first four render and the rest sit behind one more CHIP at the end of the row — a '⋯' pill, not a toolbar button, because what it opens is a filter like the ones beside it. The four are the everyday ones and the cap is the reason the ORDER of quickFilters is now load-bearing: moving a lens up or down moves it in or out of the strip. A lens picked from the panel is applied exactly as a pill is, and the chip then wears its label and its fill, so a narrowed list never presents itself as All.",
