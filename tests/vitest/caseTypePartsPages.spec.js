@@ -34,12 +34,12 @@ describe('the parts of a case type', () => {
 		expect(appended(widgetId).content).toMatchObject({ register: 'dossiq', schema, filter: { caseType: '@objectId' } })
 	})
 
-	it('places results under statuses, roles under rights, document and decision types under phases', () => {
+	it('places results, document and decision types under statuses, roles under rights', () => {
 		const tabs = appended('case-type-panels').content.tabs
 		const holds = (label) => tabs.find((tab) => tab.label === label).widgetIds
-		expect(holds('Statuses')).toEqual(['case-type-statuses-editor', 'case-type-results'])
+		expect(holds('Statuses')).toEqual(['case-type-statuses-editor', 'case-type-results', 'case-type-document-types', 'case-type-decision-types', 'case-type-blueprint'])
 		expect(holds('Rights')).toEqual(['case-type-rights', 'case-type-roles'])
-		expect(holds('Phases and tasks')).toEqual(expect.arrayContaining(['case-type-document-types', 'case-type-decision-types']))
+		expect(holds('Phases and tasks')).not.toEqual(expect.arrayContaining(['case-type-document-types']))
 	})
 
 	it('cannot unpublish: isDraft is not an editable field on the case type card', () => {
@@ -60,8 +60,10 @@ describe('the parts of a case type', () => {
 	it('edits messages, the workflow and the rules in their rehosted editors, statuses and fields as lists', () => {
 		const tabs = appended('case-type-panels').content.tabs
 		const holds = (label) => tabs.find((tab) => tab.label === label).widgetIds
-		expect(holds('Fields')).toEqual(expect.arrayContaining(['case-type-fields-editor', 'case-type-rules']))
-		expect(holds('Phases and tasks')).toEqual(expect.arrayContaining(['case-type-workflow-editor', 'case-type-messages-editor']))
+		expect(holds('Fields')).toEqual(expect.arrayContaining(['case-type-fields-editor']))
+		expect(holds('Rules')).toEqual(['case-type-rules'])
+		// The workflow canvas has a page of its own, CaseTypeFlow (case-type-page-follows-its-boards).
+		expect(holds('Phases and tasks')).toEqual(expect.arrayContaining(['case-type-messages-editor']))
 		const types = overlay.configPatch.widgets
 		expect(types['case-type-statuses-editor']).toBeUndefined()
 		expect(types['case-type-fields-editor']).toBeUndefined()

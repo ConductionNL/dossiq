@@ -128,11 +128,12 @@ class CaseTypePhases {
 			}
 
 			$phases[$id] = [
-				'id'      => $id,
-				'name'    => $this->text->forReader(value: ($statusType['name'] ?? '')),
-				'order'   => (int) ($statusType['order'] ?? 0),
-				'isFinal' => (($statusType['isFinal'] ?? false) === true),
-				'tasks'   => [],
+				'id'         => $id,
+				'caseTypeId' => $caseTypeId,
+				'name'       => $this->text->forReader(value: ($statusType['name'] ?? '')),
+				'order'      => (int) ($statusType['order'] ?? 0),
+				'isFinal'    => (($statusType['isFinal'] ?? false) === true),
+				'tasks'      => [],
 			];
 		}
 

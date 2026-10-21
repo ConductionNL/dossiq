@@ -4842,7 +4842,7 @@
 						"id": "side-case-type-facts",
 						"type": "facts",
 						"title": "Data",
-						"tabs": ["statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "history"],
+						"tabs": ["statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "history"],
 						"content": {
 							"fields": [
 								{
@@ -4850,20 +4850,58 @@
 									"path": "category"
 								},
 								{
-									"label": "Subject",
-									"path": "subject"
+									"label": "Origin",
+									"when": {
+										"field": "@self.owner",
+										"op": "eq",
+										"value": "__system__"
+									},
+									"parts": [
+										{
+											"text": "Shipped"
+										},
+										{
+											"path": "subject"
+										}
+									]
 								},
 								{
-									"label": "Handling model",
-									"path": "handlingModel"
+									"label": "Origin",
+									"when": {
+										"field": "@self.owner",
+										"op": "neq",
+										"value": "__system__"
+									},
+									"parts": [
+										{
+											"text": "Own case type"
+										}
+									]
 								},
 								{
-									"label": "Confidentiality",
-									"path": "confidentiality"
+									"label": "Form",
+									"when": {
+										"field": "intakeFormRef",
+										"op": "notEmpty"
+									},
+									"parts": [
+										{
+											"text": "A Nextcloud Forms form opens cases"
+										}
+									]
 								},
 								{
-									"label": "Identifier",
-									"path": "identifier"
+									"label": "Handling teams",
+									"parts": [
+										{
+											"path": "handling.defaultGroup"
+										},
+										{
+											"path": "handling.teams",
+											"format": "list"
+										}
+									],
+									"separator": ", "
 								}
 							]
 						}
@@ -4973,7 +5011,6 @@
 									"widgetIds": [
 										"case-type-fields-editor",
 										"case-type-field-rules",
-										"case-type-rules",
 										"case-type-core",
 										"case-type-list-layout"
 									],
@@ -4990,7 +5027,10 @@
 									"label": "Statuses",
 									"widgetIds": [
 										"case-type-statuses-editor",
-										"case-type-results"
+										"case-type-results",
+										"case-type-document-types",
+										"case-type-decision-types",
+										"case-type-blueprint"
 									],
 									"countFrom": {
 										"register": "dossiq",
@@ -5005,12 +5045,16 @@
 									"label": "Phases and tasks",
 									"widgetIds": [
 										"case-type-phase-board",
-										"case-type-terms",
-										"case-type-workflow-editor",
-										"case-type-messages-editor",
-										"case-type-blueprint",
-										"case-type-document-types",
-										"case-type-decision-types"
+										"case-type-variants",
+										"case-type-terms-written",
+										"case-type-messages-editor"
+									]
+								},
+								{
+									"id": "rules",
+									"label": "Rules",
+									"widgetIds": [
+										"case-type-rules"
 									]
 								},
 								{
@@ -5049,6 +5093,7 @@
 								{
 									"id": "portal",
 									"label": "Portal",
+									"overflow": true,
 									"widgetIds": [
 										"case-type-portal",
 										"case-type-party-kinds"
@@ -5202,11 +5247,12 @@
 						"id": "case-type-phase-board",
 						"type": "grouped-cards",
 						"title": "Phases and tasks",
+						"subtitle": "Every task has its own role, term and form. Running cases keep their version.",
 						"headerLink": {
 							"label": "View as flow",
-							"route": "WorkflowDefinitionDetail",
+							"route": "CaseTypeFlow",
 							"params": {
-								"id": "@object.workflowDefinition"
+								"id": "@objectId"
 							}
 						},
 						"_note": "DqZaaktype Fasen en taken: the case type's statuses as phases, each with the tasks its active workflow runs, and the acts available in every phase, from GET /api/case-types/{id}/phases (the steps are a JSON string no declarative widget can group).",
@@ -5231,6 +5277,13 @@
 								"title": "Available in every phase",
 								"path": "alwaysAvailable",
 								"itemText": "{label}"
+							},
+							"groupAction": {
+								"id": "case-type-phase-add-task",
+								"type": "navigate",
+								"label": "Add a task",
+								"icon": "Plus",
+								"target": "/settings/case-types/@group.caseTypeId/flow"
 							},
 							"emptyText": "This case type has no phases yet",
 							"groupEmptyText": "No tasks in this phase"
@@ -5402,6 +5455,82 @@
 									"destructive": true
 								}
 							]
+						}
+					},
+					{
+						"id": "case-type-variants",
+						"type": "field-list",
+						"title": "Variants",
+						"subtitle": "Routes through the same case type; a case picks one when it is made",
+						"_note": "DqZaaktype Varianten (case-type-page-follows-its-boards, REQ-CTB-3): caseType.variants, declared in lib/Settings/register.d/68-case-type-variants.json.",
+						"content": {
+							"field": "variants",
+							"key": "name",
+							"row": {
+								"title": "name",
+								"meta": ["description"],
+								"pill": {
+									"path": "isDefault",
+									"map": {
+										"true": "Default",
+										"false": "Rule"
+									},
+									"variantMap": {
+										"true": "info",
+										"false": "default"
+									}
+								}
+							},
+							"add": {
+								"label": "Add a variant",
+								"trigger": "button",
+								"placement": "header",
+								"unique": true,
+								"fields": [
+									{
+										"key": "name",
+										"label": "Name",
+										"required": true
+									},
+									{
+										"key": "description",
+										"label": "Description"
+									}
+								],
+								"defaults": {
+									"isDefault": false
+								}
+							},
+							"remove": {
+								"label": "Remove"
+							},
+							"emptyText": "This case type has one route, no variants"
+						}
+					},
+					{
+						"id": "case-type-terms-written",
+						"type": "facts",
+						"title": "Terms",
+						"_note": "DqZaaktype Termijnen (case-type-page-follows-its-boards, REQ-CTB-4): the terms as sentences from GET /api/case-types/{id}/terms, because the stored values are ISO durations and flags a facts card would show as P56D. The raw fields stay editable through the page's Edit dialog.",
+						"content": {
+							"source": {
+								"url": "/apps/dossiq/api/case-types/@objectId/terms"
+							},
+							"fields": [
+								{
+									"label": "Decision term",
+									"path": "decisionTerm"
+								},
+								{
+									"label": "Suspension",
+									"path": "suspension"
+								},
+								{
+									"label": "Service target",
+									"path": "serviceTarget"
+								}
+							],
+							"emptyText": "This case type sets no terms yet"
 						}
 					}
 				]
