@@ -125,6 +125,7 @@
             "%n property",
             "%n properties"
         ],
+        "_related[caseObject][case][objectUrl]": "Object",
         "_This case type names a change nobody recognises as a reason to mark a case unread: %s. Nothing watches it, so the case type behaves as if it had named nothing._::_This case type names %n changes nobody recognises as a reason to mark a case unread: %s. Nothing watches them, so the case type behaves as if it had named nothing._": [
             "This case type names a change nobody recognises as a reason to mark a case unread: %s. Nothing watches it, so the case type behaves as if it had named nothing.",
             "This case type names %n changes nobody recognises as a reason to mark a case unread: %s. Nothing watches them, so the case type behaves as if it had named nothing."

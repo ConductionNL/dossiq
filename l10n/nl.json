@@ -125,6 +125,7 @@
             "%n eigenschap",
             "%n eigenschappen"
         ],
+        "_related[caseObject][case][objectUrl]": "Object",
         "_This case type names a change nobody recognises as a reason to mark a case unread: %s. Nothing watches it, so the case type behaves as if it had named nothing._::_This case type names %n changes nobody recognises as a reason to mark a case unread: %s. Nothing watches them, so the case type behaves as if it had named nothing._": [
             "Dit zaaktype noemt een wijziging die niemand herkent als reden om een zaak ongelezen te maken: %s. Niets let erop, dus het zaaktype gedraagt zich alsof het niets noemde.",
             "Dit zaaktype noemt %n wijzigingen die niemand herkent als reden om een zaak ongelezen te maken: %s. Niets let erop, dus het zaaktype gedraagt zich alsof het niets noemde."
