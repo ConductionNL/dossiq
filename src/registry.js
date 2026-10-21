@@ -85,7 +85,6 @@ import CaseWorkInstructionPanel from './components/case/CaseWorkInstructionPanel
 import DocumentReviewPanel from './components/case/DocumentReviewPanel.vue'
 // A reviewer's own pending archival decisions, on My Work.
 // @spec openspec/specs/archief-edepot-handover/spec.md
-import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
@@ -100,19 +99,14 @@ import CaseTypeRulesWidget from './components/caseType/CaseTypeRulesWidget.vue'
 // @spec openspec/specs/case-configuration-i18n/spec.md
 import CaseTypeTranslationsWidget from './components/caseType/CaseTypeTranslationsWidget.vue'
 import CaseTypeWorkflowEditorWidget from './components/caseType/CaseTypeWorkflowEditorWidget.vue'
-// The items of a frozen file set with a per-item document compare, configured per case type (decision 182).
-// @spec openspec/specs/document-compare/spec.md
-import FileSetItems from './components/fileSet/FileSetItems.vue'
 // The task page's leaves, as detail widgets (task-page-on-the-manifest).
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
 import RequesterProjection from './components/initiator/RequesterProjection.vue'
 // Ask whether this case already exists, before it does.
 // @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
-import PartySearchField from './components/party/PartySearchField.vue'
 // A search openregister refused, said where the term was typed.
 // @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
-import CaseTypeFieldFilters from './components/search/CaseTypeFieldFilters.vue'
 // "Besluitvorming" decision-making is owned by decidesk and surfaced here as
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
@@ -154,6 +148,7 @@ import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
 import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
+import DocumentCompareDialog from './dialogs/DocumentCompareDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
@@ -321,14 +316,6 @@ const HEADLESS_WIDGET_META = {
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
-	// --- The filters a case type's own fields offer. ---
-	// @spec openspec/specs/case-search-via-or-unified-search/spec.md
-	CaseTypeFieldFilters: {
-		kind: 'page',
-		component: CaseTypeFieldFilters,
-		_note: "Cases-page after-search slot. The values a handler wants to narrow by are NOT on the case: dossiq stores each declared field as a caseProperty row pointing back at it, so the query is openregister's `_related[caseProperty][case][…]` (query-related-schema-rows, #3909/#3916/#3921/#3923). It sits in after-search rather than below-header for two reasons: that slot is the actions bar's own place for inline refinement controls, which is what a filter bar is, and below-header already holds CaseSearchRefusal — a slot takes one component. It therefore carries its OWN refusal notice, because a refused `_related` leaves CnIndexPage drawing its empty state and 'no cases match' is not what happened.",
-	},
-
 	// --- Genuine exceptions: no abstract manifest analogue. ---
 	// The Assigned to me view's two slots (Cases `defaultSavedViews` my-work
 	// `overrides.slots`): the list itself is manifest config.
@@ -655,12 +642,14 @@ const registry = {
 		_note: 'CaseDetail Custody tab: every period this case was held, with both ends of each holding, and the takeover requests beside them with accept and refuse. Fails CLOSED on a refusal: a reader who may not open the case is told so, never shown an empty chain, because "this case never changed hands" and "you may not see this" look identical from an empty list. The panel writes no holding: an accept answers a REQUEST and the move opens the holding server-side.',
 	},
 
-	'file-set-items': {
-		// @custom-widget-ratchet exclude the items are an array INSIDE one object (a frozen file set), not OpenRegister objects of their own, so an object-list or object-table has nothing to query; and the per-item Compare opens a dialog that mounts filinq's split view, which no declarative row action does. Deleted the day the library renders an embedded array with row actions
-		kind: 'widget',
-		component: FileSetItems,
-		...PANEL_WIDGET_META,
-		_note: "Generic (decision 182): the items of a frozen file set with file name, classification and SHA-256, and Compare on an item whose file that went out is not its original, opening DocumentCompareDialog over filinq's OCA.Filinq.mountCompare. The case type configures it in the widget content (filesUrl, classificationLabels); the Woo delivered set page is the first user. Without filinq the dialog says so and offers both files as links.",
+	// The compare dialog a file set's Compare row action opens (the library's
+	// field-list widget resolves `dialog` here through cnOpenModal).
+	// @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+	DocumentCompareDialog: {
+		kind: 'modal',
+		component: DocumentCompareDialog,
+		propsSchema: {},
+		_note: "Opened from the items of a frozen file set (the Woo delivered set page declares a field-list widget whose Compare row action names this modal), with `filesUrl` filled per item. It mounts filinq's OCA.Filinq.mountCompare over the original and the file that went out; without filinq it says so and offers both files as links.",
 	},
 
 	// --- The work instruction for this kind of case (knowledge-base-on-the-case). ---
@@ -699,28 +688,6 @@ const registry = {
 		kind: 'create-override',
 		handler: createCaseWithDuplicateCheck,
 		_note: "Named by `createOverride` on every `new-case` open-form action. It owns the persist, so it can ask OpenRegister whether a case like this one already exists BEFORE the case is written, and show the matches with a link to each. It is not the enforcement: DuplicatePolicy refuses a blocked create on the pre-persist event, so the mail intake, an import and any integration are refused the same way. A createOverride runs on the press rather than on the keystroke, which is the one part of REQ-FCF-10 this seam cannot give: disabling the library dialog's own Create button needs a `beforeConfirm` hook in @conduction/nextcloud-vue.",
-	},
-
-	// --- Initiator selection + display (brp-kvk-register-sets). ---
-	// @spec openspec/specs/initiator-selection/spec.md
-	InitiatorPicker: {
-		kind: 'form-field',
-		component: PartySearchField,
-		appliesTo: [
-			'case.requester',
-			'contactmoment.contact',
-			'role.representedParty',
-		],
-		_note: 'The one picker for case.requester, contactmoment.contact and role.representedParty. Inside a form (nextcloud-vue 2.103 mounts a field widget named in fieldOverrides, and it then receives `field`) it is one search field over the brpPerson and kvkCompany register sets (board DqNieuweZaak) and writes the chosen row uuid through update:modelValue; the projection (initiatorType, initiatorSourceId, initiatorDisplayName) is derived from that uuid by RequesterProjection on the case page, the one place it is made. Standalone, in InitiatorPickerModal for the StartCaseWidget create flow, it keeps its Person / Company / Contact tabs and emits `select` with the uuid and the projection together.',
-	},
-
-	// --- Which role a party takes on the case (gemachtigde-role-on-every-case-type). ---
-	// @spec openspec/specs/roles-decisions/spec.md
-	RoleTypePicker: {
-		kind: 'form-field',
-		component: RoleTypePicker,
-		appliesTo: ['role.roleType'],
-		_note: "The Add party form's Role field. The $ref on role.roleType makes the library offer EVERY roleType row this instance holds, including the seats of case types this case is not, and it cannot skip the generic Gemachtigde a type declares itself. This narrows the list to the case type's own rows followed by the generic ones, and drops a generic row whose key the type already claims. The ordering and the deduplication live in src/services/roleTypeOptions.js so they are testable without mounting anything. Same standing limitation as InitiatorPicker above: @conduction/nextcloud-vue 3.2.0 validates a form-field entry (CnAppRoot requires `appliesTo`) but does not yet mount one into the form dialog, so until it does the field falls back to the library's own object picker and this is the declaration of what it should be.",
 	},
 
 	// --- Send digital post, the CaseDetail header action (digital-post-consumes-integriq). ---

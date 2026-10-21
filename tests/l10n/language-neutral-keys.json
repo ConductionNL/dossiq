@@ -90,6 +90,7 @@
         "Relevant",
         "{title}",
         "{displayName}",
+        "{tradeName}",
         "{time}, +{extension}",
         "Offline",
         "Online",

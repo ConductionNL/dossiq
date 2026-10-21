@@ -142,22 +142,12 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
 }))
 
 const previewBulkJob = vi.fn()
-const commitBulkJob = vi.fn()
 
 vi.mock('../../src/services/bulkJobApi.js', () => ({
 	ACTION_LIFECYCLE: 'dossiq:lifecycle-cases',
 	ACTION_REASSIGN: 'dossiq:reassign-cases',
 	ACTION_SET_ATTRIBUTE: 'dossiq:set-case-attribute',
 	ACTION_TRANSITION: 'dossiq:transition-cases',
-	ACTIVE_STATES: ['previewed', 'running', 'cancelling'],
-	FINAL_STATES: ['completed', 'failed', 'cancelled'],
-	bulkJobReportUrl: (id) => `/download/${id}`,
-	cancelBulkJob: vi.fn(),
-	commitBulkJob: (...args) => commitBulkJob(...args),
-	fetchBulkJob: vi.fn(),
-	fetchBulkJobMembers: vi.fn().mockResolvedValue({ results: [], total: 0 }),
-	isFinished: (job) =>
-		['completed', 'failed', 'cancelled'].includes(String(job?.state)),
 	previewBulkJob: (...args) => previewBulkJob(...args),
 	readRefusal: (error) => {
 		const body = (error && error.response && error.response.data) || {}
@@ -168,7 +158,6 @@ vi.mock('../../src/services/bulkJobApi.js', () => ({
 			details: body.details || {},
 		}
 	},
-	retryBulkJob: vi.fn(),
 }))
 
 const axios = (await import('@nextcloud/axios')).default
@@ -307,8 +296,14 @@ describe('BulkTransitionDialog, the rehearsal is not the act', () => {
 		// The whole change is that the skip list is read BEFORE the act. A
 		// dialog whose first button committed would pass every other
 		// assertion in this file and still be the old dialog.
+		// The commit is the library panel's own button; what reaches it here
+		// is the job as rehearsed, still `previewed`.
 		expect(previewBulkJob).toHaveBeenCalledTimes(1)
-		expect(commitBulkJob).not.toHaveBeenCalled()
+		const handed = JSON.parse(
+			wrapper.get('[data-testid="bulk-job-progress"]').attributes('data-props'),
+		)
+		expect(handed.job.state).toBe('previewed')
+		expect(handed.labels.commit).toBe('Apply to {total} cases')
 	})
 
 	it('the rehearsed job replaces the form, so the counts are what is read next', async () => {
@@ -412,7 +407,9 @@ describe('BulkTransitionDialog, the transition mode', () => {
 		await typeReason(wrapper, 'Handled in bulk')
 		await flush()
 
-		await wrapper.get('[data-testid="bulk-selection-widen"]').trigger('click')
+		// The widen button is the library's CnSelectionScope; the dialog's part
+		// is to take the scope it emits.
+		wrapper.findComponent({ name: 'CnSelectionScope' }).vm.$emit('update:scope', 'result')
 		await flush()
 		await rehearse(wrapper).trigger('click')
 		await flush()

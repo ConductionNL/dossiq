@@ -643,7 +643,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "InitiatorPicker",
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -1173,7 +1173,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "InitiatorPicker",
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -1896,9 +1896,6 @@
 			"type": "index",
 			"title": "Cases",
 			"manualOrder": true,
-			"slots": {
-				"after-search": "CaseTypeFieldFilters"
-			},
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
 				"allowExport": true,
@@ -1929,7 +1926,11 @@
 				],
 				"_rowIndicatorsNote": "lifecycle-acts-on-the-case, REQ-LIFE-13 and REQ-LIFE-15. Incomplete, on hold (held until a later date) and draft ride the title cell as icons, each with its word as hidden text and tooltip (WCAG 2.2 SC 1.4.1), instead of a column that is empty on nine rows in ten. A row in none of the three states says nothing at all. An unreadable `heldUntil` reads as not held.",
 				"_allowExportNote": "case-list-export-via-or-export-leaf. The library's own Export menu (CSV and Excel) on the actions bar; it shows because the case schema is flagged `exportable` in lib/Settings/dossiq_register.json. A click sends the browser to OpenRegister's export leaf with the query the list itself sends (search, sort, facets, the active lens and the case-type folder, without paging), so the file holds the rows the table is filtered to and OpenRegister enforces access as the reader. dossiq serialises nothing (ADR-022).",
-				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are NOT on the case: dossiq stores each declared field as a `caseProperty` row pointing back at it, so the query is openregister's `_related[caseProperty][case][\u2026]` (query-related-schema-rows). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. `after-search` rather than `below-header` for two reasons: it is the actions bar's own slot for inline refinement controls, and `below-header` already holds `CaseSearchRefusal`, which a slot map cannot share.",
+				"relatedFieldFilters": {
+					"definitions": { "register": "dossiq", "schema": "propertyDefinition", "filter": { "caseType": "$route.query.caseType" } },
+					"related": { "schema": "caseProperty", "backref": "case", "definitionKey": "propertyDefinition", "valueKey": "value" }
+				},
+				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are NOT on the case: dossiq stores each declared field as a `caseProperty` row pointing back at it, so the query is openregister's `_related[caseProperty][case][\u2026]` (query-related-schema-rows). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. The library's CnRelatedFieldFilters draws it beside the search (`relatedFieldFilters`), names a refused block's field under the bar, and feeds the list's fetch through `sidebarState.onFilterChange`, since the index page drops `_`-prefixed route keys.",
 				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/utils/caseBulkActions.js, registered in src/registry.js as `kind: 'handler'` entries, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
 					{
@@ -2573,7 +2574,7 @@
 									"widget": "textarea"
 								},
 								"requester": {
-									"widget": "InitiatorPicker",
+									"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 									"label": "Requester"
 								}
 							},
@@ -2622,7 +2623,7 @@
 				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
 				"fieldOverrides": {
 					"description": { "widget": "textarea" },
-					"requester": { "widget": "InitiatorPicker", "label": "Requester" },
+					"requester": { "widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }], "label": "Requester" },
 					"confidentiality": { "enumLabels": { "openbaar": "Public", "beperkt_openbaar": "Restricted public", "intern": "Internal", "zaakvertrouwelijk": "Case confidential", "vertrouwelijk": "Confidential", "confidentieel": "Classified confidential", "geheim": "Secret", "zeer_geheim": "Top secret" } }
 				},
 				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
@@ -3135,7 +3136,7 @@
 			},
 			"_note": "case-recycle-window 1.2, the deleted lens, over dossiq's /api/cases/deleted (OpenRegister's trash with each window's end date), not the objects endpoint, which excludes soft-deleted rows by design. Restore and destroy open CnActionDialog, which posts and shows the server's refusal sentence (destroy_role_*, recovery_window_open, retention_clocks_disagree); the list reads its rows again after an act. The endpoint keeps its scoping and role checks. Decision D10: openregister owns the recycle state and the purge, dossiq publishes the date each window ends."
 		},
-		{"id": "WooDeliveredSetDetail", "route": "/woo/delivered-sets/:id", "type": "detail", "title": "Delivered set", "config": {"register": "dossiq", "schema": "wooDeliveredSet", "_note": "woo-delivered-set-is-a-record REQ-WDS-004. One delivered set, the record of what went out, frozen with its publication. The items list every document with the file that went out, the original, the classification and the SHA-256, so the record shows what came in beside what went out.", "documentationUrl": "https://dossiq.conduction.nl", "widgets": [{"id": "woo-delivered-set-data", "type": "data", "title": "Delivered set", "icon": "PackageVariantClosed", "content": {"title": "Delivered set", "columns": 2, "exclude": ["items"]}}, {"id": "woo-delivered-set-items", "type": "file-set-items", "title": "Items", "icon": "FileCompare", "content": {"filesUrl": "/apps/dossiq/api/cases/{case}/woo/delivered-sets/{set}/items/{index}", "classificationLabels": {"openbaar": "Public", "deels_openbaar": "Disclosed in part"}}, "_note": "The Woo case type configures the generic file set items widget (decision 182; registry type file-set-items -> FileSetItems): every delivered item with its classification and hash; Compare on a redacted item opens the original beside it (woo-delivered-set-is-a-record REQ-WDS-004, document-compare REQ-DCP-001)."}], "layout": [{"id": "1", "widgetId": "woo-delivered-set-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 6, "showTitle": false}, {"id": "2", "widgetId": "woo-delivered-set-items", "gridX": 0, "gridY": 6, "gridWidth": 12, "gridHeight": 6, "showTitle": true}], "sidebar": {"enabled": true, "showMetadata": true, "tabs": [{"id": "audit", "label": "History", "icon": "History", "widgets": [{"type": "audit"}]}]}}},
+		{"id": "WooDeliveredSetDetail", "route": "/woo/delivered-sets/:id", "type": "detail", "title": "Delivered set", "config": {"register": "dossiq", "schema": "wooDeliveredSet", "_note": "woo-delivered-set-is-a-record REQ-WDS-004. One delivered set, the record of what went out, frozen with its publication. The items list every document with the file that went out, the original, the classification and the SHA-256, so the record shows what came in beside what went out.", "documentationUrl": "https://dossiq.conduction.nl", "widgets": [{"id": "woo-delivered-set-data", "type": "data", "title": "Delivered set", "icon": "PackageVariantClosed", "content": {"title": "Delivered set", "columns": 2, "exclude": ["items"]}}, {"id": "woo-delivered-set-items", "type": "field-list", "title": "Items", "icon": "FileCompare", "content": {"field": "items", "variant": "table", "readOnly": true, "emptyText": "This set has no items.", "columns": [{"header": "File name", "path": "fileName"}, {"header": "Classification", "path": "classification", "map": {"openbaar": "Public", "deels_openbaar": "Disclosed in part"}}, {"header": "SHA-256", "path": "sha256", "code": true}], "rowActions": [{"id": "compare", "label": "Compare", "ariaLabel": "Compare {fileName} with the original", "placement": "inline", "dialog": "DocumentCompareDialog", "props": {"filesUrl": "/apps/dossiq/api/cases/@object.case/woo/delivered-sets/@objectId/items/@index"}, "when": {"deliveredRef": {"set": true, "neq": "@row.originalRef"}}}]}, "_note": "The Woo case type configures the library's field-list widget over the set's own items (decision 182): every delivered item with its classification and hash, read only; Compare on an item whose file that went out is not its original opens DocumentCompareDialog (a registry modal) beside it (woo-delivered-set-is-a-record REQ-WDS-004, document-compare REQ-DCP-001)."}], "layout": [{"id": "1", "widgetId": "woo-delivered-set-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 6, "showTitle": false}, {"id": "2", "widgetId": "woo-delivered-set-items", "gridX": 0, "gridY": 6, "gridWidth": 12, "gridHeight": 6, "showTitle": true}], "sidebar": {"enabled": true, "showMetadata": true, "tabs": [{"id": "audit", "label": "History", "icon": "History", "widgets": [{"type": "audit"}]}]}}},
 		{
 			"id": "CaseDetail",
 			"route": "/cases/:id",
@@ -3179,7 +3180,7 @@
 						"widget": "textarea"
 					},
 					"requester": {
-						"widget": "InitiatorPicker",
+						"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 						"label": "Requester"
 					},
 					"confidentiality": {
@@ -3485,7 +3486,7 @@
 													"editable": false
 												},
 												"requester": {
-													"widget": "InitiatorPicker",
+													"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 													"label": "Requester",
 													"formatter": "requesterName"
 												},
@@ -4622,11 +4623,19 @@
 								"widget": "textarea"
 							},
 							"roleType": {
-								"widget": "RoleTypePicker",
-								"label": "Role"
+								"widget": "resource",
+								"label": "Role",
+								"placeholder": "Pick a role",
+								"resource": {
+									"register": "dossiq",
+									"schema": "roleType",
+									"labelField": "name",
+									"scope": { "field": "caseType", "value": "@object.caseType", "includeUnscoped": true, "dedupeOn": "genericRole" },
+									"failedText": "The roles this case takes could not be read. Nothing has been changed on the case."
+								}
 							},
 							"representedParty": {
-								"widget": "InitiatorPicker",
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Represented by"
 							}
 						},
@@ -10916,7 +10925,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "InitiatorPicker",
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -11502,7 +11511,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "InitiatorPicker",
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
