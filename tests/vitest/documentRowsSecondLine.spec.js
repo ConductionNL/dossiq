@@ -7,7 +7,6 @@
  */
 
 import { describe, expect, it } from 'vitest'
-
 const panels = require('./helpers/casePanels.js')
 
 describe('the case documents rows', () => {
