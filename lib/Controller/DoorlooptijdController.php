@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Csv\CsvWriter;
+use OCA\Dossiq\Service\Doorlooptijd\DeadlineComplianceCalculator;
 use OCA\Dossiq\Service\DoorlooptijdService;
 use OCA\Dossiq\Service\Reporting\ReportingAudience;
 use OCP\AppFramework\Controller;
@@ -94,12 +95,17 @@ class DoorlooptijdController extends Controller {
 
 		$caseType = $this->request->getParam('caseType');
 		$period = $this->request->getParam('period', '12m');
+		$granularity = $this->request->getParam('granularity', 'month');
 		$atRiskRaw = $this->request->getParam('atRiskDays', 5);
 		$format = $this->request->getParam('format', 'json');
 
 		$refusal = $this->badRequest(caseType: $caseType, period: $period, atRiskRaw: $atRiskRaw);
 		if ($refusal === null && in_array($format, ['json', 'csv'], true) === false) {
 			$refusal = new JSONResponse(['message' => 'format must be json or csv'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($refusal === null && in_array($granularity, DeadlineComplianceCalculator::GRANULARITIES, true) === false) {
+			$refusal = new JSONResponse(['message' => 'granularity must be week, month, quarter or year'], Http::STATUS_BAD_REQUEST);
 		}
 
 		if ($refusal !== null) {
@@ -112,6 +118,7 @@ class DoorlooptijdController extends Controller {
 
 		$params = [
 			'period' => $period,
+			'granularity' => $granularity,
 			'atRiskDays' => (int)$atRiskRaw,
 		];
 		if (is_string($caseType) === true && $caseType !== '') {

@@ -87,6 +87,11 @@ class DoorlooptijdService {
 			$period = $params['period'];
 		}
 
+		$granularity = 'month';
+		if (isset($params['granularity']) === true && is_string($params['granularity']) === true) {
+			$granularity = $params['granularity'];
+		}
+
 		$atRiskDays = 5;
 		if (isset($params['atRiskDays']) === true) {
 			$atRiskDays = (int)$params['atRiskDays'];
@@ -107,7 +112,7 @@ class DoorlooptijdService {
 			'caseTypeBreakdown' => $this->throughputCalculator->computeCaseTypeBreakdown(cases: $enriched, caseTypes: $caseTypes),
 			'cases' => $this->complianceCalculator->buildCaseList(cases: $enriched, atRiskDays: $atRiskDays),
 			'summary' => [
-				...$this->complianceCalculator->computeSummary(cases: $enriched, period: $period),
+				...$this->complianceCalculator->computeSummary(cases: $enriched, period: $period, granularity: $granularity),
 				'withinNormByCaseType' => $this->throughputCalculator->computeWithinNormByCaseType(cases: $enriched, caseTypes: $caseTypes),
 			],
 		];
