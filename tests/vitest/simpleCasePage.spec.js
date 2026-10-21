@@ -641,10 +641,15 @@ describe('the tabs', () => {
 		// widget is still placed in the grid, so nothing renders twice.
 		expect(simple.breadcrumb.currentField).toBe('identifier')
 		// The pill above the title names the case type, as DqZaak draws "Woo-verzoek",
-		// in the case type's own colour and icon.
+		// in the case type's own colour and, as the board draws it, without an icon.
 		expect(simple.typePill).toEqual({
 			field: 'caseType',
-			resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title', colorField: 'colour', iconField: 'icon' },
+			resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title', colorField: 'colour' },
+		})
+		// The status pill names the status and takes its status type's tone ("In behandeling" purple).
+		expect(simple.statusPill).toEqual({
+			field: 'status',
+			resolve: { register: 'dossiq', schema: 'statusType', labelField: 'name', colorField: 'colour' },
 		})
 		// The advice notice opens the column while advice is still asked; the deadline is the first card.
 		expect(simple.sideColumn[0].id).toBe('side-advice-requested')

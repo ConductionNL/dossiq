@@ -51,9 +51,10 @@ describe('case type colour and icon', () => {
 		expect(STATUS_COLOURS).toContain('teal-light')
 	})
 
-	it('resolves the type pill on a case to its case type colour and icon', () => {
+	it('resolves the type pill on a case to its case type colour, without the icon the board does not draw', () => {
 		const pill = page(simple, 'CaseDetail').config.typePill
-		expect(pill.resolve).toMatchObject({ register: 'dossiq', schema: 'caseType', ...RESOLVE })
+		expect(pill.resolve).toMatchObject({ register: 'dossiq', schema: 'caseType', colorField: RESOLVE.colorField })
+		expect(pill.resolve.iconField).toBeUndefined()
 	})
 
 	it('resolves every case type tag in the case lists', () => {

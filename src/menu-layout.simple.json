@@ -942,8 +942,15 @@
 					"showHelpLinks": false,
 					"label": "More"
 				},
+				"_pillsNote": "DqZaak: the pills above the title in their records' own tones and without an icon. The type pill takes the case type's colour (the icon stays on the case type's menu entry and the list tags); the status pill names the status the case sits in and takes that status type's colour (In behandeling purple, Ontvangen blue, Afgehandeld green).",
 				"statusPill": {
-					"field": "statusPublicLabel"
+					"field": "status",
+					"resolve": {
+						"register": "dossiq",
+						"schema": "statusType",
+						"labelField": "name",
+						"colorField": "colour"
+					}
 				},
 				"nextStep": {
 					"stages": {
@@ -1423,8 +1430,7 @@
 						"register": "dossiq",
 						"schema": "caseType",
 						"labelField": "title",
-						"colorField": "colour",
-						"iconField": "icon"
+						"colorField": "colour"
 					}
 				}
 			},
