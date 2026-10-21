@@ -74,4 +74,9 @@ describe('per-card buttons on the record boards', () => {
 			body: { reason: '{reason}' },
 		})
 	})
+	it('links an existing meeting or makes one from the Afspraken card, through the calendar leaf', () => {
+		const calendar = appended('case-calendar-card')
+		expect(calendar.integrationId).toBe('calendar')
+		expect(calendar.props.headerActions).toEqual(['link', 'create'])
+	})
 })
