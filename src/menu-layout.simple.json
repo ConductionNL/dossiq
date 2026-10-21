@@ -3434,7 +3434,11 @@
 								{
 									"label": "Stop series",
 									"endpoint": "/apps/dossiq/api/case/@objectId/planned/{id}/stop",
-									"method": "POST"
+									"method": "POST",
+									"visibleWhen": {
+										"field": "plannedKind",
+										"value": "series"
+									}
 								}
 							],
 							"footerAction": {

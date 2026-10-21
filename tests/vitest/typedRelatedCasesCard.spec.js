@@ -53,6 +53,8 @@ describe('the related cases card (DqZaakGerelateerd)', () => {
 		expect(nl[card.content.valueLabels.group.planned]).toBe('Gepland vervolg')
 		expect(card.content.footerAction).toMatchObject({ type: 'open-modal', target: 'CasePlanFollowUpDialog' })
 		expect(card.content.rowActions[0]).toMatchObject({ label: 'Stop series', endpoint: '/apps/dossiq/api/case/@objectId/planned/{id}/stop', method: 'POST' })
+		// Only a series can be stopped; a single planned flow carries no menu.
+		expect(card.content.rowActions[0].visibleWhen).toEqual({ field: 'plannedKind', value: 'series' })
 		for (const kind of ['flow', 'series']) {
 			expect(nl[card.content.valueLabels.plannedKind[kind]], kind).toBeTruthy()
 		}
