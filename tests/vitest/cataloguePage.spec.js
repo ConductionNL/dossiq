@@ -41,4 +41,10 @@ describe('the catalogue page', () => {
 	it('pages the object types four at a time, as the board\'s pager does', () => {
 		expect(widget('catalogue-object-types').content.pageSize).toBe(4)
 	})
+
+	it('offers Add object type in the object types card, opening OpenRegister\'s schemas', () => {
+		expect(widget('catalogue-object-types').headerActions).toEqual([
+			{ label: 'Add object type', icon: 'Plus', action: { type: 'navigate', target: '/index.php/apps/openregister/schemas' } },
+		])
+	})
 })

@@ -60,6 +60,16 @@
 						"id": "catalogue-object-types",
 						"type": "object-table",
 						"title": "Object types",
+						"headerActions": [
+							{
+								"label": "Add object type",
+								"icon": "Plus",
+								"action": {
+									"type": "navigate",
+									"target": "/index.php/apps/openregister/schemas"
+								}
+							}
+						],
 						"description": "Objects you link to cases, by type",
 						"content": {
 							"endpointSource": {
