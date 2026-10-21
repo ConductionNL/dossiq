@@ -37,6 +37,19 @@ import {
 } from '../helpers/fixtures.ts'
 import { dismissSupportDialog } from '../helpers/nav.ts'
 
+/**
+ * Why the tests that opened `/cases/:id/deelzaken` are parked.
+ *
+ * DeelzaakList and DeelzaakDetail were retired: nothing in the app linked to
+ * them, and both addresses now redirect to the case page. Their roll-up,
+ * parent breadcrumb, Delete parent case and Create sub-case controls have no
+ * home on the case page yet, so these tests wait for one rather than pass
+ * against nothing.
+ */
+const SUB_CASE_PAGES_RETIRED =
+	'The sub-case pages were retired (they redirect to the case page); the roll-up, '
+	+ 'breadcrumb, Delete parent case and Create sub-case controls need a home on the case page'
+
 /** OpenRegister's object API for this app's own register. */
 const CASES_API = '/index.php/apps/openregister/api/objects/dossiq/case'
 
@@ -540,7 +553,8 @@ test.describe('Parent deletion is refused while sub-cases hang off it', () => {
 	// BOTH SHAPES, NOT WHICHEVER THE INSTANCE HAPPENED TO HOLD. Each test
 	// seeds the shape it needs, so a run where no case had sub-cases cannot
 	// pass by asserting nothing.
-	test('a parent with sub-cases is refused, and told which rule holds it', async ({
+	// See SUB_CASE_PAGES_RETIRED.
+	test.fixme('a parent with sub-cases is refused, and told which rule holds it', async ({
 		page,
 	}) => {
 		const { parentId } = await seedParentWithSubCase()
@@ -585,7 +599,8 @@ test.describe('Parent deletion is refused while sub-cases hang off it', () => {
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	test('a parent with no sub-cases takes the same confirmation', async ({
+	// See SUB_CASE_PAGES_RETIRED.
+	test.fixme('a parent with no sub-cases takes the same confirmation', async ({
 		page,
 	}) => {
 		const { parentId } = await seedParentWithSubCase({ withChild: false })
@@ -796,7 +811,8 @@ test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigatio
 	// Both are defects the old test could not have caught. `\(\d+\/\d+
 	// completed\)` matches 2/2 exactly as happily as 1/2, and a breadcrumb
 	// printing the literal "Parent case" satisfies a `count() > 0` check.
-	test('the roll-up counts completed sub-cases exactly', async ({ page }) => {
+	// See SUB_CASE_PAGES_RETIRED.
+	test.fixme('the roll-up counts completed sub-cases exactly', async ({ page }) => {
 		// The scenario's shape, not "some X/Y": two sub-cases, one completed.
 		// `completedCount` is `subCases.filter((sc) => sc.endDate).length`, so
 		// completion is an endDate and nothing else.
@@ -820,7 +836,8 @@ test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigatio
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	test('a parent with no completed sub-cases rolls up as none done', async ({
+	// See SUB_CASE_PAGES_RETIRED.
+	test.fixme('a parent with no completed sub-cases rolls up as none done', async ({
 		page,
 	}) => {
 		const { parentId } = await seedParentWithChildren({
@@ -840,7 +857,8 @@ test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigatio
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	test('a sub-case names its parent in the breadcrumb', async ({ page }) => {
+	// See SUB_CASE_PAGES_RETIRED.
+	test.fixme('a sub-case names its parent in the breadcrumb', async ({ page }) => {
 		const parentTitle = `${RUN_PREFIX} breadcrumb parent`
 		const { parentId, children } = await seedParentWithChildren({
 			title: parentTitle,
@@ -1076,6 +1094,7 @@ function createControl(page) {
 }
 
 test.describe('Deelzaak creation eligibility and deletion protection', () => {
+	test.fixme(true, SUB_CASE_PAGES_RETIRED)
 	test.setTimeout(180_000)
 
 	test.beforeAll(async ({ browser, playwright, baseURL }) => {

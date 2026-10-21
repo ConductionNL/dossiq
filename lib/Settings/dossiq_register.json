@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.58"
+        "version": "0.20.62"
     },
     "x-openregister": {
         "type": "application",
@@ -949,7 +949,7 @@
                     }
                 },
                 "icon": "ListStatus",
-                "version": "1.7.2",
+                "version": "1.7.4",
                 "searchable": false,
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
@@ -1059,6 +1059,8 @@
                             "red-light",
                             "purple",
                             "purple-light",
+                            "teal",
+                            "teal-light",
                             "grey",
                             "grey-light"
                         ],
@@ -1832,7 +1834,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.46.0",
+                "version": "1.47.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1894,6 +1896,7 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "exportable": true,
                     "x-openregister-mcp": {
                         "enabled": true,
                         "tools": {
@@ -9373,7 +9376,7 @@
             "aiAuditEntry": {
                 "slug": "aiAuditEntry",
                 "icon": "RobotOutline",
-                "version": "1.1.1",
+                "version": "1.2.0",
                 "searchable": false,
                 "x-schema-org": "schema:DigitalDocument",
                 "title": "AI Audit Entry",
@@ -9407,6 +9410,7 @@
                             "accepted",
                             "rejected",
                             "modified",
+                            "ignored",
                             "failed"
                         ],
                         "description": "Outcome of the AI interaction: a suggestion offered, what the human did with it, or a failed attempt",
@@ -9484,6 +9488,16 @@
                         "type": "integer",
                         "description": "AI response time in milliseconds",
                         "title": "Response Time Ms"
+                    },
+                    "unusedBecause": {
+                        "type": "string",
+                        "enum": [
+                            "closed",
+                            "expired",
+                            "superseded"
+                        ],
+                        "description": "Why a shown suggestion went unused, when the user action is ignored: the surface was closed, the suggestion expired, or a newer one replaced it",
+                        "title": "Unused because"
                     }
                 }
             },
@@ -12738,10 +12752,12 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
-                    "version": "1.1.0",
+                    "version": "1.1.1",
                     "slug": "omgevingsvergunning"
                 },
                 "title": "Omgevingsvergunning",
+                "colour": "teal",
+                "icon": "OfficeBuildingOutline",
                 "category": "Vergunningen",
                 "identifier": "omgevingsvergunning",
                 "description": "Aanvraag van een omgevingsvergunning conform de Omgevingswet (bouwen, slopen, kappen, milieubelastende activiteiten of afwijken van het omgevingsplan).",
@@ -12762,10 +12778,12 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
-                    "version": "1.1.0",
+                    "version": "1.1.1",
                     "slug": "subsidieaanvraag"
                 },
                 "title": "Subsidieaanvraag",
+                "colour": "teal",
+                "icon": "CashMultiple",
                 "category": "Subsidies",
                 "identifier": "subsidieaanvraag",
                 "description": "Aanvraag van een gemeentelijke subsidie conform de Algemene Subsidieverordening (ASV).",
@@ -12785,10 +12803,12 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
-                    "version": "1.2.0",
+                    "version": "1.2.1",
                     "slug": "klacht-behandeling"
                 },
                 "title": "Klacht behandeling",
+                "colour": "orange",
+                "icon": "MessageAlertOutline",
                 "category": "Klachten en meldingen",
                 "identifier": "klacht-behandeling",
                 "x-index": {
@@ -12889,10 +12909,12 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
-                    "version": "1.1.0",
+                    "version": "1.1.1",
                     "slug": "melding-openbare-ruimte"
                 },
                 "title": "Melding openbare ruimte",
+                "colour": "orange",
+                "icon": "MapMarkerOutline",
                 "category": "Klachten en meldingen",
                 "identifier": "melding-openbare-ruimte",
                 "description": "Melding van een probleem in de openbare ruimte (kapotte lantaarn, losse stoeptegel, zwerfafval, e.d.).",
@@ -12936,7 +12958,7 @@
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
-                "colour": "orange",
+                "colour": "purple",
                 "publicLabel": "In behandeling",
                 "publicDescription": "Wij toetsen uw aanvraag aan de regels."
             },
@@ -12952,7 +12974,7 @@
                 "order": 3,
                 "isFinal": false,
                 "role": "review",
-                "colour": "purple",
+                "colour": "teal",
                 "publicLabel": "Besluit",
                 "publicDescription": "Wij nemen een besluit op uw aanvraag."
             },
@@ -13001,7 +13023,7 @@
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
-                "colour": "orange",
+                "colour": "purple",
                 "publicLabel": "In behandeling",
                 "publicDescription": "Wij toetsen uw aanvraag aan de subsidieregels."
             },
@@ -13017,7 +13039,7 @@
                 "order": 3,
                 "isFinal": false,
                 "role": "review",
-                "colour": "purple",
+                "colour": "teal",
                 "publicLabel": "Besluit",
                 "publicDescription": "Wij nemen een besluit op uw aanvraag."
             },
@@ -13066,7 +13088,7 @@
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
-                "colour": "orange",
+                "colour": "purple",
                 "publicLabel": "In behandeling",
                 "publicDescription": "Wij onderzoeken uw klacht en vragen u om uw kant van het verhaal."
             },
@@ -13115,7 +13137,7 @@
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
-                "colour": "orange",
+                "colour": "purple",
                 "publicLabel": "In behandeling",
                 "publicDescription": "Wij werken aan uw melding."
             },
@@ -13635,11 +13657,13 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
-                    "version": "1.1.0",
+                    "version": "1.1.1",
                     "slug": "leverancier-contractverlenging-verzoek"
                 },
                 "isDraft": false,
                 "title": "Leverancier contractverlenging verzoek",
+                "colour": "grey",
+                "icon": "HandshakeOutline",
                 "category": "Inkoop en leveranciers",
                 "description": "Verzoek tot verlenging van een lopend contract met een leverancier",
                 "purpose": "Behandelen van een contractverlenging-verzoek van een leverancier"
@@ -13648,11 +13672,13 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
-                    "version": "1.1.0",
+                    "version": "1.1.1",
                     "slug": "leverancier-iban-wijziging"
                 },
                 "isDraft": false,
                 "title": "Leverancier IBAN-wijziging",
+                "colour": "grey",
+                "icon": "HandshakeOutline",
                 "category": "Inkoop en leveranciers",
                 "description": "Wijziging van het bankrekeningnummer van een leverancier (4-ogen procedure)",
                 "purpose": "Verwerken van een IBAN-wijziging onder 4-ogen-controle"
@@ -13661,11 +13687,13 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
-                    "version": "1.1.0",
+                    "version": "1.1.1",
                     "slug": "leverancier-accreditatie-verificatie"
                 },
                 "isDraft": false,
                 "title": "Leverancier accreditatie verificatie",
+                "colour": "grey",
+                "icon": "HandshakeOutline",
                 "category": "Inkoop en leveranciers",
                 "description": "Verificatie van accreditaties van een leverancier",
                 "purpose": "Controle van geldigheid van leveranciersaccreditaties"
@@ -13674,11 +13702,13 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
-                    "version": "1.1.0",
+                    "version": "1.1.1",
                     "slug": "leverancier-mutatie"
                 },
                 "isDraft": false,
                 "title": "Leverancier mutatie",
+                "colour": "grey",
+                "icon": "HandshakeOutline",
                 "category": "Inkoop en leveranciers",
                 "description": "Algemene wijziging van leveranciersgegevens",
                 "purpose": "Verwerken van wijzigingen in masterdata van een leverancier"

@@ -1385,7 +1385,7 @@
 									"itemsPath": "results",
 									"idField": "entryId",
 									"title": "{title}",
-									"meta": "{archiefactiedatum}",
+									"meta": "Disposal date: {archiefactiedatum}",
 									"answers": [
 										{
 											"value": "destroy"
@@ -1780,12 +1780,116 @@
 		{
 			"id": "PersonalQueue",
 			"route": "/my-queue",
-			"type": "custom",
+			"type": "dashboard",
 			"title": "Your queue",
-			"component": "PersonalQueueView",
-			"_note": "Everything waiting on the reader, in one place, fed by the declared queue sources. type:\"custom\" and NOT type:\"index\": an index page names one register and one schema, and this list spans cases, engine tasks, consultations, advice requests, mentions, work covered for an absent colleague, and calendar items the reader planned for themselves. No manifest key names a set that crosses four stores and a calendar. It is also not a second index over (dossiq, case), so gate-68 has nothing to answer: the page never reads the case schema directly. READ THE NAME COLLISION: the `Queue` page below is the UNCLAIMED POOL, every open case nobody has picked up, and it is a team surface; this one is personal and nobody else can see it. The component hard-codes NO source. Every group, its heading and the sentence saying what closes it come from the server, which builds them from the declared queue sources, so a ninth mechanism reaches this page by declaring itself rather than by an edit here.",
+			"_note": "Everything waiting on the reader, in one place, fed by the declared queue sources. A dashboard page with ONE `work-queue` widget (the library's CnWorkQueue) and not type:\"index\": an index page names one register and one schema, and this list spans cases, engine tasks, consultations, advice requests, mentions, work covered for an absent colleague, and calendar items the reader planned for themselves. No manifest key names a set that crosses four stores and a calendar. It is also not a second index over (dossiq, case), so gate-68 has nothing to answer: the page never reads the case schema directly. READ THE NAME COLLISION: the team queue is the UNCLAIMED POOL, every open case nobody has picked up, a view of the Cases page; this one is personal and nobody else can see it. The page names NO source. Every group, its heading and the sentence saying what closes it come from the server, which builds them from the declared queue sources, so a ninth mechanism reaches this page by declaring itself rather than by an edit here. Plan an item opens the library's CnActionDialog, which posts the item and fires `cn:page:refresh`; the work queue listens on that channel, so the planned item shows at once.",
 			"config": {
-				"documentationUrl": "https://dossiq.conduction.nl"
+				"allowEdit": false,
+				"appId": "dossiq",
+				"pageId": "PersonalQueue",
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"breadcrumb": {
+					"label": "My work",
+					"route": "MyWorkHome"
+				},
+				"headerActions": [
+					{
+						"id": "plan-item",
+						"type": "open-modal",
+						"target": "CnActionDialog",
+						"label": "Plan an item",
+						"icon": "CalendarClockOutline",
+						"variant": "secondary",
+						"props": {
+							"config": {
+								"title": "Plan an item",
+								"eyebrow": "Your queue · own task",
+								"subtitle": "This goes on your own calendar and on your queue. It is not a case.",
+								"fields": [
+									{
+										"field": "template",
+										"type": "select",
+										"label": "Template",
+										"required": false,
+										"options": [
+											{
+												"value": "call-back",
+												"label": "Call someone back",
+												"fills": {
+													"title": "Call someone back"
+												}
+											},
+											{
+												"value": "prepare-decision",
+												"label": "Prepare a decision",
+												"fills": {
+													"title": "Prepare a decision"
+												}
+											},
+											{
+												"value": "site-visit",
+												"label": "Site visit",
+												"fills": {
+													"title": "Site visit"
+												}
+											},
+											{
+												"value": "catch-up",
+												"label": "Catch up on a case",
+												"fills": {
+													"title": "Catch up on a case"
+												}
+											}
+										]
+									},
+									{
+										"field": "title",
+										"label": "What is it"
+									},
+									{
+										"field": "startsAt",
+										"type": "datetime",
+										"label": "When"
+									}
+								],
+								"confirm": {
+									"label": "Schedule it",
+									"icon": "CalendarClockOutline",
+									"request": {
+										"method": "POST",
+										"url": "/apps/dossiq/api/personal-queue/planned-items"
+									}
+								}
+							}
+						}
+					}
+				],
+				"widgets": [
+					{
+						"id": "personal-queue",
+						"type": "work-queue",
+						"title": "Your queue",
+						"content": {
+							"source": {
+								"url": "/apps/dossiq/api/personal-queue"
+							},
+							"hide": "/apps/dossiq/api/personal-queue/groups/{group}/hide",
+							"show": "/apps/dossiq/api/personal-queue/groups/{group}/show",
+							"emptyText": "Nothing is waiting on you."
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "personal-queue",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": false
+					}
+				]
 			}
 		},
 		{
@@ -1794,12 +1898,13 @@
 			"type": "index",
 			"title": "Cases",
 			"manualOrder": true,
-			"actionsComponent": "CaseListExportAction",
 			"slots": {
 				"after-search": "CaseTypeFieldFilters"
 			},
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
+				"allowExport": true,
+				"_allowExportNote": "case-list-export-via-or-export-leaf. The library's own Export menu (CSV and Excel) on the actions bar; it shows because the case schema is flagged `exportable` in lib/Settings/dossiq_register.json. A click sends the browser to OpenRegister's export leaf with the query the list itself sends (search, sort, facets, the active lens and the case-type folder, without paging), so the file holds the rows the table is filtered to and OpenRegister enforces access as the reader. dossiq serialises nothing (ADR-022).",
 				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are NOT on the case: dossiq stores each declared field as a `caseProperty` row pointing back at it, so the query is openregister's `_related[caseProperty][case][\u2026]` (query-related-schema-rows). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. `after-search` rather than `below-header` for two reasons: it is the actions bar's own slot for inline refinement controls, and `below-header` already holds `CaseSearchRefusal`, which a slot map cannot share.",
 				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/utils/caseBulkActions.js, registered in src/registry.js as `kind: 'handler'` entries, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
@@ -1847,7 +1952,7 @@
 					{ "slug": "mine-overdue", "name": "Mine, overdue", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
 					{ "slug": "mine-due-this-week", "name": "Mine, due this week", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
 					{ "slug": "unclaimed-overdue", "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
-					{ "slug": "woo-requests", "name": "Woo requests", "filters": { "caseType": "3c0f5a00-0000-4000-a000-00000000a001", "statusHiddenInLists": false, "isDraft": false } },
+					{ "slug": "woo-requests", "name": "Woo requests", "icon": "FileDocumentOutline", "filters": { "caseType": "3c0f5a00-0000-4000-a000-00000000a001", "statusHiddenInLists": false, "isDraft": false } },
 					{ "slug": "subsidies", "name": "Subsidies", "filters": { "caseType": "b3c1a000-0000-4000-a000-0000000005ab", "statusHiddenInLists": false, "isDraft": false }, "overrides": { "title": "Subsidies", "columns": ["identifier", "title", { "key": "status", "label": "Status", "formatter": "statusTypeName" }, "assignee", "deadline"] } },
 					{
 						"slug": "my-work",
@@ -2409,7 +2514,15 @@
 								{
 									"key": "deadline",
 									"label": "Term",
-									"widget": "deadlineCountdown"
+									"widget": "date",
+									"widgetProps": {
+										"due": {
+											"upcomingLabel": {
+												"one": "{count} day left",
+												"other": "{count} days left"
+											}
+										}
+									}
 								},
 								{
 									"key": "status",
@@ -2500,9 +2613,9 @@
 					"moveHandler": "moveCaseStatus",
 					"moveTargetsHandler": "caseStatusTargets",
 					"narrow": { "field": "caseType", "label": "Case type", "allLabel": "All case types", "source": { "schema": "caseType", "labelField": "title", "filter": { "isDraft": false } } },
-					"card": { "title": "title", "sub": ["identifier", "initiatorDisplayName"], "pill": "caseType", "due": "deadline", "owner": "assignee", "formatters": { "caseType": "caseTypeName" } },
+					"card": { "title": "title", "sub": ["identifier", "initiatorDisplayName"], "pill": "caseType", "resolve": { "colorField": "colour", "iconField": "icon" }, "due": "deadline", "owner": "assignee", "formatters": { "caseType": "caseTypeName" } },
 					"columnFields": [
-						{ "field": "status", "label": "status", "source": { "schema": "statusType", "labelField": "name", "orderField": "order", "colorField": "colour", "neutralColor": "grey", "colorMap": {"blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)"}, "capacityField": "capacity", "mergeBy": "name", "filter": { "isFinal": false }, "narrowBy": { "field": "caseType", "rowField": "caseType" } } },
+						{ "field": "status", "label": "status", "source": { "schema": "statusType", "labelField": "name", "orderField": "order", "colorField": "colour", "neutralColor": "grey", "colorMap": {"blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "teal": "var(--nl-color-teal, #1d5e66)", "teal-light": "var(--nl-color-teal-light, #e3f1f3)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)"}, "capacityField": "capacity", "mergeBy": "name", "filter": { "isFinal": false }, "narrowBy": { "field": "caseType", "rowField": "caseType" } } },
 						{ "field": "caseType", "label": "type", "source": { "schema": "caseType", "labelField": "title", "filter": { "isDraft": false } }, "readOnly": true },
 						{ "field": "assignee", "label": "assignee", "kind": "values", "emptyLabel": "Nobody", "readOnly": true }
 					]
@@ -2514,7 +2627,7 @@
 					"_parityNote": "What the retired /map page did, now as configuration: every case that matches the filters is plotted (up to 500, with a note past that), each marker takes the colour of its status type, as the board's columns do, and a line says how many cases have a place.",
 					"plotAll": true,
 					"count": "Showing {located} of {total} located cases",
-					"markerColor": { "field": "status", "source": { "schema": "statusType", "colorField": "colour" }, "colorMap": {"blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)"} },
+					"markerColor": { "field": "status", "source": { "schema": "statusType", "colorField": "colour" }, "colorMap": {"blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "teal": "var(--nl-color-teal, #1d5e66)", "teal-light": "var(--nl-color-teal-light, #e3f1f3)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)"} },
 					"_basemapNote": "EVERY ENTRY CARRIES `options.referrerPolicy` AND MUST KEEP IT. Nextcloud sends `Referrer-Policy: no-referrer` on every page (server/lib/OC.php), Leaflet draws a tile as a plain `<img>`, and OpenStreetMap's CDN answers a refererless tile request with an \"App is not following the tile usage policy\" image carrying `x-blocked: Access denied` — a grey map rather than an error, which is why it reads as working-but-empty. An `<img>`-level policy overrides the document's, and `strict-origin-when-cross-origin` sends the instance origin but never the path, which is where a case id would be. nextcloud-vue's CnMapWidget defaults the same value, so this is belt-and-braces for as long as dossiq resolves a library release that predates that default. THE `{s}` SUBDOMAIN FORM IS ALSO LOAD-BEARING: MapCspRegistrar allowlists `https://*.tile.openstreetmap.org`, and a CSP wildcard does NOT match the bare host, so rewriting these to OSM's modern `tile.openstreetmap.org` would trade a policy block for a CSP block.",
 					"basemaps": [
 						{
@@ -2808,8 +2921,16 @@
 					{
 						"key": "deadline",
 						"label": "Deadline",
-						"widget": "deadlineCountdown",
-						"_note": "one-case-list A22. A raw ISO date makes every reader do the same subtraction once per row and get it wrong on the rows that matter. `deadlineCountdown` (src/services/cellWidgets.js) renders the days left and, past the deadline, the days overdue in the signalering red. A cell WIDGET rather than a `formatter` because a formatter returns a string and a string cannot carry the overdue state; nextcloud-vue 2.41 ships no built-in countdown cell, only `CnCountdownWidget` for a dashboard tile. The column stays sortable: CnDataTable sorts on the stored `deadline`, not on the rendered text."
+						"widget": "date",
+						"widgetProps": {
+							"due": {
+								"upcomingLabel": {
+									"one": "{count} day left",
+									"other": "{count} days left"
+								}
+							}
+						},
+						"_note": "one-case-list A22. A raw ISO date makes every reader do the same subtraction once per row and get it wrong on the rows that matter. The library's `date` cell with `due` renders the days left, \"Due today\" on the last day and, from the day after, the days overdue in the error colour, with the full date as the tooltip; a case without a deadline shows the library's dash. The column stays sortable: CnDataTable sorts on the stored `deadline`, not on the rendered text."
 					},
 					{
 						"key": "currentStatusDwellDays",
@@ -2877,6 +2998,8 @@
 				"schema": "case",
 				"subtitleField": "identifier",
 				"visibilityContext": {"caseType": {"field": "caseType", "register": "dossiq", "schema": "caseType"}},
+				"_accessPurposeNote": "Purpose logging (Ruben, 20 October 2026): a case whose case type lists special categories of personal data (caseType.specialDataCategories) opens only after the reader states why, and the purpose goes to the case's audit trail with the reader and the time (POST /api/cases/{id}/access-purpose, CaseAccessPurposeService). The options are CaseAccessPurposeService::PURPOSES minus other, which the library adds. Asked once per case per browser session. Needs nextcloud-vue detail-access-purpose; on an older release the key is ignored and the case opens as before.",
+				"accessPurpose": {"when": {"field": "@context.caseType.specialDataCategories", "op": "notEmpty"}, "title": "Why are you opening this case?", "description": "This case holds special categories of personal data. Your purpose is recorded with your name and the time, in the case's audit trail.", "options": [{"value": "handling", "label": "Handling the case"}, {"value": "advice", "label": "Advice or consultation on the case"}, {"value": "quality-check", "label": "Supervision or a quality check"}, {"value": "legal-obligation", "label": "A legal obligation"}, {"value": "data-subject-request", "label": "A request from the person concerned"}], "url": "/apps/dossiq/api/cases/{objectId}/access-purpose"},
 				"_visibilityContextNote": "Panels per case type (Ruben, 14 October 2026): which widget a case shows is configuration in this manifest, never code. The page reads the case type of the case beside it, and a widget's `visibleWhen` asks about it as `@context.caseType.<field>`. The condition reads the case type's `category`, the folder an organisation files its case types under, so a new case type in an existing folder needs no manifest change. A widget without `visibleWhen` shows on every case, as before. Needs the nextcloud-vue release that evaluates a detail widget's `visibleWhen` against the record (nextcloud-vue detail-widgets-visible-when); on an older release the key is ignored and every widget shows, as today.",
 				"_editFormNote": "The same form the index pages open, so editing a case asks what filing one asks wherever it is done. It was the raw schema-driven default here \u2014 one column, normal width, every property the schema declares \u2014 because CnDetailPage took `formSize` and `formColumns` and forwarded neither `includeFields`, `excludeFields` nor `fieldOverrides` to its dialogs. nextcloud-vue now does. `excludeFields` keeps `status` off for the reason the Cases page gives: a status is the OUTPUT of a transition, and a raw dropdown writes it through without a statusRecord, a guard or the transition's automaticActions. The priority trio goes with it, being derived from impact and urgency.",
 				"formSize": "large",
@@ -2964,16 +3087,25 @@
 					{
 						"id": "case-payment-requests",
 						"type": "integration",
-						"integrationId": "shillinq-payment-requests",
+						"integrationId": "shillinq-payment-requests-panel",
 						"title": "Fees and payments",
-						"_note": "fees-and-payments-on-the-case D-1 and D-3. The money lives in shillinq, so shillinq renders it: this is a PLACEMENT of the `shillinq-payment-requests` leaf, the same shape as the humaniq hours leaf beside it, and not a query against another app's register. What the panel shows is the requests raised on this case, the amount, and the article of the legesverordening the amount rests on, because a citizen may ask why they are being charged and \"because the configuration says so\" is not an answer a gemeente may give. It also carries the acts: raise the leges for this case's intake channel, send the payment link, and record money that arrived another way. THE COUNTER PAYMENT IS DELIBERATELY NOT A DOSSIQ ACT. shillinq puts it behind its own `payment.administer` permission, so the authority that owns the money decides who may say it arrived; a second dossiq path to the same fact would be a second answer with a second rights matrix behind it. dossiq's own half is the word on the case (`paymentState`), refreshed hourly for the list and read live whenever an act must be refused or allowed. A leaf whose app is absent is never registered, so on an install without shillinq this panel is missing rather than empty."
+						"_note": "fees-and-payments-on-the-case D-1 and D-3. The money lives in shillinq, so shillinq renders it: this is a PLACEMENT of the `shillinq-payment-requests-panel` leaf, the same shape as the humaniq hours leaf beside it, and not a query against another app's register. What the panel shows is the requests raised on this case, the amount, and the article of the legesverordening the amount rests on, because a citizen may ask why they are being charged and \"because the configuration says so\" is not an answer a gemeente may give. It also carries the acts: raise the leges for this case's intake channel, send the payment link, and record money that arrived another way. THE COUNTER PAYMENT IS DELIBERATELY NOT A DOSSIQ ACT. shillinq puts it behind its own `payment.administer` permission, so the authority that owns the money decides who may say it arrived; a second dossiq path to the same fact would be a second answer with a second rights matrix behind it. dossiq's own half is the word on the case (`paymentState`), refreshed hourly for the list and read live whenever an act must be refused or allowed. A leaf whose app is absent is never registered, so on an install without shillinq this panel is missing rather than empty."
 					},
 					{
 						"id": "case-contract",
 						"type": "integration",
-						"integrationId": "shillinq-contracts",
+						"integrationId": "shillinq-contracts-panel",
 						"title": "Contract",
 						"_note": "fees-and-payments-on-the-case D-5. The case names the contract it is handled under and reads its term, its counterparty and what is left of its value from shillinq, which flags a contract that is expiring, expired or terminated because those change what the handler should do next. NOTHING OF THE CONTRACT IS COPIED ONTO THE CASE: a copied term goes stale and then alerts on the wrong date, and the alert before a contract lapses is shillinq's anyway. The case carries one field, `contract`, which is the reference; the other direction is shillinq's `linkedObjects`, which is how a contract lists the cases raised under it."
+					},
+					{
+						"id": "case-linked",
+						"type": "linked",
+						"title": "Linked",
+						"_note": "DqZaak Gekoppeld in the FULL profile, which has no side column: the same card the simple profile places after Handling (side-linked), here in the grid cell the standalone Projects widget had, so no profile loses the projects. nextcloud-vue linked-integrations-card mounts each leaf out of sight and lists the linked ones' rows, then one \"...: nothing linked\" line with the rest's actions. The simple profile drops this cell (`full-linked: null`) because its side column carries the card.",
+						"content": {
+							"leaves": ["filinq-documents", "shillinq-payment-requests-panel", "shillinq-contracts-panel", "planninq-projects"]
+						}
 					},
 					{
 						"id": "case-change-proposals",
@@ -2981,15 +3113,6 @@
 						"integrationId": "portaliq-change-proposal-queue",
 						"title": "Proposed changes",
 						"_note": "portal-change-proposals-on-the-case D2, placed as the Proposals tab of the case panels as board PtVoorstelBeoordelen draws it (Voorstellen). A resident proposes a corrected title or description in the portal (the proposeCaseChange action); portaliq queues it and renders the queue here, where the handler accepts or rejects it. Accepting writes the case as the reviewer with RBAC on, so it is refused wherever the reviewer could not edit the case by hand. dossiq keeps no copy of a proposal. A leaf whose app is absent is never registered, so without portaliq the panel is missing rather than empty, and no requiredApp is declared."
-					},
-					{
-						"id": "case-projects",
-						"type": "integration",
-						"integrationId": "planninq-projects",
-						"title": "Projects",
-						"_note": "projects-from-planninq-on-the-case D1 (dossiq#3190). The projects run for this case live in planninq, so planninq renders them: a PLACEMENT of its planninq-projects leaf, beside the shillinq panels. The leaf scopes to projects whose caseReference is this case's uuid because the host forwards register dossiq and schema case (planninq src/integrations/projectScope.js), and its New project action opens planninq's dialog with the case linked. dossiq keeps no copy of a project. A leaf whose app is absent is never registered, so without planninq the panel is missing rather than empty, and no requiredApp is declared.",
-						"visibleWhen": {"field": "@context.caseType.category", "op": "in", "value": ["Vergunningen", "Toezicht en handhaving", "Subsidies", "Inkoop en leveranciers", "Permits", "Grants"]},
-						"_visibleWhenNote": "Projects run for cases whose work is a project: permits and their supervision, subsidies and grants, procurement. A Woo request, an objection or a complaint has none, so the panel is absent there rather than empty. The list names case type categories as this register seeds them; an organisation that files case types under its own folder names adds them here."
 					},
 					{
 						"id": "case-merge-to-pdf",
@@ -4046,9 +4169,9 @@
 					},
 					{
 						"id": "case-document-review",
-						"type": "document-review",
+						"type": "document-relevance-review",
 						"title": "Review",
-						"_note": "document-review (woo-review-triage and woo-review-recall-and-stopping, generic per decision 182), board DqWooReview: relevance apart from the verdict, the stopping rule and recall samples, batches and reviewers, and what is still open. A tab beside Files because review is work on the case's documents. On a case whose case type does not set documentReview.enabled it says so in one sentence.",
+						"_note": "document-relevance-review (woo-review-triage and woo-review-recall-and-stopping, generic per decision 182), board DqWooReview: relevance apart from the verdict, the stopping rule and recall samples, batches and reviewers, and what is still open. A tab beside Files because review is work on the case's documents. On a case whose case type does not set documentReview.enabled it says so in one sentence.",
 						"content": {}
 					},
 					{
@@ -4243,8 +4366,8 @@
 						"showTitle": true
 					},
 					{
-						"id": "work-projects",
-						"widgetId": "case-projects",
+						"id": "full-linked",
+						"widgetId": "case-linked",
 						"gridX": 0,
 						"gridY": 27,
 						"gridWidth": 6,
@@ -5058,26 +5181,6 @@
 			}
 		},
 		{
-			"id": "DeelzaakList",
-			"route": "/cases/:id/deelzaken",
-			"type": "custom",
-			"title": "Sub-cases",
-			"_note": "Bespoke parent-scoped sub-case (deelzaak) list: header carries a back-to-parent button, a parent breadcrumb link and a roll-up summary line, and rows deep-link into DeelzaakDetail under the same parent route. A standard list/index type can't express the parent-route binding (/cases/:id/deelzaken) plus the parent-context header and roll-up text.",
-			"slots": {
-				"main": "DeelzaakList"
-			}
-		},
-		{
-			"id": "DeelzaakDetail",
-			"route": "/cases/:parentId/deelzaken/:id",
-			"type": "custom",
-			"title": "Sub-case",
-			"_note": "Sub-case detail that shares the `case` schema with CaseDetail but adds a mandatory always-visible parent breadcrumb (parent → current) and a link out to the canonical CaseDetail edit view. The standard detail type renders a single object with no parent-context breadcrumb or cross-route hand-off, so the parent-aware framing requires a bespoke page.",
-			"slots": {
-				"main": "DeelzaakDetail"
-			}
-		},
-		{
 			"id": "BezwaarDetail",
 			"route": "/bezwaren/:id",
 			"type": "detail",
@@ -5719,12 +5822,240 @@
 		{
 			"id": "EndOfDay",
 			"route": "/end-of-day",
-			"type": "custom",
+			"type": "dashboard",
 			"title": "Close out your day",
-			"component": "EndOfDayView",
-			"_note": "One screen listing what the reader opened today, with a place to write what happened on each. \"Touched\" is OpenRegister's per-reader read state, asked per item: dossiq keeps no second record of who saw what (unread-state-on-the-case), and \"changed today\" would have been the wrong question anyway, since it lists a colleague's afternoon as yours. The time box is humaniq's hours leaf, placed per item; on an instance without humaniq there is no time field at all, because a dossiq one would become a second hours store the day humaniq arrives (ADR-011). An update is written on the thing it is about, so it is there tomorrow for whoever opens the case.",
+			"_note": "One screen listing what the reader opened today, with a place to write what happened on each. \"Touched\" is OpenRegister's per-reader read state, asked per item: dossiq keeps no second record of who saw what (unread-state-on-the-case), and \"changed today\" would have been the wrong question anyway, since it lists a colleague's afternoon as yours. The time box is humaniq's hours leaf, placed per item; on an instance without humaniq there is no time field at all, because a dossiq one would become a second hours store the day humaniq arrives (ADR-011). An update is written on the thing it is about, so it is there tomorrow for whoever opens the case. SINCE 20 OCTOBER 2026 THIS IS MANIFEST CONFIG (Ruben): the day lists are worked out on the server (GET /api/personal-queue/end-of-day, EndOfDayService), so Recorded today survives a reload; opened is still OpenRegister's read state. What is typed and not yet recorded stays in the browser and is the ready figure inside the notes list (nextcloud-vue record-list `presentation: notes`). The hours box is humaniq's leaf per row (`rowLeaf`), and nothing on an instance without humaniq.",
 			"config": {
-				"documentationUrl": "https://dossiq.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"allowEdit": false,
+				"showActionsMenu": false,
+				"showWidgetActions": false,
+				"breadcrumb": {
+					"label": "My work",
+					"route": "MyWorkHome"
+				},
+				"headerMeta": "{today}",
+				"widgets": [
+					{
+						"id": "eod-unavailable",
+						"type": "banner",
+						"title": "What could not be read",
+						"content": {
+							"variant": "warning",
+							"text": "{value}",
+							"visibleWhen": {
+								"endpoint": "/apps/dossiq/api/personal-queue/end-of-day",
+								"field": "unavailableText",
+								"op": "neq",
+								"value": ""
+							}
+						}
+					},
+					{
+						"id": "eod-open",
+						"type": "record-list",
+						"title": "Still open from today",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/personal-queue/end-of-day",
+								"responsePath": "open"
+							},
+							"presentation": "notes",
+							"title": "{title}",
+							"pill": {
+								"field": "kindLabel",
+								"variant": "info"
+							},
+							"due": {
+								"field": "dueAt",
+								"todayLabel": "Term ends today",
+								"overdueLabel": {
+								"one": "{count} day late",
+								"other": "{count} days late"
+							}
+							},
+							"rowRouteField": "routeName",
+							"rowIdField": "routeId",
+							"headerCount": true,
+							"headerNote": "what you opened today and has no note yet",
+							"emptyText": "Everything you opened today has a note.",
+							"emptyTexts": [
+								{
+									"when": {
+										"endpoint": "/apps/dossiq/api/personal-queue/end-of-day",
+										"field": "opened",
+										"op": "eq",
+										"value": 0
+									},
+									"text": "You have not opened anything today."
+								}
+							],
+							"noteAction": {
+								"urlField": "notesUrl",
+								"label": "Record it",
+								"fieldLabel": "What happened",
+								"placeholder": "For example: called the resident, waiting for documents",
+								"readyLabel": "filled in, not recorded yet",
+								"draftsKey": "dossiq-end-of-day",
+								"recordAll": {
+									"title": "Ready for today?",
+									"text": "The button records every note you filled in on its own case or task. An item without a note stays open and is back in My work tomorrow.",
+									"label": "Close out your day",
+									"icon": "ClipboardCheckOutline",
+									"cancel": {
+										"label": "Cancel",
+										"route": "MyWorkHome"
+									}
+								}
+							},
+							"rowLeaf": {
+								"id": "humaniq-hours",
+								"app": "humaniq",
+								"register": "dossiq",
+								"objectIdField": "subjectId",
+								"schemaField": "subjectType",
+								"unavailableText": "The hours leaf is not available, so time cannot be recorded here."
+							}
+						}
+					},
+					{
+						"id": "eod-recorded",
+						"type": "record-list",
+						"title": "Recorded today",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/personal-queue/end-of-day",
+								"responsePath": "recorded"
+							},
+							"presentation": "rows",
+							"icon": "Check",
+							"title": "{title}",
+							"pill": {
+								"field": "kindLabel",
+								"variant": "info"
+							},
+							"meta": "{recordedTime}",
+							"text": "{note}",
+							"rowRouteField": "routeName",
+							"rowIdField": "routeId",
+							"headerCount": true,
+							"headerNote": "it is on the case or task, for whoever opens it tomorrow",
+							"emptyText": "Nothing recorded yet today."
+						}
+					},
+					{
+						"id": "eod-figures",
+						"type": "record-list",
+						"title": "Your day",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/personal-queue/end-of-day",
+								"responsePath": "figures"
+							},
+							"presentation": "rows",
+							"title": "{label}",
+							"meta": "{note}",
+							"trailing": "{value}"
+						}
+					},
+					{
+						"id": "eod-tomorrow",
+						"type": "record-list",
+						"title": "First thing tomorrow",
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/personal-queue/end-of-day",
+							"field": "tomorrow",
+							"op": "notEmpty"
+						},
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/personal-queue/end-of-day",
+								"responsePath": "tomorrow"
+							},
+							"presentation": "rows",
+							"title": "{title}",
+							"due": {
+								"field": "dueAt",
+								"todayLabel": "Term ends today",
+								"overdueLabel": {
+								"one": "{count} day late",
+								"other": "{count} days late"
+							}
+							},
+							"rowRouteField": "routeName",
+							"rowIdField": "routeId",
+							"headerLink": {
+								"label": "To My work",
+								"route": "MyWorkHome"
+							}
+						}
+					},
+					{
+						"id": "eod-how",
+						"type": "text",
+						"title": "How this works",
+						"content": {
+							"contentMode": "markdown",
+							"text": "This lists what you opened yourself today, not what a colleague changed. A note goes on the case or task itself. Hours go to humaniq."
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": 1,
+						"widgetId": "eod-unavailable",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"sizeToContent": true
+					},
+					{
+						"id": 2,
+						"widgetId": "eod-open",
+						"gridX": 0,
+						"gridY": 1,
+						"gridWidth": 8,
+						"gridHeight": 6,
+						"sizeToContent": true
+					},
+					{
+						"id": 3,
+						"widgetId": "eod-recorded",
+						"gridX": 0,
+						"gridY": 7,
+						"gridWidth": 8,
+						"gridHeight": 4,
+						"sizeToContent": true
+					},
+					{
+						"id": 4,
+						"widgetId": "eod-figures",
+						"gridX": 8,
+						"gridY": 1,
+						"gridWidth": 4,
+						"gridHeight": 3,
+						"sizeToContent": true
+					},
+					{
+						"id": 5,
+						"widgetId": "eod-tomorrow",
+						"gridX": 8,
+						"gridY": 4,
+						"gridWidth": 4,
+						"gridHeight": 3,
+						"sizeToContent": true
+					},
+					{
+						"id": 6,
+						"widgetId": "eod-how",
+						"gridX": 8,
+						"gridY": 7,
+						"gridWidth": 4,
+						"gridHeight": 2,
+						"sizeToContent": true
+					}
+				]
 			}
 		},
 		{
@@ -5825,7 +6156,24 @@
 				"appId": "dossiq",
 				"pageId": "Doorlooptijd",
 				"showWidgetActions": false,
-				"description": "All case types",
+				"_pageFiltersNote": "The case type choice sits on the description line, before the period group, as the DqDoorlooptijd board draws it (\"alle zaaktypen\"). Only case types that declare a processing deadline are offered: a type without one gives a dashboard that can say nothing. Clearing it reads every case type.",
+				"pageFilters": [
+					{
+						"key": "caseType",
+						"label": "Filter by case type",
+						"placement": "description",
+						"clearable": true,
+						"placeholder": "All case types",
+						"optionsFrom": {
+							"register": "dossiq",
+							"schema": "caseType",
+							"filter": {
+								"processingDeadline_isnull": false
+							},
+							"labelField": "title"
+						}
+					}
+				],
 				"widgets": [
 					{
 						"id": "dt-avg",
@@ -5964,7 +6312,8 @@
 						"title": "Average processing time per month",
 						"content": {
 							"chartKind": "line",
-							"height": 260,
+							"_heightNote": "No height: on a dashboard a chart without one fits its tile (nextcloud-vue CnDashboardPage). A pinned 260px plot was taller than the gridHeight 4 tile and the tile cut it off and scrolled (DqDoorlooptijd).",
+							"footnote": "Chart from the OpenRegister analysis layer. Dossiq works out the norm and what counts as within it.",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
@@ -5990,8 +6339,7 @@
 									"enabled": false
 								}
 							}
-						},
-						"subtitle": "Chart from the OpenRegister analysis layer. Dossiq works out the norm and what counts as within it."
+						}
 					},
 					{
 						"id": "dt-within-by-type",
@@ -6162,7 +6510,6 @@
 				}
 			},
 			"slots": {
-				"header-actions": "DtCaseTypeFilter",
 				"widget-dt-charts": "DtChartsWidget",
 				"widget-dt-woo": "DtWooWidget",
 				"widget-dt-atrisk": "DtAtRiskWidget",
@@ -6222,6 +6569,16 @@
 								"label": "All time"
 							}
 						]
+					},
+					{
+						"key": "caseType",
+						"label": "Filter by case type",
+						"clearable": true,
+						"placeholder": "All case types",
+						"optionsFrom": {
+							"register": "dossiq",
+							"schema": "caseType"
+						}
 					}
 				],
 				"widgets": [
@@ -6422,7 +6779,6 @@
 				"documentationUrl": "https://dossiq.conduction.nl"
 			},
 			"slots": {
-				"header-actions": "PmCaseTypeFilter",
 				"widget-pm-kpis": "PmKpiWidget",
 				"widget-pm-dwell": "PmDwellChartWidget",
 				"widget-pm-throughput": "PmThroughputChartWidget",
@@ -8589,7 +8945,9 @@
 					"origin",
 					"responsibleUnit",
 					"serviceTarget",
-					"notificationDomain"
+					"notificationDomain",
+					"colour",
+					"icon"
 				],
 				"_includeFieldsNote": "Twelve of the forty-one, and every one of them is also on CaseTypeDetail, so nothing here becomes unreachable by being left off the create form. The cut follows the detail page's own grouping: this is `case-type-core` (title, identifier, description, category, parentCaseType, purpose, trigger, handlingModel, confidentiality, isDraft) plus the two facts from `case-type-terms` that a type cannot sensibly start life without, its statutory `processingDeadline` and the `validFrom` it takes effect on. What is deliberately NOT here: the versioning trio (version, previousVersion, supersededBy) is written by the publish action, not typed; the relation lists (subCaseTypes, decisionTypes, relatedCaseTypes, startableFlows) are built up on the detail page once the thing they point at exists; the AVG block (case-type-privacy) is a data protection officer's pass over an existing type rather than an author's first screen; and the remaining specialist codings (layerIds, iv3TaskField, selectionListProcessType, referenceProcess, verwerkingsactiviteit) are lookups nobody has to hand while naming a new type. `initialStatus` is excluded for a HARDER reason, the same one the CaseTypes-adjacent `case` form records for `status`: it is a $ref to a statusType filtered by `caseType`, and at create time this case type has no id and therefore no statuses, so the picker would fetch unfiltered and offer every OTHER type's statuses. Half of those are called `Received` or `In progress`, which makes them both indistinguishable and wrong. A type's statuses are authored on its detail page, after it exists.",
 				"fieldOverrides": {
@@ -8609,7 +8967,9 @@
 					"subject": { "order": 13 },
 					"origin": { "order": 14 },
 					"responsibleUnit": { "order": 15 },
-					"notificationDomain": { "order": 16 }
+					"notificationDomain": { "order": 16 },
+					"colour": { "order": 17, "widget": "select", "optionSwatches": { "blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "teal": "var(--nl-color-teal, #1d5e66)", "teal-light": "var(--nl-color-teal-light, #e3f1f3)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)" } },
+					"icon": { "order": 18, "widget": "select", "enum": ["FileDocumentOutline", "Gavel", "MessageAlertOutline", "MapMarkerOutline", "OfficeBuildingOutline", "AccountHardHat", "MapOutline", "CashMultiple", "Calendar", "CardAccountDetailsOutline", "HandshakeOutline", "ShieldAccountOutline", "ScaleBalance", "HandHeartOutline", "StoreOutline", "FileCertificateOutline", "Domain", "FolderOutline"], "optionIcons": { "FileDocumentOutline": "FileDocumentOutline", "Gavel": "Gavel", "MessageAlertOutline": "MessageAlertOutline", "MapMarkerOutline": "MapMarkerOutline", "OfficeBuildingOutline": "OfficeBuildingOutline", "AccountHardHat": "AccountHardHat", "MapOutline": "MapOutline", "CashMultiple": "CashMultiple", "Calendar": "Calendar", "CardAccountDetailsOutline": "CardAccountDetailsOutline", "HandshakeOutline": "HandshakeOutline", "ShieldAccountOutline": "ShieldAccountOutline", "ScaleBalance": "ScaleBalance", "HandHeartOutline": "HandHeartOutline", "StoreOutline": "StoreOutline", "FileCertificateOutline": "FileCertificateOutline", "Domain": "Domain", "FolderOutline": "FolderOutline" } }
 				},
 				"_fieldOverridesNote": "`order` is set here rather than on the register because fieldsFromSchema resolves an override's `order` AHEAD of the property's own, so one manifest map orders every schema-driven surface without a data-model change. It is not cosmetic: not one of caseType's 41 properties carries an `order`, so the sort falls through to alphabetical and a form that opens on `Category` puts `Title` TENTH. The three prose fields are declared `textarea` because caseType leaves them as plain strings with no maxLength, so resolveWidget renders a single-line input for what is a paragraph. That also decides the layout: CnFormDialog spans a textarea across BOTH columns (WIDE_WIDGETS), so the nine single-line fields pair up into rows first and the three prose fields follow full width, which is why the order puts them last. Interleaved, each one would leave the column beside it empty.",
 				"_folderSidebarNote": "`source: \"field\"` and not `source: \"facet\"`. CnIndexPage still resolves exactly four sources, register, field, custom and files, and CnFolderSidebar's own validator takes only custom, field and files, so a sidebar declared as a facet falls through to `custom`, finds the (absent) `folders` array and renders an empty pane. THE SECOND HALF OF THIS NOTE WAS TRUE UNTIL nextcloud-vue 2.42.0 AND IS NOT ANY MORE: `field` no longer derives the folders from the distinct `category` values of the loaded rows. Since #1036 it prefers the FACET for `field`, which is computed over the whole query with pagination stripped, and only groups the rows when no facet arrives. That is what makes a category reachable when every row carrying it sits on a later page, and it is why no manifest change is wanted here: `facetable: true` on the property plus `source: \"field\"` is the whole contract, and the object store adds `_facets=extend` on its own once the fetched schema has any facetable property. `x-openregister-facet` is still read by nothing. ⚠️ The facet ARRIVES an hour stale, because OpenRegister caches the response and no object write invalidates it, so a category added today gets no folder today: OpenRegister#3560, and the reason the folder e2e test is parked.",
@@ -8693,6 +9053,12 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "caseType",
+				"_fieldOverridesNote": "case-type-colour-icon: the colour is a select over the NL Design System hues with a swatch per option, the icon a select over the case type icons the app registers (src/icons.js), each shown before its name. Both are the same as on the create form.",
+				"fieldOverrides": {
+					"colour": { "order": 17, "widget": "select", "optionSwatches": { "blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "teal": "var(--nl-color-teal, #1d5e66)", "teal-light": "var(--nl-color-teal-light, #e3f1f3)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)" } },
+					"icon": { "order": 18, "widget": "select", "enum": ["FileDocumentOutline", "Gavel", "MessageAlertOutline", "MapMarkerOutline", "OfficeBuildingOutline", "AccountHardHat", "MapOutline", "CashMultiple", "Calendar", "CardAccountDetailsOutline", "HandshakeOutline", "ShieldAccountOutline", "ScaleBalance", "HandHeartOutline", "StoreOutline", "FileCertificateOutline", "Domain", "FolderOutline"], "optionIcons": { "FileDocumentOutline": "FileDocumentOutline", "Gavel": "Gavel", "MessageAlertOutline": "MessageAlertOutline", "MapMarkerOutline": "MapMarkerOutline", "OfficeBuildingOutline": "OfficeBuildingOutline", "AccountHardHat": "AccountHardHat", "MapOutline": "MapOutline", "CashMultiple": "CashMultiple", "Calendar": "Calendar", "CardAccountDetailsOutline": "CardAccountDetailsOutline", "HandshakeOutline": "HandshakeOutline", "ShieldAccountOutline": "ShieldAccountOutline", "ScaleBalance": "ScaleBalance", "HandHeartOutline": "HandHeartOutline", "StoreOutline": "StoreOutline", "FileCertificateOutline": "FileCertificateOutline", "Domain": "Domain", "FolderOutline": "FolderOutline" } }
+				},
+				"follow": false,
 				"widgets": [
 					{
 						"id": "case-type-core",
@@ -8723,7 +9089,9 @@
 								"knowledgeBasePage",
 								"subject",
 								"handlerAction",
-								"publicationRequired"
+								"publicationRequired",
+								"colour",
+								"icon"
 							],
 							"hideEmpty": false
 						}
@@ -8997,6 +9365,8 @@
 										"red-light": "var(--nl-color-red-light, #fbe9e8)",
 										"purple": "var(--nl-color-purple, #762f8e)",
 										"purple-light": "var(--nl-color-purple-light, #f2eaf5)",
+										"teal": "var(--nl-color-teal, #1d5e66)",
+										"teal-light": "var(--nl-color-teal-light, #e3f1f3)",
 										"grey": "var(--nl-color-grey, #696969)",
 										"grey-light": "var(--nl-color-grey-light, #f0f0f0)"
 									}
@@ -9273,6 +9643,7 @@
 								"category",
 								"propertyType",
 								"format",
+								"items",
 								"maxLength",
 								"pattern",
 								"minimum",
@@ -9312,6 +9683,17 @@
 										},
 										"itemsPath": "formats",
 										"hideWhenEmpty": true
+									},
+									"clearWhenHidden": true
+								},
+								"items": {
+									"label": "Type of each entry",
+									"widget": "json",
+									"visibleWhen": {
+										"field": "propertyType",
+										"in": [
+											"array"
+										]
 									},
 									"clearWhenHidden": true
 								},

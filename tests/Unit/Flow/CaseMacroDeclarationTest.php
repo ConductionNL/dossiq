@@ -74,7 +74,7 @@ class CaseMacroDeclarationTest extends TestCase {
 	}//end testEveryChangingStepIsLabelledForTheLastRunLine()
 
 	public function testTheCaseTypeDeclaresWhichMacrosItOffers(): void {
-		$fragment = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/register.d/99-case-type-shown-macros.json'), true);
+		$fragment = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/register.d/99-case-type-which-macros.json'), true);
 		$macros = $fragment['components']['schemas']['caseType']['properties']['macros'];
 		$this->assertSame('array', $macros['type']);
 		$this->assertSame('string', $macros['items']['type']);

@@ -66,7 +66,18 @@
 
 	<div v-if="inputs.reason && asksText" class="case-acts__field">
 		<label class="case-acts__label" for="case-act-reason">{{ t('dossiq', 'Reason') }}</label>
+		<!-- Beside the days (suspend) the reason is one line, as board
+		     DqVolgendeStap draws it; on its own it is a text area. -->
+		<NcTextField
+			v-if="inputs.days"
+			id="case-act-reason"
+			:modelValue="reason"
+			data-testid="case-act-reason-input"
+			:label="t('dossiq', 'Reason')"
+			:labelOutside="true"
+			@update:modelValue="$emit('update:reason', $event)" />
 		<NcTextArea
+			v-else
 			id="case-act-reason"
 			:modelValue="reason"
 			data-testid="case-act-reason-input"

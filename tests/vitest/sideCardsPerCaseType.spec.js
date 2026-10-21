@@ -37,7 +37,7 @@ const simple = buildProfiledManifest(
 
 const sideId = (entry) => (typeof entry === 'string' ? entry : entry.id)
 const sideIds = simple.sideColumn.map(sideId)
-const GENERIC = ['case-tile-deadline', 'side-requester', 'side-handling', 'side-work-instruction']
+const GENERIC = ['side-advice-requested', 'case-tile-deadline', 'side-requester', 'side-handling', 'side-linked', 'side-work-instruction']
 
 function packageCaseTypes (id) {
 	const data = readJson('lib', 'Settings', 'packages', id, 'case-type.json')
@@ -58,7 +58,7 @@ describe('side cards per case type: the configuration', () => {
 	})
 
 	it('lets the domain packages list cards of the column, in the order their boards draw them', () => {
-		expect(packageCaseTypes('jeugdwet')[0].sideCards).toEqual(['case-banner-stack', 'side-social-consent', 'side-social-people'])
+		expect(packageCaseTypes('jeugdwet')[0].sideCards).toEqual(['side-special-data-health', 'case-banner-stack', 'side-social-consent', 'side-social-people'])
 		expect(packageCaseTypes('aanbesteding')[0].sideCards).toEqual(['case-tile-deadline', 'case-banner-stack'])
 		const objection = packageCaseTypes('bezwaar-beroep').find((caseType) => caseType.identifier === 'bezwaar')
 		expect(objection.sideCards).toEqual(['case-tile-deadline', 'side-objection-appeal', 'case-banner-stack'])

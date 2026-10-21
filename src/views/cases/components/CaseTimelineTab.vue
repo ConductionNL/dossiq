@@ -29,7 +29,7 @@
 	<div class="case-timeline" data-testid="case-timeline">
 
 		<div class="case-timeline__header">
-			<div>
+			<div class="case-timeline__heading">
 				<h3 class="case-timeline__title">
 					{{ t('dossiq', 'History of the case') }}
 				</h3>
@@ -793,7 +793,13 @@ export default {
 	align-items: flex-start;
 	justify-content: space-between;
 	gap: 12px;
-	margin-block-end: 12px;
+	margin-block-end: 16px;
+}
+
+.case-timeline__heading {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
 }
 
 .case-timeline__header-actions {
@@ -803,13 +809,15 @@ export default {
 
 .case-timeline__title {
 	margin: 0;
-	font-size: 16px;
-	font-weight: bold;
+	font-size: 17px;
+	font-weight: 700;
+	line-height: 1.2;
 }
 
 .case-timeline__subtitle {
 	margin: 0;
 	color: var(--color-text-maxcontrast);
+	font-size: 14px;
 }
 
 .case-timeline__chips {
@@ -822,29 +830,38 @@ export default {
 .case-timeline__chip {
 	display: inline-flex;
 	align-items: center;
-	gap: 6px;
-	min-height: 34px;
-	padding: 4px 12px;
+	gap: 8px;
+	box-sizing: border-box;
+	height: 36px;
+	padding: 0 12px;
 	border: 1px solid var(--color-border-dark);
-	border-radius: var(--border-radius-pill);
+	border-radius: 18px;
 	background: var(--color-main-background);
 	color: var(--color-main-text);
-	font-weight: bold;
+	font-size: 14px;
+	font-weight: 600;
 	cursor: pointer;
 }
 
+/* The chosen kind is a filled chip with no outline. */
 .case-timeline__chip--active {
-	border-color: var(--color-main-text);
+	border: 0;
 	background: var(--color-main-text);
 	color: var(--color-main-background);
 }
 
 .case-timeline__chip-count {
-	padding: 0 6px;
-	border-radius: var(--border-radius-pill);
-	background: var(--color-background-dark);
+	padding: 1px 7px;
+	border-radius: 10px;
+	background: var(--color-border);
 	color: var(--color-main-text);
 	font-size: 12px;
+}
+
+/* On the filled chip the count is a lighter ink bubble with light text. */
+.case-timeline__chip--active .case-timeline__chip-count {
+	background: color-mix(in srgb, var(--color-main-background) 18%, var(--color-main-text));
+	color: var(--color-main-background);
 }
 
 .case-timeline__count {

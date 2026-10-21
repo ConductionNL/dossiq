@@ -193,10 +193,15 @@ describe('registry modals reach a surface', () => {
  * The sixth, CaseTransitionConfirmDialog, was kept because it was the only
  * component mounting TemplatePicker. the-close-form-keeps-its-template moved
  * the picker onto CaseLifecycleMenuDialog, the close form a handler reaches,
- * and retired the dialog. The list is empty: a new entry needs a reason and
- * what would remove it.
+ * and retired the dialog. A new entry needs a reason and what would remove it.
  */
-const KNOWN_UNIMPORTED = {}
+const KNOWN_UNIMPORTED = {
+	'src/modals/DeelzaakCreateModal.vue':
+		'Its only mount was the retired DeelzaakList page. It is the one Create sub-case form '
+		+ '(validates against /api/deelzaken/validate before it writes), so it waits for a header '
+		+ 'action on the case page Sub-cases section rather than going with the page. Drop this '
+		+ 'entry when that action imports it.',
+}
 
 /**
  * Every `.vue` file under the dialog and modal folders.

@@ -44,7 +44,7 @@
 		<CaseArchivedStrip :objectData="objectData" />
 		<CaseUnreadPanel :objectId="objectId" />
 		<CaseStatusDeclarationPanel :objectId="objectId" :objectData="objectData" />
-		<CaseAttentionPanel :objectId="objectId" />
+		<CaseAttentionPanel :objectId="objectId" :objectData="objectData" />
 	</div>
 </template>
 
@@ -73,7 +73,8 @@ export default {
 
 		/**
 		 * The loaded case record. The archived strip and the status
-		 * declaration read it; the others fetch from `objectId`.
+		 * declaration and the attention strip read it; the others fetch from
+		 * `objectId`.
 		 */
 		objectData: {
 			type: Object,

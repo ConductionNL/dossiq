@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.11",
+          "version": "1.4.12",
           "slug": "woo-verzoek"
         },
         "macros": [
@@ -120,6 +120,8 @@
           "suspend-for-supplement"
         ],
         "title": "Woo-verzoek",
+        "colour": "red",
+        "icon": "FileDocumentOutline",
         "description": "Behandeling van verzoeken op grond van de Wet open overheid",
         "purpose": "Transparante afhandeling van informatieverzoeken conform de WOO",
         "trigger": "Ontvangst van een WOO-verzoek van een burger, journalist of organisatie",
@@ -625,7 +627,7 @@
         "order": 2,
         "isFinal": false,
         "role": "in-progress",
-        "colour": "blue",
+        "colour": "purple",
         "publicLabel": "In behandeling",
         "publicDescription": "Wij kijken of uw verzoek compleet is."
       },
@@ -643,7 +645,7 @@
         "order": 3,
         "isFinal": false,
         "role": "in-progress",
-        "colour": "orange",
+        "colour": "purple",
         "publicLabel": "In behandeling",
         "publicDescription": "Wij zoeken de documenten waar uw verzoek over gaat."
       },
@@ -661,7 +663,7 @@
         "order": 4,
         "isFinal": false,
         "role": "in-progress",
-        "colour": "orange",
+        "colour": "purple",
         "publicLabel": "In behandeling",
         "publicDescription": "Wij beoordelen per document of het openbaar kan."
       },
@@ -697,7 +699,7 @@
         "order": 6,
         "isFinal": false,
         "role": "review",
-        "colour": "purple",
+        "colour": "teal",
         "publicLabel": "Besluit",
         "publicDescription": "Wij nemen een besluit op uw verzoek."
       },
@@ -733,7 +735,7 @@
         "order": 8,
         "isFinal": true,
         "role": "closed",
-        "colour": "grey",
+        "colour": "green",
         "publicLabel": "Afgehandeld",
         "publicDescription": "Uw verzoek is afgehandeld."
       },

@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
-// The deadline column's countdown, as a pure function.
-//
-// A case list that prints a raw ISO date makes every reader do the same
-// subtraction in their head, once per row, and get it wrong on the rows that
-// matter — the ones already past. The countdown does the subtraction and says
-// which side of the line the case is on.
+// Days until a deadline and whether it has passed, as pure functions.
 //
 // The arithmetic is DATE-ONLY on purpose. A deadline is a day, not an
 // instant: comparing timestamps would call a case due today "0 days left" at
@@ -14,8 +9,6 @@
 // working day it is still due on. Both sides are floored to their calendar
 // day in LOCAL time (the same clock the reader's own "today" runs on) before
 // the difference is taken.
-
-import { translate as t } from '@nextcloud/l10n'
 
 /**
  * The local calendar day of a value, as a timestamp at midnight — or null
@@ -95,48 +88,4 @@ export function daysUntilDeadline(deadline, now = new Date()) {
 export function isOverdue(deadline, now = new Date()) {
 	const days = daysUntilDeadline(deadline, now)
 	return days !== null && days < 0
-}
-
-/**
- * The deadline column's cell content: how many days are left, or how many
- * days the case is past due.
- *
- * A case with no deadline returns null — the cell then renders EMPTY, not
- * "0 days left". Zero is a claim about a deadline; a case that has none has
- * made no such claim, and printing zero would sort it visually beside the
- * cases due today.
- *
- * @param {string|number|Date|null|undefined} deadline The case deadline.
- * @param {Date} [now] The moment to count from (defaults to the current one).
- * @return {{days: number, overdue: boolean, text: string}|null} The cell
- *   content, or null when there is no readable deadline.
- *
- * @spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md
- */
-export function deadlineCountdown(deadline, now = new Date()) {
-	const days = daysUntilDeadline(deadline, now)
-	if (days === null) {
-		return null
-	}
-
-	if (days < 0) {
-		const overdueBy = Math.abs(days)
-		return {
-			days: overdueBy,
-			overdue: true,
-			text:
-				overdueBy === 1
-					? t('dossiq', '1 day overdue')
-					: t('dossiq', '{days} days overdue', { days: overdueBy }),
-		}
-	}
-
-	return {
-		days,
-		overdue: false,
-		text:
-			days === 1
-				? t('dossiq', '1 day left')
-				: t('dossiq', '{days} days left', { days }),
-	}
 }
