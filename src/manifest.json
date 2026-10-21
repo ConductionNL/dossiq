@@ -3760,6 +3760,7 @@
 							"selectionLabel": "{count} documents selected",
 							"selectionLabelOne": "{count} document selected",
 							"showClearSelection": false,
+							"sideCardsPlacement": "page-side",
 							"bulkActions": [
 								{
 									"id": "bulk-confidentiality",
