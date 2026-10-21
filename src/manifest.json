@@ -643,7 +643,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "InitiatorPicker",
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -1141,7 +1141,7 @@
 			"route": "/",
 			"type": "dashboard",
 			"title": "My work",
-			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first. `slots.widget-my-work` moved here for the same reason `_note` on the old Dashboard page warned about: a `type: \"custom\"` widget resolves ONLY through the page's own top-level `slots` map, never through one nested under `config`.",
+			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first.",
 			"config": {
 				"allowEdit": false,
 				"appId": "dossiq",
@@ -1173,7 +1173,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "InitiatorPicker",
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -1211,10 +1211,11 @@
 						"widgets": [
 							{
 								"id": "my-work",
-								"type": "custom",
+								"type": "tasks",
 								"title": "My work",
-								"_note": "remove-casetask 2.3. This tile read `register: dossiq, schema: caseTask`, a store nothing writes any more. The read answered 200, so the page rendered a table of rows no writer had touched since the engine took over, and it would have gone empty the day that schema is deleted. It now reads OpenRegister's task engine through `useEngineTaskStore`, the seam every other task surface in dossiq already reads. TYPE is the interim. `type: \"custom\"` resolves through the page slot `widget-my-work` in this page's `slots` map, because [blocked: nextcloud-vue 2.46.0 ships a `tasks` entity source for INDEX pages only, `src/composables/indexSources.js`, and no widget equivalent], so no manifest key can name this list. TARGET: back to a generic widget the day the library grows a task source for widgets, at which point `src/views/widgets/MyWorkWidget.vue` and its registry entry are deleted. `limit`, `rowRoute`, `viewAllRoute`, `viewAllLabel` and `emptyText` are kept as written and the component reads every one of them, so the swap back is a retype and not a rewrite. `viewAllRoute` CARRIES NO QUERY, and it used to carry `assignee: @me` plus `isTerminalStatus: false`. remove-casetask 2.2 moved the Tasks index onto `entitySource: \"tasks\"`, and a named source reads NOTHING from the route: `useNamedSource.loadActive()` merges the page's `sourceConfig` with the active quick-filter tab and never looks at `$route.query`, and CnIndexPage's `$route.query` watcher is guarded on `isSelfFetchMode`, which a named source is not. The old query therefore did not narrow the list, it was simply ignored, and a query left in place would claim a filter the page does not apply. View all lands on the index's default All tab; the reader's own tab is Mine, one chip away. It comes back the day a named source grows the `?key=value` grammar `resolveQueryFilters` already gives a self-fetching one. The Case column is NOT kept: the engine answers the case in its `subject` block, that block came back null on all fifty rows the live instance returned on 2026-09-10, and a column blank on every row is the same looks-fine-shows-nothing failure this widget is being fixed for. The cause is in OpenRegister's TaskInboxService, which takes its object mapper as an optional constructor argument and gets null.",
+								"_note": "The reader's open tasks from OpenRegister's task engine, soonest due first, as the library task widget (`scope: assigned`); an overdue row says so in words and in the error colour. It replaced dossiq's MyWorkWidget. Work routed to the reader by a substitution is not listed here: the personal work queue lists covered work (Ruben, 20 Oct), so the substituted-rows toggle is gone. `viewAllRoute` carries no query: the Tasks index reads a named source, which takes nothing from the route; the reader's own tab is Mine, one chip away.",
 								"content": {
+									"scope": "assigned",
 									"limit": 10,
 									"rowRoute": "TaskDetail",
 									"viewAllRoute": {
@@ -1772,9 +1773,6 @@
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
-			},
-			"slots": {
-				"widget-my-work": "MyWorkWidget"
 			}
 		},
 		{
@@ -1898,14 +1896,41 @@
 			"type": "index",
 			"title": "Cases",
 			"manualOrder": true,
-			"slots": {
-				"after-search": "CaseTypeFieldFilters"
-			},
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
 				"allowExport": true,
+				"showUnreadRows": true,
+				"_showUnreadRowsNote": "unread-state-on-the-case, task 1.1. An unread row reads in bold with the library's unread marker (CnDataTable, from `@self.unread`, which OpenRegister attaches per reader on the render path). The board look marks unread rows only on a page that asks, and this page asks: its Unread chip (`_unread`, resolved inside the query) is one of its own quick filters, so it does not use `personalLenses`. An absent flag reads as read, because `@self.unread` is omitted for an anonymous read.",
+				"rowIndicators": [
+					{
+						"id": "incomplete",
+						"field": "isIncomplete",
+						"in": [true, 1, "1", "true"],
+						"icon": "AlertOutline",
+						"text": "Incomplete"
+					},
+					{
+						"id": "held",
+						"field": "heldUntil",
+						"after": "now",
+						"icon": "PauseCircleOutline",
+						"text": "On hold"
+					},
+					{
+						"id": "draft",
+						"field": "isDraft",
+						"in": [true, 1, "1", "true"],
+						"icon": "FileDocumentEditOutline",
+						"text": "Draft"
+					}
+				],
+				"_rowIndicatorsNote": "lifecycle-acts-on-the-case, REQ-LIFE-13 and REQ-LIFE-15. Incomplete, on hold (held until a later date) and draft ride the title cell as icons, each with its word as hidden text and tooltip (WCAG 2.2 SC 1.4.1), instead of a column that is empty on nine rows in ten. A row in none of the three states says nothing at all. An unreadable `heldUntil` reads as not held.",
 				"_allowExportNote": "case-list-export-via-or-export-leaf. The library's own Export menu (CSV and Excel) on the actions bar; it shows because the case schema is flagged `exportable` in lib/Settings/dossiq_register.json. A click sends the browser to OpenRegister's export leaf with the query the list itself sends (search, sort, facets, the active lens and the case-type folder, without paging), so the file holds the rows the table is filtered to and OpenRegister enforces access as the reader. dossiq serialises nothing (ADR-022).",
-				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are NOT on the case: dossiq stores each declared field as a `caseProperty` row pointing back at it, so the query is openregister's `_related[caseProperty][case][\u2026]` (query-related-schema-rows). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. `after-search` rather than `below-header` for two reasons: it is the actions bar's own slot for inline refinement controls, and `below-header` already holds `CaseSearchRefusal`, which a slot map cannot share.",
+				"relatedFieldFilters": {
+					"definitions": { "register": "dossiq", "schema": "propertyDefinition", "filter": { "caseType": "$route.query.caseType" } },
+					"related": { "schema": "caseProperty", "backref": "case", "definitionKey": "propertyDefinition", "valueKey": "value" }
+				},
+				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are NOT on the case: dossiq stores each declared field as a `caseProperty` row pointing back at it, so the query is openregister's `_related[caseProperty][case][\u2026]` (query-related-schema-rows). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. The library's CnRelatedFieldFilters draws it beside the search (`relatedFieldFilters`), names a refused block's field under the bar, and feeds the list's fetch through `sidebarState.onFilterChange`, since the index page drops `_`-prefixed route keys.",
 				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/utils/caseBulkActions.js, registered in src/registry.js as `kind: 'handler'` entries, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
 					{
@@ -2057,9 +2082,6 @@
 							"slots": {
 								"below-header": [
 									"WorkloadSummaryBar"
-								],
-								"before-collection": [
-									"SubstitutedWork"
 								]
 							}
 						}
@@ -2528,7 +2550,14 @@
 									"key": "status",
 									"label": "Status",
 									"formatter": "statusTypeName",
-									"widget": "statusBadge"
+									"widget": "badge",
+									"widgetProps": {
+										"resolve": {
+											"register": "dossiq",
+											"schema": "statusType",
+											"colorField": "colour"
+										}
+									}
 								},
 								"assignee"
 							],
@@ -2545,7 +2574,7 @@
 									"widget": "textarea"
 								},
 								"requester": {
-									"widget": "InitiatorPicker",
+									"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 									"label": "Requester"
 								}
 							},
@@ -2594,7 +2623,7 @@
 				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
 				"fieldOverrides": {
 					"description": { "widget": "textarea" },
-					"requester": { "widget": "InitiatorPicker", "label": "Requester" },
+					"requester": { "widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }], "label": "Requester" },
 					"confidentiality": { "enumLabels": { "openbaar": "Public", "beperkt_openbaar": "Restricted public", "intern": "Internal", "zaakvertrouwelijk": "Case confidential", "vertrouwelijk": "Confidential", "confidentieel": "Classified confidential", "geheim": "Secret", "zeer_geheim": "Top secret" } }
 				},
 				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
@@ -2862,21 +2891,7 @@
 				"_quickFilterMaxVisibleNote": "Seventeen pills wrap the actions bar onto a second line and squeeze the 'Showing X of Y' count onto two, so only the first four render and the rest sit behind one more CHIP at the end of the row — a '⋯' pill, not a toolbar button, because what it opens is a filter like the ones beside it. The four are the everyday ones and the cap is the reason the ORDER of quickFilters is now load-bearing: moving a lens up or down moves it in or out of the strip. A lens picked from the panel is applied exactly as a pill is, and the chip then wears its label and its fill, so a narrowed list never presents itself as All.",
 				"quickFilterMaxVisible": 4,
 				"columns": [
-					{
-						"key": "@self.unread",
-						"label": "Unread",
-						"widget": "unreadIndicator",
-						"sortable": false,
-						"_note": "unread-state-on-the-case, task 1.1. `@self.unread` is NOT a stored field: OpenRegister attaches it per reader on the render path and memoises it per request, so four hundred rows cost one query rather than four hundred. It is therefore `sortable: false`: the server has no column to order by, so a sortable header would send an `_order` the mapper answers by ignoring, which reads as a broken sort rather than as an absent one. Narrowing the list to what is unread is the Unread chip, whose `_unread=true` is resolved INSIDE the query so the page, the total and the facets cannot disagree; a column-side filter would be a post-filter over one page and would give a first page of 25 against a total of 120. A cell WIDGET and not a formatter, for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a dot. An absent flag reads as READ, because `@self.unread` is omitted entirely for an anonymous read and treating absence as unread would paint every row on a public page."
-					},
 					"identifier",
-					{
-						"key": "isIncomplete",
-						"label": "State",
-						"widget": "caseStateMarkers",
-						"sortable": false,
-						"_note": "lifecycle-acts-on-the-case, REQ-LIFE-13 and REQ-LIFE-15. ONE column carrying incomplete, on hold and draft, because three columns that are empty on nine rows in ten push the case title off the screen for nothing. Keyed on `isIncomplete` and not on a state field of its own: a column needs a key and the widget reads the whole ROW, so the key is only what the header sorts and filters on. `sortable: false` for the reason the Unread column gives: there is no single column behind the three markers, so a sortable header would send an `_order` the mapper answers by ignoring, which reads as a broken sort rather than an absent one. A marker is a WORD and not a colour (WCAG 2.2 SC 1.4.1), and a row in none of the three states says nothing at all: four hundred rows saying Complete is noise around the three that matter."
-					},
 					"title",
 					{
 						"key": "initiatorDisplayName",
@@ -2903,14 +2918,34 @@
 						"key": "status",
 						"label": "Status",
 						"formatter": "statusTypeName",
-						"widget": "statusBadge",
-						"_note": "The Status column reads the status's own colour. `statusTypeName` alone resolves the $ref to a name and stops there, so five different statuses read as one grey column. A cell WIDGET rather than a second formatter, for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a colour. The formatter stays as the fallback label the widget renders while the statusType collection is still loading."
+						"widget": "badge",
+						"widgetProps": {
+							"resolve": {
+								"register": "dossiq",
+								"schema": "statusType",
+								"colorField": "colour"
+							}
+						},
+						"_note": "The Status column reads the status's own colour. `statusTypeName` resolves the $ref to the status name, and the library `badge` with `resolve` reads the referenced status type's `colour` (an NL Design System hue) and draws the pill in that hue's tone, so five different statuses never read as one grey column. The name is always the text; the colour only repeats it."
 					},
 					{
 						"key": "priorityOrder",
+						"valueField": "priority",
 						"label": "Priority",
-						"widget": "priorityBadge",
-						"_note": "Keyed on `priorityOrder`, not on `priority`, and that is not a typo. CnDataTable sorts on the server, on the stored value of the column's key, and the stored value of `priority` is a word: sorting by it gives high, low, normal, urgent, which is neither the order a handler means nor a usable one. `priorityOrder` is the order the schema declares (x-enum-order on the priority property) written as an integer by the derivation, so the server sorts it right, and the `priorityBadge` cell reads the word back off the row so the reader still sees a priority. The priority FACET in the sidebar is unaffected: it comes from `facetable: true` on `priority` itself, which this change did not touch."
+						"widget": "badge",
+						"colorMap": {
+							"low": "default",
+							"normal": "info",
+							"high": "warning",
+							"urgent": "error"
+						},
+						"widgetProps": {
+							"titleWhen": {
+								"field": "priorityOverride",
+								"text": "Priority set by hand, not derived"
+							}
+						},
+						"_note": "Keyed on `priorityOrder`, not on `priority`, and that is not a typo. CnDataTable sorts on the server, on the stored value of the column's key, and the stored value of `priority` is a word: sorting by it gives high, low, normal, urgent, which is neither the order a handler means nor a usable one. `priorityOrder` is the order the schema declares (x-enum-order on the priority property) written as an integer by the derivation, so the server sorts it right, and `valueField: priority` makes the cell show the word with its translated `x-enum-labels` label. The pill tone comes from `colorMap`, and a priority set by hand carries a tooltip saying so. The priority FACET in the sidebar is unaffected: it comes from `facetable: true` on `priority` itself, which this change did not touch."
 					},
 					"assignee",
 					{
@@ -2935,8 +2970,20 @@
 					{
 						"key": "currentStatusDwellDays",
 						"label": "Days in status",
-						"widget": "dwellDays",
-						"_note": "what-a-status-declares, task 4.2. The number is HELD on the case (currentStatusDwellDays), written by the transition engine as the status changes, which is what makes this column sortable at all: CnDataTable orders on the server, and the process mining page's own dwell figure is reconstructed per request from the statusRecord chain and exists in no column. A cell WIDGET rather than a formatter for the reason deadlineCountdown is one: a formatter returns a string and a string cannot carry the breached state. Breached is statusDwellBreached, its own flag with its own chip, and it is NOT the deadline: a case can be stuck for nine weeks inside a term that runs for six months, which is the case this column exists to find."
+						"widget": "number",
+						"widgetProps": {
+							"unit": {
+								"one": "{count} working day",
+								"other": "{count} working days"
+							},
+							"flagWhen": {
+								"field": "statusDwellBreached",
+								"equals": true,
+								"text": "stuck",
+								"variant": "warning"
+							}
+						},
+						"_note": "what-a-status-declares, task 4.2. The number is HELD on the case (currentStatusDwellDays), written by the transition engine as the status changes, which is what makes this column sortable at all: CnDataTable orders on the server, and the process mining page's own dwell figure is reconstructed per request from the statusRecord chain and exists in no column. The library `number` cell reads it in working days and, when `statusDwellBreached` holds, adds a warning chip saying 'stuck' (text, not colour alone). Breached is its own flag and it is NOT the deadline: a case can be stuck for nine weeks inside a term that runs for six months, which is the case this column exists to find. An empty value is an empty cell, never 0."
 					},
 					{
 						"key": "paymentState",
@@ -2979,12 +3026,117 @@
 		{
 			"id": "CasesDeleted",
 			"route": "/cases/deleted",
-			"type": "custom",
+			"type": "index",
 			"title": "Deleted cases",
-			"component": "DeletedCasesView",
-			"_note": "case-recycle-window 1.2, the deleted lens. NOT a quickFilter chip beside All, Mine and Closed, and the reason is mechanical rather than stylistic: those chips are filters on the objects endpoint, and that endpoint excludes soft-deleted rows by design. A chip spelling `deleted: true` would send a filter OpenRegister answers with the empty set, which reads exactly like a working lens over an empty trash. The deleted rows live behind their own door, so the lens is its own place and a component that fetches from dossiq's /api/cases/deleted, which reads OpenRegister's trash and attaches the window. 🔴 WHY `type: \"custom\"` AND NOT `index`, which is what hydra gate 69 asks: an index page binds a register and a schema and fetches that same objects endpoint, so it would render an empty list here and look like a working lens over an empty trash, which is the one failure this page exists to prevent. There is no `entitySource` that can name OpenRegister's trash (checked against the installed @conduction/nextcloud-vue 2.47). The gate reds by exactly one finding, deliberately, and the unit comes back the day CnIndexPage grows such a source. Decision D10: openregister owns the recycle state and the purge, dossiq publishes the date each window ends."
+			"config": {
+				"entitySource": "endpoint",
+				"sourceConfig": {
+					"url": "/apps/dossiq/api/cases/deleted",
+					"rowsPath": "results"
+				},
+				"showTitle": true,
+				"description": "A deleted case can be recovered until the date below. After that it can be destroyed, which cannot be undone.",
+				"emptyText": "Nothing was deleted",
+				"showAdd": false,
+				"showViewAction": false,
+				"showEditAction": false,
+				"showCopyAction": false,
+				"showDeleteAction": false,
+				"allowSavedViews": false,
+				"columns": [
+					{
+						"key": "identifier",
+						"label": "Case number",
+						"cellClass": "cn-cell--strong"
+					},
+					{
+						"key": "title",
+						"label": "Case"
+					},
+					{
+						"key": "deletedBy",
+						"label": "Deleted by"
+					},
+					{
+						"key": "windowEndsOn",
+						"label": "Recover until",
+						"secondary": "{windowNote}"
+					},
+					{
+						"key": "actions",
+						"label": "Do",
+						"widget": "actions",
+						"widgetProps": {
+							"actions": [
+								"restore",
+								"destroy"
+							]
+						}
+					}
+				],
+				"actions": [
+					{
+						"id": "restore",
+						"label": "Restore",
+						"variant": "secondary",
+						"type": "open-modal",
+						"target": "CnActionDialog",
+						"props": {
+							"config": {
+								"title": "Restore this case?",
+								"eyebrow": "{identifier}",
+								"summary": {
+									"title": "{title}",
+									"meta": "{identifier}"
+								},
+								"doneText": "The case is back.",
+								"confirm": {
+									"label": "Restore",
+									"request": {
+										"method": "POST",
+										"url": "/apps/dossiq/api/case/@objectId/restore"
+									}
+								}
+							}
+						}
+					},
+					{
+						"id": "destroy",
+						"label": "Destroy",
+						"variant": "error",
+						"type": "open-modal",
+						"target": "CnActionDialog",
+						"props": {
+							"config": {
+								"title": "Destroy this case?",
+								"eyebrow": "{identifier}",
+								"summary": {
+									"title": "{title}",
+									"meta": "{identifier}"
+								},
+								"note": {
+									"variant": "warning",
+									"text": "Destroying cannot be undone. The record that the case existed stays."
+								},
+								"doneText": "The case is destroyed, and the record of it stays.",
+								"confirm": {
+									"label": "Destroy",
+									"request": {
+										"method": "POST",
+										"url": "/apps/dossiq/api/case/@objectId/destroy",
+										"body": {
+											"waiveWindow": false
+										}
+									}
+								}
+							}
+						}
+					}
+				]
+			},
+			"_note": "case-recycle-window 1.2, the deleted lens, over dossiq's /api/cases/deleted (OpenRegister's trash with each window's end date), not the objects endpoint, which excludes soft-deleted rows by design. Restore and destroy open CnActionDialog, which posts and shows the server's refusal sentence (destroy_role_*, recovery_window_open, retention_clocks_disagree); the list reads its rows again after an act. The endpoint keeps its scoping and role checks. Decision D10: openregister owns the recycle state and the purge, dossiq publishes the date each window ends."
 		},
-		{"id": "WooDeliveredSetDetail", "route": "/woo/delivered-sets/:id", "type": "detail", "title": "Delivered set", "config": {"register": "dossiq", "schema": "wooDeliveredSet", "_note": "woo-delivered-set-is-a-record REQ-WDS-004. One delivered set, the record of what went out, frozen with its publication. The items list every document with the file that went out, the original, the classification and the SHA-256, so the record shows what came in beside what went out.", "documentationUrl": "https://dossiq.conduction.nl", "widgets": [{"id": "woo-delivered-set-data", "type": "data", "title": "Delivered set", "icon": "PackageVariantClosed", "content": {"title": "Delivered set", "columns": 2, "exclude": ["items"]}}, {"id": "woo-delivered-set-items", "type": "file-set-items", "title": "Items", "icon": "FileCompare", "content": {"filesUrl": "/apps/dossiq/api/cases/{case}/woo/delivered-sets/{set}/items/{index}", "classificationLabels": {"openbaar": "Public", "deels_openbaar": "Disclosed in part"}}, "_note": "The Woo case type configures the generic file set items widget (decision 182; registry type file-set-items -> FileSetItems): every delivered item with its classification and hash; Compare on a redacted item opens the original beside it (woo-delivered-set-is-a-record REQ-WDS-004, document-compare REQ-DCP-001)."}], "layout": [{"id": "1", "widgetId": "woo-delivered-set-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 6, "showTitle": false}, {"id": "2", "widgetId": "woo-delivered-set-items", "gridX": 0, "gridY": 6, "gridWidth": 12, "gridHeight": 6, "showTitle": true}], "sidebar": {"enabled": true, "showMetadata": true, "tabs": [{"id": "audit", "label": "History", "icon": "History", "widgets": [{"type": "audit"}]}]}}},
+		{"id": "WooDeliveredSetDetail", "route": "/woo/delivered-sets/:id", "type": "detail", "title": "Delivered set", "config": {"register": "dossiq", "schema": "wooDeliveredSet", "_note": "woo-delivered-set-is-a-record REQ-WDS-004. One delivered set, the record of what went out, frozen with its publication. The items list every document with the file that went out, the original, the classification and the SHA-256, so the record shows what came in beside what went out.", "documentationUrl": "https://dossiq.conduction.nl", "widgets": [{"id": "woo-delivered-set-data", "type": "data", "title": "Delivered set", "icon": "PackageVariantClosed", "content": {"title": "Delivered set", "columns": 2, "exclude": ["items"]}}, {"id": "woo-delivered-set-items", "type": "field-list", "title": "Items", "icon": "FileCompare", "content": {"field": "items", "variant": "table", "readOnly": true, "emptyText": "This set has no items.", "columns": [{"header": "File name", "path": "fileName"}, {"header": "Classification", "path": "classification", "map": {"openbaar": "Public", "deels_openbaar": "Disclosed in part"}}, {"header": "SHA-256", "path": "sha256", "code": true}], "rowActions": [{"id": "compare", "label": "Compare", "ariaLabel": "Compare {fileName} with the original", "placement": "inline", "dialog": "DocumentCompareDialog", "props": {"filesUrl": "/apps/dossiq/api/cases/@object.case/woo/delivered-sets/@objectId/items/@index"}, "when": {"deliveredRef": {"set": true, "neq": "@row.originalRef"}}}]}, "_note": "The Woo case type configures the library's field-list widget over the set's own items (decision 182): every delivered item with its classification and hash, read only; Compare on an item whose file that went out is not its original opens DocumentCompareDialog (a registry modal) beside it (woo-delivered-set-is-a-record REQ-WDS-004, document-compare REQ-DCP-001)."}], "layout": [{"id": "1", "widgetId": "woo-delivered-set-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 6, "showTitle": false}, {"id": "2", "widgetId": "woo-delivered-set-items", "gridX": 0, "gridY": 6, "gridWidth": 12, "gridHeight": 6, "showTitle": true}], "sidebar": {"enabled": true, "showMetadata": true, "tabs": [{"id": "audit", "label": "History", "icon": "History", "widgets": [{"type": "audit"}]}]}}},
 		{
 			"id": "CaseDetail",
 			"route": "/cases/:id",
@@ -3028,7 +3180,7 @@
 						"widget": "textarea"
 					},
 					"requester": {
-						"widget": "InitiatorPicker",
+						"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 						"label": "Requester"
 					},
 					"confidentiality": {
@@ -3334,7 +3486,7 @@
 													"editable": false
 												},
 												"requester": {
-													"widget": "InitiatorPicker",
+													"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 													"label": "Requester",
 													"formatter": "requesterName"
 												},
@@ -3894,9 +4046,14 @@
 					},
 					{
 						"id": "case-decisions-panel",
-						"type": "case-decisions-pane",
+						"type": "integration",
+						"integrationId": "decidesk-decisions",
+						"appName": "Decidiq",
+						"props": {
+							"surface": "sidebar-tab"
+						},
 						"title": "Decisions",
-						"_note": "The Decisions tab: the decidiq decisions leaf (ADR-019/ADR-022). A decision is an OUTCOME of the case rather than correspondence or a related case, so it earns a tab rather than a section of one. A sidebar tab until the sidebar copies were retired. Labelled in English like every other tab: tab labels are read verbatim out of the manifest with no t() on the path, and the l10n gate refuses a key whose English value is the Dutch word. \"Decisions\" already maps to \"Besluiten\" in nl.json."
+						"_note": "The Decisions tab: the decidiq decisions leaf (ADR-019/ADR-022), as the library integration widget. decidiq kept the leaf id `decidesk-decisions` across its rename, so that string is the contract, not the app id. A mount-mode leaf is mounted with `surface: sidebar-tab`, the look it had as a tab; when decidiq's leaf is not loaded the tab says \"Decidiq not available\". A decision is an OUTCOME of the case rather than correspondence or a related case, so it earns a tab rather than a section of one. A sidebar tab until the sidebar copies were retired. Labelled in English like every other tab: tab labels are read verbatim out of the manifest with no t() on the path, and the l10n gate refuses a key whose English value is the Dutch word. \"Decisions\" already maps to \"Besluiten\" in nl.json."
 					},
 					{
 						"id": "case-work-panel",
@@ -3909,46 +4066,25 @@
 									"label": "Tasks",
 									"widget": {
 										"id": "case-tasks",
-										"type": "case-task-pane",
+										"type": "tasks",
 										"title": "Tasks",
-										"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon and the tab entry are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column. `register` and `schema` are NOT kept, and that is remove-casetask 4.2: the component reads the task engine and has ignored both keys since dossiq#2357, so the pair named a schema that no longer exists and claimed a binding the widget does not make. The day the swap back happens, the list the widget goes back to is the engine's, not an object list, so neither key comes back.",
+										"_note": "task-on-the-case A06, the library task widget (CnTasksWidget `variant: focus`): the first OPEN task of this case as a card with its number, handler, deadline, lock, who it is offered to, its form inline and Claim, Complete and Cancel task, so a handler finishes a task without leaving the case; the other open tasks are listed under it with their own verbs. Complete goes through dossiq's completion route (`completeUrl`), which applies the case type's form and effect refusals before the engine completes the task; Claim shows only where dossiq's capability probe says the engine can claim (`claimCapabilityUrl`), and otherwise an offered task says to assign it. A completion is confirmed with a toast and the next open task takes the card. It replaced dossiq's CaseTaskPane. The id, the title and the tab entry are unchanged.",
 										"content": {
-											"filter": {
-												"case": "@objectId"
-											},
-											"sort": {
-												"field": "dueDate",
-												"dir": "asc"
-											},
+											"variant": "focus",
+											"objectUuid": "@objectId",
 											"limit": 25,
-											"columns": [
-												{
-													"key": "title",
-													"label": "Title"
-												},
-												{
-													"key": "status",
-													"label": "Status"
-												},
-												{
-													"key": "assignee",
-													"label": "Assignee"
-												},
-												{
-													"key": "dueDate",
-													"label": "Due"
-												},
-												{
-													"key": "priority",
-													"label": "Priority"
-												}
-											],
+											"cancel": true,
 											"rowRoute": "TaskDetail",
-											"viewAllRoute": "Tasks",
-											"viewAllQuery": {
-												"case": "@objectId"
+											"completeUrl": "/apps/dossiq/api/case-tasks/{id}/complete",
+											"claimCapabilityUrl": "/apps/dossiq/api/case-tasks/capabilities",
+											"viewAllRoute": {
+												"name": "Tasks",
+												"query": {
+													"case": "@objectId"
+												}
 											},
-											"emptyText": "No tasks for this case yet"
+											"viewAllLabel": "View all",
+											"emptyText": "No open tasks on this case"
 										}
 									}
 								},
@@ -4104,8 +4240,7 @@
 											"columns": [
 												{
 													"key": "objectTitle",
-													"label": "Object",
-													"widget": "lensedValue"
+													"label": "Object"
 												},
 												{
 													"key": "objectType",
@@ -4113,8 +4248,7 @@
 												},
 												{
 													"key": "objectStatus",
-													"label": "Object status",
-													"widget": "lensedValue"
+													"label": "Object status"
 												},
 												{
 													"key": "objectIdentification",
@@ -4489,11 +4623,19 @@
 								"widget": "textarea"
 							},
 							"roleType": {
-								"widget": "RoleTypePicker",
-								"label": "Role"
+								"widget": "resource",
+								"label": "Role",
+								"placeholder": "Pick a role",
+								"resource": {
+									"register": "dossiq",
+									"schema": "roleType",
+									"labelField": "name",
+									"scope": { "field": "caseType", "value": "@object.caseType", "includeUnscoped": true, "dedupeOn": "genericRole" },
+									"failedText": "The roles this case takes could not be read. Nothing has been changed on the case."
+								}
 							},
 							"representedParty": {
-								"widget": "InitiatorPicker",
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Represented by"
 							}
 						},
@@ -6061,12 +6203,339 @@
 		{
 			"id": "TaskDetail",
 			"route": "/tasks/:id",
-			"type": "custom",
+			"type": "detail",
 			"title": "Task",
-			"component": "TaskDetailView",
-			"_note": "The task page over OpenRegister's task ENGINE, which is not an OpenRegister object and has no typed page that can render it. It was `type: \"detail\"` bound to `register: dossiq, schema: caseTask`, the schema remove-casetask deletes. CnDetailPage takes objectType/objectId and resolves them through the object store; it has NO entitySource mode (checked against the installed @conduction/nextcloud-vue 2.46.0), so unlike the Tasks index, which stayed `type: \"index\"` and gained `entitySource: \"tasks\"`, this page cannot be fixed with a manifest key. The defect it closes is specific: the page asked BOTH stores with one uuid, so an engine uuid rendered the case card and every field below it as an em dash, a legacy uuid rendered the fields and no case card, and neither showed a lifecycle button that worked. THE ROUTE AND THE PAGE ID ARE UNCHANGED: `/tasks/:id` and `TaskDetail`, so notification links and bookmarks still resolve. The `deepLinks` entry went with the schema in remove-casetask 4.2. It was keyed on `schemaSlug: caseTask` and fed OpenRegister's schema-scoped unified search only, so with no objects of that schema it matched nothing and resolved nothing. Engine tasks therefore have NO unified-search provider today. That gap is OpenRegister's: the engine's tasks live in their own table and no deep-link shape addresses them, and a dossiq entry cannot invent one. TaskDetailView keeps every widget the detail page carried. The case card (TaskCaseCard) and the waiting-case section (TaskWaitingCaseSection) are now plain child components rather than page slots. The notes and appointment leaves moved from `type: \"integration\"` to the task-anchored endpoints /api/flow-tasks/{uuid}/notes and /events, because the library's integration widgets read an OBJECT and a task has none. The audit sidebar tab became a page section reading /api/flow-tasks/{uuid}/audit, which is the engine's own append-only trail; a `type: \"custom\"` page has no sidebar for CnPageRenderer to render. The version-history tab is gone on purpose: an engine task is not an object and nothing writes a version of it, so the tab was an always-empty drawer. The lifecycle buttons are the engine's verbs through invoke(uuid, verb), NOT CnLifecycleActions, which asks /api/objects/{uuid}/available-actions and 404s for a task.",
+			"_note": "The task page (DqTaak) over OpenRegister's task ENGINE, as a manifest detail page on `entitySource: \"tasks\"` (task-page-on-the-manifest). It replaced TaskDetailView, the custom view it was while a detail page could not read an engine task. THE ROUTE AND THE PAGE ID ARE UNCHANGED: `/tasks/:id` and `TaskDetail`, so notification links and bookmarks still resolve. The library reads the task (GET /api/flow-tasks/{uuid}), offers the engine's verbs read off the task (Finish, Pick up or Hand back, Cancel task in the menu; none on a finished task) and shows a refusal with the engine's message as-is; Finish goes through dossiq's own completion route (`verbEndpoints`), which checks the case type's form and effects before the engine completes the task. The checklist is the library `checklist` widget, ticked through the engine. The notes, appointments and history are the library cards reading the task's own engine endpoints (`source: {kind: flow-task}`: the `notes` integration, `events` and `audit-trail`), and the waiting-case card is the library `notice` with a link to the case. The case card is the library `facts` widget reading the case through `source`. The state pill uses dossiq's words (\"In execution\"); the priority pill shows only for high and urgent. Engine tasks have NO unified-search provider: the engine's tasks live in their own table and no deep-link shape addresses them. There is no version-history tab: an engine task is not an object and nothing writes a version of it.",
 			"config": {
-				"documentationUrl": "https://dossiq.conduction.nl"
+				"entitySource": "tasks",
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"showTypeEyebrow": false,
+				"breadcrumb": {
+					"label": "Tasks",
+					"route": "Tasks",
+					"separator": "/"
+				},
+				"typePill": {
+					"field": "state",
+					"labels": {
+						"available": "Waiting",
+						"enabled": "Ready to start",
+						"active": "In execution",
+						"completed": "Done",
+						"terminated": "Stopped",
+						"disabled": "Skipped"
+					},
+					"colorMap": {
+						"active": "purple",
+						"completed": "success"
+					}
+				},
+				"statusPill": {
+					"field": "priority",
+					"values": [
+						"high",
+						"urgent"
+					],
+					"labels": {
+						"high": "High",
+						"urgent": "Urgent"
+					},
+					"colorMap": {
+						"high": "warning",
+						"urgent": "error"
+					}
+				},
+				"headerMeta": "{dueLabel}",
+				"verbEndpoints": {
+					"complete": "/apps/dossiq/api/case-tasks/{id}/complete"
+				},
+				"widgets": [
+					{
+						"id": "task-panels",
+						"type": "tabs",
+						"title": "Panels",
+						"content": {
+							"ariaLabel": "Task parts",
+							"tabs": [
+								{
+									"label": "Overview",
+									"widgetIds": [
+										"task-description",
+										"task-checklist",
+										"task-appointments",
+										"task-notes"
+									]
+								},
+								{
+									"label": "Task history",
+									"widgetId": "task-history"
+								}
+							]
+						}
+					},
+					{
+						"id": "task-description",
+						"type": "facts",
+						"title": "Description",
+						"visibleWhen": {
+							"field": "description",
+							"op": "notEmpty"
+						},
+						"content": {
+							"fields": [
+								{
+									"as": "text",
+									"path": "description"
+								}
+							]
+						}
+					},
+					{
+						"id": "task-checklist",
+						"type": "checklist",
+						"title": "Checklist",
+						"visibleWhen": {
+							"field": "checklist",
+							"op": "notEmpty"
+						},
+						"content": {
+							"path": "checklist"
+						}
+					},
+					{
+						"id": "task-appointments",
+						"type": "events",
+						"title": "Appointments",
+						"content": {
+							"source": {
+								"kind": "flow-task"
+							},
+							"emptyText": "Nobody has booked an appointment on this task"
+						}
+					},
+					{
+						"id": "task-notes",
+						"type": "integration",
+						"integrationId": "notes",
+						"title": "Notes",
+						"props": {
+							"source": {
+								"kind": "flow-task",
+								"id": "@objectId"
+							}
+						}
+					},
+					{
+						"id": "task-history",
+						"type": "audit-trail",
+						"title": "Task history",
+						"content": {
+							"source": {
+								"kind": "flow-task"
+							},
+							"maxDisplay": 50,
+							"emptyText": "Nothing has happened to this task yet"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "task-panels",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 18,
+						"showTitle": false
+					}
+				],
+				"sideColumn": [
+					{
+						"id": "side-task",
+						"type": "facts",
+						"title": "Task",
+						"content": {
+							"fields": [
+								{
+									"key": "assignee",
+									"label": "Handler",
+									"path": "assignee",
+									"format": "user"
+								},
+								{
+									"key": "team",
+									"label": "Team",
+									"path": "candidateGroups",
+									"format": "list"
+								},
+								{
+									"key": "due",
+									"label": "Due by",
+									"path": "dueAt",
+									"format": "date"
+								},
+								{
+									"key": "expires",
+									"label": "Expires",
+									"path": "expiresAt",
+									"format": "date"
+								},
+								{
+									"key": "priority",
+									"label": "Priority",
+									"path": "priority",
+									"map": {
+										"low": "Low",
+										"normal": "Normal",
+										"high": "High",
+										"urgent": "Urgent"
+									}
+								},
+								{
+									"key": "requester",
+									"label": "Requested by",
+									"path": "requester",
+									"format": "user"
+								},
+								{
+									"key": "created",
+									"label": "Created",
+									"path": "created",
+									"format": "date"
+								}
+							]
+						}
+					},
+					{
+						"id": "side-case",
+						"type": "facts",
+						"title": "Case",
+						"visibleWhen": {
+							"field": "objectUuid",
+							"op": "notEmpty"
+						},
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"id": "@object.objectUuid"
+							},
+							"fields": [
+								{
+									"key": "case-title",
+									"as": "title",
+									"path": "title",
+									"route": {
+										"name": "CaseDetail",
+										"params": {
+											"id": "@object.objectUuid"
+										}
+									}
+								},
+								{
+									"key": "case-meta",
+									"as": "line",
+									"parts": [
+										"identifier",
+										{
+											"path": "caseType",
+											"resolve": {
+												"register": "dossiq",
+												"schema": "caseType",
+												"labelField": "title"
+											}
+										}
+									]
+								},
+								{
+									"key": "case-owner",
+									"as": "line",
+									"parts": [
+										{
+											"path": "assignee",
+											"label": "Handler"
+										},
+										{
+											"path": "deadline",
+											"label": "Case deadline",
+											"format": "date"
+										}
+									]
+								},
+								{
+									"key": "case-status",
+									"as": "pill",
+									"path": "status",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "statusType",
+										"labelField": "name",
+										"toneField": "colour"
+									},
+									"variantMap": {
+										"blue": "info",
+										"blue-light": "info",
+										"green": "success",
+										"green-light": "success",
+										"orange": "warning",
+										"orange-light": "warning",
+										"red": "error",
+										"red-light": "error",
+										"purple": "purple",
+										"purple-light": "purple",
+										"grey": "default",
+										"grey-light": "default"
+									}
+								}
+							],
+							"link": {
+								"label": "To the case",
+								"route": {
+									"name": "CaseDetail",
+									"params": {
+										"id": "@object.objectUuid"
+									}
+								}
+							},
+							"emptyText": ""
+						}
+					},
+					{
+						"id": "side-waiting",
+						"type": "notice",
+						"title": "What this task holds up",
+						"visibleWhen": {
+							"field": "runUuid",
+							"op": "notEmpty"
+						},
+						"content": {
+							"variant": "info",
+							"icon": "CheckboxMarkedCircleOutline",
+							"title": "A case is waiting on this task",
+							"text": "Complete the task and the case moves on.",
+							"link": {
+								"route": "CaseDetail",
+								"params": {
+									"id": "@object.objectUuid"
+								},
+								"label": "@object.subjectLabel",
+								"fallbackLabel": "Open the case"
+							}
+						}
+					},
+					{
+						"id": "side-history",
+						"type": "audit-trail",
+						"title": "Task history",
+						"content": {
+							"source": {
+								"kind": "flow-task"
+							},
+							"maxDisplay": 50,
+							"emptyText": "Nothing has happened to this task yet"
+						}
+					}
+				]
 			}
 		},
 		{
@@ -10091,14 +10560,39 @@
 		{
 			"id": "Store",
 			"route": "/store",
-			"type": "custom",
+			"type": "store",
 			"title": "Store",
-			"component": "StoreGallery",
 			"config": {
+				"app": "dossiq",
+				"title": "Store",
+				"description": "Install case types, workflows and enforcement tables that other organisations have published.",
+				"kinds": [
+					"case-type",
+					"flow-template",
+					"decision-table",
+					"document-template"
+				],
+				"builtIn": [
+					{
+						"slug": "vth-handhavingstraject",
+						"title": "Enforcement track (VTH)",
+						"description": "Awb 5:24 enforcement procedure with a recovery period and re-inspection."
+					},
+					{
+						"slug": "bezwaar",
+						"title": "Objection procedure",
+						"description": "Objection intake, hearing, advisory committee and decision."
+					},
+					{
+						"slug": "subsidie",
+						"title": "Grant application",
+						"description": "Application, assessment, award and accountability."
+					}
+				],
 				"storeRegistry": true,
 				"documentationUrl": "https://dossiq.conduction.nl"
 			},
-			"_note": "ADR-080: the store plane. Discovery belongs to OpenRegister — this page reads /api/store/items, which is a thin action over AppHost's GenericStoreService, so the SSRF guard, the redirect refusal and the token live in the engine and dossiq builds no registry URL. A custom component rather than type:index because store items are REMOTE objects: the object-backed index renderer resolves a local register+schema and cannot address them. With no registry configured the engine answers not_configured WITHOUT a network call and the page renders dossiq's built-in templates, which is Decision 4 and the only reason this surface may carry the word Store at all. Install is dossiq's own and admin-guarded (Decision 3), and it writes case CONFIGURATION only — the record schemas are refused. PLACEMENT: footer, order 92, between Documentation (90) and Reports (95). openbuild, hermiq and integriq put Store in the main section instead; ADR-080 records no placement decision, so one of the two conventions is wrong and the ADR needs an amendment either way."
+			"_note": "ADR-080: the store plane. Discovery belongs to OpenRegister — this page reads /api/store/items, which is a thin action over AppHost's GenericStoreService, so the SSRF guard, the redirect refusal and the token live in the engine and dossiq builds no registry URL. The library store page (`type: \"store\"`, CnStorePage) and not type:index, because store items are REMOTE objects: the object-backed index renderer resolves a local register+schema and cannot address them. CnStorePage calls the same /apps/dossiq/api/store/items and /install, shows Install to administrators only, and the install action refuses anyone else on the server (AuthorizedAdminSetting). With no registry configured the engine answers not_configured WITHOUT a network call and the page renders dossiq's built-in templates, which is Decision 4 and the only reason this surface may carry the word Store at all. Install is dossiq's own and admin-guarded (Decision 3), and it writes case CONFIGURATION only — the record schemas are refused. PLACEMENT: footer, order 92, between Documentation (90) and Reports (95). openbuild, hermiq and integriq put Store in the main section instead; ADR-080 records no placement decision, so one of the two conventions is wrong and the ADR needs an amendment either way."
 		},
 		{
 			"id": "Flows",
@@ -10431,7 +10925,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "InitiatorPicker",
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -11017,7 +11511,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "InitiatorPicker",
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {

@@ -71,8 +71,21 @@
 import { CnPartyPicker } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcModal } from '@nextcloud/vue'
-import { PARTY_SOURCES_WITH_CONTACTS } from '../components/party/partySources.js'
 import { initiatorChoice } from '../services/initiatorSearch.js'
+
+/**
+ * Where a case's initiator is searched: the brpPerson and kvkCompany register
+ * sets and the reader's Nextcloud contacts. A person shows birth date and BSN
+ * and a company its KvK number, so two parties of one name are told apart.
+ * The `id` of each is the kind a choice is recorded as (`initiatorType`).
+ *
+ * @type {Array<object>}
+ */
+const PARTY_SOURCES_WITH_CONTACTS = Object.freeze([
+	{ id: 'person', register: 'dossiq', schema: 'brpPerson', label: 'Resident', title: '{displayName}', secondary: '{birth.date} · BSN {citizenServiceNumber}' },
+	{ id: 'company', register: 'dossiq', schema: 'kvkCompany', label: 'Organisation', title: '{tradeName}', secondary: 'KVK {kvkNumber}' },
+	{ id: 'contact', type: 'contacts', label: 'Contact' },
+])
 
 export default {
 	name: 'InitiatorPickerModal',

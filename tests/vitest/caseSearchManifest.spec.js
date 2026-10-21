@@ -36,12 +36,11 @@ const casesPage = manifest.pages.find((page) => page.id === 'Cases')
 
 describe('the Cases page and a refused search', () => {
 	it('leaves the refusal to the library index page, which draws it where the search box is', () => {
-		// CnIndexPage says where a refused search stopped by itself, so the
-		// page mounts only the case type's field filters. Asserted as the
-		// whole map, so another slot has to be a deliberate edit here.
-		expect(casesPage.slots).toEqual({
-			'after-search': 'CaseTypeFieldFilters',
-		})
+		// CnIndexPage says where a refused search stopped by itself, and draws
+		// the case type's field filters from `relatedFieldFilters`, so the page
+		// mounts no slot component at all.
+		expect(casesPage.slots).toBeUndefined()
+		expect(casesPage.config.relatedFieldFilters.related.schema).toBe('caseProperty')
 		expect(registry).not.toContain('CaseSearchRefusal: {')
 	})
 })

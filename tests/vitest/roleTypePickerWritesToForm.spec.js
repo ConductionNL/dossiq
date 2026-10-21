@@ -1,67 +1,41 @@
-// @vitest-environment jsdom
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
 /**
  * The Role field of the Add party form writes the picked role to the form.
  *
- * CnFormDialog mounts a registry form-field widget with `value`/`modelValue`
- * and listens for `input` and `update:modelValue` only, so a pick has to
- * leave the picker on one of those.
+ * The field used to be dossiq's RoleTypePicker, a registry form-field widget
+ * that emitted `select` while CnFormDialog listens for `input` and
+ * `update:modelValue` only, so a picked role never reached the form. It is
+ * now the library's own `resource` widget, which CnFormDialog draws itself
+ * and writes through `updateField` (the write and the shown value are asserted
+ * in the library's tests/components/CnFormDialogPartyAndResource.spec.js). What
+ * this asserts is that dossiq declares that widget and no longer routes the
+ * field through a registry component.
  *
  * @spec openspec/specs/roles-decisions/spec.md
  */
 
-import { flushPromises, mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
-import RoleTypePicker from '../../src/components/case/RoleTypePicker.vue'
+import fs from 'node:fs'
+import path from 'node:path'
+import { describe, expect, it } from 'vitest'
 
-vi.mock('../../src/services/roleTypeOptions.js', () => ({
-	fetchRoleTypes: vi.fn(async () => [{ id: 'rt-1' }, { id: 'rt-2' }]),
-	fetchCaseTypeOf: vi.fn(async () => 'ct-1'),
-	offeredRoleTypes: vi.fn(() => [
-		{ id: 'rt-1', label: 'Handler' },
-		{ id: 'rt-2', label: 'Gemachtigde' },
-	]),
-}))
+const ROOT = path.resolve(__dirname, '../..')
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
+const registry = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 
-const stubs = {
-	NcLoadingIcon: true,
-	NcNoteCard: true,
-	NcSelect: {
-		props: ['modelValue', 'options'],
-		emits: ['update:modelValue'],
-		template: '<div class="nc-select-stub">{{ modelValue && modelValue.label }}</div>',
-	},
-}
+const addParty = manifest.pages
+	.find((page) => page.id === 'CaseDetail')
+	.config.headerActions.find((action) => action.id === 'add-party')
 
-/**
- * Mount the picker as CnFormDialog mounts a form-field widget.
- *
- * @param {string|null} current The value the form holds.
- * @return {Promise<object>} The mounted wrapper.
- */
-async function mountAsFormField(current = null) {
-	const wrapper = mount(RoleTypePicker, {
-		props: { value: current, modelValue: current, caseId: 'case-1' },
-		global: { stubs },
-	})
-	await flushPromises()
-	return wrapper
-}
-
-describe('RoleTypePicker inside CnFormDialog', () => {
-	it('writes the picked role uuid back through update:modelValue', async () => {
-		const wrapper = await mountAsFormField()
-
-		wrapper.findComponent(stubs.NcSelect).vm.$emit('update:modelValue', { id: 'rt-2', label: 'Gemachtigde' })
-
-		expect(wrapper.emitted('update:modelValue')).toEqual([['rt-2']])
+describe('the Role field inside CnFormDialog', () => {
+	it('is the form\'s own resource widget, which writes the picked role uuid', () => {
+		expect(addParty.fieldOverrides.roleType.widget).toBe('resource')
+		expect(addParty.fieldOverrides.roleType.label).toBe('Role')
 	})
 
-	it('shows the role the form already holds', async () => {
-		const wrapper = await mountAsFormField('rt-1')
-
-		expect(wrapper.find('.nc-select-stub').text()).toBe('Handler')
+	it('is no longer a registry component that could emit past the form', () => {
+		expect(registry).not.toContain('RoleTypePicker')
+		expect(fs.existsSync(path.join(ROOT, 'src', 'components', 'case', 'RoleTypePicker.vue'))).toBe(false)
 	})
 })

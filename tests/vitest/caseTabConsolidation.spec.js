@@ -349,7 +349,6 @@ describe('the container type this change depends on', () => {
 		// components were registered only as sidebar `component:` entries.
 		const PANES = {
 			'case-notes-panel': 'case-notes-pane',
-			'case-decisions-panel': 'case-decisions-pane',
 			// Timeline arrived with #2846: every note, call and message on the
 			// case in one order. A single surface, keyed by TYPE like the three
 			// above it.
@@ -387,6 +386,9 @@ describe('the container type this change depends on', () => {
 		const LEAVES = {
 			'case-files': 'files',
 			'case-change-proposals': 'portaliq-change-proposal-queue',
+			// decidiq's decisions, through the library integration widget,
+			// which says "Decidiq not available" when the leaf is absent.
+			'case-decisions-panel': 'decidesk-decisions',
 		}
 
 		// The tabs a library widget type draws from the manifest alone.

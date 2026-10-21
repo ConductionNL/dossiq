@@ -22,6 +22,8 @@
  *
  * @spec openspec/specs/roles-decisions/spec.md
  */
+import fs from 'node:fs'
+import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@nextcloud/axios', () => ({ default: { get: vi.fn() } }))
@@ -31,69 +33,37 @@ vi.mock('@nextcloud/l10n', () => ({
 	translatePlural: (app, text) => text,
 }))
 
-const { offeredRoleTypes } = await import('../../src/services/roleTypeOptions.js')
 const { representedByMap } = await import('../../src/services/caseParties.js')
 
-const rows = [
-	{ id: 'rt-handler', name: 'Behandelaar', caseType: 'ct-vergunning' },
-	{ id: 'rt-other', name: 'Bezwaarbehandelaar', caseType: 'ct-bezwaar' },
-	{
-		id: 'rt-gem',
-		name: 'Gemachtigde',
-		genericRole: 'gemachtigde',
-	},
-]
+const manifest = JSON.parse(
+	fs.readFileSync(path.resolve(__dirname, '../../src/manifest.json'), 'utf8'),
+)
+
+/** The Role field of the Add party form on the case page. */
+const roleField = manifest.pages
+	.find((page) => page.id === 'CaseDetail')
+	.config.headerActions.find((action) => action.id === 'add-party')
+	.fieldOverrides.roleType
 
 describe('the roles a case type offers', () => {
-	it('offers Gemachtigde on a type that declares none, after its own roles', () => {
-		const offered = offeredRoleTypes(rows, 'ct-vergunning')
-
-		expect(offered.map((option) => option.id)).toEqual(['rt-handler', 'rt-gem'])
-		expect(offered[1].scope).toBe('generic')
+	// The ordering, the deduplication and the unknown-type fallback are the
+	// library's CnResourceSelect `scope` (tests/components/CnResourceSelectScope.spec.js).
+	// What dossiq owns is the declaration that asks for them.
+	it("offers the case type's own role types first, then the generic ones", () => {
+		expect(roleField.widget).toBe('resource')
+		expect(roleField.resource).toMatchObject({ register: 'dossiq', schema: 'roleType' })
+		expect(roleField.resource.scope).toEqual({
+			field: 'caseType',
+			value: '@object.caseType',
+			includeUnscoped: true,
+			dedupeOn: 'genericRole',
+		})
 	})
 
-	it("leaves another case type's roles off the list", () => {
-		const offered = offeredRoleTypes(rows, 'ct-vergunning')
-
-		expect(offered.map((option) => option.id)).not.toContain('rt-other')
-	})
-
-	it('lists Gemachtigde once when the type declares its own', () => {
-		const withOwn = [
-			...rows,
-			{
-				id: 'rt-bezwaar-gem',
-				name: 'Gemachtigde bezwaar',
-				genericRole: 'gemachtigde',
-				caseType: 'ct-bezwaar',
-			},
-		]
-
-		const offered = offeredRoleTypes(withOwn, 'ct-bezwaar')
-
-		expect(offered.map((option) => option.id)).toEqual([
-			'rt-other',
-			'rt-bezwaar-gem',
-		])
-		expect(
-			offered.filter((option) => option.genericRole === 'gemachtigde'),
-		).toHaveLength(1)
-	})
-
-	it('offers every role type when the case type is unknown', () => {
-		const offered = offeredRoleTypes(rows, '')
-
-		expect(offered.map((option) => option.id)).toEqual([
-			'rt-handler',
-			'rt-other',
-			'rt-gem',
-		])
-	})
-
-	it('reads a case type handed over as a reference object', () => {
-		const nested = [{ id: 'rt-x', name: 'X', caseType: { id: 'ct-a' } }]
-
-		expect(offeredRoleTypes(nested, 'ct-a').map((o) => o.id)).toEqual(['rt-x'])
+	it('says a failed read rather than drawing an empty picker', () => {
+		expect(roleField.resource.failedText).toBe(
+			'The roles this case takes could not be read. Nothing has been changed on the case.',
+		)
 	})
 })
 

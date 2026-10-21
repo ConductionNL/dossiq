@@ -48,21 +48,43 @@
 		</CnSettingsSection>
 
 		<template #tab-system>
-			<Settings />
+			<CnRegisterMapping
+				id="section-configuration"
+				:name="t('dossiq', 'Configuration')"
+				:description="
+					t(
+						'dossiq',
+						'In which register Dossiq keeps cases, and with which schemas.',
+					)
+				"
+				docUrl="https://dossiq.conduction.nl/docs/intro"
+				:groups="registerGroups"
+				:configuration="registerConfiguration"
+				:saving="registerSaving"
+				:saveButtonText="t('dossiq', 'Save')"
+				@save="saveRegisterMapping" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-menu-structure"
+				appId="dossiq"
 				:name="t('dossiq', 'Menu structure')"
 				:description="
 					t(
 						'dossiq',
 						'Choose how much the menu shows. Simple is the default.',
 					)
-				">
-				<MenuStructureTab />
-			</CnSettingsSection>
+				"
+				valuesPath="config"
+				:autoSave="true"
+				:savedMessage="
+					t(
+						'dossiq',
+						'Saved. People see the change the next time they open Dossiq.',
+					)
+				"
+				:fields="menuStructureFields" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-background-service-account"
 				:name="t('dossiq', 'Background service account')"
 				:description="
@@ -70,11 +92,21 @@
 						'dossiq',
 						'The account background jobs save as, with the access checks of OpenRegister on.',
 					)
-				">
-				<BackgroundServiceAccountSettings />
-			</CnSettingsSection>
+				"
+				:detailedDescription="
+					t(
+						'dossiq',
+						'Background jobs, such as the reminders on suspended terms, have no signed-in user. They save as this account, which joins the group {group}. Pick an account that nobody signs in with.',
+						{ group: backgroundServiceGroup },
+					)
+				"
+				url="/apps/dossiq/api/settings/background-service-account"
+				:reloadAfterSave="true"
+				:saveLabel="t('dossiq', 'Use this account')"
+				:savedMessage="t('dossiq', 'Background jobs now save as {userId}.')"
+				:fields="backgroundAccountFields" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-mailbox"
 				:name="t('dossiq', 'Case email: shared mailbox')"
 				:description="
@@ -83,11 +115,16 @@
 						'Shared functional mailbox ingest (IMAP) and transport for case correspondence. Outbound mail and per-user accounts are owned by Nextcloud Mail.',
 					)
 				"
-				:loading="!storesReady">
-				<EmailSettings v-if="storesReady" />
-			</CnSettingsSection>
+				url="/apps/dossiq/api/settings/email"
+				:columns="2"
+				:saveAll="true"
+				:hintsToggle="true"
+				:saveLabel="t('dossiq', 'Save mailbox settings')"
+				:savedMessage="t('dossiq', 'Mailbox settings saved.')"
+				:fields="sharedMailboxFields" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
+				id="section-ai"
 				:name="t('dossiq', 'AI-assisted processing')"
 				:description="
 					t(
@@ -95,11 +132,15 @@
 						'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support',
 					)
 				"
-				:loading="!storesReady">
-				<AiSettingsTab v-if="storesReady" />
-			</CnSettingsSection>
+				url="/apps/dossiq/api/ai/settings"
+				valuesPath="settings"
+				saveMethod="POST"
+				:autoSave="true"
+				:fields="aiFields" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
+				id="section-consultation"
+				appId="dossiq"
 				:name="t('dossiq', 'Consultation management')"
 				:description="
 					t(
@@ -107,9 +148,10 @@
 						'Adviesaanvragen: advisory body registry, mandatory-gate config, n8n webhook contracts and external response settings.',
 					)
 				"
-				:loading="!storesReady">
-				<ConsultationSettingsTab v-if="storesReady" />
-			</CnSettingsSection>
+				docUrl="https://dossiq.conduction.nl/docs/n8n-consultation-workflows"
+				valuesPath="config"
+				:saveLabel="t('dossiq', 'Save consultation settings')"
+				:fields="consultationFields" />
 
 			<CnSettingsSection
 				id="section-search-index"
@@ -196,16 +238,25 @@
 				<TermijnDefinitiesTab v-if="storesReady" />
 			</CnSettingsSection>
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
+				id="section-queue-urgency"
+				appId="dossiq"
 				:name="t('dossiq', 'Queue urgency')"
 				:description="
 					t(
 						'dossiq',
 						'When a case counts as critical or almost due, and how much priority and time lying still weigh in the order.',
 					)
-				">
-				<QueueUrgencySettingsTab />
-			</CnSettingsSection>
+				"
+				:detailedDescription="
+					t(
+						'dossiq',
+						'Decides the order of the cases assigned to someone. A case type can set the two thresholds itself.',
+					)
+				"
+				:columns="2"
+				valuesPath="config"
+				:fields="queueUrgencyFields" />
 
 			<CnSettingsSection
 				:name="t('dossiq', 'Mandate matrix: administration')"
@@ -219,7 +270,9 @@
 				<MandaatMatrixTab v-if="storesReady" />
 			</CnSettingsSection>
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
+				id="section-mandate-settings"
+				appId="dossiq"
 				:name="t('dossiq', 'Mandate matrix: system settings')"
 				:description="
 					t(
@@ -227,11 +280,12 @@
 						'Awb art. 10:3 mandate administration: Decidiq import, role hierarchy, waarnemer assignments.',
 					)
 				"
-				:loading="!storesReady">
-				<MandaatMatrixSettingsTab v-if="storesReady" />
-			</CnSettingsSection>
+				docUrl="https://dossiq.conduction.nl/docs/user/mandate-matrix-admin"
+				valuesPath="config"
+				:saveLabel="t('dossiq', 'Save mandate matrix settings')"
+				:fields="mandateSettingsFields" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-archival"
 				:name="t('dossiq', 'Archiving')"
 				:description="
@@ -240,12 +294,13 @@
 						'How often a reviewer is reminded of the archival decisions they hold. The setting lives in OpenRegister, which runs the archiving process; dossiq keeps no copy of it.',
 					)
 				"
-				:loading="!storesReady">
-				<ArchivalSettingsTab v-if="storesReady" />
-			</CnSettingsSection>
+				url="/apps/openregister/api/settings/archival"
+				saveMethod="POST"
+				:fields="archivalFields" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-woo-reports"
+				appId="dossiq"
 				:name="t('dossiq', 'Woo review reports')"
 				:description="
 					t(
@@ -253,9 +308,14 @@
 						'Choose which Woo review reports your organisation uses, and who may read the throughput per reviewer.',
 					)
 				"
-				:loading="!storesReady">
-				<WooReportsSettingsTab v-if="storesReady" />
-			</CnSettingsSection>
+				:detailedDescription="
+					t(
+						'dossiq',
+						'Both reports are off until you switch them on. The throughput report counts what each reviewer did per day, so only the group you name may read it.',
+					)
+				"
+				valuesPath="config"
+				:fields="reviewReportFields" />
 		</template>
 
 		<template #tab-integrations>
@@ -317,8 +377,9 @@
 				<ZgwMappingSettings v-if="storesReady" />
 			</CnSettingsSection>
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-kcc"
+				appId="dossiq"
 				:name="t('dossiq', 'KCC-werkplek integration')"
 				:description="
 					t(
@@ -326,9 +387,10 @@
 						'Burger identification, case-voorblad limits, sentiment trigger words, and belplan overflow thresholds for the KCC contact-center bridge.',
 					)
 				"
-				:loading="!storesReady">
-				<KccIntegrationSettings v-if="storesReady" />
-			</CnSettingsSection>
+				:columns="2"
+				valuesPath="config"
+				:saveLabel="t('dossiq', 'Save KCC settings')"
+				:fields="contactCentreFields" />
 
 			<CnSettingsSection
 				id="section-dmn"
@@ -341,8 +403,9 @@
 				"
 				:loading="!storesReady" />
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-financial"
+				appId="dossiq"
 				:name="t('dossiq', 'Financial integration: dwangsom callback')"
 				:description="
 					t(
@@ -350,9 +413,15 @@
 						'Configure the shared secret used to validate ERP payment-confirmation callbacks for dwangsom (penalty payment) uitbetalingen.',
 					)
 				"
-				:loading="!storesReady">
-				<FinancialIntegrationTab v-if="storesReady" />
-			</CnSettingsSection>
+				:detailedDescription="
+					t(
+						'dossiq',
+						'Configure the shared secret used to validate the X-Procest-Signature HMAC-SHA256 header on the public dwangsom payment-confirmation callback ({endpoint}). Without a configured secret, every callback request is rejected (HTTP 401). An unconfigured secret is never treated as an implicit pass.',
+						{ endpoint: '/apps/dossiq/api/dwangsom/payment-callback' },
+					)
+				"
+				valuesPath="config"
+				:fields="paymentCallbackFields" />
 
 			<CnSettingsSection
 				id="section-stuf"
@@ -379,7 +448,7 @@
 				<StufAuditLog v-if="storesReady" />
 			</CnSettingsSection>
 
-			<CnSettingsSection
+			<CnSettingsFieldsSection
 				id="section-store"
 				:name="t('dossiq', 'Store registry')"
 				:description="
@@ -388,9 +457,9 @@
 						'Connect the OpenRegister instance the Store page browses. Without one, dossiq stays offline and shows only its own templates.',
 					)
 				"
-				:loading="!storesReady">
-				<StoreSettingsTab v-if="storesReady" />
-			</CnSettingsSection>
+				url="/apps/dossiq/api/store/settings"
+				:saveLabel="t('dossiq', 'Save store settings')"
+				:fields="storeRegistryFields" />
 		</template>
 
 		<template #tab-mail>
@@ -552,80 +621,72 @@
 <script>
 import {
 	CnAdminSettingsShell,
+	CnRegisterMapping,
 	CnSettingsFieldsSection,
 	CnSettingsSection,
 	CnWidgetObjectTable,
 	CnWorkingCalendarWidget,
 } from '@conduction/nextcloud-vue'
+import axios from '@nextcloud/axios'
+import { showError, showSuccess } from '@nextcloud/dialogs'
 import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
-import BackgroundServiceAccountSettings from './BackgroundServiceAccountSettings.vue'
-import EmailSettings from './EmailSettings.vue'
-import KccIntegrationSettings from './KccIntegrationSettings.vue'
-import Settings from './Settings.vue'
 import ShippedConfiguration from './ShippedConfiguration.vue'
 import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
-import AiSettingsTab from './tabs/AiSettingsTab.vue'
-import ArchivalSettingsTab from './tabs/ArchivalSettingsTab.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
-import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
-import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import FirstRunTab from './tabs/FirstRunTab.vue'
-import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
-import MenuStructureTab from './tabs/MenuStructureTab.vue'
 import PrerequisitesTab from './tabs/PrerequisitesTab.vue'
-import QueueUrgencySettingsTab from './tabs/QueueUrgencySettingsTab.vue'
 import SearchIndexTab from './tabs/SearchIndexTab.vue'
-import StoreSettingsTab from './tabs/StoreSettingsTab.vue'
 import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
 import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
-import WooReportsSettingsTab from './tabs/WooReportsSettingsTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import manifest from '../../manifest.json'
 import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
 import {
+	aiFields,
+	archivalFields,
+	BACKGROUND_SERVICE_GROUP,
+	backgroundAccountFields,
 	CONNECTION_STATUS_TONES,
+	consultationFields,
+	contactCentreFields,
 	houseStyleFields,
 	kadasterFields,
+	mandateSettingsFields,
+	menuStructureFields,
+	paymentCallbackFields,
+	queueUrgencyFields,
+	registerMappingGroups,
+	reviewReportFields,
+	sharedMailboxFields,
+	storeRegistryFields,
 	textsAndAccessFields,
 } from './adminFields.js'
 
 export default {
 	name: 'AdminRoot',
 	components: {
-		BackgroundServiceAccountSettings,
 		Plus,
 		FirstRunTab,
 		PrerequisitesTab,
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
+		CnRegisterMapping,
 		CnSettingsFieldsSection,
 		CnSettingsSection,
 		CnWidgetObjectTable,
 		CnWorkingCalendarWidget,
-		Settings,
 		ZgwMappingSettings,
-		AiSettingsTab,
-		ArchivalSettingsTab,
 		SearchIndexTab,
 		ChecklistsTab,
 		TermijnDefinitiesTab,
-		WooReportsSettingsTab,
-		QueueUrgencySettingsTab,
 		MandaatMatrixTab,
-		MandaatMatrixSettingsTab,
-		MenuStructureTab,
-		ConsultationSettingsTab,
-		StoreSettingsTab,
-		FinancialIntegrationTab,
-		EmailSettings,
-		KccIntegrationSettings,
 		ShippedConfiguration,
 		StufEndpoints,
 		StufAuditLog,
@@ -660,6 +721,8 @@ export default {
 	data() {
 		return {
 			storesReady: false,
+			registerConfiguration: {},
+			registerSaving: false,
 			activeTab: 'general',
 			tabCounts: {},
 			ownerApps: loadState('dossiq', 'ownerApps', {
@@ -936,6 +999,141 @@ export default {
 		},
 
 		/**
+		 * The menu structure choice.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		menuStructureFields() {
+			return menuStructureFields(this.t.bind(this))
+		},
+
+		/**
+		 * The queue urgency thresholds and weights.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		queueUrgencyFields() {
+			return queueUrgencyFields(this.t.bind(this))
+		},
+
+		/**
+		 * The mandate matrix behaviour.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		mandateSettingsFields() {
+			return mandateSettingsFields(this.t.bind(this))
+		},
+
+		/**
+		 * The consultation behaviour.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		consultationFields() {
+			return consultationFields(this.t.bind(this))
+		},
+
+		/**
+		 * The review report switches and their reader group.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		reviewReportFields() {
+			return reviewReportFields(this.t.bind(this))
+		},
+
+		/**
+		 * The payment callback secret.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		paymentCallbackFields() {
+			return paymentCallbackFields(this.t.bind(this))
+		},
+
+		/**
+		 * The store registry connection.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		storeRegistryFields() {
+			return storeRegistryFields(this.t.bind(this))
+		},
+
+		/**
+		 * OpenRegister's archival reminder interval.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		archivalFields() {
+			return archivalFields(this.t.bind(this))
+		},
+
+		/**
+		 * The register dossiq keeps its records in, and a schema per kind.
+		 *
+		 * @return {Array<object>} The groups.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		registerGroups() {
+			return registerMappingGroups(this.t.bind(this))
+		},
+
+		/**
+		 * The shared mailbox intake, matching and sender.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
+		sharedMailboxFields() {
+			return sharedMailboxFields(this.t.bind(this))
+		},
+
+		/**
+		 * The AI switches, model and connection test.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		aiFields() {
+			return aiFields(this.t.bind(this))
+		},
+
+		/**
+		 * The background service account and why it cannot be used.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		backgroundAccountFields() {
+			return backgroundAccountFields(this.t.bind(this))
+		},
+
+		/**
+		 * The KCC bridge behaviour.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		contactCentreFields() {
+			return contactCentreFields(this.t.bind(this))
+		},
+
+		/** @return {string} The group the background service account joins. */
+		backgroundServiceGroup() {
+			return BACKGROUND_SERVICE_GROUP
+		},
+
+		/**
 		 * The organisation's working calendar in OpenRegister: the default
 		 * calendar dossiq's terms count on (`nl-national`).
 		 *
@@ -1036,6 +1234,7 @@ export default {
 		fetchAdminTabCounts().then((counts) => {
 			this.tabCounts = counts
 		})
+		this.loadRegisterConfiguration()
 		await initializeStores()
 		this.storesReady = true
 	},
@@ -1052,6 +1251,42 @@ export default {
 			return tabs.map((tab) => (typeof this.tabCounts[tab.id] === 'number'
 				? { ...tab, count: this.tabCounts[tab.id] }
 				: tab))
+		},
+
+		/**
+		 * Read the register and schema ids from dossiq's settings.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		async loadRegisterConfiguration() {
+			try {
+				const { data } = await axios.get(generateUrl('/apps/dossiq/api/settings'))
+				this.registerConfiguration = data?.config ?? {}
+			} catch {
+				this.registerConfiguration = {}
+			}
+		},
+
+		/**
+		 * Save the register and schema ids, keeping the ids the app config
+		 * has always held.
+		 *
+		 * @param {object} configuration The register and schema ids by key.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		async saveRegisterMapping(configuration) {
+			this.registerSaving = true
+			try {
+				const { data } = await axios.put(generateUrl('/apps/dossiq/api/settings'), configuration)
+				this.registerConfiguration = data?.config ?? configuration
+				showSuccess(this.t('dossiq', 'Configuration saved'))
+			} catch (error) {
+				showError(error?.response?.data?.message || this.t('dossiq', 'That change could not be saved.'))
+			} finally {
+				this.registerSaving = false
+			}
 		},
 
 		/**
