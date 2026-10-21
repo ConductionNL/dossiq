@@ -266,6 +266,13 @@ export default {
 			return ''
 		},
 
+		/**
+		 * The case types the parent's case type allows as sub-cases.
+		 *
+		 * @return {Array<object>} The allowed case types.
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
+		 */
 		availableCaseTypes() {
 			const allowed = this.effectiveParentCaseType?.subCaseTypes || []
 			if (!Array.isArray(allowed) || allowed.length === 0) {
