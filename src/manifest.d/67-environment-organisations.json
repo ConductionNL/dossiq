@@ -200,7 +200,7 @@
 					{
 						"id": "organisation-side-history",
 						"type": "facts",
-						"title": "History",
+						"title": "Record history",
 						"content": {
 							"fields": [
 								{
