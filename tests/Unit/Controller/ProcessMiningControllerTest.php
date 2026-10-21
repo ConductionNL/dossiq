@@ -33,6 +33,7 @@ use OCA\Dossiq\Controller\ProcessMiningController;
 use OCA\Dossiq\Service\ProcessMiningService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -57,6 +58,7 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $this->createMock(IGroupManager::class),
 			processMiningService: $this->createMock(ProcessMiningService::class),
 			logger: $this->createMock(LoggerInterface::class),
+			l10n: $this->createMock(IL10N::class),
 		);
 
 		$response = $controller->report();
@@ -85,6 +87,7 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $this->createMock(ProcessMiningService::class),
 			logger: $this->createMock(LoggerInterface::class),
+			l10n: $this->createMock(IL10N::class),
 		);
 
 		$response = $controller->report();
@@ -120,6 +123,7 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $service,
 			logger: $this->createMock(LoggerInterface::class),
+			l10n: $this->createMock(IL10N::class),
 		);
 
 		$response = $controller->report();
@@ -153,6 +157,7 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $this->createMock(ProcessMiningService::class),
 			logger: $this->createMock(LoggerInterface::class),
+			l10n: $this->createMock(IL10N::class),
 		);
 
 		$response = $controller->report();
@@ -199,6 +204,7 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $service,
 			logger: $this->createMock(LoggerInterface::class),
+			l10n: $this->createMock(IL10N::class),
 		);
 
 		$response = $controller->report();
@@ -234,6 +240,7 @@ class ProcessMiningControllerTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $service,
 			logger: $this->createMock(LoggerInterface::class),
+			l10n: $this->createMock(IL10N::class),
 		);
 
 		$response = $controller->report();

@@ -7015,6 +7015,25 @@
 				"appId": "dossiq",
 				"pageId": "ProcessMiningDashboard",
 				"showWidgetActions": false,
+				"_headerActionsNote": "Board DqProcesanalyse Downloaden: the days per phase per case type the matrix shows, in the statistic the page shows (mean or median) and for its case type, as CSV from the report endpoint (format=csv). Same audience as the page: the endpoint refuses a reader outside it.",
+				"headerActions": [
+					{
+						"id": "download-process-analysis",
+						"type": "api-call",
+						"label": "Download",
+						"icon": "TrayArrowDown",
+						"method": "GET",
+						"url": "/apps/dossiq/api/reports/process-mining",
+						"params": {
+							"format": "csv",
+							"statistic": "@workspace.statistic?",
+							"caseType": "@workspace.caseType?"
+						},
+						"download": true,
+						"filename": "procesanalyse.csv",
+						"successMessage": "Download started"
+					}
+				],
 				"description": "Bottleneck analysis from recorded case status history",
 				"_statisticNote": "Board DqProcesanalyse: the description line carries the Gemiddeld / Mediaan switch. The report answers both (`phaseDays.mean` and `phaseDays.median`), and the days-per-phase matrix reads the one the switch names through `@workspace.statistic` in its responsePath.",
 				"pageFilters": [
