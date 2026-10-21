@@ -5905,6 +5905,7 @@ OC.L10N.register(
         "Portaal Bericht": "Portaal Bericht",
         "Portaal Notificatie Voorkeur": "Portaal Notificatie Voorkeur",
         "Portal": "Portal",
+        "Portal accounts": "Portal accounts",
         "Portal audiences": "Portal audiences",
         "Portal party": "Portal party",
         "Portal request": "Portal request",
