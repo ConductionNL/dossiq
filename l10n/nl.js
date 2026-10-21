@@ -4716,6 +4716,8 @@ OC.L10N.register(
         "Needs assessment": "Indicatiestelling",
         "Needs assessments": "Indicatiestellingen",
         "Needs attention": "Aandacht nodig",
+        "Draft the warning": "Waarschuwing opstellen",
+        "Draft the pre-announcement": "Vooraankondiging opstellen",
         "Negatief": "Negatief",
         "Negative": "Negatief",
         "Neighborhood Team": "Wijkteam",

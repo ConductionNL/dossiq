@@ -2585,6 +2585,8 @@
         "Draft ruling": "Ontwerp",
         "Draft templates cannot be used for new cases (legacy flag; lifecycleStatus is authoritative)": "Conceptsjablonen kunnen niet voor nieuwe zaken worden gebruikt (oude vlag; lifecycleStatus is leidend)",
         "Draft the letter": "Brief opstellen",
+        "Draft the pre-announcement": "Vooraankondiging opstellen",
+        "Draft the warning": "Waarschuwing opstellen",
         "Draft until publish() validates required fields and sets publishedAt": "Concept totdat publish() de verplichte velden controleert en publishedAt zet",
         "Draft Version": "Conceptversie",
         "Drafter": "Steller",

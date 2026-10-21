@@ -4716,6 +4716,8 @@ OC.L10N.register(
         "Needs assessment": "Needs assessment",
         "Needs assessments": "Needs assessments",
         "Needs attention": "Needs attention",
+        "Draft the warning": "Draft the warning",
+        "Draft the pre-announcement": "Draft the pre-announcement",
         "Negatief": "Negatief",
         "Negative": "Negative",
         "Neighborhood Team": "Neighborhood Team",
