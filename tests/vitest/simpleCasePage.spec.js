@@ -385,7 +385,7 @@ describe('the tabs', () => {
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
-		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Custody', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
+		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Custody', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
 		// Proposals is not a fixed overflow tab: it shows while proposals wait
 		// (feat/case-proposals-tab), checked in caseProposalsTabInStrip.spec.js.
 		expect(strip.tabs.find((tab) => tab.label === 'Proposals').visibleWhen.appInstalled).toBe('portaliq')
@@ -453,6 +453,27 @@ describe('the tabs', () => {
 		}
 	})
 
+	it('ends no tab in untitled blocks: fees, contract, family plan and PDF merge are cards of a tab', () => {
+		// They stood as grid cells under the tab card, so every tab ended in
+		// them (DqZaak, DqSociaalDomein, DqDocumentenBeheer draw none there).
+		const strip = tabsOf(simple)
+		const fees = strip.tabs.find((tab) => tab.label === 'Fees and payments')
+		expect(fees.overflow).toBe(true)
+		expect(fees.widgetIds).toEqual(['case-payment-requests', 'case-contract'])
+		expect(strip.tabs.find((tab) => tab.label === 'Merge into one PDF').widgetId).toBe('case-merge-to-pdf')
+		const overview = strip.tabs.find((tab) => tab.label === 'Overview').widgetIds
+		expect(overview.indexOf('family-plan')).toBe(overview.indexOf('case-summary') + 1)
+		// The family plan keeps its own condition: only where a plan applies.
+		expect(find(simple, 'family-plan').visibleWhen).toEqual(find(original, 'family-plan').visibleWhen)
+		expect(find(simple, 'family-plan').visibleWhen).toBeDefined()
+		// The banner stack ends the side column as the board's Status card.
+		expect(find(simple, 'case-banner-stack').title).toBe('Status')
+		expect(simple.sideColumn.at(-1)).toBe('case-banner-stack')
+		for (const id of ['case-payment-requests', 'case-contract', 'family-plan', 'case-merge-to-pdf']) {
+			expect(simple.layout.some((cell) => cell.widgetId === id), id).toBe(false)
+		}
+	})
+
 	it('shows the case\'s tasks as the library task table (DqZaakTaken)', () => {
 		const tasks = simple.widgets.find((widget) => widget.id === 'case-tasks-card')
 		expect(tasks.type).toBe('tasks')
@@ -508,13 +529,22 @@ describe('the tabs', () => {
 		// the card title already heads it (casePageLabelsHistoryAndTourFirst).
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
-		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel']
+		// The banner stack is titled Status, as the side card DqZaak draws.
+		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-banner-stack', 'case-attention']
 		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
 		added.push('case-grant-decisions-card')
 		expect(others(simple)).toEqual(others(original))
+		expect(find(simple, 'case-banner-stack')).toEqual({ ...find(original, 'case-banner-stack'), title: 'Status', _note: expect.any(String) })
+		// Its attention strip asks the reason behind one button, with the board's hint.
+		const attention = find(original, 'case-attention')
+		expect(find(simple, 'case-attention')).toEqual({
+			...attention,
+			_note: expect.any(String),
+			content: { ...attention.content, behindButton: true, labels: { ...attention.content.labels, hintRaise: 'Flag the case with a reason. It then comes first under Needs attention, in All cases.' } },
+		})
 		// The Tasks tab holds the work panel's sections as cards, in DqZaakTaken's order.
 		const workSections = find(original, 'case-work-panel').content.sections.map((section) => section.widget.id)
 		const tasksTab = tabsOf(simple).tabs.find((tab) => tab.label === 'Tasks')
@@ -588,7 +618,9 @@ describe('the tabs', () => {
 		// The plan, terms, flows and hours are cards of the Overview tab now, as
 		// DqZaak draws them, so they keep no grid cell either. The Linked card
 		// is in the side column, so its full-profile cell goes too.
-		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6', 'full-linked']
+		// The fees, the contract, the family plan and the PDF merge are cards
+		// of tabs, so they keep no cell under the tab card either.
+		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6', 'full-linked', 'money-payments', 'money-contract', 'family-plan-panel', 'documents-merge-to-pdf']
 		expect(simple.layout.map((entry) => entry.id)).toEqual(
 			original.layout
 				.map((entry) => entry.id)
@@ -600,12 +632,7 @@ describe('the tabs', () => {
 		// it, with the plan, terms, flows and hours full width under it; the
 		// cards the board does not draw pair up two to a row. Sizes are the
 		// manifest's, except three that would scroll inside.
-		const PAIRED = {
-			'money-payments': 0,
-			'money-contract': 6,
-			'family-plan-panel': 0,
-			'documents-merge-to-pdf': 0,
-		}
+		const PAIRED = {}
 		for (const entry of simple.layout) {
 			const was = original.layout.find((item) => item.id === entry.id)
 			const half = entry.id in PAIRED

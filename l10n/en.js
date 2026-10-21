@@ -4710,6 +4710,7 @@ OC.L10N.register(
         "Needs assessment": "Needs assessment",
         "Needs assessments": "Needs assessments",
         "Needs attention": "Needs attention",
+        "Flag the case with a reason. It then comes first under Needs attention, in All cases.": "Flag the case with a reason. It then comes first under Needs attention, in All cases.",
         "Negatief": "Negatief",
         "Negative": "Negative",
         "Neighborhood Team": "Neighborhood Team",
