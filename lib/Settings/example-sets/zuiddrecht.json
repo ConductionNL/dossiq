@@ -1426,7 +1426,10 @@
 				},
 				"alert": {
 					"operator": "gte",
-					"threshold": 12
+					"threshold": 12,
+					"recipients": [
+						"user:{{cast:thomas.uid}}"
+					]
 				}
 			}
 		},
