@@ -7,16 +7,16 @@ import path from 'node:path'
  * dossiq draws no tag shape of its own: a status, priority or label pill is
  * nextcloud-vue's tag (`cn-status-badge`), so it takes the library's shape in
  * every look (a full pill in the Nextcloud look, the boards' 21px rounded
- * rectangle in the board look). A local rule may still colour a tag. Two
- * pills are not tags and keep their own shape: the timeline's filter chips
- * and the duration picker's preset buttons.
+ * rectangle in the board look). A local rule may still colour a tag. One
+ * pill is not a tag and keeps its own shape: the duration picker's preset
+ * buttons. (The timeline's filter chips are the library timeline's now.)
  *
  * @spec openspec/changes/dossiq-pills-library-tag/specs/dossiq-pills-library-tag/spec.md
  */
 import { describe, expect, it } from 'vitest'
 
 const SRC = path.resolve(__dirname, '..', '..', 'src')
-const NOT_TAGS = ['views/cases/components/CaseTimelineTab.vue', 'views/settings/components/DurationPicker.vue']
+const NOT_TAGS = ['views/settings/components/DurationPicker.vue']
 
 /**
  * Every .vue and .css file under src, relative to it.
@@ -35,7 +35,7 @@ function files (dir = '') {
 }
 
 describe('dossiq pills are the library tag', () => {
-	it('declares no full-pill corner outside the two non-tag pills', () => {
+	it('declares no full-pill corner outside the non-tag pill', () => {
 		const offenders = files()
 			.filter((rel) => !NOT_TAGS.includes(rel))
 			.filter((rel) => /border-radius:\s*(var\(--border-radius-pill|999|9999|100px)/.test(fs.readFileSync(path.join(SRC, rel), 'utf8')))

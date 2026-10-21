@@ -350,10 +350,6 @@ describe('the container type this change depends on', () => {
 		const PANES = {
 			'case-notes-panel': 'case-notes-pane',
 			'case-decisions-panel': 'case-decisions-pane',
-			// Timeline arrived with #2846: every note, call and message on the
-			// case in one order. A single surface, keyed by TYPE like the three
-			// above it.
-			'case-timeline-panel': 'case-timeline-pane',
 			// Archiving arrived with #2850 as `type: "custom"` plus a
 			// `widget-case-archival` slot on the page, and this file carried a
 			// branch that asserted exactly that. The slot name did not match
@@ -392,6 +388,9 @@ describe('the container type this change depends on', () => {
 		// The tabs a library widget type draws from the manifest alone.
 		const LIBRARY_TYPES = {
 			'case-email-panel': 'mail',
+			// Timeline arrived with #2846: every note, call and message on the
+			// case in one order, now the library timeline in manage mode.
+			'case-timeline-panel': 'timeline',
 		}
 
 		// A leaf that lives inside a group, as `{ widgetId: [sectionWidgetId,

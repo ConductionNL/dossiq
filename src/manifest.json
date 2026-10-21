@@ -3564,9 +3564,31 @@
 					},
 					{
 						"id": "case-timeline-panel",
-						"type": "case-timeline-pane",
+						"type": "timeline",
 						"title": "Timeline",
-						"_note": "The Timeline tab: one chronological read of every note, logged call, inbound and outbound message and acknowledgement of receipt on this case, from OpenRegister's timeline (timeline-entries-are-records, #3762). It does NOT replace the three tabs beside it. Notes, Communication and Email each remain the place to DO that one thing; this is the only place that puts them in one order, which is the whole of gap-register row 6.4. The audit sidebar keeps the change history, which is the rule case-history-surface already set. Rendered by TYPE (case-timeline-pane in registry.js) because a tab child resolves from cnRegistry[widget.type] and a component:-only entry draws an empty panel and logs nothing, which this page has shipped twice."
+						"_note": "The Timeline tab: one chronological read of every note, logged call, inbound and outbound message and acknowledgement of receipt on this case, from OpenRegister's timeline (timeline-entries-are-records, #3762). It does NOT replace the three tabs beside it. Notes, Communication and Email each remain the place to DO that one thing; this is the only place that puts them in one order, which is the whole of gap-register row 6.4. The audit sidebar keeps the change history, which is the rule case-history-surface already set. The library `timeline` widget in `manage` mode: kind chips, visibility filter, pin, follow-up, a note composer with standard text blocks and CSV export, the write controls drawn only when OpenRegister answers canManage. Reply on a resident's portal message is an entry action opening PortalMessageDialog, which closes that message's follow-up on `sent`.",
+						"content": {
+							"manage": true,
+							"title": "History of the case",
+							"exportName": "case-history",
+							"entryActions": [
+								{
+									"id": "reply",
+									"label": "Reply",
+									"kinds": [
+										"portaalbericht-inkomend"
+									],
+									"modal": "PortalMessageDialog",
+									"props": {
+										"open": true,
+										"caseId": "@objectId",
+										"subject": "@row.fields.subject"
+									},
+									"doneEvent": "sent",
+									"closesFollowUp": true
+								}
+							]
+						}
 					},
 					{
 						"id": "case-notes-panel",
