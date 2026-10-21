@@ -96,10 +96,10 @@
 				data-testid="case-acts-list"
 				@update:modelValue="chooseByKey">
 				<template #option-details="{ option }">
-					<CaseActFields
+					<CnTransitionInputFields
 						v-if="chosen !== null && option.value === entryKey(chosen)"
 						v-bind="fieldProps"
-						v-on="fieldEvents" />
+						@update:modelValue="values = $event" />
 				</template>
 			</CnChoiceCards>
 
@@ -113,7 +113,7 @@
 		</div>
 
 		<div v-else class="case-acts">
-			<CaseActFields v-bind="fieldProps" v-on="fieldEvents" />
+			<CnTransitionInputFields v-bind="fieldProps" @update:modelValue="values = $event" />
 
 			<p
 				v-if="error"
@@ -139,18 +139,18 @@
 				:disabled="!canConfirm"
 				:aria-busy="busy ? 'true' : null"
 				@click="confirm">
-				<template v-if="busy || chosen.id === 'archive'" #icon>
+				<template v-if="busy || form.confirmIcon" #icon>
 					<NcLoadingIcon v-if="busy" :size="20" data-testid="case-acts-confirm-busy" />
-					<ArchiveOutline v-else :size="20" />
+					<component :is="form.confirmIcon" v-else :size="20" />
 				</template>
-				{{ chosen.id === 'archive' ? t('dossiq', 'Archive it') : label(chosen) }}
+				{{ label(chosen) }}
 			</NcButton>
 		</template>
 	</CnDialog>
 </template>
 
 <script>
-import { CnChoiceCards, CnDialog } from '@conduction/nextcloud-vue'
+import { CnChoiceCards, CnDialog, CnTransitionInputFields, readTransitionInputs } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showSuccess, showWarning } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
@@ -158,10 +158,9 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import ArchiveOutline from 'vue-material-design-icons/ArchiveOutline.vue'
-import CaseActFields from '../components/case/CaseActFields.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
-import { buildActsMenu, endpointFor, iconFor, inputsFor } from '../utils/caseActsMenu.js'
+import { actForm } from '../utils/caseActInputs.js'
+import { buildActsMenu, endpointFor, iconFor } from '../utils/caseActsMenu.js'
 import {
 	approvalHeading,
 	approversLine,
@@ -172,11 +171,6 @@ import {
 	extensionNotice,
 	refusalMessage,
 } from '../utils/caseLifecycleHelpers.js'
-import {
-	asksReasonText,
-	offersPauseReasons,
-	pauseReasonToSend,
-} from '../utils/pauseReasonChoice.js'
 import { failedActionsWarning } from '../utils/transitionOutcome.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -185,10 +179,9 @@ export default {
 	name: 'CaseLifecycleMenuDialog',
 
 	components: {
-		ArchiveOutline,
-		CaseActFields,
 		CnChoiceCards,
 		CnDialog,
+		CnTransitionInputFields,
 		NcButton,
 		NcLoadingIcon,
 	},
@@ -219,12 +212,18 @@ export default {
 			awaiting: [],
 			chosen: null,
 			loading: true,
-			reason: '',
-			resultTypeId: '',
-			until: '',
-			days: '14',
+			// What the chosen act's inputs hold (caseActInputs.js). The
+			// reason, the date and the days carry over from one act to the
+			// next; a result and a pause reason do not (`choose`).
+			values: {
+				reason: '',
+				resultTypeId: '',
+				until: '',
+				days: '14',
+				pauseReason: '',
+			},
+
 			pauseReasons: [],
-			pauseReason: '',
 			caseType: '',
 			error: '',
 			busy: false,
@@ -245,9 +244,36 @@ export default {
 			return this.caseId || String(this.$route?.params?.id ?? '')
 		},
 
-		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
-		inputs() {
-			return inputsFor(this.chosen ?? {})
+		/**
+		 * The chosen act's form: its input declarations and layout.
+		 *
+		 * @return {object} The form (`actForm`).
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		form() {
+			return actForm(this.chosen, { caseType: this.caseType, caseId: this.targetCaseId })
+		},
+
+		/**
+		 * What the chosen act's inputs read: the case for the summary, the
+		 * case type's pause reasons and the act's result types.
+		 *
+		 * @return {object} The context.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		formContext() {
+			return { kase: this.kase, pauseReasons: this.pauseReasons, resultTypes: this.resultOptions }
+		},
+
+		/**
+		 * The values against the declarations: whether the form is complete,
+		 * and what it sends.
+		 *
+		 * @return {{complete: boolean, data: object}} The reading.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		answers() {
+			return readTransitionInputs(this.form.inputs, this.values, { context: this.formContext })
 		},
 
 		/**
@@ -302,72 +328,36 @@ export default {
 		},
 
 		/**
-		 * What the chosen act's fields read.
+		 * What the chosen act's inputs are drawn with.
 		 *
-		 * @return {object} CaseActFields props.
+		 * @return {object} CnTransitionInputFields props.
 		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 		 */
 		fieldProps() {
 			return {
-				act: this.chosen,
-				inputs: this.inputs,
-				kase: this.kase,
-				caseType: this.caseType,
-				caseId: this.targetCaseId,
-				resultOptions: this.resultOptions,
-				busy: this.busy,
-				reason: this.reason,
-				resultTypeId: this.resultTypeId,
-				until: this.until,
-				days: this.days,
-				pauseReasons: this.pauseReasons,
-				pauseReason: this.pauseReason,
+				inputs: this.form.inputs,
+				modelValue: this.values,
+				context: this.formContext,
+				columns: this.form.columns,
+				summary: this.form.summary,
+				notice: this.form.notice,
+				disabled: this.busy,
+				markRequired: false,
+				'data-testid': 'case-act-fields-' + String(this.chosen?.id ?? ''),
 			}
 		},
 
 		/**
-		 * What the chosen act's fields write back.
+		 * Whether the act may be posted: not while posting, and only with every
+		 * input it asks filled. A pause reason picker needs a pick and the free
+		 * text only after Other; a closing move with results waits for one,
+		 * because the engine refuses the close without it.
 		 *
-		 * @return {object} CaseActFields listeners.
+		 * @return {boolean}
 		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 		 */
-		fieldEvents() {
-			return {
-				'update:reason': (value) => { this.reason = value },
-				'update:resultTypeId': (value) => { this.resultTypeId = value },
-				'update:until': (value) => { this.until = value },
-				'update:days': (value) => { this.days = value },
-				'update:pauseReason': (value) => { this.pauseReason = value },
-				applyTemplate: (chosen) => this.applyTemplate(chosen),
-			}
-		},
-
-		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
 		canConfirm() {
-			if (this.busy || this.chosen === null) {
-				return false
-			}
-			if (this.inputs.reason) {
-				// A picker of the case type's pause reasons needs a pick; the
-				// free text is asked for without one, and after Other.
-				if (offersPauseReasons(this.chosen, this.pauseReasons) && this.pauseReason === '') {
-					return false
-				}
-				if (asksReasonText(this.chosen, this.pauseReasons, this.pauseReason) && this.reason.trim().length === 0) {
-					return false
-				}
-			}
-			// A closing move with results to pick from waits for one: the
-			// engine refuses the close without it.
-			if (
-				this.inputs.result
-				&& this.resultOptions.length > 0
-				&& this.resultTypeId === ''
-			) {
-				return false
-			}
-
-			return !(this.inputs.until && this.until.trim().length === 0)
+			return !this.busy && this.chosen !== null && this.answers.complete
 		},
 	},
 
@@ -634,7 +624,7 @@ export default {
 		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 		 */
 		actTitle(entry) {
-			return entry?.id === 'archive' ? t('dossiq', 'Archive this case') : this.label(entry)
+			return actForm(entry).title || this.label(entry)
 		},
 
 		/**
@@ -676,29 +666,7 @@ export default {
 			this.chosen = entry
 			this.error = ''
 			// A result or a pause reason picked for one act is not an answer for another.
-			this.resultTypeId = ''
-			this.pauseReason = ''
-		},
-
-		/**
-		 * Fill the outcome text from a result template.
-		 *
-		 * 🔑 IT DOES NOT OVERWRITE WHAT THE HANDLER ALREADY TYPED. Picking a
-		 * template after writing two paragraphs and losing them is worse than
-		 * having no templates: the handler cannot get the text back, and the
-		 * gesture that destroyed it looked like a convenience.
-		 *
-		 * @param {object} chosen The template, with its body and presets.
-		 * @return {void}
-		 * @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
-		 */
-		applyTemplate(chosen) {
-			const text = chosen?.body || chosen?.presets?.body || ''
-			if (!text || this.reason.trim() !== '') {
-				return
-			}
-
-			this.reason = text
+			this.values = { ...this.values, resultTypeId: '', pauseReason: '' }
 		},
 
 		/**
@@ -729,14 +697,17 @@ export default {
 			this.busy = true
 			this.error = ''
 			const id = encodeURIComponent(this.targetCaseId)
+			// Only what the act asks now is sent: text typed before a pause
+			// reason was picked instead of Other is not a reason.
+			const sent = { reason: '', resultTypeId: '', until: '', days: '', pauseReason: '', ...this.answers.data }
 			try {
 				if (this.chosen.kind === 'transition') {
 					const { data } = await axios.post(
 						generateUrl(`/apps/dossiq/api/case/${id}/transition`),
 						buildTransitionPayload({
 							transitionId: this.chosen.id,
-							comment: this.reason,
-							resultTypeId: this.resultTypeId,
+							comment: sent.reason,
+							resultTypeId: sent.resultTypeId,
 						}),
 					)
 					// A 200 is not the same as everything having happened: the
@@ -749,11 +720,11 @@ export default {
 							`/apps/dossiq/api/case/${id}/${endpointFor(this.chosen)}`,
 						),
 						{
-							reason: this.reason,
-							resultTypeId: this.resultTypeId,
-							until: this.until,
-							days: Number(this.days) || 0,
-							pauseReason: pauseReasonToSend(this.pauseReason),
+							reason: sent.reason,
+							resultTypeId: sent.resultTypeId,
+							until: sent.until,
+							days: Number(sent.days) || 0,
+							pauseReason: sent.pauseReason,
 						},
 					)
 					this.sayWhetherTheRequesterWasTold(data)

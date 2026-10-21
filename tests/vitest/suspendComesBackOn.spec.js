@@ -7,59 +7,38 @@
  * read from the days the applicant is given, and sets the reason and the days
  * side by side.
  *
+ * The form is declared here and drawn by the library's
+ * CnTransitionInputFields; the preview's date arithmetic (today plus the
+ * days, nothing without a positive number) is tested there
+ * (nextcloud-vue tests/utils/transitionInputs.spec.js).
+ *
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 
-import { shallowMount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
-import { formatDate } from '../../src/utils/caseHelpers.js'
-
-vi.mock('@nextcloud/dialogs', () => ({
-	showWarning: vi.fn(),
-	showSuccess: vi.fn(),
-	showError: vi.fn(),
-}))
-
-const CaseActFields = (await import('../../src/components/case/CaseActFields.vue')).default
-
-/**
- * The suspend form with the given days.
- *
- * @param {string} days The days typed.
- * @return {object} The mounted wrapper.
- */
-function suspendWith(days) {
-	return shallowMount(CaseActFields, {
-		props: {
-			act: { kind: 'gesture', id: 'suspend' },
-			inputs: { reason: true, result: false, until: false, days: true },
-			days,
-		},
-	})
-}
+import { describe, expect, it } from 'vitest'
+import { actForm } from '../../src/utils/caseActInputs.js'
 
 describe('the Opschorten form', () => {
 	it('says the day the case comes back, today plus the days given', () => {
-		const expected = new Date()
-		expected.setDate(expected.getDate() + 14)
+		const days = actForm({ kind: 'gesture', id: 'suspend' }).inputs.find((input) => input.field === 'days')
 
-		const line = suspendWith('14').find('[data-testid="case-act-comes-back-date"]')
-		expect(line.text()).toBe(formatDate(expected.toISOString()))
-	})
-
-	it('says nothing without days', () => {
-		expect(suspendWith('').find('[data-testid="case-act-comes-back"]').exists()).toBe(false)
-		expect(suspendWith('0').find('[data-testid="case-act-comes-back"]').exists()).toBe(false)
+		expect(days).toMatchObject({ widget: 'number', label: 'Days the applicant is given', testid: 'case-act-days-input' })
+		expect(days.preview).toEqual({
+			label: 'The case comes back on',
+			template: '{today+days|date}',
+			note: 'You pick the case up earlier if the answer comes in earlier.',
+			testid: 'case-act-comes-back',
+		})
 	})
 
 	it('pairs the reason and the days only on suspend', () => {
-		expect(suspendWith('14').classes()).toContain('case-act-fields--paired')
-		const hold = shallowMount(CaseActFields, {
-			props: {
-				act: { kind: 'state', id: 'hold' },
-				inputs: { reason: true, result: false, until: true, days: false },
-			},
-		})
-		expect(hold.classes()).not.toContain('case-act-fields--paired')
+		expect(actForm({ kind: 'gesture', id: 'suspend' }).columns).toBe(2)
+		expect(actForm({ kind: 'state', id: 'hold' }).columns).toBe(1)
+	})
+
+	it('asks a return date, not days, when holding', () => {
+		const hold = actForm({ kind: 'state', id: 'hold' }).inputs
+		expect(hold.find((input) => input.field === 'until')).toMatchObject({ widget: 'date', required: true, label: 'The case comes back on', testid: 'case-act-until-input' })
+		expect(hold.some((input) => input.field === 'days')).toBe(false)
 	})
 })

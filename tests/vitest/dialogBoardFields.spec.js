@@ -10,47 +10,30 @@
  * @spec openspec/changes/dialog-board-fields/specs/dialog-board-fields/spec.md#requirement-a-dialog-s-reason-field-has-the-board-s-height
  */
 
-import { mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
-import { describe, expect, it, vi } from 'vitest'
-import { inputsFor } from '../../src/utils/caseActsMenu.js'
-
-vi.mock('@nextcloud/dialogs', () => ({ showWarning: vi.fn(), showError: vi.fn() }))
-vi.mock('@nextcloud/event-bus', () => ({ emit: vi.fn() }))
-
-const CaseActFields = (await import('../../src/components/case/CaseActFields.vue')).default
-
-const stubs = {
-	NcTextField: { name: 'NcTextField', props: ['modelValue', 'label'], template: '<input class="text-field" :value="modelValue">' },
-	NcTextArea: { name: 'NcTextArea', props: ['modelValue', 'label'], template: '<textarea class="text-area" :value="modelValue" />' },
-	NcSelect: true,
-	NcNoteCard: true,
-	CnTemplateSelect: true,
-	FolderOutline: true,
-}
+import { describe, expect, it } from 'vitest'
+import { actForm } from '../../src/utils/caseActInputs.js'
 
 /**
- * Mount the fields for one act.
+ * The reason input of one act's form.
  *
  * @param {string} id The act id.
- * @return {object} The wrapper.
+ * @return {object} The declaration.
  */
-function fieldsFor(id) {
-	const act = { id }
-	return mount(CaseActFields, { props: { act, inputs: inputsFor(act) }, global: { stubs } })
+function reasonOf(id) {
+	return actForm({ id }).inputs.find((input) => input.field === 'reason')
 }
 
 describe('dialog reason fields', () => {
 	it('asks a one-line reason beside the days when suspending', () => {
-		const w = fieldsFor('suspend')
-		expect(w.find('.text-field#case-act-reason').exists()).toBe(true)
-		expect(w.find('.text-area').exists()).toBe(false)
+		expect(reasonOf('suspend')).toMatchObject({ widget: 'text', id: 'case-act-reason', testid: 'case-act-reason-input' })
+		expect(actForm({ id: 'suspend' }).columns).toBe(2)
 	})
 
 	it('keeps a text area for an act without days', () => {
-		const w = fieldsFor('abort')
-		expect(w.find('.text-area#case-act-reason').exists()).toBe(true)
+		expect(reasonOf('abort')).toMatchObject({ widget: 'textarea', id: 'case-act-reason', testid: 'case-act-reason-input' })
+		expect(actForm({ id: 'abort' }).columns).toBe(1)
 	})
 
 	it('gives the Woo decision\'s reasons four lines', () => {
