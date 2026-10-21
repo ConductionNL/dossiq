@@ -121,8 +121,9 @@ const CUSTOM_PAGE_COUNT_AFTER = 9
 // Custom pages moved onto manifest config since, each one unit off the ratchet
 // (end-of-day-manifest: Close out your day is a dashboard; the personal queue
 // is library config; deleted cases is an endpoint index; the store is a
-// library `type: "store"` page).
-const CUSTOM_PAGES_RETIRED_SINCE = ['EndOfDay', 'PersonalQueue', 'CasesDeleted', 'Store']
+// library `type: "store"` page; substitution admin lives in the admin
+// settings).
+const CUSTOM_PAGES_RETIRED_SINCE = ['EndOfDay', 'PersonalQueue', 'CasesDeleted', 'Store', 'SubstitutionAdmin']
 
 /**
  * One page as the manifest declares it.

@@ -843,7 +843,6 @@ describe('what this change does NOT move', () => {
 			'Re-integration pathways',
 			'Supplier portal accounts',
 			'Data breach register',
-			'Substitutions & reassignment',
 			'Integrations',
 			'Features & roadmap',
 			'Processing activities (AVG)',
