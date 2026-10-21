@@ -3604,7 +3604,7 @@
 								}
 							],
 							"rowActions": [
-								{ "label": "All cases on this object", "icon": "BriefcaseSearchOutline", "type": "navigate", "route": "Cases", "query": { "_related[caseObject][case][objectUrl]": "{objectUrl}" }, "visibleWhen": { "field": "objectUrl", "op": "notEmpty" } }
+								{ "label": "All cases on this object", "icon": "BriefcaseSearchOutline", "type": "navigate", "target": "/cases?_related[caseObject][case][objectUrl]=@row.objectUrl", "visibleWhen": { "field": "objectUrl", "op": "notEmpty" } }
 							],
 							"footerLinks": [
 								{ "label": "Manage object types", "href": "/index.php/apps/openregister/#/registers/dossiq", "note": "(administrators only)", "group": "admin" }

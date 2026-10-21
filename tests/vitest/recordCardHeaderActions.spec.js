@@ -58,7 +58,7 @@ describe('per-card buttons on the record boards', () => {
 
 	it('lists every case on a linked object, by its address', () => {
 		const [all] = appended('case-objects-card').content.rowActions
-		expect(all).toMatchObject({ type: 'navigate', route: 'Cases', query: { '_related[caseObject][case][objectUrl]': '{objectUrl}' } })
+		expect(all).toMatchObject({ type: 'navigate', target: '/cases?_related[caseObject][case][objectUrl]=@row.objectUrl' })
 		expect(all.visibleWhen).toEqual({ field: 'objectUrl', op: 'notEmpty' })
 		expect(nl[all.label]).toBe('Alle zaken op dit object')
 	})
