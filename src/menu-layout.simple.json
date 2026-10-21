@@ -474,7 +474,7 @@
 								"id": "simple-my-tasks",
 								"type": "tasks",
 								"title": "My tasks",
-								"_note": "The library's `tasks` widget with `variant: list` is the board's My tasks card (a box, the task, its case on a muted second line, the due date on the right); ticking a box completes the task through the engine. It replaced the app's own MyWorkWidget here, which keeps the table, the substitution toggle and the full profile's My work page. The header link is the placement's `headerLink`.",
+								"_note": "The library's `tasks` widget with `variant: list` is the board's My tasks card (a box, the task, its case on a muted second line, the due date on the right); ticking a box completes the task through the engine. The full profile's My work page shows the same library widget in its compact rows. The header link is the placement's `headerLink`.",
 								"content": {
 									"scope": "assigned",
 									"variant": "list",
@@ -2430,7 +2430,7 @@
 						"id": "case-tasks-card",
 						"type": "tasks",
 						"title": "Tasks on this case",
-						"_note": "DqZaakTaken: the case's tasks as the library task table (CnTasksWidget `variant: table`): every task on the case from OpenRegister's task engine, open first and finished struck through, with the summary under the title and New task in the card header. Claim, complete (also a colleague's task, the engine decides), cancel and adding a task stay on the case page; a task's form, candidates and notes are on its own page, which the task title opens (rowRoute TaskDetail). This replaces the case-task-pane widget in the table mode, which drew the same table with dossiq's own component.",
+						"_note": "DqZaakTaken: the case's tasks as the library task table (CnTasksWidget `variant: table`): every task on the case from OpenRegister's task engine, open first and finished struck through, with the summary under the title and New task in the card header. Claim, complete (also a colleague's task, the engine decides), cancel and adding a task stay on the case page; a task's form, candidates and notes are on its own page, which the task title opens (rowRoute TaskDetail). Complete goes through dossiq's completion route (`completeUrl`), which applies the case type's form and effect refusals first, and a task that asks for a form opens it in a dialog; Claim shows only where dossiq's capability probe says the engine can claim (`claimCapabilityUrl`).",
 						"content": {
 							"variant": "table",
 							"objectUuid": "@objectId",
@@ -2442,6 +2442,8 @@
 							"completeAny": true,
 							"cancel": true,
 							"rowRoute": "TaskDetail",
+							"completeUrl": "/apps/dossiq/api/case-tasks/{id}/complete",
+							"claimCapabilityUrl": "/apps/dossiq/api/case-tasks/capabilities",
 							"viewAllRoute": {
 								"name": "Tasks",
 								"query": {

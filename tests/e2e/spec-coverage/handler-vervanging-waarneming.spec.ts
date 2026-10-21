@@ -35,7 +35,7 @@ import {
 	RUN_PREFIX,
 	showObject,
 } from '../helpers/fixtures.ts'
-import { dismissSupportDialog, expectSort } from '../helpers/nav.ts'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 import {
 	// WHY THESE TESTS USED TO SKIP ON EVERY RUN, diagnosed by #2480 and kept here
 	// because the reason was not what the skip said. The old guards waited for a
@@ -47,10 +47,8 @@ import {
 	// and the skip reason's note about Dutch locators answered a question nobody
 	// had asked. The tests below assert the actions the page offers instead.
 
-	CasesSavedView,
 	SubstitutionAdmin,
 	SubstitutionPersonalSettings,
-	VIEW_OVERRIDES_APPLIED,
 } from '../helpers/page-components.ts'
 
 /** The dossiq controller surface these scenarios are actually enforced on. */
@@ -815,84 +813,45 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	})
 
 	/**
-	 * The scenario this file could not cite until the call site existed.
-	 *
-	 * It used to click a `substituted-toggle` inside an `if` that stood down
-	 * when the toggle was absent, which it always was: `fetchSubstitutedWork()`
-	 * had no caller, every helper in `src/utils/substitutionHelpers.js` was
-	 * imported by nothing, and neither My work surface mentioned substitution.
-	 * So the `if` could only take its empty branch and the two assertions left
-	 * — a button and the absence of a 500 — were satisfied by a build that
-	 * routed no substituted work at all. The scenario carried an `@e2e exclude`
-	 * saying exactly that.
-	 *
-	 * What is asserted now is the requirement: the absentee's in-scope case is
-	 * ON this reader's My work, carrying a marker that names the absentee, and
-	 * hiding substituted work removes it. The signed-in account is the
-	 * waarnemer of the scope-limited substitution seeded in `beforeAll`
-	 * (`PLAIN_USER` covered by `ADMIN_USER`), so nothing here needs its own
-	 * fixture and nothing here writes one.
-	 *
-	 * Assigned to me is the `my-work` default view of the Cases index, and
-	 * the substituted group is that view's `before-collection` slot
-	 * (`SubstitutedWork.vue`). Dropping `this.load()` from its `mounted()`
-	 * reds the marker assertion below and the vitest cases in
-	 * `tests/vitest/substitutedWorkOnMyWork.spec.js`.
+	 * Substituted work reaches the waarnemer through the personal work queue
+	 * (`/my-queue`), the one place it is listed (Ruben, 20 Oct): its covered-work
+	 * source puts the absentee's in-scope case there, marked "Covering for"
+	 * with whose it is. The SubstitutedWork card and the My work toggle are
+	 * gone. The signed-in account is the waarnemer of the scope-limited
+	 * substitution seeded in `beforeAll` (`PLAIN_USER` covered by
+	 * `ADMIN_USER`), so nothing here needs its own fixture.
 	 */
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#waarnemer-sees-substituted-work-in-my-work
-	test('the absentee in-scope case is on the waarnemer My work, marked and hideable', async ({
+	test('the absentee in-scope case is in the waarnemer queue, marked with whose it is', async ({
 		page,
 	}) => {
-		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs the view slot: openspec/changes/lists-are-views/restore.md section 2')
-		await page.goto(`/index.php/apps/dossiq${CasesSavedView('my-work')}`)
+		await page.goto('/index.php/apps/dossiq/my-queue')
 		await dismissSupportDialog(page)
-		await expectSort(page, 'Urgency')
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 
-		const group = page.getByTestId('substituted-work')
+		// The seeded case itself, by the title `beforeAll` gave it.
+		const row = page.locator('li', { hasText: IN_SCOPE_CASE }).first()
 		await expect(
-			group,
-			'an active substitution routes the absentee open work here, so the group must render',
+			row,
+			'an active substitution routes the absentee open work into the queue',
 		).toBeVisible({ timeout: 30_000 })
 
-		// The seeded case itself, by the title `beforeAll` gave it: a group
-		// that rendered empty would pass a bare visibility check.
+		// The marker NAMES the absentee, not just any colleague.
 		await expect(
-			group.getByText(IN_SCOPE_CASE, { exact: false }),
-			'the case assigned to the absentee must be listed',
-		).toBeVisible({ timeout: 30_000 })
-
-		// The marker NAMES the absentee. `not.toBe('')` would pass on any
-		// marker at all, including one naming the wrong colleague.
-		const marker = group.getByTestId('substituted-marker').first()
-		await expect(marker).toBeVisible()
-		await expect(
-			marker,
-			`the marker must name ${PLAIN_USER}, whose work this is`,
-		).toContainText(PLAIN_USER)
+			row,
+			`the row must say whose work it is (${PLAIN_USER})`,
+		).toContainText(`Covering for ${PLAIN_USER}`)
 
 		// And a case OUTSIDE the substitution scope must not have come with it.
-		await expect(
-			group.getByText(OUT_OF_SCOPE_CASE, { exact: false }),
-		).toHaveCount(0)
-
-		await page.getByTestId('substituted-toggle').click()
-		await expect(
-			group.getByTestId('substituted-marker'),
-			'hiding substituted work must remove it from the list',
-		).toHaveCount(0)
-		await expect(group.getByText(IN_SCOPE_CASE, { exact: false })).toHaveCount(0)
-		// The toggle survives being used, or hiding is a one-way door.
-		await expect(page.getByTestId('substituted-toggle')).toBeVisible()
+		await expect(page.getByText(OUT_OF_SCOPE_CASE, { exact: false })).toHaveCount(0)
 	})
 
 	/**
 	 * Both halves of the scope limit, against two seeded case types.
 	 *
-	 * This citation used to sit on the My Work page-load test above, whose
-	 * substituted-work toggle is only touched when it happens to be visible.
-	 * That test cannot fail on a build that routes EVERY case of the absentee
-	 * to the substitute, which is the half the requirement spells "MUST NOT".
+	 * The queue test above cannot fail on a build that routes EVERY case of
+	 * the absentee to the substitute, which is the half the requirement
+	 * spells "MUST NOT".
 	 *
 	 * Asserted on `/api/substitutions/work`, the resolver the view reads, so
 	 * the answer does not depend on a toggle having rendered.

@@ -103,6 +103,7 @@ import CaseTypeWorkflowEditorWidget from './components/caseType/CaseTypeWorkflow
 // The items of a frozen file set with a per-item document compare, configured per case type (decision 182).
 // @spec openspec/specs/document-compare/spec.md
 import FileSetItems from './components/fileSet/FileSetItems.vue'
+// The task page's leaves, as detail widgets (task-page-on-the-manifest).
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
 import RequesterProjection from './components/initiator/RequesterProjection.vue'
@@ -115,9 +116,7 @@ import CaseTypeFieldFilters from './components/search/CaseTypeFieldFilters.vue'
 // "Besluitvorming" decision-making is owned by decidesk and surfaced here as
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
-import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
-import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // Send digital post — the CaseDetail header action's compose surface.
 // @spec openspec/specs/berichtenbox-integration/spec.md
 import AssessmentDecisionDialog from './dialogs/AssessmentDecisionDialog.vue'
@@ -206,19 +205,11 @@ import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidg
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
-import SubstitutedWork from './views/SubstitutedWork.vue'
-// The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
-// `type: "detail"` page when remove-casetask took the caseTask schema away:
-// CnDetailPage has no entity-source mode, so a detail page can only bind a
-// register and a schema. Route and page id unchanged, so deep links resolve.
-// @spec openspec/specs/task-management/spec.md
-import TaskDetailView from './views/tasks/TaskDetailView.vue'
 import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
 import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // The Dashboard's My work tile, over OpenRegister's task engine.
 // @spec openspec/specs/dashboard/spec.md
 import FirstTodayWidget from './views/widgets/FirstTodayWidget.vue'
-import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
 import WooReportsView from './views/woo/WooReportsView.vue'
 import WorkloadSummaryBar from './views/WorkloadSummaryBar.vue'
 import { leafTab } from './integrations/leafTabs.js'
@@ -249,12 +240,6 @@ import { readFileAsMessage } from './utils/savedMail.js'
 // entry or `slots` mapping is needed. The self-fetching `src/views/widgets/*.vue`
 // components and their `src/*Widget.js` native-dashboard entry points survive
 // UNCHANGED for the native Nextcloud Dashboard (which has no manifest).
-//
-// ONE EXCEPTION SINCE remove-casetask: `my-work`. Its rows are not
-// OpenRegister objects any more, they are engine tasks behind
-// `/api/flow-tasks`, and a built-in `object-table` can only name a register
-// and a schema. See the `MyWorkWidget` entry below for what has to land in
-// the library before the tile goes back to being declared inline.
 
 // Leverancier-zaakportaal external supplier portal MOVED to Portaliq (ADR-046,
 // procest#162): the /leverancier Vue surface + the citizen "Mijn gemeente"
@@ -351,11 +336,6 @@ const registry = {
 		kind: 'page',
 		component: WorkloadSummaryBar,
 		_note: "Below-header slot: the coordinator's open cases per colleague, read from /api/work-queue/workload (403, and so nothing, for anyone else). A colleague's chip opens their open cases on the Cases page.",
-	},
-	SubstitutedWork: {
-		kind: 'page',
-		component: SubstitutedWork,
-		_note: 'Before-collection slot: the cases an active substitution routes to the reader, marked with whose they are and until when, hideable. Not a filter on the list, because these cases are not assigned to the reader.',
 	},
 
 	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
@@ -644,9 +624,8 @@ const registry = {
 	// --- The Related cases tab, with the follow-ups still to come
 	//     (case-actions-menu, row A26). ---
 	//
-	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, for the same
-	// reason `case-task-pane` is: this is a child of the `case-panels` tabs
-	// widget, and a tab child has no layout grid item and
+	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, because this is
+	// a child of the `case-panels` tabs widget, and a tab child has no layout grid item and
 	// therefore no `widget-<id>` page slot. CnTabsWidget resolves a tab child
 	// through `cnRegistry[widget.type]` and renders nothing, silently, when no
 	// key answers.
@@ -744,13 +723,6 @@ const registry = {
 		_note: "The Add party form's Role field. The $ref on role.roleType makes the library offer EVERY roleType row this instance holds, including the seats of case types this case is not, and it cannot skip the generic Gemachtigde a type declares itself. This narrows the list to the case type's own rows followed by the generic ones, and drops a generic row whose key the type already claims. The ordering and the deduplication live in src/services/roleTypeOptions.js so they are testable without mounting anything. Same standing limitation as InitiatorPicker above: @conduction/nextcloud-vue 3.2.0 validates a form-field entry (CnAppRoot requires `appliesTo`) but does not yet mount one into the form dialog, so until it does the field falls back to the library's own object picker and this is the declaration of what it should be.",
 	},
 
-	// TaskWaitingCaseSection is NOT a registry entry any more, and neither is
-	// TaskCaseCard. Both were resolved through TaskDetail's `slots` map while
-	// that page was `type: "detail"`; the page is now `type: "custom"` and
-	// mounts them as plain child components of TaskDetailView, the same way
-	// WorkflowTab mounts WorkflowEditor. A registry entry no manifest names
-	// resolves for nobody and is dead configuration.
-
 	// --- Send digital post, the CaseDetail header action (digital-post-consumes-integriq). ---
 	// @spec openspec/specs/berichtenbox-integration/spec.md
 	BerichtenboxComposeDialog: {
@@ -817,31 +789,6 @@ const registry = {
 		_note: "Version history for one dossier document, over the Nextcloud Files versions WebDAV API. ITS PARENT IS GONE, the same way BulkDocumentActionDialog's is: the object-list `rowActions` Versions entry that opened it belonged to the Documents tab retired on 2026-09-13, and nothing has named this dialog since. Opened today by the `case-files` `rowActions` Versions entry, where CnFilesBrowser merges the clicked node's `fileId`, `fileName` and `path` onto the declared props; the older `props.row` path (the zaakinformatieobject row with `informatieobject` inlined by `content.extend`, nextcloud-vue#1117) is still read, second, for a widget object-list that passes one. Handed neither, the panel names the file it could not find and offers Show in Files rather than rendering an empty version list. Self-sufficient: the signed-in user comes from `getCurrentUser()`, since there is no parent DossierTab any more to pass it down.",
 	},
 
-	// --- The inline task pane on the case page (task-on-the-case A06). ---
-	//
-	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, because
-	// `case-tasks` is a child of the `case-panels` tabs widget. The change
-	// design called for `type: "custom"` behind the page slot
-	// `widget-case-tasks`, the way TaskDetail resolves `widget-task-waiting-case`
-	// below. That path exists only for a widget in the page's `layout`:
-	// CnDetailPage renders one `widget-<id>` slot per GRID item, and a tab child
-	// is deliberately absent from `layout` (a layout entry renders it twice).
-	// CnTabsWidget renders its children through CnDetailWidgetHost, which picks a
-	// renderer from `cnRegistry[widget.type]` and, failing that, renders NOTHING
-	// and logs nothing. So the registry key is the type the manifest names, which
-	// is the injection CnAppRoot provides and the shape the library documents for
-	// an app's own widget types.
-	// @spec openspec/specs/task-management/spec.md
-	'case-task-pane': {
-		// @custom-widget-ratchet exclude blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column, so a lifecycle button cannot be put inside a row from the manifest; the widget returns to type object-list and this entry is deleted the moment the library ships one (https://github.com/ConductionNL/nextcloud-vue/issues/1033)
-		kind: 'widget',
-		// A card of its own on the side column and in a tab stack, titled from the definition.
-		chrome: 'card',
-		component: CaseTaskPane,
-		...PANEL_WIDGET_META,
-		_note: 'CaseDetail Tasks tab: the first open task of the case with the lifecycle buttons OpenRegister answers for it, a toast on completion and the next open task in its place. No built-in fits: CnObjectListWidget accepts register/schema/filter/sort/limit/columns/rowRoute/prompt/emptyText/viewAllRoute/viewAllQuery and nothing else, has no rowActions and no per-row slot, and a config key it does not declare is dropped in silence. Interim by construction, and the e2e asserts on the tab and the button labels rather than on this component so it survives the swap back.',
-	},
-
 	// --- Case panel tabs that were sidebar tabs first. ---
 	//
 	// A tab child renders by TYPE: CnDetailWidgetHost picks a renderer from
@@ -851,9 +798,8 @@ const registry = {
 	// panel. `case-notes-pane`, registered further down, shipped in that state
 	// for a day before #2631 fixed it.
 	//
-	// Keyed by the TYPE the manifest names, like `case-task-pane` above and
-	// unlike the `component:` entries further down, which the sidebar resolves
-	// by component name instead.
+	// Keyed by the TYPE the manifest names, unlike the `component:` entries
+	// further down, which the sidebar resolves by component name instead.
 	// @spec openspec/specs/case-dashboard-view/spec.md
 	// @spec openspec/specs/case-dashboard-view/spec.md
 	// @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
@@ -867,15 +813,6 @@ const registry = {
 		_note: 'The Live conversation section of the Communication tab: start a conversation in Talk from any case, see what the case recorded of the ones already held, and declare the case major. The hoorzitting reaches the same mechanism through HearingService; this is the surface for every other case. Absent Talk, it says so rather than offering a button that cannot work.',
 	},
 
-	// @spec openspec/specs/case-dashboard-view/spec.md
-	'case-decisions-pane': {
-		// @custom-widget-ratchet exclude the decisions surface is decidiq's own integration leaf, reached through leafTab('decidesk-decisions'), so there is nothing in this repository for a built-in widget to read: no register, no schema, and no `integration` id that resolves it as a widget rather than as a sidebar tab. It moved from a `component:` sidebar tab to a tab child and needs a TYPE to render by; the definition is otherwise the same component. Deleted the day a leaf can be placed as a built-in widget
-		kind: 'widget',
-		component: BesluitvormingLeafTab,
-		...PANEL_WIDGET_META,
-		_note: 'The Decisions tab of the case panels: the decidiq decisions leaf (ADR-019/ADR-022). Was a sidebar tab. A decision is a case OUTCOME rather than correspondence or a related case, so it earns a tab rather than a section of one.',
-	},
-
 	// --- The case's locations, as a map on the Data tab. ---
 	// @spec openspec/specs/case-dashboard-view/spec.md
 	'case-location-map': {
@@ -886,30 +823,6 @@ const registry = {
 		component: CaseLocationMap,
 		...PANEL_WIDGET_META,
 		_note: 'Replaces the Locations list that was the second section of the retired Objects and locations tab. `case-location` already carries latitude and longitude, so the addresses were a table of coordinates nobody could picture. A row with no usable pair is skipped rather than plotted at (0, 0), which is open water and looks like a real pin.',
-	},
-
-	// --- The task page (`/tasks/:id`), over the engine (remove-casetask 2.1). ---
-	// @spec openspec/specs/task-management/spec.md
-	TaskDetailView: {
-		kind: 'page',
-		component: TaskDetailView,
-		_note: "The task page reads OpenRegister's task ENGINE, which is not an OpenRegister object, and there is no typed page that can. CnDetailPage takes objectType/objectId and resolves them through the object store; it has no entitySource mode, so a type:detail page can only bind a register and a schema, and the schema it bound is the one remove-casetask deletes. The route, the page id and every deep link are unchanged. It mounts TaskCaseCard and TaskWaitingCaseSection as plain children, reads the notes, appointments and history leaves from the task-anchored endpoints (the object-anchored library widgets have no object to read), and drives the lifecycle with the engine's own verbs through invoke(uuid, verb): CnLifecycleActions asks /api/objects/{uuid}/available-actions, which 404s for a task.",
-	},
-
-	// --- The Dashboard's My work tile (remove-casetask 2.3). ---
-	//
-	// Keyed by COMPONENT NAME, like TaskCaseCard above and unlike
-	// `case-task-pane`: `my-work` is a widget in the Dashboard page's own
-	// `config.widgets`, so it has a grid item, CnDashboardPage renders a
-	// `widget-my-work` slot for it, and `pages[Dashboard].slots` maps that
-	// slot name to this key.
-	// @spec openspec/specs/dashboard/spec.md
-	MyWorkWidget: {
-		// @custom-widget-ratchet exclude the rows are not OpenRegister objects: an engine task lives behind /api/flow-tasks with no register and no schema, and every built-in table widget takes exactly those two, so no configuration of object-table can address this list at all; nextcloud-vue 2.46.0 ships a `tasks` entity source for INDEX pages (src/composables/indexSources.js) and no widget equivalent, which is the gap this entry stands in for
-		kind: 'widget',
-		component: MyWorkWidget,
-		...DASHBOARD_TILE_META,
-		_note: 'Dashboard My work tile: your open tasks from OpenRegister\'s task engine, soonest due first, with a days-left column and a red row once a deadline has passed. INTERIM. It is a component rather than a built-in `object-table` only because nextcloud-vue has no task source for widgets: 2.46.0 gives an INDEX page `entitySource: "tasks"` and gives a widget nothing, so the manifest cannot name this list. TARGET: back to a generic widget the day the library grows that source, at which point the `content` block the manifest still carries is what it goes back to reading and this entry is deleted. The e2e asserts on the tile and its rows rather than on this component, so it survives the swap back.',
 	},
 
 	// --- My work, First today: ONE case, with its acts (DqMijnWerk). ---
@@ -1010,7 +923,7 @@ const registry = {
 	// --- The notes as a tab on the case page. ---
 	//
 	// The same component the sidebar's Notes tab mounts, keyed by a widget
-	// TYPE for the same reason `case-task-pane` is: a child of the
+	// TYPE because it is a child of the
 	// `case-panels` tabs widget renders through CnDetailWidgetHost, which
 	// picks a renderer from `cnRegistry[widget.type]` and binds `objectId`,
 	// `register` and `schema` from the page, which is exactly the prop set

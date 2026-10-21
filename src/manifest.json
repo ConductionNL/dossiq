@@ -1141,7 +1141,7 @@
 			"route": "/",
 			"type": "dashboard",
 			"title": "My work",
-			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first. `slots.widget-my-work` moved here for the same reason `_note` on the old Dashboard page warned about: a `type: \"custom\"` widget resolves ONLY through the page's own top-level `slots` map, never through one nested under `config`.",
+			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first.",
 			"config": {
 				"allowEdit": false,
 				"appId": "dossiq",
@@ -1211,10 +1211,11 @@
 						"widgets": [
 							{
 								"id": "my-work",
-								"type": "custom",
+								"type": "tasks",
 								"title": "My work",
-								"_note": "remove-casetask 2.3. This tile read `register: dossiq, schema: caseTask`, a store nothing writes any more. The read answered 200, so the page rendered a table of rows no writer had touched since the engine took over, and it would have gone empty the day that schema is deleted. It now reads OpenRegister's task engine through `useEngineTaskStore`, the seam every other task surface in dossiq already reads. TYPE is the interim. `type: \"custom\"` resolves through the page slot `widget-my-work` in this page's `slots` map, because [blocked: nextcloud-vue 2.46.0 ships a `tasks` entity source for INDEX pages only, `src/composables/indexSources.js`, and no widget equivalent], so no manifest key can name this list. TARGET: back to a generic widget the day the library grows a task source for widgets, at which point `src/views/widgets/MyWorkWidget.vue` and its registry entry are deleted. `limit`, `rowRoute`, `viewAllRoute`, `viewAllLabel` and `emptyText` are kept as written and the component reads every one of them, so the swap back is a retype and not a rewrite. `viewAllRoute` CARRIES NO QUERY, and it used to carry `assignee: @me` plus `isTerminalStatus: false`. remove-casetask 2.2 moved the Tasks index onto `entitySource: \"tasks\"`, and a named source reads NOTHING from the route: `useNamedSource.loadActive()` merges the page's `sourceConfig` with the active quick-filter tab and never looks at `$route.query`, and CnIndexPage's `$route.query` watcher is guarded on `isSelfFetchMode`, which a named source is not. The old query therefore did not narrow the list, it was simply ignored, and a query left in place would claim a filter the page does not apply. View all lands on the index's default All tab; the reader's own tab is Mine, one chip away. It comes back the day a named source grows the `?key=value` grammar `resolveQueryFilters` already gives a self-fetching one. The Case column is NOT kept: the engine answers the case in its `subject` block, that block came back null on all fifty rows the live instance returned on 2026-09-10, and a column blank on every row is the same looks-fine-shows-nothing failure this widget is being fixed for. The cause is in OpenRegister's TaskInboxService, which takes its object mapper as an optional constructor argument and gets null.",
+								"_note": "The reader's open tasks from OpenRegister's task engine, soonest due first, as the library task widget (`scope: assigned`); an overdue row says so in words and in the error colour. It replaced dossiq's MyWorkWidget. Work routed to the reader by a substitution is not listed here: the personal work queue lists covered work (Ruben, 20 Oct), so the substituted-rows toggle is gone. `viewAllRoute` carries no query: the Tasks index reads a named source, which takes nothing from the route; the reader's own tab is Mine, one chip away.",
 								"content": {
+									"scope": "assigned",
 									"limit": 10,
 									"rowRoute": "TaskDetail",
 									"viewAllRoute": {
@@ -1772,9 +1773,6 @@
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
-			},
-			"slots": {
-				"widget-my-work": "MyWorkWidget"
 			}
 		},
 		{
@@ -2083,9 +2081,6 @@
 							"slots": {
 								"below-header": [
 									"WorkloadSummaryBar"
-								],
-								"before-collection": [
-									"SubstitutedWork"
 								]
 							}
 						}
@@ -4050,9 +4045,14 @@
 					},
 					{
 						"id": "case-decisions-panel",
-						"type": "case-decisions-pane",
+						"type": "integration",
+						"integrationId": "decidesk-decisions",
+						"appName": "Decidiq",
+						"props": {
+							"surface": "sidebar-tab"
+						},
 						"title": "Decisions",
-						"_note": "The Decisions tab: the decidiq decisions leaf (ADR-019/ADR-022). A decision is an OUTCOME of the case rather than correspondence or a related case, so it earns a tab rather than a section of one. A sidebar tab until the sidebar copies were retired. Labelled in English like every other tab: tab labels are read verbatim out of the manifest with no t() on the path, and the l10n gate refuses a key whose English value is the Dutch word. \"Decisions\" already maps to \"Besluiten\" in nl.json."
+						"_note": "The Decisions tab: the decidiq decisions leaf (ADR-019/ADR-022), as the library integration widget. decidiq kept the leaf id `decidesk-decisions` across its rename, so that string is the contract, not the app id. A mount-mode leaf is mounted with `surface: sidebar-tab`, the look it had as a tab; when decidiq's leaf is not loaded the tab says \"Decidiq not available\". A decision is an OUTCOME of the case rather than correspondence or a related case, so it earns a tab rather than a section of one. A sidebar tab until the sidebar copies were retired. Labelled in English like every other tab: tab labels are read verbatim out of the manifest with no t() on the path, and the l10n gate refuses a key whose English value is the Dutch word. \"Decisions\" already maps to \"Besluiten\" in nl.json."
 					},
 					{
 						"id": "case-work-panel",
@@ -4065,46 +4065,25 @@
 									"label": "Tasks",
 									"widget": {
 										"id": "case-tasks",
-										"type": "case-task-pane",
+										"type": "tasks",
 										"title": "Tasks",
-										"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon and the tab entry are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column. `register` and `schema` are NOT kept, and that is remove-casetask 4.2: the component reads the task engine and has ignored both keys since dossiq#2357, so the pair named a schema that no longer exists and claimed a binding the widget does not make. The day the swap back happens, the list the widget goes back to is the engine's, not an object list, so neither key comes back.",
+										"_note": "task-on-the-case A06, the library task widget (CnTasksWidget `variant: focus`): the first OPEN task of this case as a card with its number, handler, deadline, lock, who it is offered to, its form inline and Claim, Complete and Cancel task, so a handler finishes a task without leaving the case; the other open tasks are listed under it with their own verbs. Complete goes through dossiq's completion route (`completeUrl`), which applies the case type's form and effect refusals before the engine completes the task; Claim shows only where dossiq's capability probe says the engine can claim (`claimCapabilityUrl`), and otherwise an offered task says to assign it. A completion is confirmed with a toast and the next open task takes the card. It replaced dossiq's CaseTaskPane. The id, the title and the tab entry are unchanged.",
 										"content": {
-											"filter": {
-												"case": "@objectId"
-											},
-											"sort": {
-												"field": "dueDate",
-												"dir": "asc"
-											},
+											"variant": "focus",
+											"objectUuid": "@objectId",
 											"limit": 25,
-											"columns": [
-												{
-													"key": "title",
-													"label": "Title"
-												},
-												{
-													"key": "status",
-													"label": "Status"
-												},
-												{
-													"key": "assignee",
-													"label": "Assignee"
-												},
-												{
-													"key": "dueDate",
-													"label": "Due"
-												},
-												{
-													"key": "priority",
-													"label": "Priority"
-												}
-											],
+											"cancel": true,
 											"rowRoute": "TaskDetail",
-											"viewAllRoute": "Tasks",
-											"viewAllQuery": {
-												"case": "@objectId"
+											"completeUrl": "/apps/dossiq/api/case-tasks/{id}/complete",
+											"claimCapabilityUrl": "/apps/dossiq/api/case-tasks/capabilities",
+											"viewAllRoute": {
+												"name": "Tasks",
+												"query": {
+													"case": "@objectId"
+												}
 											},
-											"emptyText": "No tasks for this case yet"
+											"viewAllLabel": "View all",
+											"emptyText": "No open tasks on this case"
 										}
 									}
 								},
@@ -6215,12 +6194,339 @@
 		{
 			"id": "TaskDetail",
 			"route": "/tasks/:id",
-			"type": "custom",
+			"type": "detail",
 			"title": "Task",
-			"component": "TaskDetailView",
-			"_note": "The task page over OpenRegister's task ENGINE, which is not an OpenRegister object and has no typed page that can render it. It was `type: \"detail\"` bound to `register: dossiq, schema: caseTask`, the schema remove-casetask deletes. CnDetailPage takes objectType/objectId and resolves them through the object store; it has NO entitySource mode (checked against the installed @conduction/nextcloud-vue 2.46.0), so unlike the Tasks index, which stayed `type: \"index\"` and gained `entitySource: \"tasks\"`, this page cannot be fixed with a manifest key. The defect it closes is specific: the page asked BOTH stores with one uuid, so an engine uuid rendered the case card and every field below it as an em dash, a legacy uuid rendered the fields and no case card, and neither showed a lifecycle button that worked. THE ROUTE AND THE PAGE ID ARE UNCHANGED: `/tasks/:id` and `TaskDetail`, so notification links and bookmarks still resolve. The `deepLinks` entry went with the schema in remove-casetask 4.2. It was keyed on `schemaSlug: caseTask` and fed OpenRegister's schema-scoped unified search only, so with no objects of that schema it matched nothing and resolved nothing. Engine tasks therefore have NO unified-search provider today. That gap is OpenRegister's: the engine's tasks live in their own table and no deep-link shape addresses them, and a dossiq entry cannot invent one. TaskDetailView keeps every widget the detail page carried. The case card (TaskCaseCard) and the waiting-case section (TaskWaitingCaseSection) are now plain child components rather than page slots. The notes and appointment leaves moved from `type: \"integration\"` to the task-anchored endpoints /api/flow-tasks/{uuid}/notes and /events, because the library's integration widgets read an OBJECT and a task has none. The audit sidebar tab became a page section reading /api/flow-tasks/{uuid}/audit, which is the engine's own append-only trail; a `type: \"custom\"` page has no sidebar for CnPageRenderer to render. The version-history tab is gone on purpose: an engine task is not an object and nothing writes a version of it, so the tab was an always-empty drawer. The lifecycle buttons are the engine's verbs through invoke(uuid, verb), NOT CnLifecycleActions, which asks /api/objects/{uuid}/available-actions and 404s for a task.",
+			"_note": "The task page (DqTaak) over OpenRegister's task ENGINE, as a manifest detail page on `entitySource: \"tasks\"` (task-page-on-the-manifest). It replaced TaskDetailView, the custom view it was while a detail page could not read an engine task. THE ROUTE AND THE PAGE ID ARE UNCHANGED: `/tasks/:id` and `TaskDetail`, so notification links and bookmarks still resolve. The library reads the task (GET /api/flow-tasks/{uuid}), offers the engine's verbs read off the task (Finish, Pick up or Hand back, Cancel task in the menu; none on a finished task) and shows a refusal with the engine's message as-is; Finish goes through dossiq's own completion route (`verbEndpoints`), which checks the case type's form and effects before the engine completes the task. The checklist is the library `checklist` widget, ticked through the engine. The notes, appointments and history are the library cards reading the task's own engine endpoints (`source: {kind: flow-task}`: the `notes` integration, `events` and `audit-trail`), and the waiting-case card is the library `notice` with a link to the case. The case card is the library `facts` widget reading the case through `source`. The state pill uses dossiq's words (\"In execution\"); the priority pill shows only for high and urgent. Engine tasks have NO unified-search provider: the engine's tasks live in their own table and no deep-link shape addresses them. There is no version-history tab: an engine task is not an object and nothing writes a version of it.",
 			"config": {
-				"documentationUrl": "https://dossiq.conduction.nl"
+				"entitySource": "tasks",
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"showTypeEyebrow": false,
+				"breadcrumb": {
+					"label": "Tasks",
+					"route": "Tasks",
+					"separator": "/"
+				},
+				"typePill": {
+					"field": "state",
+					"labels": {
+						"available": "Waiting",
+						"enabled": "Ready to start",
+						"active": "In execution",
+						"completed": "Done",
+						"terminated": "Stopped",
+						"disabled": "Skipped"
+					},
+					"colorMap": {
+						"active": "purple",
+						"completed": "success"
+					}
+				},
+				"statusPill": {
+					"field": "priority",
+					"values": [
+						"high",
+						"urgent"
+					],
+					"labels": {
+						"high": "High",
+						"urgent": "Urgent"
+					},
+					"colorMap": {
+						"high": "warning",
+						"urgent": "error"
+					}
+				},
+				"headerMeta": "{dueLabel}",
+				"verbEndpoints": {
+					"complete": "/apps/dossiq/api/case-tasks/{id}/complete"
+				},
+				"widgets": [
+					{
+						"id": "task-panels",
+						"type": "tabs",
+						"title": "Panels",
+						"content": {
+							"ariaLabel": "Task parts",
+							"tabs": [
+								{
+									"label": "Overview",
+									"widgetIds": [
+										"task-description",
+										"task-checklist",
+										"task-appointments",
+										"task-notes"
+									]
+								},
+								{
+									"label": "Task history",
+									"widgetId": "task-history"
+								}
+							]
+						}
+					},
+					{
+						"id": "task-description",
+						"type": "facts",
+						"title": "Description",
+						"visibleWhen": {
+							"field": "description",
+							"op": "notEmpty"
+						},
+						"content": {
+							"fields": [
+								{
+									"as": "text",
+									"path": "description"
+								}
+							]
+						}
+					},
+					{
+						"id": "task-checklist",
+						"type": "checklist",
+						"title": "Checklist",
+						"visibleWhen": {
+							"field": "checklist",
+							"op": "notEmpty"
+						},
+						"content": {
+							"path": "checklist"
+						}
+					},
+					{
+						"id": "task-appointments",
+						"type": "events",
+						"title": "Appointments",
+						"content": {
+							"source": {
+								"kind": "flow-task"
+							},
+							"emptyText": "Nobody has booked an appointment on this task"
+						}
+					},
+					{
+						"id": "task-notes",
+						"type": "integration",
+						"integrationId": "notes",
+						"title": "Notes",
+						"props": {
+							"source": {
+								"kind": "flow-task",
+								"id": "@objectId"
+							}
+						}
+					},
+					{
+						"id": "task-history",
+						"type": "audit-trail",
+						"title": "Task history",
+						"content": {
+							"source": {
+								"kind": "flow-task"
+							},
+							"maxDisplay": 50,
+							"emptyText": "Nothing has happened to this task yet"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "task-panels",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 18,
+						"showTitle": false
+					}
+				],
+				"sideColumn": [
+					{
+						"id": "side-task",
+						"type": "facts",
+						"title": "Task",
+						"content": {
+							"fields": [
+								{
+									"key": "assignee",
+									"label": "Handler",
+									"path": "assignee",
+									"format": "user"
+								},
+								{
+									"key": "team",
+									"label": "Team",
+									"path": "candidateGroups",
+									"format": "list"
+								},
+								{
+									"key": "due",
+									"label": "Due by",
+									"path": "dueAt",
+									"format": "date"
+								},
+								{
+									"key": "expires",
+									"label": "Expires",
+									"path": "expiresAt",
+									"format": "date"
+								},
+								{
+									"key": "priority",
+									"label": "Priority",
+									"path": "priority",
+									"map": {
+										"low": "Low",
+										"normal": "Normal",
+										"high": "High",
+										"urgent": "Urgent"
+									}
+								},
+								{
+									"key": "requester",
+									"label": "Requested by",
+									"path": "requester",
+									"format": "user"
+								},
+								{
+									"key": "created",
+									"label": "Created",
+									"path": "created",
+									"format": "date"
+								}
+							]
+						}
+					},
+					{
+						"id": "side-case",
+						"type": "facts",
+						"title": "Case",
+						"visibleWhen": {
+							"field": "objectUuid",
+							"op": "notEmpty"
+						},
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"id": "@object.objectUuid"
+							},
+							"fields": [
+								{
+									"key": "case-title",
+									"as": "title",
+									"path": "title",
+									"route": {
+										"name": "CaseDetail",
+										"params": {
+											"id": "@object.objectUuid"
+										}
+									}
+								},
+								{
+									"key": "case-meta",
+									"as": "line",
+									"parts": [
+										"identifier",
+										{
+											"path": "caseType",
+											"resolve": {
+												"register": "dossiq",
+												"schema": "caseType",
+												"labelField": "title"
+											}
+										}
+									]
+								},
+								{
+									"key": "case-owner",
+									"as": "line",
+									"parts": [
+										{
+											"path": "assignee",
+											"label": "Handler"
+										},
+										{
+											"path": "deadline",
+											"label": "Case deadline",
+											"format": "date"
+										}
+									]
+								},
+								{
+									"key": "case-status",
+									"as": "pill",
+									"path": "status",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "statusType",
+										"labelField": "name",
+										"toneField": "colour"
+									},
+									"variantMap": {
+										"blue": "info",
+										"blue-light": "info",
+										"green": "success",
+										"green-light": "success",
+										"orange": "warning",
+										"orange-light": "warning",
+										"red": "error",
+										"red-light": "error",
+										"purple": "purple",
+										"purple-light": "purple",
+										"grey": "default",
+										"grey-light": "default"
+									}
+								}
+							],
+							"link": {
+								"label": "To the case",
+								"route": {
+									"name": "CaseDetail",
+									"params": {
+										"id": "@object.objectUuid"
+									}
+								}
+							},
+							"emptyText": ""
+						}
+					},
+					{
+						"id": "side-waiting",
+						"type": "notice",
+						"title": "What this task holds up",
+						"visibleWhen": {
+							"field": "runUuid",
+							"op": "notEmpty"
+						},
+						"content": {
+							"variant": "info",
+							"icon": "CheckboxMarkedCircleOutline",
+							"title": "A case is waiting on this task",
+							"text": "Complete the task and the case moves on.",
+							"link": {
+								"route": "CaseDetail",
+								"params": {
+									"id": "@object.objectUuid"
+								},
+								"label": "@object.subjectLabel",
+								"fallbackLabel": "Open the case"
+							}
+						}
+					},
+					{
+						"id": "side-history",
+						"type": "audit-trail",
+						"title": "Task history",
+						"content": {
+							"source": {
+								"kind": "flow-task"
+							},
+							"maxDisplay": 50,
+							"emptyText": "Nothing has happened to this task yet"
+						}
+					}
+				]
 			}
 		},
 		{
