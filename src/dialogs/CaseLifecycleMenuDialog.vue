@@ -400,7 +400,7 @@ export default {
 				case 'extend':
 					return t('dossiq', 'Extend term')
 				case 'reopen':
-					return t('dossiq', 'Reopen')
+					return t('dossiq', 'Reopen or restore from the archive')
 				case 'finish':
 					return t('dossiq', 'Finish')
 				case 'abort':
@@ -408,7 +408,7 @@ export default {
 				case 'archive':
 					return t('dossiq', 'Archive it')
 				case 'unarchive':
-					return t('dossiq', 'Restore from the archive')
+					return t('dossiq', 'Reopen or restore from the archive')
 				case 'hold':
 					return t('dossiq', 'Hold')
 				case 'release-hold':
@@ -452,11 +452,9 @@ export default {
 						'dossiq',
 						'The case moves to the retention rule its result type carries.',
 					)
+				case 'reopen':
 				case 'unarchive':
-					return t(
-						'dossiq',
-						'The case comes back into the working lists and can be edited again.',
-					)
+					return t('dossiq', 'Only for a finished or archived case.')
 				case 'hold':
 					return t('dossiq', 'Park it internally, the term keeps running.')
 				case 'release-hold':
