@@ -1079,17 +1079,9 @@
 							"fields": [
 								{
 									"as": "lead",
-									"path": "initiatorDisplayName",
+									"title": "initiatorDisplayName",
+									"subtitle": { "path": "initiatorType", "map": { "person": "Person", "company": "Company", "contact": "Contact" } },
 									"initialsPath": "initiatorDisplayName"
-								},
-								{
-									"path": "initiatorType",
-									"label": "Initiator type",
-									"map": {
-										"person": "Person",
-										"company": "Company",
-										"contact": "Contact"
-									}
 								},
 								{
 									"path": "intakeChannel",
