@@ -5052,6 +5052,7 @@ OC.L10N.register(
         "No store registry is configured, so nothing was requested from the network. An administrator can connect one under Administration settings. The templates below ship with dossiq.": "No store registry is configured, so nothing was requested from the network. An administrator can connect one under Administration settings. The templates below ship with dossiq.",
         "No StUF endpoints configured yet.": "No StUF endpoints configured yet.",
         "No StUF messages match the filters.": "No StUF messages match the filters.",
+        "No sub-case can be added here": "No sub-case can be added here",
         "No sub-cases yet": "No sub-cases yet",
         "No substitutions": "No substitutions",
         "No suggestions available": "No suggestions available",

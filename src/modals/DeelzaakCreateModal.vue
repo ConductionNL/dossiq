@@ -7,12 +7,11 @@
   validation and the OpenRegister object store to persist the new case
   with parentCase set.
 
-  Usage:
-    <DeelzaakCreateModal
-      :parent-case="parent.id"
-      :parent-case-type="parentCaseTypeObject"
-      @created="onCreated"
-      @close="showModal = false" />
+  Opened by the `case-sub-cases` list's create action on the case page
+  (manifest `createAction`, `parentCase: "@objectId"`). Without a
+  `parentCaseType` it reads the parent case and its case type itself. A
+  parent that cannot take a sub-case gets the reason instead of the form.
+  After a create it refreshes the page and closes.
 
   @spec openspec/changes/deelzaak-support/tasks.md#T08
   @spec openspec/changes/deelzaak-support/tasks.md#T09
@@ -27,23 +26,34 @@
 		<div class="deelzaak-create">
 			<!-- Parent case context -->
 			<div
-				v-if="parentCaseType"
+				v-if="effectiveParentCaseType"
 				class="deelzaak-create__parent-context"
 				role="status">
 				<span class="parent-context-label">{{
 					t('dossiq', 'Parent case type')
 				}}</span>
 				<span class="parent-context-value">{{
-					parentCaseType.title || parentCaseType.name
+					effectiveParentCaseType.title || effectiveParentCaseType.name
 				}}</span>
 			</div>
 
-			<NcLoadingIcon v-if="loadingTypes" :size="32" />
+			<NcLoadingIcon v-if="loadingTypes || loadingParent" :size="32" />
 
 			<template v-else>
+				<!-- The parent itself cannot take a sub-case. -->
+				<NcEmptyContent
+					v-if="parentRefusal"
+					:name="t('dossiq', 'No sub-case can be added here')"
+					:description="parentRefusal"
+					data-testid="deelzaak-create-refusal">
+					<template #icon>
+						<AlertCircleOutline :size="48" />
+					</template>
+				</NcEmptyContent>
+
 				<!-- No allowed child types -->
 				<NcEmptyContent
-					v-if="availableCaseTypes.length === 0"
+					v-else-if="availableCaseTypes.length === 0"
 					:name="t('dossiq', 'No allowed sub-case types')"
 					:description="
 						t(
@@ -125,7 +135,7 @@
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				v-if="availableCaseTypes.length > 0"
+				v-if="!parentRefusal && availableCaseTypes.length > 0"
 				variant="primary"
 				:disabled="saving || !selectedCaseType"
 				@click="submit">
@@ -140,6 +150,7 @@
 
 <script>
 import { getCurrentUser } from '@nextcloud/auth'
+import { emit } from '@nextcloud/event-bus'
 import {
 	NcButton,
 	NcDialog,
@@ -149,6 +160,7 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
+import logger from '../logger.js'
 import { createSubCase } from '../services/deelzaakApi.js'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
@@ -157,6 +169,9 @@ import {
 	DEFAULT_CASE_CONFIDENTIALITY,
 	generateIdentifier,
 } from '../utils/caseHelpers.js'
+
+/** The library's page refresh channel: the lists on the page refetch. */
+const PAGE_REFRESH = 'cn:page:refresh'
 
 export default {
 	name: 'DeelzaakCreateModal',
@@ -177,7 +192,7 @@ export default {
 			required: true,
 		},
 
-		/** Parent caseType object — used to filter the allowed child types. */
+		/** Parent caseType object, used to filter the allowed child types. Read from the parent when absent. */
 		parentCaseType: {
 			type: Object,
 			default: null,
@@ -194,11 +209,14 @@ export default {
 			},
 
 			selectedCaseType: null,
+			parent: null,
+			loadedParentCaseType: null,
 			caseTypes: [],
 			statusTypes: [],
 			errors: {},
 			saving: false,
 			loadingTypes: false,
+			loadingParent: true,
 			serverError: '',
 		}
 	},
@@ -227,8 +245,36 @@ export default {
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
 		 * Filter caseTypes to ONLY those listed on parentCaseType.subCaseTypes.
 		 */
+		effectiveParentCaseType() {
+			return this.parentCaseType || this.loadedParentCaseType
+		},
+
+		/**
+		 * Why the parent cannot take a sub-case, or '' when it can.
+		 *
+		 * @return {string} The translated reason.
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
+		 */
+		parentRefusal() {
+			if (this.parent?.parentCase) {
+				return t('dossiq', 'Sub-cases cannot themselves have sub-cases.')
+			}
+			if (this.parent?.endDate) {
+				return t('dossiq', 'This case is closed; sub-cases can no longer be added.')
+			}
+			return ''
+		},
+
+		/**
+		 * The case types the parent's case type allows as sub-cases.
+		 *
+		 * @return {Array<object>} The allowed case types.
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
+		 */
 		availableCaseTypes() {
-			const allowed = this.parentCaseType?.subCaseTypes || []
+			const allowed = this.effectiveParentCaseType?.subCaseTypes || []
 			if (!Array.isArray(allowed) || allowed.length === 0) {
 				return []
 			}
@@ -243,10 +289,31 @@ export default {
 	},
 
 	async mounted() {
-		await this.loadCaseTypes()
+		await Promise.all([this.loadParent(), this.loadCaseTypes()])
 	},
 
 	methods: {
+		/**
+		 * Read the parent case, and its case type when none was passed.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
+		 */
+		async loadParent() {
+			try {
+				this.parent = await this.objectStore.fetchObject('case', this.parentCase)
+				const typeId = this.parent?.caseType
+				if (!this.parentCaseType && typeId) {
+					this.loadedParentCaseType = await this.objectStore.fetchObject('caseType', typeId)
+				}
+			} catch (err) {
+				logger.error('DeelzaakCreateModal: failed to load the parent case', { error: err })
+			} finally {
+				this.loadingParent = false
+			}
+		},
+
 		async loadCaseTypes() {
 			this.loadingTypes = true
 			try {
@@ -422,6 +489,8 @@ export default {
 
 				const created = result?.object || {}
 				this.$emit('created', created.id || created['@self']?.id || created)
+				emit(PAGE_REFRESH)
+				this.$emit('close')
 			} catch (err) {
 				console.error('[DeelzaakCreateModal] Failed to create sub-case', err)
 				this.serverError =

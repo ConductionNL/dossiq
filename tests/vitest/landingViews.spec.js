@@ -78,7 +78,8 @@ describe('the landing page in the full structure', () => {
 			['team', 'My team'],
 		])
 		expect(home.config.defaultView).toBe('mine')
-		expect(home.config.viewsLabel).toBe('Whose work')
+		// DqMijnWerk and DqMijnTeam name the switch "Weergave".
+		expect(home.config.viewsLabel).toBe('Display')
 	})
 
 	it('keeps its own grid empty, so the switch sits in the page header', () => {

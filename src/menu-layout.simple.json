@@ -12,7 +12,6 @@
 		"Analytics",
 		"TermijnDashboardMenu",
 		"ProcessMiningDashboardMenu",
-		"SubstitutionAdminMenu",
 		"BezwaarCommitteesMenu",
 		"PersonalQueueMenu",
 		"MyWork",
@@ -23,14 +22,12 @@
 		"Analytics": "Reports",
 		"TermijnDashboardMenu": "Reports",
 		"ProcessMiningDashboardMenu": "Reports",
-		"SubstitutionAdminMenu": "Cases",
 		"BezwaarCommitteesMenu": "decidiq:GovernanceBodies"
 	},
 	"settingsSection": [
 		"WmsLayersMenu",
 		"LhsRecommendationsMenu",
 		"BezwaarCommitteesMenu",
-		"SubstitutionAdminMenu",
 		"IntegrationsMenu",
 		"CasesDeletedMenu",
 		"CaseObjectsMenu",
@@ -1790,6 +1787,21 @@
 									"label": "Case history"
 								},
 								{
+									"widgetId": "case-change-proposals",
+									"label": "Proposals",
+									"visibleWhen": {
+										"appInstalled": "portaliq",
+										"endpoint": "/apps/portaliq/api/proposals?register=dossiq&schema=case&id=@objectId",
+										"field": "proposals",
+										"op": "notEmpty"
+									},
+									"countFrom": {
+										"endpoint": "/apps/portaliq/api/proposals?register=dossiq&schema=case&id=@objectId",
+										"field": "proposals"
+									},
+									"_note": "PtVoorstelBeoordelen: while proposals wait on the case, Proposals is listed under More with their count. It stands after the five tabs of DqZaak (Overview, Documents, Contact, Tasks, Case history), which keep their places in the strip: where the two boards disagree, the dossiq board wins. The question goes to portaliq's own queue route, the one the panel reads, so it answers only for a reader who may review here; without waiting proposals, without the right or without portaliq the tab is absent. Needs the nextcloud-vue release that resolves @objectId in an endpoint condition and counts an endpoint's list, so it lands with that bump: on an older release the condition sends the literal token, fails safe and the tab is absent."
+								},
+								{
 									"widgetId": "case-notes-panel",
 									"label": "Notes",
 									"overflow": true
@@ -1859,11 +1871,6 @@
 								{
 									"widgetId": "case-knowledge-panel",
 									"label": "Knowledge",
-									"overflow": true
-								},
-								{
-									"widgetId": "case-change-proposals",
-									"label": "Proposals",
 									"overflow": true
 								},
 								{
@@ -3169,7 +3176,7 @@
 						"type": "object-list",
 						"title": "Sub-cases",
 						"icon": "FileTreeOutline",
-						"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Only the stats-block COUNT (case-kpis-sub-cases) existed; the listing lived on a separate route (/cases/:id/deelzaken, DeelzaakList), so the detail view had no such section and the requirement was unimplemented. The count widget already proves the filter shape works. Rows deep-link to CaseDetail because a sub-case IS a case.",
+						"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Rows deep-link to CaseDetail because a sub-case IS a case. `createAction` opens DeelzaakCreateModal and `summary` is the completion roll-up, as on the full profile's case-sub-cases.",
 						"content": {
 							"register": "dossiq",
 							"schema": "case",
@@ -3200,7 +3207,33 @@
 								}
 							],
 							"rowRoute": "CaseDetail",
-							"emptyText": "No sub-cases yet"
+							"emptyText": "No sub-cases yet",
+							"createAction": {
+								"id": "create-sub-case",
+								"type": "open-modal",
+								"target": "DeelzaakCreateModal",
+								"label": "Create sub-case",
+								"icon": "Plus",
+								"props": {
+									"parentCase": "@objectId"
+								},
+								"visibleWhen": {
+									"all": [
+										{"field": "endDate", "op": "empty"},
+										{"field": "parentCase", "op": "empty"}
+									]
+								},
+								"hiddenNote": [
+									{"when": {"field": "parentCase", "op": "notEmpty"}, "text": "Sub-cases cannot themselves have sub-cases."},
+									{"when": {"field": "endDate", "op": "notEmpty"}, "text": "This case is closed; sub-cases can no longer be added."}
+								]
+							},
+							"summary": {
+								"text": "({completed}/{total} completed)",
+								"counts": {
+									"completed": {"field": "endDate", "op": "notEmpty"}
+								}
+							}
 						}
 					},
 					{
@@ -3648,10 +3681,10 @@
 		},
 		{
 			"id": "Cases",
-			"_note": "The cases list in the simple structure (openspec/changes/archive/2026-10-10-simple-list-and-dashboard). FIVE VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests. The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day AFTER it ends (`lt 0`) and amber on its last day, the same rule the board and the week strip use: a term is not late on its last day (one-term-engine, REQ-OTE-05).",
+			"_note": "The cases list in the simple structure (openspec/changes/archive/2026-10-10-simple-list-and-dashboard). SIX VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests, Suspended (DqZaken). The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day AFTER it ends (`lt 0`) and amber on its last day, the same rule the board and the week strip use: a term is not late on its last day (one-term-engine, REQ-OTE-05).",
 			"config": {
 				"searchPlaceholder": "Search by case, number or requester",
-				"quickFilterMaxVisible": 5,
+				"quickFilterMaxVisible": 6,
 				"folderSidebar": null,
 				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The line under each title is the case's address and number (`caseAddress` reads the case's first case-location; a case without one shows its number only), and the pills name the case type and the status, the status pill in its status type's colour (`resolve.colorField`). Markers take their status type's colour and a line counts the located cases, as in the full profile. `plotAll` is left out on purpose: the map shows the current page, so the numbered list stays a page long.",
 				"mapConfig": {
@@ -3837,6 +3870,9 @@
 					},
 					"Waiting on the applicant": {
 						"showCount": true
+					},
+					"Suspended": {
+						"showCount": true
 					}
 				}
 			},
@@ -3939,7 +3975,8 @@
 					"Mine",
 					"Due this week",
 					"Waiting on the applicant",
-					"Woo requests"
+					"Woo requests",
+					"Suspended"
 				]
 			},
 			"title": "All cases"

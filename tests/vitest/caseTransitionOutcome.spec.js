@@ -95,7 +95,7 @@ describe('the case-page lifecycle menu', () => {
 			label: 'Start behandeling',
 			disabled: false,
 		})
-		wrapper.vm.reason = 'Alle stukken zijn binnen.'
+		wrapper.vm.values = { ...wrapper.vm.values, reason: 'Alle stukken zijn binnen.' }
 		await wrapper.vm.confirm()
 		await flushPromises()
 		return wrapper

@@ -113,15 +113,16 @@ describe('the cases list', () => {
 	const simple = page(builtSimple, 'Cases').config
 	const before = original('Cases').config
 
-	it('leads with five views that each show a count', () => {
-		expect(simple.quickFilterMaxVisible).toBe(5)
-		const lead = simple.quickFilters.slice(0, 5)
+	it('leads with six views that each show a count', () => {
+		expect(simple.quickFilterMaxVisible).toBe(6)
+		const lead = simple.quickFilters.slice(0, 6)
 		expect(lead.map((lens) => lens.label)).toEqual([
 			'All',
 			'Mine',
 			'Due this week',
 			'Waiting on the applicant',
 			'Woo requests',
+			'Suspended',
 		])
 		for (const lens of lead) {
 			expect(lens.showCount, lens.label).toBe(true)
@@ -129,9 +130,9 @@ describe('the cases list', () => {
 		expect(lead[0].default).toBe(true)
 	})
 
-	it('keeps every one of the 19 lenses it had (With drafts joined them with decision 201), with the filter it had', () => {
-		expect(before.quickFilters).toHaveLength(19)
-		expect(simple.quickFilters).toHaveLength(20)
+	it('keeps every one of the 20 lenses it had (With drafts joined them with decision 201), with the filter it had', () => {
+		expect(before.quickFilters).toHaveLength(20)
+		expect(simple.quickFilters).toHaveLength(21)
 		for (const lens of before.quickFilters) {
 			const kept = simple.quickFilters.find(
 				(item) => item.label === lens.label,
@@ -151,6 +152,7 @@ describe('the cases list', () => {
 							'Due this week',
 							'Waiting on the applicant',
 							'Woo requests',
+							'Suspended',
 						].includes(label),
 				)
 		expect(rest(simple.quickFilters)).toEqual(rest(before.quickFilters))

@@ -481,15 +481,6 @@
 			"permission": "privacy"
 		},
 		{
-			"id": "SubstitutionAdminMenu",
-			"label": "Substitutions & reassignment",
-			"icon": "AccountSwitchOutline",
-			"route": "SubstitutionAdmin",
-			"section": "settings",
-			"order": 94,
-			"permission": "admin"
-		},
-		{
 			"id": "IntegrationsMenu",
 			"label": "Integrations",
 			"icon": "PowerPlugOutline",
@@ -1202,7 +1193,7 @@
 					}
 				],
 				"_viewsNote": "landing-views. The landing page holds two VIEWS behind one switch, My work and My team (nextcloud-vue 2.66.0 page views, `views` and `defaultView`). The chosen view is in the address (`?view=team`) and in the reader's preferences, so a team lead who reads My team opens on it next time. `mine` is what this page showed before, unchanged. `team` holds widgets the Dashboard page already declares, copied without their notes: the reader's team queue (the Dashboard's `your-teams-queue` preset: the Queue page's own filter narrowed to `assignedGroup: @myGroups`) and the team-wide counts and charts. tests/vitest/landingViews.spec.js fails when a copy drifts from the Dashboard's definition. The page's own grid is EMPTY on purpose: the library draws a view's grid below the page's own, and in the full structure the switch sits in the page header. The simple structure puts a greeting on the page grid and lets the greeting draw the switch. There is no `userLayout` on this page: layout is the administrator's, through buildiq (see the Dashboard's `_layoutNote`). `kpi-sla-compliance` stays on the Dashboard only: it is gated on roles and on a visibility endpoint, and a view is the wrong place to find out whether the library applies `roles` there.",
-				"viewsLabel": "Whose work",
+				"viewsLabel": "Display",
 				"defaultView": "mine",
 				"views": [
 					{
@@ -2886,6 +2877,16 @@
 							"statusDwellBreached": true
 						},
 						"_note": "what-a-status-declares, task 3.2. A lens of its own, deliberately NOT folded into Overdue: a case can breach its status maximum while its statutory term is comfortable, and merging the two would bury exactly the case this lens exists to surface. It narrows on `statusDwellBreached`, which the engine writes on the case, so the page, the total and the facets are resolved by one query rather than by a post-filter over a page of twenty-five. A case in a status that declares no maximum can never carry the flag, so on a fleet that has annotated nothing this lens is simply empty."
+					},
+					{
+						"label": "Suspended",
+						"filter": {
+							"_related[deadlineInstance][case][status]": "paused",
+							"isFinalStatus": false,
+							"statusHiddenInLists": false,
+							"isDraft": false
+						},
+						"_note": "DqZaken \"Opgeschort\": the open cases whose term stands still. A pause under Awb 4:5 is not on the case: it is the `status: paused` of the case's term row (`deadlineInstance`, written by DeadlinePauseService), so the lens asks OpenRegister for the case through the term rows that point at it (`_related`, query-related-schema-rows), the way the organisations list asks for its open cases. The case's lifecycle journal says the same, but a JSON string is nothing a list can narrow on."
 					}
 				],
 				"_quickFilterMaxVisibleNote": "Seventeen pills wrap the actions bar onto a second line and squeeze the 'Showing X of Y' count onto two, so only the first four render and the rest sit behind one more CHIP at the end of the row — a '⋯' pill, not a toolbar button, because what it opens is a filter like the ones beside it. The four are the everyday ones and the cap is the reason the ORDER of quickFilters is now load-bearing: moving a lens up or down moves it in or out of the strip. A lens picked from the panel is applied exactly as a pill is, and the chip then wears its label and its fill, so a narrowed list never presents itself as All.",
@@ -4183,7 +4184,7 @@
 										"id": "case-sub-cases",
 										"type": "object-list",
 										"title": "Sub-cases",
-										"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Only the stats-block COUNT (case-kpis-sub-cases) existed; the listing lived on a separate route (/cases/:id/deelzaken, DeelzaakList), so the detail view had no such section and the requirement was unimplemented. The count widget already proves the filter shape works. Rows deep-link to CaseDetail because a sub-case IS a case.",
+										"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Rows deep-link to CaseDetail because a sub-case IS a case. `createAction` replaces the list's own create form with DeelzaakCreateModal, which creates through /api/deelzaken so the sub-case inherits what case.parentCase declares; it shows only on an open case that is not itself a sub-case, and elsewhere its `hiddenNote` says why, as the old list page did. `summary` is the completion roll-up under the list. The separate /cases/:id/deelzaken page that carried both is retired and redirects here.",
 										"content": {
 											"register": "dossiq",
 											"schema": "case",
@@ -4214,7 +4215,33 @@
 												}
 											],
 											"rowRoute": "CaseDetail",
-											"emptyText": "No sub-cases yet"
+											"emptyText": "No sub-cases yet",
+											"createAction": {
+												"id": "create-sub-case",
+												"type": "open-modal",
+												"target": "DeelzaakCreateModal",
+												"label": "Create sub-case",
+												"icon": "Plus",
+												"props": {
+													"parentCase": "@objectId"
+												},
+												"visibleWhen": {
+													"all": [
+														{"field": "endDate", "op": "empty"},
+														{"field": "parentCase", "op": "empty"}
+													]
+												},
+												"hiddenNote": [
+													{"when": {"field": "parentCase", "op": "notEmpty"}, "text": "Sub-cases cannot themselves have sub-cases."},
+													{"when": {"field": "endDate", "op": "notEmpty"}, "text": "This case is closed; sub-cases can no longer be added."}
+												]
+											},
+											"summary": {
+												"text": "({completed}/{total} completed)",
+												"counts": {
+													"completed": {"field": "endDate", "op": "notEmpty"}
+												}
+											}
 										}
 									}
 								},
@@ -9354,15 +9381,6 @@
 				"widget-td-quarterly": "TdQuarterlyWidget",
 				"widget-td-annual": "TdAnnualWidget"
 			}
-		},
-		{
-			"id": "SubstitutionAdmin",
-			"route": "/substitution-admin",
-			"type": "custom",
-			"title": "Substitutions & reassignment",
-			"permission": "admin",
-			"component": "SubstitutionAdminView",
-			"_note": "Coordinator substitution console: a filterable list of all substitutions plus register-on-behalf, revoke, inspect-capacity-stamped-actions, and bulk-reassignment actions (the latter two open dedicated modals). Coordinator role is enforced server-side. The standard list type cannot host the on-behalf-of register flow, the action-list inspection, or the bulk-reassign operation over the listed objects."
 		},
 		{
 			"id": "CaseTypes",

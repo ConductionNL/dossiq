@@ -37,7 +37,6 @@ const DIALOG_RENDERS_ITS_SLOT = {
 	},
 	NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 	CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
-	CaseActFields: false,
 	NcButton: {
 		props: ['disabled'],
 		template:
@@ -82,6 +81,19 @@ async function formFor(id, resultTypes) {
 	return wrapper
 }
 
+/**
+ * Type into the open form the way the library does: one changed values object.
+ *
+ * @param {object} wrapper The dialog wrapper.
+ * @param {object} change The values that change.
+ * @return {Promise<void>}
+ */
+async function type(wrapper, change) {
+	const fields = wrapper.findComponent({ name: 'CnTransitionInputFields' })
+	fields.vm.$emit('update:modelValue', { ...fields.props('modelValue'), ...change })
+	await wrapper.vm.$nextTick()
+}
+
 describe('the ending acts carry the case type results', () => {
 	it('copies the results onto finish and abort, and not onto archive', () => {
 		const menu = buildActsMenu({
@@ -115,25 +127,20 @@ describe('Afronden in the lifecycle dialog', () => {
 	it('offers the results in a picker and no free field', async () => {
 		const wrapper = await formFor('finish', RESULTS)
 
-		const picker = wrapper.findComponent({ name: 'NcSelect' })
-		expect(picker.exists()).toBe(true)
-		expect(picker.props('options')).toEqual(RESULTS)
-		expect(wrapper.find('[data-testid="case-act-result-input"]').exists()).toBe(
-			false,
-		)
+		const fields = wrapper.findComponent({ name: 'CnTransitionInputFields' })
+		const result = fields.props('inputs').find((input) => input.field === 'resultTypeId')
+		expect(result).toMatchObject({ optionsSource: 'resultTypes', optionValue: 'id', optionLabel: 'name', label: 'Result', testid: 'case-act-result-picker' })
+		expect(fields.props('context').resultTypes).toEqual(RESULTS)
+		expect(fields.props('inputs').map((input) => input.field)).toEqual(['resultTemplate', 'reason', 'resultTypeId'])
 	})
 
 	it('sends the picked id, not a name', async () => {
 		axios.post.mockResolvedValue({ data: {} })
 		const wrapper = await formFor('finish', RESULTS)
-		wrapper.vm.reason = 'Besluit verzonden.'
-		await wrapper.vm.$nextTick()
+		await type(wrapper, { reason: 'Besluit verzonden.' })
 		expect(wrapper.vm.canConfirm).toBe(false)
 
-		wrapper
-			.findComponent({ name: 'NcSelect' })
-			.vm.$emit('update:modelValue', RESULTS[1])
-		await wrapper.vm.$nextTick()
+		await type(wrapper, { resultTypeId: RESULTS[1].id })
 		await wrapper.vm.confirm()
 
 		expect(axios.post).toHaveBeenCalledWith(
@@ -145,12 +152,10 @@ describe('Afronden in the lifecycle dialog', () => {
 	it('control: a case type without results shows neither picker nor free field', async () => {
 		const wrapper = await formFor('finish', [])
 
-		expect(wrapper.findComponent({ name: 'NcSelect' }).exists()).toBe(false)
-		expect(wrapper.find('[data-testid="case-act-result-input"]').exists()).toBe(
-			false,
-		)
-		wrapper.vm.reason = 'Klaar.'
-		await wrapper.vm.$nextTick()
+		const fields = wrapper.findComponent({ name: 'CnTransitionInputFields' })
+		expect(fields.props('context').resultTypes).toEqual([])
+		expect(fields.props('inputs').some((input) => input.field === 'result')).toBe(false)
+		await type(wrapper, { reason: 'Klaar.' })
 		expect(wrapper.vm.canConfirm).toBe(true)
 	})
 })

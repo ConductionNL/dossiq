@@ -96,7 +96,8 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// 63 -> 62: the CaseMap page retires; the map is the Cases list.
 		// 62 -> 60: `lists-are-views` retires Queue and MyWork; they are views of Cases.
 		// 60 -> 58: DeelzaakList and DeelzaakDetail retire; their addresses redirect to CaseDetail.
-		expect(manifest.pages).toHaveLength(58)
+		// 58 -> 57: SubstitutionAdmin retires; substitution admin lives in the admin settings.
+		expect(manifest.pages).toHaveLength(57)
 		// Two entries open Cases as a place: the list, and the Werkbord, which is the
 		// same list in its board view (`query: { _view: 'board' }`). The
 		// team queue opens a view of it (`savedView`), which is not a page.
