@@ -22,24 +22,12 @@
 		data-testid="case-share-organisation-dialog"
 		@closing="$emit('close')">
 		<div class="case-share-org">
-			<div class="case-share-org__modes" role="radiogroup" :aria-label="t('dossiq', 'What you do')">
-				<label
-					v-for="option in modes"
-					:key="option.value"
-					class="case-share-org__mode"
-					:class="{ 'case-share-org__mode--active': mode === option.value }"
-					:data-testid="`case-share-mode-${option.value}`">
-					<input
-						v-model="mode"
-						type="radio"
-						name="case-share-mode"
-						:value="option.value">
-					<span class="case-share-org__mode-text">
-						<strong>{{ option.label }}</strong>
-						<span>{{ option.hint }}</span>
-					</span>
-				</label>
-			</div>
+			<CnChoiceCards
+				v-model="mode"
+				:options="modes"
+				:label="t('dossiq', 'What you do')"
+				:columns="2"
+				data-testid="case-share-modes" />
 
 			<NcSelect
 				v-model="organisation"
@@ -111,7 +99,7 @@
 </template>
 
 <script>
-import { CnDialog } from '@conduction/nextcloud-vue'
+import { CnChoiceCards, CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
@@ -129,6 +117,7 @@ export default {
 	name: 'CaseShareOrganisationDialog',
 
 	components: {
+		CnChoiceCards,
 		CnDialog,
 		NcButton,
 		NcCheckboxRadioSwitch,
@@ -195,13 +184,13 @@ export default {
 		},
 
 		/**
-		 * @return {Array<{value: string, label: string, hint: string}>} The two acts.
+		 * @return {Array<{value: string, label: string, description: string}>} The two acts.
 		 * @spec openspec/specs/federated-case-collaboration/spec.md
 		 */
 		modes() {
 			return [
-				{ value: 'share', label: t('dossiq', 'Share'), hint: t('dossiq', 'You stay the owner; they work along') },
-				{ value: 'handover', label: t('dossiq', 'Hand over'), hint: t('dossiq', 'They become the owner; you can still read along') },
+				{ value: 'share', label: t('dossiq', 'Share'), description: t('dossiq', 'You stay the owner; they work along') },
+				{ value: 'handover', label: t('dossiq', 'Hand over'), description: t('dossiq', 'They become the owner; you can still read along') },
 			]
 		},
 
@@ -364,45 +353,9 @@ export default {
 	gap: 12px;
 }
 
-.case-share-org__modes {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 12px;
-}
-
-.case-share-org__mode {
-	display: flex;
-	gap: 12px;
-	align-items: flex-start;
-	padding: 12px 16px;
-	border: 1px solid var(--color-border-dark);
-	border-radius: var(--border-radius-large);
-	cursor: pointer;
-}
-
-.case-share-org__mode--active {
-	border: 2px solid var(--color-primary-element);
-}
-
-.case-share-org__mode-text {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-}
-
-.case-share-org__mode-text span {
-	color: var(--color-text-maxcontrast);
-}
-
 .case-share-org__fields {
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-large);
 	padding: 8px 12px;
-}
-
-@media (max-width: 600px) {
-	.case-share-org__modes {
-		grid-template-columns: minmax(0, 1fr);
-	}
 }
 </style>
