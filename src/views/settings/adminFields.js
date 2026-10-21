@@ -38,6 +38,12 @@ export function houseStyleFields(t) {
 			placeholder: 'Dossiq',
 		},
 		{
+			// The lists of contacts and organisations open on this city
+			// (`@config.municipalityCity`); empty leaves that lens out.
+			key: 'municipality_city',
+			label: t('dossiq', 'City of the municipality'),
+		},
+		{
 			key: 'theme',
 			label: t('dossiq', 'Theme'),
 			type: 'select',

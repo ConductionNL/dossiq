@@ -37,6 +37,7 @@ import { installCaseLiveUpdates } from './services/caseLiveUpdates.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
 import { useObjectStore } from './store/modules/object.js'
+import { withConfiguredLenses } from './utils/configLenses.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
 import { installPageTitles } from './utils/pageTitle.js'
 import { currentPermissions } from './utils/permissions.js'
@@ -242,10 +243,14 @@ const profiledManifest = {
 		},
 	},
 }
+// The app config the pages resolve `@config.<key>` against (DashboardController
+// provides it): the contacts and organisations lists open on the municipality's
+// city. A lens whose setting is empty is left out (utils/configLenses.js).
+const appConfig = loadState('dossiq', 'config', {})
 const builtManifest = markRaw(
 	translateFieldOverrideLabels(
 		translateBannerCopy(
-			translateLensLabels(profiledManifest, (label) => t('dossiq', label)),
+			translateLensLabels(withConfiguredLenses(profiledManifest, appConfig), (label) => t('dossiq', label)),
 			(label) => t('dossiq', label),
 		),
 		(label) => t('dossiq', label),
@@ -381,6 +386,8 @@ const app = createApp({
 app.config.globalProperties.t = t
 app.config.globalProperties.n = n
 app.config.globalProperties.$mapFormatters = mapFormattersProp
+// Every page reads `@config.<key>` off this (nextcloud-vue `cnAppConfig`).
+app.provide('cnAppConfig', appConfig)
 
 app.use(pinia)
 app.use(router)

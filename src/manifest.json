@@ -12266,7 +12266,16 @@
 					{
 						"label": "All",
 						"showCount": true,
-						"filter": {},
+						"filter": {}
+					},
+					{
+						"label": "Living in @config.municipalityCity",
+						"activeLabel": "Place of residence: @config.municipalityCity",
+						"showCount": true,
+						"_note": "The list opens on the people living in the municipality (board DqContacten, Woonplaats: Zuiddrecht). The city is the admin setting `municipality_city`, handed to the bundle as `@config.municipalityCity`; an instance without one leaves this lens out and opens on All (utils/configLenses.js). `residence.city` is a path inside the `residence` object, which OpenRegister filters on (nested-property-filters).",
+						"filter": {
+							"residence.city": "@config.municipalityCity"
+						},
 						"default": true
 					},
 					{
@@ -12341,7 +12350,16 @@
 					{
 						"label": "All",
 						"showCount": true,
-						"filter": {},
+						"filter": {}
+					},
+					{
+						"label": "Based in @config.municipalityCity",
+						"activeLabel": "Place: @config.municipalityCity",
+						"showCount": true,
+						"_note": "The list opens on the organisations established in the municipality (board DqOrganisaties, Plaats: Zuiddrecht), from the same `municipality_city` setting as the Contacts lens; without one this lens is left out and the list opens on All. `address.place` is a path inside the `address` object.",
+						"filter": {
+							"address.place": "@config.municipalityCity"
+						},
 						"default": true
 					},
 					{
