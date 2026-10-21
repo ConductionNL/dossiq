@@ -513,8 +513,13 @@ describe('the landing page', () => {
 			'kpi-overdue': 'Late',
 			'kpi-sla-compliance': 'Within deadline',
 		}
+		// The two charts carry the board's subtitle, "Lopende zaken".
+		const subtitled = ['cases-by-status', 'cases-by-type']
 		const sameButBars = (list) =>
 			list.map((item) => {
+				if (subtitled.includes(item.id)) {
+					return { ...item, subtitle: 'Open cases' }
+				}
 				if (boardWords[item.id]) {
 					return {
 						...item,

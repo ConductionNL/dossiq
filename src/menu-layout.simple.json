@@ -4171,6 +4171,7 @@
 						}
 					},
 					"cases-by-status": {
+						"subtitle": "Open cases",
 						"content": {
 							"chartKind": "bar-list",
 							"footnote": "Click a bar to see the cases",
@@ -4199,6 +4200,7 @@
 						}
 					},
 					"cases-by-type": {
+						"subtitle": "Open cases",
 						"content": {
 							"chartKind": "bar-list",
 							"footnote": "Click a bar to see the cases",
