@@ -191,7 +191,6 @@ import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
 // The AVG panel on a data subject request case
 // (data-subject-requests-drive-the-platform).
 import DataSubjectRequestTab from './views/cases/components/DataSubjectRequestTab.vue'
-import DeletedCasesView from './views/cases/DeletedCasesView.vue'
 import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
 import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
 import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
@@ -1263,11 +1262,6 @@ const registry = {
 
 	// --- Pages that were only ever in the legacy customComponents map. ---
 	//
-	DeletedCasesView: {
-		kind: 'page',
-		component: DeletedCasesView,
-		_note: 'The deleted lens. A plain component rather than an index page: the deleted rows are not in the objects endpoint the index renderer fetches from, they are in OpenRegister trash, which answers on its own door.',
-	},
 	MailIntakeLogView: {
 		kind: 'page',
 		component: MailIntakeLogView,
