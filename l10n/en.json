@@ -10860,6 +10860,7 @@
         "{count} working days in this status": "{count} working days in this status",
         "{count} you may not write": "{count} you may not write",
         "{courtReference} · filed {appellantFilingDate|date}": "{courtReference} · filed {appellantFilingDate|date}",
+        "{daysSinceActivity} days idle": "{daysSinceActivity} days idle",
         "{days} days": "{days} days",
         "{days} days ago": "{days} days ago",
         "{days} days left": "{days} days left",

@@ -4089,7 +4089,17 @@
 						"gridY": 4,
 						"gridWidth": 4,
 						"gridHeight": 6,
-						"showTitle": true
+						"showTitle": true,
+						"headerLink": {
+							"label": "View all",
+							"route": "Cases",
+							"query": {
+								"isFinalStatus": "false",
+								"statusHiddenInLists": "false",
+								"isDraft": "false",
+								"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
+							}
+						}
 					},
 					{
 						"id": "14",
@@ -4098,7 +4108,14 @@
 						"gridY": 4,
 						"gridWidth": 4,
 						"gridHeight": 6,
-						"showTitle": true
+						"showTitle": true,
+						"headerLink": {
+							"label": "View all",
+							"route": "Cases",
+							"query": {
+								"_watching": "true"
+							}
+						}
 					},
 					{
 						"id": "15",
@@ -4107,7 +4124,14 @@
 						"gridY": 4,
 						"gridWidth": 4,
 						"gridHeight": 6,
-						"showTitle": true
+						"showTitle": true,
+						"headerLink": {
+							"label": "View all",
+							"route": "Cases",
+							"query": {
+								"_recent": "true"
+							}
+						}
 					},
 					{
 						"id": "16",
@@ -4122,6 +4146,76 @@
 			},
 			"configPatch": {
 				"widgets": {
+					"stalled-cases": {
+						"type": "record-list",
+						"_note": "DqDashboard draws Vastgelopen zaken as rows: the title, the case number and how long it has been idle, without a chevron. The same query as the full structure's table (open cases, least recently changed first); View all is the layout entry's headerLink, to the same list.",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"isFinalStatus": false,
+								"statusHiddenInLists": false,
+								"isDraft": false
+							},
+							"extend": [
+								"calculations"
+							],
+							"sort": {
+								"field": "@self.updated",
+								"dir": "asc"
+							},
+							"limit": 5,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{identifier}",
+							"text": "{daysSinceActivity} days idle",
+							"chevron": false,
+							"rowRoute": "CaseDetail",
+							"emptyText": "All cases active"
+						}
+					},
+					"favourite-cases": {
+						"type": "record-list",
+						"_note": "DqDashboard draws Zaken die u volgt as rows: the title and the case number, without a chevron, over the same `_watching` lens as the full structure's table.",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"_watching": true
+							},
+							"limit": 5,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{identifier}",
+							"chevron": false,
+							"rowRoute": "CaseDetail",
+							"emptyText": "Follow a case to find it here"
+						}
+					},
+					"recent-cases": {
+						"type": "record-list",
+						"_note": "DqDashboard draws Recent geopend as rows: the title, the case number and the day the reader opened it (`@self.viewedAt`, the lens's own moment), without a chevron. The `_recent` lens carries its own order, so no sort.",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"_recent": true
+							},
+							"limit": 5,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{identifier}",
+							"text": "{@self.viewedAt|relative}",
+							"chevron": false,
+							"rowRoute": "CaseDetail",
+							"emptyText": "Cases you open show up here",
+							"lensReasonTexts": {
+								"recent.audit-trail-disabled": "This server does not keep track of which cases you open.",
+								"recent.anonymous": "Sign in to see the cases you opened recently.",
+								"recent.read-history-unavailable": "Your recent cases are not available right now."
+							}
+						}
+					},
 					"kpi-overdue": {
 						"title": "Late",
 						"content": {
