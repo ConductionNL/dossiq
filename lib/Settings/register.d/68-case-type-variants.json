@@ -2,6 +2,7 @@
   "components": {
     "schemas": {
       "caseType": {
+        "version": "1.29.0",
         "properties": {
           "variants": {
             "type": "array",
