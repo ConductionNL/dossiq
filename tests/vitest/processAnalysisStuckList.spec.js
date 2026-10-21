@@ -42,6 +42,12 @@ describe('the Gemiddeld / Mediaan switch', () => {
 		expect(statistic.options.map((option) => option.value)).toEqual(['mean', 'median'])
 	})
 
+	it('names the group Maat, as the board does', () => {
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
+		expect(statistic.label).toBe('Measure')
+		expect(nl[statistic.label]).toBe('Maat')
+	})
+
 	it('makes the matrix read the statistic the switch names, through the library', () => {
 		const source = matrix.content.endpointSource
 		expect(resolveEndpointRequest(source, { workspace: { statistic: 'median' } }).responsePath).toBe('phaseDays.median')
