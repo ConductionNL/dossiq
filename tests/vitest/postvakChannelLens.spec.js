@@ -19,6 +19,17 @@ describe('Postvak channel filter', () => {
 		expect(page.config.sourceConfig.searchFields.channel).toEqual({ param: 'channel', single: true })
 	})
 
+	it('offers the channels the endpoint counts as a picker after the search', () => {
+		const [facet] = page.config.sourceConfig.facets
+		expect(facet).toMatchObject({ field: 'channel', path: 'channels', label: 'Channel', allLabel: 'all' })
+		expect(page.config.sourceConfig.searchFields[facet.field]).toBeTruthy()
+		expect(nl[facet.label]).toBe('Kanaal')
+		expect(nl[facet.allLabel]).toBe('alle')
+		for (const label of Object.values(facet.labels)) {
+			expect(nl[label]).toBeTruthy()
+		}
+	})
+
 	it('opens on every channel, which the Active line names', () => {
 		const lens = page.config.quickFilters.find((tab) => tab.default === true)
 		expect(lens.filter).toEqual({})
