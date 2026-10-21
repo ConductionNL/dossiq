@@ -10,12 +10,11 @@
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
  */
 
-import axios from '@nextcloud/axios'
-import { flushPromises, mount } from '@vue/test-utils'
+import { mount } from '@vue/test-utils'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 
 /**
