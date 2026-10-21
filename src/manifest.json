@@ -1986,7 +1986,7 @@
 								"label": "My work",
 								"route": "MyWorkHome"
 							},
-							"headerMeta": "{total} cases in your name · most urgent first",
+							"headerMeta": "{total} cases in your name[, {rows:coveredFor} of them as a substitute] · most urgent first",
 							"footerNote": "Urgency follows from the deadline, the priority and how long a case has been idle.",
 							"headerButtons": [
 								{
@@ -2065,6 +2065,12 @@
 								},
 								"number": "identifier",
 								"title": "title",
+								"meta": [
+									{
+										"field": "coveredFor",
+										"formatter": "coveredFor"
+									}
+								],
 								"description": {
 									"field": "description",
 									"maxLength": 140

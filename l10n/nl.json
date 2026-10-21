@@ -101,6 +101,8 @@
         "8 weeks": "8 weken",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> van de oudere checklist waaruit dit sjabloon is overgenomen, zodat de overname één keer per bron loopt",
         "> 90 dagen": "> 90 dagen",
+        "For {name}": "Voor {name}",
+        "For {name}, until {date}": "Voor {name}, tot {date}",
         "Including work you cover": "Inclusief werk waarvoor u waarneemt",
         "_%n case_::_%n cases_": [
             "%n zaak",
@@ -10903,6 +10905,7 @@
         "{total} cases": "{total} zaken",
         "{total} cases in your name · most urgent first": "{total} zaken op uw naam · meest urgente eerst",
         "{total} cases in your name, most urgent first": "{total} zaken op uw naam, meest urgente eerst",
+        "{total} cases in your name[, {rows:coveredFor} of them as a substitute] · most urgent first": "{total} zaken op uw naam[, waarvan {rows:coveredFor} als waarnemer] · meest urgente eerst",
         "{total} contracts": "{total} contracten",
         "{total} in total": "{total} in totaal",
         "{total} open · term one month, extendable by two": "{total} lopend · termijn 1 maand, te verlengen met 2",

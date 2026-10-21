@@ -20,6 +20,7 @@ import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
 import { formatDuration } from '../utils/durationHelpers.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
 import { caseAddress } from './caseAddress.js'
+import { coveredForLabel } from './coveredFor.js'
 import { scanVerdictLabel } from './scanVerdict.js'
 
 // Guard so each lookup collection is fetched at most once per page load.
@@ -103,6 +104,15 @@ function lookupRelatedName(type, uuid) {
 }
 
 export default {
+	/**
+	 * Whom a covered case is covered for, and until when ("For Anouk Bakker,
+	 * until 10 Oct"); '' on the reader's own case.
+	 *
+	 * @param {object|null} value The case's `coveredFor`.
+	 * @return {string}
+	 */
+	coveredFor: (value) => coveredForLabel(value),
+
 	/**
 	 * Human label for a case's `caseType` UUID reference.
 	 *
