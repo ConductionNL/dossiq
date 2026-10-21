@@ -4716,6 +4716,7 @@ OC.L10N.register(
         "Needs assessment": "Indicatiestelling",
         "Needs assessments": "Indicatiestellingen",
         "Needs attention": "Aandacht nodig",
+        "(administrators only)": "(alleen voor beheerders)",
         "Planned follow-up": "Gepland vervolg",
         "Planned flow": "Geplande flow",
         "Series": "Reeks",

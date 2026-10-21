@@ -1888,10 +1888,9 @@
 										"case-related-card",
 										"case-sub-cases-card",
 										"case-objects-card",
-										"case-programme-card",
-										"case-object-types-link-card"
+										"case-programme-card"
 									],
-									"_note": "DqZaakGerelateerd: the related panel's sections as the board's cards, related cases first, then sub-cases and objects; the programme and the object-type link follow, so nothing the panel showed is lost."
+									"_note": "DqZaakGerelateerd: the typed related cases first, then the related panel's sections as the board's cards: the parent case, sub-cases and objects, then the programme. The object-type link is a link under the objects (footerLinks, administrators only), as the board draws it, so nothing the panel showed is lost."
 								},
 								{
 									"widgetId": "case-custody-panel",
@@ -3592,6 +3591,9 @@
 									"label": "Link"
 								}
 							],
+							"footerLinks": [
+								{ "label": "Manage object types", "href": "/index.php/apps/openregister/#/registers/dossiq", "note": "(administrators only)", "group": "admin" }
+							],
 							"emptyText": "No objects linked to this case yet"
 						}
 					},
@@ -3699,28 +3701,6 @@
 								}
 							],
 							"errorText": "The programme could not be read"
-						}
-					},
-					{
-						"id": "case-object-types-link-card",
-						"type": "nav-card-grid",
-						"_note": "The way from a case's objects to the schemas behind them (data-model-link, REQ-ADMIN-023). A SECTION and not a page-level `widgets[]` entry: a detail page carrying both spellings is the render-path shadowing gate-55 refuses. `nav-card-grid` resolves here because `registerCaseSections.js` adds it to the shared catalog, which is the only catalog CnDetailWidgetHost reads. Gated by `visibleIf` against `manifest.runtime.user.isAdmin`, not `permission`: CnNavCardGrid declares `permission` and reads it nowhere.",
-						"content": {
-							"title": "",
-							"widgetId": "case-object-types-link",
-							"entries": [
-								{
-									"id": "manage-object-types",
-									"label": "Manage object types",
-									"description": "An object type is an OpenRegister schema. Add one, or change its fields, on the register page.",
-									"icon": "DatabaseCogOutline",
-									"href": "/apps/openregister/#/registers/dossiq",
-									"visibleIf": {
-										"appInstalled": "openregister",
-										"user.isAdmin": true
-									}
-								}
-							]
 						}
 					},
 					{

@@ -58,6 +58,7 @@
         "%s was withdrawn without an answer. Ask for it again in decidiq.": "%s is zonder antwoord ingetrokken. Vraag het opnieuw aan in decidiq.",
         "'Valid from' date must be set": "Datum 'Geldig vanaf' moet worden ingevuld",
         "(4 weeks from receipt, extendable by 2 weeks)": "(4 weken vanaf ontvangst, verlengbaar met 2 weken)",
+        "(administrators only)": "(alleen voor beheerders)",
         "(choose)": "(kies)",
         "(no decisions yet)": "(nog geen besluiten)",
         "(no envelope)": "(geen envelop)",

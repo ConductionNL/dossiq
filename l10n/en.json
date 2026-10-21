@@ -58,6 +58,7 @@
         "%s was withdrawn without an answer. Ask for it again in decidiq.": "%s was withdrawn without an answer. Ask for it again in decidiq.",
         "'Valid from' date must be set": "'Valid from' date must be set",
         "(4 weeks from receipt, extendable by 2 weeks)": "(4 weeks from receipt, extendable by 2 weeks)",
+        "(administrators only)": "(administrators only)",
         "(choose)": "(choose)",
         "(no decisions yet)": "(no decisions yet)",
         "(no envelope)": "(no envelope)",
