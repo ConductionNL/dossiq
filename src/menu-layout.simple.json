@@ -1828,7 +1828,11 @@
 								},
 								{
 									"widgetId": "case-timeline-panel",
-									"label": "Case history"
+									"label": "Case history",
+									"countFrom": {
+										"endpoint": "/apps/openregister/api/objects/dossiq/case/@objectId/timeline",
+										"field": "total"
+									}
 								},
 								{
 									"widgetId": "case-change-proposals",
