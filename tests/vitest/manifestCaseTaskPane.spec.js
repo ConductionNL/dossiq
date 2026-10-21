@@ -111,9 +111,12 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  *
  * Moved 12 -> 10 by the retirement of the custom DeelzaakList and
  * DeelzaakDetail pages. Both numbers drop.
+ *
+ * Moved 10 -> 9 by the custom SubstitutionAdmin page leaving the app: the
+ * console lives only in the admin settings. Both numbers drop.
  */
-const CUSTOM_PAGE_COUNT_BEFORE = 9
-const CUSTOM_PAGE_COUNT_AFTER = 10
+const CUSTOM_PAGE_COUNT_BEFORE = 8
+const CUSTOM_PAGE_COUNT_AFTER = 9
 
 /**
  * One page as the manifest declares it.

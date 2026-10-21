@@ -749,6 +749,8 @@ describe('what this change does NOT move', () => {
 		// top-level slot: `menu-layout.json` relocates it under `My work`
 		// beside `All cases`, which is where a handler looks for the case
 		// they just deleted.
+		// `Substitutions & reassignment` left the menu: the console lives only
+		// in the admin settings.
 		//
 		// ONE ENTRY IS LABELLED `Organisations`: the KvK companies. The second
 		// one, `TenantsMenu` (the multitenancy tenant), retired with dossiq's
@@ -805,7 +807,6 @@ describe('what this change does NOT move', () => {
 			'Re-integration pathways',
 			'Supplier portal accounts',
 			'Data breach register',
-			'Substitutions & reassignment',
 			'Integrations',
 			'Features & roadmap',
 			'Processing activities (AVG)',
