@@ -385,7 +385,10 @@ describe('the tabs', () => {
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
-		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Custody', 'Archiving', 'Knowledge', 'Proposals', 'Publication', 'Review', 'AI oversight'])
+		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Custody', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
+		// Proposals is not a fixed overflow tab: it shows while proposals wait
+		// (feat/case-proposals-tab), checked in caseProposalsTabInStrip.spec.js.
+		expect(strip.tabs.find((tab) => tab.label === 'Proposals').visibleWhen.appInstalled).toBe('portaliq')
 		const widgetIds = (content) => content.tabs
 			.flatMap((tab) => (Array.isArray(tab.widgetIds) ? tab.widgetIds : [tab.widgetId]))
 		// Every panel of the full strip is still on it, except the Data and
@@ -711,7 +714,8 @@ describe('the header and the side column', () => {
 	it('adds the tabs of a case type domain only for that category, each over records linked to this case', () => {
 		const find = (config, id) => config.widgets.find((widget) => widget.id === id)
 		const tabs = find(simple, 'case-panels').content.tabs
-		const gated = tabs.filter((tab) => tab.visibleWhen)
+		// Proposals is gated on waiting proposals, not on a case type domain.
+		const gated = tabs.filter((tab) => tab.visibleWhen && tab.widgetId !== 'case-change-proposals')
 		expect(gated.map((tab) => tab.widgetId)).toEqual([
 			'case-objection-hearings',
 			'case-objection-advice',
