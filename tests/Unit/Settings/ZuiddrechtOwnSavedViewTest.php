@@ -83,4 +83,22 @@ class ZuiddrechtOwnSavedViewTest extends TestCase {
 		$this->assertSame(expected: [['key' => 'deadline', 'order' => 'asc']], actual: $view['query']['sort']);
 		$this->assertSame(expected: '', actual: $view['query']['search']);
 	}//end testItsConditionsAreTheShippedDefaultViews()
+
+	/**
+	 * DqFilterBeheren, DqFilterBewerken and DqFilterDelen: Pieter's view "Wacht op inwoner" over the Woo team's running cases that wait on the resident.
+	 *
+	 * @return void
+	 */
+	public function testPieterHasTheViewTheFilterBoardsOpen(): void {
+		$views = $this->views();
+		$this->assertArrayHasKey(key: 'pieter-wacht-op-inwoner', array: $views);
+
+		$view = $views['pieter-wacht-op-inwoner'];
+		$this->assertSame(expected: 'Wacht op inwoner', actual: $view['name']);
+		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $view['owner']);
+		$this->assertSame(expected: 'dossiq/case', actual: $view['query']['scope']);
+		$this->assertTrue(condition: $view['query']['filters']['waitingOnApplicant']);
+		$this->assertFalse(condition: $view['query']['filters']['isFinalStatus']);
+		$this->assertSame(expected: 'zuiddrecht-woo-en-informatie', actual: $view['query']['filters']['assignedGroup']);
+	}//end testPieterHasTheViewTheFilterBoardsOpen()
 }//end class

@@ -1577,6 +1577,38 @@
 					]
 				}
 			}
+		},
+		{
+			"key": "pieter-wacht-op-inwoner",
+			"data": {
+				"name": "Wacht op inwoner",
+				"description": "Lopende zaken van Woo en informatie die wachten op de inwoner",
+				"owner": "{{cast:pieter.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"assignedGroup": "zuiddrecht-woo-en-informatie",
+						"waitingOnApplicant": true,
+						"isFinalStatus": false,
+						"statusHiddenInLists": false,
+						"isDraft": false
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
 		}
 	],
 	"tasks": [
