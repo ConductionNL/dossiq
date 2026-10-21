@@ -6919,6 +6919,7 @@ OC.L10N.register(
         "Search by name, KvK number or place": "Zoek op naam, KvK-nummer of plaats",
         "Search by sender": "Zoek op afzender",
         "Search by subject, department...": "Zoek op onderwerp, afdeling...",
+        "Search by task or case number": "Zoek op taak of zaaknummer",
         "Search cases, objects and documents": "Zoek in zaken, objecten en documenten",
         "Search complaints": "Klachten zoeken",
         "Search complaints…": "Klachten zoeken…",

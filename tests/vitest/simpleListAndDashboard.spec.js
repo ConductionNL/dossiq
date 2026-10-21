@@ -816,7 +816,8 @@ describe('the case type list', () => {
 		// in no catalogue, so the library drew it as written.
 		const nl = JSON.parse(read('l10n', 'nl.json')).translations
 		expect(nl[list.config.headerMeta]).toBe('{total} zaaktypen')
-		expect(nl[list.config.searchPlaceholder]).toBe('Zoeken in deze lijst')
+		// DqZaaktypen draws the field as "Zoek een zaaktype".
+		expect(nl[list.config.searchPlaceholder]).toBe('Zoek een zaaktype')
 	})
 
 	it('has an Actions menu with the import dialog the case type page already owns', () => {
