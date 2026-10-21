@@ -154,6 +154,7 @@ import {
 	transitionSelection,
 } from './utils/caseBulkActions.js'
 import { claimCase } from './utils/caseClaim.js'
+import { declareCaseMajor, startCaseConversation } from './utils/caseConversation.js'
 import { toggleCaseFollow } from './utils/caseFollow.js'
 import { caseStatusTargets, moveCaseStatus } from './utils/caseStatusBoardMoves.js'
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
@@ -985,6 +986,18 @@ const registry = {
 		kind: 'handler',
 		handler: openCaseOfDocument,
 		_note: "The contact and organisation Documents panels' open-case row action. A function because the row is a `dispatch` and the destination is its CASE: `rowRoute` pushes the row's own id, which would navigate to a case page for a uuid no case has, and that looks exactly like a deleted case rather than like a bug.",
+	},
+	// @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	startCaseConversation: {
+		kind: 'handler',
+		handler: startCaseConversation,
+		_note: "The Contact tab's \"Gesprek starten\" card button: the same start the live-conversation panel runs (utils/caseConversation.js), for the open case.",
+	},
+	// @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	declareCaseMajor: {
+		kind: 'handler',
+		handler: declareCaseMajor,
+		_note: "The Contact tab's \"Groot incident melden\" card button: the same declaration the live-conversation panel runs (utils/caseConversation.js), for the open case.",
 	},
 	// @spec openspec/specs/case-email-integration/spec.md
 	readFileAsMessage: {

@@ -4716,6 +4716,8 @@ OC.L10N.register(
         "Needs assessment": "Indicatiestelling",
         "Needs assessments": "Indicatiestellingen",
         "Needs attention": "Aandacht nodig",
+        "Start conversation": "Gesprek starten",
+        "Report a major incident": "Groot incident melden",
         "Run flow": "Flow uitvoeren",
         "All cases on this object": "Alle zaken op dit object",
         "(administrators only)": "(alleen voor beheerders)",

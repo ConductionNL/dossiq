@@ -4716,6 +4716,8 @@ OC.L10N.register(
         "Needs assessment": "Needs assessment",
         "Needs assessments": "Needs assessments",
         "Needs attention": "Needs attention",
+        "Start conversation": "Start conversation",
+        "Report a major incident": "Report a major incident",
         "Run flow": "Run flow",
         "All cases on this object": "All cases on this object",
         "(administrators only)": "(administrators only)",
