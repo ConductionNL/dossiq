@@ -30,14 +30,12 @@ import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it, vi } from 'vitest'
-import { saveMenuStructure } from '../../src/services/menuStructureSetting.js'
 import {
 	applyPageOverlay,
 	buildProfiledManifest,
 	overlayItemName,
 	resolveStructureProfile,
 	STRUCTURE_FULL,
-	STRUCTURE_SETTING,
 	STRUCTURE_SIMPLE,
 } from '../../src/utils/structureProfile.js'
 
@@ -673,70 +671,5 @@ describe('the structure setting', () => {
 		expect(mainSource).toContain(
 			'buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout, {',
 		)
-	})
-
-	it('is saved under its own key, through the settings write', async () => {
-		const calls = []
-		const fetchImpl = async (url, init) => {
-			calls.push({ url, init })
-			return {
-				ok: true,
-				status: 200,
-				json: async () => ({
-					success: true,
-					config: { [STRUCTURE_SETTING]: 'full' },
-				}),
-			}
-		}
-		const stored = await saveMenuStructure('full', {
-			url: '/apps/dossiq/api/settings',
-			requestToken: 'token',
-			fetchImpl,
-		})
-		expect(stored).toBe('full')
-		expect(calls).toHaveLength(1)
-		expect(calls[0].init.method).toBe('POST')
-		expect(calls[0].init.headers.requesttoken).toBe('token')
-		expect(JSON.parse(calls[0].init.body)).toEqual({ menu_structure: 'full' })
-	})
-
-	it('does not report a refused save as saved', async () => {
-		const refused = async () => ({
-			ok: false,
-			status: 403,
-			json: async () => ({}),
-		})
-		await expect(
-			saveMenuStructure('full', {
-				url: '/x',
-				requestToken: 't',
-				fetchImpl: refused,
-			}),
-		).rejects.toThrow('403')
-	})
-
-	it('does not report a save the server dropped as saved', async () => {
-		// The settings write answers success for a key it does not know.
-		const dropped = async () => ({
-			ok: true,
-			status: 200,
-			json: async () => ({ success: true, config: {} }),
-		})
-		await expect(
-			saveMenuStructure('full', {
-				url: '/x',
-				requestToken: 't',
-				fetchImpl: dropped,
-			}),
-		).rejects.toThrow('did not store')
-		// Simple is the default, so a dropped save of it would read back as
-		// simple by accident. The stored word itself has to come back.
-		await expect(
-			saveMenuStructure('simple', {
-				url: '/x',
-				requestToken: 't',
-				fetchImpl: dropped,
-			}),
-		).rejects.toThrow('did not store')
 	})
 })

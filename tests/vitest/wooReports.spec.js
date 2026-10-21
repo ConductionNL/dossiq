@@ -3,8 +3,9 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The Woo review reports: the admin switches show the server's refusal, and
- * the throughput screen shows the server's rows, or its refusal and no rows.
+ * The Woo review reports: the throughput screen shows the server's rows, or
+ * its refusal and no rows. The admin switches are declared fields
+ * (adminSettingsForms.spec.js).
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
  */
@@ -103,20 +104,6 @@ vi.mock('../../src/store/modules/settings.js', () => ({
 	}),
 }))
 
-/**
- * Flip the throughput switch on the way the real switch does: by emitting its model update.
- *
- * @param {object} wrapper The mounted tab.
- * @return {Promise<void>}
- */
-async function flipThroughputOn(wrapper) {
-	const switches = wrapper.findAllComponents({ name: 'NcCheckboxRadioSwitch' })
-	await switches[0].vm.$emit('update:modelValue', true)
-}
-
-const tab = await import('../../src/views/settings/tabs/WooReportsSettingsTab.vue')
-const WooReportsSettingsTab = tab.default
-const { isSwitchedOn } = tab
 const view = await import('../../src/views/woo/WooReportsView.vue')
 const WooReportsView = view.default
 const { throughputUrl } = view
@@ -124,96 +111,6 @@ const parties =
 	await import('../../src/components/reports/CaseMailPartiesReport.vue')
 const CaseMailPartiesReport = parties.default
 const { mailPartiesUrl } = parties
-
-describe('Woo report switches (REQ-WRR-001)', () => {
-	beforeEach(() => {
-		vi.clearAllMocks()
-		stored.config = {}
-	})
-
-	it('reads only an explicit yes as on', () => {
-		expect(['', 'false', '0', undefined, null].map(isSwitchedOn)).toEqual([
-			false,
-			false,
-			false,
-			false,
-			false,
-		])
-		expect(['true', '1', 'on', true].map(isSwitchedOn)).toEqual([
-			true,
-			true,
-			true,
-			true,
-		])
-	})
-
-	it('draws both switches off on a fresh install', async () => {
-		const wrapper = mount(WooReportsSettingsTab)
-		await flushPromises()
-		expect(
-			wrapper.find('[data-testid="woo-reports-throughput"]').element.checked,
-		).toBe(false)
-		expect(
-			wrapper.find('[data-testid="woo-reports-parties"]').element.checked,
-		).toBe(false)
-	})
-
-	it('shows the refusal and leaves the switch off when no reader group is named', async () => {
-		axios.post.mockRejectedValue({
-			response: {
-				status: 422,
-				data: {
-					message:
-						'Name an existing reader group before switching the throughput report on.',
-				},
-			},
-		})
-		const wrapper = mount(WooReportsSettingsTab)
-		await flushPromises()
-
-		await flipThroughputOn(wrapper)
-		await flushPromises()
-
-		expect(axios.post).toHaveBeenCalledWith(
-			expect.stringContaining('/apps/dossiq/api/settings'),
-			{
-				wooReviewerThroughputReport: 'true',
-				wooReviewerThroughputReaders: '',
-			},
-		)
-		expect(wrapper.text()).toContain('Name an existing reader group')
-		expect(
-			wrapper.find('[data-testid="woo-reports-throughput"]').element.checked,
-		).toBe(false)
-	})
-
-	it('sends the reader group with the switch and draws what the server stored', async () => {
-		axios.post.mockResolvedValue({
-			data: {
-				config: {
-					wooReviewerThroughputReport: 'true',
-					wooReviewerThroughputReaders: 'woo-leiding',
-				},
-			},
-		})
-		const wrapper = mount(WooReportsSettingsTab)
-		await flushPromises()
-		await wrapper
-			.find('[data-testid="woo-reports-readers"]')
-			.setValue('woo-leiding')
-
-		await flipThroughputOn(wrapper)
-		await flushPromises()
-
-		expect(axios.post.mock.calls[0][1]).toEqual({
-			wooReviewerThroughputReport: 'true',
-			wooReviewerThroughputReaders: 'woo-leiding',
-		})
-		expect(
-			wrapper.find('[data-testid="woo-reports-throughput"]').element.checked,
-		).toBe(true)
-	})
-})
 
 describe('Woo throughput screen (REQ-WRR-002)', () => {
 	beforeEach(() => {

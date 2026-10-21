@@ -48,7 +48,15 @@
 				)
 			}}
 		</p>
-		<WorkDigestSettings />
+		<CnSettingsFieldsSection
+			:name="t('dossiq', 'Daily overview')"
+			url="/apps/dossiq/api/personal-queue/digest"
+			saveMethod="POST"
+			:bare="true"
+			:autoSave="true"
+			:saveAll="true"
+			:reloadAfterSave="true"
+			:fields="workDigestFields" />
 	</NcAppSettingsSection>
 
 	<NcAppSettingsSection
@@ -77,6 +85,7 @@
 </template>
 
 <script>
+import { CnSettingsFieldsSection } from '@conduction/nextcloud-vue'
 import { NcAppSettingsSection } from '@nextcloud/vue'
 import AccountSwitchOutline from 'vue-material-design-icons/AccountSwitchOutline.vue'
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
@@ -85,7 +94,7 @@ import EmailNewsletter from 'vue-material-design-icons/EmailNewsletter.vue'
 import CaseEmailMatchSettings from './CaseEmailMatchSettings.vue'
 import NotificationRoutingSettings from './NotificationRoutingSettings.vue'
 import SubstitutionSettings from './SubstitutionSettings.vue'
-import WorkDigestSettings from './WorkDigestSettings.vue'
+import { workDigestFields } from './adminFields.js'
 
 export default {
 	name: 'UserSettings',
@@ -96,10 +105,22 @@ export default {
 		EmailArrowRightOutline,
 		EmailNewsletter,
 		CaseEmailMatchSettings,
+		CnSettingsFieldsSection,
 		NcAppSettingsSection,
 		NotificationRoutingSettings,
 		SubstitutionSettings,
-		WorkDigestSettings,
+	},
+
+	computed: {
+		/**
+		 * The daily digest: on or off, the hour, and who decided it.
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+		 */
+		workDigestFields() {
+			return workDigestFields(this.t.bind(this))
+		},
 	},
 }
 </script>
