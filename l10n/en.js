@@ -4758,6 +4758,7 @@ OC.L10N.register(
         "Needs assessment": "Needs assessment",
         "Needs assessments": "Needs assessments",
         "Needs attention": "Needs attention",
+        "term of the case": "term of the case",
         "Negatief": "Negatief",
         "Negative": "Negative",
         "Neighborhood Team": "Neighborhood Team",

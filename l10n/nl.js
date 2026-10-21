@@ -4758,6 +4758,7 @@ OC.L10N.register(
         "Needs assessment": "Indicatiestelling",
         "Needs assessments": "Indicatiestellingen",
         "Needs attention": "Aandacht nodig",
+        "term of the case": "termijn van de zaak",
         "Negatief": "Negatief",
         "Negative": "Negatief",
         "Neighborhood Team": "Wijkteam",
