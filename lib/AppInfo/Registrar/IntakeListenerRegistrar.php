@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\WooStartFromListener;
+use OCA\Dossiq\Listener\CaseTypeIntakeListener;
 use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
@@ -139,6 +140,27 @@ class IntakeListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectUpdatingEvent::class,
 			listener: IntakeRequirementsListener::class
+		);
+
+		// A case type's own intake (case-intake-per-case-type, decision a1):
+		// shaped as the case is received, whichever path wrote it, and linked
+		// to the resident's dossier once it exists. Registered after the
+		// requirements, so a refused case is never shaped.
+		$context->registerEventListener(
+			event: ObjectCreatingEvent::class,
+			listener: CaseTypeIntakeListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: CaseTypeIntakeListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: CaseTypeIntakeListener::class
+		);
+		$context->registerEventListener(
+			event: self::DRAFT_SENT_EVENT,
+			listener: CaseTypeIntakeListener::class
 		);
 
 		// The forms that open a case: a case type's own Forms binding, the
