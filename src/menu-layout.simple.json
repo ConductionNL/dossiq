@@ -4926,6 +4926,43 @@
 						}
 					},
 					{
+						"id": "side-case-type-choice-list",
+						"type": "field-list",
+						"title": "Choice list: {name}",
+						"_note": "DqZaaktypeVelden Keuzelijst: the options of the field selected in the Fields table, or of its first field with a choice list (nextcloud-vue side-card-follows-row). The options live on that field's own propertyDefinition record, so the card follows the table's selected row and saves to it.",
+						"tabs": ["fields"],
+						"follows": {
+							"widget": "case-type-fields-editor",
+							"register": "dossiq",
+							"schema": "propertyDefinition",
+							"when": {
+								"field": "enumValues",
+								"op": "notEmpty"
+							}
+						},
+						"content": {
+							"field": "enumValues",
+							"add": {
+								"label": "Add option",
+								"trigger": "button",
+								"placement": "footer",
+								"scalar": true,
+								"unique": true,
+								"fields": [
+									{
+										"key": "value",
+										"label": "Option",
+										"required": true
+									}
+								]
+							},
+							"remove": {
+								"label": "Remove"
+							},
+							"emptyText": "This field has no options yet"
+						}
+					},
+					{
 						"id": "side-case-type-parent",
 						"type": "facts",
 						"title": "Parent type",

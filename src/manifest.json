@@ -11547,6 +11547,7 @@
 							"filter": {
 								"caseType": "@objectId"
 							},
+							"rowSelection": true,
 							"editable": true,
 							"sort": {
 								"field": "category",

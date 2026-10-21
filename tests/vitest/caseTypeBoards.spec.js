@@ -165,3 +165,35 @@ describe('the side column (nextcloud-vue 24p)', () => {
 		expect(history.headerLink).toEqual({ label: 'All history', tab: 'history' })
 	})
 })
+
+describe('the choice list beside Fields (DqZaaktypeVelden, nextcloud-vue side-card-follows-row)', () => {
+	const card = detail.config.sideColumn.find((entry) => entry.id === 'side-case-type-choice-list')
+	const fieldsEditor = detail.config.widgets.find((entry) => entry.id === 'case-type-fields-editor')
+
+	it('lets the Fields table select a field', () => {
+		expect(fieldsEditor.content.rowSelection).toBe(true)
+	})
+
+	it('follows the selected field that has a choice list, beside the Fields tab', () => {
+		expect(card.tabs).toEqual(['fields'])
+		expect(card.title).toBe('Choice list: {name}')
+		expect(card.follows).toEqual({
+			widget: 'case-type-fields-editor',
+			register: 'dossiq',
+			schema: 'propertyDefinition',
+			when: { field: 'enumValues', op: 'notEmpty' },
+		})
+	})
+
+	it('lists the options and adds one as a plain value', () => {
+		expect(card.type).toBe('field-list')
+		expect(card.content.field).toBe('enumValues')
+		expect(card.content.add).toEqual(expect.objectContaining({ label: 'Add option', scalar: true, unique: true }))
+		expect(card.content.add.fields).toEqual([{ key: 'value', label: 'Option', required: true }])
+	})
+
+	it('sits above the parent type card', () => {
+		const ids = detail.config.sideColumn.map((entry) => entry.id)
+		expect(ids.indexOf('side-case-type-choice-list')).toBeLessThan(ids.indexOf('side-case-type-parent'))
+	})
+})

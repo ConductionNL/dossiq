@@ -41,7 +41,7 @@ describe('case type side column per tab', () => {
 		const on = (tab) => side.filter((card) => (card.tabs || tabIds).includes(tab)).map((card) => card.id)
 		expect(on('overview')).toEqual(['side-case-type-versions', 'side-case-type-check'])
 		expect(on('phases')).toEqual(['side-case-type-versions', 'side-case-type-facts', 'side-case-type-history'])
-		expect(on('fields')).toEqual(['side-case-type-parent'])
+		expect(on('fields')).toEqual(['side-case-type-choice-list', 'side-case-type-parent'])
 	})
 
 	it('draws the check beside Overview, not in its body', () => {
