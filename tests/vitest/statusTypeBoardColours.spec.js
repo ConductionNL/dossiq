@@ -49,7 +49,9 @@ const files = [
 	...inDir('templates'),
 	...inDir('packages').map((dir) => path.join(dir, 'case-type.json')).filter((file) => fs.existsSync(file)),
 ].filter((file) => file.endsWith('.json'))
+// A translatable name may ship language-keyed ({ nl, en }); the Dutch value is its source.
 const rows = files.flatMap((file) => statuses(readJson(file)))
+	.map((row) => (row.name && typeof row.name === 'object' ? { ...row, name: row.name.nl } : row))
 
 describe('shipped status colours', () => {
 	it('gives every shipped status a colour the badge paints', () => {
