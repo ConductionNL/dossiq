@@ -30,6 +30,10 @@
 						"action": "export",
 						"label": "Download",
 						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "actions-menu",
+						"label": "Actions"
 					}
 				],
 				"quickFilters": [

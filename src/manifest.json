@@ -1483,19 +1483,22 @@
 										"isTemplate": false
 									},
 									"limit": 10,
+									"hideHeader": true,
 									"columns": [
 										{
-											"key": "identifier",
-											"label": "Number"
-										},
-										{
 											"key": "title",
-											"label": "Title"
-										},
+											"label": "Case",
+											"cellClass": "cn-cell--strong",
+											"secondary": "{identifier} · {deadline|date}"
+										}
+									],
+									"rowActions": [
 										{
-											"key": "deadline",
-											"label": "Deadline",
-											"format": "date"
+											"id": "claim",
+											"label": "Pick up",
+											"type": "handler",
+											"handler": "claimCase",
+											"variant": "secondary"
 										}
 									],
 									"rowRoute": "CaseDetail",
@@ -1989,11 +1992,6 @@
 							"headerMeta": "{total} cases in your name · most urgent first",
 							"footerNote": "Urgency follows from the deadline, the priority and how long a case has been idle.",
 							"headerButtons": [
-								{
-									"action": "export",
-									"label": "Download",
-									"icon": "TrayArrowDown"
-								},
 								{
 									"action": "actions-menu",
 									"label": "Actions"
