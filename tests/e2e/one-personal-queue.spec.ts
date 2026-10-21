@@ -214,7 +214,7 @@ test.describe('One personal queue', () => {
 
 		await navToRoute(page, '/end-of-day')
 		await expect(
-			page.getByTestId(`end-of-day-item-assigned-cases:case:${cases.mine}`),
+			page.getByTestId(`cn-record-list-note-assigned-cases:case:${cases.mine}`),
 		).toBeVisible(PAGE_LOAD)
 	})
 
@@ -231,12 +231,12 @@ test.describe('One personal queue', () => {
 
 		await navToRoute(page, '/end-of-day')
 		const field = page.getByTestId(
-			`end-of-day-update-assigned-cases:case:${cases.mine}`,
+			`cn-record-list-note-assigned-cases:case:${cases.mine}`,
 		)
 		await expect(field).toBeVisible(PAGE_LOAD)
 		await field.locator('input').fill(`${RUN_PREFIX} handled the intake`)
 		await page
-			.getByTestId(`end-of-day-save-assigned-cases:case:${cases.mine}`)
+			.getByTestId(`cn-record-list-record-assigned-cases:case:${cases.mine}`)
 			.click()
 
 		// Read the note back off the case, not off a toast: a toast says the
@@ -259,6 +259,17 @@ test.describe('One personal queue', () => {
 				},
 			)
 			.toContain(`${RUN_PREFIX} handled the intake`)
+	})
+
+	// @e2e openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
+	test('A note recorded at the end of the day is still listed after a reload', async ({
+		page,
+	}) => {
+		await navToRoute(page, '/end-of-day')
+		await page.reload()
+		await expect(
+			page.getByTestId('cn-record-list').filter({ hasText: `${RUN_PREFIX} handled the intake` }),
+		).toBeVisible(PAGE_LOAD)
 	})
 
 	// @e2e openspec/specs/my-work/spec.md#a-planned-item-with-no-case

@@ -1780,12 +1780,116 @@
 		{
 			"id": "PersonalQueue",
 			"route": "/my-queue",
-			"type": "custom",
+			"type": "dashboard",
 			"title": "Your queue",
-			"component": "PersonalQueueView",
-			"_note": "Everything waiting on the reader, in one place, fed by the declared queue sources. type:\"custom\" and NOT type:\"index\": an index page names one register and one schema, and this list spans cases, engine tasks, consultations, advice requests, mentions, work covered for an absent colleague, and calendar items the reader planned for themselves. No manifest key names a set that crosses four stores and a calendar. It is also not a second index over (dossiq, case), so gate-68 has nothing to answer: the page never reads the case schema directly. READ THE NAME COLLISION: the `Queue` page below is the UNCLAIMED POOL, every open case nobody has picked up, and it is a team surface; this one is personal and nobody else can see it. The component hard-codes NO source. Every group, its heading and the sentence saying what closes it come from the server, which builds them from the declared queue sources, so a ninth mechanism reaches this page by declaring itself rather than by an edit here.",
+			"_note": "Everything waiting on the reader, in one place, fed by the declared queue sources. A dashboard page with ONE `work-queue` widget (the library's CnWorkQueue) and not type:\"index\": an index page names one register and one schema, and this list spans cases, engine tasks, consultations, advice requests, mentions, work covered for an absent colleague, and calendar items the reader planned for themselves. No manifest key names a set that crosses four stores and a calendar. It is also not a second index over (dossiq, case), so gate-68 has nothing to answer: the page never reads the case schema directly. READ THE NAME COLLISION: the team queue is the UNCLAIMED POOL, every open case nobody has picked up, a view of the Cases page; this one is personal and nobody else can see it. The page names NO source. Every group, its heading and the sentence saying what closes it come from the server, which builds them from the declared queue sources, so a ninth mechanism reaches this page by declaring itself rather than by an edit here. Plan an item opens the library's CnActionDialog, which posts the item and fires `cn:page:refresh`; the work queue listens on that channel, so the planned item shows at once.",
 			"config": {
-				"documentationUrl": "https://dossiq.conduction.nl"
+				"allowEdit": false,
+				"appId": "dossiq",
+				"pageId": "PersonalQueue",
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"breadcrumb": {
+					"label": "My work",
+					"route": "MyWorkHome"
+				},
+				"headerActions": [
+					{
+						"id": "plan-item",
+						"type": "open-modal",
+						"target": "CnActionDialog",
+						"label": "Plan an item",
+						"icon": "CalendarClockOutline",
+						"variant": "secondary",
+						"props": {
+							"config": {
+								"title": "Plan an item",
+								"eyebrow": "Your queue · own task",
+								"subtitle": "This goes on your own calendar and on your queue. It is not a case.",
+								"fields": [
+									{
+										"field": "template",
+										"type": "select",
+										"label": "Template",
+										"required": false,
+										"options": [
+											{
+												"value": "call-back",
+												"label": "Call someone back",
+												"fills": {
+													"title": "Call someone back"
+												}
+											},
+											{
+												"value": "prepare-decision",
+												"label": "Prepare a decision",
+												"fills": {
+													"title": "Prepare a decision"
+												}
+											},
+											{
+												"value": "site-visit",
+												"label": "Site visit",
+												"fills": {
+													"title": "Site visit"
+												}
+											},
+											{
+												"value": "catch-up",
+												"label": "Catch up on a case",
+												"fills": {
+													"title": "Catch up on a case"
+												}
+											}
+										]
+									},
+									{
+										"field": "title",
+										"label": "What is it"
+									},
+									{
+										"field": "startsAt",
+										"type": "datetime",
+										"label": "When"
+									}
+								],
+								"confirm": {
+									"label": "Schedule it",
+									"icon": "CalendarClockOutline",
+									"request": {
+										"method": "POST",
+										"url": "/apps/dossiq/api/personal-queue/planned-items"
+									}
+								}
+							}
+						}
+					}
+				],
+				"widgets": [
+					{
+						"id": "personal-queue",
+						"type": "work-queue",
+						"title": "Your queue",
+						"content": {
+							"source": {
+								"url": "/apps/dossiq/api/personal-queue"
+							},
+							"hide": "/apps/dossiq/api/personal-queue/groups/{group}/hide",
+							"show": "/apps/dossiq/api/personal-queue/groups/{group}/show",
+							"emptyText": "Nothing is waiting on you."
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "personal-queue",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 12,
+						"showTitle": false
+					}
+				]
 			}
 		},
 		{
@@ -1794,12 +1898,13 @@
 			"type": "index",
 			"title": "Cases",
 			"manualOrder": true,
-			"actionsComponent": "CaseListExportAction",
 			"slots": {
 				"after-search": "CaseTypeFieldFilters"
 			},
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
+				"allowExport": true,
+				"_allowExportNote": "case-list-export-via-or-export-leaf. The library's own Export menu (CSV and Excel) on the actions bar; it shows because the case schema is flagged `exportable` in lib/Settings/dossiq_register.json. A click sends the browser to OpenRegister's export leaf with the query the list itself sends (search, sort, facets, the active lens and the case-type folder, without paging), so the file holds the rows the table is filtered to and OpenRegister enforces access as the reader. dossiq serialises nothing (ADR-022).",
 				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are NOT on the case: dossiq stores each declared field as a `caseProperty` row pointing back at it, so the query is openregister's `_related[caseProperty][case][\u2026]` (query-related-schema-rows). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. `after-search` rather than `below-header` for two reasons: it is the actions bar's own slot for inline refinement controls, and `below-header` already holds `CaseSearchRefusal`, which a slot map cannot share.",
 				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/utils/caseBulkActions.js, registered in src/registry.js as `kind: 'handler'` entries, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
@@ -2409,7 +2514,15 @@
 								{
 									"key": "deadline",
 									"label": "Term",
-									"widget": "deadlineCountdown"
+									"widget": "date",
+									"widgetProps": {
+										"due": {
+											"upcomingLabel": {
+												"one": "{count} day left",
+												"other": "{count} days left"
+											}
+										}
+									}
 								},
 								{
 									"key": "status",
@@ -2808,8 +2921,16 @@
 					{
 						"key": "deadline",
 						"label": "Deadline",
-						"widget": "deadlineCountdown",
-						"_note": "one-case-list A22. A raw ISO date makes every reader do the same subtraction once per row and get it wrong on the rows that matter. `deadlineCountdown` (src/services/cellWidgets.js) renders the days left and, past the deadline, the days overdue in the signalering red. A cell WIDGET rather than a `formatter` because a formatter returns a string and a string cannot carry the overdue state; nextcloud-vue 2.41 ships no built-in countdown cell, only `CnCountdownWidget` for a dashboard tile. The column stays sortable: CnDataTable sorts on the stored `deadline`, not on the rendered text."
+						"widget": "date",
+						"widgetProps": {
+							"due": {
+								"upcomingLabel": {
+									"one": "{count} day left",
+									"other": "{count} days left"
+								}
+							}
+						},
+						"_note": "one-case-list A22. A raw ISO date makes every reader do the same subtraction once per row and get it wrong on the rows that matter. The library's `date` cell with `due` renders the days left, \"Due today\" on the last day and, from the day after, the days overdue in the error colour, with the full date as the tooltip; a case without a deadline shows the library's dash. The column stays sortable: CnDataTable sorts on the stored `deadline`, not on the rendered text."
 					},
 					{
 						"key": "currentStatusDwellDays",
@@ -2877,6 +2998,8 @@
 				"schema": "case",
 				"subtitleField": "identifier",
 				"visibilityContext": {"caseType": {"field": "caseType", "register": "dossiq", "schema": "caseType"}},
+				"_accessPurposeNote": "Purpose logging (Ruben, 20 October 2026): a case whose case type lists special categories of personal data (caseType.specialDataCategories) opens only after the reader states why, and the purpose goes to the case's audit trail with the reader and the time (POST /api/cases/{id}/access-purpose, CaseAccessPurposeService). The options are CaseAccessPurposeService::PURPOSES minus other, which the library adds. Asked once per case per browser session. Needs nextcloud-vue detail-access-purpose; on an older release the key is ignored and the case opens as before.",
+				"accessPurpose": {"when": {"field": "@context.caseType.specialDataCategories", "op": "notEmpty"}, "title": "Why are you opening this case?", "description": "This case holds special categories of personal data. Your purpose is recorded with your name and the time, in the case's audit trail.", "options": [{"value": "handling", "label": "Handling the case"}, {"value": "advice", "label": "Advice or consultation on the case"}, {"value": "quality-check", "label": "Supervision or a quality check"}, {"value": "legal-obligation", "label": "A legal obligation"}, {"value": "data-subject-request", "label": "A request from the person concerned"}], "url": "/apps/dossiq/api/cases/{objectId}/access-purpose"},
 				"_visibilityContextNote": "Panels per case type (Ruben, 14 October 2026): which widget a case shows is configuration in this manifest, never code. The page reads the case type of the case beside it, and a widget's `visibleWhen` asks about it as `@context.caseType.<field>`. The condition reads the case type's `category`, the folder an organisation files its case types under, so a new case type in an existing folder needs no manifest change. A widget without `visibleWhen` shows on every case, as before. Needs the nextcloud-vue release that evaluates a detail widget's `visibleWhen` against the record (nextcloud-vue detail-widgets-visible-when); on an older release the key is ignored and every widget shows, as today.",
 				"_editFormNote": "The same form the index pages open, so editing a case asks what filing one asks wherever it is done. It was the raw schema-driven default here \u2014 one column, normal width, every property the schema declares \u2014 because CnDetailPage took `formSize` and `formColumns` and forwarded neither `includeFields`, `excludeFields` nor `fieldOverrides` to its dialogs. nextcloud-vue now does. `excludeFields` keeps `status` off for the reason the Cases page gives: a status is the OUTPUT of a transition, and a raw dropdown writes it through without a statusRecord, a guard or the transition's automaticActions. The priority trio goes with it, being derived from impact and urgency.",
 				"formSize": "large",
@@ -5058,26 +5181,6 @@
 			}
 		},
 		{
-			"id": "DeelzaakList",
-			"route": "/cases/:id/deelzaken",
-			"type": "custom",
-			"title": "Sub-cases",
-			"_note": "Bespoke parent-scoped sub-case (deelzaak) list: header carries a back-to-parent button, a parent breadcrumb link and a roll-up summary line, and rows deep-link into DeelzaakDetail under the same parent route. A standard list/index type can't express the parent-route binding (/cases/:id/deelzaken) plus the parent-context header and roll-up text.",
-			"slots": {
-				"main": "DeelzaakList"
-			}
-		},
-		{
-			"id": "DeelzaakDetail",
-			"route": "/cases/:parentId/deelzaken/:id",
-			"type": "custom",
-			"title": "Sub-case",
-			"_note": "Sub-case detail that shares the `case` schema with CaseDetail but adds a mandatory always-visible parent breadcrumb (parent → current) and a link out to the canonical CaseDetail edit view. The standard detail type renders a single object with no parent-context breadcrumb or cross-route hand-off, so the parent-aware framing requires a bespoke page.",
-			"slots": {
-				"main": "DeelzaakDetail"
-			}
-		},
-		{
 			"id": "BezwaarDetail",
 			"route": "/bezwaren/:id",
 			"type": "detail",
@@ -5719,12 +5822,240 @@
 		{
 			"id": "EndOfDay",
 			"route": "/end-of-day",
-			"type": "custom",
+			"type": "dashboard",
 			"title": "Close out your day",
-			"component": "EndOfDayView",
-			"_note": "One screen listing what the reader opened today, with a place to write what happened on each. \"Touched\" is OpenRegister's per-reader read state, asked per item: dossiq keeps no second record of who saw what (unread-state-on-the-case), and \"changed today\" would have been the wrong question anyway, since it lists a colleague's afternoon as yours. The time box is humaniq's hours leaf, placed per item; on an instance without humaniq there is no time field at all, because a dossiq one would become a second hours store the day humaniq arrives (ADR-011). An update is written on the thing it is about, so it is there tomorrow for whoever opens the case.",
+			"_note": "One screen listing what the reader opened today, with a place to write what happened on each. \"Touched\" is OpenRegister's per-reader read state, asked per item: dossiq keeps no second record of who saw what (unread-state-on-the-case), and \"changed today\" would have been the wrong question anyway, since it lists a colleague's afternoon as yours. The time box is humaniq's hours leaf, placed per item; on an instance without humaniq there is no time field at all, because a dossiq one would become a second hours store the day humaniq arrives (ADR-011). An update is written on the thing it is about, so it is there tomorrow for whoever opens the case. SINCE 20 OCTOBER 2026 THIS IS MANIFEST CONFIG (Ruben): the day lists are worked out on the server (GET /api/personal-queue/end-of-day, EndOfDayService), so Recorded today survives a reload; opened is still OpenRegister's read state. What is typed and not yet recorded stays in the browser and is the ready figure inside the notes list (nextcloud-vue record-list `presentation: notes`). The hours box is humaniq's leaf per row (`rowLeaf`), and nothing on an instance without humaniq.",
 			"config": {
-				"documentationUrl": "https://dossiq.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"allowEdit": false,
+				"showActionsMenu": false,
+				"showWidgetActions": false,
+				"breadcrumb": {
+					"label": "My work",
+					"route": "MyWorkHome"
+				},
+				"headerMeta": "{today}",
+				"widgets": [
+					{
+						"id": "eod-unavailable",
+						"type": "banner",
+						"title": "What could not be read",
+						"content": {
+							"variant": "warning",
+							"text": "{value}",
+							"visibleWhen": {
+								"endpoint": "/apps/dossiq/api/personal-queue/end-of-day",
+								"field": "unavailableText",
+								"op": "neq",
+								"value": ""
+							}
+						}
+					},
+					{
+						"id": "eod-open",
+						"type": "record-list",
+						"title": "Still open from today",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/personal-queue/end-of-day",
+								"responsePath": "open"
+							},
+							"presentation": "notes",
+							"title": "{title}",
+							"pill": {
+								"field": "kindLabel",
+								"variant": "info"
+							},
+							"due": {
+								"field": "dueAt",
+								"todayLabel": "Term ends today",
+								"overdueLabel": {
+								"one": "{count} day late",
+								"other": "{count} days late"
+							}
+							},
+							"rowRouteField": "routeName",
+							"rowIdField": "routeId",
+							"headerCount": true,
+							"headerNote": "what you opened today and has no note yet",
+							"emptyText": "Everything you opened today has a note.",
+							"emptyTexts": [
+								{
+									"when": {
+										"endpoint": "/apps/dossiq/api/personal-queue/end-of-day",
+										"field": "opened",
+										"op": "eq",
+										"value": 0
+									},
+									"text": "You have not opened anything today."
+								}
+							],
+							"noteAction": {
+								"urlField": "notesUrl",
+								"label": "Record it",
+								"fieldLabel": "What happened",
+								"placeholder": "For example: called the resident, waiting for documents",
+								"readyLabel": "filled in, not recorded yet",
+								"draftsKey": "dossiq-end-of-day",
+								"recordAll": {
+									"title": "Ready for today?",
+									"text": "The button records every note you filled in on its own case or task. An item without a note stays open and is back in My work tomorrow.",
+									"label": "Close out your day",
+									"icon": "ClipboardCheckOutline",
+									"cancel": {
+										"label": "Cancel",
+										"route": "MyWorkHome"
+									}
+								}
+							},
+							"rowLeaf": {
+								"id": "humaniq-hours",
+								"app": "humaniq",
+								"register": "dossiq",
+								"objectIdField": "subjectId",
+								"schemaField": "subjectType",
+								"unavailableText": "The hours leaf is not available, so time cannot be recorded here."
+							}
+						}
+					},
+					{
+						"id": "eod-recorded",
+						"type": "record-list",
+						"title": "Recorded today",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/personal-queue/end-of-day",
+								"responsePath": "recorded"
+							},
+							"presentation": "rows",
+							"icon": "Check",
+							"title": "{title}",
+							"pill": {
+								"field": "kindLabel",
+								"variant": "info"
+							},
+							"meta": "{recordedTime}",
+							"text": "{note}",
+							"rowRouteField": "routeName",
+							"rowIdField": "routeId",
+							"headerCount": true,
+							"headerNote": "it is on the case or task, for whoever opens it tomorrow",
+							"emptyText": "Nothing recorded yet today."
+						}
+					},
+					{
+						"id": "eod-figures",
+						"type": "record-list",
+						"title": "Your day",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/personal-queue/end-of-day",
+								"responsePath": "figures"
+							},
+							"presentation": "rows",
+							"title": "{label}",
+							"meta": "{note}",
+							"trailing": "{value}"
+						}
+					},
+					{
+						"id": "eod-tomorrow",
+						"type": "record-list",
+						"title": "First thing tomorrow",
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/personal-queue/end-of-day",
+							"field": "tomorrow",
+							"op": "notEmpty"
+						},
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/personal-queue/end-of-day",
+								"responsePath": "tomorrow"
+							},
+							"presentation": "rows",
+							"title": "{title}",
+							"due": {
+								"field": "dueAt",
+								"todayLabel": "Term ends today",
+								"overdueLabel": {
+								"one": "{count} day late",
+								"other": "{count} days late"
+							}
+							},
+							"rowRouteField": "routeName",
+							"rowIdField": "routeId",
+							"headerLink": {
+								"label": "To My work",
+								"route": "MyWorkHome"
+							}
+						}
+					},
+					{
+						"id": "eod-how",
+						"type": "text",
+						"title": "How this works",
+						"content": {
+							"contentMode": "markdown",
+							"text": "This lists what you opened yourself today, not what a colleague changed. A note goes on the case or task itself. Hours go to humaniq."
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": 1,
+						"widgetId": "eod-unavailable",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"sizeToContent": true
+					},
+					{
+						"id": 2,
+						"widgetId": "eod-open",
+						"gridX": 0,
+						"gridY": 1,
+						"gridWidth": 8,
+						"gridHeight": 6,
+						"sizeToContent": true
+					},
+					{
+						"id": 3,
+						"widgetId": "eod-recorded",
+						"gridX": 0,
+						"gridY": 7,
+						"gridWidth": 8,
+						"gridHeight": 4,
+						"sizeToContent": true
+					},
+					{
+						"id": 4,
+						"widgetId": "eod-figures",
+						"gridX": 8,
+						"gridY": 1,
+						"gridWidth": 4,
+						"gridHeight": 3,
+						"sizeToContent": true
+					},
+					{
+						"id": 5,
+						"widgetId": "eod-tomorrow",
+						"gridX": 8,
+						"gridY": 4,
+						"gridWidth": 4,
+						"gridHeight": 3,
+						"sizeToContent": true
+					},
+					{
+						"id": 6,
+						"widgetId": "eod-how",
+						"gridX": 8,
+						"gridY": 7,
+						"gridWidth": 4,
+						"gridHeight": 2,
+						"sizeToContent": true
+					}
+				]
 			}
 		},
 		{
@@ -9312,6 +9643,7 @@
 								"category",
 								"propertyType",
 								"format",
+								"items",
 								"maxLength",
 								"pattern",
 								"minimum",
@@ -9351,6 +9683,17 @@
 										},
 										"itemsPath": "formats",
 										"hideWhenEmpty": true
+									},
+									"clearWhenHidden": true
+								},
+								"items": {
+									"label": "Type of each entry",
+									"widget": "json",
+									"visibleWhen": {
+										"field": "propertyType",
+										"in": [
+											"array"
+										]
 									},
 									"clearWhenHidden": true
 								},

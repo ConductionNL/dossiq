@@ -56,7 +56,7 @@ describe('special categories of personal data on a case', () => {
 			expect(card.visibleWhen).toEqual({ field: '@context.caseType.specialDataCategories', op: 'contains', value: key })
 			expect(card.content.variant).toBe('warning')
 			expect(nl[card.content.lead]).toBe('Bijzondere persoonsgegevens:')
-			expect(nl[card.content.text]).toBeTruthy()
+			expect(nl[card.content.text]).toMatch(/ Elke inzage wordt gelogd met het doel\.$/)
 		}
 	})
 
@@ -64,6 +64,6 @@ describe('special categories of personal data on a case', () => {
 		const jeugdwet = readJson('lib', 'Settings', 'packages', 'jeugdwet', 'case-type.json').caseType
 		expect(jeugdwet.specialDataCategories).toEqual(['health'])
 		expect(jeugdwet.sideCards[0]).toBe('side-special-data-health')
-		expect(nl['health.']).toBe('gezondheid.')
+		expect(nl['health. Every view is logged with its purpose.']).toBe('gezondheid. Elke inzage wordt gelogd met het doel.')
 	})
 })

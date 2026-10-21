@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.136.0",
+	"version": "2.137.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -1362,6 +1362,11 @@
 					"type": "string",
 					"minLength": 1,
 					"description": "Dot-path to the value on the record."
+				},
+				"values": {
+					"type": "array",
+					"items": { "type": "string" },
+					"description": "With `field`: draw the pill only when the raw value is one of these (a priority pill for high and urgent only)."
 				},
 				"text": {
 					"type": "string",
@@ -3202,6 +3207,23 @@
 					"default": 1,
 					"description": "open-form: how many columns the fields flow into. 2 pairs them up, which halves the scrolling on a longer form. Textareas and JSON editors still span the full width, and the layout collapses to one column below 700px. Widen the dialog with size: 'large' as well, or two columns are merely two narrow ones."
 				},
+				"endpoint": {
+					"type": "object",
+					"description": "open-form only: edit a record that is not a register object through an endpoint (an OpenRegister organisation). `url` is where the save goes (token-interpolated, app-relative or absolute), `method` is PATCH (default) or PUT, or POST to create a record with an empty form, `loadUrl` reads the record when it differs from `url`, `responsePath` plucks it from the answer. The fields are `formProperties`. Without `endpoint` the action is the schema-driven create form.",
+					"properties": {
+						"url": { "type": "string" },
+						"method": { "type": "string", "enum": ["PATCH", "PUT", "POST"] },
+						"loadUrl": { "type": "string" },
+						"responsePath": { "type": "string" }
+					},
+					"required": ["url"],
+					"additionalProperties": false
+				},
+				"formProperties": {
+					"type": "object",
+					"description": "open-form with `endpoint` only: the fields the form shows and sends, as JSON-schema properties (`{ \"name\": { \"type\": \"string\", \"title\": \"Name\" } }`).",
+					"additionalProperties": { "type": "object" }
+				},
 				"handler": {
 					"type": "string",
 					"description": "Registry key for type: 'handler'. Resolved across both registries passed to CnAppRoot: a v2 `registry` entry of `kind: 'handler'` exposing the function as `.handler` (or `.fn`), a directly function-valued registry entry, or a function-valued entry in the deprecated `customComponents` map. The same resolution serves actions[], bulkActions[] and headerActions[]. Also the built-in dispatch verb when paired with `route` (handler: 'navigate' → $router.push to `route`)."
@@ -3255,8 +3277,8 @@
 				},
 				"method": {
 					"type": "string",
-					"enum": ["POST", "PUT"],
-					"description": "api-call: HTTP method (default POST). toggle writeUrl: default PUT."
+					"enum": ["POST", "PUT", "GET"],
+					"description": "api-call: HTTP method (default POST); GET sends the resolved params as the query string, and with download: true downloads the file the endpoint answers (DqDoorlooptijd). toggle writeUrl: default PUT."
 				},
 				"payload": {
 					"type": "object",
@@ -5504,6 +5526,30 @@
 									"register": { "type": "string", "minLength": 1, "description": "Register slug or id of the record to read." },
 									"schema": { "type": "string", "minLength": 1, "description": "Schema slug or id of the record to read." }
 								}
+							}
+						},
+						"accessPurpose": {
+							"type": "object",
+							"required": ["when", "url"],
+							"additionalProperties": false,
+							"description": "type='detail': ask why the reader opens the record before the page shows it, and record the answer (detail-access-purpose). `when` is a condition in the visibleWhen grammar on the record and its visibilityContext records; `options` the purposes offered (\"Other\" with a written purpose is always added); `url` the app endpoint that records the purpose (POST { purpose, note }, {objectId} filled in). Nothing of the record shows until the endpoint accepts; the same record is not asked again in the same browser session. Maps to CnDetailPage `accessPurpose`.",
+							"properties": {
+								"when": { "type": "object", "description": "The condition under which the page asks, e.g. { \"field\": \"@context.caseType.specialDataCategories\", \"op\": \"notEmpty\" }." },
+								"options": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"required": ["value", "label"],
+										"additionalProperties": false,
+										"properties": {
+											"value": { "type": "string", "minLength": 1 },
+											"label": { "type": "string", "minLength": 1, "description": "i18n key." }
+										}
+									}
+								},
+								"url": { "type": "string", "minLength": 1, "description": "App endpoint that records the purpose; {objectId} is filled in." },
+								"title": { "type": "string", "description": "i18n key of the dialog's title." },
+								"description": { "type": "string", "description": "i18n key of the sentence under the title." }
 							}
 						},
 						"mapConfig": {

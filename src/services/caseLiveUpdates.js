@@ -23,9 +23,8 @@
  * HINT, and `liveUpdatesPlugin` answers it by re-running `fetchObject('case',
  * id)` through the store's existing path, coalesced so a burst collapses into
  * one trailing refetch. The header, the panels and the terms read that store
- * entry, so they follow. That is the same contract `DeelzaakDetail` documents
- * at its own call site, and the reason neither of them ever reads the event
- * body: a payload applied locally is a second copy of the record that
+ * entry, so they follow. Nothing here reads the event body either: a payload
+ * applied locally is a second copy of the record that
  * eventually disagrees with the register.
  *
  * WHAT THIS DOES NOT COVER, said out loud. A FLOW RUN IS NOT AN OPENREGISTER
@@ -69,8 +68,7 @@ export function caseIdOfRoute(route) {
 /**
  * Keeps exactly one live subscription pointed at the case on screen.
  *
- * The shape is `DeelzaakDetail`'s, for the reasons its own comments give and
- * one more: `subscribe()` is asynchronous, so between asking and being handed a
+ * `subscribe()` is asynchronous, so between asking and being handed a
  * handle the reader can have opened another case or left the page entirely. An
  * epoch counter is what makes that safe. Without it the late handle is stored
  * for a case nobody is looking at, and it keeps refetching until the tab
