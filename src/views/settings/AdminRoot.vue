@@ -1164,6 +1164,7 @@ export default {
 					schema: 'working-calendar',
 					filter: { slug: 'nl-national' },
 				},
+
 				// The section's title row draws Add day.
 				addButton: false,
 			}
