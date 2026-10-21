@@ -111,6 +111,8 @@
         "Agenda",
         "In status",
         "{candidateGroups}",
-        "{label}"
+        "{label}",
+        "Actor type",
+        "Override"
     ]
 }
