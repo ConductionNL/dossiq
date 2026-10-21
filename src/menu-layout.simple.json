@@ -3377,10 +3377,10 @@
 						"type": "record-list",
 						"title": "Related cases",
 						"subtitle": "Typed per the RGBZ, kept in both directions",
-						"_note": "DqZaakGerelateerd Gerelateerde zaken: the case's typed peer relations, grouped by what they are to this case (the label the other side reads, else the relation type), each with the other case's initials, number, case type and handler and its status. The rows come from /api/cases/{id}/relations, which adds those details only for a case the reader may open. `groupBy` is nextcloud-vue's record-list group headings (feat/record-list-group-headings); on an older library the rows stand ungrouped.",
+						"_note": "DqZaakGerelateerd Gerelateerde zaken: the case's typed peer relations grouped by what they are to this case (the label this side of the relation reads, else the relation type), each with the other case's initials, number, case type and handler and its status, then the planned follow-ups (planned flows and series) under Gepland vervolg. The rows come from /api/cases/{id}/relations?planned=1, which adds the case details only for a case the reader may open. `groupBy` is nextcloud-vue's record-list group headings (d45d382846); on an older library the rows stand ungrouped. A planned row opens no case, so it carries the Stop series menu; Plan follow-up ends the card.",
 						"content": {
 							"endpointSource": {
-								"url": "/apps/dossiq/api/cases/@objectId/relations",
+								"url": "/apps/dossiq/api/cases/@objectId/relations?planned=1",
 								"responsePath": "results"
 							},
 							"presentation": "rows",
@@ -3389,7 +3389,8 @@
 							"meta": [
 								"{identifier} · {caseTypeTitle} · {assigneeName}",
 								"{identifier} · {caseTypeTitle}",
-								"{caseTypeTitle}"
+								"{caseTypeTitle}",
+								"{plannedKind} · {date}"
 							],
 							"pill": {
 								"field": "statusRole",
@@ -3399,7 +3400,8 @@
 									"in-progress": "In progress",
 									"review": "In review",
 									"closed": "Closed",
-									"stranded": "Stranded"
+									"stranded": "Stranded",
+									"planned": "Planned"
 								},
 								"colorMap": {
 									"intake": "default",
@@ -3407,82 +3409,51 @@
 									"in-progress": "purple",
 									"review": "purple",
 									"closed": "success",
-									"stranded": "error"
+									"stranded": "error",
+									"planned": "info"
 								}
 							},
-							"groupBy": {
-								"field": "displayLabel",
-								"fallbackField": "aardRelatie",
-								"labels": {
+							"groupBy": "group",
+							"rowRoute": "CaseDetail",
+							"rowIdField": "caseId",
+							"emptyText": "No related cases yet",
+							"valueLabels": {
+								"group": {
 									"subject": "Subject of this case",
 									"waitsOn": "Waits on",
 									"vervolg": "Follow-up",
 									"bijdrage": "Contribution",
-									"samenhang": "Related"
+									"samenhang": "Related",
+									"planned": "Planned follow-up"
+								},
+								"plannedKind": {
+									"flow": "Planned flow",
+									"series": "Series"
 								}
 							},
-							"rowRoute": "CaseDetail",
-							"rowIdField": "caseId",
-							"emptyText": "No related cases yet"
+							"rowActions": [
+								{
+									"label": "Stop series",
+									"endpoint": "/apps/dossiq/api/case/@objectId/planned/{id}/stop",
+									"method": "POST"
+								}
+							],
+							"footerAction": {
+								"type": "open-modal",
+								"target": "CasePlanFollowUpDialog",
+								"label": "Plan follow-up",
+								"icon": "CalendarClock"
+							}
 						}
 					},
 					{
 						"id": "case-related-card",
 						"type": "related",
-						"title": "Related cases",
+						"title": "Parent case",
 						"icon": "LinkVariant",
-						"_note": "The Related cases tab: the library related widget with three sections it reads from dossiq (case-actions-menu A26, planned-case-series 1.8). Planned follow-ups are scheduled FLOWS, not cases, so they open nothing; a series lists the cases it already opened and offers Stop series, which switches the flow off and leaves those cases alone. Typed relations come grouped by the label the server answers per direction (displayLabel, else the ZGW aard), a row only with a readable title. The parent case shows only with a readable title. Plan follow-up opens CasePlanFollowUpDialog. A read that fails is logged and leaves the rest alone.",
+						"_note": "The Related cases tab: the library related widget with three sections it reads from dossiq (case-actions-menu A26, planned-case-series 1.8). Planned follow-ups are scheduled FLOWS, not cases, so they open nothing; a series lists the cases it already opened and offers Stop series, which switches the flow off and leaves those cases alone. Typed relations come grouped by the label the server answers per direction (displayLabel, else the ZGW aard), a row only with a readable title. The parent case shows only with a readable title. Plan follow-up opens CasePlanFollowUpDialog. A read that fails is logged and leaves the rest alone. The planned follow-ups and the typed relations moved to case-related-cases-card, so this card keeps the parent case.",
 						"content": {
 							"showObjects": false,
-							"extraSources": [
-								{
-									"key": "planned",
-									"label": "Planned cases",
-									"icon": "CalendarClock",
-									"endpoint": "/apps/dossiq/api/case/@objectId/planned",
-									"path": "results",
-									"itemLabel": {
-										"parts": [
-											"{title}",
-											"{recurrence|lower}",
-											"next on {date}",
-											"{occurrences|count} opened so far"
-										],
-										"separator": ", "
-									},
-									"valueLabels": {
-										"recurrence": {
-											"none": "",
-											"monthly": "Every month",
-											"quarterly": "Every quarter",
-											"halfYearly": "Every half year",
-											"yearly": "Every year"
-										}
-									},
-									"static": true,
-									"rowActions": [
-										{
-											"label": "Stop series",
-											"endpoint": "/apps/dossiq/api/case/@objectId/planned/{id}/stop",
-											"when": {
-												"field": "recurrence",
-												"op": "neq",
-												"value": "none"
-											}
-										}
-									],
-									"children": {
-										"path": "occurrences",
-										"label": "{title}",
-										"route": {
-											"name": "CaseDetail",
-											"params": {
-												"id": "{id}"
-											}
-										}
-									}
-								}
-							],
 							"referenceSections": [
 								{
 									"key": "parent",
