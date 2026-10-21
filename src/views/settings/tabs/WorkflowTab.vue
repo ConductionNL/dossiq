@@ -304,6 +304,7 @@ export default {
 		},
 	},
 
+	/** @spec openspec/specs/workflow-definition-model/spec.md */
 	async mounted() {
 		await Promise.all([this.loadTypes(), this.loadVersions()])
 		this.ensureNodePositions()
