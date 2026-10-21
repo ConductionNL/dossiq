@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Board PtVoorstelBeoordelen: while proposals wait on a case, the Proposals tab
- * stands in the case strip with their count. It asks portaliq's queue route
- * about this case, so it is absent without waiting proposals, without the
- * right to review them and without portaliq.
+ * is there with their count. It asks portaliq's queue route about this case, so
+ * it is absent without waiting proposals, without the right to review them and
+ * without portaliq. The strip keeps the five tabs of board DqZaak, so with five
+ * places Proposals is listed under More.
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
@@ -43,9 +44,15 @@ describe('the Proposals tab on the simple case page', () => {
 	const labels = content.tabs.map((tab) => tab.label)
 	const proposals = content.tabs.find((tab) => tab.widgetId === 'case-change-proposals')
 
-	it('stands in the strip, right after Contact', () => {
+	it('comes after the five tabs of DqZaak, which keep their places', () => {
+		const always = content.tabs.filter((tab) => !tab.visibleWhen && !tab.overflow).map((tab) => tab.label)
+		expect(always).toEqual(['Overview', 'Documents', 'Contact', 'Tasks', 'Case history'])
+		expect(content.maxVisibleTabs).toBe(always.length)
+		expect(labels.indexOf('Proposals')).toBe(labels.indexOf('Case history') + 1)
+	})
+
+	it('is not pinned under More: the five places decide where it goes', () => {
 		expect(proposals.overflow).toBeUndefined()
-		expect(labels.indexOf('Proposals')).toBe(labels.indexOf('Contact') + 1)
 	})
 
 	it('shows only while portaliq has proposals waiting on this case', () => {
