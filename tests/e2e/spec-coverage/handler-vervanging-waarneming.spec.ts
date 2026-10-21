@@ -960,7 +960,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('coordinator admin exposes a bulk-reassign action with a mandatory preview', async ({
 		page,
 	}) => {
-		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
+		await page.goto(`/index.php${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
 		await expect(
 			page
@@ -997,7 +997,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * down in precisely the case the test exists for.
 	 */
 	test('coordinator admin renders without a server error', async ({ page }) => {
-		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
+		await page.goto(`/index.php${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 		await expect(
