@@ -101,6 +101,11 @@
         "8 weeks": "8 weken",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> van de oudere checklist waaruit dit sjabloon is overgenomen, zodat de overname één keer per bron loopt",
         "> 90 dagen": "> 90 dagen",
+        "Based in @config.municipalityCity": "Gevestigd in @config.municipalityCity",
+        "City of the municipality": "Plaats van de gemeente",
+        "Living in @config.municipalityCity": "Wonend in @config.municipalityCity",
+        "Place of residence: @config.municipalityCity": "Woonplaats: @config.municipalityCity",
+        "Place: @config.municipalityCity": "Plaats: @config.municipalityCity",
         "_%n case_::_%n cases_": [
             "%n zaak",
             "%n zaken"
