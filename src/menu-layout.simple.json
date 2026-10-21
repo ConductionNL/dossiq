@@ -1884,6 +1884,7 @@
 									"label": "Related",
 									"overflow": true,
 									"widgetIds": [
+										"case-related-cases-card",
 										"case-related-card",
 										"case-sub-cases-card",
 										"case-objects-card",
@@ -3372,6 +3373,60 @@
 						"_note": "DqZaakEmail: the mail linked to the case, with Link mail and Compose mail, from the email integration (Nextcloud Mail). Absent where Mail is not installed."
 					},
 					{
+						"id": "case-related-cases-card",
+						"type": "record-list",
+						"title": "Related cases",
+						"subtitle": "Typed per the RGBZ, kept in both directions",
+						"_note": "DqZaakGerelateerd Gerelateerde zaken: the case's typed peer relations, grouped by what they are to this case (the label the other side reads, else the relation type), each with the other case's initials, number, case type and handler and its status. The rows come from /api/cases/{id}/relations, which adds those details only for a case the reader may open. `groupBy` is nextcloud-vue's record-list group headings (feat/record-list-group-headings); on an older library the rows stand ungrouped.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/relations",
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"avatar": "{title}",
+							"title": "{title}",
+							"meta": [
+								"{identifier} · {caseTypeTitle} · {assigneeName}",
+								"{identifier} · {caseTypeTitle}",
+								"{caseTypeTitle}"
+							],
+							"pill": {
+								"field": "statusRole",
+								"labels": {
+									"intake": "Received",
+									"pending-info": "Waiting for information",
+									"in-progress": "In progress",
+									"review": "In review",
+									"closed": "Closed",
+									"stranded": "Stranded"
+								},
+								"colorMap": {
+									"intake": "default",
+									"pending-info": "warning",
+									"in-progress": "purple",
+									"review": "purple",
+									"closed": "success",
+									"stranded": "error"
+								}
+							},
+							"groupBy": {
+								"field": "displayLabel",
+								"fallbackField": "aardRelatie",
+								"labels": {
+									"subject": "Subject of this case",
+									"waitsOn": "Waits on",
+									"vervolg": "Follow-up",
+									"bijdrage": "Contribution",
+									"samenhang": "Related"
+								}
+							},
+							"rowRoute": "CaseDetail",
+							"rowIdField": "caseId",
+							"emptyText": "No related cases yet"
+						}
+					},
+					{
 						"id": "case-related-card",
 						"type": "related",
 						"title": "Related cases",
@@ -3424,33 +3479,6 @@
 											"params": {
 												"id": "{id}"
 											}
-										}
-									}
-								},
-								{
-									"key": "relations",
-									"endpoint": "/apps/dossiq/api/cases/@objectId/relations",
-									"path": "results",
-									"icon": "LinkVariant",
-									"groupBy": [
-										"{displayLabel}",
-										"{aardRelatie}"
-									],
-									"groupLabels": {
-										"vervolg": "Follow-up",
-										"subject": "Subject",
-										"bijdrage": "Contribution",
-										"samenhang": "Related"
-									},
-									"itemLabel": [
-										"{title} ({notes})",
-										"{title}"
-									],
-									"requireLabel": true,
-									"rowRoute": {
-										"name": "CaseDetail",
-										"params": {
-											"id": "{caseId}"
 										}
 									}
 								}

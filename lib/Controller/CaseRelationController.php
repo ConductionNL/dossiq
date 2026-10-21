@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseRelationService;
+use OCA\Dossiq\Service\Relation\CaseRelationDetails;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -72,12 +73,14 @@ class CaseRelationController extends Controller {
 	 * @param CaseRelationService $caseRelationService Backend service.
 	 * @param IUserSession $userSession Current user session.
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseRelationDetails $caseRelationDetails Number, case type, status and handler per related case.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly CaseRelationService $caseRelationService,
 		private readonly IUserSession $userSession,
 		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseRelationDetails $caseRelationDetails,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -120,7 +123,10 @@ class CaseRelationController extends Controller {
 
 		return new JSONResponse(
 			[
-				'results' => $this->caseRelationService->listRelations(caseId: $caseId),
+				'results' => $this->caseRelationDetails->describe(
+					rows: $this->caseRelationService->listRelations(caseId: $caseId),
+					canRead: fn (string $relatedId): bool => $this->caseAccessGuard->hasCaseReadAccess(caseId: $relatedId, user: $user),
+				),
 			]
 		);
 	}//end list()
