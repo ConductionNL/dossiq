@@ -896,7 +896,7 @@ const registry = {
 		kind: 'widget',
 		component: MailPartiesReportWidget,
 		...DASHBOARD_TILE_META,
-		_note: 'The mail parties report on the reports dashboard (src/manifest.d/86-woo-reports.json): CnCountTablesReport configured for one case. A registry widget because the report body asks for its case before it reads.',
+		_note: 'The mail parties report on the reports dashboard (src/manifest.d/86-document-review-reports.json): CnCountTablesReport configured for one case. A registry widget because the report body asks for its case before it reads.',
 	},
 	// The token-addressed advice-response page is gone with
 	// case-sharing-mints-access-links: nothing ever minted the token it read,

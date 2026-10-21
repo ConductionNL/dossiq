@@ -198,7 +198,7 @@ class PayoutServiceTest extends TestCase {
 		);
 		$urls = $this->createMock(IURLGenerator::class);
 		$urls->method('linkToRouteAbsolute')->willReturnMap(
-			[[PayoutService::CALLBACK_ROUTE, [], 'https://gemeente.example/apps/dossiq/api/dossiq/openconnector/dwangsom-payment-callback']]
+			[[PayoutService::CALLBACK_ROUTE, [], 'https://gemeente.example/apps/dossiq/api/payments/callback']]
 		);
 
 		return new PayoutService(
@@ -235,7 +235,7 @@ class PayoutServiceTest extends TestCase {
 		self::assertSame('b-stopped', $command['correlationId']);
 		self::assertSame(PayoutService::CATEGORY, $command['category']);
 		self::assertSame('2026-04-29', $command['dueOn']);
-		self::assertStringEndsWith('/dwangsom-payment-callback', $command['callbackUrl']);
+		self::assertStringEndsWith('/api/payments/callback', $command['callbackUrl']);
 		self::assertSame('payable-1', $row['payableId']);
 		self::assertSame('payable-1', $this->objects->get('dwangsomUitbetaling', (string)$row['id'])['payableId'] ?? null, 'the stored row keeps the payable');
 		self::assertSame('voorbereid', $row['status']);

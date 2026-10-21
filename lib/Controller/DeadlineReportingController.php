@@ -265,4 +265,80 @@ class DeadlineReportingController extends Controller {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end annualStatement()
+
+	/**
+	 * dashboard() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/dashboard/kpi; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for dashboard(); behaviour covered by the dashboard() tests.
+	 */
+	public function dashboardLegacyPath(): JSONResponse {
+		return $this->dashboard();
+	}//end dashboardLegacyPath()
+
+	/**
+	 * quarterlyReport() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/reports/quarterly; remove after the next major.
+	 *
+	 * @param string $period Period (YYYY-Qn).
+	 * @param string|null $department Optional department filter.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for quarterlyReport(); behaviour covered by the quarterlyReport() tests.
+	 */
+	public function quarterlyReportLegacyPath(string $period = '', ?string $department = null): JSONResponse {
+		return $this->quarterlyReport(period: $period, department: $department);
+	}//end quarterlyReportLegacyPath()
+
+	/**
+	 * annualStatement() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/reports/annual; remove after the next major.
+	 *
+	 * @param int $year Year.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for annualStatement(); behaviour covered by the annualStatement() tests.
+	 */
+	public function annualStatementLegacyPath(int $year = 0): JSONResponse {
+		return $this->annualStatement(year: $year);
+	}//end annualStatementLegacyPath()
+
+	/**
+	 * firstResponseReport() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/reports/first-response; remove after the next major.
+	 *
+	 * @param string $caseType     Optional case type filter.
+	 * @param string $organisation Optional organisation filter.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 *
+	 * @contract exclude Deprecated path alias for firstResponseReport(); behaviour covered by the firstResponseReport() tests.
+	 */
+	public function firstResponseReportLegacyPath(string $caseType = '', string $organisation = ''): JSONResponse {
+		return $this->firstResponseReport(caseType: $caseType, organisation: $organisation);
+	}//end firstResponseReportLegacyPath()
 }//end class

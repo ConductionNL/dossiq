@@ -126,7 +126,7 @@ test.describe('A term is more than one number on one case type', () => {
 
 		// And both are reportable from what was stored.
 		const report = await api.get(
-			`/index.php/apps/${REGISTER}/api/termijn/reports/eerste-reactie`,
+			`/index.php/apps/${REGISTER}/api/deadlines/reports/first-response`,
 		)
 		expect(report.ok()).toBeTruthy()
 		const body = await report.json()

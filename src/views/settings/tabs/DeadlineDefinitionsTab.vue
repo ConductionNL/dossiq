@@ -3,9 +3,9 @@
   SPDX-License-Identifier: EUPL-1.2
 -->
 <template>
-	<div class="termijn-definities-tab">
-		<div class="termijn-definities-tab__header">
-			<p class="termijn-definities-tab__description">
+	<div class="deadline-definitions-tab">
+		<div class="deadline-definitions-tab__header">
+			<p class="deadline-definitions-tab__description">
 				{{
 					t(
 						'dossiq',
@@ -15,8 +15,8 @@
 			</p>
 			<p
 				v-if="timezone"
-				class="termijn-definities-tab__calendar"
-				data-testid="termijn-calendar-line">
+				class="deadline-definitions-tab__calendar"
+				data-testid="deadline-calendar-line">
 				{{
 					t('dossiq', 'Days and dates are counted in {zone}.', {
 						zone: timezone,
@@ -31,7 +31,7 @@
 					}}
 				</span>
 			</p>
-			<NcButton type="primary" @click="openNew">
+			<NcButton variant="primary" @click="openNew">
 				<template #icon>
 					<Plus :size="18" />
 				</template>
@@ -47,7 +47,7 @@
 
 		<div
 			v-if="!loading && definitions.length === 0"
-			class="termijn-definities-tab__empty">
+			class="deadline-definitions-tab__empty">
 			<NcEmptyContent
 				:name="t('dossiq', 'No term definitions')"
 				:description="
@@ -64,47 +64,47 @@
 
 		<div
 			v-if="!loading && definitions.length > 0"
-			class="termijn-definities-tab__list">
+			class="deadline-definitions-tab__list">
 			<div
 				v-for="def in definitions"
 				:key="def.id"
-				class="termijn-definities-tab__row"
-				:class="{ 'termijn-definities-tab__row--inactive': !isActive(def) }">
-				<div class="termijn-definities-tab__row-info">
-					<strong class="termijn-definities-tab__row-name">
+				class="deadline-definitions-tab__row"
+				:class="{ 'deadline-definitions-tab__row--inactive': !isActive(def) }">
+				<div class="deadline-definitions-tab__row-info">
+					<strong class="deadline-definitions-tab__row-name">
 						{{ def.case_type }}
 					</strong>
-					<span class="termijn-definities-tab__pill">
+					<span class="deadline-definitions-tab__pill">
 						{{ def.basis || t('dossiq', '(no grondslag)') }}
 					</span>
 					<span
-						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
+						class="deadline-definitions-tab__pill deadline-definitions-tab__pill--alt">
 						{{ formatDuur(def) }}
 					</span>
 					<span
-						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
+						class="deadline-definitions-tab__pill deadline-definitions-tab__pill--alt">
 						v{{ def.version || 1 }}
 					</span>
 					<span
-						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt"
-						data-testid="termijn-counting-mode-pill">
+						class="deadline-definitions-tab__pill deadline-definitions-tab__pill--alt"
+						data-testid="deadline-counting-mode-pill">
 						{{ countingModeLabel(def) }}
 					</span>
 					<span
 						v-if="rollsToWorkingDay(def)"
-						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt"
-						data-testid="termijn-roll-pill">
+						class="deadline-definitions-tab__pill deadline-definitions-tab__pill--alt"
+						data-testid="deadline-roll-pill">
 						{{ t('dossiq', 'Moves off a closed day') }}
 					</span>
-					<span class="termijn-definities-tab__validity">
+					<span class="deadline-definitions-tab__validity">
 						{{ def.validFrom || '?' }} → {{ def.validUntil || '∞' }}
 					</span>
 					<span
-						class="termijn-definities-tab__badge"
+						class="deadline-definitions-tab__badge"
 						:class="
 							isActive(def)
-								? 'termijn-definities-tab__badge--active'
-								: 'termijn-definities-tab__badge--inactive'
+								? 'deadline-definitions-tab__badge--active'
+								: 'deadline-definitions-tab__badge--inactive'
 						">
 						{{
 							isActive(def)
@@ -113,7 +113,7 @@
 						}}
 					</span>
 				</div>
-				<div class="termijn-definities-tab__row-actions">
+				<div class="deadline-definitions-tab__row-actions">
 					<NcButton size="small" @click="openEdit(def)">
 						{{ t('dossiq', 'New version') }}
 					</NcButton>
@@ -122,7 +122,7 @@
 		</div>
 
 		<!-- Editor modal (own file under src/modals/ per ADR-004) -->
-		<TermijnDefinitieEditor
+		<DeadlineDefinitionEditor
 			v-if="editorOpen"
 			:definition="editingDefinition"
 			:zaaktypeOptions="zaaktypeOptions"
@@ -138,10 +138,10 @@ import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import TimerSand from 'vue-material-design-icons/TimerSand.vue'
-import TermijnDefinitieEditor from '../../../modals/TermijnDefinitieEditor.vue'
+import DeadlineDefinitionEditor from '../../../modals/DeadlineDefinitionEditor.vue'
 
 export default {
-	name: 'TermijnDefinitiesTab',
+	name: 'DeadlineDefinitionsTab',
 	components: {
 		NcButton,
 		NcEmptyContent,
@@ -149,7 +149,7 @@ export default {
 		NcNoteCard,
 		Plus,
 		TimerSand,
-		TermijnDefinitieEditor,
+		DeadlineDefinitionEditor,
 	},
 
 	data() {
@@ -206,7 +206,7 @@ export default {
 			this.error = null
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/dossiq/api/termijn/definities'),
+					generateUrl('/apps/dossiq/api/deadlines/definitions'),
 				)
 				this.definitions = Array.isArray(res.data)
 					? res.data
@@ -235,7 +235,7 @@ export default {
 		async loadCalendar() {
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/dossiq/api/termijn/calendar'),
+					generateUrl('/apps/dossiq/api/deadlines/calendar'),
 				)
 				this.timezone = String(res.data?.timezone ?? '')
 				this.rollAvailable = res.data?.rollAvailable === true
@@ -340,14 +340,14 @@ export default {
 				if (this.editingDefinition) {
 					await axios.patch(
 						generateUrl(
-							'/apps/dossiq/api/termijn/definities/'
+							'/apps/dossiq/api/deadlines/definitions/'
 								+ encodeURIComponent(this.editingDefinition.id),
 						),
 						{ validUntil: isoToday },
 					)
 				}
 				await axios.post(
-					generateUrl('/apps/dossiq/api/termijn/definities'),
+					generateUrl('/apps/dossiq/api/deadlines/definitions'),
 					next,
 				)
 				this.closeEditor()
@@ -364,31 +364,31 @@ export default {
 </script>
 
 <style scoped>
-.termijn-definities-tab {
+.deadline-definitions-tab {
 	padding: 8px 0;
 }
 
-.termijn-definities-tab__header {
+.deadline-definitions-tab__header {
 	margin-bottom: 16px;
 }
 
-.termijn-definities-tab__calendar {
+.deadline-definitions-tab__calendar {
 	color: var(--color-text-maxcontrast);
 	margin: 0 0 8px;
 }
 
-.termijn-definities-tab__description {
+.deadline-definitions-tab__description {
 	color: var(--color-text-maxcontrast);
 	margin: 4px 0 12px 0;
 }
 
-.termijn-definities-tab__list {
+.deadline-definitions-tab__list {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 }
 
-.termijn-definities-tab__row {
+.deadline-definitions-tab__row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -399,56 +399,56 @@ export default {
 	background: var(--color-main-background);
 }
 
-.termijn-definities-tab__row--inactive {
+.deadline-definitions-tab__row--inactive {
 	opacity: 0.65;
 }
 
-.termijn-definities-tab__row-info {
+.deadline-definitions-tab__row-info {
 	display: flex;
 	align-items: center;
 	gap: 10px;
 	flex-wrap: wrap;
 }
 
-.termijn-definities-tab__pill {
+.deadline-definitions-tab__pill {
 	font-size: 12px;
 	padding: 2px 8px;
 	border-radius: 8px;
 	background: var(--color-background-dark);
 }
 
-.termijn-definities-tab__pill--alt {
+.deadline-definitions-tab__pill--alt {
 	background: var(--color-background-darker);
 }
 
-.termijn-definities-tab__validity {
+.deadline-definitions-tab__validity {
 	font-size: 12px;
 	color: var(--color-text-maxcontrast);
 }
 
-.termijn-definities-tab__badge {
+.deadline-definitions-tab__badge {
 	font-size: 11px;
 	padding: 2px 8px;
 	border-radius: 8px;
 	font-weight: 500;
 }
 
-.termijn-definities-tab__badge--active {
+.deadline-definitions-tab__badge--active {
 	background: var(--color-success);
 	color: var(--color-success-text);
 }
 
-.termijn-definities-tab__badge--inactive {
+.deadline-definitions-tab__badge--inactive {
 	background: var(--color-background-dark);
 	color: var(--color-text-maxcontrast);
 }
 
-.termijn-definities-tab__row-actions {
+.deadline-definitions-tab__row-actions {
 	display: flex;
 	gap: 6px;
 }
 
-.termijn-definities-tab__empty {
+.deadline-definitions-tab__empty {
 	margin-top: 32px;
 }
 </style>

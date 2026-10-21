@@ -42,23 +42,27 @@ const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'u
 /** The case page, which is where a family plan is read. */
 const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
 
-/** The widget this change adds. */
-const WIDGET = 'family-plan'
+/** The widget this change adds, by its layout id. */
+const WIDGET = 'goal-plan'
+
+/** The registry key that rendered it before it was library config. */
+const OLD_KEY = 'family-plan'
 
 /** The adaptive case plan, which is a different thing entirely. */
 const ADAPTIVE = 'cmmn-case-plan'
 
 describe('the family plan reaches the case page', () => {
-	it('is declared as library widgets over the plan endpoint, under its stored id', () => {
+	it('is declared as library widgets over the plan endpoint, under its renamed id', () => {
 		const widget = caseDetail.config.widgets.find((entry) => entry.id === WIDGET)
 
 		expect(widget, 'the widget is declared').toBeTruthy()
-		// The id stays `family-plan`: users' stored layouts name it. The body
-		// is library config, a review-due banner and grouped cards, so no
-		// registry key answers for it any more.
+		// The id is `goal-plan`; RewriteRenamedLayoutIds carries users' stored
+		// layouts over from `family-plan`. The body is library config, a
+		// review-due banner and grouped cards, so no registry key answers for
+		// it any more.
 		expect(widget.type).toBe('sections')
 		expect(widget.content.sections.map((section) => section.widget.type)).toEqual(['banner', 'grouped-cards'])
-		expect(registrySource).not.toContain(`'${WIDGET}': {`)
+		expect(registrySource).not.toContain(`'${OLD_KEY}': {`)
 		expect(registrySource).not.toContain('CasePlanSociaalDomeinPanel')
 	})
 

@@ -47,7 +47,7 @@ class WidgetVisibilityMapTest extends TestCase {
 	/**
 	 * A tile the shipped manifest declares.
 	 */
-	private const DECLARED = 'td-annual';
+	private const DECLARED = 'deadline-report-annual';
 
 	/**
 	 * A tile it leaves to everyone.

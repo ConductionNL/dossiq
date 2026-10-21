@@ -138,7 +138,7 @@ export const useInspectionStore = defineStore('inspection', {
 			try {
 				const response = await axios.get(
 					generateUrl(
-						'/apps/dossiq/api/vth/cases/{id}/inspection-results',
+						'/apps/dossiq/api/cases/{id}/checklist-results',
 						{ id: caseId },
 					),
 				)
@@ -170,7 +170,7 @@ export const useInspectionStore = defineStore('inspection', {
 			try {
 				const response = await axios.post(
 					generateUrl(
-						'/apps/dossiq/api/vth/cases/{id}/inspection-result',
+						'/apps/dossiq/api/cases/{id}/checklist-results',
 						{ id: reportData.case },
 					),
 					{

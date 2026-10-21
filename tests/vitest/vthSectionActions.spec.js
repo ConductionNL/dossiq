@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest'
 
 const root = path.resolve(__dirname, '../..')
 const admin = fs.readFileSync(path.join(root, 'src/views/settings/AdminRoot.vue'), 'utf8')
-const checklists = fs.readFileSync(path.join(root, 'src/views/settings/tabs/ChecklistsTab.vue'), 'utf8')
+const checklists = fs.readFileSync(path.join(root, 'src/views/settings/tabs/ChecklistTemplatesTab.vue'), 'utf8')
 const nl = JSON.parse(fs.readFileSync(path.join(root, 'l10n/nl.json'), 'utf8')).translations
 
 describe('the VTH section header actions', () => {
@@ -32,7 +32,7 @@ describe('the VTH section header actions', () => {
 
 	it('opens the checklist editor from the header, and the tab leaves its own button out', () => {
 		expect(admin).toContain('$refs.checklists.openEditor(null)')
-		expect(admin).toContain('<ChecklistsTab v-if="storesReady" ref="checklists" :hideAddButton="true" />')
+		expect(admin).toContain('<ChecklistTemplatesTab v-if="storesReady" ref="checklists" :hideAddButton="true" />')
 		expect(checklists).toContain('<div v-if="!hideAddButton" class="checklists-tab__header">')
 		expect(nl['Add checklist']).toBe('Checklist toevoegen')
 	})

@@ -72,6 +72,11 @@ export const RETIRED_ROUTES = [
 			return false
 		},
 	},
+	// Pages renamed to say what they do (dq-abstract L7).
+	{
+		path: '/woo-reports',
+		redirect: { name: 'DocumentReviewReports' },
+	},
 ]
 
 /**

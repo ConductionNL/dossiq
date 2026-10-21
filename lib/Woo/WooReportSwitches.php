@@ -44,17 +44,30 @@ class WooReportSwitches {
 	/**
 	 * Throughput per reviewer per day (row 16.10).
 	 */
-	public const THROUGHPUT = 'wooReviewerThroughputReport';
+	public const THROUGHPUT = 'reviewerThroughputReport';
 
 	/**
 	 * The collection by sender, recipient and domain (row 16.11).
 	 */
-	public const PARTIES = 'wooCollectionPartiesReport';
+	public const PARTIES = 'collectionPartiesReport';
 
 	/**
 	 * The Nextcloud group whose members read the throughput report.
 	 */
-	public const READERS = 'wooReviewerThroughputReaders';
+	public const READERS = 'reviewerThroughputReaders';
+
+	/**
+	 * Each setting's earlier, procedure-named key. Read when the current key
+	 * was never written, and accepted on a save, so an instance configured
+	 * before the rename keeps its reports.
+	 *
+	 * @var array<string, string>
+	 */
+	public const LEGACY_KEYS = [
+		self::THROUGHPUT => 'wooReviewerThroughputReport',
+		self::PARTIES => 'wooCollectionPartiesReport',
+		self::READERS => 'wooReviewerThroughputReaders',
+	];
 
 	/**
 	 * The refusal rule when the throughput report has no existing reader group.
@@ -178,6 +191,7 @@ class WooReportSwitches {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function assertSaveAllowed(array $data): void {
+		$data = self::withCurrentKeys(data: $data);
 		if (array_key_exists(self::THROUGHPUT, $data) === false && array_key_exists(self::READERS, $data) === false) {
 			return;
 		}
@@ -198,6 +212,27 @@ class WooReportSwitches {
 			status: RefusedException::STATUS_UNPROCESSABLE,
 		);
 	}//end assertSaveAllowed()
+
+	/**
+	 * A settings save with every earlier key carried onto its current key.
+	 *
+	 * A value posted under the current key wins over one under the old key.
+	 *
+	 * @param array<string, mixed> $data The settings as posted.
+	 *
+	 * @return array<string, mixed> The settings, current keys filled in.
+	 *
+	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+	 */
+	public static function withCurrentKeys(array $data): array {
+		foreach (self::LEGACY_KEYS as $current => $legacy) {
+			if (array_key_exists($legacy, $data) === true && array_key_exists($current, $data) === false) {
+				$data[$current] = $data[$legacy];
+			}
+		}
+
+		return $data;
+	}//end withCurrentKeys()
 
 	/**
 	 * Whether a stored or posted value means yes.
@@ -224,7 +259,13 @@ class WooReportSwitches {
 	 * @return string The stored value.
 	 */
 	private function stored(string $key): string {
-		return $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		$value = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		$legacy = (self::LEGACY_KEYS[$key] ?? null);
+		if ($value !== '' || $legacy === null || $this->appConfig->hasKey(Application::APP_ID, $key) === true) {
+			return $value;
+		}
+
+		return $this->appConfig->getValueString(Application::APP_ID, $legacy, '');
 	}//end stored()
 
 	/**

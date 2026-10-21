@@ -8,7 +8,7 @@
 <template>
 	<div class="toewijzingen-table">
 		<div class="toewijzingen-table__toolbar">
-			<NcButton type="primary" @click="addOpen = true">
+			<NcButton variant="primary" @click="addOpen = true">
 				<template #icon>
 					<Plus :size="18" />
 				</template>
@@ -105,7 +105,7 @@ import AddAssignmentDialog from '../../../dialogs/AddAssignmentDialog.vue'
 import EndAssignmentDialog from '../../../dialogs/EndAssignmentDialog.vue'
 
 export default {
-	name: 'MandaatToewijzingenTable',
+	name: 'RoleAssignmentsTable',
 	components: {
 		NcButton,
 		NcEmptyContent,
@@ -180,7 +180,7 @@ export default {
 				)
 				this.addOpen = false
 				this.$emit('reload')
-			} catch (e) {
+			} catch {
 				/* dialog stays open */
 			}
 		},
@@ -214,7 +214,7 @@ export default {
 				)
 				this.ending = null
 				this.$emit('reload')
-			} catch (e) {
+			} catch {
 				/* dialog stays open */
 			}
 		},

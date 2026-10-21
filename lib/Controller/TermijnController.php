@@ -54,6 +54,8 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods) — one action per routed term endpoint
+ *
  * @spec openspec/specs/termijn-binding/spec.md
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
@@ -395,4 +397,116 @@ class TermijnController extends Controller {
 		$this->logger->info($log . ': ' . $e->getMessage());
 		return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 	}//end error()
+
+	/**
+	 * create() on its old address.
+	 *
+	 * Deprecated alias of POST /api/deadlines/instances; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for create(); behaviour covered by the create() tests.
+	 */
+	public function createLegacyPath(): JSONResponse {
+		return $this->create();
+	}//end createLegacyPath()
+
+	/**
+	 * show() on its old address.
+	 *
+	 * Deprecated alias of GET /api/deadlines/instances/{id}; remove after the next major.
+	 *
+	 * @param string $id Instance id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for show(); behaviour covered by the show() tests.
+	 */
+	public function showLegacyPath(string $id): JSONResponse {
+		return $this->show(id: $id);
+	}//end showLegacyPath()
+
+	/**
+	 * pauze() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/instances/{id}/pause; remove after the next major.
+	 *
+	 * @param string $id Instance id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for pauze(); behaviour covered by the pauze() tests.
+	 */
+	public function pauzeLegacyPath(string $id): JSONResponse {
+		return $this->pauze(id: $id);
+	}//end pauzeLegacyPath()
+
+	/**
+	 * hervat() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/instances/{id}/resume; remove after the next major.
+	 *
+	 * @param string $id Instance id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for hervat(); behaviour covered by the hervat() tests.
+	 */
+	public function hervatLegacyPath(string $id): JSONResponse {
+		return $this->hervat(id: $id);
+	}//end hervatLegacyPath()
+
+	/**
+	 * verleng() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/instances/{id}/extend; remove after the next major.
+	 *
+	 * @param string $id Instance id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for verleng(); behaviour covered by the verleng() tests.
+	 */
+	public function verlengLegacyPath(string $id): JSONResponse {
+		return $this->verleng(id: $id);
+	}//end verlengLegacyPath()
+
+	/**
+	 * voltooi() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/instances/{id}/complete; remove after the next major.
+	 *
+	 * @param string $id Instance id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for voltooi(); behaviour covered by the voltooi() tests.
+	 */
+	public function voltooiLegacyPath(string $id): JSONResponse {
+		return $this->voltooi(id: $id);
+	}//end voltooiLegacyPath()
 }//end class

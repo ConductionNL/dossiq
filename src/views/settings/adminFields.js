@@ -357,7 +357,7 @@ export function consultationFields(t) {
 export function reviewReportFields(t) {
 	return [
 		{
-			key: 'wooReviewerThroughputReaders',
+			key: 'reviewerThroughputReaders',
 			label: t('dossiq', 'Reader group for the throughput report'),
 			hint: t(
 				'dossiq',
@@ -365,14 +365,14 @@ export function reviewReportFields(t) {
 			),
 		},
 		{
-			key: 'wooReviewerThroughputReport',
+			key: 'reviewerThroughputReport',
 			label: t('dossiq', 'Report throughput per reviewer per day'),
 			type: 'switch',
 			trueValue: 'true',
 			falseValue: 'false',
 		},
 		{
-			key: 'wooCollectionPartiesReport',
+			key: 'collectionPartiesReport',
 			label: t('dossiq', 'Report collected mail by sender, recipient and domain'),
 			type: 'switch',
 			trueValue: 'true',

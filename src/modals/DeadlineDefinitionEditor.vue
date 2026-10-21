@@ -4,7 +4,7 @@
 -->
 <template>
 	<NcModal :name="title" size="normal" @close="$emit('close')">
-		<div class="termijn-definitie-editor">
+		<div class="deadline-definition-editor">
 			<h2>{{ title }}</h2>
 
 			<div class="form-group">
@@ -60,7 +60,7 @@
 				}}</label>
 				<NcSelect
 					id="td-counting-mode"
-					data-testid="termijn-counting-mode"
+					data-testid="deadline-counting-mode"
 					:modelValue="selectedCountingMode"
 					:options="countingModeOptions"
 					:inputLabel="t('dossiq', 'Counting mode')"
@@ -110,7 +110,7 @@
 			</div>
 
 			<div class="form-group form-group--note">
-				<p class="termijn-editor__note">
+				<p class="deadline-definition-editor__note">
 					{{
 						t(
 							'dossiq',
@@ -120,11 +120,11 @@
 				</p>
 			</div>
 
-			<div class="termijn-definitie-editor__actions">
+			<div class="deadline-definition-editor__actions">
 				<NcButton @click="$emit('close')">
 					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
-				<NcButton type="primary" :disabled="saving" @click="save">
+				<NcButton variant="primary" :disabled="saving" @click="save">
 					<template #icon>
 						<NcLoadingIcon v-if="saving" :size="18" />
 						<ContentSave v-else :size="18" />
@@ -153,7 +153,7 @@ import {
 import ContentSave from 'vue-material-design-icons/ContentSave.vue'
 
 export default {
-	name: 'TermijnDefinitieEditor',
+	name: 'DeadlineDefinitionEditor',
 	components: {
 		NcModal,
 		NcButton,
@@ -294,7 +294,7 @@ export default {
 </script>
 
 <style scoped>
-.termijn-definitie-editor {
+.deadline-definition-editor {
 	padding: 24px;
 	max-width: 560px;
 }
@@ -328,7 +328,7 @@ export default {
 	margin-top: 4px;
 }
 
-.termijn-editor__note {
+.deadline-definition-editor__note {
 	font-size: 12px;
 	color: var(--color-text-maxcontrast);
 	background: var(--color-background-dark);
@@ -336,7 +336,7 @@ export default {
 	border-radius: 6px;
 }
 
-.termijn-definitie-editor__actions {
+.deadline-definition-editor__actions {
 	display: flex;
 	justify-content: flex-end;
 	gap: 8px;

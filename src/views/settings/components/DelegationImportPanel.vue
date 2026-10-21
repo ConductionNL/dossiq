@@ -39,7 +39,7 @@
 		</div>
 
 		<div class="mandaat-import__actions">
-			<NcButton :disabled="!raw || running" type="primary" @click="preview">
+			<NcButton :disabled="!raw || running" variant="primary" @click="preview">
 				<template #icon>
 					<NcLoadingIcon v-if="running" :size="18" />
 					<EyeOutline v-else :size="18" />
@@ -49,7 +49,7 @@
 			<NcButton
 				v-if="previewResult"
 				:disabled="!importId || approving"
-				type="success"
+				variant="success"
 				@click="approve">
 				<template #icon>
 					<CheckBold :size="18" />
@@ -108,7 +108,7 @@ import CheckBold from 'vue-material-design-icons/CheckBold.vue'
 import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
 
 export default {
-	name: 'MandaatImportPanel',
+	name: 'DelegationImportPanel',
 	components: { NcButton, NcLoadingIcon, NcNoteCard, EyeOutline, CheckBold },
 	emits: ['imported'],
 	data() {

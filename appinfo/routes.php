@@ -690,16 +690,25 @@ $extra = [
     ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
     ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
-        // ── VTH Module ─────────────────────────────────────────────────────
-        // Checklist templates (admin). The URLs keep their first names; the
-        // controllers behind them know no procedure.
-    ['name' => 'checklistTemplate#index',   'url' => '/api/vth/checklists',       'verb' => 'GET'],
-    ['name' => 'checklistTemplate#create',  'url' => '/api/vth/checklists',       'verb' => 'POST'],
-    ['name' => 'checklistTemplate#update',  'url' => '/api/vth/checklists/{id}',  'verb' => 'PUT'],
-    ['name' => 'checklistTemplate#destroy', 'url' => '/api/vth/checklists/{id}',  'verb' => 'DELETE'],
+        // Checklist templates (admin).
+    ['name' => 'checklistTemplate#index',   'url' => '/api/checklists',       'verb' => 'GET'],
+    ['name' => 'checklistTemplate#create',  'url' => '/api/checklists',       'verb' => 'POST'],
+    ['name' => 'checklistTemplate#update',  'url' => '/api/checklists/{id}',  'verb' => 'PUT'],
+    ['name' => 'checklistTemplate#destroy', 'url' => '/api/checklists/{id}',  'verb' => 'DELETE'],
+        // deprecated alias: /api/checklists[/{id}], remove after the next major.
+        // Each alias has its own method: AppHost Routes::standard() rejects a
+        // duplicate route name and ignores `postfix`.
+    ['name' => 'checklistTemplate#indexLegacyPath',   'url' => '/api/vth/checklists',      'verb' => 'GET'],
+    ['name' => 'checklistTemplate#createLegacyPath',  'url' => '/api/vth/checklists',      'verb' => 'POST'],
+    ['name' => 'checklistTemplate#updateLegacyPath',  'url' => '/api/vth/checklists/{id}', 'verb' => 'PUT'],
+    ['name' => 'checklistTemplate#destroyLegacyPath', 'url' => '/api/vth/checklists/{id}', 'verb' => 'DELETE'],
         // A checklist run on a case: submit one, read them all.
-    ['name' => 'taskChecklist#submit', 'url' => '/api/vth/cases/{id}/inspection-result', 'verb' => 'POST'],
-    ['name' => 'taskChecklist#runs',   'url' => '/api/vth/cases/{id}/inspection-results', 'verb' => 'GET'],
+    ['name' => 'taskChecklist#submit', 'url' => '/api/cases/{id}/checklist-results', 'verb' => 'POST'],
+    ['name' => 'taskChecklist#runs',   'url' => '/api/cases/{id}/checklist-results', 'verb' => 'GET'],
+        // deprecated alias: /api/cases/{id}/checklist-results, remove after the
+        // next major. The offline field-inspection leaf replays to the old URL.
+    ['name' => 'taskChecklist#submitLegacyPath', 'url' => '/api/vth/cases/{id}/inspection-result',  'verb' => 'POST'],
+    ['name' => 'taskChecklist#runsLegacyPath',   'url' => '/api/vth/cases/{id}/inspection-results', 'verb' => 'GET'],
         // What an inspector captured at the site. The metadata validator and
         // the transcription queue both shipped with mobiel-inspectie-offline
         // and had no door, so a photo or a voice memo reached nobody and the
@@ -823,7 +832,9 @@ $extra = [
     // Lodge a remedy (bezwaar, ...) against a decided case; the case type's remedy declaration names the case type it opens (woo-case-screens-and-objections REQ-RML-001, generic per decision 182).
     ['name' => 'remedy#lodge', 'url' => '/api/cases/{id}/remedy', 'verb' => 'POST'],
     // Woo review reports (woo-review-reports): opt-in per organisation, the reader check is in the body.
-    ['name' => 'wooReport#throughput', 'url' => '/api/woo/reports/throughput', 'verb' => 'GET'],
+    ['name' => 'wooReport#throughput', 'url' => '/api/document-review/reports/throughput', 'verb' => 'GET'],
+        // deprecated alias: /api/document-review/reports/throughput, remove after the next major.
+    ['name' => 'wooReport#throughputLegacyPath', 'url' => '/api/woo/reports/throughput', 'verb' => 'GET'],
     ['name' => 'wooReport#offered', 'url' => '/api/reports/offered', 'verb' => 'GET'],
     ['name' => 'mailPartiesReport#show', 'url' => '/api/cases/{id}/reports/mail-parties', 'verb' => 'GET'],
     // Woo review (woo-review-triage): relevance apart from the verdict, and the case summary.
@@ -1085,15 +1096,25 @@ $extra = [
 
         // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
         // Public webhook for payout callbacks: the finance app (X-Shillinq-Signature)
-        // or the external payment provider (frozen X-Procest-Signature). URL frozen.
-    ['name' => 'payoutCallback#callback', 'url' => '/api/dossiq/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
-        // TermijnInstance lifecycle (caseworker / handler).
-    ['name' => 'termijn#create',     'url' => '/api/termijn/instances',                  'verb' => 'POST'],
-    ['name' => 'termijn#show',       'url' => '/api/termijn/instances/{id}',             'verb' => 'GET'],
-    ['name' => 'termijn#pauze',      'url' => '/api/termijn/instances/{id}/pauze',       'verb' => 'POST'],
-    ['name' => 'termijn#hervat',     'url' => '/api/termijn/instances/{id}/hervat',      'verb' => 'POST'],
-    ['name' => 'termijn#verleng',    'url' => '/api/termijn/instances/{id}/verleng',     'verb' => 'POST'],
-    ['name' => 'termijn#voltooi',    'url' => '/api/termijn/instances/{id}/voltooi',     'verb' => 'POST'],
+        // or the external payment provider (frozen X-Procest-Signature).
+    ['name' => 'payoutCallback#callback', 'url' => '/api/payments/callback', 'verb' => 'POST'],
+        // PERMANENT alias: the old URL is configured at external payment
+        // providers, where no repair step can reach it. Never remove.
+    ['name' => 'payoutCallback#callbackLegacyPath', 'url' => '/api/dossiq/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
+        // Term instance lifecycle (caseworker / handler).
+    ['name' => 'termijn#create',     'url' => '/api/deadlines/instances',                'verb' => 'POST'],
+    ['name' => 'termijn#show',       'url' => '/api/deadlines/instances/{id}',           'verb' => 'GET'],
+    ['name' => 'termijn#pauze',      'url' => '/api/deadlines/instances/{id}/pause',     'verb' => 'POST'],
+    ['name' => 'termijn#hervat',     'url' => '/api/deadlines/instances/{id}/resume',    'verb' => 'POST'],
+    ['name' => 'termijn#verleng',    'url' => '/api/deadlines/instances/{id}/extend',    'verb' => 'POST'],
+    ['name' => 'termijn#voltooi',    'url' => '/api/deadlines/instances/{id}/complete',  'verb' => 'POST'],
+        // deprecated alias: /api/deadlines/instances*, remove after the next major.
+    ['name' => 'termijn#createLegacyPath',  'url' => '/api/termijn/instances',             'verb' => 'POST'],
+    ['name' => 'termijn#showLegacyPath',    'url' => '/api/termijn/instances/{id}',        'verb' => 'GET'],
+    ['name' => 'termijn#pauzeLegacyPath',   'url' => '/api/termijn/instances/{id}/pauze',  'verb' => 'POST'],
+    ['name' => 'termijn#hervatLegacyPath',  'url' => '/api/termijn/instances/{id}/hervat', 'verb' => 'POST'],
+    ['name' => 'termijn#verlengLegacyPath', 'url' => '/api/termijn/instances/{id}/verleng', 'verb' => 'POST'],
+    ['name' => 'termijn#voltooiLegacyPath', 'url' => '/api/termijn/instances/{id}/voltooi', 'verb' => 'POST'],
         // The four clocks on ONE CASE. Addressed by case and not by instance,
         // because a case page holds a case id and there are four instances
         // behind it: a statutory term, a planned end, an internal target and a
@@ -1112,7 +1133,9 @@ $extra = [
         // statutory suspension.
     ['name' => 'caseTerms#aanvullingsverzoeken', 'url' => '/api/cases/{caseId}/aanvullingsverzoeken', 'verb' => 'GET'],
         // How old the work still standing is, read live over open cases only.
-    ['name' => 'caseTerms#workloadAge', 'url' => '/api/termijn/reports/open-workload-age', 'verb' => 'GET'],
+    ['name' => 'caseTerms#workloadAge', 'url' => '/api/deadlines/reports/open-workload-age', 'verb' => 'GET'],
+        // deprecated alias: /api/deadlines/reports/open-workload-age, remove after the next major.
+    ['name' => 'caseTerms#workloadAgeLegacyPath', 'url' => '/api/termijn/reports/open-workload-age', 'verb' => 'GET'],
 
         // AVG data subject requests, driven from the case
         // (data-subject-requests-drive-the-platform, REQ-AVG-DSR-01..03).
@@ -1127,16 +1150,21 @@ $extra = [
     ['name' => 'dataSubjectRequest#requestExport', 'url' => '/api/cases/{caseId}/avg/subject-export',  'verb' => 'POST'],
     ['name' => 'dataSubjectRequest#exportState',   'url' => '/api/cases/{caseId}/avg/subject-export',  'verb' => 'GET'],
         // TermijnDefinitie ADMIN registry (REQ-TERM-ADMIN-001, procest#794).
-        // TermijnDefinitiesTab.vue has always called this collection; only
+        // DeadlineDefinitionsTab.vue has always called this collection; only
         // /api/termijn/instances* was declared, so the tab rendered empty.
-    ['name' => 'termijnDefinitie#index',  'url' => '/api/termijn/definities',      'verb' => 'GET'],
+    ['name' => 'termijnDefinitie#index',  'url' => '/api/deadlines/definitions',   'verb' => 'GET'],
     // What every term on this instance is counted against: the zone, and
     // whether an organisation calendar answers the Awt roll. The admin page
     // says which, because a roll that could not be made and a roll that was
     // not needed produce the same plausible date.
-    ['name' => 'termijnDefinitie#calendar', 'url' => '/api/termijn/calendar',      'verb' => 'GET'],
-    ['name' => 'termijnDefinitie#create', 'url' => '/api/termijn/definities',      'verb' => 'POST'],
-    ['name' => 'termijnDefinitie#update', 'url' => '/api/termijn/definities/{id}', 'verb' => 'PATCH'],
+    ['name' => 'termijnDefinitie#calendar', 'url' => '/api/deadlines/calendar',    'verb' => 'GET'],
+    ['name' => 'termijnDefinitie#create', 'url' => '/api/deadlines/definitions',      'verb' => 'POST'],
+    ['name' => 'termijnDefinitie#update', 'url' => '/api/deadlines/definitions/{id}', 'verb' => 'PATCH'],
+        // deprecated alias: /api/deadlines/definitions[/{id}] and /api/deadlines/calendar, remove after the next major.
+    ['name' => 'termijnDefinitie#indexLegacyPath',    'url' => '/api/termijn/definities',      'verb' => 'GET'],
+    ['name' => 'termijnDefinitie#calendarLegacyPath', 'url' => '/api/termijn/calendar',        'verb' => 'GET'],
+    ['name' => 'termijnDefinitie#createLegacyPath',   'url' => '/api/termijn/definities',      'verb' => 'POST'],
+    ['name' => 'termijnDefinitie#updateLegacyPath',   'url' => '/api/termijn/definities/{id}', 'verb' => 'PATCH'],
         // Notice-of-default registration.
         // Route NAMES follow the renamed controller — a route name resolves to
         // its class, so it must move with it or the router 500s. The URLs
@@ -1152,17 +1180,18 @@ $extra = [
     ['name' => 'dwangsom#bezwaar',      'url' => '/api/termijn/dwangsom/{id}/bezwaar',     'verb' => 'POST'],
     ['name' => 'dwangsom#bezwaarHeroverweging', 'url' => '/api/termijn/dwangsom/{id}/bezwaar/heroverweging', 'verb' => 'POST'],
         // Reporting (manager / accountant).
-        // The route NAMES follow the renamed controller and its methods; the
-        // URLs deliberately do NOT. /api/termijn/* is the published contract and
-        // moving it is a breaking change for every consumer, so it is a separate
-        // decision from this rename. Nothing references these route names — the
-        // frontend calls the URLs directly.
-    ['name' => 'deadlineReporting#dashboard',        'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
-    ['name' => 'deadlineReporting#quarterlyReport',  'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
-    ['name' => 'deadlineReporting#annualStatement',  'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
+    ['name' => 'deadlineReporting#dashboard',        'url' => '/api/deadlines/dashboard/kpi',          'verb' => 'GET'],
+    ['name' => 'deadlineReporting#quarterlyReport',  'url' => '/api/deadlines/reports/quarterly',      'verb' => 'GET'],
+    ['name' => 'deadlineReporting#annualStatement',  'url' => '/api/deadlines/reports/annual',         'verb' => 'GET'],
         // The first response, counted and averaged from what was stored on the
         // cases at the time (term-configuration-beyond-the-case-type, row 8.24).
-    ['name' => 'deadlineReporting#firstResponseReport', 'url' => '/api/termijn/reports/eerste-reactie', 'verb' => 'GET'],
+    ['name' => 'deadlineReporting#firstResponseReport', 'url' => '/api/deadlines/reports/first-response', 'verb' => 'GET'],
+        // deprecated alias: /api/deadlines/dashboard/kpi and /api/deadlines/reports/*,
+        // remove after the next major. External report consumers call these.
+    ['name' => 'deadlineReporting#dashboardLegacyPath',           'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
+    ['name' => 'deadlineReporting#quarterlyReportLegacyPath',     'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
+    ['name' => 'deadlineReporting#annualStatementLegacyPath',     'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
+    ['name' => 'deadlineReporting#firstResponseReportLegacyPath', 'url' => '/api/termijn/reports/eerste-reactie',   'verb' => 'GET'],
         // IV3/BBV taakveld reference list, for the case-type classification
         // picker. The quarterly IV3 cost report that used to sit alongside it
         // is gone under ADR-081 — Shillinq is the only statutory reporter. The

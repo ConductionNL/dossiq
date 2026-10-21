@@ -368,7 +368,7 @@ describe('the simple profile', () => {
 				'CasesDeletedMenu',
 				'CaseObjectsMenu',
 				'MailIntakeLogMenu',
-				'WooReportsMenu',
+				'DocumentReviewReportsMenu',
 			]),
 		)
 		// Everything the full profile has in settings is still there.
@@ -384,7 +384,7 @@ describe('the simple profile', () => {
 		expect(ids(built.menu, 'integrations')).toEqual(ids(full, 'integrations'))
 		expect(ids(built.menu, 'footer')).toEqual(
 			ids(full, 'footer').filter(
-				(id) => id !== 'MailIntakeLogMenu' && id !== 'WooReportsMenu',
+				(id) => id !== 'MailIntakeLogMenu' && id !== 'DocumentReviewReportsMenu',
 			),
 		)
 	})

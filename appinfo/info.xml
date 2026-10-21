@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261021074500</version>
+    <version>0.4.47-unstable.20261021135200</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -874,6 +874,16 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 types, so it runs after the import.
             -->
             <step>OCA\Dossiq\Repair\PinCaseTypesAsViews</step>
+            <!--
+                Renamed UI names (dq-abstract L7). The document review report
+                settings move to their current keys, and the widget, page and
+                menu ids an administrator arranged in buildiq follow their new
+                names. Both never overwrite, never throw, and change nothing on
+                a second run. Post-migration only: a fresh install has no old
+                keys and no stored arrangement.
+            -->
+            <step>OCA\Dossiq\Repair\CarryRenamedSettingKeys</step>
+            <step>OCA\Dossiq\Repair\RewriteRenamedLayoutIds</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:

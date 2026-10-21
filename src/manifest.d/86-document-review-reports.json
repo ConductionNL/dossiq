@@ -7,10 +7,10 @@
 	},
 	"menu": [
 		{
-			"id": "WooReportsMenu",
+			"id": "DocumentReviewReportsMenu",
 			"label": "Woo reports",
 			"icon": "ChartBoxOutline",
-			"route": "WooReports",
+			"route": "DocumentReviewReports",
 			"section": "footer",
 			"order": 96,
 			"visibleIf": {
@@ -20,8 +20,8 @@
 	],
 	"pages": [
 		{
-			"id": "WooReports",
-			"route": "/woo-reports",
+			"id": "DocumentReviewReports",
+			"route": "/document-review-reports",
 			"type": "dashboard",
 			"_note": "Shown in the menu only while a report is offered to this user (initial state woo_reports, runtime woo.reportsOffered). Each widget shows only while its report is offered (/api/reports/offered); WooReportController and MailPartiesReportController still refuse a read from anyone else, with their sentence.",
 			"title": "Woo reports",
@@ -43,7 +43,7 @@
 						"id": "throughput-csv",
 						"label": "Download CSV",
 						"icon": "Download",
-						"href": "/apps/dossiq/api/woo/reports/throughput?format=csv&from=@workspace.dateFrom&to=@workspace.dateTo",
+						"href": "/apps/dossiq/api/document-review/reports/throughput?format=csv&from=@workspace.dateFrom&to=@workspace.dateTo",
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/reports/offered",
 							"field": "throughput",
@@ -65,7 +65,7 @@
 						},
 						"content": {
 							"endpointSource": {
-								"url": "/apps/dossiq/api/woo/reports/throughput",
+								"url": "/apps/dossiq/api/document-review/reports/throughput",
 								"params": {
 									"from": "@workspace.dateFrom",
 									"to": "@workspace.dateTo"
