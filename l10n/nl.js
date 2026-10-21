@@ -590,6 +590,7 @@ OC.L10N.register(
         "All changes synced": "Alle wijzigingen gesynchroniseerd",
         "All connections": "Alle verbindingen",
         "All deadlines": "Alle termijnen",
+        "All history": "Alle historie",
         "All issues": "Alle zaken",
         "All kinds": "Alle soorten",
         "All my work": "Al mijn werk",

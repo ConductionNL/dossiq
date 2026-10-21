@@ -133,3 +133,35 @@ describe('the side facts (REQ-CTB-5)', () => {
 		expect(origin.map((field) => field.parts[0].text)).toEqual(['Shipped', 'Own case type'])
 	})
 })
+
+describe('card header actions (nextcloud-vue widget-header-actions)', () => {
+	it.each([
+		['case-type-statuses', 'Edit', 'statuses'],
+		['case-type-rules-summary', 'Add a rule', 'rules'],
+		['case-type-terms-written', 'Edit', 'fields'],
+	])('%s carries %s, opening the %s tab', (id, label, tabId) => {
+		expect(widget(id).headerActions).toEqual([
+			expect.objectContaining({ label, action: { type: 'navigate', target: `/settings/case-types/@objectId#${tabId}` } }),
+		])
+		expect(tab(tabId)).toBeTruthy()
+	})
+
+	it('keeps the raw terms editable on the Fields tab', () => {
+		expect(idsOf(tab('fields'))).toContain('case-type-terms')
+	})
+})
+
+describe('the side column (nextcloud-vue 24p)', () => {
+	const side = (id) => detail.config.sideColumn.find((card) => card.id === id)
+
+	it('titles the data card as a side card', () => {
+		expect(side('side-case-type-facts').titleTone).toBe('side')
+	})
+
+	it('shows what changed in the history card, not who read it, and opens the History tab', () => {
+		const history = side('side-case-type-history')
+		expect(history.title).toBe('Record history')
+		expect(history.content.excludeActions).toEqual(['read'])
+		expect(history.headerLink).toEqual({ label: 'All history', tab: 'history' })
+	})
+})
