@@ -242,6 +242,7 @@
         "A mention leaves once you have opened what you were mentioned in.": "A mention leaves once you have opened what you were mentioned in.",
         "A message to this party is refused": "A message to this party is refused",
         "A message to {party} is refused.": "A message to {party} is refused.",
+        "A message with the result, in the portal, the Berichtenbox or by e-mail": "A message with the result, in the portal, the Berichtenbox or by e-mail",
         "A milestone cannot wait for itself: %s": "A milestone cannot wait for itself: %s",
         "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.": "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.",
         "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.": "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.",
