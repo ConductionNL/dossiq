@@ -1777,6 +1777,7 @@
 			"_note": "Everything waiting on the reader, in one place, fed by the declared queue sources. A dashboard page with ONE `work-queue` widget (the library's CnWorkQueue) and not type:\"index\": an index page names one register and one schema, and this list spans cases, engine tasks, consultations, advice requests, mentions, work covered for an absent colleague, and calendar items the reader planned for themselves. No manifest key names a set that crosses four stores and a calendar. It is also not a second index over (dossiq, case), so gate-68 has nothing to answer: the page never reads the case schema directly. READ THE NAME COLLISION: the team queue is the UNCLAIMED POOL, every open case nobody has picked up, a view of the Cases page; this one is personal and nobody else can see it. The page names NO source. Every group, its heading and the sentence saying what closes it come from the server, which builds them from the declared queue sources, so a ninth mechanism reaches this page by declaring itself rather than by an edit here. Plan an item opens the library's CnActionDialog, which posts the item and fires `cn:page:refresh`; the work queue listens on that channel, so the planned item shows at once.",
 			"config": {
 				"allowEdit": false,
+				"showActionsMenu": false,
 				"appId": "dossiq",
 				"pageId": "PersonalQueue",
 				"documentationUrl": "https://dossiq.conduction.nl",
