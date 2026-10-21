@@ -114,6 +114,8 @@
         "{candidateGroups}",
         "{label}",
         "Actor type",
-        "Override"
+        "Override",
+        "{identifier}",
+        "{subject.title}"
     ]
 }

@@ -49,16 +49,17 @@ const WIDGET = 'family-plan'
 const ADAPTIVE = 'cmmn-case-plan'
 
 describe('the family plan reaches the case page', () => {
-	it('is declared as a widget with its own registry type', () => {
+	it('is declared as library widgets over the plan endpoint, under its stored id', () => {
 		const widget = caseDetail.config.widgets.find((entry) => entry.id === WIDGET)
 
 		expect(widget, 'the widget is declared').toBeTruthy()
-		// The type names a REGISTRY KEY rather than "custom": CnDetailPage
-		// resolves a grid item's renderer from `cnRegistry[widget.type]` when
-		// the app supplies no `widget-<id>` slot, and dossiq supplies none.
-		expect(widget.type).toBe(WIDGET)
-		expect(registrySource).toContain(`'${WIDGET}': {`)
-		expect(registrySource).toContain('CasePlanSociaalDomeinPanel')
+		// The id stays `family-plan`: users' stored layouts name it. The body
+		// is library config, a review-due banner and grouped cards, so no
+		// registry key answers for it any more.
+		expect(widget.type).toBe('sections')
+		expect(widget.content.sections.map((section) => section.widget.type)).toEqual(['banner', 'grouped-cards'])
+		expect(registrySource).not.toContain(`'${WIDGET}': {`)
+		expect(registrySource).not.toContain('CasePlanSociaalDomeinPanel')
 	})
 
 	it('🔴 is PLACED in the layout, so it is not dark', () => {

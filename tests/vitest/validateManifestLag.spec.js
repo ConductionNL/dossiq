@@ -195,7 +195,10 @@ describe('check:manifest tells a lag from a defect', () => {
 			'resolve',
 		)
 
-		if (declaresAll && declaresStartOn && declaresCardResolve) {
+		// The `redaction` page type (schema 2.137.0) is derived the same way.
+		const declaresRedaction = (installed.$defs.page?.properties?.type?.enum || []).includes('redaction')
+
+		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction) {
 			expect(out).not.toContain('pending a library release')
 			return
 		}
@@ -250,6 +253,20 @@ describe('check:manifest tells a lag from a defect', () => {
 		}
 
 		manifest.walkthrough.tours[0].thisTourKeyExistsNowhere = true
+		const bogus = validate(manifest)
+		expect(bogus.code).toBe(1)
+		expect(bogus.out).toContain('FAIL')
+	}, 30000)
+
+	it('a page type only the newer schema lists is a lag, and an unknown one is not', () => {
+		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
+		expect(vendored.$defs.page.properties.type.enum).toContain('redaction')
+
+		const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
+		const named = validate(manifest)
+		expect(named.code).toBe(0)
+
+		manifest.pages.find((page) => page.id === 'CaseRedaction').type = 'thisPageTypeExistsNowhere'
 		const bogus = validate(manifest)
 		expect(bogus.code).toBe(1)
 		expect(bogus.out).toContain('FAIL')

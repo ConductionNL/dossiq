@@ -33,8 +33,6 @@ vi.mock('@nextcloud/l10n', () => ({
 	translatePlural: (app, text) => text,
 }))
 
-const { representedByMap } = await import('../../src/services/caseParties.js')
-
 const manifest = JSON.parse(
 	fs.readFileSync(path.resolve(__dirname, '../../src/manifest.json'), 'utf8'),
 )
@@ -68,39 +66,17 @@ describe('the roles a case type offers', () => {
 })
 
 describe('who a party is representing', () => {
-	it('names the represented party for the participant acting for them', () => {
-		const map = representedByMap([
-			{
-				participant: 'party-gem',
-				roleType: 'rt-gem',
-				representedParty: 'party-applicant',
-			},
-			{ participant: 'party-applicant', roleType: 'rt-handler' },
-		])
+	// Reading `representedParty` off the role rows is the library parties
+	// widget's (nextcloud-vue objectParties.representedByMap, with these cases
+	// ported to its spec). dossiq's half is that the Roles section names the
+	// role rows of THIS case, where a gemachtigde says whom they act for.
+	it('reads the role rows of the case, where a gemachtigde names the represented party', () => {
+		const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
+		const people = caseDetail.config.widgets.find((widget) => widget.id === 'case-people-panel')
+		const roles = people.content.sections.map((section) => section.widget).find((widget) => widget.id === 'case-party-roles')
 
-		expect(map).toEqual({ 'party-gem': 'party-applicant' })
-	})
-
-	it('ignores delegateFrom, which is a date and not a party', () => {
-		const map = representedByMap([
-			{
-				participant: 'party-gem',
-				delegateFrom: '2026-09-01T00:00:00+00:00',
-			},
-		])
-
-		expect(map).toEqual({})
-	})
-
-	it('reads a represented party handed over as a reference object', () => {
-		const map = representedByMap([
-			{ participant: 'p', representedParty: { id: 'q' } },
-		])
-
-		expect(map).toEqual({ p: 'q' })
-	})
-
-	it('answers an empty map for a case whose roles could not be read', () => {
-		expect(representedByMap(null)).toEqual({})
+		expect(roles.type).toBe('parties')
+		expect(roles.content.rolesObjects).toEqual({ register: 'dossiq', schema: 'role', field: 'case' })
+		expect(roles.content.roleLabels.gemachtigde).toBe('Authorised representative')
 	})
 })
