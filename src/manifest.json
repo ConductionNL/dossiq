@@ -7971,11 +7971,11 @@
 					}
 				],
 				"description": "Bottleneck analysis from recorded case status history",
-				"_statisticNote": "Board DqProcesanalyse: the description line carries the Gemiddeld / Mediaan switch. The report answers both (`phaseDays.mean` and `phaseDays.median`), and the days-per-phase matrix reads the one the switch names through `@workspace.statistic` in its responsePath.",
+				"_statisticNote": "Board DqProcesanalyse: the description line carries the Gemiddeld / Mediaan switch, a group named Maat (Measure). The report answers both (`phaseDays.mean` and `phaseDays.median`), and the days-per-phase matrix reads the one the switch names through `@workspace.statistic` in its responsePath.",
 				"pageFilters": [
 					{
 						"key": "statistic",
-						"label": "Statistic",
+						"label": "Measure",
 						"control": "segmented",
 						"placement": "description",
 						"default": "mean",
