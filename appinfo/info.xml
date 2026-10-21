@@ -874,6 +874,16 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 types, so it runs after the import.
             -->
             <step>OCA\Dossiq\Repair\PinCaseTypesAsViews</step>
+            <!--
+                Renamed UI names (dq-abstract L7). The document review report
+                settings move to their current keys, and the widget, page and
+                menu ids an administrator arranged in buildiq follow their new
+                names. Both never overwrite, never throw, and change nothing on
+                a second run. Post-migration only: a fresh install has no old
+                keys and no stored arrangement.
+            -->
+            <step>OCA\Dossiq\Repair\CarryRenamedSettingKeys</step>
+            <step>OCA\Dossiq\Repair\RewriteRenamedLayoutIds</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:

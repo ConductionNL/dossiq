@@ -27,8 +27,9 @@ use Throwable;
  * series with OpenRegister (ADR-022), so OpenRegister owns persistence and the
  * render contract.
  *
- * The series keys keep the `procest-sla-` prefix: OpenRegister upserts on the
- * key, so a new key would orphan the stored series rather than move it.
+ * Each series is registered under its `dossiq-sla-` key and, for one release,
+ * also under its earlier `procest-sla-` key: OpenRegister upserts on the key,
+ * so a reader of the old key keeps a current series until it moves.
  * Publication never fails a report; an absent or failing leaf is logged.
  *
  * @spec openspec/specs/sla-charts-via-analytics-leaf/spec.md
@@ -42,6 +43,19 @@ class ProcessingTimeSeriesPublisher {
 	 * @var string
 	 */
 	private const SERIES_SERVICE = 'OCA\OpenRegister\Service\AnalyticsSeriesService';
+
+	/**
+	 * Each series key => the key it was published under before. Both are
+	 * published for one release.
+	 *
+	 * @var array<string, string>
+	 */
+	public const LEGACY_KEYS = [
+		'dossiq-sla-compliance-by-type' => 'procest-sla-compliance-by-type',
+		'dossiq-sla-processing-time-distribution' => 'procest-sla-processing-time-distribution',
+		'dossiq-sla-monthly-trend' => 'procest-sla-monthly-trend',
+		'dossiq-sla-weekly-throughput' => 'procest-sla-weekly-throughput',
+	];
 
 	/**
 	 * Constructor.
@@ -76,6 +90,10 @@ class ProcessingTimeSeriesPublisher {
 			$service = $this->container->get(self::SERIES_SERVICE);
 			foreach ($series as $entry) {
 				$service->register(...$entry);
+				$legacy = (self::LEGACY_KEYS[$entry['seriesKey']] ?? null);
+				if ($legacy !== null) {
+					$service->register(...array_merge($entry, ['seriesKey' => $legacy]));
+				}
 			}
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -100,7 +118,7 @@ class ProcessingTimeSeriesPublisher {
 		$sla = ($report['sla'] ?? []);
 		if ($sla !== []) {
 			$series[] = [
-				'seriesKey' => 'procest-sla-compliance-by-type',
+				'seriesKey' => 'dossiq-sla-compliance-by-type',
 				'title'     => $this->l10n->t('Compliance by Case Type'),
 				'chartType' => 'doughnut',
 				'labels'    => array_column($sla, 'name'),
@@ -111,7 +129,7 @@ class ProcessingTimeSeriesPublisher {
 		$bins = ($report['distribution'] ?? []);
 		if ($bins !== []) {
 			$series[] = [
-				'seriesKey' => 'procest-sla-processing-time-distribution',
+				'seriesKey' => 'dossiq-sla-processing-time-distribution',
 				'title'     => $this->l10n->t('Processing Time Distribution'),
 				'chartType' => 'bar',
 				'labels'    => array_column($bins, 'label'),
@@ -122,7 +140,7 @@ class ProcessingTimeSeriesPublisher {
 		$trend = ($report['trend'] ?? []);
 		if ($trend !== []) {
 			$series[] = [
-				'seriesKey' => 'procest-sla-monthly-trend',
+				'seriesKey' => 'dossiq-sla-monthly-trend',
 				'title'     => $this->l10n->t('Monthly SLA Trend'),
 				'chartType' => 'line',
 				'labels'    => array_column($trend, 'month'),
@@ -133,7 +151,7 @@ class ProcessingTimeSeriesPublisher {
 		$weeks = ($report['throughput'] ?? []);
 		if ($weeks !== []) {
 			$series[] = [
-				'seriesKey' => 'procest-sla-weekly-throughput',
+				'seriesKey' => 'dossiq-sla-weekly-throughput',
 				'title'     => $this->l10n->t('Throughput (cases closed per week)'),
 				'chartType' => 'line',
 				'labels'    => array_column($weeks, 'weekLabel'),

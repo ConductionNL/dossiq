@@ -146,4 +146,21 @@ class PayoutCallbackController extends Controller {
 	protected function rawBody(): string {
 		return (string)file_get_contents('php://input');
 	}//end rawBody()
+
+	/**
+	 * callback() on its old address.
+	 *
+	 * A permanent alias of /api/payments/callback: external systems are configured with
+	 * the old URL.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 300, period: 60)]
+	public function callbackLegacyPath(): JSONResponse {
+		return $this->callback();
+	}//end callbackLegacyPath()
 }//end class

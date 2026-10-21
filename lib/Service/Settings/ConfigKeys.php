@@ -393,9 +393,14 @@ class ConfigKeys {
 		'staff_app_name',
 		// The organisation's text above Mijn zaken in the portal (CitizenManifest).
 		'portal_intro_text',
-		// The Woo review reports (woo-review-reports, decision D9): both off
-		// until an administrator says yes. WooReportSwitches reads them and
+		// The document review reports (woo-review-reports, decision D9): both
+		// off until an administrator says yes. WooReportSwitches reads them and
 		// refuses the throughput switch without an existing reader group.
+		'reviewerThroughputReport',
+		'reviewerThroughputReaders',
+		'collectionPartiesReport',
+		// Their earlier names, still read where the current key was never
+		// written (WooReportSwitches::LEGACY_KEYS).
 		'wooReviewerThroughputReport',
 		'wooReviewerThroughputReaders',
 		'wooCollectionPartiesReport',

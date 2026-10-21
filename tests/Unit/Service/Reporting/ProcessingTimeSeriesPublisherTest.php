@@ -70,23 +70,23 @@ class ProcessingTimeSeriesPublisherTest extends TestCase {
 	}//end publisher()
 
 	/**
-	 * The keys stay at their stored `procest-sla-` names.
+	 * The series carry their `dossiq-sla-` names.
 	 *
 	 * @return void
 	 */
-	public function testSeriesKeepTheirStoredKeys(): void {
+	public function testSeriesCarryTheirGenericKeys(): void {
 		$series = $this->publisher(service: null)->seriesOf(report: $this->report());
 
 		self::assertSame(
 			[
-				'procest-sla-compliance-by-type',
-				'procest-sla-processing-time-distribution',
-				'procest-sla-monthly-trend',
-				'procest-sla-weekly-throughput',
+				'dossiq-sla-compliance-by-type',
+				'dossiq-sla-processing-time-distribution',
+				'dossiq-sla-monthly-trend',
+				'dossiq-sla-weekly-throughput',
 			],
 			array_column($series, 'seriesKey')
 		);
-	}//end testSeriesKeepTheirStoredKeys()
+	}//end testSeriesCarryTheirGenericKeys()
 
 	/**
 	 * The donut is a flat list; the others are named datasets.
@@ -143,7 +143,20 @@ class ProcessingTimeSeriesPublisherTest extends TestCase {
 
 		$this->publisher(service: $service)->publish(report: $this->report());
 
-		self::assertCount(4, $service->keys);
+		self::assertSame(
+			[
+				'dossiq-sla-compliance-by-type',
+				'procest-sla-compliance-by-type',
+				'dossiq-sla-processing-time-distribution',
+				'procest-sla-processing-time-distribution',
+				'dossiq-sla-monthly-trend',
+				'procest-sla-monthly-trend',
+				'dossiq-sla-weekly-throughput',
+				'procest-sla-weekly-throughput',
+			],
+			$service->keys,
+			'Each series is published under its new key and, for one release, its old one.'
+		);
 	}//end testPublishRegistersEachSeries()
 
 	/**

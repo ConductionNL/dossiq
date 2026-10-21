@@ -482,11 +482,11 @@ class SettingsServiceTest extends TestCase {
 
 		$settings = $this->service->getSettings();
 
-		$this->assertArrayHasKey('wooReviewerThroughputReport', $settings);
-		$this->assertArrayHasKey('wooCollectionPartiesReport', $settings);
-		$this->assertArrayHasKey('wooReviewerThroughputReaders', $settings);
-		$this->assertSame('', $settings['wooReviewerThroughputReport']);
-		$this->assertSame('', $settings['wooCollectionPartiesReport']);
+		$this->assertArrayHasKey('reviewerThroughputReport', $settings);
+		$this->assertArrayHasKey('collectionPartiesReport', $settings);
+		$this->assertArrayHasKey('reviewerThroughputReaders', $settings);
+		$this->assertSame('', $settings['reviewerThroughputReport']);
+		$this->assertSame('', $settings['collectionPartiesReport']);
 
 		$switches = new \OCA\Dossiq\Woo\WooReportSwitches(
 			$this->appConfig,
@@ -520,9 +520,15 @@ class SettingsServiceTest extends TestCase {
 		$this->appConfig->method('getValueString')->willReturn('');
 		$this->appConfig->expects($this->never())->method('setValueString');
 
-		foreach ([[], ['wooReviewerThroughputReaders' => 'nobody']] as $readers) {
+		$saves = [
+			['reviewerThroughputReport' => 'true'],
+			['reviewerThroughputReport' => 'true', 'reviewerThroughputReaders' => 'nobody'],
+			// A client that still posts the earlier keys is checked the same way.
+			['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'nobody'],
+		];
+		foreach ($saves as $save) {
 			try {
-				$this->service->updateSettings(['wooReviewerThroughputReport' => 'true'] + $readers);
+				$this->service->updateSettings($save);
 				$this->fail('The throughput report went on without an existing reader group');
 			} catch (\OCA\Dossiq\Exception\RefusedException $e) {
 				$this->assertSame('woo-throughput-needs-reader-group', $e->getRule());
@@ -552,9 +558,15 @@ class SettingsServiceTest extends TestCase {
 			}
 		);
 
-		$this->service->updateSettings(['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'woo-leiding']);
+		$this->service->updateSettings(['reviewerThroughputReport' => 'true', 'reviewerThroughputReaders' => 'woo-leiding']);
 
-		$this->assertSame(['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'woo-leiding'], $written);
+		$this->assertSame(['reviewerThroughputReport' => 'true', 'reviewerThroughputReaders' => 'woo-leiding'], $written);
+
+		// The earlier keys still save, and land under the current keys too.
+		$written = [];
+		$this->service->updateSettings(['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'woo-leiding']);
+		$this->assertSame('true', $written['reviewerThroughputReport']);
+		$this->assertSame('woo-leiding', $written['reviewerThroughputReaders']);
 	}//end testThroughputGoesOnWithAnExistingReaderGroup()
 }//end class
 

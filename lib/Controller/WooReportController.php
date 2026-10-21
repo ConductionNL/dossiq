@@ -221,4 +221,18 @@ class WooReportController extends Controller {
 			default => $this->l10n->t('The Woo assessments cannot be read, so the report cannot be made.'),
 		};
 	}//end sentence()
+
+	/**
+	 * throughput() on its old address.
+	 *
+	 * Deprecated alias of /api/document-review/reports/throughput; remove after the next major.
+	 *
+	 * @return JSONResponse|DataDownloadResponse
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 */
+	#[NoAdminRequired]
+	public function throughputLegacyPath(): JSONResponse|DataDownloadResponse {
+		return $this->throughput();
+	}//end throughputLegacyPath()
 }//end class

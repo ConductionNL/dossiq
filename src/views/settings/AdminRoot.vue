@@ -235,7 +235,7 @@
 					)
 				"
 				:loading="!storesReady">
-				<TermijnDefinitiesTab v-if="storesReady" />
+				<DeadlineDefinitionsTab v-if="storesReady" />
 			</CnSettingsSection>
 
 			<CnSettingsFieldsSection
@@ -267,7 +267,7 @@
 					)
 				"
 				:loading="!storesReady">
-				<MandaatMatrixTab v-if="storesReady" />
+				<DelegationMatrixTab v-if="storesReady" />
 			</CnSettingsSection>
 
 			<CnSettingsFieldsSection
@@ -582,7 +582,7 @@
 						{{ t('dossiq', 'Add checklist') }}
 					</NcButton>
 				</template>
-				<ChecklistsTab v-if="storesReady" ref="checklists" :hideAddButton="true" />
+				<ChecklistTemplatesTab v-if="storesReady" ref="checklists" :hideAddButton="true" />
 			</CnSettingsSection>
 
 			<CnSettingsSection
@@ -637,13 +637,13 @@ import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
 import ShippedConfiguration from './ShippedConfiguration.vue'
 import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
-import ChecklistsTab from './tabs/ChecklistsTab.vue'
+import ChecklistTemplatesTab from './tabs/ChecklistTemplatesTab.vue'
+import DeadlineDefinitionsTab from './tabs/DeadlineDefinitionsTab.vue'
+import DelegationMatrixTab from './tabs/DelegationMatrixTab.vue'
 import FirstRunTab from './tabs/FirstRunTab.vue'
-import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
 import PrerequisitesTab from './tabs/PrerequisitesTab.vue'
 import SearchIndexTab from './tabs/SearchIndexTab.vue'
 import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
-import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import manifest from '../../manifest.json'
 import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
@@ -684,9 +684,9 @@ export default {
 		CnWorkingCalendarWidget,
 		ZgwMappingSettings,
 		SearchIndexTab,
-		ChecklistsTab,
-		TermijnDefinitiesTab,
-		MandaatMatrixTab,
+		ChecklistTemplatesTab,
+		DeadlineDefinitionsTab,
+		DelegationMatrixTab,
 		ShippedConfiguration,
 		StufEndpoints,
 		StufAuditLog,

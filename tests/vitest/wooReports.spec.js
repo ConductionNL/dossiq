@@ -120,7 +120,7 @@ vi.mock('../../src/store/modules/settings.js', () => ({
 const { mailPartiesReport } = await import('../../src/views/reports/mailPartiesReport.js')
 const { default: MailPartiesReportWidget } = await import('../../src/views/reports/MailPartiesReportWidget.vue')
 const reportsPage = JSON.parse(
-	readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../../src/manifest.d/86-woo-reports.json'), 'utf8'),
+	readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../../src/manifest.d/86-document-review-reports.json'), 'utf8'),
 ).pages[0]
 const pageWidget = (id) => reportsPage.config.widgets.find((w) => w.id === id)
 
@@ -131,7 +131,7 @@ describe('Woo throughput on the reports page (REQ-WRR-002)', () => {
 	it('reads the period the page shows, from the throughput endpoint', () => {
 		expect(table.type).toBe('object-table')
 		expect(source).toMatchObject({
-			url: '/apps/dossiq/api/woo/reports/throughput',
+			url: '/apps/dossiq/api/document-review/reports/throughput',
 			params: { from: '@workspace.dateFrom', to: '@workspace.dateTo' },
 			responsePath: 'rows',
 		})
@@ -153,7 +153,7 @@ describe('Woo throughput on the reports page (REQ-WRR-002)', () => {
 
 	it('downloads the CSV of the same period from the header', () => {
 		const csv = reportsPage.config.headerActions.find((a) => a.id === 'throughput-csv')
-		expect(csv.href).toBe('/apps/dossiq/api/woo/reports/throughput?format=csv&from=@workspace.dateFrom&to=@workspace.dateTo')
+		expect(csv.href).toBe('/apps/dossiq/api/document-review/reports/throughput?format=csv&from=@workspace.dateFrom&to=@workspace.dateTo')
 	})
 })
 

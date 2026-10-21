@@ -144,14 +144,14 @@ describe('the review reports (REQ-WRR-001)', () => {
 	const fields = byKey(reviewReportFields(t))
 
 	it('has both switches off unless the server stored an explicit yes, and saves them as true or false', () => {
-		for (const key of ['wooReviewerThroughputReport', 'wooCollectionPartiesReport']) {
+		for (const key of ['reviewerThroughputReport', 'collectionPartiesReport']) {
 			expect(fields[key]).toMatchObject({ type: 'switch', trueValue: 'true', falseValue: 'false' })
 			expect(fields[key].default).toBeUndefined()
 		}
 	})
 
 	it('names the reader group the server checks before the throughput switch goes on', () => {
-		expect(fields.wooReviewerThroughputReaders.label).toBe('Reader group for the throughput report')
+		expect(fields.reviewerThroughputReaders.label).toBe('Reader group for the throughput report')
 	})
 })
 

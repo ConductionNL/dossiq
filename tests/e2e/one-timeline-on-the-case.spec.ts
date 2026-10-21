@@ -552,7 +552,7 @@ test.describe('REQ-TL-16 every term event records itself on the timeline', () =>
 		seededTerms.push(termId)
 
 		const paused = await request.post(
-			`${APP}/termijn/instances/${termId}/pauze`,
+			`${APP}/deadlines/instances/${termId}/pause`,
 			{
 				headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
 				data: {

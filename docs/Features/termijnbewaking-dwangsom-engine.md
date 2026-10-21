@@ -37,22 +37,27 @@ oplopen. Deze module modelleert die volledige levenscyclus.
 
 | Verb   | URL                                                    | Doel                                |
 |--------|--------------------------------------------------------|-------------------------------------|
-| POST   | `/api/termijn/instances`                               | Nieuwe TermijnInstance aanmaken     |
-| GET    | `/api/termijn/instances/{id}`                          | TermijnInstance opvragen            |
-| POST   | `/api/termijn/instances/{id}/pauze`                    | Pauze registreren (AWB 4:5/4:15)    |
-| POST   | `/api/termijn/instances/{id}/hervat`                   | Hervatten na aanvulling             |
-| POST   | `/api/termijn/instances/{id}/verleng`                  | Verlenging aanvragen (AWB 4:14)     |
-| POST   | `/api/termijn/instances/{id}/voltooi`                  | Beschikking-stop registreren        |
+| POST   | `/api/deadlines/instances`                             | Nieuwe TermijnInstance aanmaken     |
+| GET    | `/api/deadlines/instances/{id}`                        | TermijnInstance opvragen            |
+| POST   | `/api/deadlines/instances/{id}/pause`                  | Pauze registreren (AWB 4:5/4:15)    |
+| POST   | `/api/deadlines/instances/{id}/resume`                 | Hervatten na aanvulling             |
+| POST   | `/api/deadlines/instances/{id}/extend`                 | Verlenging aanvragen (AWB 4:14)     |
+| POST   | `/api/deadlines/instances/{id}/complete`               | Beschikking-stop registreren        |
 | POST   | `/api/termijn/ingebrekestellingen`                     | Ingebrekestelling indienen          |
 | GET    | `/api/termijn/ingebrekestellingen/{id}`                | Ingebrekestelling opvragen          |
 | GET    | `/api/termijn/dwangsom/{id}`                           | Dwangsom-staat opvragen             |
 | POST   | `/api/termijn/dwangsom/{id}/beschikking`               | Beschikking registreren             |
 | POST   | `/api/termijn/dwangsom/{id}/bezwaar`                   | Bezwaar registreren                 |
 | POST   | `/api/termijn/dwangsom/{id}/bezwaar/heroverweging`     | Heroverweging vastleggen            |
-| GET    | `/api/termijn/dashboard/kpi`                           | Dashboard KPI                       |
-| GET    | `/api/termijn/reports/kwartaal`                        | Kwartaalrapport                     |
-| GET    | `/api/termijn/reports/jaarrekening`                    | Jaarlijks dwangsom-rapport          |
-| POST   | `/api/dossiq/openconnector/dwangsom-payment-callback` | Webhook van openconnector (publiek) |
+| GET    | `/api/deadlines/dashboard/kpi`                         | Dashboard KPI                       |
+| GET    | `/api/deadlines/reports/quarterly`                     | Kwartaalrapport                     |
+| GET    | `/api/deadlines/reports/annual`                        | Jaarlijks dwangsom-rapport          |
+| POST   | `/api/payments/callback`                               | Webhook van openconnector (publiek) |
+
+De eerdere adressen (`/api/termijn/instances…` met `pauze`, `hervat`, `verleng` en `voltooi`,
+`/api/termijn/dashboard/kpi`, `/api/termijn/reports/kwartaal` en `/jaarrekening`) blijven tot de
+volgende major werken. `/api/dossiq/openconnector/dwangsom-payment-callback` blijft altijd werken,
+omdat het adres bij de betaalprovider is ingesteld.
 
 ## Configuratie
 
