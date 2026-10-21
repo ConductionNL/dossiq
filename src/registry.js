@@ -132,7 +132,6 @@ import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
 import CaseConversationsPanel from './views/cases/components/CaseConversationsPanel.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
-import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
 // The AVG panel on a data subject request case
 // (data-subject-requests-drive-the-platform).
 import DataSubjectRequestTab from './views/cases/components/DataSubjectRequestTab.vue'
@@ -763,14 +762,6 @@ const registry = {
 		component: DocumentReviewPanel,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail, Review tab (board DqWooReview): relevance apart from the verdict, the stopping rule and the recall samples, the batches and their reviewers, and what is still open. Generic per decision 182: any case type that sets documentReview.enabled gets it; on any other case it says in one sentence that this case type does not review its documents. It derives no verdict: counts, unseen pages and estimates come from the server.',
-	},
-
-	'case-timeline-pane': {
-		// @custom-widget-ratchet exclude the surface is OpenRegister's TIMELINE, not a collection of OpenRegister objects: the entries come from /api/objects/{register}/{schema}/{id}/timeline, which takes no register-and-schema pair of its own, and a built-in object-list takes exactly that. There is no `integration` id for the timeline either, so `type: "integration"` cannot reach it. The pin and the follow-up are PATCHes on a sub-resource, which no declarative widget writes. This entry is deleted the day the library ships a timeline widget type
-		kind: 'widget',
-		component: CaseTimelineTab,
-		...PANEL_WIDGET_META,
-		_note: "CaseDetail Timeline tab: one chronological read of every note, logged call, message and acknowledgement on this case, from OpenRegister's timeline. Notes, Communication and Email stay beside it because each is the place to DO that one thing; this is the place to see the order. The audit sidebar keeps the change history.",
 	},
 
 	// --- Sharing/transfer sidebar tab (federated-case-collaboration). ---
