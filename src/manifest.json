@@ -6929,7 +6929,8 @@
 							"source": {
 								"kind": "flow-task",
 								"id": "@objectId"
-							}
+							},
+							"composer": "button"
 						}
 					},
 					{

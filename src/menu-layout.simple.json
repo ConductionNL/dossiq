@@ -1962,7 +1962,11 @@
 							"field": "@context.caseType.overviewCards",
 							"op": "empty"
 						},
-						"title": "Flows"
+						"title": "Flows",
+						"_headerActionsNote": "DqZaak/DqZaakMeer Flows: \"Flow uitvoeren\" in the card's title row, the case's own start-flow dialog, shown while the case has a flow it may start (as the header action of the same name).",
+						"headerActions": [
+							{ "label": "Run flow", "icon": "Play", "visibleWhen": { "field": "hasStartableFlows", "op": "eq", "value": true }, "action": { "type": "open-modal", "target": "CaseStartFlowDialog" } }
+						]
 					},
 					"case-kpis-hours": {
 						"visibleWhen": {
@@ -1972,8 +1976,9 @@
 						"title": "Record hours"
 					},
 					"case-email-panel": {
-						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the linked mail and the notes stand under it as cards, so the mail widget leaves its own linked mail list out.",
+						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the linked mail and the notes stand under it as cards, so the mail widget leaves its own linked mail list out. Mail koppelen and Mail opstellen are the library mail tab's own header buttons (content.headerActions).",
 						"content": {
+							"headerActions": ["link", "compose"],
 							"heading": "Email",
 							"description": "Mail linked to this case, also from a shared mailbox",
 							"hint": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.",
@@ -3197,6 +3202,9 @@
 					{
 						"id": "case-resident-thread",
 						"type": "conversation",
+						"headerActions": [
+							{ "label": "Log contact", "icon": "PhonePlusOutline", "visibleWhen": { "field": "@self.archived", "op": "empty" }, "action": { "type": "open-modal", "target": "LogContactDialog", "props": { "caseId": "@objectId" } } }
+						],
 						"title": "Conversation with the resident",
 						"_note": "DqZaakContact \"Gesprek met de inwoner\": the contact moments on the case as a thread, oldest first, ours on the right, with the channel on each. Answering opens the portal message dialog with the reply already written, so the answer goes to the resident through the berichtenbox.",
 						"content": {
@@ -3594,6 +3602,9 @@
 									"key": "objectUrl",
 									"label": "Link"
 								}
+							],
+							"rowActions": [
+								{ "label": "All cases on this object", "icon": "BriefcaseSearchOutline", "type": "navigate", "route": "Cases", "query": { "_related[caseObject][case][objectUrl]": "{objectUrl}" }, "visibleWhen": { "field": "objectUrl", "op": "notEmpty" } }
 							],
 							"footerLinks": [
 								{ "label": "Manage object types", "href": "/index.php/apps/openregister/#/registers/dossiq", "note": "(administrators only)", "group": "admin" }
