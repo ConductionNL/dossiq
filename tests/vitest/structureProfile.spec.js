@@ -92,12 +92,12 @@ describe('the full profile', () => {
 		expect(views(built).filter((view) => view.slug !== 'team-queue')).toEqual(views(before).filter((view) => view.slug !== 'team-queue'))
 	})
 
-	it('keeps the Queue page it had as the team queue view: title, unread and priority columns, case type folders', () => {
+	it('keeps the Queue page it had as the team queue view: title and priority columns, case type folders', () => {
 		const views = build(fullFile).pages.find((page) => page.id === 'Cases').config.defaultSavedViews
 		const overrides = views.find((view) => view.slug === 'team-queue').overrides
 		expect(overrides.title).toBe('Queue')
 		expect(overrides.columns.map((column) => (typeof column === 'string' ? column : column.key))).toEqual(
-			['@self.unread', 'identifier', 'title', 'caseType', 'status', 'priorityOrder', 'deadline'],
+			['identifier', 'title', 'caseType', 'status', 'priorityOrder', 'deadline'],
 		)
 		expect(overrides.folderSidebar).toMatchObject({ schema: 'caseType', filterField: 'caseType' })
 		// The deep merge keeps what the patch does not name.
