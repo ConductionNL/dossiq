@@ -33,13 +33,16 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ProcessMining\ReportViews;
+use OCA\Dossiq\Service\Csv\CsvWriter;
 use OCA\Dossiq\Service\ProcessMiningService;
 use OCA\Dossiq\Service\Reporting\ReportPeriod;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -72,6 +75,8 @@ class ProcessMiningController extends Controller {
 	 * @param ReportViews $views Shapes the display blocks.
 	 * @param ReportPeriod $periods Resolves a period preset.
 	 * @param CaseDateNormaliser $dates The tenant's today.
+	 * @param IL10N $l10n The translations, for the download's column labels.
+	 * @param CsvWriter $csvWriter Writes the download.
 	 */
 	public function __construct(
 		string $appName,
@@ -83,26 +88,31 @@ class ProcessMiningController extends Controller {
 		private readonly ReportViews $views,
 		private readonly ReportPeriod $periods,
 		private readonly CaseDateNormaliser $dates,
+		private readonly IL10N $l10n,
+		private readonly CsvWriter $csvWriter=new CsvWriter(),
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
 	/**
-	 * Return the process-mining bottleneck report.
+	 * Return the process-mining bottleneck report, or with `format=csv` the
+	 * days per phase per case type as a download.
 	 *
 	 * `period` (a {@see ReportPeriod} preset) sets `from` when `from` is not
 	 * given. Without `view` the whole report is answered with every display
 	 * block of {@see ReportViews} beside it; `view` narrows the answer to that
 	 * block plus `period`, `clock`, `labels` and `truncated`.
 	 *
-	 * @return JSONResponse Report body, 401 when unauthenticated, 403 when
-	 *                      the caller lacks the controller/beheerder/admin
-	 *                      role, or 400 on invalid parameters.
+	 * @return JSONResponse|DataDownloadResponse Report body, the CSV, 401 when
+	 *                                          unauthenticated, 403 when the caller lacks the
+	 *                                          controller/beheerder/admin role, or 400 on
+	 *                                          invalid parameters.
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+	 * @spec openspec/changes/procesanalyse-csv/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
 	 */
 	#[NoAdminRequired]
-	public function report(): JSONResponse {
+	public function report(): JSONResponse|DataDownloadResponse {
 		$denied = $this->ensureAllowed();
 		if ($denied !== null) {
 			return $denied;
@@ -113,8 +123,18 @@ class ProcessMiningController extends Controller {
 		$caseType = $this->request->getParam('caseType');
 		$period = $this->request->getParam('period');
 		$view = $this->request->getParam('view');
+		$format = ($this->request->getParam('format') ?? 'json');
+		$statistic = ($this->request->getParam('statistic') ?? 'mean');
 
 		$invalid = ($this->validateFilters(from: $from, to: $to, caseType: $caseType) ?? $this->validateDisplay(period: $period, view: $view));
+		if ($invalid === null && in_array($format, ['json', 'csv'], true) === false) {
+			$invalid = new JSONResponse(['message' => 'format must be json or csv'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($invalid === null && in_array($statistic, ['mean', 'median'], true) === false) {
+			$invalid = new JSONResponse(['message' => 'statistic must be mean or median'], Http::STATUS_BAD_REQUEST);
+		}
+
 		if ($invalid !== null) {
 			return $invalid;
 		}
@@ -123,6 +143,10 @@ class ProcessMiningController extends Controller {
 
 		try {
 			$report = $this->processMiningService->getReport(params: $params);
+			if ($format === 'csv') {
+				return $this->csv(matrix: (array)($report['phaseDays'][$statistic] ?? []));
+			}
+
 			if (is_string($view) === true && $view !== '') {
 				return new JSONResponse(
 					[
@@ -140,6 +164,42 @@ class ProcessMiningController extends Controller {
 			return new JSONResponse(['message' => 'Report generation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end report()
+
+	/**
+	 * The days per phase per case type as a CSV download: a column per
+	 * phase, a row per case type, a phase the case type never passes in
+	 * words.
+	 *
+	 * @param array<string, mixed> $matrix The `phaseDays` matrix of one statistic.
+	 *
+	 * @return DataDownloadResponse The CSV, with a byte order mark so a spreadsheet reads it as UTF-8.
+	 *
+	 * @spec openspec/changes/procesanalyse-csv/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
+	 */
+	private function csv(array $matrix): DataDownloadResponse {
+		$none = $this->l10n->t('none');
+		$rows = [];
+		foreach ((array)($matrix['rows'] ?? []) as $row) {
+			$cells = [(string)($row['label'] ?? '')];
+			foreach ((array)($row['values'] ?? []) as $value) {
+				if ($value === 'none') {
+					$value = $none;
+				}
+
+				$cells[] = $value;
+			}
+
+			$rows[] = $cells;
+		}
+
+		$header = [$this->l10n->t('Case type'), ...array_map('strval', (array)($matrix['columns'] ?? []))];
+
+		return new DataDownloadResponse(
+			"\u{FEFF}".$this->csvWriter->document(header: $header, rows: $rows),
+			'procesanalyse.csv',
+			'text/csv; charset=utf-8'
+		);
+	}//end csv()
 
 	/**
 	 * Validate the optional report filter parameters.
