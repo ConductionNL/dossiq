@@ -8253,7 +8253,12 @@
 						"type": "chart",
 						"title": "Dwell time by status",
 						"content": {
-							"chartKind": "bar",
+							"chartKind": "bar-list",
+							"valueFormat": {
+								"name": "number",
+								"decimals": 0,
+								"suffix": " h"
+							},
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/process-mining",
 								"params": {
