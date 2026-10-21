@@ -34,9 +34,10 @@ describe('renamed UI names', () => {
 	it('sends the earlier reports address to the document review reports page', () => {
 		expect(RETIRED_ROUTES).toContainEqual({ path: '/woo-reports', redirect: { name: 'DocumentReviewReports' } })
 		const fragment = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/manifest.d/86-document-review-reports.json'), 'utf8'))
-		expect(fragment.pages[0]).toMatchObject({ id: 'DocumentReviewReports', route: '/document-review-reports', component: 'DocumentReviewReportsView' })
+		// The page is a library dashboard, so no app component renders it.
+		expect(fragment.pages[0]).toMatchObject({ id: 'DocumentReviewReports', route: '/document-review-reports', type: 'dashboard' })
 		expect(fragment.menu[0]).toMatchObject({ id: 'DocumentReviewReportsMenu', route: 'DocumentReviewReports' })
-		expect(fs.readFileSync(path.join(ROOT, 'src/registry.js'), 'utf8')).toContain('DocumentReviewReportsView: {')
+		expect(fs.readFileSync(path.join(ROOT, 'src/registry.js'), 'utf8')).not.toContain('WooReportsView')
 	})
 
 	it('calls no procedure-named URL from the frontend', () => {
