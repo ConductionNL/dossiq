@@ -65,6 +65,7 @@ class CaseRelationDetails {
 	public function describe(array $rows, callable $canRead): array {
 		$caseTypeTitles = [];
 		foreach ($rows as $index => $row) {
+			$rows[$index]['group'] = $this->groupOf(row: $row);
 			$caseId = (string)($row['caseId'] ?? '');
 			if ($caseId === '' || $canRead($caseId) !== true) {
 				continue;
@@ -83,7 +84,7 @@ class CaseRelationDetails {
 
 			$assignee = (string)($case['assignee'] ?? '');
 			$rows[$index] = array_merge(
-				$row,
+				$rows[$index],
 				[
 					'identifier'    => (string)($case['identifier'] ?? ''),
 					'caseTypeTitle' => $caseTypeTitles[$caseTypeId] ?? '',
@@ -105,6 +106,63 @@ class CaseRelationDetails {
 			)
 		);
 	}//end describe()
+
+	/**
+	 * The planned follow-ups of a case as rows of the same list, in the
+	 * `planned` group: a planned flow or a series, with its next date. They
+	 * open no case, so they carry no `caseId`.
+	 *
+	 * @param array<int, array<string, mixed>> $planned The planned rows, as the planned endpoint lists them.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function plannedRows(array $planned): array {
+		$rows = [];
+		foreach ($planned as $entry) {
+			$recurrence = (string)($entry['recurrence'] ?? 'none');
+			$kind       = 'series';
+			if ($recurrence === 'none') {
+				$kind = 'flow';
+			}
+
+			$occurrences = 0;
+			if (is_array($entry['occurrences'] ?? null) === true) {
+				$occurrences = count($entry['occurrences']);
+			}
+
+			$rows[] = [
+				'id'          => (string)($entry['id'] ?? ''),
+				'title'       => (string)($entry['title'] ?? ''),
+				'group'       => 'planned',
+				'statusRole'  => 'planned',
+				'plannedKind' => $kind,
+				'recurrence'  => $recurrence,
+				'date'        => (string)($entry['date'] ?? ''),
+				'occurrences' => $occurrences,
+			];
+		}
+
+		return array_values(array_filter($rows, static fn (array $row): bool => $row['title'] !== ''));
+	}//end plannedRows()
+
+	/**
+	 * The group a relation row lists under: the label the reader's side of
+	 * the relation carries, else the relation type.
+	 *
+	 * @param array<string, mixed> $row The relation row.
+	 *
+	 * @return string The group.
+	 */
+	private function groupOf(array $row): string {
+		$label = trim((string)($row['displayLabel'] ?? ''));
+		if ($label !== '') {
+			return $label;
+		}
+
+		return (string)($row['aardRelatie'] ?? '');
+	}//end groupOf()
 
 	/**
 	 * A handler's display name, or the user id when the account is gone.

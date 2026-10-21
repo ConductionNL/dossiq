@@ -402,8 +402,11 @@ describe('the tabs', () => {
 		// The typed related cases lead (DqZaakGerelateerd), then the related panel's sections.
 		expect(relatedTab.widgetIds[0]).toBe('case-related-cases-card')
 		const sectionCards = relatedTab.widgetIds.slice(1)
-		expect(sectionCards.map((id) => id.replace(/-card$/, ''))).toEqual(['case-related', 'case-sub-cases', 'case-objects', 'case-programme', 'case-object-types-link'])
-		expect(sectionCards.map((id) => id.replace(/-card$/, '')).sort()).toEqual([...relatedSections].sort())
+		expect(sectionCards.map((id) => id.replace(/-card$/, ''))).toEqual(['case-related', 'case-sub-cases', 'case-objects', 'case-programme'])
+		// The object-type link is a link under the objects, as the board draws it.
+		expect(sectionCards.map((id) => id.replace(/-card$/, '')).concat('case-object-types-link').sort()).toEqual([...relatedSections].sort())
+		const objectsCard = simple.widgets.find((widget) => widget.id === 'case-objects-card')
+		expect(objectsCard.content.footerLinks[0]).toMatchObject({ label: 'Manage object types', group: 'admin' })
 		// The Besluiten tab: the decisions, then the decision letter and the advice on the case (DqZaakBesluiten).
 		expect(strip.tabs.find((tab) => tab.label === 'Decisions').widgetIds).toEqual(['case-decisions-panel', 'case-decision-letter', 'case-advice-requests'])
 		const advice = simple.widgets.find((widget) => widget.id === 'case-advice-requests')
