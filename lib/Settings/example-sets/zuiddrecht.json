@@ -1469,6 +1469,37 @@
 					]
 				}
 			}
+		},
+		{
+			"key": "pieter-wacht-op-inwoner",
+			"data": {
+				"name": "Wacht op inwoner",
+				"description": "Zaken die wachten op de aanvrager",
+				"owner": "{{cast:pieter.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"waitingOnApplicant": true,
+						"statusHiddenInLists": false,
+						"isDraft": false,
+						"isFinalStatus": false
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
 		}
 	],
 	"changes": [
