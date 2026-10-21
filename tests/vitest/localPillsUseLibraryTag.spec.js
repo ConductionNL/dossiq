@@ -45,7 +45,6 @@ describe('dossiq pills are the library tag', () => {
 	it.each([
 		'components/cells/StatusBadgeCell.vue',
 		'components/cells/PriorityBadgeCell.vue',
-		'views/cases/DeelzaakList.vue',
 	])('%s renders its tag as cn-status-badge', (rel) => {
 		expect(fs.readFileSync(path.join(SRC, rel), 'utf8')).toContain('cn-status-badge cn-status-badge--')
 	})

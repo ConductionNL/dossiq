@@ -490,10 +490,11 @@ describe('the simple profile', () => {
 	// 82 -> 81: the CaseMap page retires; `/map` redirects to the Cases map view.
 	// 81 -> 78: Queue, MyWork and PrivacyRequests became views of Cases.
 	// 78 -> 77: Subsidies became a view of Cases.
-	it('builds the same 77 pages as the full profile, so every route stays', () => {
+	// 77 -> 75: DeelzaakList and DeelzaakDetail retire; their addresses redirect to CaseDetail.
+	it('builds the same 75 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(77)
+		expect(built.pages).toHaveLength(75)
 	})
 })
 
