@@ -38,6 +38,11 @@
 							"schema": "supplier",
 							"filter": {}
 						}
+					},
+					{
+						"label": "Portal accounts",
+						"route": "SupplierUsers",
+						"adminOnly": true
 					}
 				],
 				"headerMeta": "{total} contracts",
@@ -175,6 +180,11 @@
 							"schema": "supplier",
 							"filter": {}
 						}
+					},
+					{
+						"label": "Portal accounts",
+						"route": "SupplierUsers",
+						"adminOnly": true
 					}
 				],
 				"headerMeta": "{total} suppliers",

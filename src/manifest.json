@@ -7792,6 +7792,37 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "supplierUser",
+				"_pageTabsNote": "Board DqContracten: Contracts, Suppliers and Portal accounts are one set of tabs. Portal accounts shows only to an admin (the tab is hidden, this page refuses others), so it carries no count on the procurement pages: a hidden tab's count is still requested.",
+				"pageTabs": [
+					{
+						"label": "Contracts",
+						"route": "Contracts",
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "supplierContract",
+							"filter": {}
+						}
+					},
+					{
+						"label": "Suppliers",
+						"route": "Suppliers",
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "supplier",
+							"filter": {}
+						}
+					},
+					{
+						"label": "Portal accounts",
+						"route": "SupplierUsers",
+						"adminOnly": true,
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "supplierUser",
+							"filter": {}
+						}
+					}
+				],
 				"columns": [
 					"email",
 					"supplierRef",
