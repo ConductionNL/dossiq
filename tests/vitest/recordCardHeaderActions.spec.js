@@ -62,4 +62,16 @@ describe('per-card buttons on the record boards', () => {
 		expect(all.visibleWhen).toEqual({ field: 'objectUrl', op: 'notEmpty' })
 		expect(nl[all.label]).toBe('Alle zaken op dit object')
 	})
+	it('recomputes the archive nomination from the Archiving card, with a reason, through OpenRegister', () => {
+		const [recompute] = simple.configPatch.widgets['case-archival-panel'].headerActions
+		expect(nl[recompute.label]).toBe('Nominatie herberekenen')
+		expect(recompute.action).toMatchObject({ type: 'open-modal', target: 'CnActionDialog', props: { objectId: '@objectId' } })
+		const { config } = recompute.action.props
+		expect(config.reason.label).toBe('Reason')
+		expect(config.confirm.request).toEqual({
+			method: 'POST',
+			url: '/apps/openregister/api/archival/objects/@objectId/nomination/recompute',
+			body: { reason: '{reason}' },
+		})
+	})
 })

@@ -1975,6 +1975,29 @@
 						},
 						"title": "Record hours"
 					},
+					"case-archival-panel": {
+						"_headerActionsNote": "DqZaakArchivering: \"Nominatie herberekenen\" in the Archiving card's title row. It recomputes the case's archival nomination through OpenRegister (POST /api/archival/objects/{id}/nomination/recompute), which an archivist may do, asks for a reason, and records the actor, the reason and the previous nomination. The library action dialog asks the reason; OpenRegister refuses anyone who is not an archivist, with its own sentence.",
+						"headerActions": [
+							{
+								"label": "Recompute nomination",
+								"icon": "Refresh",
+								"action": {
+									"type": "open-modal",
+									"target": "CnActionDialog",
+									"props": {
+										"objectId": "@objectId",
+										"config": {
+											"title": "Recompute the archive nomination",
+											"subtitle": "The nomination is derived again from the current selection list and the case's result. The previous one stays in its history.",
+											"reason": { "label": "Reason", "hint": "Goes into the nomination history of the case." },
+											"confirm": { "label": "Recompute", "icon": "Refresh", "request": { "method": "POST", "url": "/apps/openregister/api/archival/objects/@objectId/nomination/recompute", "body": { "reason": "{reason}" } } },
+											"doneText": "The archive nomination was recomputed."
+										}
+									}
+								}
+							}
+						]
+					},
 					"case-email-panel": {
 						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the linked mail and the notes stand under it as cards, so the mail widget leaves its own linked mail list out. Mail koppelen and Mail opstellen are the library mail tab's own header buttons (content.headerActions).",
 						"content": {
