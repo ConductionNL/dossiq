@@ -194,6 +194,10 @@ $extra = [
     ['name' => 'sociaalDomeinPlan#grounds',          'url' => '/api/cross-domain/grounds',                     'verb' => 'GET'],
     ['name' => 'sociaalDomeinPlan#lookUp',           'url' => '/api/cross-domain/lookup',                      'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#lookupsAbout',     'url' => '/api/cross-domain/lookups/{bsn}',               'verb' => 'GET'],
+        // The household card on a social domain case (DqSociaalDomein). Other domains are read only on a
+        // chosen ground, logged, and kept in the reader's session.
+    ['name' => 'householdCases#index',  'url' => '/api/cases/{caseId}/household-cases',        'verb' => 'GET'],
+    ['name' => 'householdCases#lookUp', 'url' => '/api/cases/{caseId}/household-cases/lookup', 'verb' => 'POST'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
         // Literal routes registered before the ZGW {resource}-wildcard

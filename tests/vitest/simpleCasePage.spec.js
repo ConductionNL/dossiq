@@ -468,7 +468,7 @@ describe('the tabs', () => {
 		expect(fees.widgetIds).toEqual(['case-payment-requests', 'case-contract'])
 		expect(strip.tabs.find((tab) => tab.label === 'Merge into one PDF').widgetId).toBe('case-merge-to-pdf')
 		const overview = strip.tabs.find((tab) => tab.label === 'Overview').widgetIds
-		expect(overview.indexOf('goal-plan')).toBe(overview.indexOf('case-summary') + 1)
+		expect(overview.indexOf('goal-plan')).toBe(overview.indexOf('case-household-cases-card') + 1)
 		// The family plan keeps its own condition: only where a plan applies.
 		expect(find(simple, 'goal-plan').visibleWhen).toEqual(find(original, 'goal-plan').visibleWhen)
 		expect(find(simple, 'goal-plan').visibleWhen).toBeDefined()
@@ -537,7 +537,7 @@ describe('the tabs', () => {
 		// DqZaak titles them; the cards the simple page adds are its own.
 		// The banner stack is titled Status, as the side card DqZaak draws.
 		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-banner-stack', 'case-attention']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')

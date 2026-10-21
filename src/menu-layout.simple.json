@@ -1609,6 +1609,7 @@
 										"case-objection-grounds",
 										"case-objection-advice-card",
 										"case-summary",
+										"case-household-cases-card",
 										"goal-plan",
 										"case-grant-decisions-card",
 										"case-request",
@@ -2774,6 +2775,92 @@
 								}
 							],
 							"emptyText": "No description yet"
+						}
+					},
+					{
+						"id": "case-household-cases-card",
+						"type": "record-list",
+						"title": "Other cases in this household",
+						"subtitle": "Contents only with a purpose and consent",
+						"_note": "DqSociaalDomein Andere zaken van dit huishouden. The household is the people in the case's family plan. Cases in this case's own domain that the reader may open come in full (number, title, case type, status, a link); another domain's cases appear only after Look up in other domains on a chosen ground (the cross-domain lookup dialog in household mode, one logged lookup per person) and carry exists, domain and contact only. GET/POST /api/cases/{id}/household-cases; dossiq-sensitive only. Shown where the report is shown: a case with a plan or of the social domain.",
+						"visibleWhen": {
+							"any": [
+								{
+									"field": "gezinsplanId",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@context.caseType.category",
+									"op": "in",
+									"value": [
+										"Sociaal domein",
+										"Jeugd",
+										"Jeugdhulp"
+									]
+								}
+							]
+						},
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/household-cases",
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"title": [
+								"{identifier} {title}",
+								"{domain}"
+							],
+							"meta": [
+								"{caseTypeTitle}",
+								"Contact: {contact}"
+							],
+							"pill": {
+								"field": "statusRole",
+								"labels": {
+									"intake": "Received",
+									"pending-info": "Waiting for information",
+									"in-progress": "In progress",
+									"review": "In review",
+									"closed": "Closed",
+									"stranded": "Stranded"
+								},
+								"colorMap": {
+									"intake": "default",
+									"pending-info": "warning",
+									"in-progress": "purple",
+									"review": "purple",
+									"closed": "success",
+									"stranded": "error"
+								}
+							},
+							"badges": [
+								{
+									"field": "access",
+									"labels": {
+										"full": "Visible to you: yes"
+									},
+									"variant": "success"
+								},
+								{
+									"field": "exists",
+									"labels": {
+										"true": "Visible to you: only that it exists"
+									},
+									"variant": "default"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"rowIdField": "caseId",
+							"emptyText": "No other cases in this household that you may see",
+							"footerAction": {
+								"type": "open-modal",
+								"target": "CrossDomainLookupDialog",
+								"label": "Look up in other domains",
+								"icon": "AccountSearchOutline",
+								"props": {
+									"household": true
+								}
+							}
 						}
 					},
 					{
