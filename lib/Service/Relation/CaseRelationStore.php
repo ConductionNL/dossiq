@@ -103,6 +103,36 @@ class CaseRelationStore {
 	}//end fetchCase()
 
 	/**
+	 * Fetch a case type object by UUID, for the title a related case shows.
+	 *
+	 * @param string $caseTypeUuid Case type UUID.
+	 *
+	 * @return array<string, mixed>|null The case type, or null when it does not resolve.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function fetchCaseType(string $caseTypeUuid): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register      = $this->settingsService->getConfigValue('register');
+		$schema        = $this->settingsService->getConfigValue('case_type_schema');
+		if ($caseTypeUuid === '' || $objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		try {
+			$obj = $objectService->find($caseTypeUuid, register: $register, schema: $schema);
+		} catch (\Throwable $e) {
+			$this->logger->debug(
+				'CaseRelationService: case type lookup failed',
+				['uuid' => $caseTypeUuid, 'error' => $e->getMessage()]
+			);
+			return null;
+		}
+
+		return $this->normalizeCaseObject(object: $obj);
+	}//end fetchCaseType()
+
+	/**
 	 * Persist a relation list back onto a case, JSON-encoding the field
 	 * (the `relatedCases` field is a JSON-encoded string).
 	 *

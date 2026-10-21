@@ -28,9 +28,12 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\CaseRelationController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseRelationService;
+use OCA\Dossiq\Service\Relation\CaseRelationDetails;
+use OCA\Dossiq\Service\Relation\CaseRelationStore;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
@@ -69,6 +72,18 @@ class CaseRelationControllerTest extends TestCase {
 	private CaseRelationController $controller;
 
 	/**
+	 * Row details over a store that resolves no case, so rows pass unchanged.
+	 *
+	 * @return CaseRelationDetails
+	 */
+	private function details(): CaseRelationDetails {
+		return new CaseRelationDetails(
+			store: $this->createMock(originalClassName: CaseRelationStore::class),
+			userManager: $this->createMock(originalClassName: IUserManager::class),
+		);
+	}//end details()
+
+	/**
 	 * Set up fixtures.
 	 *
 	 * @return void
@@ -88,6 +103,7 @@ class CaseRelationControllerTest extends TestCase {
 			caseRelationService: $this->service,
 			userSession: $this->userSession,
 			caseAccessGuard: $this->caseAccessGuard,
+			caseRelationDetails: $this->details(),
 		);
 	}//end setUp()
 
@@ -111,6 +127,7 @@ class CaseRelationControllerTest extends TestCase {
 			caseRelationService: $this->service,
 			userSession: $this->userSession,
 			caseAccessGuard: $guard,
+			caseRelationDetails: $this->details(),
 		);
 	}//end controllerWithReadableCases()
 
@@ -278,7 +295,7 @@ class CaseRelationControllerTest extends TestCase {
 	public function testListReturnsResults(): void {
 		$this->authenticate();
 		$this->service->method('listRelations')->willReturn([
-			['caseId' => 'b', 'aardRelatie' => 'subject'],
+			['caseId' => 'b', 'aardRelatie' => 'subject', 'title' => 'Advies verlichting fietspad'],
 		]);
 
 		$response = $this->controller->list(caseId: 'a');
