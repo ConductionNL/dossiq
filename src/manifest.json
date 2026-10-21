@@ -7951,7 +7951,7 @@
 					"persistKey": "dossiq-doorlooptijd-range",
 					"_presetNote": "A preset id is what the widgets send as `period` (@workspace.datePreset), and the metrics endpoint reads only a month count such as 12m: an id like `year` is refused with a 400 and every widget on the page stays empty. So the ids are month counts and the label says the period.",
 					"default": {
-						"preset": "12m"
+						"preset": "1m"
 					},
 					"presets": [
 						{
