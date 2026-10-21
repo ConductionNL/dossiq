@@ -1202,7 +1202,7 @@
 					}
 				],
 				"_viewsNote": "landing-views. The landing page holds two VIEWS behind one switch, My work and My team (nextcloud-vue 2.66.0 page views, `views` and `defaultView`). The chosen view is in the address (`?view=team`) and in the reader's preferences, so a team lead who reads My team opens on it next time. `mine` is what this page showed before, unchanged. `team` holds widgets the Dashboard page already declares, copied without their notes: the reader's team queue (the Dashboard's `your-teams-queue` preset: the Queue page's own filter narrowed to `assignedGroup: @myGroups`) and the team-wide counts and charts. tests/vitest/landingViews.spec.js fails when a copy drifts from the Dashboard's definition. The page's own grid is EMPTY on purpose: the library draws a view's grid below the page's own, and in the full structure the switch sits in the page header. The simple structure puts a greeting on the page grid and lets the greeting draw the switch. There is no `userLayout` on this page: layout is the administrator's, through buildiq (see the Dashboard's `_layoutNote`). `kpi-sla-compliance` stays on the Dashboard only: it is gated on roles and on a visibility endpoint, and a view is the wrong place to find out whether the library applies `roles` there.",
-				"viewsLabel": "Whose work",
+				"viewsLabel": "Display",
 				"defaultView": "mine",
 				"views": [
 					{
