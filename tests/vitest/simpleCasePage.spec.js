@@ -465,14 +465,14 @@ describe('the tabs', () => {
 		expect(fees.widgetIds).toEqual(['case-payment-requests', 'case-contract'])
 		expect(strip.tabs.find((tab) => tab.label === 'Merge into one PDF').widgetId).toBe('case-merge-to-pdf')
 		const overview = strip.tabs.find((tab) => tab.label === 'Overview').widgetIds
-		expect(overview.indexOf('family-plan')).toBe(overview.indexOf('case-summary') + 1)
+		expect(overview.indexOf('goal-plan')).toBe(overview.indexOf('case-summary') + 1)
 		// The family plan keeps its own condition: only where a plan applies.
-		expect(find(simple, 'family-plan').visibleWhen).toEqual(find(original, 'family-plan').visibleWhen)
-		expect(find(simple, 'family-plan').visibleWhen).toBeDefined()
+		expect(find(simple, 'goal-plan').visibleWhen).toEqual(find(original, 'goal-plan').visibleWhen)
+		expect(find(simple, 'goal-plan').visibleWhen).toBeDefined()
 		// The banner stack ends the side column as the board's Status card.
 		expect(find(simple, 'case-banner-stack').title).toBe('Status')
 		expect(simple.sideColumn.at(-1)).toBe('case-banner-stack')
-		for (const id of ['case-payment-requests', 'case-contract', 'family-plan', 'case-merge-to-pdf']) {
+		for (const id of ['case-payment-requests', 'case-contract', 'goal-plan', 'case-merge-to-pdf']) {
 			expect(simple.layout.some((cell) => cell.widgetId === id), id).toBe(false)
 		}
 	})
@@ -623,7 +623,7 @@ describe('the tabs', () => {
 		// is in the side column, so its full-profile cell goes too.
 		// The fees, the contract, the family plan and the PDF merge are cards
 		// of tabs, so they keep no cell under the tab card either.
-		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6', 'full-linked', 'money-payments', 'money-contract', 'family-plan-panel', 'documents-merge-to-pdf']
+		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6', 'full-linked', 'money-payments', 'money-contract', 'goal-plan-panel', 'documents-merge-to-pdf']
 		expect(simple.layout.map((entry) => entry.id)).toEqual(
 			original.layout
 				.map((entry) => entry.id)

@@ -965,10 +965,10 @@
     },
     {
       "file": "lib/Service/Relation/CaseRelationStore.php",
-      "method": "fetchCase",
+      "method": "findObject",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`fetchCase()` answers `return null` when the read fails; the catch logs at debug (\"CaseRelationService: case lookup failed\"), so a failed read and an absent record are the same answer."
+      "reason": "`findObject()`, behind `fetchCase()` and `fetchCaseType()`, answers `return null` when the read fails; the catch logs at debug (\"CaseRelationService: case lookup failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Relation/CaseRelationStore.php",
