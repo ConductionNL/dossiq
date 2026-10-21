@@ -149,23 +149,37 @@ class ProcessMiningController extends Controller {
 				return $this->csv(matrix: (array)($report['phaseDays'][$statistic] ?? []));
 			}
 
-			if (is_string($view) === true && $view !== '') {
-				return new JSONResponse(
-					[
-						'period' => ($report['period'] ?? null),
-						'clock' => ($report['clock'] ?? null),
-						'truncated' => ($report['truncated'] ?? null),
-						...$this->views->shape(report: $report, view: $view),
-					]
-				);
-			}
-
-			return new JSONResponse([...$report, ...$this->views->shape(report: $report, view: null)]);
+			return $this->shaped(report: $report, view: $view);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: process-mining report generation failed', ['exception' => $e->getMessage()]);
 			return new JSONResponse(['message' => 'Report generation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end report()
+
+	/**
+	 * The report as JSON: whole with every display block, or narrowed to one view.
+	 *
+	 * @param array<string, mixed> $report The report.
+	 * @param mixed                $view   The requested view, when any.
+	 *
+	 * @return JSONResponse The answer.
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+	 */
+	private function shaped(array $report, mixed $view): JSONResponse {
+		if (is_string($view) === true && $view !== '') {
+			return new JSONResponse(
+				[
+					'period' => ($report['period'] ?? null),
+					'clock' => ($report['clock'] ?? null),
+					'truncated' => ($report['truncated'] ?? null),
+					...$this->views->shape(report: $report, view: $view),
+				]
+			);
+		}
+
+		return new JSONResponse([...$report, ...$this->views->shape(report: $report, view: null)]);
+	}//end shaped()
 
 	/**
 	 * Refuse a download format or statistic the report does not offer.
