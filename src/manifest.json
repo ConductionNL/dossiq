@@ -7064,13 +7064,7 @@
 								{
 									"key": "case-title",
 									"as": "title",
-									"path": "title",
-									"route": {
-										"name": "CaseDetail",
-										"params": {
-											"id": "@object.objectUuid"
-										}
-									}
+									"path": "title"
 								},
 								{
 									"key": "case-meta",
