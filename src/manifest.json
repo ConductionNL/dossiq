@@ -3951,6 +3951,7 @@
 							"selectionLabel": "{count} documents selected",
 							"selectionLabelOne": "{count} document selected",
 							"showClearSelection": false,
+							"nameSecondary": "{type} · {size} · {modified|date}",
 							"sideCardsPlacement": "page-side",
 							"bulkActions": [
 								{
