@@ -1318,6 +1318,7 @@
 				}
 			},
 			"data": {
+				"case": "{{object:terras-slagerij.id}}",
 				"template": "{{lookup:template}}",
 				"templateVersion": 1,
 				"templateSnapshot": {
