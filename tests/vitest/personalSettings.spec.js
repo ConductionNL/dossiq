@@ -91,10 +91,14 @@ describe('the one personal settings screen', () => {
 	it.each([
 		'SubstitutionSettings',
 		'CaseEmailMatchSettings',
-		'WorkDigestSettings',
 		'NotificationRoutingSettings',
 	])('keeps a home for %s in the dialog', (section) => {
 		expect(userSettings).toContain(`<${section} />`)
+	})
+
+	it('keeps a home for the daily digest in the dialog, declared as fields', () => {
+		expect(userSettings).toContain(':fields="workDigestFields"')
+		expect(userSettings).toContain('url="/apps/dossiq/api/personal-queue/digest"')
 	})
 
 	it('keeps the library sections beside its own, except the notification pane it replaces', () => {
@@ -102,7 +106,7 @@ describe('the one personal settings screen', () => {
 		// library's sections; dossiq's Notices section is the screen over the
 		// notification preferences, so the library's pane stays out.
 		expect(app).toContain(
-			"return ['app', 'credentials', 'walkthrough', 'integrations']",
+			"return ['views', 'app', 'credentials', 'walkthrough', 'integrations']",
 		)
 		expect(app).toContain(':userSettingsSections="userSettingsSections"')
 		expect(userSettings).not.toContain('<CnCredentials')
@@ -118,6 +122,11 @@ describe('the one personal settings screen', () => {
 
 	it('has no case type picker: a pinned case type is a view, added to the menu from the list', () => {
 		expect(userSettings).not.toContain('menu-case-types')
+	})
+
+	it('opens with the library\'s Views in my menu, where the case type picker was (board DqPersoonlijkeInstellingen)', () => {
+		// @spec openspec/changes/views-in-my-menu-settings/specs/personal-settings-surface/spec.md#requirement-the-personal-settings-open-with-the-views-in-my-menu
+		expect(app).toMatch(/return \['views', 'app',/)
 	})
 
 	it('opens on its own hash', () => {

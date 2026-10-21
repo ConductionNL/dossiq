@@ -115,17 +115,16 @@ describe('a result template on the lifecycle menu', () => {
 	it('offers result templates on an act that carries a result, scoped to the case type', async () => {
 		const wrapper = await formFor('finish')
 
-		const picker = wrapper.findComponent({ name: 'TemplatePicker' })
+		const picker = wrapper.findComponent({ name: 'CnTemplateSelect' })
 		expect(picker.exists()).toBe(true)
-		expect(picker.props('kind')).toBe('result')
-		expect(picker.props('caseType')).toBe('ct-bezwaar')
-		expect(picker.props('caseId')).toBe('case-1')
+		expect(picker.props('url')).toBe('/apps/dossiq/api/content-templates/result')
+		expect(picker.props('params')).toEqual({ caseType: 'ct-bezwaar', case: 'case-1' })
 	})
 
 	it('offers no template on an act without a result', async () => {
 		const wrapper = await formFor('suspend')
 
-		expect(wrapper.findComponent({ name: 'TemplatePicker' }).exists()).toBe(
+		expect(wrapper.findComponent({ name: 'CnTemplateSelect' }).exists()).toBe(
 			false,
 		)
 	})

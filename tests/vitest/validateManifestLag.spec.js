@@ -148,9 +148,12 @@ describe('the vendored schema never falls behind the installed one', () => {
 
 		// The trap in one assertion: `_note` is all over this schema, and not
 		// here. A classifier that searched for the name would forgive it.
+		// An action's fields live in $defs/actionFields; $defs/action closes
+		// them with unevaluatedProperties.
+		expect(vendored.$defs.actionFields.properties).not.toHaveProperty('_note')
+		expect(installed.$defs.actionFields.properties).not.toHaveProperty('_note')
 		expect(vendored.$defs.action.properties).not.toHaveProperty('_note')
-		expect(installed.$defs.action.properties).not.toHaveProperty('_note')
-		expect(vendored.$defs.action.additionalProperties).toBe(false)
+		expect(vendored.$defs.action.unevaluatedProperties).toBe(false)
 	})
 })
 
@@ -186,7 +189,13 @@ describe('check:manifest tells a lag from a defect', () => {
 			'startOn',
 		)
 
-		if (declaresAll && declaresStartOn) {
+		// The board card pill's `resolve` (schema 2.135.0) is derived the same way.
+		const declaresCardResolve = Object.hasOwn(
+			installed.$defs.boardView?.properties?.card?.properties || {},
+			'resolve',
+		)
+
+		if (declaresAll && declaresStartOn && declaresCardResolve) {
 			expect(out).not.toContain('pending a library release')
 			return
 		}
@@ -197,6 +206,9 @@ describe('check:manifest tells a lag from a defect', () => {
 		}
 		if (!declaresStartOn) {
 			expect(out).toContain('uses "startOn"')
+		}
+		if (!declaresCardResolve) {
+			expect(out).toContain('/config/board/card uses "resolve"')
 		}
 	}, 30000)
 
@@ -238,6 +250,32 @@ describe('check:manifest tells a lag from a defect', () => {
 		}
 
 		manifest.walkthrough.tours[0].thisTourKeyExistsNowhere = true
+		const bogus = validate(manifest)
+		expect(bogus.code).toBe(1)
+		expect(bogus.out).toContain('FAIL')
+	}, 30000)
+
+	// @spec openspec/changes/case-type-colour-icon/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+	it('a pill resolve key, a board card resolve or a view icon only the newer schema declares is a lag, and an unknown one is not', () => {
+		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
+		expect(Object.hasOwn(vendored.$defs.headerPill.properties.resolve.properties, 'colorField')).toBe(true)
+
+		const manifest = JSON.parse(
+			fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+		)
+		const page = manifest.pages.find((candidate) => candidate.type === 'detail')
+		page.config.typePill = { field: 'caseType', resolve: { register: 'dossiq', schema: 'caseType', colorField: 'colour', iconField: 'icon' } }
+		expect(validate(manifest).code).toBe(0)
+
+		const cases = manifest.pages.find((candidate) => Array.isArray(candidate?.config?.defaultSavedViews))
+		cases.config.defaultSavedViews[0].icon = 'FileDocumentOutline'
+		expect(validate(manifest).code).toBe(0)
+
+		const board = manifest.pages.find((candidate) => candidate?.config?.board?.card)
+		board.config.board.card.resolve = { colorField: 'colour', iconField: 'icon' }
+		expect(validate(manifest).code).toBe(0)
+
+		page.config.typePill.resolve.thisKeyExistsNowhere = true
 		const bogus = validate(manifest)
 		expect(bogus.code).toBe(1)
 		expect(bogus.out).toContain('FAIL')

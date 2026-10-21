@@ -7,7 +7,6 @@
 		:registry="registry"
 		:pageTypes="pageTypes"
 		:formatters="formatters"
-		:cellWidgets="cellWidgets"
 		appId="dossiq"
 		:translate="translateForApp"
 		:notificationLabels="notificationLabels"
@@ -144,18 +143,6 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
-
-		/**
-		 * Cell-widget registry — forwarded to CnAppRoot as `cnCellWidgets`.
-		 * Resolves `pages[].config.columns[].widget` ids to components on
-		 * index pages (see src/services/cellWidgets.js). A formatter shapes a
-		 * value; a cell widget is what a column needs when the cell carries a
-		 * STATE the reader has to see, such as an overdue deadline.
-		 */
-		cellWidgets: {
-			type: Object,
-			default: () => ({}),
-		},
 	},
 
 	data() {
@@ -199,14 +186,15 @@ export default {
 
 	computed: {
 		/**
-		 * The user settings dialog's sections, in order: the app's own first,
-		 * then the library's credentials, guided tour and integrations.
+		 * The user settings dialog's sections, in order: the library's Views in
+		 * my menu first (board DqPersoonlijkeInstellingen), the app's own, then
+		 * the library's credentials, guided tour and integrations.
 		 *
 		 * @return {Array<string>} The section keys CnAppRoot draws.
-		 * @spec openspec/specs/personal-settings-surface/spec.md
+		 * @spec openspec/changes/views-in-my-menu-settings/specs/personal-settings-surface/spec.md#requirement-the-personal-settings-open-with-the-views-in-my-menu
 		 */
 		userSettingsSections() {
-			return ['app', 'credentials', 'walkthrough', 'integrations']
+			return ['views', 'app', 'credentials', 'walkthrough', 'integrations']
 		},
 
 		/**

@@ -60,7 +60,8 @@
       "order": 1,
       "isFinal": false,
       "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
-      "role": "intake"
+      "role": "intake",
+      "colour": "blue"
     },
     {
       "id": "2318408c-cb66-5b32-b06a-7809499ec77f",
@@ -69,7 +70,8 @@
       "order": 2,
       "isFinal": false,
       "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
-      "role": "in-progress"
+      "role": "in-progress",
+      "colour": "purple"
     },
     {
       "id": "c1ae2604-721a-54ec-9300-7b0d1c8f9e91",
@@ -78,7 +80,8 @@
       "order": 3,
       "isFinal": true,
       "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
-      "role": "closed"
+      "role": "closed",
+      "colour": "green"
     },
     {
       "id": "93b1b54f-4571-587e-a505-29c0952d342a",
@@ -86,7 +89,8 @@
       "description": "Subsidieaanvraag is afgewezen",
       "order": 4,
       "isFinal": true,
-      "caseType": "b3c1a000-0000-4000-a000-0000000005ab"
+      "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
+      "colour": "red"
     },
     {
       "id": "5f7731b9-e67d-59be-a98d-71321ca7a5af",
@@ -94,7 +98,8 @@
       "description": "Aanvraag is ingetrokken door de aanvrager",
       "order": 90,
       "isFinal": true,
-      "caseType": "b3c1a000-0000-4000-a000-0000000005ab"
+      "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
+      "colour": "grey"
     }
   ],
   "roleTypes": [

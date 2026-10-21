@@ -64,7 +64,7 @@ function modalEntries() {
 }
 
 /**
- * Every modal target any manifest action names, across the base manifest,
+ * Every modal target any manifest action or field-list row action names, across the base manifest,
  * every fragment under `src/manifest.d` and the structure profiles
  * (`src/menu-layout*.json`), whose page overlays add actions of their own.
  *
@@ -102,6 +102,12 @@ function manifestTargets() {
 		}
 		if (node.type === 'open-modal' && typeof node.target === 'string') {
 			targets.add(node.target)
+		}
+		// A field-list row action opens a registry dialog by name too.
+		if (Array.isArray(node.rowActions)) {
+			node.rowActions
+				.filter((rowAction) => rowAction && typeof rowAction.dialog === 'string')
+				.forEach((rowAction) => targets.add(rowAction.dialog))
 		}
 		Object.values(node).forEach(walk)
 	}
@@ -193,10 +199,15 @@ describe('registry modals reach a surface', () => {
  * The sixth, CaseTransitionConfirmDialog, was kept because it was the only
  * component mounting TemplatePicker. the-close-form-keeps-its-template moved
  * the picker onto CaseLifecycleMenuDialog, the close form a handler reaches,
- * and retired the dialog. The list is empty: a new entry needs a reason and
- * what would remove it.
+ * and retired the dialog. A new entry needs a reason and what would remove it.
  */
-const KNOWN_UNIMPORTED = {}
+const KNOWN_UNIMPORTED = {
+	'src/modals/DeelzaakCreateModal.vue':
+		'Its only mount was the retired DeelzaakList page. It is the one Create sub-case form '
+		+ '(validates against /api/deelzaken/validate before it writes), so it waits for a header '
+		+ 'action on the case page Sub-cases section rather than going with the page. Drop this '
+		+ 'entry when that action imports it.',
+}
 
 /**
  * Every `.vue` file under the dialog and modal folders.

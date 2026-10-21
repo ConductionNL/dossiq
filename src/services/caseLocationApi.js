@@ -40,7 +40,7 @@ export function parcelOf(result) {
  * The `case-location` record for an address chosen from the PDOK search.
  *
  * @param {string} caseId The case the location belongs to.
- * @param {{result: object, coordinates: object|null, address: string}} chosen What AddressSearch emitted.
+ * @param {{result: object, coordinates: object|null, address: string}} chosen What the address search (CnAddressSearch) emitted.
  * @return {object} The record to save.
  * @spec openspec/specs/case-dashboard-view/spec.md
  */

@@ -11,7 +11,7 @@
   trail, so a decision can show who planned what and when.
 
   Until the plan is recorded, a handler can start it from a named template of
-  the request configuration (RecordTemplateSelect). The template fills whose
+  the request configuration (the library's CnTemplateSelect). The template fills whose
   files, the systems and the terms, never the period, and the recorded plan
   names the template it started from (REQ-WRC-005).
 
@@ -40,9 +40,12 @@
 				{{ recordedLine }}
 			</p>
 
-			<RecordTemplateSelect
+			<CnTemplateSelect
 				v-if="!plan?.recordedAt"
 				:schema="templateSchema"
+				:inputLabel="t('dossiq', 'Start from a template')"
+				:placeholder="t('dossiq', 'Pick a template')"
+				data-testid="record-template-select"
 				@apply="applyTemplate" />
 
 			<fieldset
@@ -142,6 +145,7 @@
 </template>
 
 <script>
+import { CnTemplateSelect } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
@@ -150,7 +154,6 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import RecordTemplateSelect from '../components/RecordTemplateSelect.vue'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 const DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -163,7 +166,7 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcDialog,
 		NcTextField,
-		RecordTemplateSelect,
+		CnTemplateSelect,
 	},
 
 	props: {
@@ -305,7 +308,7 @@ export default {
 		 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-new-request-starts-from-the-configuration-of-an-earlier-one-req-wrc-005
 		 */
 		applyTemplate(template) {
-			this.startedFrom = template?.uuid ?? ''
+			this.startedFrom = template?.id ?? ''
 			if (!template) {
 				return
 			}

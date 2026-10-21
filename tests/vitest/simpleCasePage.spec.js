@@ -26,6 +26,7 @@ import {
 	stageEntry,
 	stageOf,
 } from '@conduction/nextcloud-vue/src/utils/detailActionModel.js'
+import { firstFilled } from '@conduction/nextcloud-vue/src/utils/fillTemplate.js'
 import { schemaRefSlug } from '@conduction/nextcloud-vue/src/utils/schemaRefSlug.js'
 import { spawnSync } from 'child_process'
 import fs from 'fs'
@@ -227,10 +228,15 @@ describe('the stage', () => {
 				statusRole: 'in-progress',
 				assignee: 'pieter',
 				isIncomplete: true,
+				statusPublicLabel: 'In behandeling',
 			},
 			simple.stageField,
 		)
-		expect(card.title).toBe('What now? Handle the case')
+		// The board's title names the step and the case's public status label,
+		// and falls back to the plain title when the case carries no label.
+		expect(firstFilled(card.title, { statusPublicLabel: 'In behandeling' })).toBe('What now? Step 2: in behandeling')
+		expect(firstFilled(card.title, {})).toBe('What now? Handle the case')
+		expect(card.after).toBe('Then: on to step 3, the decision')
 		expect(card.items.map((item) => [item.label, item.done])).toEqual([
 			['Choose a handler', true],
 			['Complete the case details', false],
@@ -379,7 +385,7 @@ describe('the tabs', () => {
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
-		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Custody', 'Archiving', 'Knowledge', 'Proposals', 'Publication', 'Review'])
+		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Custody', 'Archiving', 'Knowledge', 'Proposals', 'Publication', 'Review', 'AI oversight'])
 		const widgetIds = (content) => content.tabs
 			.flatMap((tab) => (Array.isArray(tab.widgetIds) ? tab.widgetIds : [tab.widgetId]))
 		// Every panel of the full strip is still on it, except the Data and
@@ -403,6 +409,8 @@ describe('the tabs', () => {
 		// The parties by role lead, as Partijen; the linked contacts follow (DqZaakBetrokkenen).
 		expect(peopleTab.widgetIds[0]).toBe('case-party-roles-card')
 		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Case parties')
+		// Seats and followers share a row, as the board draws them.
+		expect(peopleTab.layout).toEqual([{ widgetId: 'case-seats-card', gridWidth: 6 }, { widgetId: 'case-followers-card', gridWidth: 6 }])
 		for (const id of widgetIds(tabsOf(original)).filter((id) => !unfolded.includes(id))) {
 			expect(shown, id).toContain(id)
 		}
@@ -441,6 +449,21 @@ describe('the tabs', () => {
 		}
 	})
 
+	it('shows the case\'s tasks as the library task table (DqZaakTaken)', () => {
+		const tasks = simple.widgets.find((widget) => widget.id === 'case-tasks-card')
+		expect(tasks.type).toBe('tasks')
+		expect(tasks.content).toMatchObject({
+			variant: 'table',
+			objectUuid: '@objectId',
+			includeDone: true,
+			create: { appId: 'dossiq' },
+			completeAny: true,
+			cancel: true,
+			rowRoute: 'TaskDetail',
+			viewAllRoute: { name: 'Tasks', query: { case: '@objectId' } },
+		})
+	})
+
 	it('turns the stages horizontal and leaves every other widget of the page as it was', () => {
 		const find = (config, id) =>
 			config.widgets.find((widget) => widget.id === id)
@@ -463,6 +486,12 @@ describe('the tabs', () => {
 					finalField: 'isFinal',
 					limit: 50,
 				},
+				datesSource: {
+					url: '/apps/dossiq/api/case-types/@object.caseType/blueprint?case=@objectId',
+					path: 'statusTypes',
+					idField: 'id',
+					dateField: 'reachedAt',
+				},
 			},
 		})
 		// The blueprint endpoint the full page reads lists only the statuses a
@@ -476,7 +505,7 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-followers-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-followers-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-assistant-chat']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
@@ -553,8 +582,9 @@ describe('the tabs', () => {
 		// The stages (`3`) sit in the header card (`config.headerWidget`) and the
 		// banner stack in the side column, so neither keeps a grid cell.
 		// The plan, terms, flows and hours are cards of the Overview tab now, as
-		// DqZaak draws them, so they keep no grid cell either.
-		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6']
+		// DqZaak draws them, so they keep no grid cell either. The Linked card
+		// is in the side column, so its full-profile cell goes too.
+		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6', 'full-linked']
 		expect(simple.layout.map((entry) => entry.id)).toEqual(
 			original.layout
 				.map((entry) => entry.id)
@@ -570,7 +600,6 @@ describe('the tabs', () => {
 			'money-payments': 0,
 			'money-contract': 6,
 			'family-plan-panel': 0,
-			'work-projects': 6,
 			'documents-merge-to-pdf': 0,
 		}
 		for (const entry of simple.layout) {
@@ -607,12 +636,15 @@ describe('the tabs', () => {
 		// the deadline is the first card of the side column, and neither
 		// widget is still placed in the grid, so nothing renders twice.
 		expect(simple.breadcrumb.currentField).toBe('identifier')
-		// The pill above the title names the case type, as DqZaak draws "Woo-verzoek".
+		// The pill above the title names the case type, as DqZaak draws "Woo-verzoek",
+		// in the case type's own colour and icon.
 		expect(simple.typePill).toEqual({
 			field: 'caseType',
-			resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title' },
+			resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title', colorField: 'colour', iconField: 'icon' },
 		})
-		expect(simple.sideColumn[0]).toBe('case-tile-deadline')
+		// The advice notice opens the column while advice is still asked; the deadline is the first card.
+		expect(simple.sideColumn[0].id).toBe('side-advice-requested')
+		expect(simple.sideColumn[1]).toBe('case-tile-deadline')
 		const placed = simple.layout.map((entry) => entry.widgetId)
 		expect(placed).not.toContain('case-tile-deadline')
 		expect(
@@ -627,8 +659,8 @@ describe('the header and the side column', () => {
 		expect(onTheCase(simple.breadcrumb.currentField)).toBe(true)
 		expect(onTheCase(simple.typePill.field)).toBe(true)
 		// The cards every case shows; the case-type cards are gated and checked below.
-		const cards = simple.sideColumn.filter((card) => typeof card === 'object' && !card.visibleWhen)
-		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Work instruction'])
+		const cards = simple.sideColumn.filter((card) => typeof card === 'object' && !card.visibleWhen && card.type !== 'banner')
+		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Linked', 'Work instruction'])
 		const shown = []
 		for (const card of cards) {
 			// The requester is a facts card (a lead, as DqZaak draws it), the
@@ -659,7 +691,9 @@ describe('the header and the side column', () => {
 		// case page, with side cards gated on the case type's category. Each
 		// card lists records that name this case, so no card states a fact
 		// the register does not hold.
-		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen)
+		// The special-category warnings are gated on the case type itself
+		// (caseSpecialDataNotice.spec.js), not on records linked to the case.
+		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen && card.type !== 'banner')
 		expect(gated.map((card) => card.id)).toEqual([
 			'side-objection-appeal',
 			'side-grant-application',
@@ -761,4 +795,19 @@ describe('the built simple manifest', () => {
 		)
 		expect(run.status).toBe(0)
 	}, 120_000)
+})
+
+describe('the assistant in the case page (DqZaakAssistent)', () => {
+	const layout = JSON.parse(fs.readFileSync(path.join(__dirname, '../../src/menu-layout.simple.json'), 'utf8'))
+	const page = layout.pages.find((entry) => entry.id === 'CaseDetail')
+	const widget = page.configAppend.widgets.find((entry) => entry.id === 'case-assistant-chat')
+	const tab = page.configPatch.widgets['case-panels'].content.tabs.find((entry) => entry.widgetId === 'case-assistant-chat')
+
+	it('places the AI chat the launcher opens, embedded, needing hermiq', () => {
+		expect(widget).toMatchObject({ type: 'ai-chat', requiredApp: 'hermiq', content: { chatAppId: 'hermiq' } })
+	})
+
+	it('gives it the AI oversight tab, under Acties until it is opened', () => {
+		expect(tab).toMatchObject({ label: 'AI oversight', overflow: true })
+	})
 })

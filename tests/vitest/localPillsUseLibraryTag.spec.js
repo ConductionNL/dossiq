@@ -41,12 +41,4 @@ describe('dossiq pills are the library tag', () => {
 			.filter((rel) => /border-radius:\s*(var\(--border-radius-pill|999|9999|100px)/.test(fs.readFileSync(path.join(SRC, rel), 'utf8')))
 		expect(offenders).toEqual([])
 	})
-
-	it.each([
-		'components/cells/StatusBadgeCell.vue',
-		'components/cells/PriorityBadgeCell.vue',
-		'views/cases/DeelzaakList.vue',
-	])('%s renders its tag as cn-status-badge', (rel) => {
-		expect(fs.readFileSync(path.join(SRC, rel), 'utf8')).toContain('cn-status-badge cn-status-badge--')
-	})
 })

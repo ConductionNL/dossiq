@@ -467,4 +467,106 @@ class WOOAnonymisationAssistServiceTest extends TestCase {
 		$this->assertSame('rejected', $result['status']);
 		$this->assertArrayNotHasKey('approvedSpans', $result);
 	}//end testRejectRecordsNoApprovedSpans()
+
+	/**
+	 * Build an assessment mock holding one pending proposal.
+	 *
+	 * @param array<int, array<string, mixed>> $spans The proposed spans.
+	 *
+	 * @return void
+	 */
+	private function withPendingProposal(array $spans): void {
+		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
+		$this->assessmentService->method('findAssessment')->willReturn([
+			'id' => 'assessment-1',
+			'documentRef' => 'doc-1',
+			'caseRef' => 'case-1',
+			'redactionProposal' => [
+				'status' => 'pending_review',
+				'spans' => $spans,
+				'proposedBy' => 'carol',
+				'proposedAt' => '2026-10-20T09:00:00+00:00',
+			],
+		]);
+		$this->assessmentService->method('saveRedactionProposal')->willReturnCallback(
+			static fn (string $caseId, string $documentRef, array $proposal): array => [
+				'redactionProposal' => $proposal,
+			]
+		);
+	}//end withPendingProposal()
+
+	/**
+	 * Approving the proposal as-is reports it accepted; approving edited spans
+	 * reports it modified with the spans used; rejecting reports it rejected.
+	 *
+	 * @param string     $decision The review decision.
+	 * @param array|null $edited   Edited spans, or null.
+	 * @param string     $expected The reported user action.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider reviewReportProvider
+	 */
+	public function testReviewReportsTheDecisionToOversight(string $decision, ?array $edited, string $expected): void {
+		$spans = [['start' => 0, 'end' => 9, 'category' => 'bsn', 'source' => 'rule']];
+		$this->withPendingProposal(spans: $spans);
+		$this->auditService->expects($this->once())
+			->method('recordUserAction')
+			->with(
+				'case-1',
+				'extraction',
+				$expected,
+				['spans' => $spans],
+				$expected === 'modified' ? ['spans' => $edited] : null,
+				null,
+				'bob',
+				$this->callback(static fn (array $context): bool => $context['documentId'] === 'doc-1')
+			);
+
+		$this->service()->reviewProposal(
+			caseId: 'case-1',
+			documentRef: 'doc-1',
+			decision: $decision,
+			reviewerId: 'bob',
+			editedSpans: $edited
+		);
+	}//end testReviewReportsTheDecisionToOversight()
+
+	/**
+	 * Review decisions and what they report.
+	 *
+	 * @return array<string, array<int, mixed>>
+	 */
+	public static function reviewReportProvider(): array {
+		return [
+			'approved as proposed' => ['approve', null, 'accepted'],
+			'approved edited' => ['approve', [['start' => 0, 'end' => 4, 'category' => 'bsn', 'source' => 'rule']], 'modified'],
+			'rejected' => ['reject', null, 'rejected'],
+		];
+	}//end reviewReportProvider()
+
+	/**
+	 * A new proposal over a still-pending one reports the old one unused,
+	 * superseded, for the person it was shown to.
+	 *
+	 * @return void
+	 */
+	public function testNewProposalReportsThePendingOneSuperseded(): void {
+		$this->withPendingProposal(spans: []);
+		$this->aiService->method('detectDeterministicPiiSpans')->willReturn([]);
+		$this->auditService->expects($this->once())
+			->method('recordUserAction')
+			->with(
+				'case-1',
+				'extraction',
+				'ignored',
+				['spans' => []],
+				null,
+				null,
+				'carol',
+				$this->callback(static fn (array $context): bool => $context['unusedBecause'] === 'superseded')
+			);
+
+		$this->service()->proposeSpans(caseId: 'case-1', documentRef: 'doc-1', text: 'Some text', userId: 'dave');
+	}//end testNewProposalReportsThePendingOneSuperseded()
 }//end class

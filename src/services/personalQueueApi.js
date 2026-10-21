@@ -19,19 +19,6 @@ import { generateUrl } from '@nextcloud/router'
 const BASE = '/apps/dossiq/api/personal-queue'
 
 /**
- * The cases and tasks the reader may close their day on.
- *
- * @return {Promise<{items: Array, unavailable: Array}>} The candidates.
- *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
- */
-export async function fetchEndOfDay() {
-	const { data } = await axios.get(generateUrl(`${BASE}/end-of-day`))
-
-	return { items: data?.items ?? [], unavailable: data?.unavailable ?? [] }
-}
-
-/**
  * Remember how the reader groups their queue.
  *
  * @param {string} groupBy One of source, priority, due.
@@ -79,43 +66,3 @@ export async function savePersonalStage(caseId, stage) {
 	return String(data?.stage ?? '')
 }
 
-/**
- * When the reader wants their digest.
- *
- * @return {Promise<{enabled: boolean, hour: number}>} The settings.
- *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
- */
-export async function fetchDigestSettings() {
-	const { data } = await axios.get(generateUrl(`${BASE}/digest`))
-
-	return {
-		enabled: data?.enabled !== false,
-		hour: Number(data?.hour ?? 8),
-		source: String(data?.source ?? 'dossiq'),
-		scope: String(data?.scope ?? 'global'),
-	}
-}
-
-/**
- * Save when the reader wants their digest.
- *
- * @param {boolean} enabled Whether they want one.
- * @param {number} hour The hour they want it in.
- * @return {Promise<{enabled: boolean, hour: number}>} The settings now stored.
- *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
- */
-export async function saveDigestSettings(enabled, hour) {
-	const { data } = await axios.post(generateUrl(`${BASE}/digest`), {
-		enabled,
-		hour,
-	})
-
-	return {
-		enabled: data?.enabled !== false,
-		hour: Number(data?.hour ?? 8),
-		source: String(data?.source ?? 'dossiq'),
-		scope: String(data?.scope ?? 'global'),
-	}
-}

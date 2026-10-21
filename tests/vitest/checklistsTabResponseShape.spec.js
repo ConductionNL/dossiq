@@ -78,6 +78,15 @@ vi.mock('@nextcloud/vue', () => ({
 }))
 vi.mock('@conduction/nextcloud-vue', () => ({
 	CnConfirmDialog: stub('div'),
+	// A row renders its title and its actions slot, like the library's.
+	CnObjectRow: {
+		name: 'CnObjectRow',
+		props: ['object', 'config'],
+		render() {
+			return h('div', {}, [this.object[this.config.titleField], this.$slots.actions ? this.$slots.actions() : null])
+		},
+	},
+	CnRowActions: stub('span'),
 }))
 vi.mock('../../src/components/InspectionChecklistEditor.vue', () => ({
 	default: stub('div'),

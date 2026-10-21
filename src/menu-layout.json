@@ -12,7 +12,7 @@
 		"SubstitutionAdminMenu": "Cases",
 		"BezwaarCommitteesMenu": "decidiq:GovernanceBodies"
 	},
-	"pagesNote": "Page overlays, applied by src/utils/structureProfile.js as in the simple profile. The team queue is a view of the Cases page (`team-queue`) whose overrides are the simple profile's DqTeamwachtrij look; the full profile keeps the Queue page it had: that title, its columns (unread and priority among them), its view modes opening on the table, and the case type folders. `configPatch` addresses the view by slug and merges into its `overrides` deeply, so everything else the view carries stays.",
+	"pagesNote": "Page overlays, applied by src/utils/structureProfile.js as in the simple profile. The team queue is a view of the Cases page (`team-queue`) whose overrides are the simple profile's DqTeamwachtrij look; the full profile keeps the Queue page it had: that title, its columns (priority among them; unread rows read in bold, as on the Cases page), its view modes opening on the table, and the case type folders. `configPatch` addresses the view by slug and merges into its `overrides` deeply, so everything else the view carries stays.",
 	"pages": [
 		{
 			"id": "Cases",
@@ -22,12 +22,6 @@
 						"overrides": {
 							"title": "Queue",
 							"columns": [
-								{
-									"key": "@self.unread",
-									"label": "Unread",
-									"widget": "unreadIndicator",
-									"sortable": false
-								},
 								"identifier",
 								"title",
 								{
@@ -42,8 +36,21 @@
 								},
 								{
 									"key": "priorityOrder",
+									"valueField": "priority",
 									"label": "Priority",
-									"widget": "priorityBadge"
+									"widget": "badge",
+									"colorMap": {
+										"low": "default",
+										"normal": "info",
+										"high": "warning",
+										"urgent": "error"
+									},
+									"widgetProps": {
+										"titleWhen": {
+											"field": "priorityOverride",
+											"text": "Priority set by hand, not derived"
+										}
+									}
 								},
 								"deadline"
 							],

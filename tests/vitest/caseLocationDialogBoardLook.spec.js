@@ -1,0 +1,66 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V.
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * The Add location dialog as the board draws it (DqZaakLocatie): the wizard
+ * width, the address field named once by its own label, the map beside a
+ * 200px layer list, and BAG and cadastre cards with a 17px title over 14px
+ * rows 8px apart. Read from the component.
+ *
+ * @spec openspec/changes/case-location-dialog-board-look/specs/case-dashboard-view/spec.md
+ */
+import fs from 'fs'
+import path from 'path'
+import { describe, expect, it } from 'vitest'
+
+const source = fs.readFileSync(path.resolve(__dirname, '../../src/dialogs/CaseLocationDialog.vue'), 'utf8')
+const style = source.slice(source.indexOf('>', source.indexOf('<style')) + 1).replace(/\/\*[\s\S]*?\*\//g, '')
+
+/**
+ * The body of the rule whose selector is exactly this one.
+ *
+ * @param {string} selector The selector.
+ * @return {string} The rule body, or '' when there is none.
+ */
+function ruleFor(selector) {
+	const re = /([^{}]+)\{([^{}]*)\}/g
+	let m
+	while ((m = re.exec(style))) {
+		if (m[1].trim() === selector) {
+			return m[2]
+		}
+	}
+	return ''
+}
+
+describe('CaseLocationDialog in the board look', () => {
+	it('opens at the wizard width', () => {
+		expect(source).toMatch(/<CnDialog[^>]*\swidth="wizard"/)
+	})
+
+	it('names the address field once, by the field\'s own label', () => {
+		expect(source).not.toContain('case-location-dialog__label')
+	})
+
+	it('puts the map beside a 200px layer list in an 8px rounded frame', () => {
+		expect(ruleFor('.case-location-dialog__map-row')).toContain('grid-template-columns: minmax(0, 1fr) 200px')
+		expect(ruleFor('.case-location-dialog__layers')).toContain('border-radius: 8px')
+		expect(ruleFor('.case-location-dialog__layers legend')).toContain('font-weight: 600')
+	})
+
+	it('draws a fact card 12px rounded, 14px 16px in, with a 17px title at 700', () => {
+		const card = ruleFor('.case-location-dialog__card')
+		expect(card).toContain('border-radius: 12px')
+		expect(card).toContain('padding: 14px 16px')
+		expect(card).toContain('gap: 8px')
+		const title = ruleFor('.case-location-dialog__card h3')
+		expect(title).toContain('font-size: 17px')
+		expect(title).toContain('font-weight: 700')
+	})
+
+	it('sets the facts 8px apart with no padding of their own', () => {
+		const list = ruleFor('.case-location-dialog__card dl')
+		expect(list).toContain('gap: 8px 16px')
+		expect(list).toContain('padding: 0')
+	})
+})

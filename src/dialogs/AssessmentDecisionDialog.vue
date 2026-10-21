@@ -126,6 +126,7 @@
 							data-testid="assessment-decision-description"
 							:label="t('dossiq', 'Reasons for the decision')"
 							:labelOutside="true"
+							:rows="4"
 							resize="vertical" />
 						<span class="assessment-decision__hint">
 							{{ t('dossiq', 'Goes into the decision and into the reason of this step.') }}

@@ -40,10 +40,8 @@ import { pageWidgets } from './helpers/pageViews.js'
 const ROOT = path.resolve(__dirname, '../..')
 const MANIFEST_PATH = path.join(ROOT, 'src', 'manifest.json')
 
-const CELL_WIDGETS_PATH = path.join(ROOT, 'src', 'services', 'cellWidgets.js')
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
-const cellWidgetsSource = fs.readFileSync(CELL_WIDGETS_PATH, 'utf8')
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const bulkActionsSource = fs.readFileSync(
 	path.join(ROOT, 'src', 'utils', 'caseBulkActions.js'),
@@ -652,15 +650,39 @@ describe('the Deadline column', () => {
 			(column) => typeof column === 'object' && column.key === 'deadline',
 		)
 
-	it('renders through the deadlineCountdown cell widget', () => {
-		expect(deadlineColumn().widget).toBe('deadlineCountdown')
+	it('renders through the library date cell as a countdown', () => {
+		// The library's `date` cell with `due` reads the days overdue in the
+		// error colour from the day after the deadline, "Due today" on the
+		// day itself, and with `upcomingLabel` the days left before it.
+		expect(deadlineColumn().widget).toBe('date')
+		expect(deadlineColumn().widgetProps.due.upcomingLabel).toEqual({
+			one: '{count} day left',
+			other: '{count} days left',
+		})
 	})
 
-	it('names a widget id the cell registry resolves', () => {
-		// A `widget` id that resolves to nothing in `cnCellWidgets` does not
-		// error: CnCellRenderer falls through to the type-aware rendering and
-		// the column silently reverts to a plain date.
-		expect(cellWidgetsSource).toMatch(/^\tdeadlineCountdown: /m)
+	it('declares the same countdown on every deadline column', () => {
+		const deadlineColumns = []
+		const walk = (node) => {
+			if (Array.isArray(node)) {
+				node.forEach(walk)
+			} else if (node && typeof node === 'object') {
+				if (node.key === 'deadline' && typeof node.widget === 'string' && node.widgetProps?.due) {
+					deadlineColumns.push(node)
+				}
+				Object.values(node).forEach(walk)
+			}
+		}
+		walk(manifest.pages)
+		expect(deadlineColumns.length).toBeGreaterThan(1)
+		for (const column of deadlineColumns) {
+			expect(column.widget).toBe('date')
+			expect(column.widgetProps.due.upcomingLabel.other).toBe('{count} days left')
+		}
+	})
+
+	it('names no app cell widget, so the library draws it', () => {
+		expect(fs.existsSync(path.join(ROOT, 'src', 'services', 'cellWidgets.js'))).toBe(false)
 	})
 
 	it('sorts on the stored deadline, not on the rendered text', () => {

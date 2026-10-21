@@ -163,9 +163,8 @@ export function asTaskRow(row) {
 	// `/api/flow-tasks/{uuid}/…` verb take the uuid, so the surfaces
 	// (MyTasksWidget, TaskRemindersWidget) built a deep link
 	// like `/apps/dossiq/tasks/153` that resolves to nothing. It answered no
-	// error, it just went nowhere. `taskIdOf()` in `caseTaskPaneHelpers.js`
-	// already reads uuid first, and this is the same precedence in the one
-	// place every reader goes through.
+	// error, it just went nowhere. Uuid first is the precedence every reader
+	// needs, kept here in the one place they all go through.
 	//
 	// The other three keep `row.<registerName> ?? row.<engineName>`: unlike
 	// `id`, none of them is emitted by the engine at all, so the register

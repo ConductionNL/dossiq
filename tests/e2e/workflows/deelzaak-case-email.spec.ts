@@ -160,7 +160,7 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		})
 		const childId = objectId(child)
 
-		// DeelzaakList.vue fetches GET /deelzaken/{parent}/children — the child
+		// GET /deelzaken/{parent}/children — the child
 		// must be returned, proving the parent-child link persisted.
 		const children = await deelzaken(`/${encodeURIComponent(parentId)}/children`)
 		expect(children.status, 'children endpoint reachable').toBe(200)
@@ -224,14 +224,10 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		)
 	})
 
-	// ----- Rendered tab UI (nc-vue slot-render gap now FIXED) -----------------
-	// These drive the actual rendered DeelzaakList and Email tabs. The
-	// @conduction/nextcloud-vue manifest shell now renders a kind:'page'
-	// registry component referenced from a sidebar tab `component:` and from a
-	// custom page's `slots.main` (CnObjectSidebar.resolveTabComponent +
-	// CnPageRenderer.resolvedComponent — ADR-036 / nextcloud-vue#459 family),
-	// so these are un-fixmed.
-	test('Sub-cases tab renders DeelzaakList with the seeded child row', async ({
+	// ----- Rendered tab UI ------------------------------------------------------
+	// The old sub-case list address redirects to the parent case, on the
+	// Related tab that lists its sub-cases.
+	test('the old sub-case list address opens the parent on its Related tab', async ({
 		page,
 	}: {
 		page: Page
@@ -244,8 +240,10 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		const parentId = objectId(parent)
 		await page.goto(`/index.php/apps/dossiq/cases/${parentId}/deelzaken`)
 		await dismissSupportDialog(page)
-		await expect(page.locator('.deelzaak-list')).toBeVisible({ timeout: 15_000 })
-		await expect(page.getByRole('heading', { name: 'Sub-cases' })).toBeVisible()
+		await expect(page).toHaveURL(new RegExp(`/cases/${parentId}(\\?[^#]*)?#case-related-panel$`), { timeout: 15_000 })
+		const detail = page.locator('.cn-detail-page')
+		await expect(detail).toBeVisible({ timeout: 15_000 })
+		await expect(detail.getByText('Sub-cases', { exact: true }).first()).toBeVisible({ timeout: 15_000 })
 	})
 
 	// The Email tab of the case panels renders the library mail widget

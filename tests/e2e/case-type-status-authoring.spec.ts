@@ -608,7 +608,7 @@ test.describe('A status is authored on the page, and what was authored runs', ()
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 		await strip.getByRole('tab', { name: /^(Work|Werk)$/ }).click()
 		const panel = strip.locator('[role="tabpanel"]:not([hidden])')
-		await expect(panel.locator('[data-testid="case-task-pane"]')).toContainText(
+		await expect(panel.locator('.cn-tasks-widget')).toContainText(
 			CHECK_IDENTITY,
 			{ timeout: 30_000 },
 		)

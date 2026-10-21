@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.133.0",
+	"version": "2.138.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -660,6 +660,16 @@
 					"type": "array",
 					"description": "The indicator applies when the field's value is one of these."
 				},
+				"after": {
+					"type": "string",
+					"minLength": 1,
+					"description": "The indicator applies while the field holds a readable date after this moment: `now` or an ISO date (\"held until a later date\")."
+				},
+				"before": {
+					"type": "string",
+					"minLength": 1,
+					"description": "The indicator applies while the field holds a readable date before this moment: `now` or an ISO date."
+				},
 				"icon": {
 					"type": "string",
 					"description": "CnIcon name (PascalCase). Defaults to InformationOutline."
@@ -1212,6 +1222,7 @@
 							]
 						},
 						"pill": { "type": "string", "description": "The field shown as a status pill." },
+						"resolve": { "type": "object", "additionalProperties": false, "description": "pill-color-field: the `pill` field holds the id of a record; the pill takes the tone that record's colour maps onto and shows its icon. Register and schema default to the field's reference.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "colorField": { "type": "string", "minLength": 1 }, "iconField": { "type": "string", "minLength": 1 } } },
 						"pillColors": {
 							"type": "object",
 							"description": "Pill value to badge variant. A value without an entry takes the default variant.",
@@ -1362,6 +1373,11 @@
 					"minLength": 1,
 					"description": "Dot-path to the value on the record."
 				},
+				"values": {
+					"type": "array",
+					"items": { "type": "string" },
+					"description": "With `field`: draw the pill only when the raw value is one of these (a priority pill for high and urgent only)."
+				},
 				"text": {
 					"type": "string",
 					"minLength": 1,
@@ -1378,7 +1394,7 @@
 						"filter": { "type": "object", "additionalProperties": true }
 					}
 				},
-				"resolve": { "type": "object", "additionalProperties": false, "required": ["register", "schema"], "description": "detail-pill-resolve: the field holds the id of a record of this register and schema; the pill shows that record's `labelField` (else its title or name) and keys `colorMap` by it. The raw value shows while the lookup runs and when it finds nothing.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "labelField": { "type": "string", "minLength": 1 } } },
+				"resolve": { "type": "object", "additionalProperties": false, "required": ["register", "schema"], "description": "detail-pill-resolve: the field holds the id of a record of this register and schema; the pill shows that record's `labelField` (else its title or name) and keys `colorMap` by it. The raw value shows while the lookup runs and when it finds nothing.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "labelField": { "type": "string", "minLength": 1 }, "colorField": { "type": "string", "minLength": 1, "description": "pill-color-field: the referenced record's property holding a colour name (an NL Design System hue such as `red` or `blue-light`, or a badge role); the pill takes the tone it maps onto." }, "iconField": { "type": "string", "minLength": 1, "description": "pill-color-field: the referenced record's property holding a registered icon name, shown before the label." } } },
 				"countLabel": {
 					"type": "object",
 					"additionalProperties": false,
@@ -3103,10 +3119,17 @@
 			}
 		},
 		"action": {
+			"description": "A page action: the fields of $defs/actionFields, nothing else, with children that are actions too. Row, bulk and navigation actions use it; header actions use $defs/headerAction.",
+			"$ref": "#/$defs/actionFields",
+			"properties": {
+				"children": { "items": { "$ref": "#/$defs/action" } }
+			},
+			"unevaluatedProperties": false
+		},
+		"actionFields": {
 			"type": "object",
 			"required": ["id", "label"],
-			"additionalProperties": false,
-			"description": "A typed page action with a discriminator field. The type field determines behaviour: handler (registry function), open-modal (modal by id), open-page (named route), navigate (URL), object-op (declarative OpenRegister mutation via useObjectStore), export (opens the shared CnMassExportDialog export launcher), open-form (schema-driven create dialog — CnActionButtons), refresh (bumps the cn:page:refresh signal), api-call (POST/PUT an app endpoint + toast + refresh — CnActionButtons/dispatchAction), agent (run a governed hermiq agent), run-node (invoke one OpenRegister flow node against the page object, config collected via a dialog sourced from the node's own declared form — CnActionButtons/dispatchAction, or-flow-run-node; distinct from the UNRELATED setup-wizard step type of a similar name, 'run-action'), toggle (two-way state button — CnActionButtons only, NOT dispatchable). When type is omitted, it defaults to 'handler' (back-compatibility with v1.3.0 action declarations). The Ajv instance is compiled with useDefaults: true so the default is applied during validation.",
+			"description": "The fields of an action, shared by $defs/action and the non-link $defs/headerAction, which close it and constrain `children`. A typed page action with a discriminator field. The type field determines behaviour: handler (registry function), open-modal (modal by id), open-page (named route), navigate (URL), object-op (declarative OpenRegister mutation via useObjectStore), export (opens the shared CnMassExportDialog export launcher), open-form (schema-driven create dialog — CnActionButtons), refresh (bumps the cn:page:refresh signal), api-call (POST/PUT an app endpoint + toast + refresh — CnActionButtons/dispatchAction), agent (run a governed hermiq agent), run-node (invoke one OpenRegister flow node against the page object, config collected via a dialog sourced from the node's own declared form — CnActionButtons/dispatchAction, or-flow-run-node; distinct from the UNRELATED setup-wizard step type of a similar name, 'run-action'), toggle (two-way state button — CnActionButtons only, NOT dispatchable). When type is omitted, it defaults to 'handler' (back-compatibility with v1.3.0 action declarations). The Ajv instance is compiled with useDefaults: true so the default is applied during validation.",
 			"properties": {
 				"id": {
 					"type": "string",
@@ -3194,6 +3217,23 @@
 					"default": 1,
 					"description": "open-form: how many columns the fields flow into. 2 pairs them up, which halves the scrolling on a longer form. Textareas and JSON editors still span the full width, and the layout collapses to one column below 700px. Widen the dialog with size: 'large' as well, or two columns are merely two narrow ones."
 				},
+				"endpoint": {
+					"type": "object",
+					"description": "open-form only: edit a record that is not a register object through an endpoint (an OpenRegister organisation). `url` is where the save goes (token-interpolated, app-relative or absolute), `method` is PATCH (default) or PUT, or POST to create a record with an empty form, `loadUrl` reads the record when it differs from `url`, `responsePath` plucks it from the answer. The fields are `formProperties`. Without `endpoint` the action is the schema-driven create form.",
+					"properties": {
+						"url": { "type": "string" },
+						"method": { "type": "string", "enum": ["PATCH", "PUT", "POST"] },
+						"loadUrl": { "type": "string" },
+						"responsePath": { "type": "string" }
+					},
+					"required": ["url"],
+					"additionalProperties": false
+				},
+				"formProperties": {
+					"type": "object",
+					"description": "open-form with `endpoint` only: the fields the form shows and sends, as JSON-schema properties (`{ \"name\": { \"type\": \"string\", \"title\": \"Name\" } }`).",
+					"additionalProperties": { "type": "object" }
+				},
 				"handler": {
 					"type": "string",
 					"description": "Registry key for type: 'handler'. Resolved across both registries passed to CnAppRoot: a v2 `registry` entry of `kind: 'handler'` exposing the function as `.handler` (or `.fn`), a directly function-valued registry entry, or a function-valued entry in the deprecated `customComponents` map. The same resolution serves actions[], bulkActions[] and headerActions[]. Also the built-in dispatch verb when paired with `route` (handler: 'navigate' → $router.push to `route`)."
@@ -3247,8 +3287,8 @@
 				},
 				"method": {
 					"type": "string",
-					"enum": ["POST", "PUT"],
-					"description": "api-call: HTTP method (default POST). toggle writeUrl: default PUT."
+					"enum": ["POST", "PUT", "GET"],
+					"description": "api-call: HTTP method (default POST); GET sends the resolved params as the query string, and with download: true downloads the file the endpoint answers (DqDoorlooptijd). toggle writeUrl: default PUT."
 				},
 				"payload": {
 					"type": "object",
@@ -3364,8 +3404,7 @@
 				},
 				"children": {
 					"type": "array",
-					"description": "Sub-actions, rendered by CnActionButtons as this action's OWN chevron dropdown beside its button — deliberately not folded into the page's single overflow menu, because NcActions cannot nest and a list that grows per record (app versions, say) would swamp it. Children take the same shape as any action, `visibleWhen` included, and an action carrying them consumes none of the `inline` slots. The parent itself still renders its own button beside the chevron (`type` defaults to 'handler' when omitted), so a parent meant only to group its children needs a `handler` that does something meaningful — an untyped, handler-less parent renders a button that dispatches to nothing.",
-					"items": { "$ref": "#/$defs/action" }
+					"description": "Sub-actions, rendered by CnActionButtons as this action's OWN chevron dropdown beside its button — deliberately not folded into the page's single overflow menu, because NcActions cannot nest and a list that grows per record (app versions, say) would swamp it. Children take the same shape as any action, `visibleWhen` included, and an action carrying them consumes none of the `inline` slots. The parent itself still renders its own button beside the chevron (`type` defaults to 'handler' when omitted), so a parent meant only to group its children needs a `handler` that does something meaningful — an untyped, handler-less parent renders a button that dispatches to nothing. Each child is an action; a header action's child is a header action, so it may be a link with `href`."
 				},
 				"childrenLabel": {
 					"type": "string",
@@ -3436,6 +3475,42 @@
 					"then": { "required": ["flowId", "nodeId"] }
 				}
 			]
+		},
+		"headerAction": {
+			"description": "A page header action (`headerActions[]`, a detail page's `quickActions[]` / `primaryActionByStage` entry, and their `children[]`): an action ($ref action), or with `href` a link ($ref headerLinkAction). Only header actions take `href`; row, bulk and navigation actions do not (2.135.0).",
+			"if": { "type": "object", "required": ["href"] },
+			"then": { "$ref": "#/$defs/headerLinkAction" },
+			"else": {
+				"$ref": "#/$defs/actionFields",
+				"properties": {
+					"children": { "items": { "$ref": "#/$defs/headerAction" } }
+				},
+				"unevaluatedProperties": false
+			}
+		},
+		"headerLinkAction": {
+			"type": "object",
+			"required": ["id", "label", "href"],
+			"additionalProperties": false,
+			"description": "A header action that is a real link (`<a href>`), so it can be middle-clicked, opened in a new tab, copied and bookmarked. It only navigates: it runs no handler and emits no `header-action`, so it carries no `handler` and no other `type` (2.135.0).",
+			"properties": {
+				"id": { "type": "string", "description": "Unique action identifier within the page's actions array." },
+				"label": { "type": "string", "description": "i18n key resolved by the consuming app's t() function at render time." },
+				"href": {
+					"type": "string",
+					"pattern": "^(https?://|mailto:|tel:|/)",
+					"description": "The link. An absolute `http(s)`, `mailto:` or `tel:` URL and a protocol-relative `//host/...` URL are used as written. A path starting with a Nextcloud entry point (`/index.php/`, `/remote.php/`, `/public.php/`, `/ocs/`) is prefixed with the instance root unless it already starts with it; any other instance path (leading `/`, e.g. `/apps/integriq/connections`) goes through `generateUrl()`."
+				},
+				"target": { "type": "string", "enum": ["_blank", "_self"], "default": "_self", "description": "`_blank` opens the link in a new tab; `_self` opens it in place." },
+				"type": { "const": "handler", "description": "Only the default; a link has no other behaviour." },
+				"icon": { "type": "string", "description": "Optional icon: an MDI icon name or a CSS icon class, as on any action." },
+				"variant": { "type": "string", "description": "CnActionButtons button variant, as on any action." },
+				"group": { "type": "string", "minLength": 1, "description": "Detail page header actions only: the overflow menu group, as on any action." },
+				"adminOnly": { "type": "boolean", "default": false, "description": "Detail page header actions only: show the link to instance admins alone, as on any action." },
+				"visibleWhen": { "$ref": "#/$defs/visibleWhen", "description": "An optional predicate gating whether the link renders, as on any action." },
+				"children": { "type": "array", "description": "Sub-actions in the link's own chevron dropdown, as on any action.", "items": { "$ref": "#/$defs/headerAction" } },
+				"childrenLabel": { "type": "string", "description": "Name of the sub-action chevron, as on any action." }
+			}
 		},
 		"fieldValidation": {
 			"type": "object",
@@ -4353,7 +4428,7 @@
 							"additionalProperties": {
 								"oneOf": [
 									{ "type": "string", "minLength": 1 },
-									{ "$ref": "#/$defs/action" }
+									{ "$ref": "#/$defs/headerAction" }
 								]
 							}
 						},
@@ -4364,7 +4439,7 @@
 							"items": {
 								"oneOf": [
 									{ "type": "string", "minLength": 1 },
-									{ "$ref": "#/$defs/action" }
+									{ "$ref": "#/$defs/headerAction" }
 								]
 							}
 						},
@@ -4413,8 +4488,8 @@
 									"description": "A field path, read like a `visibleWhen` field, whose value holds the stages in the `stages` shape, e.g. `@context.caseType.nextStep`, so each case type keeps its own stage texts and checklist. The declared `stages` apply otherwise (2.129.0)."
 								},
 								"title": {
-									"type": "string",
-									"description": "i18n key / heading used by a stage that names none."
+									"anyOf": [{ "type": "string" }, { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }],
+									"description": "i18n key / heading used by a stage that names none. May name record fields as `{path}` tokens; a list is candidates, the first whose fields all have a value is used."
 								},
 								"stages": {
 									"type": "object",
@@ -4424,8 +4499,8 @@
 										"additionalProperties": false,
 										"required": ["checklist"],
 										"properties": {
-											"title": { "type": "string", "description": "i18n key / heading of the card for this stage." },
-											"after": { "type": "string", "description": "i18n key / one line under the button saying what follows." },
+											"title": { "anyOf": [{ "type": "string" }, { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }], "description": "i18n key / heading of the card for this stage. May name record fields as `{path}` tokens (`What now? Step 2: {statusPublicLabel|lower}`); a list is candidates, the first whose fields all have a value is used." },
+											"after": { "anyOf": [{ "type": "string" }, { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }], "description": "i18n key / one line under the button saying what follows. Takes `{path}` tokens and candidates as `title` does." },
 											"checklist": {
 												"type": "array",
 												"description": "What this stage still needs. An empty list shows no card.",
@@ -4488,8 +4563,8 @@
 						},
 						"headerActions": {
 							"type": "array",
-							"description": "Page-level header actions rendered inside CnActionsBar's overflow dropdown (between the built-in Refresh action and the `#action-items` slot). On a `type:'detail'` page the same entries render in the header's Actions menu, above the Request-a-feature / Report-a-bug / Documentation trio. Same shape as the row-level `actions[]` ($ref action), but handlers receive NO row context — they are page-level. Reserved ids (`refresh`, `import`, `export`, `copy`, `delete`) are dropped at render time to avoid shadowing built-ins. See manifest-icons-and-page-actions for the dispatch semantics.",
-							"items": { "$ref": "#/$defs/action" }
+							"description": "Page-level header actions rendered inside CnActionsBar's overflow dropdown (between the built-in Refresh action and the `#action-items` slot). On a `type:'detail'` page the same entries render in the header's Actions menu, above the Request-a-feature / Report-a-bug / Documentation trio. Same shape as the row-level `actions[]` ($ref action), but handlers receive NO row context — they are page-level. Reserved ids (`refresh`, `import`, `export`, `copy`, `delete`) are dropped at render time to avoid shadowing built-ins. An entry with `href` (instead of `handler`) renders as a real link to that URL and is never dispatched ($ref headerAction). See manifest-icons-and-page-actions for the dispatch semantics.",
+							"items": { "$ref": "#/$defs/headerAction" }
 						},
 						"bulkActions": {
 							"type": "array",
@@ -4526,7 +4601,7 @@
 						},
 						"rowIndicators": {
 							"type": "array",
-							"description": "type='index': state indicators the page declares for its rows. Each entry names a `field` (a dotted path on the row), a condition (`equals`, `in`, or plain truthiness when neither is given), an `icon` (a CnIcon name) and a `text` (the text alternative, required). An entry without `text` does not render, because an icon with no text is colour and shape alone. The page declares which indicators exist; a record cannot add one the page has not declared. Maps to CnIndexPage `rowIndicators`.",
+							"description": "type='index': state indicators the page declares for its rows. Each entry names a `field` (a dotted path on the row), a condition (`equals`, `in`, a date `after` or `before` a moment, or plain truthiness when none is given), an `icon` (a CnIcon name) and a `text` (the text alternative, required). An entry without `text` does not render, because an icon with no text is colour and shape alone. The page declares which indicators exist; a record cannot add one the page has not declared. Maps to CnIndexPage `rowIndicators`.",
 							"items": {
 								"$ref": "#/$defs/rowIndicator"
 							}
@@ -4693,6 +4768,11 @@
 									"label": {
 										"type": "string",
 										"description": "One label for the control's label filter."
+									},
+									"icon": {
+										"type": "string",
+										"minLength": 1,
+										"description": "pill-color-field: a registered icon name the view's My views menu entry shows instead of the filter icon (a case type's own icon, say)."
 									},
 									"overrides": {
 										"type": "object",
@@ -5339,14 +5419,14 @@
 							"additionalProperties": false,
 							"description": "type='index', board look: the record layout of each card in the cards view (board-record-card-layout): a pill and the number on the head row, the title, a meta line, and a footer with a pill and a date. Each part names a field (a dot path) and is left out while it is empty; a pill maps values to a badge variant (`colorMap`, ignoring case) and to shown text (`labels`). Maps to CnIndexPage `cardLayout`.",
 							"properties": {
-								"headPill": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "due": { "type": "object", "description": "Read the field as a due date: overdue gives the error variant, within `soonWithin` days the warning one; any other date draws no pill.", "properties": { "soonWithin": { "type": "number", "minimum": 0 } } }, "variantWhen": { "type": "array", "description": "Rules on the days left until the field's date, `{ op, value, variant }`; the first match gives the variant, no match draws no pill.", "items": { "type": "object", "required": ["op", "value", "variant"], "properties": { "op": { "type": "string" }, "value": { "type": "number" }, "variant": { "type": "string" } } } } } },
+								"headPill": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "resolve": { "type": "object", "additionalProperties": false, "description": "pill-color-field: the field holds the id of a record; the pill takes the tone that record's colour maps onto and shows its icon. Register and schema default to the field's reference.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "colorField": { "type": "string", "minLength": 1 }, "iconField": { "type": "string", "minLength": 1 } } }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "due": { "type": "object", "description": "Read the field as a due date: overdue gives the error variant, within `soonWithin` days the warning one; any other date draws no pill.", "properties": { "soonWithin": { "type": "number", "minimum": 0 } } }, "variantWhen": { "type": "array", "description": "Rules on the days left until the field's date, `{ op, value, variant }`; the first match gives the variant, no match draws no pill.", "items": { "type": "object", "required": ["op", "value", "variant"], "properties": { "op": { "type": "string" }, "value": { "type": "number" }, "variant": { "type": "string" } } } } } },
 								"number": { "type": "string", "minLength": 1 },
 								"title": { "type": "string", "minLength": 1 },
 								"meta": { "type": "array", "description": "The meta line's parts: a field name reads through the page column it names; `{ field, formatter?, formatterOptions? }` reads as plain text through its own formatter (card-layout-part-formatter).", "items": { "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" } } } ] } },
-								"footerPill": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "due": { "type": "object", "description": "Read the field as a due date: overdue gives the error variant, within `soonWithin` days the warning one; any other date draws no pill.", "properties": { "soonWithin": { "type": "number", "minimum": 0 } } }, "variantWhen": { "type": "array", "description": "Rules on the days left until the field's date, `{ op, value, variant }`; the first match gives the variant, no match draws no pill.", "items": { "type": "object", "required": ["op", "value", "variant"], "properties": { "op": { "type": "string" }, "value": { "type": "number" }, "variant": { "type": "string" } } } } } },
+								"footerPill": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "resolve": { "type": "object", "additionalProperties": false, "description": "pill-color-field: the field holds the id of a record; the pill takes the tone that record's colour maps onto and shows its icon. Register and schema default to the field's reference.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "colorField": { "type": "string", "minLength": 1 }, "iconField": { "type": "string", "minLength": 1 } } }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "due": { "type": "object", "description": "Read the field as a due date: overdue gives the error variant, within `soonWithin` days the warning one; any other date draws no pill.", "properties": { "soonWithin": { "type": "number", "minimum": 0 } } }, "variantWhen": { "type": "array", "description": "Rules on the days left until the field's date, `{ op, value, variant }`; the first match gives the variant, no match draws no pill.", "items": { "type": "object", "required": ["op", "value", "variant"], "properties": { "op": { "type": "string" }, "value": { "type": "number" }, "variant": { "type": "string" } } } } } },
 								"footerDate": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 }, "overdueVariant": { "type": "string", "enum": ["error", "warning"], "description": "The date's tone once it has passed (2.132.0)." } } },
 								"description": { "description": "A line under the meta line: a field, or `{ field, maxLength? }` cut at maxLength characters (140 by default) with an ellipsis (2.132.0).", "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "maxLength": { "type": "integer", "minimum": 1 } } }] },
-								"chips": { "type": "array", "description": "Pills under the description, one per entry whose field holds a value; the text reads through the entry's formatter, `colorMap` and `labels` work as on a pill (2.132.0).", "items": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } } }] } }
+								"chips": { "type": "array", "description": "Pills under the description, one per entry whose field holds a value; the text reads through the entry's formatter, `colorMap` and `labels` work as on a pill (2.132.0).", "items": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "resolve": { "type": "object", "additionalProperties": false, "description": "pill-color-field: the field holds the id of a record; the pill takes the tone that record's colour maps onto and shows its icon. Register and schema default to the field's reference.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "colorField": { "type": "string", "minLength": 1 }, "iconField": { "type": "string", "minLength": 1 } } }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } } }] } }
 							}
 						},
 						"afterList": { "type": "array", "description": "type='index': cards after the list, stacked full width in the listed order, the counterpart of statRow above it (index-scope-presentation). Each entry is a widget definition resolved like statRow's. A query preset or a folder scope can set its own. Maps to CnIndexPage `afterList`.", "items": { "type": "object", "required": ["id", "type"], "properties": { "id": { "type": "string", "minLength": 1 }, "type": { "type": "string", "minLength": 1 }, "title": { "type": "string" }, "subtitle": { "type": "string" }, "content": { "type": "object" }, "headerLink": { "type": "object" } } } },
@@ -5456,6 +5536,30 @@
 									"register": { "type": "string", "minLength": 1, "description": "Register slug or id of the record to read." },
 									"schema": { "type": "string", "minLength": 1, "description": "Schema slug or id of the record to read." }
 								}
+							}
+						},
+						"accessPurpose": {
+							"type": "object",
+							"required": ["when", "url"],
+							"additionalProperties": false,
+							"description": "type='detail': ask why the reader opens the record before the page shows it, and record the answer (detail-access-purpose). `when` is a condition in the visibleWhen grammar on the record and its visibilityContext records; `options` the purposes offered (\"Other\" with a written purpose is always added); `url` the app endpoint that records the purpose (POST { purpose, note }, {objectId} filled in). Nothing of the record shows until the endpoint accepts; the same record is not asked again in the same browser session. Maps to CnDetailPage `accessPurpose`.",
+							"properties": {
+								"when": { "type": "object", "description": "The condition under which the page asks, e.g. { \"field\": \"@context.caseType.specialDataCategories\", \"op\": \"notEmpty\" }." },
+								"options": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"required": ["value", "label"],
+										"additionalProperties": false,
+										"properties": {
+											"value": { "type": "string", "minLength": 1 },
+											"label": { "type": "string", "minLength": 1, "description": "i18n key." }
+										}
+									}
+								},
+								"url": { "type": "string", "minLength": 1, "description": "App endpoint that records the purpose; {objectId} is filled in." },
+								"title": { "type": "string", "description": "i18n key of the dialog's title." },
+								"description": { "type": "string", "description": "i18n key of the sentence under the title." }
 							}
 						},
 						"mapConfig": {
