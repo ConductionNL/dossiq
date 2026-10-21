@@ -76,10 +76,10 @@ class ZuiddrechtSocialSearchContactTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheSavedSearchHasItsAlert(): void {
-		$views = $this->settings(path: 'example-sets/zuiddrecht.json')['views'];
+		$views = array_column($this->settings(path: 'example-sets/zuiddrecht.json')['views'], 'data', 'key');
 
-		$this->assertCount(expectedCount: 1, haystack: $views);
-		$view = $views[0]['data'];
+		$this->assertArrayHasKey(key: 'zoek-lindelaan', array: $views);
+		$view = $views['zoek-lindelaan'];
 		$this->assertSame(expected: 'Lindelaan', actual: $view['query']['search']);
 		$this->assertSame(expected: 'source:search', actual: $view['query']['scope']);
 		$this->assertSame(expected: ['operator' => 'gte', 'threshold' => 12], actual: $view['alert']);
