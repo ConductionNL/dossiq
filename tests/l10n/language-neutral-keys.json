@@ -116,6 +116,8 @@
         "Actor type",
         "Override",
         "{identifier}",
-        "{subject.title}"
+        "{subject.title}",
+        "initiatorDisplayName",
+        "name"
     ]
 }
