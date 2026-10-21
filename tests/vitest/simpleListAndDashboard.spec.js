@@ -722,7 +722,7 @@ describe('the landing page', () => {
 
 	it('places my tasks as the library tasks widget in its list variant', () => {
 		expect(widget('simple-my-tasks').type).toBe('tasks')
-		expect(simple.slots).not.toHaveProperty('widget-simple-my-tasks')
+		expect(simple.slots?.['widget-simple-my-tasks']).toBeUndefined()
 		// The full My work view keeps the app's own tile (a table, with the
 		// substitution toggle); only the simple profile uses the list variant.
 		const onMyWork = pageView(original('MyWorkHome'), 'mine').widgets.find(
