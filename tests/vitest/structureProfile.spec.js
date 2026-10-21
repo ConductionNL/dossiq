@@ -490,10 +490,10 @@ describe('the simple profile', () => {
 	// 78 -> 77: Subsidies became a view of Cases.
 	// 77 -> 75: DeelzaakList and DeelzaakDetail retire; their addresses redirect to CaseDetail.
 	// 75 -> 74: SubstitutionAdmin retires; `/substitution-admin` goes to the admin settings.
-	it('builds the same 74 pages as the full profile, so every route stays', () => {
+	it('builds the same 75 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(74)
+		expect(built.pages).toHaveLength(75)
 	})
 })
 
