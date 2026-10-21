@@ -5302,7 +5302,7 @@
 							"objectId": "@objectId",
 							"config": {
 								"title": "Archive this case",
-								"eyebrow": "Close off",
+								"eyebrow": "Close off · {identifier}",
 								"subtitle": "The case goes to the archive and is only read afterwards.",
 								"summary": {
 									"source": {
@@ -5323,6 +5323,10 @@
 											{
 												"label": "Destruction date",
 												"value": "{archiveActionDate}"
+											},
+											{
+												"label": "Archive status afterwards",
+												"value": "Archived"
 											}
 										]
 									}
@@ -5370,7 +5374,7 @@
 								},
 								"reason": {
 									"label": "Reason",
-									"hint": "Goes into the history of the case."
+									"hint": "Goes into the history of the case. To bring it back, use Restore from the archive under Next step."
 								},
 								"note": {
 									"variant": "info",

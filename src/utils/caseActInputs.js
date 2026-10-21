@@ -29,6 +29,7 @@ import { contentTemplateOption } from './templatePicker.js'
  * - `pauseReasons` offers the case type's pause reasons before the free text.
  * - `reasonWidget` is the reason's field: one line beside the days, else a text area.
  * - `summary` and `notice` show the case and what the act makes of it.
+ * - `reasonNote` replaces the line under the reason.
  * - `title` names the dialog while the act is open; `confirmIcon` sits on its confirm button.
  *
  * @return {object} The layouts by act id.
@@ -44,6 +45,7 @@ function actLayouts() {
 		archive: {
 			title: t('dossiq', 'Archive this case'),
 			confirmIcon: ArchiveOutline,
+			reasonNote: t('dossiq', 'Goes into the history of the case. To bring it back, use Restore from the archive under Next step.'),
 			summary: {
 				when: 'kase',
 				testid: 'case-act-archive',
@@ -57,7 +59,7 @@ function actLayouts() {
 				facts: [
 					{ label: t('dossiq', 'Archive nomination'), path: 'kase.archiveNomination', fallback: t('dossiq', 'Not set') },
 					{ label: t('dossiq', 'Destruction date'), path: 'kase.archiveActionDate', fallback: t('dossiq', 'Not set') },
-					{ label: t('dossiq', 'Archive status afterwards'), path: 'kase.archiveStatus', fallback: t('dossiq', 'Not set') },
+					{ label: t('dossiq', 'Archive status afterwards'), fallback: t('dossiq', 'Archived') },
 				],
 			},
 			notice: {
@@ -127,7 +129,7 @@ export function actForm(entry, { caseType = '', caseId = '' } = {}) {
 			label: t('dossiq', 'Reason'),
 			labelOutside: true,
 			id: 'case-act-reason',
-			note: t('dossiq', 'Goes into the history of the case.'),
+			note: layout.reasonNote ?? t('dossiq', 'Goes into the history of the case.'),
 			rows: 2,
 			testid: 'case-act-reason-input',
 		})
