@@ -391,6 +391,10 @@ class ConfigKeys {
 		'menu_structure',
 		// The name staff know the app by (board DqInstellingenAlgemeen, Huisstijl).
 		'staff_app_name',
+		// The city of the municipality, the default lens of the contacts and
+		// organisations lists (boards DqContacten, DqOrganisaties); handed to
+		// the bundle as `@config.municipalityCity`.
+		'municipality_city',
 		// The organisation's text above Mijn zaken in the portal (CitizenManifest).
 		'portal_intro_text',
 		// The document review reports (woo-review-reports, decision D9): both

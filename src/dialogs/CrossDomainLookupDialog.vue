@@ -40,6 +40,7 @@
 			</p>
 
 			<NcTextField
+				v-if="!household"
 				v-model="bsn"
 				data-testid="cross-domain-bsn"
 				:label="t('dossiq', 'Citizen service number')" />
@@ -112,11 +113,13 @@
 <script>
 import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
+import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseIdFromLocation } from '../utils/savedMail.js'
 
 export default {
 	name: 'CrossDomainLookupDialog',
@@ -136,6 +139,16 @@ export default {
 		domain: {
 			type: String,
 			default: '',
+		},
+
+		/**
+		 * Look up the household of the open case (its family plan) rather than
+		 * one person: no BSN to type, one logged lookup per person, and the
+		 * answer stays on the case's household card for this session.
+		 */
+		household: {
+			type: Boolean,
+			default: false,
 		},
 	},
 
@@ -167,7 +180,7 @@ export default {
 		canLookUp() {
 			return (
 				this.busy === false
-				&& this.bsn.trim().length > 0
+				&& (this.household || this.bsn.trim().length > 0)
 				&& Boolean(this.ground)
 			)
 		},
@@ -220,15 +233,24 @@ export default {
 			this.error = ''
 			this.answered = false
 			try {
-				const { data } = await axios.post(
-					generateUrl('/apps/dossiq/api/cross-domain/lookup'),
-					{
-						bsn: this.bsn.trim(),
-						domain: this.domain,
-						ground: this.ground,
-					},
-				)
-				this.found = Array.isArray(data?.found) ? data.found : []
+				if (this.household) {
+					const { data } = await axios.post(
+						generateUrl('/apps/dossiq/api/cases/{caseId}/household-cases/lookup', { caseId: caseIdFromLocation() }),
+						{ ground: this.ground },
+					)
+					this.found = Array.isArray(data?.results) ? data.results : []
+					emit('cn:page:refresh')
+				} else {
+					const { data } = await axios.post(
+						generateUrl('/apps/dossiq/api/cross-domain/lookup'),
+						{
+							bsn: this.bsn.trim(),
+							domain: this.domain,
+							ground: this.ground,
+						},
+					)
+					this.found = Array.isArray(data?.found) ? data.found : []
+				}
 				this.answered = true
 			} catch (e) {
 				// The server's own sentence, which names the rule it refused

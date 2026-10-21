@@ -38,7 +38,8 @@ describe('case type Overview cards', () => {
  * @spec openspec/changes/case-type-overview-cards/specs/case-type-overview-cards/spec.md#requirement-the-phase-board-opens-the-case-types-workflow
  */
 describe('phase board', () => {
-	it('links View as flow to the case type\'s workflow', () => {
-		expect(widget('case-type-phase-board').headerLink).toEqual({ label: 'View as flow', route: 'WorkflowDefinitionDetail', params: { id: '@object.workflowDefinition' } })
+	it('links View as flow to the case type\'s workflow canvas', () => {
+		// The canvas sits on a page of its own (case-type-page-follows-its-boards).
+		expect(widget('case-type-phase-board').headerLink).toEqual({ label: 'View as flow', route: 'CaseTypeFlow', params: { id: '@objectId' } })
 	})
 })

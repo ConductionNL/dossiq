@@ -100,7 +100,7 @@ class CaseRelationDetailsTest extends TestCase {
 	}//end testDescribesAReadableCase()
 
 	/**
-	 * A case the reader may not open is not read at all, and keeps its row.
+	 * A case the reader may not open is not read at all, and keeps its row, with its group.
 	 *
 	 * @return void
 	 */
@@ -111,7 +111,7 @@ class CaseRelationDetailsTest extends TestCase {
 
 		$rows = $this->details(store: $store)->describe(rows: [$row], canRead: fn (string $id): bool => false);
 
-		$this->assertSame(expected: [$row], actual: $rows);
+		$this->assertSame(expected: [$row + ['group' => 'subject']], actual: $rows);
 	}//end testLeavesAnUnreadableCaseAlone()
 
 	/**
@@ -145,4 +145,39 @@ class CaseRelationDetailsTest extends TestCase {
 
 		$this->assertSame(expected: ['c'], actual: array_column($rows, 'caseId'));
 	}//end testLeavesOutARowWithoutATitle()
+	/**
+	 * A relation lists under the label the reader's side carries, else its type.
+	 *
+	 * @return void
+	 */
+	public function testGroupsByTheLabelElseTheType(): void {
+		$rows = $this->details()->describe(
+			rows: [
+				['caseId' => 'b', 'aardRelatie' => 'waitsOn', 'displayLabel' => 'Wacht op', 'title' => 'B'],
+				['caseId' => 'c', 'aardRelatie' => 'subject', 'title' => 'C'],
+			],
+			canRead: fn (string $id): bool => false,
+		);
+
+		$this->assertSame(expected: ['Wacht op', 'subject'], actual: array_column($rows, 'group'));
+	}//end testGroupsByTheLabelElseTheType()
+
+	/**
+	 * A planned flow and a series become rows of the planned group.
+	 *
+	 * @return void
+	 */
+	public function testListsPlannedFollowUps(): void {
+		$rows = $this->details()->plannedRows(
+			planned: [
+				['id' => 'f1', 'title' => 'Bericht aan verzoeker na publicatie', 'date' => '2026-11-04', 'recurrence' => 'none', 'occurrences' => []],
+				['id' => 'f2', 'title' => '', 'date' => '2026-11-05', 'recurrence' => 'none'],
+			]
+		);
+
+		$this->assertCount(expectedCount: 1, haystack: $rows);
+		$this->assertSame(expected: 'planned', actual: $rows[0]['group']);
+		$this->assertSame(expected: 'flow', actual: $rows[0]['plannedKind']);
+		$this->assertSame(expected: '2026-11-04', actual: $rows[0]['date']);
+	}//end testListsPlannedFollowUps()
 }//end class
