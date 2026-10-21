@@ -467,7 +467,8 @@
 				"roleType": {
 					"schema": "roleType",
 					"where": {
-						"name": "Gemachtigde"
+						"name": "Gemachtigde",
+						"genericRole": "gemachtigde"
 					}
 				}
 			},
@@ -853,7 +854,8 @@
 				"decisionType": {
 					"schema": "decisionType",
 					"where": {
-						"caseType": "{{lookup:caseType}}"
+						"caseType": "{{lookup:caseType}}",
+						"name": "WOO-besluit"
 					}
 				},
 				"publicatie": {
