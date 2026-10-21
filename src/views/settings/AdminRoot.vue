@@ -163,7 +163,7 @@
 					)
 				"
 				:loading="!storesReady">
-				<SearchIndexTab v-if="storesReady" />
+				<CnSearchIndexStatus v-if="storesReady" />
 			</CnSettingsSection>
 
 			<CnSettingsSection
@@ -201,7 +201,17 @@
 					)
 				"
 				:loading="!storesReady">
-				<ShippedConfiguration v-if="storesReady" />
+				<CnShippedConfigurationSection
+					v-if="storesReady"
+					endpoint="/apps/dossiq/api/starter/shipped"
+					countUrl="/apps/openregister/api/objects/dossiq/{schema}"
+					:schemas="shippedSchemas"
+					:description="
+						t(
+							'dossiq',
+							'Dossiq ships case types, statuses, results and roles. This is what arrived, and what you changed since.',
+						)
+					" />
 			</CnSettingsSection>
 
 			<CnSettingsSection
@@ -632,8 +642,10 @@ import {
 	CnAdminSettingsShell,
 	CnIndexPage,
 	CnRegisterMapping,
+	CnSearchIndexStatus,
 	CnSettingsFieldsSection,
 	CnSettingsSection,
+	CnShippedConfigurationSection,
 	CnWidgetObjectTable,
 	CnWorkingCalendarWidget,
 } from '@conduction/nextcloud-vue'
@@ -647,13 +659,11 @@ import StufEnvelopeDialog from '../../dialogs/StufEnvelopeDialog.vue'
 import SubstitutionActionsDialog from '../../dialogs/SubstitutionActionsDialog.vue'
 import BulkReassignModal from '../../modals/BulkReassignModal.vue'
 import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
-import ShippedConfiguration from './ShippedConfiguration.vue'
 import StufEndpoints from './StufEndpoints.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
 import FirstRunTab from './tabs/FirstRunTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
 import PrerequisitesTab from './tabs/PrerequisitesTab.vue'
-import SearchIndexTab from './tabs/SearchIndexTab.vue'
 import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
 import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
@@ -709,11 +719,11 @@ export default {
 		CnWidgetObjectTable,
 		CnWorkingCalendarWidget,
 		ZgwMappingSettings,
-		SearchIndexTab,
+		CnSearchIndexStatus,
 		ChecklistsTab,
 		TermijnDefinitiesTab,
 		MandaatMatrixTab,
-		ShippedConfiguration,
+		CnShippedConfigurationSection,
 		StufEndpoints,
 		NcButton,
 		NcNoteCard,
@@ -769,6 +779,21 @@ export default {
 		 */
 		substitutionIndex() {
 			return substitutionIndex(this.t, (key, props) => this.openAdminModal(key, props))
+		},
+
+		/**
+		 * The schemas whose shipped objects the admin page shows.
+		 *
+		 * @return {Array<{slug: string, label: string}>} The schemas.
+		 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+		 */
+		shippedSchemas() {
+			return [
+				{ slug: 'caseType', label: this.t('dossiq', 'Case types') },
+				{ slug: 'roleType', label: this.t('dossiq', 'Roles') },
+				{ slug: 'statusType', label: this.t('dossiq', 'Statuses') },
+				{ slug: 'resultType', label: this.t('dossiq', 'Results') },
+			]
 		},
 
 		/**

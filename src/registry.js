@@ -94,7 +94,6 @@ import CaseTypeMessagesEditorWidget from './components/caseType/CaseTypeMessages
 // (parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype).
 import CaseTypePartyKindsWidget from './components/caseType/CaseTypePartyKindsWidget.vue'
 import CaseTypePortalWidget from './components/caseType/CaseTypePortalWidget.vue'
-import CaseTypeRulesWidget from './components/caseType/CaseTypeRulesWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
 // @spec openspec/specs/case-configuration-i18n/spec.md
@@ -447,14 +446,6 @@ const registry = {
 		component: CaseTypeMessagesEditorWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail Phases and tasks: the messages to the applicant through the email template endpoints, so each change is a new version (EmailTemplateVersionListener keeps that on the object API too).',
-	},
-	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
-	CaseTypeRulesWidget: {
-		// @custom-widget-ratchet exclude the rules are read from OpenRegister's rules vocabulary and evaluated against a pasted case; no declared widget evaluates a rule
-		kind: 'widget',
-		component: CaseTypeRulesWidget,
-		...PANEL_WIDGET_META,
-		_note: 'CaseTypeDetail Fields: the OpenRegister rules of the case schema with a try-it. They belong to the case schema rather than to one case type, so this is a candidate to move to OpenRegister\'s schema page.',
 	},
 	// @spec openspec/specs/zaaktype-versioning/spec.md
 	CaseTypePublishDialog: {

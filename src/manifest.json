@@ -9503,10 +9503,21 @@
 					},
 					{
 						"id": "case-type-rules",
-						"type": "custom",
+						"type": "schema-rules",
 						"title": "Rules",
 						"icon": "ScaleBalance",
-						"_note": "The OpenRegister rules of the case schema with a try-it, rehosted from the retired admin-settings editor (CaseTypeRulesWidget); a candidate to move to OpenRegister's schema page."
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"objectId": "",
+							"title": "Rules on the case",
+							"description": "Everything the platform checks when a case is saved, in the order it checks it. Statuses and fields are declared on the other tabs; this is what came of them.",
+							"emptyText": "Nothing is checked on the case yet. Give a status a field rule and publish the case type.",
+							"objectLabel": "Case to try a rule against",
+							"objectPlaceholder": "Paste a case id",
+							"refusedText": "Only an administrator can read the rules of a case."
+						},
+						"_note": "The OpenRegister rules of the case schema with a try-it against a case (CnSchemaRulesWidget). The rules belong to the case schema, not to one case type, so the widget names the schema; `objectId` is empty so the trial does not start from the case type's own id."
 					}
 				],
 				"layout": [
@@ -9736,8 +9747,7 @@
 				"widget-case-type-portal": "CaseTypePortalWidget",
 				"widget-case-type-party-kinds": "CaseTypePartyKindsWidget",
 				"widget-case-type-workflow-editor": "CaseTypeWorkflowEditorWidget",
-				"widget-case-type-messages-editor": "CaseTypeMessagesEditorWidget",
-				"widget-case-type-rules": "CaseTypeRulesWidget"
+				"widget-case-type-messages-editor": "CaseTypeMessagesEditorWidget"
 			},
 			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here. `case-type-authoring-extras` put the type's own content on the page: what it inherits from a parent, what it actually offers, the personal data it processes, and the four gestures that were API-only. NO TAB STRIP: `case-type-one-authoring-surface` owns that, and building one here would be the second strip the moment it lands. These are layout cells, and they become that strip's children when it arrives -- except `case-type-blueprint`, which cannot be a tab child while it is `type: \"custom\"`."
 		},

@@ -4917,9 +4917,6 @@
 					},
 					"case-type-messages-editor": {
 						"type": "CaseTypeMessagesEditorWidget"
-					},
-					"case-type-rules": {
-						"type": "CaseTypeRulesWidget"
 					}
 				}
 			}

@@ -1,70 +1,15 @@
 // SPDX-License-Identifier: EUPL-1.2
 // SPDX-FileCopyrightText: 2026 Conduction B.V.
 //
-// What a new instance starts with: the shipped configuration, the municipal
-// role set, retirement, the domain copy and the reusable steps. Every endpoint
-// is documented in lib/Controller/StarterContentController.php and routed by
-// appinfo/routes.php (the "starter" block).
+// What a new instance starts with: the municipal role set, retirement, the
+// domain copy and the reusable steps. Every endpoint is documented in
+// lib/Controller/StarterContentController.php and routed by appinfo/routes.php
+// (the "starter" block).
 
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
 const base = (path) => generateUrl('/apps/dossiq' + path)
-
-/**
- * Read what shipped for one schema, and what was changed here.
- *
- * @param {string} schema The schema slug, for example caseType.
- * @return {Promise<object>} The rows, each with its state and set version.
- * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
- */
-export async function listShipped(schema) {
-	const { data } = await axios.get(base('/api/starter/shipped/' + schema))
-	return data
-}
-
-/**
- * How many objects of one schema the dossiq register holds, whatever brought them.
- *
- * The shipped ledger records only what a starter set seeded. The case types
- * the register import brings are not in it, so an empty ledger beside 24 case
- * types read as "Nothing has been seeded yet" (round-4 cloud check). This is
- * the count the screen tells the truth with.
- *
- * @param {string} schema The schema slug, for example caseType.
- * @return {Promise<number|null>} The count, or null when it cannot be read.
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
- */
-export async function countObjects(schema) {
-	try {
-		const { data } = await axios.get(
-			generateUrl('/apps/openregister/api/objects/dossiq/' + schema),
-			{ params: { _limit: 1 } },
-		)
-		const total = Number(data?.total)
-
-		return Number.isFinite(total) ? total : null
-	} catch {
-		return null
-	}
-}
-
-/**
- * Take the newer shipped version of one object.
- *
- * @param {string} schema The schema slug.
- * @param {string} id The object's id.
- * @param {object} payload The set, the new object and whether a local change may go.
- * @return {Promise<object>} Whether it was adopted, and why not when it was not.
- * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
- */
-export async function adoptShipped(schema, id, payload) {
-	const { data } = await axios.post(
-		base('/api/starter/shipped/' + schema + '/' + id + '/adopt'),
-		payload,
-	)
-	return data
-}
 
 /**
  * Read the shipped municipal role set and whether it is in use.
@@ -158,9 +103,6 @@ export async function stepUsedBy(stepId) {
 }
 
 export default {
-	listShipped,
-	countObjects,
-	adoptShipped,
 	readRoleSet,
 	adoptRoleSet,
 	undoRoleSet,

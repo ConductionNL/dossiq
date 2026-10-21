@@ -69,7 +69,8 @@ describe('the parts of a case type', () => {
 		expect(baseWidget('case-type-fields-editor').type).toBe('object-list')
 		expect(types['case-type-messages-editor'].type).toBe('CaseTypeMessagesEditorWidget')
 		expect(types['case-type-workflow-editor'].type).toBe('CaseTypeWorkflowEditorWidget')
-		expect(types['case-type-rules'].type).toBe('CaseTypeRulesWidget')
+		expect(types['case-type-rules']).toBeUndefined()
+		expect(baseWidget('case-type-rules').type).toBe('schema-rules')
 	})
 
 	it('edits the general fields the old editor had on the case type cards', () => {
