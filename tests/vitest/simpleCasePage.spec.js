@@ -671,7 +671,7 @@ describe('the header and the side column', () => {
 			// handling a read-only data card, the work instruction a facts card
 			// over the case TYPE (a link only, no fields of the case).
 			const fields = card.type === 'facts'
-				? (card.content.fields || []).map((entry) => entry.path)
+				? (card.content.fields || []).flatMap((entry) => (entry.as === 'lead' ? [entry.title, entry.subtitle?.path] : [entry.path])).filter(Boolean)
 				: card.type === 'data' ? card.content.include : []
 			if (card.type === 'data') {
 				expect(card.content.editable).toBe(false)
