@@ -1787,6 +1787,21 @@
 									"label": "Case history"
 								},
 								{
+									"widgetId": "case-change-proposals",
+									"label": "Proposals",
+									"visibleWhen": {
+										"appInstalled": "portaliq",
+										"endpoint": "/apps/portaliq/api/proposals?register=dossiq&schema=case&id=@objectId",
+										"field": "proposals",
+										"op": "notEmpty"
+									},
+									"countFrom": {
+										"endpoint": "/apps/portaliq/api/proposals?register=dossiq&schema=case&id=@objectId",
+										"field": "proposals"
+									},
+									"_note": "PtVoorstelBeoordelen: while proposals wait on the case, Proposals is listed under More with their count. It stands after the five tabs of DqZaak (Overview, Documents, Contact, Tasks, Case history), which keep their places in the strip: where the two boards disagree, the dossiq board wins. The question goes to portaliq's own queue route, the one the panel reads, so it answers only for a reader who may review here; without waiting proposals, without the right or without portaliq the tab is absent. Needs the nextcloud-vue release that resolves @objectId in an endpoint condition and counts an endpoint's list, so it lands with that bump: on an older release the condition sends the literal token, fails safe and the tab is absent."
+								},
+								{
 									"widgetId": "case-notes-panel",
 									"label": "Notes",
 									"overflow": true
@@ -1856,11 +1871,6 @@
 								{
 									"widgetId": "case-knowledge-panel",
 									"label": "Knowledge",
-									"overflow": true
-								},
-								{
-									"widgetId": "case-change-proposals",
-									"label": "Proposals",
 									"overflow": true
 								},
 								{
