@@ -1817,6 +1817,10 @@
 								},
 								{
 									"label": "Tasks",
+									"countFrom": {
+										"endpoint": "/apps/openregister/api/flow-tasks?objectUuid=@objectId&scope=all",
+										"field": "total"
+									},
 									"widgetIds": [
 										"case-tasks-card",
 										"case-planned-actions-card",
