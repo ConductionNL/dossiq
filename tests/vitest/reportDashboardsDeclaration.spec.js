@@ -46,7 +46,7 @@ describe('processing time', () => {
 			expect(w.content.endpointSource.url).toBe(PT)
 			expect(w.content.endpointSource.params.view).toBe(view)
 			expect(w.content.endpointSource.responsePath).toBe(view)
-			expect(w.content.endpointSource.params.period).toBe('@workspace.datePreset?')
+			expect(w.content.endpointSource.params.period).toBeUndefined()
 			expect(onGrid('Doorlooptijd', id)).toBe(true)
 		}
 	})

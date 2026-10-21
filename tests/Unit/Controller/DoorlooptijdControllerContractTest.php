@@ -214,7 +214,7 @@ class DoorlooptijdControllerContractTest extends TestCase {
 
 		$this->leadTimeService->expects($this->once())
 			->method('getMetrics')
-			->with(['period' => '12m', 'atRiskDays' => 5])
+			->with(['period' => '12m', 'granularity' => 'month', 'atRiskDays' => 5])
 			->willReturn($payload);
 
 		$response = $this->controller->metrics();
@@ -236,11 +236,44 @@ class DoorlooptijdControllerContractTest extends TestCase {
 
 		$this->leadTimeService->expects($this->once())
 			->method('getMetrics')
-			->with(['period' => '6m', 'atRiskDays' => 10, 'caseType' => 'bezwaar'])
+			->with(['period' => '6m', 'granularity' => 'month', 'atRiskDays' => 10, 'caseType' => 'bezwaar'])
 			->willReturn([]);
 
 		$response = $this->controller->metrics();
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 	}//end testMetricsForwardsTheCaseTypeAndCoercesAtRiskDaysToAnInteger()
+
+	/**
+	 * The grouping is forwarded: week, month, quarter or year.
+	 *
+	 * @return void
+	 */
+	public function testMetricsForwardsTheGranularity(): void {
+		$this->signIn();
+		$this->withQuery(['granularity' => 'quarter']);
+
+		$this->leadTimeService->expects($this->once())
+			->method('getMetrics')
+			->with(['period' => '12m', 'granularity' => 'quarter', 'atRiskDays' => 5])
+			->willReturn([]);
+
+		$this->assertSame(Http::STATUS_OK, $this->controller->metrics()->getStatus());
+	}//end testMetricsForwardsTheGranularity()
+
+	/**
+	 * A grouping other than week, month, quarter or year is rejected with its own message.
+	 *
+	 * @return void
+	 */
+	public function testMetricsRejectsAnUnknownGranularity(): void {
+		$this->signIn();
+		$this->withQuery(['granularity' => 'day']);
+		$this->leadTimeService->expects($this->never())->method('getMetrics');
+
+		$response = $this->controller->metrics();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['message' => 'granularity must be week, month, quarter or year'], $response->getData());
+	}//end testMetricsRejectsAnUnknownGranularity()
 }//end class

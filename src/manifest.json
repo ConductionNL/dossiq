@@ -7232,6 +7232,7 @@
 				"appId": "dossiq",
 				"pageId": "Doorlooptijd",
 				"showWidgetActions": false,
+				"_granularityNote": "Board DqDoorlooptijd: Maand, Kwartaal and Jaar group the averages per month, quarter or year over a one-year window; they do not shorten the window (Ruben, 21 Oct). The window is the endpoint default, twelve months. The monthly chart sends the grouping as `granularity`.",
 				"_pageFiltersNote": "The case type choice sits on the description line, before the period group, as the DqDoorlooptijd board draws it (\"alle zaaktypen\"). Only case types that declare a processing deadline are offered: a type without one gives a dashboard that can say nothing. Clearing it reads every case type.",
 				"pageFilters": [
 					{
@@ -7248,6 +7249,18 @@
 							},
 							"labelField": "title"
 						}
+					},
+					{
+						"key": "granularity",
+						"label": "Period",
+						"control": "segmented",
+						"placement": "description",
+						"default": "month",
+						"options": [
+							{ "value": "month", "label": "Month" },
+							{ "value": "quarter", "label": "Quarter" },
+							{ "value": "year", "label": "Year" }
+						]
 					}
 				],
 				"widgets": [
@@ -7269,7 +7282,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -7300,7 +7312,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -7331,7 +7342,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -7362,7 +7372,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								}
 							},
@@ -7393,8 +7402,8 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.datePreset?",
-									"caseType": "@workspace.caseType?"
+									"caseType": "@workspace.caseType?",
+									"granularity": "@workspace.granularity?"
 								},
 								"labelsPath": "summary.monthlyAvgDays.labels",
 								"series": [
@@ -7439,7 +7448,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?"
 								},
 								"labelsPath": "summary.withinNormByCaseType.labels",
@@ -7469,7 +7477,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "sla"
 								},
@@ -7502,7 +7509,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "distribution"
 								},
@@ -7535,7 +7541,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "trend"
 								},
@@ -7579,7 +7584,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "throughput"
 								},
@@ -7753,7 +7757,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "breakdown"
 								},
@@ -7891,34 +7894,7 @@
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
-				"kpiRow": ["processing-time-average", "processing-time-within-target", "processing-time-over-target", "processing-time-closed"],
-				"dateRange": {
-					"enabled": true,
-					"control": "segmented",
-					"placement": "description",
-					"persistKey": "dossiq-doorlooptijd-range",
-					"_presetNote": "A preset id is what the widgets send as `period` (@workspace.datePreset), and the metrics endpoint reads only a month count such as 12m: an id like `year` is refused with a 400 and every widget on the page stays empty. So the ids are month counts and the label says the period.",
-					"default": {
-						"preset": "1m"
-					},
-					"presets": [
-						{
-							"id": "1m",
-							"label": "Month",
-							"period": "month"
-						},
-						{
-							"id": "3m",
-							"label": "Quarter",
-							"period": "quarter"
-						},
-						{
-							"id": "12m",
-							"label": "Year",
-							"period": "year"
-						}
-					]
-				}
+				"kpiRow": ["processing-time-average", "processing-time-within-target", "processing-time-over-target", "processing-time-closed"]
 			}
 		},
 		{
