@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.138.0",
+	"version": "2.139.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -659,6 +659,16 @@
 				"in": {
 					"type": "array",
 					"description": "The indicator applies when the field's value is one of these."
+				},
+				"after": {
+					"type": "string",
+					"minLength": 1,
+					"description": "The indicator applies while the field holds a readable date after this moment: `now` or an ISO date (\"held until a later date\")."
+				},
+				"before": {
+					"type": "string",
+					"minLength": 1,
+					"description": "The indicator applies while the field holds a readable date before this moment: `now` or an ISO date."
 				},
 				"icon": {
 					"type": "string",
@@ -4613,7 +4623,7 @@
 						},
 						"rowIndicators": {
 							"type": "array",
-							"description": "type='index': state indicators the page declares for its rows. Each entry names a `field` (a dotted path on the row), a condition (`equals`, `in`, or plain truthiness when neither is given), an `icon` (a CnIcon name) and a `text` (the text alternative, required). An entry without `text` does not render, because an icon with no text is colour and shape alone. The page declares which indicators exist; a record cannot add one the page has not declared. Maps to CnIndexPage `rowIndicators`.",
+							"description": "type='index': state indicators the page declares for its rows. Each entry names a `field` (a dotted path on the row), a condition (`equals`, `in`, a date `after` or `before` a moment, or plain truthiness when none is given), an `icon` (a CnIcon name) and a `text` (the text alternative, required). An entry without `text` does not render, because an icon with no text is colour and shape alone. The page declares which indicators exist; a record cannot add one the page has not declared. Maps to CnIndexPage `rowIndicators`.",
 							"items": {
 								"$ref": "#/$defs/rowIndicator"
 							}
