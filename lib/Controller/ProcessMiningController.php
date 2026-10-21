@@ -131,11 +131,13 @@ class ProcessMiningController extends Controller {
 		$caseType = $this->request->getParam('caseType');
 		$period = $this->request->getParam('period');
 		$view = $this->request->getParam('view');
-		$format = ($this->request->getParam('format') ?? 'json');
-		$statistic = ($this->request->getParam('statistic') ?? 'mean');
+		[$format, $statistic] = $this->requestedDownload();
 
-		$invalid = ($this->validateFilters(from: $from, to: $to, caseType: $caseType) ?? $this->validateDisplay(period: $period, view: $view));
-		$invalid = ($invalid ?? $this->validateDownload(format: $format, statistic: $statistic));
+		$invalid = (
+			$this->validateFilters(from: $from, to: $to, caseType: $caseType)
+			?? $this->validateDisplay(period: $period, view: $view)
+			?? $this->validateDownload(format: $format, statistic: $statistic)
+		);
 
 		if ($invalid !== null) {
 			return $invalid;
@@ -146,7 +148,7 @@ class ProcessMiningController extends Controller {
 		try {
 			$report = $this->processMiningService->getReport(params: $params);
 			if ($format === 'csv') {
-				return $this->csv(matrix: (array)($report['phaseDays'][$statistic] ?? []));
+				return $this->csv(matrix: $this->phaseDays(report: $report, statistic: $statistic));
 			}
 
 			return $this->shaped(report: $report, view: $view);
@@ -180,6 +182,34 @@ class ProcessMiningController extends Controller {
 
 		return new JSONResponse([...$report, ...$this->views->shape(report: $report, view: null)]);
 	}//end shaped()
+
+	/**
+	 * The download format and statistic the request asks for, JSON and the mean when it names none.
+	 *
+	 * @return array{0: mixed, 1: mixed} The format and the statistic.
+	 *
+	 * @spec openspec/changes/procesanalyse-csv/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
+	 */
+	private function requestedDownload(): array {
+		return [
+			($this->request->getParam('format') ?? 'json'),
+			($this->request->getParam('statistic') ?? 'mean'),
+		];
+	}//end requestedDownload()
+
+	/**
+	 * The days per phase matrix of one statistic.
+	 *
+	 * @param array<string, mixed> $report    The report.
+	 * @param string               $statistic The statistic, mean or median.
+	 *
+	 * @return array<string, mixed> The matrix, empty when the report has none.
+	 *
+	 * @spec openspec/changes/procesanalyse-csv/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
+	 */
+	private function phaseDays(array $report, string $statistic): array {
+		return (array)($report['phaseDays'][$statistic] ?? []);
+	}//end phaseDays()
 
 	/**
 	 * Refuse a download format or statistic the report does not offer.
