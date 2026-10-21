@@ -252,6 +252,8 @@ class TaskChecklistController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/specs/inspection-checklists/spec.md
+	 *
+	 * @contract exclude Deprecated path alias for submit(); behaviour covered by the submit() tests.
 	 */
 	#[NoAdminRequired]
 	public function submitLegacyPath(string $id): JSONResponse {
@@ -270,6 +272,8 @@ class TaskChecklistController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/specs/inspection-checklists/spec.md
+	 *
+	 * @contract exclude Deprecated path alias for runs(); behaviour covered by the runs() tests.
 	 */
 	#[NoAdminRequired]
 	public function runsLegacyPath(string $id): JSONResponse {

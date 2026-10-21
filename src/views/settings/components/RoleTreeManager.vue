@@ -178,6 +178,12 @@ export default {
 		 */
 		roles: {
 			immediate: true,
+			/**
+			 * Expand every role id the list holds.
+			 *
+			 * @param {Array<object>} roles The roles.
+			 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+			 */
 			handler(roles) {
 				this.expandedIds = (roles || []).map((role) => role.id)
 			},

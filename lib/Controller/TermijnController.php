@@ -408,6 +408,8 @@ class TermijnController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for create(); behaviour covered by the create() tests.
 	 */
 	public function createLegacyPath(): JSONResponse {
 		return $this->create();
@@ -425,6 +427,8 @@ class TermijnController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for show(); behaviour covered by the show() tests.
 	 */
 	public function showLegacyPath(string $id): JSONResponse {
 		return $this->show(id: $id);
@@ -442,6 +446,8 @@ class TermijnController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for pauze(); behaviour covered by the pauze() tests.
 	 */
 	public function pauzeLegacyPath(string $id): JSONResponse {
 		return $this->pauze(id: $id);
@@ -459,6 +465,8 @@ class TermijnController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for hervat(); behaviour covered by the hervat() tests.
 	 */
 	public function hervatLegacyPath(string $id): JSONResponse {
 		return $this->hervat(id: $id);
@@ -476,6 +484,8 @@ class TermijnController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for verleng(); behaviour covered by the verleng() tests.
 	 */
 	public function verlengLegacyPath(string $id): JSONResponse {
 		return $this->verleng(id: $id);
@@ -493,6 +503,8 @@ class TermijnController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for voltooi(); behaviour covered by the voltooi() tests.
 	 */
 	public function voltooiLegacyPath(string $id): JSONResponse {
 		return $this->voltooi(id: $id);

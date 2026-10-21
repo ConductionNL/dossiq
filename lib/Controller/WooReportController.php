@@ -230,6 +230,8 @@ class WooReportController extends Controller {
 	 * @return JSONResponse|DataDownloadResponse
 	 *
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 *
+	 * @contract exclude Deprecated path alias for throughput(); behaviour covered by the throughput() tests.
 	 */
 	#[NoAdminRequired]
 	public function throughputLegacyPath(): JSONResponse|DataDownloadResponse {

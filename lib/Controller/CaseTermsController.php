@@ -490,6 +490,8 @@ class CaseTermsController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+	 *
+	 * @contract exclude Deprecated path alias for workloadAge(); behaviour covered by the workloadAge() tests.
 	 */
 	#[NoAdminRequired]
 	public function workloadAgeLegacyPath(): JSONResponse {

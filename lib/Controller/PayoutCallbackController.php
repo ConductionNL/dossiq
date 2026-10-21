@@ -156,6 +156,8 @@ class PayoutCallbackController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 *
+	 * @contract exclude Deprecated path alias for callback(); behaviour covered by the callback() tests.
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

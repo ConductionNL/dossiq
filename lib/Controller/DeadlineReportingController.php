@@ -276,6 +276,8 @@ class DeadlineReportingController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for dashboard(); behaviour covered by the dashboard() tests.
 	 */
 	public function dashboardLegacyPath(): JSONResponse {
 		return $this->dashboard();
@@ -294,6 +296,8 @@ class DeadlineReportingController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for quarterlyReport(); behaviour covered by the quarterlyReport() tests.
 	 */
 	public function quarterlyReportLegacyPath(string $period = '', ?string $department = null): JSONResponse {
 		return $this->quarterlyReport(period: $period, department: $department);
@@ -311,6 +315,8 @@ class DeadlineReportingController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for annualStatement(); behaviour covered by the annualStatement() tests.
 	 */
 	public function annualStatementLegacyPath(int $year = 0): JSONResponse {
 		return $this->annualStatement(year: $year);
@@ -329,6 +335,8 @@ class DeadlineReportingController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 *
+	 * @contract exclude Deprecated path alias for firstResponseReport(); behaviour covered by the firstResponseReport() tests.
 	 */
 	public function firstResponseReportLegacyPath(string $caseType = '', string $organisation = ''): JSONResponse {
 		return $this->firstResponseReport(caseType: $caseType, organisation: $organisation);
