@@ -319,7 +319,9 @@ class CaseRecycleController extends Controller {
 			'case_not_deleted' => $this->l10n->t('This case is not in the recovery window.'),
 			'destroy_role_undeclared' => $this->l10n->t('This case type names no role that may destroy a case. Declare one on the case type first.'),
 			'destroy_role_missing' => $this->l10n->t('You do not hold the role this case type requires to destroy a case.'),
-			'retention_clocks_disagree' => $this->l10n->t('The lawful purpose of this case has ended while its archive period has not. Somebody has to decide which rule wins.'),
+			'retention_clocks_disagree' => $this->l10n->t(
+				'The lawful purpose of this case has ended while its archive period has not. Somebody has to decide which rule wins.'
+			),
 			'recovery_window_open' => $this->l10n->t('This case can still be recovered, so it is not destroyed yet.'),
 			default => $this->l10n->t('The case does not allow this.'),
 		};
