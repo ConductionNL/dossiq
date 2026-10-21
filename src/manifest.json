@@ -7474,7 +7474,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "sla"
 								},
@@ -7508,7 +7507,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "distribution"
 								},
@@ -7542,7 +7540,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "trend"
 								},
@@ -7587,7 +7584,6 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
-									"period": "@workspace.datePreset?",
 									"caseType": "@workspace.caseType?",
 									"view": "throughput"
 								},
