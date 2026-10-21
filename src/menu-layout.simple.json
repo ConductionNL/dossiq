@@ -1794,8 +1794,13 @@
 								},
 								{
 									"widgetId": "case-files",
-									"label": "Documents",
-									"unreadKey": "files"
+									"label": "Files",
+									"unreadKey": "files",
+									"countFrom": {
+										"endpoint": "/apps/openregister/api/objects/dossiq/case/@objectId/files",
+										"field": "total"
+									},
+									"_labelNote": "DqZaak and every case tab board name this tab \"Bestanden 7\": Files, with the number of files in the case's folder (OpenRegister's file total)."
 								},
 								{
 									"label": "Contact",
