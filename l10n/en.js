@@ -7243,6 +7243,7 @@ OC.L10N.register(
         "Show in Files": "Show in Files",
         "Show more": "Show more",
         "Show on initial load even without case-type subscription": "Show on initial load even without case-type subscription",
+        "Show only": "Show only",
         "Show only the tasks on one case.": "Show only the tasks on one case.",
         "Show substituted work": "Show substituted work",
         "Show the explanations": "Show the explanations",
