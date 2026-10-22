@@ -6974,7 +6974,21 @@
 								"kind": "flow-task"
 							},
 							"maxDisplay": 50,
-							"emptyText": "Nothing has happened to this task yet"
+							"emptyText": "Nothing has happened to this task yet",
+							"actionLabels": {
+								"create": "Task created",
+								"enable": "Task ready to start",
+								"offer": "Task offered to the team",
+								"assign": "Task assigned to {actor}",
+								"reassign": "Task reassigned by {actor}",
+								"claim": "Task picked up by {actor}",
+								"unclaim": "Task handed back by {actor}",
+								"delegate": "Task passed on by {actor}",
+								"checklist": "Checklist updated by {actor}",
+								"complete": "Task finished by {actor}",
+								"cancel": "Task cancelled by {actor}",
+								"terminate": "Task stopped"
+							}
 						}
 					}
 				],
