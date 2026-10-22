@@ -93,16 +93,18 @@ export function channelsFrom({
  * @param {object} options - The call.
  * @param {Array<object>} [options.entries] - The platform's entries.
  * @param {(entry: object) => string} [options.label] - What to call one entry on screen.
+ * @param {(title: string) => string} [options.groupLabel] - What to call a group on screen,
+ *   given the schema's title; the title as it is when absent.
  *
  * @return {Array<object>} `{ id, label, group, groupLabel, appDefault, immediate }`.
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
-export function eventsFrom({ entries = [], label = (entry) => keyFor(entry) } = {}) {
+export function eventsFrom({ entries = [], label = (entry) => keyFor(entry), groupLabel = (title) => title } = {}) {
 	return entries.map((entry) => ({
 		id: keyFor(entry),
 		label: String(label(entry)),
 		group: String(entry?.schema ?? ''),
-		groupLabel: String(entry?.schemaTitle ?? entry?.schema ?? ''),
+		groupLabel: String(groupLabel(String(entry?.schemaTitle ?? entry?.schema ?? ''))),
 		// Only when the platform says so. See the header: an effective value
 		// is not the shipped default, and a guess would render as one.
 		appDefault: appDefaultOf(entry),
@@ -186,6 +188,7 @@ export function valuesFrom({ entries = [], channelId = SINGLE_CHANNEL_ID } = {})
  * @param {Array<object>} [options.entries] - The platform's entries.
  * @param {Array<object>} [options.channels] - The platform's channels, if any.
  * @param {(entry: object) => string} [options.label] - What to call one entry.
+ * @param {(title: string) => string} [options.groupLabel] - What to call a group.
  * @param {string} [options.singleChannelLabel] - The one column's name.
  *
  * @return {object} The component's props.
@@ -195,12 +198,13 @@ export function propsFor({
 	entries = [],
 	channels = [],
 	label,
+	groupLabel,
 	singleChannelLabel,
 } = {}) {
 	const columns = channelsFrom({ channels, singleChannelLabel })
 
 	return {
-		events: eventsFrom({ entries, label }),
+		events: eventsFrom({ entries, label, groupLabel }),
 		channels: columns,
 		...valuesFrom({ entries, channelId: columns[0].id }),
 	}
