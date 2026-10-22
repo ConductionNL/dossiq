@@ -217,7 +217,7 @@
 								"id": "simple-first-today",
 								"type": "banner",
 								"title": "First today",
-								"_note": "DqMijnWerk names ONE case: the reader's own open case furthest past its deadline, with Open case and the list of all of them. The library banner reads the first row of the ordered query (`visibleWhen.source` with `order` and `extend`) as its subject; with no such case it draws nothing. `content` is still the declaration of what is past term, the same filter appinfo/attention.json carries for LaunchPad.",
+								"_note": "DqMijnWerk names ONE case: the reader's own open case furthest past its deadline, with the list of all of them, the board, Suspend the term (the case's lifecycle menu opened on that act for the named case) and Open case. The library banner reads the first row of the ordered query (`visibleWhen.source` with `order` and `extend`) as its subject; with no such case it draws nothing. `content` is still the declaration of what is past term, the same filter appinfo/attention.json carries for LaunchPad.",
 								"content": {
 									"layout": "attention",
 									"variant": "error",
@@ -266,6 +266,15 @@
 												"query": {
 													"_view": "board"
 												}
+											}
+										},
+										{
+											"label": "Suspend the term",
+											"type": "open-modal",
+											"target": "CaseLifecycleMenuDialog",
+											"props": {
+												"caseId": "@subject.id",
+												"act": "suspend"
 											}
 										},
 										{
