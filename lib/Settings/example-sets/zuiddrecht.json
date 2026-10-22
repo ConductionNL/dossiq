@@ -3499,6 +3499,7 @@
 			"data": {
 				"name": "Wacht op inwoner",
 				"description": "Zaken die wachten op de aanvrager",
+				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}, {"user": "{{cast:anouk.uid}}", "mode": "write"}],
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": false,
 				"query": {
