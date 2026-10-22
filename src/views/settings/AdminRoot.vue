@@ -872,11 +872,16 @@ export default {
 			return [
 				{
 					key: 'title',
-					label: this.t('dossiq', 'Connection'),
+					label: this.t('dossiq', 'Link'),
 					cellClass: 'cn-cell--strong',
 					formatter: 'translated',
 					secondary: (row) =>
 						row.description ? this.t('dossiq', row.description) : '',
+				},
+				{
+					key: 'source',
+					label: this.t('dossiq', 'Source'),
+					resolve: { register: 'integriq', schema: 'source', labelField: 'name' },
 				},
 				{
 					key: 'status',
@@ -899,7 +904,12 @@ export default {
 						error: 'Error',
 					},
 				},
-				{ key: '@self.updated', label: this.t('dossiq', 'Last contact') },
+				{
+					key: 'checkedAt',
+					label: this.t('dossiq', 'Last contact'),
+					formatter: 'relativeDate',
+					formatterOptions: { time: true },
+				},
 			]
 		},
 
