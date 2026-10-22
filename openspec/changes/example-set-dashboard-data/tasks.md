@@ -17,3 +17,9 @@
 - **files**: `lib/Settings/example-sets/zuiddrecht.json`
 - [x] Implement: seventeen intake log entries
 - [x] Test: `tests/Unit/Settings/ZuiddrechtDashboardDataTest.php`
+
+### Task 4: Pieter has worked today
+- **spec_ref**: `openspec/changes/example-set-dashboard-data/specs/example-set-dashboard-data/spec.md#requirement-pieter-has-worked-today`
+- **files**: `lib/Settings/example-sets/zuiddrecht.json`
+- [x] Implement: read states and a note of the install day
+- [x] Test: `tests/Unit/Settings/ZuiddrechtDashboardDataTest.php`
