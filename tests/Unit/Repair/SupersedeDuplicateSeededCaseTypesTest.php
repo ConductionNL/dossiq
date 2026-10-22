@@ -201,8 +201,8 @@ class SupersedeDuplicateSeededCaseTypesTest extends TestCase {
 			$this->row(id: 'a-late', slug: 'omgevingsvergunning-kleinbouw', created: '2026-10-10T23:34:00+00:00', organisation: 'org-a'),
 		];
 
-		$this->step(objects: $objects)->run($this->createMock(IOutput::class));
+		$this->step(objects: $objects)->run($this->createMock(originalClassName: IOutput::class));
 
-		$this->assertSame([['a-early', ['supersededBy' => 'a-late']]], $objects->patches);
+		$this->assertSame(expected: [['a-early', ['supersededBy' => 'a-late']]], actual: $objects->patches);
 	}//end testAnOrganisationsCopyIsNeverSupersededByAnothers()
 }//end class
