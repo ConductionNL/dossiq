@@ -170,6 +170,10 @@
             "{count} working day",
             "{count} working days"
         ],
+        "_{total} case, {shown} on this page_::_{total} cases, {shown} on this page_": [
+            "{total} case, {shown} on this page",
+            "{total} cases, {shown} on this page"
+        ],
         "A BAG nummeraanduiding ID is required when the location source is \"bag\".": "A BAG nummeraanduiding ID is required when the location source is \"bag\".",
         "A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents.": "A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents.",
         "A batch can be taken by the rule that marked its documents, or by a list of documents.": "A batch can be taken by the rule that marked its documents, or by a list of documents.",

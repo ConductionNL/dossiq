@@ -3033,7 +3033,11 @@
 				],
 				"sidebar": {
 					"enabled": true,
-					"showMetadata": true
+					"showMetadata": true,
+					"subtitle": {
+						"singular": "{total} case, {shown} on this page",
+						"plural": "{total} cases, {shown} on this page"
+					}
 				},
 				"folderSidebar": {
 					"source": "register",
