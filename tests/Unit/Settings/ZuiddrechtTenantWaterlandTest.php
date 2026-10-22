@@ -53,6 +53,14 @@ class ZuiddrechtTenantWaterlandTest extends TestCase {
 		$this->assertSame(expected: 'admin', actual: $records['tenantUser'][0]['role']);
 		$this->assertSame(expected: ['Behandelaar', 'Teamleider', 'Afdelingshoofd'], actual: array_column($records['tenantMandate'], 'mandateMatrixRef'));
 		$this->assertSame(expected: ['{{cast:marieke.uid}}'], actual: array_values(array_unique(array_column($records['tenantMandate'], 'signedBy'))));
+		$this->assertSame(
+			expected: [
+				['plafond' => 5000, 'decisionTypes' => ['vergunning'], 'enforcement' => 'none'],
+				['plafond' => 50000, 'decisionTypes' => ['vergunning', 'bezwaar'], 'enforcement' => 'warning'],
+				['plafond' => null, 'decisionTypes' => ['vergunning', 'bezwaar'], 'enforcement' => 'full'],
+			],
+			actual: array_column($records['tenantMandate'], 'terms')
+		);
 		$this->assertSame(expected: ['subscription_fee', 'case_created', 'case_refund'], actual: array_column($records['tenantBillingEvent'], 'eventType'));
 	}//end testWaterlandHasItsAdministratorMandatesAndBilling()
 }//end class

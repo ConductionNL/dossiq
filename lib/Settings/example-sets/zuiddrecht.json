@@ -1810,7 +1810,14 @@
 				"tenantRef": "{{organisation:waterland}}",
 				"mandateMatrixRef": "Behandelaar",
 				"effectiveFrom": "{{datetime:-22 09:00}}",
-				"signedBy": "{{cast:marieke.uid}}"
+				"signedBy": "{{cast:marieke.uid}}",
+				"terms": {
+					"plafond": 5000,
+					"decisionTypes": [
+						"vergunning"
+					],
+					"enforcement": "none"
+				}
 			}
 		},
 		{
@@ -1821,7 +1828,15 @@
 				"tenantRef": "{{organisation:waterland}}",
 				"mandateMatrixRef": "Teamleider",
 				"effectiveFrom": "{{datetime:-22 09:00}}",
-				"signedBy": "{{cast:marieke.uid}}"
+				"signedBy": "{{cast:marieke.uid}}",
+				"terms": {
+					"plafond": 50000,
+					"decisionTypes": [
+						"vergunning",
+						"bezwaar"
+					],
+					"enforcement": "warning"
+				}
 			}
 		},
 		{
@@ -1832,7 +1847,15 @@
 				"tenantRef": "{{organisation:waterland}}",
 				"mandateMatrixRef": "Afdelingshoofd",
 				"effectiveFrom": "{{datetime:-22 09:00}}",
-				"signedBy": "{{cast:marieke.uid}}"
+				"signedBy": "{{cast:marieke.uid}}",
+				"terms": {
+					"plafond": null,
+					"decisionTypes": [
+						"vergunning",
+						"bezwaar"
+					],
+					"enforcement": "full"
+				}
 			}
 		},
 		{
