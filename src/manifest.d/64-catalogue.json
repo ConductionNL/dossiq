@@ -26,6 +26,7 @@
 				"breadcrumb": { "label": "Settings", "href": "/index.php/settings/admin/dossiq" },
 				"headerMeta": "case types, attributes, templates and object types in folders",
 				"allowEdit": false,
+				"gridFloat": false,
 				"showWidgetActions": false,
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"_headerActionsNote": "Board DqCatalogus: Downloaden, the Actions menu, the buildiq square and New object type. Download asks the object types table for its rows as CSV (exportId, nextcloud-vue feat/header-download-table-csv). An object type is an OpenRegister schema, so New object type opens OpenRegister's schemas, where Add schema creates one. A new case type starts on the Case types page the tree opens.",
@@ -120,9 +121,9 @@
 					}
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "catalogue-folders", "gridX": 0, "gridY": 0, "gridWidth": 3, "gridHeight": 5, "showTitle": false },
-					{ "id": "2", "widgetId": "catalogue-object-types", "gridX": 3, "gridY": 0, "gridWidth": 9, "gridHeight": 7, "showTitle": true },
-					{ "id": "3", "widgetId": "catalogue-store", "gridX": 3, "gridY": 7, "gridWidth": 9, "gridHeight": 4, "showTitle": true }
+					{ "id": "1", "widgetId": "catalogue-folders", "gridX": 0, "gridY": 0, "gridWidth": 3, "gridHeight": 5, "showTitle": false, "sizeToContent": true },
+					{ "id": "2", "widgetId": "catalogue-object-types", "gridX": 3, "gridY": 0, "gridWidth": 9, "gridHeight": 7, "showTitle": true, "sizeToContent": true },
+					{ "id": "3", "widgetId": "catalogue-store", "gridX": 3, "gridY": 7, "gridWidth": 9, "gridHeight": 4, "showTitle": true, "sizeToContent": true }
 				]
 			}
 		}
