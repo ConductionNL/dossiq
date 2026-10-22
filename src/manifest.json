@@ -5314,7 +5314,12 @@
 						"type": "open-modal",
 						"label": "Lifecycle",
 						"icon": "PlayCircleOutline",
-						"target": "CaseLifecycleMenuDialog"
+						"target": "CaseLifecycleMenuDialog",
+						"props": {
+							"actDialogs": {
+								"archive": "case-archive"
+							}
+						}
 					},
 					{
 						"id": "case-archive",
