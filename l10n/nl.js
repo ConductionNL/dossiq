@@ -7313,6 +7313,7 @@ OC.L10N.register(
         "Show in Files": "Tonen in Bestanden",
         "Show more": "Meer tonen",
         "Show on initial load even without case-type subscription": "Meteen bij het laden tonen, ook zonder abonnement op het zaaktype",
+        "Show only": "Toon",
         "Show only the tasks on one case.": "Toon alleen de taken op één zaak.",
         "Show substituted work": "Waargenomen werk tonen",
         "Show the explanations": "Uitleg tonen",

@@ -10420,6 +10420,7 @@
 					"layout": "rows",
 					"tabs": false,
 					"filter": "segmented",
+					"filterLabel": "Show only",
 					"next": 0,
 					"statusLabels": {
 						"all": "All",
