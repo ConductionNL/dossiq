@@ -64,6 +64,7 @@
 				"footerNote": "20 per page",
 				"notice": {
 					"variant": "info",
+					"placement": "page",
 					"text": "Renewing and terminating are decisions. dossiq asks decidiq for them, which checks the mandate; the outcome comes back onto the contract. The expiry signal runs in dossiq."
 				},
 				"quickFilters": [
