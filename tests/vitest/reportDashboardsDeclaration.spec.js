@@ -159,11 +159,15 @@ describe('process mining', () => {
 })
 
 describe('deadline reports', () => {
-	it('draws the quarterly report from its rows, named by case type, with CSV export', () => {
+	it('draws the quarterly report from its rows, named by case type, exported from its form', () => {
 		const w = widget('TermijnDashboard', 'deadline-report-quarterly')
 		expect(w.type).toBe('object-table')
 		expect(w.content.endpointSource).toMatchObject({ responsePath: 'rows', params: { period: '@workspace.quarter' } })
-		expect(w.content.exportCsv).toBe(true)
+		// Board DqTermijnen: "CSV exporteren" beside "Rapport laden" above the
+		// table, so the form carries the export and the table has no footer button.
+		expect(w.content.exportCsv).toBeUndefined()
+		expect(w.content.exportId).toBe('deadline-report-quarterly')
+		expect(widget('TermijnDashboard', 'deadline-report-quarter-form').content.exportTable).toEqual({ exportId: 'deadline-report-quarterly' })
 		const keys = Object.fromEntries(w.content.columns.map((c) => [c.key, c]))
 		expect(keys.caseTypeTitle.label).toBe('Case type')
 		expect(keys.withinTermPct.format).toMatchObject({ decimals: 1, suffix: ' %' })
