@@ -30,8 +30,39 @@ describe('organisation lifecycle actions', () => {
 	})
 
 	it('shows Suspend and Resume in the header and End under More, confirmed', () => {
-		expect(config.quickActions).toEqual(['organisation-suspend', 'organisation-resume'])
+		expect(config.quickActions).toEqual(['organisation-suspend', 'organisation-resume', 'organisation-edit'])
 		expect(action('organisation-end').confirm).toBe(true)
 		expect(action('organisation-suspend').confirm).toBe(true)
+	})
+})
+
+/**
+ * @spec openspec/changes/organisation-edit/specs/organisation-edit/spec.md#requirement-an-organisation-is-edited-from-its-page
+ */
+describe('organisation edit', () => {
+	it('edits the name and description through OpenRegister\'s organisation endpoint', () => {
+		const edit = action('organisation-edit')
+		expect(edit.type).toBe('open-form')
+		expect(edit.endpoint).toEqual({ url: '/apps/openregister/api/organisations/@objectId', method: 'PATCH', responsePath: 'organisation' })
+		expect(Object.keys(edit.formProperties)).toEqual(['name', 'description'])
+	})
+})
+
+/**
+ * @spec openspec/changes/organisation-history-tab/specs/organisation-history-tab/spec.md#requirement-an-organisation-shows-its-history
+ */
+describe('organisation history', () => {
+	const tabs = fragment.pages.find((entry) => entry.id === 'EnvironmentOrganisationDetail').config.widgets.find((widget) => widget.id === 'organisation-panels').content.tabs
+	const history = fragment.pages.find((entry) => entry.id === 'EnvironmentOrganisationDetail').config.widgets.find((widget) => widget.id === 'organisation-history')
+
+	it('has a History tab after Billing', () => {
+		expect(tabs.map((tab) => tab.label)).toEqual(['Overview', 'Users', 'Mandates', 'Billing', 'Record history'])
+		expect(JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../l10n/nl.json'), 'utf8')).translations[tabs[4].label]).toBe('Historie')
+	})
+
+	it('reads the organisation\'s lifecycle entries from OpenRegister\'s audit trail', () => {
+		expect(history.content.endpointSource.url).toContain('/apps/openregister/api/audit-trails?object_uuid=@objectId')
+		expect(history.content.endpointSource.url).toContain('action=organisation.status_changed,organisation.updated')
+		expect(history.content.endpointSource.responsePath).toBe('results')
 	})
 })
