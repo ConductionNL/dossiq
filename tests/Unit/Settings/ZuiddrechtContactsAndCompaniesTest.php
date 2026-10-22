@@ -45,16 +45,23 @@ class ZuiddrechtContactsAndCompaniesTest extends TestCase {
 		$this->assertIsArray(actual: $set);
 		$objects = array_column($set['objects'], null, 'key');
 
-		foreach (['persoon-pieterbos' => 'pieterbos', 'persoon-henkvisser' => 'henkvisser'] as $key => $cast) {
+		foreach (['persoon-pieterbos' => 'pieterbos', 'persoon-henkvisser' => 'henkvisser', 'persoon-jvanwijk' => 'jvanwijk'] as $key => $cast) {
 			$this->assertSame(expected: 'brpPerson', actual: $objects[$key]['schema']);
 			$this->assertSame(expected: '{{cast:'.$cast.'.bsn}}', actual: $objects[$key]['data']['citizenServiceNumber']);
 			$this->assertSame(expected: '{{cast:'.$cast.'.displayName}}', actual: $objects[$key]['data']['displayName']);
 		}
 
-		foreach (['bedrijf-visserbouw' => 'visserbouw', 'bedrijf-vanwijk' => 'vanwijk'] as $key => $cast) {
+		foreach (['bedrijf-visserbouw' => 'visserbouw', 'bedrijf-vanwijk' => 'vanwijk', 'bedrijf-bewonerslindelaan' => 'bewonerslindelaan'] as $key => $cast) {
 			$this->assertSame(expected: 'kvkCompany', actual: $objects[$key]['schema']);
 			$this->assertSame(expected: '{{cast:'.$cast.'.kvk}}', actual: $objects[$key]['data']['kvkNumber']);
 			$this->assertSame(expected: '{{cast:'.$cast.'.name}}', actual: $objects[$key]['data']['tradeName']);
 		}
+
+		// The residents' association reported more than once; Sanne asked for no secrecy.
+		$this->assertSame(
+			expected: [['key' => 'meerdere-meldingen', 'label' => 'Meerdere meldingen', 'effect' => 'warn', 'note' => 'Meldt vaker over de Lindelaan, ook via de balie.']],
+			actual: $objects['bedrijf-bewonerslindelaan']['data']['indicators']
+		);
+		$this->assertSame(expected: [], actual: ($objects['persoon-sanne']['data']['indicators'] ?? []));
 	}//end testTheListBoardsContactsAreInTheSet()
 }//end class
