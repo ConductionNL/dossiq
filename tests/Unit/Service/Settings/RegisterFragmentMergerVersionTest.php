@@ -130,4 +130,37 @@ class RegisterFragmentMergerVersionTest extends TestCase {
 		self::assertSame(expected: '1.2.0', actual: $merged['components']['schemas']['task']['version']);
 		self::assertSame(expected: 'Work item', actual: $merged['components']['schemas']['task']['title']);
 	}//end testAHigherVersionStillRaisesAndOtherScalarsStillOverwrite()
+
+	/**
+	 * The shipped register merges every schema to the highest version the base or a fragment declares.
+	 *
+	 * @return void
+	 */
+	public function testTheShippedRegisterMergesToTheHighestDeclaredVersion(): void {
+		$settings = dirname(path: __DIR__, levels: 4) . '/lib/Settings';
+		$base     = json_decode(json: (string) file_get_contents(filename: $settings . '/dossiq_register.json'), associative: true);
+
+		$declared = [];
+		$sources  = array_merge([$settings . '/dossiq_register.json'], (array) glob(pattern: $settings . '/register.d/*.json'));
+		foreach ($sources as $file) {
+			$config = json_decode(json: (string) file_get_contents(filename: $file), associative: true);
+			foreach (($config['components']['schemas'] ?? []) as $name => $schema) {
+				$version = $schema['version'] ?? null;
+				if (is_string($version) === false) {
+					continue;
+				}
+
+				if (isset($declared[$name]) === false || version_compare(version1: $version, version2: $declared[$name], operator: '>') === true) {
+					$declared[$name] = $version;
+				}
+			}
+		}
+
+		[$merged] = (new RegisterFragmentMerger())->merge(base: $base, fragmentDir: $settings . '/register.d');
+
+		self::assertNotEmpty(actual: $declared);
+		foreach ($declared as $name => $version) {
+			self::assertSame(expected: $version, actual: $merged['components']['schemas'][$name]['version'], message: $name);
+		}
+	}//end testTheShippedRegisterMergesToTheHighestDeclaredVersion()
 }//end class
