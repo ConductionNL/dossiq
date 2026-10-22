@@ -23,6 +23,6 @@ describe('the working days card head', () => {
 	})
 
 	it('leaves the calendar\'s own Add day out', () => {
-		expect(admin).toMatch(/workingCalendarContent\(\) \{[\s\S]*?addButton: false,)
+		expect(admin).toMatch(/workingCalendarContent\(\) \{[\s\S]*?addButton: false,/)
 	})
 })
