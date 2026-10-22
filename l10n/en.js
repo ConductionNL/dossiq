@@ -9320,6 +9320,7 @@ OC.L10N.register(
         "To Employee ID": "To Employee ID",
         "To handler (user id)": "To handler (user id)",
         "To My work": "To My work",
+        "To the queue": "To the queue",
         "To pseudonymise": "To pseudonymise",
         "To Queue": "To Queue",
         "To Status": "To Status",

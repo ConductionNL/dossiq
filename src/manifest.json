@@ -1734,7 +1734,12 @@
 								"gridY": 2,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": true
+								"showTitle": true,
+								"headerLink": {
+									"label": "To the queue",
+									"route": "Cases",
+									"query": { "savedView": "default:team-queue" }
+								}
 							},
 							{
 								"id": "t5",

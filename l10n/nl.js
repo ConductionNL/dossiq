@@ -9320,6 +9320,7 @@ OC.L10N.register(
         "To Employee ID": "Naar medewerker-id",
         "To handler (user id)": "Naar behandelaar (gebruikers-id)",
         "To My work": "Naar Mijn werk",
+        "To the queue": "Naar de wachtrij",
         "To pseudonymise": "Te pseudonimiseren",
         "To Queue": "Naar wachtrij",
         "To Status": "Naar status",
