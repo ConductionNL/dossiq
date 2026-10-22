@@ -1683,6 +1683,7 @@
 								{
 									"widgetId": "case-social-indications",
 									"label": "Indication",
+									"permission": "sociaal-domein",
 									"visibleWhen": {
 										"any": [
 											{
@@ -1711,6 +1712,7 @@
 								{
 									"widgetId": "case-social-meetings",
 									"label": "Case meeting",
+									"permission": "sociaal-domein",
 									"visibleWhen": {
 										"any": [
 											{
