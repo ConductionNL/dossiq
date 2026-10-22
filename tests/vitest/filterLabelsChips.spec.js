@@ -49,6 +49,10 @@ describe('the cases list names the open-or-closed filter', () => {
 		expect(dutchChip(labels, 'isFinalStatus', 'false')).toBe('Status: lopend')
 	})
 
+	it('names the team filter Team, so the @myTeam queue chip reads "Team: Woo en informatie"', () => {
+		expect(nl[labels.assignedGroup.label]).toBe('Team')
+	})
+
 	it('names the deadline Termijn and asks for a range from today in words', () => {
 		expect(nl[labels.deadline.label]).toBe('Termijn')
 		expect(labels.deadline.relative).toBe(true)
