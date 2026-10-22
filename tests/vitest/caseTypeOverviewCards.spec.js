@@ -20,9 +20,9 @@ const overview = widget('case-type-panels').content.tabs.find((tab) => tab.id ==
 
 describe('case type Overview cards', () => {
 	it('shows the board\'s cards in its order', () => {
-		expect(overview.widgetIds).toEqual(['case-type-statuses', 'case-type-rules-summary', 'case-type-rights', 'case-type-privacy', 'case-type-translations'])
+		expect(overview.widgetIds).toEqual(['case-type-statuses', 'case-type-rules-summary', 'case-type-rights', 'case-type-privacy-summary', 'case-type-translations-summary'])
 		expect(overview.layout.map((entry) => [entry.widgetId, entry.gridWidth])).toEqual([
-			['case-type-statuses', 12], ['case-type-rules-summary', 12], ['case-type-rights', 12], ['case-type-privacy', 6], ['case-type-translations', 6],
+			['case-type-statuses', 12], ['case-type-rules-summary', 12], ['case-type-rights', 12], ['case-type-privacy-summary', 6], ['case-type-translations-summary', 6],
 		])
 		overview.widgetIds.forEach((id) => expect(widget(id)).toBeTruthy())
 	})

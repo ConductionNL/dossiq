@@ -48,6 +48,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Queue\QueueFigures;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -115,6 +116,7 @@ class KpiAggregationService {
 	 * @param IL10N $l10n The app's translator, for the month names.
 	 * @param LoggerInterface $logger The logger interface.
 	 * @param LanguageMapText $text Reads a translatable case type title as text.
+	 * @param DayCount $days The one place days between two dates are counted.
 	 *
 	 * @return void
 	 */
@@ -127,6 +129,7 @@ class KpiAggregationService {
 		private IL10N $l10n,
 		private LoggerInterface $logger,
 		private LanguageMapText $text = new LanguageMapText(),
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -539,7 +542,7 @@ class KpiAggregationService {
 			return null;
 		}
 
-		return (int)$start->diff($end)->format('%r%a');
+		return $this->days->signed(from: $start, to: $end);
 	}//end daysBetween()
 
 	/**

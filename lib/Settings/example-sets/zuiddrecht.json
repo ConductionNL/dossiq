@@ -2333,6 +2333,714 @@
 			}
 		},
 		{
+			"key": "leverancier-kindzorg",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002001",
+				"legalName": "Stichting Kindzorg Drechtsteden",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-groen-en-co",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002002",
+				"legalName": "Groen & Co",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-taxi-drechtstad",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002003",
+				"legalName": "Taxi Drechtstad",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-lumen-infra",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002004",
+				"legalName": "Lumen Infra BV",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-schoon-zuid",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002005",
+				"legalName": "Schoon Zuid",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-conduction",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002006",
+				"legalName": "Conduction",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "contract-jeugdhulp-ambulant",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-kindzorg.id}}",
+				"number": "CT-2023-014",
+				"subject": "Jeugdhulp ambulant 2023-2026",
+				"startDate": "2023-01-01",
+				"endDate": "2026-12-31",
+				"value": 2400000,
+				"status": "renewal-decision",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-groenonderhoud-oost",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-groen-en-co.id}}",
+				"number": "CT-2024-003",
+				"subject": "Groenonderhoud oost",
+				"startDate": "2024-05-01",
+				"endDate": "2027-04-30",
+				"value": 610000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-leerlingenvervoer",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-taxi-drechtstad.id}}",
+				"number": "CT-2022-021",
+				"subject": "Leerlingenvervoer",
+				"startDate": "2022-08-01",
+				"endDate": "2026-07-31",
+				"value": 1850000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-straatverlichting",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-lumen-infra.id}}",
+				"number": "CT-2025-002",
+				"subject": "Straatverlichting onderhoud",
+				"startDate": "2025-04-01",
+				"endDate": "2027-03-31",
+				"value": 340000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-schoonmaak-stadhuis",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-schoon-zuid.id}}",
+				"number": "CT-2024-011",
+				"subject": "Schoonmaak stadhuis",
+				"startDate": "2024-03-01",
+				"endDate": "2027-02-28",
+				"value": 290000,
+				"status": "termination-decision",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-softwarelicenties",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-conduction.id}}",
+				"number": "CT-2025-009",
+				"subject": "Softwarelicenties sociaal domein",
+				"startDate": "2025-01-01",
+				"endDate": "2027-12-31",
+				"value": 96000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "leverancier-rivierland-installatie",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002007",
+				"legalName": "Rivierland Installatietechniek",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-zuidwaard-catering",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002008",
+				"legalName": "Zuidwaard Catering",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-kade-advies",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002009",
+				"legalName": "Kade & Co Advies",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-polderlicht",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002010",
+				"legalName": "Polderlicht Elektra",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-oosthaven-drukwerk",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002011",
+				"legalName": "Oosthaven Drukwerk",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-waalmond-ict",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002012",
+				"legalName": "Waalmond ICT",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-linde-facilitair",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002013",
+				"legalName": "Linde Facilitair",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-molenwerf-bouw",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002014",
+				"legalName": "Molenwerf Bouw",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-grachtzicht-juridisch",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002015",
+				"legalName": "Grachtzicht Juridisch Advies",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-dijkveld-beveiliging",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002016",
+				"legalName": "Dijkveld Beveiliging",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-haventoren-archief",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002017",
+				"legalName": "Haventoren Archiefdiensten",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-zandpad-verhuizingen",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002018",
+				"legalName": "Zandpad Verhuizingen",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "contract-ct-2024-007",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-rivierland-installatie.id}}",
+				"number": "CT-2024-007",
+				"subject": "Onderhoud klimaatinstallaties",
+				"startDate": "2024-01-01",
+				"endDate": "2027-12-31",
+				"value": 420000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-004",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-zuidwaard-catering.id}}",
+				"number": "CT-2025-004",
+				"subject": "Catering raadszaal",
+				"startDate": "2025-02-01",
+				"endDate": "2027-01-31",
+				"value": 85000,
+				"status": "active",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-ct-2023-019",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-kade-advies.id}}",
+				"number": "CT-2023-019",
+				"subject": "Advies omgevingsvisie",
+				"startDate": "2023-09-01",
+				"endDate": "2026-08-31",
+				"value": 135000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-011",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-polderlicht.id}}",
+				"number": "CT-2025-011",
+				"subject": "Openbare verlichting buitengebied",
+				"startDate": "2025-06-01",
+				"endDate": "2028-05-31",
+				"value": 510000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-015",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-oosthaven-drukwerk.id}}",
+				"number": "CT-2024-015",
+				"subject": "Drukwerk en verzending",
+				"startDate": "2024-04-01",
+				"endDate": "2027-03-31",
+				"value": 64000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-013",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-waalmond-ict.id}}",
+				"number": "CT-2025-013",
+				"subject": "Werkplekbeheer",
+				"startDate": "2025-01-01",
+				"endDate": "2027-12-31",
+				"value": 780000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-022",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-linde-facilitair.id}}",
+				"number": "CT-2024-022",
+				"subject": "Facilitaire dienstverlening stadskantoor",
+				"startDate": "2024-07-01",
+				"endDate": "2027-06-30",
+				"value": 355000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-016",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-molenwerf-bouw.id}}",
+				"number": "CT-2025-016",
+				"subject": "Renovatie sporthal Oosthaven",
+				"startDate": "2025-03-01",
+				"endDate": "2026-12-31",
+				"value": 1250000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2023-008",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-grachtzicht-juridisch.id}}",
+				"number": "CT-2023-008",
+				"subject": "Juridisch advies aanbestedingen",
+				"startDate": "2023-01-01",
+				"endDate": "2026-06-30",
+				"value": 120000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-018",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-dijkveld-beveiliging.id}}",
+				"number": "CT-2024-018",
+				"subject": "Beveiliging gemeentelijke gebouwen",
+				"startDate": "2024-05-01",
+				"endDate": "2027-04-30",
+				"value": 290000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-020",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-haventoren-archief.id}}",
+				"number": "CT-2025-020",
+				"subject": "Digitalisering bouwarchief",
+				"startDate": "2025-09-01",
+				"endDate": "2027-08-31",
+				"value": 175000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-024",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-zandpad-verhuizingen.id}}",
+				"number": "CT-2024-024",
+				"subject": "Verhuizing archief en werkplekken",
+				"startDate": "2024-10-01",
+				"endDate": "2026-09-30",
+				"value": 48000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-021",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-rivierland-installatie.id}}",
+				"number": "CT-2025-021",
+				"subject": "Onderhoud liften",
+				"startDate": "2025-01-01",
+				"endDate": "2028-12-31",
+				"value": 96000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-026",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-zuidwaard-catering.id}}",
+				"number": "CT-2024-026",
+				"subject": "Koffie- en theevoorziening",
+				"startDate": "2024-02-01",
+				"endDate": "2027-01-31",
+				"value": 38000,
+				"status": "active",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-ct-2025-023",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-polderlicht.id}}",
+				"number": "CT-2025-023",
+				"subject": "Laadpalen gemeentelijk wagenpark",
+				"startDate": "2025-05-01",
+				"endDate": "2028-04-30",
+				"value": 260000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-029",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-waalmond-ict.id}}",
+				"number": "CT-2024-029",
+				"subject": "Netwerkbeheer",
+				"startDate": "2024-01-01",
+				"endDate": "2027-12-31",
+				"value": 330000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-025",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-linde-facilitair.id}}",
+				"number": "CT-2025-025",
+				"subject": "Schoonmaak buitenlocaties",
+				"startDate": "2025-04-01",
+				"endDate": "2027-03-31",
+				"value": 140000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2023-027",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-molenwerf-bouw.id}}",
+				"number": "CT-2023-027",
+				"subject": "Onderhoud gemeentelijk vastgoed",
+				"startDate": "2023-05-01",
+				"endDate": "2026-04-30",
+				"value": 890000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-027",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-dijkveld-beveiliging.id}}",
+				"number": "CT-2025-027",
+				"subject": "Cameratoezicht centrum",
+				"startDate": "2025-08-01",
+				"endDate": "2028-07-31",
+				"value": 215000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-031",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-haventoren-archief.id}}",
+				"number": "CT-2024-031",
+				"subject": "Scannen en indexeren dossiers",
+				"startDate": "2024-03-01",
+				"endDate": "2027-02-28",
+				"value": 72000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-029",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-kade-advies.id}}",
+				"number": "CT-2025-029",
+				"subject": "Advies duurzame mobiliteit",
+				"startDate": "2025-10-01",
+				"endDate": "2027-09-30",
+				"value": 98000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2023-031",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-oosthaven-drukwerk.id}}",
+				"number": "CT-2023-031",
+				"subject": "Huisstijlmaterialen",
+				"startDate": "2023-07-01",
+				"endDate": "2026-06-30",
+				"value": 26000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-031",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-grachtzicht-juridisch.id}}",
+				"number": "CT-2025-031",
+				"subject": "Juridische ondersteuning bezwaarzaken",
+				"startDate": "2025-01-01",
+				"endDate": "2027-12-31",
+				"value": 160000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-033",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-zandpad-verhuizingen.id}}",
+				"number": "CT-2025-033",
+				"subject": "Inzet verhuisteam evenementen",
+				"startDate": "2025-03-01",
+				"endDate": "2027-02-28",
+				"value": 22000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2026-002",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-rivierland-installatie.id}}",
+				"number": "CT-2026-002",
+				"subject": "Onderhoud sanitaire voorzieningen",
+				"startDate": "2026-01-01",
+				"endDate": "2028-12-31",
+				"value": 58000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2026-004",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-polderlicht.id}}",
+				"number": "CT-2026-004",
+				"subject": "Verlichting sportvelden",
+				"startDate": "2026-02-01",
+				"endDate": "2029-01-31",
+				"value": 185000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2026-006",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-waalmond-ict.id}}",
+				"number": "CT-2026-006",
+				"subject": "Cloudopslag archief",
+				"startDate": "2026-03-01",
+				"endDate": "2029-02-28",
+				"value": 112000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2026-008",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-linde-facilitair.id}}",
+				"number": "CT-2026-008",
+				"subject": "Postverwerking",
+				"startDate": "2026-04-01",
+				"endDate": "2028-03-31",
+				"value": 67000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
 			"key": "afdeling-gemeente",
 			"register": "dossiq",
 			"schema": "organisatieRol",
@@ -2731,7 +3439,7 @@
 			"data": {
 				"name": "Lindelaan",
 				"description": "Alles over de Lindelaan: zaken, objecten en documenten.",
-				"owner": "{{cast:thomas.uid}}",
+				"owner": "{{cast:pieter.uid}}",
 				"isPublic": true,
 				"query": {
 					"filters": {},
@@ -2743,7 +3451,7 @@
 					"operator": "gte",
 					"threshold": 12,
 					"recipients": [
-						"user:{{cast:thomas.uid}}"
+						"user:{{cast:pieter.uid}}"
 					]
 				}
 			}
@@ -2790,10 +3498,14 @@
 				"isPublic": false,
 				"query": {
 					"filters": {
-						"waitingOnApplicant": true,
-						"statusHiddenInLists": false,
-						"isDraft": false,
-						"isFinalStatus": false
+						"waitingOnApplicant": true
+					},
+					"overrides": {
+						"lockedFilters": {
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
 					},
 					"search": "",
 					"sort": [

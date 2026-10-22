@@ -17,7 +17,6 @@ and the LHS advice page declared no card.
   pre-announcement with a two-week period for a view for a penalty order or
   administrative enforcement, the letter for a warning or remedial action.
 
-## Not yet
-
-Stage texts per case type (the board's own wording per procedure) need the
-card to read its stages from the case type, which nextcloud-vue cannot yet.
+- A case type can carry its own stage texts (`caseType.nextStep`); the case
+  page reads them through nextcloud-vue's `nextStep.stagesFrom` and keeps its
+  own for a case type without them.

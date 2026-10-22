@@ -71,6 +71,7 @@
 						"id": "catalogue-object-types",
 						"type": "object-table",
 						"title": "Object types",
+						"subtitle": "Objects you link to cases; you manage their properties here",
 						"headerActions": [
 							{
 								"label": "Add object type",

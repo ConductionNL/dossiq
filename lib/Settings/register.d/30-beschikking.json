@@ -351,6 +351,41 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "caseType",
+          "slug": "wmo-melding",
+          "version": "1.0.1"
+        },
+        "title": "Wmo-melding",
+        "identifier": "wmo-melding",
+        "colour": "purple",
+        "icon": "HandHeartOutline",
+        "category": "Sociaal domein",
+        "description": "Melding van een hulpvraag onder de Wet maatschappelijke ondersteuning 2015.",
+        "processingDeadline": "P42D",
+        "internalOrExternal": "extern",
+        "confidentiality": "zaakvertrouwelijk",
+        "isDraft": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "case",
+          "slug": "case-wmo-huishoudelijke-hulp"
+        },
+        "title": "Wmo-melding: huishoudelijke hulp",
+        "description": "Melding van een inwoner die hulp in het huishouden nodig heeft; toegekend bij beschikking Z/2026/04832/B01.",
+        "identifier": "2026-4832",
+        "caseType": "@ref:caseType:wmo-melding",
+        "startDate": "2026-02-19",
+        "confidentiality": "zaakvertrouwelijk",
+        "intakeChannel": "manual",
+        "priority": "normal",
+        "extensionCount": 0,
+        "isFinalStatus": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "mandateArrangement",
           "slug": "mr-2024-007-wmo"
         },
@@ -371,7 +406,7 @@
           "schema": "beschikking",
           "slug": "besch-2026-04832"
         },
-        "caseId": "zaak-2026-wmo-04832",
+        "caseId": "@ref:case:case-wmo-huishoudelijke-hulp",
         "caseType": "wmo-melding",
         "decisionType": "toekenning",
         "reference": "Z/2026/04832/B01",
@@ -427,7 +462,7 @@
           "schema": "beschikking",
           "slug": "besch-2026-00156"
         },
-        "caseId": "zaak-2026-omg-00156",
+        "caseId": "@ref:case:case-bp-dormer-lindenstraat",
         "caseType": "omgevingsvergunning",
         "decisionType": "toekenning",
         "reference": "Z/2026/00156/B01",
@@ -461,7 +496,7 @@
           "schema": "beschikking",
           "slug": "besch-2026-00489"
         },
-        "caseId": "zaak-2026-sub-00489",
+        "caseId": "@ref:case:case-grant-festival-oranjewijk",
         "caseType": "subsidieaanvraag",
         "decisionType": "toekenning",
         "reference": "Z/2026/00489/B01",

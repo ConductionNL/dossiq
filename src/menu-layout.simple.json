@@ -852,6 +852,7 @@
 								"id": "archival-reviews",
 								"type": "decision-list",
 								"title": "My archival reviews",
+								"subtitle": "Archival decisions waiting for your signature",
 								"icon": "ArchiveOutline",
 								"content": {
 									"source": {
@@ -1220,6 +1221,7 @@
 					}
 				},
 				"nextStep": {
+					"stagesFrom": "@context.caseType.nextStep",
 					"notTabs": [
 						"ai-oversight"
 					],
@@ -2150,7 +2152,6 @@
 									"overflow": true,
 									"widgetIds": [
 										"case-email-panel",
-										"case-linked-mail",
 										"case-notes-panel"
 									]
 								},
@@ -2263,8 +2264,17 @@
 					},
 					"case-terms": {
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-terms"
+								}
+							]
 						},
 						"title": "Term and payment",
 						"content": {
@@ -2290,10 +2300,20 @@
 					},
 					"case-flow-runs": {
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-flow-runs"
+								}
+							]
 						},
 						"title": "Flows",
+						"subtitle": "What ran on this case or is still planned",
 						"_headerActionsNote": "DqZaak/DqZaakMeer Flows: \"Flow uitvoeren\" in the card's title row, the case's own start-flow dialog, shown while the case has a flow it may start (as the header action of the same name).",
 						"headerActions": [
 							{ "label": "Run flow", "icon": "Play", "visibleWhen": { "field": "hasStartableFlows", "op": "eq", "value": true }, "action": { "type": "open-modal", "target": "CaseStartFlowDialog" } }
@@ -2301,12 +2321,22 @@
 					},
 					"case-kpis-hours": {
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-kpis-hours"
+								}
+							]
 						},
 						"title": "Record hours"
 					},
 					"case-archival-panel": {
+						"subtitle": "What happens to this case once it is closed",
 						"_headerActionsNote": "DqZaakArchivering: \"Nominatie herberekenen\" in the Archiving card's title row. It recomputes the case's archival nomination through OpenRegister (POST /api/archival/objects/{id}/nomination/recompute), which an archivist may do, asks for a reason, and records the actor, the reason and the previous nomination. The library action dialog asks the reason; OpenRegister refuses anyone who is not an archivist, with its own sentence.",
 						"headerActions": [
 							{
@@ -2330,7 +2360,7 @@
 						]
 					},
 					"case-email-panel": {
-						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the linked mail and the notes stand under it as cards, so the mail widget leaves its own linked mail list out. Mail koppelen and Mail opstellen are the library mail tab's own header buttons (content.headerActions).",
+						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the mail linked to the case is listed in the same card, as the board draws it, and the notes stand under it. Mail koppelen and Mail opstellen are the library mail tab's own header buttons (content.headerActions).",
 						"content": {
 							"headerActions": ["link", "compose"],
 							"heading": "Email",
@@ -2351,7 +2381,7 @@
 								"field": "endDate",
 								"op": "notEmpty"
 							},
-							"linkedMail": false
+							"linkedMail": true
 						}
 					}
 				},
@@ -2391,8 +2421,17 @@
 						"id": "case-request",
 						"type": "facts",
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-request"
+								}
+							]
 						},
 						"title": "The request",
 						"_note": "DqZaak: the card that opens the Overview tab, what the case is about in the requester's words. Read only: the description is edited in the Edit dialog.",
@@ -2410,8 +2449,17 @@
 						"id": "case-details",
 						"type": "data",
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-details"
+								}
+							]
 						},
 						"title": "Case details",
 						"_note": "DqZaak Zaakgegevens: the case's own fields in three columns, in the board's order. Holds what case-core held on the Data tab except the title (the page title), the description (The request) and the priority (its own card beside Locations).",
@@ -2535,8 +2583,17 @@
 						"id": "case-priority-card",
 						"type": "data",
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-priority-card"
+								}
+							]
 						},
 						"title": "Priority",
 						"content": {
@@ -2583,8 +2640,17 @@
 						"id": "case-locations-card",
 						"type": "map",
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-locations-card"
+								}
+							]
 						},
 						"title": "Locations",
 						"_note": "The case on a map: the case-location objects that point at this case (`filter: case = @objectId`), drawn by the library map. An empty answer and a failed read say so in words, a point at (0, 0) is not plotted, and saving a location (CaseLocationDialog emits dossiq:case-location:saved with the caseId) reads the markers again.",
@@ -2618,10 +2684,20 @@
 							"emptyText": "This case type has no adaptive plan"
 						},
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-plan-card"
+								}
+							]
 						},
 						"title": "Case plan",
+						"subtitle": "Milestones and parts of this case",
 						"_note": "The adaptive plan as a card of the Overview stack (library widget type plan -> CnPlanWidget). The full profile keeps cmmn-case-plan as a layout cell."
 					},
 					{
@@ -2792,6 +2868,7 @@
 						"id": "case-acknowledgement-card",
 						"type": "data",
 						"title": "Receipt confirmation",
+						"subtitle": "Awb 4:3a: the requester hears that the request has arrived",
 						"_note": "ontvangstbevestiging REQ-TERM-023 and REQ-TERM-024: whether this case confirmed receipt under Awb 4:3a, when, to whom and by which channel, and the messages it sent on its own. It sits in Communication rather than Data because it IS correspondence, beside the contact a handler logs by hand. A `data` widget and not a bespoke component: both fields are declared on the case schema, so the library renders them from the schema and this change adds no widget to the custom-widget ratchet. Read-only throughout: the duty is written by the acknowledgement service and cleared through the Record receipt confirmed action, never by typing over the field, because a duty a handler can edit silently is the state this feature exists to make visible.",
 						"content": {
 							"title": "Receipt confirmation",
@@ -2831,6 +2908,7 @@
 						],
 						"content": { "actionsInHeader": true },
 						"title": "Live conversation",
+						"subtitle": "A Talk conversation, started from this case",
 						"_note": "A conversation held live from this case, in Nextcloud Talk, and what the case recorded of the ones already held: the moment, who joined and how long it lasted. It sits in Communication rather than in a tab of its own because a handler reading what was said on this case is already here, and a call and a contact moment are the same question asked of two moments. Rendered by TYPE (case-conversations-pane in registry.js): a section child resolves from the widget registry, and a component registered only by name draws an empty panel and logs nothing. The icon is PhoneInTalk, which src/icons.js carries; an icon a manifest names but no registry holds renders the default glyph and breaks nothing visibly, which is how that goes unnoticed."
 					},
 					{
@@ -3030,13 +3108,15 @@
 						"integrationId": "calendar",
 						"props": { "headerActions": ["link", "create"] },
 						"_headerActionsNote": "DqZaakTaken Afspraken: \"Bestaande koppelen\" and \"Afspraak maken\" in the card's title row, the calendar leaf's own link-existing and create flows (nextcloud-vue calendar card headerActions).",
-						"title": "Appointments"
+						"title": "Appointments",
+						"subtitle": "From the calendar, linked to this case"
 					},
 					{
 						"id": "case-deck-card",
 						"type": "integration",
 						"integrationId": "deck",
 						"title": "Cards",
+						"subtitle": "Coordination in Deck, linked to this case",
 						"_note": "leaf-integrations REQ-LEAF-105: a board for the ad-hoc coordination around a case, beside the tasks and never instead of them. NOTHING IN DOSSIQ READS OR WRITES A DECK CARD FROM A `task`, OR THE OTHER WAY ROUND. Task lifecycle belongs to WorkflowEngineService alone and the kanban WorkflowBoardView is the workflow surface; a mirror would give a handler two places to finish the same work and no rule about which one counts. A SECTION of the Work panel rather than a body widget with a layout entry, which is what the design named: the case body is a tab strip and its grid is full, and a card board is work, so it belongs beside the tasks. The leaf owns link, create and unlink, so dossiq ships no Deck code at all; with the Deck app absent the library renders its own empty state rather than an error."
 					},
 					{
@@ -3826,14 +3906,6 @@
 						}
 					},
 					{
-						"id": "case-linked-mail",
-						"type": "integration",
-						"integrationId": "email",
-						"title": "Linked mail",
-						"icon": "EmailOutline",
-						"_note": "DqZaakEmail: the mail linked to the case, with Link mail and Compose mail, from the email integration (Nextcloud Mail). Absent where Mail is not installed."
-					},
-					{
 						"id": "case-related-cases-card",
 						"type": "record-list",
 						"title": "Related cases",
@@ -4255,6 +4327,7 @@
 						"id": "case-decision-letter",
 						"type": "facts",
 						"title": "Decision letter",
+						"subtitle": "The document that goes to the requester",
 						"icon": "FileDocumentOutline",
 						"_note": "DqZaakBesluiten Beschikking: the decision document the case's document step writes, with Document genereren as the card's action.",
 						"content": {
@@ -4507,7 +4580,8 @@
 						"gridY": 0,
 						"gridWidth": 6,
 						"gridHeight": 4,
-						"showTitle": true
+						"showTitle": true,
+						"sizeToContent": true
 					},
 					{
 						"id": "6",
@@ -4516,7 +4590,8 @@
 						"gridY": 0,
 						"gridWidth": 6,
 						"gridHeight": 4,
-						"showTitle": true
+						"showTitle": true,
+						"sizeToContent": true
 					},
 					{
 						"id": "10",
@@ -5481,7 +5556,7 @@
 						"type": "facts",
 						"title": "Data",
 						"titleTone": "side",
-						"tabs": ["statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "history"],
+						"tabs": ["overview", "statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "history"],
 						"content": {
 							"fields": [
 								{
@@ -5549,7 +5624,7 @@
 						"id": "side-case-type-check",
 						"type": "record-list",
 						"title": "Check",
-						"_note": "DqZaaktypeOverzicht Controle, beside the Overview tab only (`tabs`): the warnings publishing would give for this case type (GET /api/case-types/{id}/publish/validate answers warnings as plain strings), as one warning notice. The side cards per tab follow the boards: Overview Versions and Check, Phases and tasks Versions, Data and History, Fields the parent type.",
+						"_note": "DqZaaktypeOverzicht Controle, beside the Overview tab only (`tabs`): the warnings publishing would give for this case type (GET /api/case-types/{id}/publish/validate answers warnings as plain strings), as one warning notice. The side cards per tab follow the boards: Overview Versions, Data and Check, Phases and tasks Versions, Data and History, Fields the parent type.",
 						"tabs": ["overview"],
 						"content": {
 							"endpointSource": {
@@ -5662,8 +5737,8 @@
 										"case-type-statuses",
 										"case-type-rules-summary",
 										"case-type-rights",
-										"case-type-privacy",
-										"case-type-translations"
+										"case-type-privacy-summary",
+										"case-type-translations-summary"
 									],
 									"layout": [
 										{
@@ -5679,11 +5754,11 @@
 											"gridWidth": 12
 										},
 										{
-											"widgetId": "case-type-privacy",
+											"widgetId": "case-type-privacy-summary",
 											"gridWidth": 6
 										},
 										{
-											"widgetId": "case-type-translations",
+											"widgetId": "case-type-translations-summary",
 											"gridWidth": 6
 										}
 									]
@@ -5908,8 +5983,8 @@
 					{
 						"id": "case-type-field-rules",
 						"type": "field-list",
-						"title": "Who sees and fills what",
-						"description": "Hidden or read only, per group and status",
+						"title": "Who sees and fills what, per group and status",
+						"subtitle": "Hidden or read only, per group and status",
 						"_note": "DqZaaktypeVelden: the case type's field rights (fieldRoleRules), read only here; OpenRegister enforces them on every read path.",
 						"content": {
 							"field": "fieldRoleRules",
@@ -5946,6 +6021,62 @@
 						"type": "audit-trail",
 						"title": "Record history",
 						"icon": "History"
+					},
+					{
+						"id": "case-type-privacy-summary",
+						"type": "facts",
+						"title": "Privacy",
+						"_note": "DqZaaktypeOverzicht Privacy: the AVG facts the board draws on the Overview tab and the line that the cases count in the register of processing activities. The editable personal data card stays on the Privacy tab.",
+						"content": {
+							"fields": [
+								{
+									"label": "Purpose",
+									"path": "purpose"
+								},
+								{
+									"label": "Basis",
+									"path": "legalBasis"
+								},
+								{
+									"label": "Categories",
+									"parts": [
+										{
+											"path": "personalDataCategories",
+											"format": "list"
+										}
+									]
+								},
+								{
+									"label": "Retention period",
+									"parts": [
+										{
+											"path": "lawfulPurposeRetention"
+										},
+										{
+											"text": "months"
+										}
+									],
+									"separator": " "
+								},
+								{
+									"as": "line",
+									"text": "Counts in the register of processing activities."
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-translations-summary",
+						"type": "CaseTypeTranslationsWidget",
+						"title": "Translations",
+						"_note": "DqZaaktypeOverzicht Vertalingen: one row per language with its labels and a pill, fully translated or the number missing. The editor stays on the Translations tab, which Edit opens.",
+						"headerLink": {
+							"label": "Edit",
+							"tab": "translations"
+						},
+						"content": {
+							"mode": "summary"
+						}
 					},
 					{
 						"id": "case-type-phase-board",
@@ -6251,6 +6382,20 @@
 			},
 			"configPatch": {
 				"widgets": {
+					"case-type-privacy": {
+						"title": "Privacy",
+						"content": {
+							"title": "Privacy",
+							"columns": 2,
+							"include": [
+								"processesPersonalData",
+								"personalDataCategories",
+								"legalBasis",
+								"verwerkingsactiviteit"
+							],
+							"hideEmpty": false
+						}
+					},
 					"case-type-blueprint": {
 						"type": "CaseTypeBlueprintWidget"
 					},
@@ -6271,6 +6416,9 @@
 					},
 					"case-type-rules": {
 						"type": "CaseTypeRulesWidget"
+					},
+					"case-type-fields-editor": {
+						"subtitle": "The data schema of this case type."
 					}
 				}
 			}
