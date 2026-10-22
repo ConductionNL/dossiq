@@ -387,7 +387,7 @@ describe('the tabs', () => {
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
-		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Custody', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
+		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
 		// Proposals is not a fixed overflow tab: it shows while proposals wait
 		// (feat/case-proposals-tab), checked in caseProposalsTabInStrip.spec.js.
 		expect(strip.tabs.find((tab) => tab.label === 'Proposals').visibleWhen.appInstalled).toBe('portaliq')
