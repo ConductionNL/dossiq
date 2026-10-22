@@ -7840,7 +7840,7 @@
 									},
 									"colorMap": {
 										"overdue": "error",
-										"critical": "error",
+										"critical": "warning",
 										"warning": "warning",
 										"ok": "success"
 									}
@@ -7901,7 +7901,7 @@
 									},
 									"colorMap": {
 										"overdue": "error",
-										"critical": "error",
+										"critical": "warning",
 										"warning": "warning",
 										"ok": "success"
 									}
