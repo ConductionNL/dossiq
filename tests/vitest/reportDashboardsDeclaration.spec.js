@@ -131,6 +131,13 @@ describe('process mining', () => {
 		}
 	})
 
+	it('draws Days per phase with the board\'s 240px case-type column', () => {
+		// DqProcesanalyse: the case types in a 240px column, the phases sharing the rest.
+		const matrix = widget('ProcessMiningDashboard', 'pm-phase-days')
+		expect(matrix.content.chartKind).toBe('matrix')
+		expect(matrix.content.matrixLabelWidth).toBe(240)
+	})
+
 	it('keeps the by-handler table on the page and on the grid, with its hint', () => {
 		const w = widget('ProcessMiningDashboard', 'pm-dwell-by-assignee')
 		expect(w.type).toBe('object-table')
