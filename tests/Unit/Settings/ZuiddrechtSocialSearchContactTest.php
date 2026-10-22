@@ -72,7 +72,8 @@ class ZuiddrechtSocialSearchContactTest extends TestCase {
 
 	/**
 	 * DqZoekresultaten: a public saved search for "Lindelaan" on the search page with the count alert at 12,
- * telling its owner, the one recipient a saver may name without being an administrator.
+ * telling its owner, the one recipient a saver may name without being an administrator. Pieter owns it: the
+	 * board's reader turns its alert on and off, and only the owner may.
 	 *
 	 * @return void
 	 */
@@ -86,7 +87,7 @@ class ZuiddrechtSocialSearchContactTest extends TestCase {
 		$this->assertSame(expected: 'gte', actual: $view['alert']['operator']);
 		$this->assertSame(expected: 12, actual: $view['alert']['threshold']);
 		$this->assertTrue(condition: $view['isPublic']);
-		$this->assertStringStartsWith(prefix: '{{cast:', string: $view['owner']);
+		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $view['owner']);
 		$this->assertSame(expected: ['user:'.$view['owner']], actual: $view['alert']['recipients']);
 	}//end testTheSavedSearchHasItsAlert()
 

@@ -2309,7 +2309,7 @@
 			"data": {
 				"name": "Lindelaan",
 				"description": "Alles over de Lindelaan: zaken, objecten en documenten.",
-				"owner": "{{cast:thomas.uid}}",
+				"owner": "{{cast:pieter.uid}}",
 				"isPublic": true,
 				"query": {
 					"filters": {},
@@ -2321,7 +2321,7 @@
 					"operator": "gte",
 					"threshold": 12,
 					"recipients": [
-						"user:{{cast:thomas.uid}}"
+						"user:{{cast:pieter.uid}}"
 					]
 				}
 			}
