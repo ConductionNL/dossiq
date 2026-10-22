@@ -4360,6 +4360,7 @@
 						"id": "case-advice-requests",
 						"type": "object-list",
 						"title": "Advice on the case",
+						"subtitle": "Internal and external advice on this case",
 						"icon": "CommentQuestionOutline",
 						"_note": "DqZaakBesluiten Adviezen: the internal and external advice requested on this case; Toevoegen asks a new one with the case filled in.",
 						"content": {

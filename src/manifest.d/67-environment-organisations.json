@@ -411,6 +411,7 @@
 						"id": "organisation-mandates",
 						"type": "object-list",
 						"title": "Mandates",
+						"subtitle": "Per organisation; dossiq checks them at every decision",
 						"content": {
 							"register": "dossiq",
 							"schema": "tenantMandate",
