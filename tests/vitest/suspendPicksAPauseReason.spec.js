@@ -135,6 +135,9 @@ describe('suspending from the lifecycle menu', () => {
 			context: { pauseReasons: REASONS },
 			columns: 2,
 			markRequired: false,
+			// Board DqVolgendeStap marks the inputs that are NOT required:
+			// "Dagen die de aanvrager krijgt (niet verplicht)".
+			markOptional: true,
 			'data-testid': 'case-act-fields-suspend',
 		})
 	})
