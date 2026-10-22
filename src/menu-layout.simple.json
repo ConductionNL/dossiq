@@ -5063,6 +5063,7 @@
 						"id": "side-case-type-facts",
 						"type": "facts",
 						"title": "Data",
+						"titleTone": "side",
 						"tabs": ["statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "history"],
 						"content": {
 							"fields": [
@@ -5146,6 +5147,43 @@
 						}
 					},
 					{
+						"id": "side-case-type-choice-list",
+						"type": "field-list",
+						"title": "Choice list: {name}",
+						"_note": "DqZaaktypeVelden Keuzelijst: the options of the field selected in the Fields table, or of its first field with a choice list (nextcloud-vue side-card-follows-row). The options live on that field's own propertyDefinition record, so the card follows the table's selected row and saves to it.",
+						"tabs": ["fields"],
+						"follows": {
+							"widget": "case-type-fields-editor",
+							"register": "dossiq",
+							"schema": "propertyDefinition",
+							"when": {
+								"field": "enumValues",
+								"op": "notEmpty"
+							}
+						},
+						"content": {
+							"field": "enumValues",
+							"add": {
+								"label": "Add option",
+								"trigger": "button",
+								"placement": "footer",
+								"scalar": true,
+								"unique": true,
+								"fields": [
+									{
+										"key": "value",
+										"label": "Option",
+										"required": true
+									}
+								]
+							},
+							"remove": {
+								"label": "Remove"
+							},
+							"emptyText": "This field has no options yet"
+						}
+					},
+					{
 						"id": "side-case-type-parent",
 						"type": "facts",
 						"title": "Parent type",
@@ -5167,8 +5205,15 @@
 					{
 						"id": "side-case-type-history",
 						"type": "audit-trail",
-						"title": "History",
-						"tabs": ["phases"]
+						"title": "Record history",
+						"tabs": ["phases"],
+						"headerLink": {
+							"label": "All history",
+							"tab": "history"
+						},
+						"content": {
+							"excludeActions": ["read"]
+						}
 					}
 				],
 				"layout": [
@@ -5233,6 +5278,7 @@
 										"case-type-fields-editor",
 										"case-type-field-rules",
 										"case-type-core",
+										"case-type-terms",
 										"case-type-list-layout"
 									],
 									"countFrom": {
@@ -5332,6 +5378,16 @@
 						"id": "case-type-rules-summary",
 						"type": "record-list",
 						"title": "Rules",
+						"headerActions": [
+							{
+								"label": "Add a rule",
+								"icon": "Plus",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#rules"
+								}
+							}
+						],
 						"_note": "DqZaaktypeOverzicht Regels: the rules OpenRegister holds for the case schema (GET /apps/openregister/api/schemas/case/rules, the inventory the Fields tab's rules widget reads), one row each with whether it is on. The rules belong to the case schema, not to one case type, which is why every case type lists the same ones. Adding a rule happens on OpenRegister's schema page, so there is no Add here.",
 						"content": {
 							"endpointSource": {
@@ -5360,6 +5416,16 @@
 						"id": "case-type-statuses",
 						"type": "record-list",
 						"title": "Statuses",
+						"headerActions": [
+							{
+								"label": "Edit",
+								"icon": "Pencil",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#statuses"
+								}
+							}
+						],
 						"content": {
 							"register": "dossiq",
 							"schema": "statusType",
@@ -5732,6 +5798,16 @@
 						"id": "case-type-terms-written",
 						"type": "facts",
 						"title": "Terms",
+						"headerActions": [
+							{
+								"label": "Edit",
+								"icon": "Pencil",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#fields"
+								}
+							}
+						],
 						"_note": "DqZaaktype Termijnen (case-type-page-follows-its-boards, REQ-CTB-4): the terms as sentences from GET /api/case-types/{id}/terms, because the stored values are ISO durations and flags a facts card would show as P56D. The raw fields stay editable through the page's Edit dialog.",
 						"content": {
 							"source": {
