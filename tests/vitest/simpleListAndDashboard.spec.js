@@ -325,6 +325,8 @@ describe('the cases list', () => {
 			showMassCopy,
 			showMassDelete,
 			_massCopyDeleteNote,
+			cardLayout,
+			_cardLayoutNote,
 			headerFilters,
 			searchPlaceholder,
 			...others
