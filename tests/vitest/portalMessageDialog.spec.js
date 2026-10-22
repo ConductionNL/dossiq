@@ -261,4 +261,47 @@ describe('Reply on a resident message in the timeline', () => {
 		expect(reply.doneEvent).toBe('sent')
 		expect(reply.closesFollowUp).toBe(true)
 	})
+
+	it('also logs the answer as a contact moment on the case when asked to', async () => {
+		mockPost.mockImplementation(async (url) => (url.endsWith('/contact-moments') ? { data: { contactmoment: { id: 'cm-1' } } } : { data: { id: 'msg-9' } }))
+		const wrapper = mountDialog({ logContactMoment: true })
+		await flushPromises()
+
+		wrapper.vm.form.content = 'We sent the documents.'
+		await wrapper.vm.send()
+		await flushPromises()
+
+		expect(mockPost).toHaveBeenCalledTimes(2)
+		const [url, moment] = mockPost.mock.calls[1]
+		expect(url).toContain('/pipelinq/contact-moments')
+		expect(moment).toMatchObject({ notificationChannel: 'webformulier', direction: 'outbound', summary: 'We sent the documents.', visibleToApplicant: true })
+		expect(typeof moment.startTime).toBe('string')
+		expect(wrapper.emitted('close')).toBeTruthy()
+	})
+
+	it('logs nothing without the option', async () => {
+		const wrapper = mountDialog()
+		await flushPromises()
+		wrapper.vm.form.content = 'Hello'
+		await wrapper.vm.send()
+		await flushPromises()
+		expect(mockPost).toHaveBeenCalledTimes(1)
+	})
+
+	it('says so when the message went but the contact moment did not, and stays open', async () => {
+		mockPost.mockImplementation(async (url) => {
+			if (url.endsWith('/contact-moments')) {
+				throw new Error('500')
+			}
+			return { data: { id: 'msg-9' } }
+		})
+		const wrapper = mountDialog({ logContactMoment: true })
+		await flushPromises()
+		wrapper.vm.form.content = 'Hello'
+		await wrapper.vm.send()
+		await flushPromises()
+		expect(wrapper.emitted('sent')[0][0]).toEqual({ id: 'msg-9' })
+		expect(wrapper.emitted('close')).toBeFalsy()
+		expect(wrapper.vm.error).toBe('The message was sent, but it could not be logged as a contact moment.')
+	})
 })

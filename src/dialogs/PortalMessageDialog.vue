@@ -52,6 +52,7 @@ import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import { logContactMoment } from '../services/pipelinqCaseApi.js'
 import {
 	NcButton,
 	NcDialog,
@@ -100,6 +101,8 @@ export default {
 		subject: { type: String, default: '' },
 		/** A reply already written elsewhere (the case's conversation thread), to start the message with. */
 		text: { type: String, default: '' },
+		/** Also log the message as an outgoing contact moment on the case (the conversation's reply switch). */
+		logContactMoment: { type: Boolean, default: false },
 	},
 
 	emits: ['close', 'sent'],
@@ -184,6 +187,29 @@ export default {
 		},
 
 		/**
+		 * Log a sent message as an outgoing contact moment on the case,
+		 * visible to the applicant, through the case's own contact route.
+		 *
+		 * @param {object} message The message as it was sent.
+		 * @return {Promise<boolean>} Whether it was logged.
+		 * @spec openspec/changes/reply-logs-a-contact-moment/specs/portal-contribution/spec.md#requirement-an-answer-to-the-resident-can-be-logged-as-a-contact-moment
+		 */
+		async logAsContactMoment(message) {
+			try {
+				await logContactMoment(this.resolvedCaseId, {
+					notificationChannel: 'webformulier',
+					direction: 'outbound',
+					startTime: message.sentAt,
+					summary: message.content,
+					visibleToApplicant: true,
+				})
+				return true
+			} catch {
+				return false
+			}
+		},
+
+		/**
 		 * Write the message to the applicant's inbox.
 		 *
 		 * @return {Promise<void>}
@@ -225,6 +251,13 @@ export default {
 					payload,
 				)
 				this.$emit('sent', data)
+				if (this.logContactMoment === true && await this.logAsContactMoment(payload) === false) {
+					this.error = t(
+						'dossiq',
+						'The message was sent, but it could not be logged as a contact moment.',
+					)
+					return
+				}
 				this.$emit('close')
 			} catch {
 				this.error = t(
