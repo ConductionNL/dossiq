@@ -1899,6 +1899,8 @@
 			"config": {
 				"quickFilterPlacementByView": { "board": "toolbar", "map": "toolbar" },
 				"allowExport": true,
+				"searchPlaceholder": "Search by case, number or requester",
+				"searchPlaceholderByView": { "board": "Search by case or requester", "map": "Filter by case or applicant" },
 				"showUnreadRows": true,
 				"_showUnreadRowsNote": "unread-state-on-the-case, task 1.1. An unread row reads in bold with the library's unread marker (CnDataTable, from `@self.unread`, which OpenRegister attaches per reader on the render path). The board look marks unread rows only on a page that asks, and this page asks: its Unread chip (`_unread`, resolved inside the query) is one of its own quick filters, so it does not use `personalLenses`. An absent flag reads as read, because `@self.unread` is omitted for an anonymous read.",
 				"rowIndicators": [
