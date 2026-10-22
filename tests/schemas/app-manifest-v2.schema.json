@@ -5460,6 +5460,11 @@
 							"minLength": 1,
 							"description": "type='index', board look: the 13px hint after the bulk band's buttons (screens-index-list-parity). Maps to CnIndexPage `bulkHint`."
 						},
+						"bulkNoun": {
+							"type": "string",
+							"minLength": 1,
+							"description": "type='index', board look: the plural the bulk band names (\"With the selected cases\"), an i18n key, lower-cased after translation. Wins over the schema's plural; without either the band says \"items\". Maps to CnIndexPage `bulkNoun`."
+						},
 						"cardFields": {
 							"type": "array",
 							"description": "type='index': the property keys the cards view shows as the facts list of each card, in order; defaults to the first four list columns under the board look (screens-card-parity). Maps to CnIndexPage `cardFields`.",

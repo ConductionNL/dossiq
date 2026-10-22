@@ -314,6 +314,7 @@ describe('the cases list', () => {
 			defaultOrder,
 			footerNote,
 			bulkHint,
+			bulkNoun,
 			headerButtons,
 			headerActions,
 			mapConfig,
