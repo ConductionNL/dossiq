@@ -9495,6 +9495,8 @@
         "Type: {type}": "Type: {type}",
         "Typed peer relations to other cases, JSON-encoded array of objects {caseId (uuid, required), aardRelatie (enum: vervolg|onderwerp|bijdrage, required), toelichting (string, optional)} per RGBZ/ZRC relevanteAndereZaken. Written symmetrically by CaseRelationService; do not edit directly.": "Typed peer relations to other cases, JSON-encoded array of objects {caseId (uuid, required), aardRelatie (enum: vervolg|onderwerp|bijdrage, required), toelichting (string, optional)} per RGBZ/ZRC relevanteAndereZaken. Written symmetrically by CaseRelationService; do not edit directly.",
         "Typed per the RGBZ, kept in both directions": "Typed per the RGBZ, kept in both directions",
+        "Everyone involved in this case, by role": "Everyone involved in this case, by role",
+        "From OpenRegister's party model, also for those without an account": "From OpenRegister's party model, also for those without an account",
         "UID": "UID",
         "UID of the advisor who submitted the response": "UID of the advisor who submitted the response",
         "UID of the assessor when approved": "UID of the assessor when approved",
