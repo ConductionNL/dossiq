@@ -4951,6 +4951,10 @@
 												"minimum": 0,
 												"description": "Same as config.quickFilterMaxVisible."
 											},
+											"bulkBandAlways": {
+												"type": "boolean",
+												"description": "Same as config.bulkBandAlways: `false` draws the bulk band only once rows are selected while the view is active (DqTeamwachtrij, DqAanMijToegewezen)."
+											},
 											"sidePanel": {
 												"type": "array",
 												"description": "Same as config.sidePanel."

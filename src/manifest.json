@@ -1989,6 +1989,7 @@
 				},
 				"allowSavedViews": true,
 				"_wooSavedViewNote": "Woo requests are a view of the case list, not a page of their own (Ruben, 19 October 2026): the default view `woo-requests` is the Woo case type with the same working-list rule as the Woo chip, and a link to the Woo list is `/cases?savedView=default:woo-requests`.",
+				"_teamQueueChipsNote": "DqTeamwachtrij (view `team-queue`): its chips are the case types in the queue (`quickFiltersFrom`), not this list's lenses. Its `quickFilters: []` sets the lenses aside while the view is active (nextcloud-vue: an empty quickFilters gives way to quickFiltersFrom); status, handler and the rest stay in the Filter panel. Its `bulkBandAlways: false` draws the bulk band only once rows are selected, as the board shows the queue with nothing selected.",
 				"_defaultSavedViewsNote": "saved-views-manage-and-defaults: views dossiq ships for every user, read-only, listed under Default views above the user's own saved views. A user applies one, or saves a copy to edit and share. They combine conditions the quick-filter chips offer one at a time (Mine and Overdue), so they add a lens instead of repeating a chip. The conditions are the chips' own: the same flat `deadline[lt]` / `deadline[gte]` keys with `@today` tokens, the same working-list rule `statusHiddenInLists: false`.",
 				"defaultSavedViews": [
 					{ "slug": "mine-overdue", "name": "Mine, overdue", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
@@ -2199,6 +2200,8 @@
 							],
 							"quickFilterPlacement": "toolbar",
 							"quickFilterMaxVisible": 4,
+							"quickFilters": [],
+							"bulkBandAlways": false,
 							"quickFiltersFrom": {
 								"field": "caseType",
 								"register": "dossiq",
