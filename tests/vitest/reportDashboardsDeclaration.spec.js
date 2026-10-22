@@ -176,10 +176,17 @@ describe('deadline reports', () => {
 		}
 	})
 
+	it('downloads the quarterly report from its card header, as the board does', () => {
+		const card = widget('TermijnDashboard', 'deadline-report-quarterly-card')
+		expect(card.headerActions[0]).toMatchObject({ label: 'Download quarterly report', action: { type: 'export', exportId: 'deadline-report-quarterly' } })
+		expect(widget('TermijnDashboard', 'deadline-report-quarterly').content.exportId).toBe('deadline-report-quarterly')
+	})
+
 	it('lists the forfeited payments by case, with the year\'s total above them', () => {
 		const list = widget('TermijnDashboard', 'deadline-report-annual-payments-list')
 		expect(list.content.endpointSource).toMatchObject({ url: '/apps/dossiq/api/deadlines/reports/penalty-payments', params: { year: '@workspace.year' }, responsePath: 'rows' })
 		expect(list.content.columns.map((c) => c.key)).toEqual(['caseIdentifier', 'caseTypeTitle', 'requester', 'forfeitDate', 'amountEuros', 'paymentStatus'])
+		expect(list.content).toMatchObject({ rowRoute: 'CaseDetail', rowIdField: 'caseId' })
 		const summary = widget('TermijnDashboard', 'deadline-report-annual-summary')
 		expect(summary.content.endpointSource.responsePath).toBe('summaryRows')
 		expect(summary.content.title).toContain('{totalEuros|currency:EUR}')

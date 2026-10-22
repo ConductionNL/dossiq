@@ -30,6 +30,7 @@ import { contentTemplateOption } from './templatePicker.js'
  * - `reasonWidget` is the reason's field: one line beside the days, else a text area.
  * - `summary` and `notice` show the case and what the act makes of it.
  * - `reasonNote` replaces the line under the reason.
+ * - `notifyRequester` adds a ticked checkbox that tells the requester afterwards.
  * - `title` names the dialog while the act is open; `confirmIcon` sits on its confirm button.
  *
  * @return {object} The layouts by act id.
@@ -46,6 +47,7 @@ function actLayouts() {
 			title: t('dossiq', 'Archive this case'),
 			confirmIcon: ArchiveOutline,
 			reasonNote: t('dossiq', 'Goes into the history of the case. To bring it back, use Restore from the archive under Next step.'),
+			notifyRequester: true,
 			summary: {
 				when: 'kase',
 				testid: 'case-act-archive',
@@ -82,10 +84,11 @@ function actLayouts() {
  * @param {object} [scope] What scopes the result templates.
  * @param {string} [scope.caseType] The case type.
  * @param {string} [scope.caseId] The case id.
+ * @param {string} [scope.requester] The requester's name, for the notify checkbox.
  * @return {{inputs: Array<object>, columns: number, summary: object|null, notice: object|null, title: string, confirmIcon: object|null}} The form.
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
-export function actForm(entry, { caseType = '', caseId = '' } = {}) {
+export function actForm(entry, { caseType = '', caseId = '', requester = '' } = {}) {
 	if (!entry) {
 		return { inputs: [], columns: 1, summary: null, notice: null, title: '', confirmIcon: null }
 	}
@@ -170,6 +173,19 @@ export function actForm(entry, { caseType = '', caseId = '' } = {}) {
 				testid: 'case-act-comes-back',
 			},
 			testid: 'case-act-days-input',
+		})
+	}
+
+	if (layout.notifyRequester) {
+		inputs.push({
+			field: 'notifyRequester',
+			widget: 'checkbox',
+			default: true,
+			required: false,
+			label: requester === ''
+				? t('dossiq', 'Let the requester know the case is completed')
+				: t('dossiq', 'Let {initiatorDisplayName} know the case is completed', { initiatorDisplayName: requester }),
+			testid: 'case-act-notify-requester',
 		})
 	}
 

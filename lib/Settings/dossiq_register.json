@@ -11150,7 +11150,7 @@
             "tenantBillingEvent": {
                 "slug": "tenantBillingEvent",
                 "icon": "CashRegister",
-                "version": "1.0.1",
+                "version": "1.1.0",
                 "searchable": false,
                 "x-insert-only": true,
                 "title": "Tenant Billing Event",
@@ -11178,7 +11178,8 @@
                             "storage_increment",
                             "api_burst",
                             "quota_exceeded",
-                            "case_refund"
+                            "case_refund",
+                            "subscription_fee"
                         ],
                         "description": "Type of billable event",
                         "title": "Event Type"
