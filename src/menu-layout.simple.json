@@ -6283,13 +6283,6 @@
 						"type": "grouped-cards",
 						"title": "Phases and tasks",
 						"subtitle": "Every task has its own role, term and form. Running cases keep their version.",
-						"headerLink": {
-							"label": "View as flow",
-							"route": "CaseTypeFlow",
-							"params": {
-								"id": "@objectId"
-							}
-						},
 						"_note": "DqZaaktype Fasen en taken: the case type's statuses as phases, each with the tasks its active workflow runs, and the acts available in every phase, from GET /api/case-types/{id}/phases (the steps are a JSON string no declarative widget can group).",
 						"content": {
 							"endpointSource": {
@@ -6313,13 +6306,22 @@
 								"path": "alwaysAvailable",
 								"itemText": "{label}"
 							},
-							"groupAction": {
-								"id": "case-type-phase-add-task",
-								"type": "navigate",
-								"label": "Add a task",
-								"icon": "Plus",
-								"target": "/settings/case-types/@group.caseTypeId/flow"
-							},
+							"actions": [
+								{
+									"id": "case-type-phases-view-as-flow",
+									"type": "navigate",
+									"label": "View as flow",
+									"icon": "Sync",
+									"target": "/settings/case-types/@objectId/flow"
+								},
+								{
+									"id": "case-type-phase-add-task",
+									"type": "navigate",
+									"label": "Add a task",
+									"icon": "Plus",
+									"target": "/settings/case-types/@objectId/flow"
+								}
+							],
 							"emptyText": "This case type has no phases yet",
 							"groupEmptyText": "No tasks in this phase"
 						}
