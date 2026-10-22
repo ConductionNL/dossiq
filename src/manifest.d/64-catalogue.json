@@ -49,7 +49,11 @@
 							"expandedByDefault": true,
 							"showIcons": false,
 							"items": [
-								{ "label": "Case types", "url": "/index.php/apps/dossiq/settings/case-types" },
+								{
+									"label": "Case types",
+									"url": "/index.php/apps/dossiq/settings/case-types",
+									"childrenFrom": { "register": "dossiq", "schema": "caseType", "field": "category", "url": "/index.php/apps/dossiq/settings/case-types?category={value}" }
+								},
 								{ "label": "Attributes", "url": "/index.php/apps/dossiq/settings/attributes" },
 								{ "label": "Templates", "url": "/index.php/apps/dossiq/settings/workflow-definitions" },
 								{ "label": "Object types", "url": "/index.php/apps/dossiq/settings/catalogue" }
