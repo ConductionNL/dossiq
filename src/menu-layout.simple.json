@@ -2492,7 +2492,8 @@
 									"key": "direction",
 									"label": "Direction",
 									"enum": ["inbound", "outbound"],
-									"enumLabels": { "inbound": "Incoming", "outbound": "Outgoing" }
+									"enumLabels": { "inbound": "Incoming", "outbound": "Outgoing" },
+									"colorMap": { "inbound": "default", "outbound": "info" }
 								},
 								{
 									"key": "summary",
