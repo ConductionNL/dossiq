@@ -40,8 +40,9 @@ describe('the end-of-day page', () => {
 
 	it('reads every list from the server\'s day, so Recorded today survives a reload', () => {
 		const lists = page.config.widgets.filter((item) => item.type === 'record-list')
-		expect(lists.map((item) => item.content.endpointSource.url)).toEqual([DAY, DAY, DAY, DAY])
-		expect(lists.map((item) => item.content.endpointSource.responsePath)).toEqual(['open', 'recorded', 'figures', 'tomorrow'])
+		expect(lists.map((item) => item.content.endpointSource.url)).toEqual([DAY, DAY, DAY])
+		expect(lists.map((item) => item.content.endpointSource.responsePath)).toEqual(['open', 'recorded', 'tomorrow'])
+		expect(widget('eod-figures').content.endpointSource).toEqual({ url: DAY })
 	})
 
 	it('records each note on the row\'s own notes endpoint', () => {
@@ -81,21 +82,21 @@ describe('the end-of-day page', () => {
 		expect(widget('eod-open').content.emptyTexts[0].when).toEqual({ endpoint: DAY, field: 'opened', op: 'eq', value: 0 })
 		expect(widget('eod-tomorrow').visibleWhen).toEqual({ endpoint: DAY, field: 'tomorrow', op: 'notEmpty' })
 	})
-	it('shows the hours booked today from humaniq, and nothing at all without humaniq', () => {
-		// DqDagAfsluiten "Uren 2,75, nu al in humaniq": humaniq's own day
-		// summary of the reader's entries, read through its endpoint.
+	it('draws Your day as the board\'s grid of figures, Hours from humaniq among them and gone without it', () => {
+		// DqDagAfsluiten "Uw dag": Geopend, Vastgelegd and Uren, two to a row,
+		// in one card. Uren reads humaniq's day summary of the reader's own
+		// entries; dossiq keeps no hours (ADR-011).
 		const SUMMARY = '/apps/humaniq/api/time-entries/summary'
-		const hours = widget('eod-hours')
-		expect(hours.type).toBe('stat')
-		expect(hours.content.endpointSource).toEqual({ url: SUMMARY })
-		expect(hours.content.valueField).toBe('hours')
-		expect(hours.content.format).toEqual({ style: 'decimal', decimals: 2 })
-		expect(hours.content.caption).toBe('already in humaniq')
-		// Hidden, not an install prompt, when humaniq is absent or too old to answer.
+		const figures = widget('eod-figures')
+		expect(figures.type).toBe('stat-grid')
+		expect(figures.content.columns).toBe(2)
+		const [opened, recorded, hours] = figures.content.cells
+		expect(opened).toMatchObject({ label: 'Opened', valueField: 'figures.0.value', caption: '{figures.0.note}' })
+		expect(recorded).toMatchObject({ label: 'Notes recorded', valueField: 'figures.1.value', caption: '{figures.1.note}' })
+		expect(hours).toMatchObject({ label: 'Hours', valueField: 'hours', caption: 'already in humaniq', endpointSource: { url: SUMMARY } })
+		expect(hours.format).toEqual({ style: 'decimal', decimals: 2 })
 		expect(hours.visibleWhen).toEqual({ appInstalled: 'humaniq', endpoint: SUMMARY, field: 'hours', op: 'gte', value: 0 })
-		expect(hours.requiresApp).toBeUndefined()
-		const figures = page.config.layout.find((cell) => cell.widgetId === 'eod-figures')
-		const cell = page.config.layout.find((entry) => entry.widgetId === 'eod-hours')
-		expect(cell).toMatchObject({ gridX: figures.gridX, gridWidth: figures.gridWidth, gridY: figures.gridY + figures.gridHeight })
+		expect(widget('eod-hours')).toBeUndefined()
+		expect(page.config.layout.some((cell) => cell.widgetId === 'eod-hours')).toBe(false)
 	})
 })
