@@ -408,7 +408,8 @@
 				"nature": "new_request",
 				"summary": "Meneer Bakker wil een bewonersvergunning voor het Kerkplein. Hij heeft geen computer. Kenteken en adres samen doorgenomen en de aanvraag voor hem ingevoerd. Hij krijgt het besluit per post.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-henk.id}}"
 			}
 		},
 		{
@@ -428,7 +429,8 @@
 				"nature": "informatieverzoek",
 				"summary": "Meneer Bakker teruggebeld: het kenteken in de aanvraag klopte niet met het kentekenbewijs. Hij brengt het bewijs langs bij de balie.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-henk.id}}"
 			}
 		},
 		{
@@ -448,7 +450,8 @@
 				"nature": "new_request",
 				"summary": "Meneer Bakker kwam met zijn kentekenbewijs aan de balie. Kenteken gecorrigeerd en een kopie van het bewijs bij de zaak gevoegd.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-henk.id}}"
 			}
 		},
 		{
@@ -468,7 +471,8 @@
 				"nature": "statusverzoek",
 				"summary": "Meneer Bakker vroeg wanneer de vergunning komt. Het besluit is gisteren per post verstuurd; hij heeft het binnen twee dagen.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-henk.id}}"
 			}
 		},
 		{
@@ -624,7 +628,8 @@
 				"nature": "report",
 				"summary": "Melding van een kapotte bank en zwerfafval bij de speeltuin. Mevrouw vindt het formulier op de website lastig. Afspraak aan de balie gemaakt om de melding samen aan te vullen.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-fatima.id}}"
 			}
 		},
 		{
