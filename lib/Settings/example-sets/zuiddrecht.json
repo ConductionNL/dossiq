@@ -262,6 +262,29 @@
 			}
 		},
 		{
+			"key": "persoon-jvanwijk",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:jvanwijk.bsn}}",
+				"name": {
+					"givenNames": "{{cast:jvanwijk.givenName}}",
+					"surname": "{{cast:jvanwijk.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:jvanwijk.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:jvanwijk.address.street}}",
+					"houseNumber": "{{cast:jvanwijk.address.number}}",
+					"postcode": "{{cast:jvanwijk.address.postcode}}",
+					"city": "{{cast:jvanwijk.address.city}}"
+				},
+				"displayName": "{{cast:jvanwijk.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
 			"key": "bedrijf-slagerij",
 			"register": "dossiq",
 			"schema": "kvkCompany",
@@ -327,6 +350,31 @@
 					"place": "{{cast:vanwijk.address.city}}"
 				},
 				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-bewonerslindelaan",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:bewonerslindelaan.kvk}}",
+				"tradeName": "{{cast:bewonerslindelaan.name}}",
+				"legalForm": "{{cast:bewonerslindelaan.legalForm}}",
+				"address": {
+					"streetName": "{{cast:bewonerslindelaan.address.street}}",
+					"houseNumber": "{{cast:bewonerslindelaan.address.number}}",
+					"postcode": "{{cast:bewonerslindelaan.address.postcode}}",
+					"place": "{{cast:bewonerslindelaan.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging.",
+				"indicators": [
+					{
+						"key": "meerdere-meldingen",
+						"label": "Meerdere meldingen",
+						"effect": "warn",
+						"note": "Meldt vaker over de Lindelaan, ook via de balie."
+					}
+				]
 			}
 		},
 		{
