@@ -105,6 +105,13 @@
         "8 weeks": "8 weken",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> van de oudere checklist waaruit dit sjabloon is overgenomen, zodat de overname één keer per bron loopt",
         "> 90 dagen": "> 90 dagen",
+        "From decidiq's decision-making, shown on the case": "Uit de besluitvorming van decidiq, op de zaak getoond",
+        "Internal notes, also visible in the history": "Interne notities, ook zichtbaar in de historie",
+        "Milestones and parts of this case": "Mijlpalen en onderdelen van deze zaak",
+        "Objects you link to cases; you manage their properties here": "Objecten die u aan zaken koppelt; eigenschappen beheert u hier",
+        "Only for those working on the task": "Alleen voor wie aan de taak werkt",
+        "The chosen cell is outlined": "Het gekozen vak is omlijnd",
+        "Who has had this case in hand": "Wie deze zaak in handen heeft gehad",
         "_%n case_::_%n cases_": [
             "%n zaak",
             "%n zaken"
