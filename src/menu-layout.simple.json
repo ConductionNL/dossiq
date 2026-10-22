@@ -2279,6 +2279,10 @@
 						"content": {
 							"height": "260px",
 							"autoFit": true,
+							"zoomControl": false,
+							"fitControl": false,
+							"locateControl": false,
+							"fullscreenControl": false,
 							"ariaLabel": "Locations on this case",
 							"markers": {
 								"dataSource": {
