@@ -121,7 +121,7 @@ class SupersedeDuplicateSeededCaseTypesTest extends TestCase {
 	 * @return SupersedeDuplicateSeededCaseTypes
 	 */
 	private function step(FakeDuplicateCaseTypeObjectService $objects): SupersedeDuplicateSeededCaseTypes {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objects);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => match ($key) {
@@ -133,7 +133,7 @@ class SupersedeDuplicateSeededCaseTypesTest extends TestCase {
 
 		return new SupersedeDuplicateSeededCaseTypes(
 			settingsService: $settings,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end step()
 
@@ -154,9 +154,9 @@ class SupersedeDuplicateSeededCaseTypesTest extends TestCase {
 			$this->row(id: 'woo', slug: 'woo-verzoek', created: '2026-10-01T09:00:00+00:00'),
 		];
 
-		$this->step(objects: $objects)->run($this->createMock(IOutput::class));
+		$this->step(objects: $objects)->run($this->createMock(originalClassName: IOutput::class));
 
-		$this->assertSame([['early', ['supersededBy' => 'late']]], $objects->patches);
+		$this->assertSame(expected: [['early', ['supersededBy' => 'late']]], actual: $objects->patches);
 	}//end testTheOlderCopyIsSupersededByTheNewer()
 
 	/**
@@ -179,8 +179,8 @@ class SupersedeDuplicateSeededCaseTypesTest extends TestCase {
 			$this->row(id: 'own2', slug: '', created: '2026-10-03T09:00:00+00:00'),
 		];
 
-		$this->step(objects: $objects)->run($this->createMock(IOutput::class));
+		$this->step(objects: $objects)->run($this->createMock(originalClassName: IOutput::class));
 
-		$this->assertSame([], $objects->patches);
+		$this->assertSame(expected: [], actual: $objects->patches);
 	}//end testVersionsAndSupersededCopiesAreLeftAlone()
 }//end class
