@@ -4192,6 +4192,7 @@ OC.L10N.register(
         "Last Attempt At": "Laatste poging op",
         "Last changed": "Laatst gewijzigd",
         "Last changed on": "Laatst gewijzigd op",
+        "last changed {_lastChange.created|date} by {_lastChange.userName}": "laatst gewijzigd {_lastChange.created|date} door {_lastChange.userName}",
         "Last check: {when}. Messages read: {scanned}. Links made: {linked}.": "Laatste controle: {when}. Berichten gelezen: {scanned}. Koppelingen gemaakt: {linked}.",
         "Last checked": "Laatst gecontroleerd",
         "Last collected note": "Laatst opgehaalde notitie",

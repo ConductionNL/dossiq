@@ -5670,7 +5670,8 @@
 						"true": "warning"
 					}
 				},
-				"headerMeta": "{identifier}",
+				"headerMeta": "last changed {_lastChange.created|date} by {_lastChange.userName}",
+				"headerMetaLastChange": true,
 				"quickActions": [
 					"case-type-export"
 				],
