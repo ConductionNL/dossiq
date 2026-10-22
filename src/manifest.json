@@ -3706,6 +3706,7 @@
 										"title": "Locations",
 										"_note": "The case on a map: the case-location objects that point at this case (`filter: case = @objectId`), drawn by the library map. An empty answer and a failed read say so in words, a point at (0, 0) is not plotted, and saving a location (CaseLocationDialog emits dossiq:case-location:saved with the caseId) reads the markers again.",
 										"content": {
+											"headerSubtitle": { "one": "{total} location", "other": "{total} locations" },
 											"height": "260px",
 											"autoFit": true,
 											"ariaLabel": "Locations on this case",

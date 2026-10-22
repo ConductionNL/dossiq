@@ -11060,6 +11060,8 @@ OC.L10N.register(
         "{total} cases in your name[, {rows:coveredFor} of them as a substitute] · most urgent first": "{total} cases in your name[, {rows:coveredFor} of them as a substitute] · most urgent first",
         "{total} contracts": "{total} contracts",
         "{total} in total": "{total} in total",
+        "{total} location": "{total} location",
+        "{total} locations": "{total} locations",
         "{total} open": "{total} open",
         "{total} open · term one month, extendable by two": "{total} open · term one month, extendable by two",
         "{total} organisations": "{total} organisations",
