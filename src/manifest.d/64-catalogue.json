@@ -77,7 +77,7 @@
 								}
 							}
 						],
-						"description": "Objects you link to cases, by type",
+						"subtitle": "Objects you link to cases, by type",
 						"content": {
 							"endpointSource": {
 								"url": "/apps/dossiq/api/catalogue/object-types",
@@ -99,7 +99,7 @@
 						"id": "catalogue-store",
 						"type": "record-list",
 						"title": "From the Store",
-						"description": "Case types and set-up in and out as a file",
+						"subtitle": "Case types and set-up in and out as a file",
 						"content": {
 							"endpointSource": {
 								"url": "/apps/dossiq/api/store/items",
