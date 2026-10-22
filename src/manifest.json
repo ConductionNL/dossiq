@@ -1804,6 +1804,7 @@
 										"type": "select",
 										"label": "Template",
 										"required": false,
+										"placeholder": "Choose a template (optional)",
 										"options": [
 											{
 												"value": "call-back",

@@ -34,4 +34,11 @@ describe('DqUwWachtrij', () => {
 		expect(nl[subtitle]).toBe('Dit komt in uw eigen agenda en in uw wachtrij. Het is geen zaak.')
 		expect(nlJs).toContain(`"${subtitle}": "Dit komt in uw eigen agenda en in uw wachtrij. Het is geen zaak."`)
 	})
+
+	it('asks for a template as "Sjabloon (niet verplicht)" over "Kies een sjabloon (optioneel)"', () => {
+		const template = queue.config.headerActions[0].props.config.fields.find((field) => field.field === 'template')
+		expect(template).toMatchObject({ type: 'select', label: 'Template', required: false, placeholder: 'Choose a template (optional)' })
+		expect(nl[template.label]).toBe('Sjabloon')
+		expect(nl[template.placeholder]).toBe('Kies een sjabloon (optioneel)')
+	})
 })
