@@ -1773,6 +1773,7 @@ OC.L10N.register(
         "Connections": "Verbindingen",
         "Consent": "Toestemming",
         "Consent Date": "Datum van de toestemming",
+        "Consent on a case": "Toestemming bij een zaak",
         "Consent required inside the organisation": "Toestemming die binnen de organisatie nodig is",
         "Consent runs until": "Toestemming loopt tot",
         "Consent scope": "Reikwijdte van de toestemming",

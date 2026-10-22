@@ -1773,6 +1773,7 @@ OC.L10N.register(
         "Connections": "Connections",
         "Consent": "Consent",
         "Consent Date": "Consent Date",
+        "Consent on a case": "Consent on a case",
         "Consent required inside the organisation": "Consent required inside the organisation",
         "Consent runs until": "Consent runs until",
         "Consent scope": "Consent scope",
