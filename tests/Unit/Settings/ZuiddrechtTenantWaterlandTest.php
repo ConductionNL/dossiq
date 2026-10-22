@@ -62,5 +62,17 @@ class ZuiddrechtTenantWaterlandTest extends TestCase {
 			actual: array_column($records['tenantMandate'], 'terms')
 		);
 		$this->assertSame(expected: ['subscription_fee', 'case_created', 'case_refund'], actual: array_column($records['tenantBillingEvent'], 'eventType'));
+
+		$steps = array_filter($set['tasks'] ?? [], static fn (array $t): bool => ($t['data']['kind'] ?? '') === 'dossiq.onboarding');
+		$this->assertSame(
+			expected: ['contract', 'mandate_import', 'sso_setup', 'branding', 'zaaktype_selection', 'first_user', 'go_live'],
+			actual: array_values(array_map(static fn (array $t): string => $t['data']['taskKey'], $steps))
+		);
+		$done = array_filter($steps, static fn (array $t): bool => $t['data']['state'] === 'completed');
+		$this->assertCount(expectedCount: 5, haystack: $done);
+		foreach ($steps as $step) {
+			$this->assertSame(expected: '{{organisation:waterland}}', actual: $step['data']['objectUuid']);
+			$this->assertSame(expected: '{{organisation:waterland}}', actual: $step['data']['organisation']);
+		}
 	}//end testWaterlandHasItsAdministratorMandatesAndBilling()
 }//end class

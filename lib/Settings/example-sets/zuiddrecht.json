@@ -2084,6 +2084,93 @@
 				"completedAt": "{{datetime:-27 09:30}}",
 				"completedBy": "{{cast:pieter.uid}}"
 			}
+		},
+		{
+			"key": "waterland-inrichten-contract",
+			"data": {
+				"title": "Contract getekend",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "contract",
+				"state": "completed",
+				"completedAt": "{{datetime:-50 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-mandate-import",
+			"data": {
+				"title": "Mandaten ingesteld",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "mandate_import",
+				"state": "completed",
+				"completedAt": "{{datetime:-22 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-sso-setup",
+			"data": {
+				"title": "Inloggen ingericht",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "sso_setup",
+				"state": "available"
+			}
+		},
+		{
+			"key": "waterland-inrichten-branding",
+			"data": {
+				"title": "Huisstijl gekozen",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "branding",
+				"state": "completed",
+				"completedAt": "{{datetime:-40 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-zaaktype-selection",
+			"data": {
+				"title": "Zaaktypen geladen",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "zaaktype_selection",
+				"state": "completed",
+				"completedAt": "{{datetime:-35 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-first-user",
+			"data": {
+				"title": "Beheerder uitgenodigd",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "first_user",
+				"state": "completed",
+				"completedAt": "{{datetime:-48 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-go-live",
+			"data": {
+				"title": "Live gezet",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "go_live",
+				"state": "available"
+			}
 		}
 	],
 	"changes": [

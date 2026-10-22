@@ -77,7 +77,8 @@ class ZuiddrechtPietersWorkTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheTaskListHasEveryPriorityAndState(): void {
-		$tasks = array_column($this->set()['tasks'], 'data', 'key');
+		$caseWork = array_filter($this->set()['tasks'], static fn (array $task): bool => isset($task['data']['kind']) === false);
+		$tasks    = array_column($caseWork, 'data', 'key');
 		$this->assertCount(expectedCount: 6, haystack: $tasks);
 		$this->assertSame(expected: '{{object:bezwaar-parkeerboete-havenstraat.id}}', actual: $tasks['hoorzitting-inplannen']['objectUuid']);
 
