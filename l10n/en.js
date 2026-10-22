@@ -583,6 +583,7 @@ OC.L10N.register(
         "Alderman user ID": "Alderman user ID",
         "Alias of completedAt; populated on submit": "Alias of completedAt; populated on submit",
         "All": "All",
+        "all": "all",
         "All case types": "All case types",
         "All cases": "All cases",
         "All cases active": "All cases active",

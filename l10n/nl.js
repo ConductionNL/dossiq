@@ -583,6 +583,7 @@ OC.L10N.register(
         "Alderman user ID": "Gebruikers-ID wethouder",
         "Alias of completedAt; populated on submit": "Alias van completedAt; wordt bij indienen gevuld",
         "All": "Alles",
+        "all": "alle",
         "All case types": "Alle zaaktypen",
         "All cases": "Alle zaken",
         "All cases active": "Alle zaken actief",

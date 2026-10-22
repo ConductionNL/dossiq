@@ -83,4 +83,38 @@ class ZuiddrechtOwnSavedViewTest extends TestCase {
 		$this->assertSame(expected: [['key' => 'deadline', 'order' => 'asc']], actual: $view['query']['sort']);
 		$this->assertSame(expected: '', actual: $view['query']['search']);
 	}//end testItsConditionsAreTheShippedDefaultViews()
+
+	/**
+	 * Pieter also owns "Wacht op inwoner", the view the DqFilterBeheren, -Bewerken, -Delen and
+	 * -Verwijderen boards open; its conditions are the case list's "Waiting on the applicant" lens.
+	 *
+	 * @return void
+	 */
+	public function testPieterOwnsTheViewTheFilterBoardsOpen(): void {
+		$views = $this->views();
+		$this->assertArrayHasKey(key: 'pieter-wacht-op-inwoner', array: $views);
+
+		$view = $views['pieter-wacht-op-inwoner'];
+		$this->assertSame(expected: 'Wacht op inwoner', actual: $view['name']);
+		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $view['owner']);
+		$this->assertFalse(condition: $view['isPublic']);
+		$this->assertSame(expected: 'dossiq/case', actual: $view['query']['scope']);
+
+		$manifest = json_decode((string)file_get_contents(__DIR__.'/../../../src/manifest.json'), true);
+		$lens     = null;
+		foreach ($manifest['pages'] as $page) {
+			if (($page['id'] ?? '') !== 'Cases') {
+				continue;
+			}
+
+			foreach ($page['config']['quickFilters'] as $quickFilter) {
+				if ($quickFilter['label'] === 'Waiting on the applicant') {
+					$lens = $quickFilter;
+				}
+			}
+		}
+
+		$this->assertNotNull(actual: $lens);
+		$this->assertSame(expected: $lens['filter'], actual: $view['query']['filters']);
+	}//end testPieterOwnsTheViewTheFilterBoardsOpen()
 }//end class
