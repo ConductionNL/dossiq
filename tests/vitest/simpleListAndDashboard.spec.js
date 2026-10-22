@@ -883,9 +883,18 @@ describe('the case type list', () => {
 		// A Dutch reader saw "38 case types": the key was in the manifest and
 		// in no catalogue, so the library drew it as written.
 		const nl = JSON.parse(read('l10n', 'nl.json')).translations
-		expect(nl[list.config.headerMeta]).toBe('{total} zaaktypen')
+		// DqZaaktypen: "14 zaaktypen · 9 meegeleverd, 5 eigen".
+		expect(nl[list.config.headerMeta]).toBe('{total} zaaktypen · {count:shipped} meegeleverd, {count:own} eigen')
 		// DqZaaktypen draws the field as "Zoek een zaaktype".
 		expect(nl[list.config.searchPlaceholder]).toBe('Zoek een zaaktype')
+	})
+
+	it('counts the shipped and the own case types, current versions only, for the header line', () => {
+		const current = { supersededBy: { isnull: true } }
+		expect(list.config.headerMetaCounts).toEqual({
+			shipped: { register: 'dossiq', schema: 'caseType', filter: { ...current, '@self': { owner: '__system__' } } },
+			own: { register: 'dossiq', schema: 'caseType', filter: { ...current, '@self[owner][ne]': '__system__' } },
+		})
 	})
 
 	it('has an Actions menu with the import dialog the case type page already owns', () => {
