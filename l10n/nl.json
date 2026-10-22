@@ -10860,6 +10860,7 @@
         "{count} working days in this status": "{count} werkdagen in deze status",
         "{count} you may not write": "{count} mag je niet schrijven",
         "{courtReference} · filed {appellantFilingDate|date}": "{courtReference} · ingediend {appellantFilingDate|date}",
+        "{daysSinceActivity} days idle": "{daysSinceActivity} dagen stil",
         "{days} days": "{days} dagen",
         "{days} days ago": "{days} dagen geleden",
         "{days} days left": "Nog {days} dagen",

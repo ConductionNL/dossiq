@@ -139,6 +139,41 @@ describe('the landing page in the full structure', () => {
 	})
 })
 
+describe('My team in the simple structure', () => {
+	const team = pageView(page(builtSimple.pages, 'MyWorkHome'), 'team')
+	const fullTeam = pageView(home, 'team')
+
+	it('draws the stalled cases as DqMijnTeam\'s rows: title, number and handler, days idle at the end, no chevron', () => {
+		const stalled = team.widgets.find((widget) => widget.id === 'stalled-cases')
+		const table = dashboard.config.widgets.find((widget) => widget.id === 'stalled-cases')
+		expect(stalled.type).toBe('record-list')
+		expect(stalled.content).toMatchObject({
+			register: table.content.source.register,
+			schema: table.content.source.schema,
+			filter: table.content.source.filter,
+			extend: ['calculations'],
+			sort: { field: '@self.updated', dir: 'asc' },
+			limit: 3,
+			presentation: 'rows',
+			title: '{title}',
+			meta: { parts: ['{identifier}', '{assignee|user}'] },
+			trailing: ['{daysSinceActivity} days idle'],
+			chevron: false,
+			rowRoute: 'CaseDetail',
+		})
+		const { name, ...rest } = table.content.viewAllRoute
+		expect(stalled.headerLink).toEqual({ label: 'View all', route: name, ...rest })
+	})
+
+	it('keeps every other team widget as the full structure declares it', () => {
+		expect(team.widgets.map((widget) => widget.id)).toEqual(fullTeam.widgets.map((widget) => widget.id))
+		for (const widget of team.widgets.filter((item) => item.id !== 'stalled-cases')) {
+			expect(withoutNotes(widget), widget.id).toEqual(withoutNotes(fullTeam.widgets.find((item) => item.id === widget.id)))
+		}
+		expect(team.layout).toEqual(fullTeam.layout)
+	})
+})
+
 describe('no view is empty, in either structure', () => {
 	it.each([
 		['full', builtFull],
