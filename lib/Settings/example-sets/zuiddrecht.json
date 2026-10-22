@@ -2301,6 +2301,162 @@
 				"scheduledAt": "{{datetime:0 15:00}}",
 				"status": "planned"
 			}
+		},
+		{
+			"key": "leverancier-kindzorg",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002001",
+				"legalName": "Stichting Kindzorg Drechtsteden",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-groen-en-co",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002002",
+				"legalName": "Groen & Co",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-taxi-drechtstad",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002003",
+				"legalName": "Taxi Drechtstad",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-lumen-infra",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002004",
+				"legalName": "Lumen Infra BV",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-schoon-zuid",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002005",
+				"legalName": "Schoon Zuid",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-conduction",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002006",
+				"legalName": "Conduction",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "contract-jeugdhulp-ambulant",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-kindzorg.id}}",
+				"number": "CT-2023-014",
+				"subject": "Jeugdhulp ambulant 2023-2026",
+				"startDate": "2023-01-01",
+				"endDate": "2026-12-31",
+				"value": 2400000,
+				"status": "renewal-decision",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-groenonderhoud-oost",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-groen-en-co.id}}",
+				"number": "CT-2024-003",
+				"subject": "Groenonderhoud oost",
+				"startDate": "2024-05-01",
+				"endDate": "2027-04-30",
+				"value": 610000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-leerlingenvervoer",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-taxi-drechtstad.id}}",
+				"number": "CT-2022-021",
+				"subject": "Leerlingenvervoer",
+				"startDate": "2022-08-01",
+				"endDate": "2026-07-31",
+				"value": 1850000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-straatverlichting",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-lumen-infra.id}}",
+				"number": "CT-2025-002",
+				"subject": "Straatverlichting onderhoud",
+				"startDate": "2025-04-01",
+				"endDate": "2027-03-31",
+				"value": 340000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-schoonmaak-stadhuis",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-schoon-zuid.id}}",
+				"number": "CT-2024-011",
+				"subject": "Schoonmaak stadhuis",
+				"startDate": "2024-03-01",
+				"endDate": "2027-02-28",
+				"value": 290000,
+				"status": "termination-decision",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-softwarelicenties",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-conduction.id}}",
+				"number": "CT-2025-009",
+				"subject": "Softwarelicenties sociaal domein",
+				"startDate": "2025-01-01",
+				"endDate": "2027-12-31",
+				"value": 96000,
+				"status": "active",
+				"renewalWarning": false
+			}
 		}
 	],
 	"views": [
