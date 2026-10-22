@@ -19,3 +19,13 @@ advice settles on.
 - GIVEN an advice whose final intervention is a penalty order
 - WHEN the page opens
 - THEN the card asks for the pre-announcement and the two-week period for a view
+
+### Requirement: A case type keeps its own What now? texts
+
+A case type MAY declare `nextStep` with its own stages (title, checklist and what follows per stage). The case page
+SHALL read them through `nextStep.stagesFrom` and SHALL keep its own stages for a case type that declares none.
+
+#### Scenario: An objection with its own wording
+- GIVEN the Bezwaar case type declares its own text for the review stage
+- WHEN an objection in that stage opens
+- THEN the What now? card reads the case type's text, and a permit case still reads the page's
