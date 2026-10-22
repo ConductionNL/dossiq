@@ -320,6 +320,8 @@ describe('the cases list', () => {
 			_mapConfigNote,
 			showAdd,
 			showViewToggle,
+			cardLayout,
+			_cardLayoutNote,
 			headerFilters,
 			searchPlaceholder,
 			...others

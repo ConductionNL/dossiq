@@ -4558,7 +4558,30 @@
 					}
 				],
 				"showViewToggle": true,
-				"showAdd": false
+				"showAdd": false,
+				"_cardLayoutNote": "DqZakenSorteren: each card in the cards view is the record layout. The status pill in its status type's colour heads the card, then the title, the number and case type, and a footer with the handler (picture and name, through the Handler column) and the deadline, red once it has passed.",
+				"cardLayout": {
+					"headPill": {
+						"field": "status",
+						"resolve": {
+							"schema": "statusType",
+							"colorField": "colour"
+						}
+					},
+					"title": "title",
+					"meta": [
+						"identifier",
+						{
+							"field": "caseType",
+							"formatter": "caseTypeName"
+						}
+					],
+					"footerCell": "assignee",
+					"footerDate": {
+						"field": "deadline",
+						"overdueVariant": "error"
+					}
+				}
 			},
 			"configPatch": {
 				"quickFilters": {
