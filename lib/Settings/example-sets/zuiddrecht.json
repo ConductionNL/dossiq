@@ -1787,6 +1787,79 @@
 				"scheduledAt": "{{datetime:0 15:00}}",
 				"status": "planned"
 			}
+		},
+		{
+			"key": "waterland-beheerder",
+			"register": "dossiq",
+			"schema": "tenantUser",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"userRef": "{{cast:marieke.uid}}",
+				"role": "admin",
+				"joinedAt": "{{datetime:-50 10:00}}",
+				"lastActiveAt": "{{datetime:-1 16:20}}",
+				"mfaEnabled": true,
+				"eherkenningLevel": "3"
+			}
+		},
+		{
+			"key": "waterland-mandaat-behandelaar",
+			"register": "dossiq",
+			"schema": "tenantMandate",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"mandateMatrixRef": "Behandelaar",
+				"effectiveFrom": "{{datetime:-22 09:00}}",
+				"signedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-mandaat-teamleider",
+			"register": "dossiq",
+			"schema": "tenantMandate",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"mandateMatrixRef": "Teamleider",
+				"effectiveFrom": "{{datetime:-22 09:00}}",
+				"signedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-mandaat-afdelingshoofd",
+			"register": "dossiq",
+			"schema": "tenantMandate",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"mandateMatrixRef": "Afdelingshoofd",
+				"effectiveFrom": "{{datetime:-22 09:00}}",
+				"signedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-factuur-zaak",
+			"register": "dossiq",
+			"schema": "tenantBillingEvent",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"eventType": "case_created",
+				"quantity": 1,
+				"unitPrice": 1.2,
+				"currency": "EUR",
+				"occurredAt": "{{datetime:-15 11:04}}"
+			}
+		},
+		{
+			"key": "waterland-factuur-terugboeking",
+			"register": "dossiq",
+			"schema": "tenantBillingEvent",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"eventType": "case_refund",
+				"quantity": 1,
+				"unitPrice": -1.2,
+				"currency": "EUR",
+				"occurredAt": "{{datetime:-15 11:30}}"
+			}
 		}
 	],
 	"views": [
