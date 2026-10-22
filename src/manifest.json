@@ -3227,6 +3227,7 @@
 			"title": "Case",
 			"tabInAddress": true,
 			"referencePreview": true,
+			"listNavigation": true,
 			"actionsComponent": "RequesterProjection",
 			"config": {
 				"register": "dossiq",
