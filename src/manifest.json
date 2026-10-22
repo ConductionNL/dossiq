@@ -6838,6 +6838,7 @@
 						"id": "eod-tomorrow",
 						"type": "record-list",
 						"title": "First thing tomorrow",
+						"titleTone": "side",
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/personal-queue/end-of-day",
 							"field": "tomorrow",

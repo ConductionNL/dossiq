@@ -85,5 +85,7 @@ describe('the end-of-day page', () => {
 	it('heads Your day and How this works as side headings, as board DqDagAfsluiten (nextcloud-vue titleTone)', () => {
 		expect(widget('eod-figures').titleTone).toBe('side')
 		expect(widget('eod-how').titleTone).toBe('side')
+		// "Morgen eerst" is the same side heading on the board (15px, 600).
+		expect(widget('eod-tomorrow').titleTone).toBe('side')
 	})
 })
