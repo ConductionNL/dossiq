@@ -218,20 +218,20 @@ class AanvullingsverzoekServiceTest extends TestCase {
 	}//end testAskingWritesTheRequestNamingBothItems()
 
 	/**
-	 * The service, told what the case row says.
+	 * The service, told what the case's type is.
 	 *
-	 * @param array<string, mixed> $case The case row.
+	 * @param string $case The case's type identifier or id.
 	 *
 	 * @return AanvullingsverzoekService&MockObject The service.
 	 */
-	private function serviceForCase(array $case): AanvullingsverzoekService {
+	private function serviceForCase(string $case): AanvullingsverzoekService {
 		$service = $this->getMockBuilder(className: AanvullingsverzoekService::class)
 			->setConstructorArgs(['act' => $this->act, 'settingsService' => $this->settings, 'logger' => new NullLogger()])
-			->onlyMethods(['openFor', 'write', 'markCaseWaiting', 'caseRowOf'])
+			->onlyMethods(['openFor', 'write', 'markCaseWaiting', 'caseTypeOf'])
 			->getMock();
 		$service->method('openFor')->willReturn(null);
 		$service->method('write')->willReturnArgument(0);
-		$service->method('caseRowOf')->willReturn($case);
+		$service->method('caseTypeOf')->willReturn($case);
 
 		return $service;
 	}//end serviceForCase()
@@ -253,11 +253,11 @@ class AanvullingsverzoekServiceTest extends TestCase {
 			question: 'Welke periode bedoelt u?',
 		);
 
-		self::assertSame('verduidelijking', $ask($this->serviceForCase(['caseType' => WooRequestIntake::CASE_TYPE_ID]))['kind']);
-		self::assertSame('verduidelijking', $ask($this->serviceForCase(['caseType' => 'woo-v2', 'caseTypeIdentifier' => 'woo-verzoek']))['kind']);
+		self::assertSame('verduidelijking', $ask($this->serviceForCase(WooRequestIntake::CASE_TYPE_ID))['kind']);
+		self::assertSame('verduidelijking', $ask($this->serviceForCase('woo-verzoek'))['kind']);
 
 		try {
-			$ask($this->serviceForCase(['caseType' => 'melding-1', 'caseTypeIdentifier' => 'melding-openbare-ruimte']));
+			$ask($this->serviceForCase('melding-openbare-ruimte'));
 			self::fail('a clarification on another case type is refused');
 		} catch (RefusedException $e) {
 			self::assertSame('aanvullingsverzoek-clarification-woo-only', $e->getRule());
