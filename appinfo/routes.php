@@ -931,6 +931,7 @@ $extra = [
         // are the `besluitvorming` package now, installed on request through the
         // package routes below (hydra ADR-118, decision 190).
     ['name' => 'package#index',   'url' => '/api/packages',              'verb' => 'GET'],
+    ['name' => 'package#reload',  'url' => '/api/packages/reload',       'verb' => 'POST'],
     ['name' => 'package#install', 'url' => '/api/packages/{id}/install', 'verb' => 'POST'],
         // The two `agenda#` routes were removed with the agenda compiler: decidiq
         // owns agenda-building and meetings, and it surfaces them here through the
