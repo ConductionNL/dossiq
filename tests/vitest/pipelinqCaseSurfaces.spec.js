@@ -102,7 +102,7 @@ describe('the sentences', () => {
 	 * @param {object} row The row.
 	 * @return {Array<string>} The badge texts.
 	 */
-	const countBadges = (row) => widget('case-pipelinq-contact-moments').content.badges
+	const countBadges = (row) => widget('linked-contact-moments').content.badges
 		.filter((badge) => badge.kind === 'count')
 		.map((badge) => {
 			const raw = row[badge.field]
@@ -159,7 +159,8 @@ describe('the declarations', () => {
 	const json = JSON.stringify(caseDetail)
 
 	it('puts the customer record on the Communication tab and the programme on the Related tab, as library config', () => {
-		expect(json).toContain('"id":"case-pipelinq-contact-moments","type":"record-list"')
+		// Renamed from case-pipelinq-contact-moments; RenamedLayoutIds rewrites stored layouts.
+		expect(json).toContain('"id":"linked-contact-moments","type":"record-list"')
 		expect(json).toContain('"id":"case-programme","type":"facts"')
 		expect(registrySource).not.toContain("'case-pipelinq-contact-moments': {")
 		expect(registrySource).not.toContain("'case-programme': {")

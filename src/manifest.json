@@ -4112,7 +4112,7 @@
 										"id": "linked-contact-moments",
 										"type": "record-list",
 										"title": "Contact moments in the customer record",
-										"_note": "parties-and-contact-moments-consume-pipelinq 2.2 and 2.3, board DqZaakContactmomenten: pipelinq's contact moments read by MEMBERSHIP of this case through dossiq's endpoint, newest first. Absent (pipelinq not installed), empty and failed are three answers. A moment also on other cases says so and links them; filing it on another case opens FileContactMomentDialog, taking it off calls the endpoint and shows pipelinq's refusal. The id stays `case-pipelinq-contact-moments` until L7 renames it with a repair step.",
+										"_note": "parties-and-contact-moments-consume-pipelinq 2.2 and 2.3, board DqZaakContactmomenten: pipelinq's contact moments read by MEMBERSHIP of this case through dossiq's endpoint, newest first. Absent (pipelinq not installed), empty and failed are three answers. A moment also on other cases says so and links them; filing it on another case opens FileContactMomentDialog, taking it off calls the endpoint and shows pipelinq's refusal. It was `case-pipelinq-contact-moments`; RenamedLayoutIds rewrites stored layouts to the new id.",
 										"content": {
 											"endpointSource": {
 												"url": "/apps/dossiq/api/cases/@objectId/pipelinq/contact-moments",
@@ -4828,7 +4828,7 @@
 						"id": "goal-plan",
 						"type": "sections",
 						"title": "Family plan",
-						"_note": "the-social-domain-plan-and-its-grounds REQ-CPN-01 and REQ-CPN-03: the goals a household agreed to work on, the interventions under each with their provider and target date, and what is late, read from one endpoint (`gezinsplanId` names the plan; the data field stays frozen). Library config: a review-due banner over the same endpoint and grouped cards that join the interventions to their goal. It FAILS CLOSED with a retry: an unreachable register and a plan without goals must not look alike, or a consulent writes a second plan over the first. The widget id `family-plan` stays until L7 renames it (`goal-plan`) with a repair step for stored layouts.",
+						"_note": "the-social-domain-plan-and-its-grounds REQ-CPN-01 and REQ-CPN-03: the goals a household agreed to work on, the interventions under each with their provider and target date, and what is late, read from one endpoint (`gezinsplanId` names the plan; the data field stays frozen). Library config: a review-due banner over the same endpoint and grouped cards that join the interventions to their goal. It FAILS CLOSED with a retry: an unreachable register and a plan without goals must not look alike, or a consulent writes a second plan over the first. It was `family-plan`; RenamedLayoutIds rewrites stored layouts to `goal-plan`.",
 						"content": {
 							"dividers": false,
 							"sections": [

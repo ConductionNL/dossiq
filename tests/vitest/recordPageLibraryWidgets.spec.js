@@ -205,7 +205,7 @@ describe('the parties', () => {
 })
 
 describe('the contact moments in the customer record', () => {
-	it.each([['full', fullCase, 'case-pipelinq-contact-moments'], ['simple', simpleCase, 'case-customer-record-card']])('keep their id, and say absent, empty and failed apart (%s)', (_name, page, id) => {
+	it.each([['full', fullCase, 'linked-contact-moments'], ['simple', simpleCase, 'case-customer-record-card']])('keep their id, and say absent, empty and failed apart (%s)', (_name, page, id) => {
 		const moments = find(page, id)
 		expect(moments.type).toBe('record-list')
 		expect(moments.content.endpointSource).toEqual({ url: '/apps/dossiq/api/cases/@objectId/pipelinq/contact-moments', responsePath: 'moments' })
@@ -216,7 +216,7 @@ describe('the contact moments in the customer record', () => {
 	})
 
 	it('files a moment on another case through the dialog and takes it off through pipelinq', () => {
-		const moments = find(fullCase, 'case-pipelinq-contact-moments')
+		const moments = find(fullCase, 'linked-contact-moments')
 		const [file, unfile] = moments.content.rowActions
 		expect(file).toMatchObject({ type: 'open-modal', target: 'FileContactMomentDialog', props: { caseId: '@objectId' } })
 		expect(unfile).toMatchObject({ endpoint: '/apps/dossiq/api/cases/@objectId/pipelinq/contact-moments/{id}', method: 'DELETE' })
@@ -226,7 +226,8 @@ describe('the contact moments in the customer record', () => {
 })
 
 describe('the family plan', () => {
-	const plan = find(fullCase, 'family-plan')
+	// Renamed from family-plan; RenamedLayoutIds rewrites stored layouts.
+	const plan = find(fullCase, 'goal-plan')
 
 	it('keeps its id and its condition, and reads the plan the case names', () => {
 		expect(plan.type).toBe('sections')
@@ -247,13 +248,24 @@ describe('the family plan', () => {
 	})
 
 	it('is placed in the layout, so it is not dark', () => {
-		expect(fullCase.config.layout.some((cell) => cell.widgetId === 'family-plan')).toBe(true)
+		expect(fullCase.config.layout.some((cell) => cell.widgetId === 'goal-plan')).toBe(true)
 	})
 })
 
 describe('the Related cases tab', () => {
-	it.each([['full', fullCase, 'case-related'], ['simple', simpleCase, 'case-related-card']])('reads the planned follow-ups, the typed relations and the parent (%s)', (_name, page, id) => {
-		const related = find(page, id)
+	// The simple structure lists the planned follow-ups and the typed
+	// relations in case-related-cases-card (typedRelatedCasesCard.spec.js);
+	// its case-related-card keeps the parent case and Plan follow-up.
+	it('keeps the parent case and Plan follow-up on the parent card (simple)', () => {
+		const related = find(simpleCase, 'case-related-card')
+		expect(related.type).toBe('related')
+		expect(related.content.extraSources).toBeUndefined()
+		expect(related.content.referenceSections[0]).toMatchObject({ field: 'parentCase', register: 'dossiq', schema: 'case' })
+		expect(related.content.footerActions[0]).toMatchObject({ type: 'open-modal', target: 'CasePlanFollowUpDialog', props: { caseId: '@objectId' } })
+	})
+
+	it('reads the planned follow-ups, the typed relations and the parent (full)', () => {
+		const related = find(fullCase, 'case-related')
 		expect(related.type).toBe('related')
 		expect(related.content.showObjects).toBe(false)
 		const [planned, relations] = related.content.extraSources
