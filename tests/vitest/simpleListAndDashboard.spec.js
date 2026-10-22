@@ -292,13 +292,14 @@ describe('the cases list', () => {
 		// The second line is the case address, falling back to the identifier.
 		expect(simple.mapConfig.list.sub).toContain('{identifier}')
 		const { list, ...rest } = simple.mapConfig
-		const { _basemapNote, _parityNote, plotAll, ...fullMap } = before.mapConfig
+		const { _basemapNote, _parityNote, plotAll, count, ...fullMap } = before.mapConfig
 		expect(rest).toEqual(fullMap)
 	})
 
-	it('colours and counts the markers but plots only the current page', () => {
+	it('colours the markers, counts them in the header only and plots only the current page', () => {
 		expect(simple.mapConfig.markerColor).toEqual(before.mapConfig.markerColor)
-		expect(simple.mapConfig.count).toBe(before.mapConfig.count)
+		// The header says "· 5 met een adres op de kaart" with the list; no line under the map repeats it.
+		expect(simple.mapConfig).not.toHaveProperty('count')
 		expect(simple.mapConfig).not.toHaveProperty('plotAll')
 	})
 

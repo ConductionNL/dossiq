@@ -4348,7 +4348,7 @@
 				"searchPlaceholder": "Search by case, number or requester",
 				"quickFilterMaxVisible": 6,
 				"folderSidebar": null,
-				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The line under each title is the case's address and number (`caseAddress` reads the case's first case-location; a case without one shows its number only), and the pills name the case type and the status, the status pill in its status type's colour (`resolve.colorField`). Markers take their status type's colour and a line counts the located cases, as in the full profile. `plotAll` is left out on purpose: the map shows the current page, so the numbered list stays a page long.",
+				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The line under each title is the case's address and number (`caseAddress` reads the case's first case-location; a case without one shows its number only), and the pills name the case type and the status, the status pill in its status type's colour (`resolve.colorField`). Markers take their status type's colour as in the full profile. The header counts the cases with an address (\"· 5 met een adres op de kaart\"), so no count line sits under the map as well (`count` is left out). `plotAll` is left out on purpose: the map shows the current page, so the numbered list stays a page long.",
 				"mapConfig": {
 					"geoField": "geometry",
 					"popupField": "title",
@@ -4356,7 +4356,6 @@
 						52.1326,
 						5.2913
 					],
-					"count": "Showing {located} of {total} located cases",
 					"markerColor": {
 						"field": "status",
 						"source": {
