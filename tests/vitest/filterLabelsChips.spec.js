@@ -4,8 +4,7 @@
  *
  * The Active line names a filter as a person reads it, also one that came
  * from a link: "Status: lopend" on the cases list (board DqZaken), "Deadline:
- * 1 tot en met 31 oktober" on the task list (board DqTaken), "Status: actief
- * en verlopend" on the contracts list (board DqContracten). Without
+ * 1 tot en met 31 oktober" on the task list (board DqTaken). Without
  * `filterLabels` the chips read "Is Final Status: false" and a raw due-date
  * key.
  *
@@ -19,8 +18,6 @@ import { describe, expect, it } from 'vitest'
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
 const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
-const contracts = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.d', '70-privacy-and-procurement.json'), 'utf8'))
-	.pages.find((p) => p.id === 'Contracts')
 
 /**
  * One page of the shipped manifest.
@@ -67,13 +64,5 @@ describe('the task list names its due-date range', () => {
 		const config = page('Tasks').config
 		expect(nl[config.filterLabels.dueAt.label]).toBe('Deadline')
 		expect(config.sidebar.fields.dueAt.inputControl).toBe('date-range')
-	})
-})
-
-describe('the contracts list names its status values', () => {
-	it('gives the two values the board joins as "actief en verlopend"', () => {
-		const labels = contracts.config.filterLabels
-		const names = ['active', 'ending'].map((value) => nl[labels.status.values[value]])
-		expect(`${nl[labels.status.label]}: ${new Intl.ListFormat('nl', { type: 'conjunction' }).format(names)}`).toBe('Status: actief en verlopend')
 	})
 })

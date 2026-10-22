@@ -16,18 +16,6 @@
 				"showTitle": true,
 				"register": "dossiq",
 				"schema": "supplierContract",
-				"_filterLabelsNote": "The Active line names a status filter in the board's words, lower case inside the chip: /procurement/contracts?status[]=active&status[]=ending reads \"Status: actief en verlopend\" (board DqContracten).",
-				"filterLabels": {
-					"status": {
-						"label": "Status",
-						"values": {
-							"active": "active",
-							"ending": "ending",
-							"renewal-decision": "renewal: decision in decidiq",
-							"termination-decision": "termination: decision in decidiq"
-						}
-					}
-				},
 				"breadcrumb": {
 					"label": "Procurement",
 					"route": "Contracts"
