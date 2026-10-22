@@ -126,6 +126,7 @@ OC.L10N.register(
         "_{count} open case_::_{count} open cases_": ["{count} open case","{count} open cases"],
         "_{count} working day in this status_::_{count} working days in this status_": ["{count} working day in this status","{count} working days in this status"],
         "_{count} working day_::_{count} working days_": ["{count} working day","{count} working days"],
+        "_{total} case, {shown} on this page_::_{total} cases, {shown} on this page_": ["{total} case, {shown} on this page","{total} cases, {shown} on this page"],
         "A BAG nummeraanduiding ID is required when the location source is \"bag\".": "A BAG nummeraanduiding ID is required when the location source is \"bag\".",
         "A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents.": "A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents.",
         "A batch can be taken by the rule that marked its documents, or by a list of documents.": "A batch can be taken by the rule that marked its documents, or by a list of documents.",
