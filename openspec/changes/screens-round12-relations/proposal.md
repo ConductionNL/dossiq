@@ -25,5 +25,4 @@ they stay manifest configuration over the shared nextcloud-vue widgets.
 
 The board's Tickets tab and Open tickets card read pipelinq's tickets, and
 pipelinq's ticket names a pipelinq client, not a dossiq `brpPerson` or
-`kvkCompany`, so there is no filter that answers it yet. The Last contact
-column needs a latest-value aggregate, and the library counts only.
+`kvkCompany`, so there is no filter that answers it yet.
