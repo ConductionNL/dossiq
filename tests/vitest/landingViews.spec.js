@@ -135,6 +135,10 @@ describe('the landing page in the full structure', () => {
 	})
 
 	it('fits the team cards to their content, as DqMijnTeam draws them', () => {
+		// A grid that floats keeps every card on its row, so a card that
+		// shrinks would leave a band under it; this one packs upward.
+		expect(home.config.gridFloat).toBe(false)
+		expect(page(builtSimple.pages, 'MyWorkHome').config.gridFloat).toBe(false)
 		const layout = pageView(home, 'team').layout
 		for (const id of ['t4', 't5', 't6', 't7']) {
 			expect(layout.find((item) => item.id === id).sizeToContent, id).toBe(true)
