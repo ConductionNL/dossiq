@@ -14078,7 +14078,8 @@
               "storage_increment",
               "api_burst",
               "quota_exceeded",
-              "case_refund"
+              "case_refund",
+              "subscription_fee"
             ],
             "description": "Type of billable event",
             "title": "Event Type"
