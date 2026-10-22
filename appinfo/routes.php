@@ -145,6 +145,9 @@ $extra = [
         // The case surfaces that read and act through pipelinq
         // (parties-and-contact-moments-consume-pipelinq, boards
         // DqZaakContactmomenten, DqZaakPartijen, DqZaaktype).
+    // A party's open pipelinq tickets by master entity (organisation-open-tickets).
+    ['name' => 'partyTicket#openTicketCounts', 'url' => '/api/parties/open-tickets',      'verb' => 'GET'],
+    ['name' => 'partyTicket#openTickets',      'url' => '/api/parties/open-tickets/list', 'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#contactMoments',      'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#logContactMoment',    'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#fileContactMoment',   'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}/file',   'verb' => 'POST'],

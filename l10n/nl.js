@@ -10961,7 +10961,13 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Open tickets": "Open tickets",
+        "No open tickets": "Geen open tickets",
+        "Awaiting customer": "Wacht op klant",
+        "Term {slaDeadline|date}": "Termijn {slaDeadline|date}",
+        "{total} open": "{total} open",
+        "Tickets": "Tickets"
     },
     "nplurals=2; plural=(n != 1);"
 )

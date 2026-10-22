@@ -10961,7 +10961,13 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "{value} of your cases are past their deadline or end today.",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Open tickets": "Open tickets",
+        "No open tickets": "No open tickets",
+        "Awaiting customer": "Awaiting customer",
+        "Term {slaDeadline|date}": "Term {slaDeadline|date}",
+        "{total} open": "{total} open",
+        "Tickets": "Tickets"
     },
     "nplurals=2; plural=(n != 1);"
 )

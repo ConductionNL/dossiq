@@ -12505,6 +12505,18 @@
 						"widget": "badge"
 					},
 					{
+						"key": "openTickets",
+						"label": "Open tickets",
+						"sortable": false,
+						"aggregate": {
+							"endpoint": "/apps/dossiq/api/parties/open-tickets",
+							"key": "masterEntityRef",
+							"requiresApp": "pipelinq",
+							"zeroLabel": "None"
+						},
+						"widget": "badge"
+					},
+					{
 						"key": "lastContact",
 						"label": "Last contact",
 						"sortable": false,
@@ -13336,6 +13348,48 @@
 						}
 					},
 					{
+						"id": "contact-open-tickets",
+						"type": "record-list",
+						"title": "Tickets",
+						"icon": "TicketOutline",
+						"visibleWhen": {
+							"appInstalled": "pipelinq"
+						},
+						"content": {
+							"requiresApp": "pipelinq",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/parties/open-tickets/list",
+								"params": {
+									"key": "@object.masterEntityRef"
+								},
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{ticketType}",
+							"pill": {
+								"field": "status",
+								"variant": "purple",
+								"labels": {
+									"new": "New",
+									"in_progress": "In progress",
+									"awaiting_customer": "Awaiting customer"
+								}
+							},
+							"trailing": [
+								"Term {slaDeadline|date}"
+							],
+							"valueLabels": {
+								"ticketType": {
+									"request": "Request",
+									"complaint": "Complaint"
+								}
+							},
+							"headerNote": "{total} open",
+							"emptyText": "No open tickets"
+						}
+					},
+					{
 						"id": "contact-cases",
 						"type": "object-list",
 						"title": "Cases",
@@ -13493,7 +13547,8 @@
 									"widgetIds": [
 										"contact-card",
 										"contact-open-cases",
-										"contact-latest-moments"
+										"contact-latest-moments",
+										"contact-open-tickets"
 									],
 									"label": "Overview"
 								},
