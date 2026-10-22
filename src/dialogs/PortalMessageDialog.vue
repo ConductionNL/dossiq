@@ -52,7 +52,6 @@ import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import { logContactMoment } from '../services/pipelinqCaseApi.js'
 import {
 	NcButton,
 	NcDialog,
@@ -60,6 +59,7 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
+import { logContactMoment } from '../services/pipelinqCaseApi.js'
 
 /**
  * The handler writes to the applicant of a case, in the portal.
