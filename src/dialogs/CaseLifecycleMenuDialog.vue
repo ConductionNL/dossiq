@@ -870,7 +870,7 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	padding: 8px 16px 16px;
+	padding: 8px 0 16px;
 }
 
 .case-acts__reason,
