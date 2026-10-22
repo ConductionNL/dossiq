@@ -7984,6 +7984,7 @@ OC.L10N.register(
         "Test": "Test",
         "Test connection": "Verbinding testen",
         "Test register": "Testregister",
+        "Test with a case": "Testen met een zaak",
         "Text": "Tekst",
         "text": "tekst",
         "Text above My cases in the portal": "Tekst boven Mijn zaken in het portaal",
