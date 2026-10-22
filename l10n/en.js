@@ -4240,6 +4240,7 @@ OC.L10N.register(
         "Letter (brief)": "Letter (brief)",
         "Letter of the decision": "Letter of the decision",
         "Level": "Level",
+        "last changed by": "by",
         "level {n}": "level {n}",
         "Leveranciersportaal": "Leveranciersportaal",
         "Levy Amount": "Levy Amount",

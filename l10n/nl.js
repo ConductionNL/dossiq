@@ -4240,6 +4240,7 @@ OC.L10N.register(
         "Letter (brief)": "Brief",
         "Letter of the decision": "Besluitbrief",
         "Level": "Niveau",
+        "last changed by": "door",
         "level {n}": "niveau {n}",
         "Leveranciersportaal": "Leveranciersportaal",
         "Levy Amount": "Heffingsbedrag",
