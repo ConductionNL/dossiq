@@ -76,3 +76,12 @@ describe('the Files tab on a case type that reviews its documents', () => {
 		expect(nl[grounds.content.headerSubtitle]).toBe('Gaan mee in het besluit')
 	})
 })
+
+describe('the Files card on a case type that reviews its documents', () => {
+	it('says how to assess the documents, only where the case type reviews them', () => {
+		const files = simple.configPatch.widgets['case-files']
+		const [entry] = files.subtitle
+		expect(entry.when).toEqual(REVIEWED)
+		expect(nl[entry.text]).toBe('Per document beoordelen of het openbaar kan. Wat deels openbaar is, lakt u daarna.')
+	})
+})

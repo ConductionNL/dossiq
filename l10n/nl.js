@@ -860,6 +860,7 @@ OC.L10N.register(
         "Assess documents": "Documenten beoordelen",
         "Assess each document for disclosure under the WOO (Art. 5.1/5.2).": "Beoordeel elk document op openbaarmaking onder de WOO (Art. 5.1/5.2).",
         "Assess each document for disclosure under the WOO.": "Beoordeel elk document op openbaarmaking onder de WOO.",
+        "Assess per document whether it can be public. What is partly public, you redact afterwards.": "Per document beoordelen of het openbaar kan. Wat deels openbaar is, lakt u daarna.",
         "Assess these documents first. The decision covers every document on the case.": "Beoordeel eerst deze documenten. Het besluit gaat over elk document in de zaak.",
         "Assessed": "Beoordeeld",
         "Assessed at": "Beoordeeld op",
