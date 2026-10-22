@@ -1969,7 +1969,7 @@
 				},
 				"allowSavedViews": true,
 				"_wooSavedViewNote": "Woo requests are a view of the case list, not a page of their own (Ruben, 19 October 2026): the default view `woo-requests` is the Woo case type with the same working-list rule as the Woo chip, and a link to the Woo list is `/cases?savedView=default:woo-requests`.",
-				"_myWorkViewNote": "DqAanMijToegewezen (view `my-work`): the board draws the team's workload chips and no lenses, so the view sets `quickFilters: []`; the conditions stay in the Filter panel. `bulkBandAlways: false` keeps the bulk band away until cards are selected, and the Actions menu lists copy and delete for the selection, which the simple profile keeps out of the band.",
+				"_myWorkViewNote": "DqAanMijToegewezen (view `my-work`): the board draws the team's workload chips and no lenses, so the view sets `quickFilters: []`; the conditions stay in the Filter panel. `bulkBandAlways: false` keeps the bulk band away until cards are selected, and the Actions menu lists the export and copy and delete for the selection, which the simple profile keeps out of the band; an Actions menu listing `export` takes the toolbar's Export over. `countText: \"\"` and `countSubtitle: null` leave the header note (\"{total} cases in your name\") as the only count.",
 				"_defaultSavedViewsNote": "saved-views-manage-and-defaults: views dossiq ships for every user, read-only, listed under Default views above the user's own saved views. A user applies one, or saves a copy to edit and share. They combine conditions the quick-filter chips offer one at a time (Mine and Overdue), so they add a lens instead of repeating a chip. The conditions are the chips' own: the same flat `deadline[lt]` / `deadline[gte]` keys with `@today` tokens, the same working-list rule `statusHiddenInLists: false`.",
 				"defaultSavedViews": [
 					{ "slug": "mine-overdue", "name": "Mine, overdue", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
@@ -1997,12 +1997,15 @@
 							"footerNote": "Urgency follows from the deadline, the priority and how long a case has been idle.",
 							"quickFilters": [],
 							"bulkBandAlways": false,
+							"countText": "",
+							"countSubtitle": null,
 							"headerButtons": [
 								{
 									"action": "actions-menu",
 									"label": "Actions",
 									"items": [
 										"header-actions",
+										"export",
 										"copy-selected",
 										"delete-selected"
 									]
