@@ -9392,6 +9392,7 @@
         "To the board": "To the board",
         "To the case": "To the case",
         "To the day close": "To the day close",
+        "To {status}": "To {status}",
         "to {subject.advisor}. Answer due {subject.deadline|longdate}. Closing waits until then.": "to {subject.advisor}. Answer due {subject.deadline|longdate}. Closing waits until then.",
         "To:": "To:",
         "Today": "Today",

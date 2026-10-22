@@ -194,6 +194,7 @@ function transitionEntries(transitions) {
 			disabled: transitionIsBlocked(row),
 			reason: transitionBlockReason(row),
 			toStatus: String(row.toStatus ?? ''),
+			toStatusName: String(row.toStatusName ?? ''),
 			// Copied from the engine's answer, never derived here: whether
 			// the move closes the case, and the results it may close with.
 			closesCase: row.closesCase === true,
