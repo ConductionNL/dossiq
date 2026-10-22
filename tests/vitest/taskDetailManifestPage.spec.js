@@ -69,7 +69,8 @@ describe('the TaskDetail manifest page', () => {
 		// The leaves are the library cards on the task's engine endpoints
 		// (`source: flow-task`), with dossiq's empty lines kept.
 		expect(widget('task-appointments')).toMatchObject({ type: 'events', content: { source: { kind: 'flow-task' }, emptyText: 'Nobody has booked an appointment on this task' } })
-		expect(widget('task-notes')).toMatchObject({ type: 'integration', integrationId: 'notes', props: { source: { kind: 'flow-task', id: '@objectId' } } })
+		// The add form sits behind "Add note" in the card header, as DqTaak draws it.
+		expect(widget('task-notes')).toMatchObject({ type: 'integration', integrationId: 'notes', props: { source: { kind: 'flow-task', id: '@objectId' }, composer: 'button' } })
 		expect(widget('task-history')).toMatchObject({ type: 'audit-trail', content: { source: { kind: 'flow-task' }, emptyText: 'Nothing has happened to this task yet' } })
 	})
 
