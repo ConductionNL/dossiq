@@ -381,7 +381,7 @@ describe('the tabs', () => {
 		// behind a visibleWhen (checked under the side column).
 		expect(
 			strip.tabs.filter((tab) => !tab.overflow && !tab.visibleWhen).map((tab) => tab.label),
-		).toEqual(['Overview', 'Documents', 'Contact', 'Tasks', 'Case history'])
+		).toEqual(['Overview', 'Files', 'Contact', 'Tasks', 'Case history'])
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
