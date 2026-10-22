@@ -11193,6 +11193,21 @@
 					"validUntil"
 				],
 				"showViewAction": false,
+				"_headerActionsNote": "Reload the shipped case type templates (POST /api/packages/reload): admin-only on the server, `adminOnly` hides the entry from others. The simple profile lists it in the Actions menu (DqZaaktypen).",
+				"headerActions": [
+					{
+						"id": "case-type-templates-reload",
+						"type": "api-call",
+						"label": "Reload templates",
+						"icon": "Refresh",
+						"url": "/apps/dossiq/api/packages/reload",
+						"method": "POST",
+						"confirm": true,
+						"adminOnly": true,
+						"successMessage": "The shipped templates are up to date.",
+						"errorMessage": "The shipped templates were not reloaded."
+					}
+				],
 				"actions": [
 					{
 						"id": "view",
