@@ -27,3 +27,16 @@ templates", after a confirmation.
 - **GIVEN** a request without a user, or from a user who is not an administrator
 - **WHEN** it posts to `/api/packages/reload`
 - **THEN** the installer SHALL not be called
+
+### Requirement: The case type list exports its selection
+
+The case type list SHALL allow its export and the `caseType` schema SHALL be
+flagged exportable (`configuration.exportable`), so the Actions menu offers
+"Export selection as JSON" for the selected case types.
+
+#### Scenario: Two selected case types
+@e2e exclude configuration only; proven by tests/Unit/Settings/CaseTypeListExportTest.php
+- **GIVEN** two case types selected in the list
+- **WHEN** an administrator chooses Export selection as JSON
+- **THEN** one JSON file SHALL hold those two case types
+

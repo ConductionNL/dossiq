@@ -4872,6 +4872,7 @@
 				},
 				"headerMeta": "{total} case types",
 				"searchPlaceholder": "Search a case type",
+				"allowExport": true,
 				"_actionsMenuNote": "DqZaaktypen's Actions menu: import a case type, export the selected case types as JSON (nextcloud-vue `export-selected`, OpenRegister's export by `_ids`), and reload the shipped templates (POST /api/packages/reload, admin-only on the server; `adminOnly` only hides the entry from others).",
 				"headerActions": [
 					{

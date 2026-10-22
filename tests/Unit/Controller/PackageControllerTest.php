@@ -20,10 +20,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\PackageController;
-use OCA\Dossiq\Settings\AdminSettings;
-use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -127,6 +127,7 @@ class PackageControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->install(id: 'fixture-case-type')->getStatus());
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->index()->getStatus());
 	}//end testWithoutAUserNothingHappens()
+
 	/**
 	 * A reload answers each package's outcome, and 500 when one failed.
 	 *
