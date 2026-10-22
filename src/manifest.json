@@ -3801,6 +3801,17 @@
 									"icon": "EmailOutline",
 									"type": "open-modal",
 									"target": "FileRequestDialog"
+								},
+								{
+									"id": "generate-document",
+									"label": "Generate document",
+									"icon": "FileDocumentPlusOutline",
+									"type": "open-modal",
+									"target": "BeschikkingComposerDialog",
+									"props": {
+										"caseId": "@objectId",
+										"open": true
+									}
 								}
 							],
 							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
@@ -3839,8 +3850,28 @@
 										"geheim": "warning",
 										"zeer_geheim": "warning"
 									}
+								},
+								{
+									"key": "direction",
+									"source": "row",
+									"label": "Direction",
+									"property": "direction",
+									"formatter": "documentDirection",
+									"hidden": true
+								},
+								{
+									"key": "keywords",
+									"source": "row",
+									"label": "Keywords",
+									"property": "keywords",
+									"hidden": true
 								}
 							],
+							"facets": [
+								"keywords"
+							],
+							"preferenceApp": "dossiq",
+							"preferenceKey": "case-files-columns",
 							"selectionLabel": "{count} documents selected",
 							"selectionLabelOne": "{count} document selected",
 							"showClearSelection": false,
