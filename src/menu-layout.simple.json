@@ -4268,7 +4268,8 @@
 						"gridY": 0,
 						"gridWidth": 6,
 						"gridHeight": 4,
-						"showTitle": true
+						"showTitle": true,
+						"sizeToContent": true
 					},
 					{
 						"id": "6",
@@ -4277,7 +4278,8 @@
 						"gridY": 0,
 						"gridWidth": 6,
 						"gridHeight": 4,
-						"showTitle": true
+						"showTitle": true,
+						"sizeToContent": true
 					},
 					{
 						"id": "10",
