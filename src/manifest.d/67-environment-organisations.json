@@ -167,7 +167,7 @@
 									"format": "date"
 								},
 								{
-									"label": "Identifier",
+									"label": "Reference",
 									"path": "slug"
 								},
 								{
@@ -319,17 +319,17 @@
 							"fields": [
 								{
 									"as": "meter",
-									"key": "users",
-									"label": "Users",
-									"path": "usage.users"
-								},
-								{
-									"as": "meter",
 									"key": "storage",
 									"label": "Storage",
 									"path": "usage.storage",
 									"limitPath": "quota.storage",
 									"format": "bytes"
+								},
+								{
+									"as": "meter",
+									"key": "users",
+									"label": "Users",
+									"path": "usage.users"
 								},
 								{
 									"as": "meter",
@@ -388,7 +388,8 @@
 							"columns": [
 								{
 									"key": "occurredAt",
-									"label": "Date"
+									"label": "Date",
+									"formatter": "date"
 								},
 								{
 									"key": "eventType",
@@ -396,10 +397,12 @@
 								},
 								{
 									"key": "unitPrice",
-									"label": "Amount"
+									"label": "Amount",
+									"formatter": "currency"
 								}
 							],
-							"emptyText": "No billing events yet. Events never change afterwards; a correction is a new line."
+							"emptyText": "No billing events yet",
+							"footnote": "Events never change afterwards; a correction is a new line."
 						}
 					},
 					{
@@ -484,7 +487,8 @@
 							"columns": [
 								{
 									"key": "occurredAt",
-									"label": "Date"
+									"label": "Date",
+									"formatter": "date"
 								},
 								{
 									"key": "eventType",
@@ -496,10 +500,12 @@
 								},
 								{
 									"key": "unitPrice",
-									"label": "Amount"
+									"label": "Amount",
+									"formatter": "currency"
 								}
 							],
-							"emptyText": "No billing events yet"
+							"emptyText": "No billing events yet",
+							"footnote": "Events never change afterwards; a correction is a new line."
 						}
 					}
 				],
