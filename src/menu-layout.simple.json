@@ -2202,14 +2202,13 @@
 									"overflow": true
 								},
 								{
-									"widgetId": "case-custody-panel",
-									"label": "Custody",
-									"overflow": true
-								},
-								{
-									"widgetId": "case-archival-panel",
+									"widgetIds": [
+										"case-archival-panel",
+										"case-custody-panel"
+									],
 									"label": "Archiving",
-									"overflow": true
+									"overflow": true,
+									"_note": "DqZaakArchivering: the archiving card and, under it, Bewaring (who has held the case and who asks for it), as one tab."
 								},
 								{
 									"widgetId": "case-knowledge-panel",
