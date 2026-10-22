@@ -12760,6 +12760,7 @@
 			"type": "detail",
 			"title": "Contact",
 			"config": {
+				"recordLastChange": true,
 				"register": "dossiq",
 				"schema": "brpPerson",
 				"documentationUrl": "https://dossiq.conduction.nl",
@@ -13325,6 +13326,10 @@
 										{
 											"path": "@self.updated",
 											"format": "date-long"
+										},
+										{
+											"path": "_lastChange.userName",
+											"label": "last changed by"
 										}
 									],
 									"separator": " "
@@ -13389,6 +13394,7 @@
 			"type": "detail",
 			"title": "Organisation",
 			"config": {
+				"recordLastChange": true,
 				"register": "dossiq",
 				"schema": "kvkCompany",
 				"documentationUrl": "https://dossiq.conduction.nl",
@@ -13946,6 +13952,10 @@
 										{
 											"path": "@self.updated",
 											"format": "date-long"
+										},
+										{
+											"path": "_lastChange.userName",
+											"label": "last changed by"
 										}
 									],
 									"separator": " "
