@@ -40,8 +40,9 @@ describe('the end-of-day page', () => {
 
 	it('reads every list from the server\'s day, so Recorded today survives a reload', () => {
 		const lists = page.config.widgets.filter((item) => item.type === 'record-list')
-		expect(lists.map((item) => item.content.endpointSource.url)).toEqual([DAY, DAY, DAY, DAY])
-		expect(lists.map((item) => item.content.endpointSource.responsePath)).toEqual(['open', 'recorded', 'figures', 'tomorrow'])
+		expect(lists.map((item) => item.content.endpointSource.url)).toEqual([DAY, DAY, DAY])
+		expect(lists.map((item) => item.content.endpointSource.responsePath)).toEqual(['open', 'recorded', 'tomorrow'])
+		expect(widget('eod-figures').content.endpointSource).toEqual({ url: DAY })
 	})
 
 	it('records each note on the row\'s own notes endpoint', () => {
@@ -70,6 +71,20 @@ describe('the end-of-day page', () => {
 		expect(icons).toContain(`\n\t${widget('eod-open').content.noteAction.recordAll.icon},\n`)
 	})
 
+	it('keeps the side column the board\'s 300px, the lists filling the rest', () => {
+		// DqDagAfsluiten: Uw dag, Morgen eerst and Hoe dit werkt 300px wide.
+		expect(page.config.gridSideColumn).toEqual({ width: 300 })
+		const tracks = Object.fromEntries(page.config.layout.map((cell) => [cell.widgetId, cell.track]))
+		expect(tracks).toEqual({
+			'eod-unavailable': undefined,
+			'eod-open': 'main',
+			'eod-recorded': 'main',
+			'eod-figures': 'side',
+			'eod-tomorrow': 'side',
+			'eod-how': 'side',
+		})
+	})
+
 	it('opens a case and a task on their own pages', () => {
 		for (const id of ['eod-open', 'eod-recorded', 'eod-tomorrow']) {
 			expect(widget(id).content.rowRouteField, id).toBe('routeName')
@@ -85,5 +100,23 @@ describe('the end-of-day page', () => {
 	it('heads Your day and How this works as side headings, as board DqDagAfsluiten (nextcloud-vue titleTone)', () => {
 		expect(widget('eod-figures').titleTone).toBe('side')
 		expect(widget('eod-how').titleTone).toBe('side')
+	})
+
+	it('draws Your day as the board\'s grid of figures, Hours from humaniq among them and gone without it', () => {
+		// DqDagAfsluiten "Uw dag": Geopend, Vastgelegd and Uren, two to a row,
+		// in one card. Uren reads humaniq's day summary of the reader's own
+		// entries; dossiq keeps no hours (ADR-011).
+		const SUMMARY = '/apps/humaniq/api/time-entries/summary'
+		const figures = widget('eod-figures')
+		expect(figures.type).toBe('stat-grid')
+		expect(figures.content.columns).toBe(2)
+		const [opened, recorded, hours] = figures.content.cells
+		expect(opened).toMatchObject({ label: 'Opened', valueField: 'figures.0.value', caption: '{figures.0.note}' })
+		expect(recorded).toMatchObject({ label: 'Notes recorded', valueField: 'figures.1.value', caption: '{figures.1.note}' })
+		expect(hours).toMatchObject({ label: 'Hours', valueField: 'hours', caption: 'already in humaniq', endpointSource: { url: SUMMARY } })
+		expect(hours.format).toEqual({ style: 'decimal', decimals: 2 })
+		expect(hours.visibleWhen).toEqual({ appInstalled: 'humaniq', endpoint: SUMMARY, field: 'hours', op: 'gte', value: 0 })
+		expect(widget('eod-hours')).toBeUndefined()
+		expect(page.config.layout.some((cell) => cell.widgetId === 'eod-hours')).toBe(false)
 	})
 })

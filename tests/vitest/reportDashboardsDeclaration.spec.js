@@ -131,12 +131,30 @@ describe('process mining', () => {
 		}
 	})
 
+	it('draws the dwell time per status as a bar list in whole hours, as DqProcesanalyse does', () => {
+		// "Ontvangst ▬ 31 h": a labelled track per status, the hours at its end.
+		const dwell = widget('ProcessMiningDashboard', 'pm-dwell')
+		expect(dwell.content.chartKind).toBe('bar-list')
+		expect(dwell.content.valueFormat).toEqual({ name: 'number', decimals: 0, suffix: ' h' })
+		expect(dwell.content.endpointSource.labelsPath).toBe('statusName')
+	})
+
 	it('keeps the by-handler table on the page and on the grid, with its hint', () => {
 		const w = widget('ProcessMiningDashboard', 'pm-dwell-by-assignee')
 		expect(w.type).toBe('object-table')
 		expect(w.content.endpointSource.responsePath).toBe('byAssignee')
 		expect(w.subtitle).toContain('not recorded')
 		expect(onGrid('ProcessMiningDashboard', 'pm-dwell-by-assignee')).toBe(true)
+	})
+	it('puts the measure, the period and the case type on the description line, in the board\'s order', () => {
+		// DqProcesanalyse: "… · [Gemiddeld | Mediaan] [Laatste 12 maanden]
+		// [Alle zaaktypen]", with no filter row under the header.
+		const filters = page('ProcessMiningDashboard').config.pageFilters
+		expect(filters.map((f) => f.key)).toEqual(['statistic', 'period', 'caseType'])
+		for (const filter of filters) {
+			expect(filter.placement, filter.key).toBe('description')
+		}
+		expect(filters.find((f) => f.key === 'caseType').placeholder).toBe('All case types')
 	})
 })
 

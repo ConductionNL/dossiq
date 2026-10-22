@@ -292,15 +292,19 @@ export default {
 }
 
 .generate-document__fills {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 	padding: 14px 16px;
-	border-radius: 8px;
-	background: var(--color-background-hover);
+	border-radius: var(--border-radius-large);
+	background: color-mix(in srgb, var(--color-background-hover) 60%, var(--color-main-background));
 }
 
 .generate-document__fills-title {
-	margin: 0 0 10px;
+	margin: 0;
 	font-size: 14px;
-	font-weight: 600;
+	font-weight: 700;
+	line-height: 1.2;
 }
 
 .generate-document__fills-grid {

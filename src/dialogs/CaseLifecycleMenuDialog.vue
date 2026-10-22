@@ -159,6 +159,7 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import manifest from '../manifest.json'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { actForm } from '../utils/caseActInputs.js'
 import { buildActsMenu, endpointFor, iconFor } from '../utils/caseActsMenu.js'
@@ -173,9 +174,28 @@ import {
 	extensionNotice,
 	refusalMessage,
 } from '../utils/caseLifecycleHelpers.js'
+import { findHeaderAction } from '../utils/manifestHeaderAction.js'
 import { failedActionsWarning } from '../utils/transitionOutcome.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
+
+/**
+ * A move's label: "To {status}" when its own label is only the status it
+ * leads to, or empty (board DqVolgendeStap, "Naar Besluit"); else the label an
+ * administrator wrote.
+ *
+ * @param {object} entry A menu entry.
+ * @return {string} The label.
+ * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ */
+function moveLabel(entry) {
+	const own = String(entry?.label ?? '')
+	const status = String(entry?.toStatusName ?? '')
+	if (entry?.kind === 'transition' && status !== '' && (own === '' || own === status)) {
+		return t('dossiq', 'To {status}', { status })
+	}
+	return own
+}
 
 export default {
 	name: 'CaseLifecycleMenuDialog',
@@ -187,6 +207,11 @@ export default {
 		CnTransitionInputFields,
 		NcButton,
 		NcLoadingIcon,
+	},
+
+	inject: {
+		/** The page's action dispatcher, to open an act's own dialog. */
+		cnDispatchAction: { default: null },
 	},
 
 	props: {
@@ -203,6 +228,16 @@ export default {
 		act: {
 			type: String,
 			default: '',
+		},
+
+		/**
+		 * Acts that open a dialog of their own instead of a form in the menu,
+		 * as `{ act: headerActionId }` (board DqArchiveren draws archiving as
+		 * its own dialog: `{ archive: 'case-archive' }`).
+		 */
+		actDialogs: {
+			type: Object,
+			default: () => ({}),
 		},
 	},
 
@@ -434,7 +469,7 @@ export default {
 				case 'promote':
 					return t('dossiq', 'Promote to case')
 				default:
-					return String(entry?.label ?? '')
+					return moveLabel(entry)
 			}
 		},
 
@@ -679,10 +714,37 @@ export default {
 			if (entry.disabled) {
 				return
 			}
+			if (this.openOwnDialog(entry)) {
+				return
+			}
 			this.chosen = entry
 			this.error = ''
 			// A result or a pause reason picked for one act is not an answer for another.
 			this.values = { ...this.values, resultTypeId: '', pauseReason: '' }
+		},
+
+		/**
+		 * Open the dialog an act is configured to open, closing the menu.
+		 *
+		 * Without a page to open it (no dispatcher), or without the action the
+		 * configuration names, the act's form folds open in the menu as before.
+		 *
+		 * @param {object} entry The entry the handler pressed.
+		 * @return {boolean} Whether a dialog of its own was opened.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		openOwnDialog(entry) {
+			const named = String(this.actDialogs?.[String(entry?.id ?? '')] ?? '')
+			if (named === '' || typeof this.cnDispatchAction !== 'function') {
+				return false
+			}
+			const action = findHeaderAction(manifest, named)
+			if (action === null) {
+				return false
+			}
+			this.$emit('close')
+			this.cnDispatchAction(action, { tokenCtx: { objectId: this.targetCaseId } })
+			return true
 		},
 
 		/**

@@ -49,6 +49,36 @@
 			"members": [
 				"noor"
 			]
+		},
+		{
+			"group": "zuiddrecht-fysiek-domein",
+			"displayName": "Fysiek domein",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-toezicht-en-handhaving",
+			"displayName": "Toezicht en handhaving",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-buitenruimte",
+			"displayName": "Buitenruimte",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-jeugdteam",
+			"displayName": "Jeugdteam",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-werk-en-inkomen",
+			"displayName": "Werk en inkomen",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-bedrijfsvoering",
+			"displayName": "Bedrijfsvoering",
+			"members": []
 		}
 	],
 	"serviceAccounts": [
@@ -2301,6 +2331,398 @@
 				"scheduledAt": "{{datetime:0 15:00}}",
 				"status": "planned"
 			}
+		},
+		{
+			"key": "afdeling-gemeente",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Gemeente Zuiddrecht",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-medewerkers"
+			}
+		},
+		{
+			"key": "afdeling-fysiek-domein",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Fysiek domein",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-fysiek-domein",
+				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+			}
+		},
+		{
+			"key": "afdeling-buitenruimte",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Buitenruimte",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-buitenruimte",
+				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+			}
+		},
+		{
+			"key": "afdeling-sociaal-domein",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Sociaal domein",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-sociaal-domein",
+				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+			}
+		},
+		{
+			"key": "afdeling-jeugdteam",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Jeugdteam",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-jeugdteam",
+				"parentRoleId": "{{object:afdeling-sociaal-domein.id}}"
+			}
+		},
+		{
+			"key": "afdeling-werk-en-inkomen",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Werk en inkomen",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-werk-en-inkomen",
+				"parentRoleId": "{{object:afdeling-sociaal-domein.id}}"
+			}
+		},
+		{
+			"key": "afdeling-bedrijfsvoering",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Bedrijfsvoering",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-bedrijfsvoering",
+				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+			}
+		},
+		{
+			"key": "afdeling-informatie-en-woo",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Informatie en Woo",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-woo-en-informatie",
+				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+			}
+		},
+		{
+			"key": "termijn-woo-parkeervergunningen-binnenstad",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:woo-parkeervergunningen-binnenstad.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-28 10:05}}",
+				"endDateCalculated": "{{date:0}}",
+				"endDateCurrent": "{{date:0}}",
+				"status": "lopend"
+			}
+		},
+		{
+			"key": "waarneming-pieter-voor-esra",
+			"register": "dossiq",
+			"schema": "substitution",
+			"data": {
+				"absentee": "{{cast:esra.uid}}",
+				"substitute": "{{cast:pieter.uid}}",
+				"startDate": "{{date:-1}}",
+				"endDate": "{{date:6}}",
+				"scope": "all",
+				"reason": "verlof",
+				"status": "active",
+				"comment": "Esra is deze week met verlof; Pieter neemt haar zaken waar.",
+				"createdBy": "{{cast:esra.uid}}"
+			}
+		},
+		{
+			"key": "postvak-01",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-01@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:henk.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Vraag over mijn kapvergunning {{object:kapvergunning-molenweg.identifier}}",
+				"receivedAt": "{{datetime:0 08:42}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-02",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-02@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:linda.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Aanvulling op mijn Woo-verzoek {{object:woo-parkeervergunningen-binnenstad.identifier}}",
+				"receivedAt": "{{datetime:0 08:15}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar.",
+				"channel": "portal"
+			}
+		},
+		{
+			"key": "postvak-03",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-03@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:fatima.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Re: bezwaar parkeerboete, zaak {{object:bezwaar-parkeerboete-havenstraat.identifier}}",
+				"receivedAt": "{{datetime:-1 16:20}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-04",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-04@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:fatima.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Foto's van de kapotte bank, melding {{object:melding-fatima.identifier}}",
+				"receivedAt": "{{datetime:-1 11:05}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar.",
+				"channel": "portal"
+			}
+		},
+		{
+			"key": "postvak-05",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-05@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:slagerij.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Tekening terrasoverkapping bij {{object:terras-slagerij.identifier}}",
+				"receivedAt": "{{datetime:-2 14:30}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-06",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-06@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:henk.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Nieuw kenteken doorgegeven voor {{object:kenteken-henk.identifier}}",
+				"receivedAt": "{{datetime:-3 09:50}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-07",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-07@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:vandam.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Factuur onderhoud openbare verlichting",
+				"receivedAt": "{{datetime:0 07:58}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-08",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-08@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:sanne.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Bericht via Mijn Zuiddrecht",
+				"receivedAt": "{{datetime:0 07:31}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar.",
+				"channel": "portal"
+			}
+		},
+		{
+			"key": "postvak-09",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-09@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:karin.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Klacht over afvalinzameling",
+				"receivedAt": "{{datetime:-1 19:12}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-10",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-10@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:mark.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Vraag over een evenementenvergunning",
+				"receivedAt": "{{datetime:-1 10:40}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-11",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-11@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:janwillem.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Offerte herinrichting Dorpsstraat",
+				"receivedAt": "{{datetime:-2 15:03}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-12",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-12@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:cloudgemeente.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Uitnodiging gebruikersdag zaaksysteem",
+				"receivedAt": "{{datetime:-2 09:12}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-13",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-13@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:linda.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Wanneer wordt de stoep gerepareerd?",
+				"receivedAt": "{{datetime:-3 20:45}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar.",
+				"channel": "portal"
+			}
+		},
+		{
+			"key": "postvak-14",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-14@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:sanne.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Overlast van bladblazers in de Lindelaan",
+				"receivedAt": "{{datetime:-4 13:27}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-15",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-15@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:henk.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Afmelding afvalpas",
+				"receivedAt": "{{datetime:-4 10:02}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-16",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-16@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:karin.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Vraag over de hondenbelasting",
+				"receivedAt": "{{datetime:-5 17:36}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-17",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-17@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:vandam.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Storing lantaarnpaal Kerkplein",
+				"receivedAt": "{{datetime:-6 08:20}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
 		}
 	],
 	"views": [
@@ -2388,6 +2810,39 @@
 						"case"
 					]
 				}
+			}
+		}
+	],
+	"notes": [
+		{
+			"key": "pieter-noteert-parkeervergunningen",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:woo-parkeervergunningen-binnenstad.id}}",
+				"message": "Verzoeker herinnerd aan de ontbrekende machtiging.",
+				"createdAt": "{{datetime:0 09:30}}"
+			}
+		}
+	],
+	"readStates": [
+		{
+			"key": "pieter-opende-bezwaar-parkeerboete",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
+				"register": "dossiq",
+				"schema": "case",
+				"seenAt": "{{datetime:0 08:40}}"
+			}
+		},
+		{
+			"key": "pieter-opende-kapvergunning-essen",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:kapvergunning-essen-parkweg.id}}",
+				"register": "dossiq",
+				"schema": "case",
+				"seenAt": "{{datetime:0 10:15}}"
 			}
 		}
 	],
@@ -2511,6 +2966,30 @@
 				"decisions": [
 					"{{object:woo-zaaksysteem-besluit.id}}"
 				]
+			}
+		},
+		{
+			"key": "team-vergunningen-in-de-boom",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"where": {
+				"roleName": "Team Vergunningen"
+			},
+			"set": {
+				"ncGroupId": "zuiddrecht-vergunningen",
+				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+			}
+		},
+		{
+			"key": "team-handhaving-in-de-boom",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"where": {
+				"roleName": "Team Handhaving"
+			},
+			"set": {
+				"ncGroupId": "zuiddrecht-toezicht-en-handhaving",
+				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
 			}
 		}
 	]
