@@ -3064,6 +3064,15 @@
 								}
 							},
 							"viewAllLabel": "All tasks of this case in Tasks",
+							"viewAllPlacement": "footer",
+							"dueFormat": "date",
+							"stateLabels": {
+								"active": "In progress",
+								"completed": "Done"
+							},
+							"stateColors": {
+								"active": "purple"
+							},
 							"emptyText": "No tasks for this case yet",
 							"pollSeconds": 30,
 							"stateVariants": {
