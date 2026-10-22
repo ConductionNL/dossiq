@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.141.1",
+	"version": "2.144.1",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -3114,6 +3114,7 @@
 								"sumField": { "type": "string", "description": "Numeric field summed when metric is 'sum' (required for sum)." },
 								"topN": { "type": "integer", "minimum": 1, "description": "Keep the N largest groups (sorted by value desc)." },
 								"otherBucket": { "type": "boolean", "description": "Fold the post-topN remainder into a single translated 'Other' slice (sum of the rest). The Other bucket never drilldown-navigates." },
+								"mergeByLabel": { "type": "boolean", "description": "Fold the groups whose labels read the same into one bar or slice, summed, before topN is applied (2.141.0): status types declared per case type count as one 'Received'. A merged bar drills down with every key behind it." },
 								"labelResolve": {
 									"type": "object",
 									"required": ["schema"],
@@ -3275,6 +3276,10 @@
 					"required": ["url"],
 					"additionalProperties": false
 				},
+				"exportId": {
+					"type": "string",
+					"description": "export only: the id of the table on the page whose rows the export downloads (an object-table widget's `content.exportId`); the dispatcher emits cn:widget:export with it. Pending in the library schema; its dispatcher already reads it."
+				},
 				"formProperties": {
 					"type": "object",
 					"description": "open-form with `endpoint` only: the fields the form shows and sends, as JSON-schema properties (`{ \"name\": { \"type\": \"string\", \"title\": \"Name\" } }`).",
@@ -3307,10 +3312,6 @@
 							"filter": { "type": "object", "description": "Filters sent with the export, as a list filter takes them." }
 						}
 					}
-				},
-				"exportId": {
-					"type": "string",
-					"description": "export only: the id of the table on the page whose rows the export downloads (an object-table widget's `content.exportId`); the dispatcher emits cn:widget:export with it. Pending in the library schema; its dispatcher already reads it."
 				},
 				"formats": {
 					"type": "array",
@@ -3501,7 +3502,7 @@
 						"properties": { "type": { "const": "open-form" } },
 						"required": ["type"]
 					},
-					"then": { "required": ["schema"] }
+					"then": { "anyOf": [{ "required": ["schema"] }, { "required": ["endpoint", "formProperties"] }] }
 				},
 				{
 					"description": "agent actions MUST declare the target agent uuid via `agent`.",
@@ -4495,11 +4496,22 @@
 						"quickActions": {
 							"type": "array",
 							"maxItems": 3,
-							"description": "type='detail': at most three always visible buttons in the header, for the actions a handler uses on every record. An item is an action in the header action shape, or the id of a `headerActions` entry, which then leaves the overflow menu.",
+							"description": "type='detail': at most three always visible buttons in the header, for the actions a handler uses on every record. An item is an action in the header action shape, or the id of a `headerActions` entry, which then leaves the overflow menu. `{ id, tabs?, notTabs? }` names a `headerActions` entry that shows only beside some body tabs; on the other tabs it stays in the overflow menu.",
 							"items": {
 								"oneOf": [
 									{ "type": "string", "minLength": 1 },
-									{ "$ref": "#/$defs/headerAction" }
+									{ "$ref": "#/$defs/headerAction" },
+									{
+										"type": "object",
+										"required": ["id"],
+										"not": { "required": ["label"] },
+										"anyOf": [{ "required": ["tabs"] }, { "required": ["notTabs"] }],
+										"properties": {
+											"id": { "type": "string", "minLength": 1 },
+											"tabs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "description": "The body tab ids this shows beside; it is hidden while another tab is open." },
+											"notTabs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "description": "The body tab ids this stands aside for, such as a tab that draws the page as its own." }
+										}
+									}
 								]
 							}
 						},
@@ -4535,8 +4547,10 @@
 							"type": "object",
 							"additionalProperties": false,
 							"anyOf": [{ "required": ["stages"] }, { "required": ["stagesFrom"] }],
-							"description": "type='detail': the 'what now' card above the body. For the record's stage it shows a short checklist next to the primary button. A stage without an entry shows no card. Rendered by CnNextStepCard.",
+							"description": "type='detail': the 'what now' card above the body. For the record's stage it shows a short checklist next to the primary button. A stage without an entry shows no card. `tabs` / `notTabs` tie it to body tabs as side cards are. Rendered by CnNextStepCard.",
 							"properties": {
+								"tabs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "description": "The body tab ids this shows beside; it is hidden while another tab is open." },
+								"notTabs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "description": "The body tab ids this stands aside for, such as a tab that draws the page as its own." },
 								"field": {
 									"type": "string",
 									"minLength": 1,
@@ -4627,6 +4641,11 @@
 							"type": "string",
 							"minLength": 1,
 							"description": "type='detail': a field path, read like a `visibleWhen` field, whose value picks the tabs of the page's tabs widgets and their order for this record, e.g. `@context.caseType.tabs` (DqAanbesteding). A non-empty list of tab ids keeps those tabs in that order; otherwise the declared tabs stay, and edit mode shows them all (2.128.0)."
+						},
+						"quickActionsFrom": {
+							"type": "string",
+							"minLength": 1,
+							"description": "type='detail': a field path, read like a `visibleWhen` field, whose list of `headerActions` ids picks this record's quick actions in that order, e.g. `@context.caseType.quickActions` (a case type that names the actions its cases need most). Only declared header actions are taken; an id nobody declares, or an action written out in the data, is dropped. An empty or missing list keeps `quickActions` (2.142.0)."
 						},
 						"sideColumnFrom": {
 							"type": "string",
