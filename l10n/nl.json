@@ -7916,6 +7916,7 @@
         "Task deadline": "Deadline",
         "Task description": "Taakomschrijving",
         "Task Due Reminders": "Herinneringen voor taken",
+        "Task edited by {actor}": "Taak bewerkt door {actor}",
         "Task finished by {actor}": "Taak afgerond door {actor}",
         "Task handed back by {actor}": "Taak teruggegeven door {actor}",
         "Task history": "Historie",

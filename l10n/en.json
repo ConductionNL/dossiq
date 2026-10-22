@@ -7916,6 +7916,7 @@
         "Task deadline": "Task deadline",
         "Task description": "Task description",
         "Task Due Reminders": "Task Due Reminders",
+        "Task edited by {actor}": "Task edited by {actor}",
         "Task finished by {actor}": "Task finished by {actor}",
         "Task handed back by {actor}": "Task handed back by {actor}",
         "Task history": "Task history",
