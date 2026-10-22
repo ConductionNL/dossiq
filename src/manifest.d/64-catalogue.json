@@ -107,6 +107,9 @@
 						"type": "record-list",
 						"title": "From the Store",
 						"subtitle": "Case types and set-up in and out as a file",
+						"headerActions": [
+							{ "label": "Import", "icon": "TrayArrowUp", "action": { "type": "open-modal", "target": "CaseTypeImportDialog" } }
+						],
 						"content": {
 							"endpointSource": {
 								"url": "/apps/dossiq/api/store/items",
