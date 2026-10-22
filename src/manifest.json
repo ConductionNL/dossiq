@@ -1992,7 +1992,7 @@
 								"label": "My work",
 								"route": "MyWorkHome"
 							},
-							"headerMeta": "{total} cases in your name · most urgent first",
+							"headerMeta": "{total} cases in your name[, {rows:coveredFor} of them as a substitute] · most urgent first",
 							"footerNote": "Urgency follows from the deadline, the priority and how long a case has been idle.",
 							"headerButtons": [
 								{
@@ -2032,6 +2032,21 @@
 							},
 							"rowClickToView": true,
 							"showViewAction": false,
+							"quickFilters": [
+								{
+									"label": "Including work you cover",
+									"activeLabel": "Including work you cover",
+									"_note": "The view opens including the work the reader covers for an absent colleague (board DqAanMijToegewezen, `Inclusief werk waarvoor u waarneemt` on the Active line; removing the chip leaves only their own cases). The server computes the covered cases: the lens asks the urgency source, GET /api/work-queue, for `covering=1` (nextcloud-vue `sourceParams`), and WorkQueueController adds the open cases the active substitutions route to the reader, each one a case CaseAccessGuard already lets them read (CoveredWork), so covering never widens access. Its filter repeats the view's open-case conditions because a lens filter replaces the page's All lens. The Cases page's other lenses are not offered here: the board draws none on this view.",
+									"filter": {
+										"statusHiddenInLists": false,
+										"isDraft": false
+									},
+									"sourceParams": {
+										"covering": "1"
+									},
+									"default": true
+								}
+							],
 							"sortOption": "urgency",
 							"cardLayout": {
 								"headPill": {
@@ -2051,6 +2066,12 @@
 								},
 								"number": "identifier",
 								"title": "title",
+								"meta": [
+									{
+										"field": "coveredFor",
+										"formatter": "coveredFor"
+									}
+								],
 								"description": {
 									"field": "description",
 									"maxLength": 140
@@ -6801,6 +6822,7 @@
 						"id": "eod-figures",
 						"type": "record-list",
 						"title": "Your day",
+						"titleTone": "side",
 						"content": {
 							"endpointSource": {
 								"url": "/apps/dossiq/api/personal-queue/end-of-day",
@@ -6848,6 +6870,7 @@
 						"id": "eod-how",
 						"type": "text",
 						"title": "How this works",
+						"titleTone": "side",
 						"content": {
 							"contentMode": "markdown",
 							"text": "This lists what you opened yourself today, not what a colleague changed. A note goes on the case or task itself. Hours go to humaniq."
@@ -7022,6 +7045,7 @@
 							"source": {
 								"kind": "flow-task"
 							},
+							"headerActions": ["link", "create"],
 							"emptyText": "Nobody has booked an appointment on this task"
 						}
 					},
@@ -7034,7 +7058,8 @@
 							"source": {
 								"kind": "flow-task",
 								"id": "@objectId"
-							}
+							},
+							"composer": "button"
 						}
 					},
 					{
@@ -10416,6 +10441,7 @@
 					"layout": "rows",
 					"tabs": false,
 					"filter": "segmented",
+					"filterLabel": "Show only",
 					"next": 0,
 					"statusLabels": {
 						"all": "All",
@@ -10729,6 +10755,7 @@
 							],
 							"exportCsv": true,
 							"exportFileName": "deadline-report",
+							"exportId": "deadline-report-quarterly",
 							"emptyText": "No terms started in this quarter."
 						}
 					},
@@ -10763,6 +10790,16 @@
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
 						"type": "sections",
 						"title": "Quarterly report",
+						"headerActions": [
+							{
+								"label": "Download quarterly report",
+								"icon": "TrayArrowDown",
+								"action": {
+									"type": "export",
+									"exportId": "deadline-report-quarterly"
+								}
+							}
+						],
 						"subtitle": "Per case type: total, within the term, overruns, processing time, extensions, notices of default and penalty",
 						"content": {
 							"dividers": false,
@@ -11710,6 +11747,7 @@
 							"filter": {
 								"caseType": "@objectId"
 							},
+							"rowSelection": true,
 							"editable": true,
 							"sort": {
 								"field": "category",
@@ -12246,6 +12284,13 @@
 				"app": "dossiq",
 				"palette": "column",
 				"listLabel": "Settings / Flows",
+				"_testSubjectNote": "Board DqFlow: Testen met een zaak. The button tries the saved flow with a picked case through OpenRegister's dry-run, which changes and sends nothing, and shows each step beside the canvas (nextcloud-vue feat/flow-page-dry-run, openregister#4753).",
+				"testSubject": {
+					"register": "dossiq",
+					"schema": "case",
+					"labelField": "title",
+					"label": "Test with a case"
+				},
 				"pill": "Case type flow",
 				"notice": "This flow is how its case type works. The case runs the steps; old webhook steps now run as an external call through Integriq.",
 				"paletteFootnote": "dossiq only offers steps a case can do itself. The rest comes from the app that does it.",

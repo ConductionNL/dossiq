@@ -41,4 +41,18 @@ describe('the catalogue page', () => {
 	it('pages the object types four at a time, as the board\'s pager does', () => {
 		expect(widget('catalogue-object-types').content.pageSize).toBe(4)
 	})
+
+	it('heads the page as the board: Download, then New object type as the primary action', () => {
+		const actions = page.config.headerActions
+		expect(actions.map((action) => action.id)).toEqual(['catalogue-download', 'catalogue-new-object-type'])
+		expect(actions[0]).toMatchObject({ type: 'export', exportId: 'catalogue-object-types', label: 'Download' })
+		expect(widget('catalogue-object-types').content.exportId).toBe('catalogue-object-types')
+		expect(actions[1]).toMatchObject({ label: 'New object type', variant: 'primary', href: '/apps/openregister/schemas' })
+	})
+
+	it('offers Add object type in the object types card, opening OpenRegister\'s schemas', () => {
+		expect(widget('catalogue-object-types').headerActions).toEqual([
+			{ label: 'Add object type', icon: 'Plus', action: { type: 'navigate', target: '/index.php/apps/openregister/schemas' } },
+		])
+	})
 })
