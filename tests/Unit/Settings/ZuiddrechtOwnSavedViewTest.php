@@ -115,6 +115,27 @@ class ZuiddrechtOwnSavedViewTest extends TestCase {
 		}
 
 		$this->assertNotNull(actual: $lens);
-		$this->assertSame(expected: $lens['filter'], actual: $view['query']['filters']);
+		$conditions = array_merge($view['query']['overrides']['lockedFilters'], $view['query']['filters']);
+		ksort($conditions);
+		$expected = $lens['filter'];
+		ksort($expected);
+		$this->assertSame(expected: $expected, actual: $conditions);
 	}//end testPieterOwnsTheViewTheFilterBoardsOpen()
+
+	/**
+	 * DqFilterBeheren's Active line names what the view chose, not the list's own conditions:
+	 * the view's filter is "waiting on the applicant" alone, and the conditions every case list
+	 * applies (not hidden, not a draft, still open) are locked, so they show no chip.
+	 *
+	 * @return void
+	 */
+	public function testTheFilterBoardViewShowsOnlyItsOwnCondition(): void {
+		$view = $this->views()['pieter-wacht-op-inwoner'];
+
+		$this->assertSame(expected: ['waitingOnApplicant' => true], actual: $view['query']['filters']);
+		$this->assertSame(
+			expected: ['statusHiddenInLists' => false, 'isDraft' => false, 'isFinalStatus' => false],
+			actual: $view['query']['overrides']['lockedFilters']
+		);
+	}//end testTheFilterBoardViewShowsOnlyItsOwnCondition()
 }//end class

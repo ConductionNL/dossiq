@@ -2790,10 +2790,14 @@
 				"isPublic": false,
 				"query": {
 					"filters": {
-						"waitingOnApplicant": true,
-						"statusHiddenInLists": false,
-						"isDraft": false,
-						"isFinalStatus": false
+						"waitingOnApplicant": true
+					},
+					"overrides": {
+						"lockedFilters": {
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
 					},
 					"search": "",
 					"sort": [
