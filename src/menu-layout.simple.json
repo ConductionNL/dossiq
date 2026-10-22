@@ -215,9 +215,17 @@
 						"widgets": [
 							{
 								"id": "your-teams-queue",
-								"type": "object-list",
+								"type": "record-list",
 								"title": "Your team's queue",
 								"icon": "AccountGroupOutline",
+								"_note": "DqMijnTeam draws the team queue as rows: the title, under it the case number, the case type and the deadline, and Pick up at the end of the row. The same query as the full structure's table, the first three; To the queue opens the team queue view of Cases. Pick up is the registered claimCase handler, as on the queue and the case list.",
+								"headerLink": {
+									"label": "To the queue",
+									"route": "Cases",
+									"query": {
+										"savedView": "default:team-queue"
+									}
+								},
 								"content": {
 									"register": "dossiq",
 									"schema": "case",
@@ -229,28 +237,28 @@
 										"isDraft": false,
 										"isTemplate": false
 									},
-									"limit": 10,
-									"hideHeader": true,
-									"columns": [
-										{
-											"key": "title",
-											"label": "Case",
-											"cellClass": "cn-cell--strong",
-											"secondary": "{identifier} · {deadline|date}"
-										}
+									"extend": [
+										"caseType"
 									],
-									"rowActions": [
-										{
-											"id": "claim",
-											"label": "Pick up",
-											"type": "handler",
-											"handler": "claimCase",
-											"variant": "secondary"
-										}
-									],
+									"limit": 3,
+									"presentation": "rows",
+									"title": "{title}",
+									"meta": {
+										"parts": [
+											"{identifier}",
+											"{caseType.title}",
+											"deadline {deadline|date}"
+										]
+									},
+									"rowAction": {
+										"id": "claim",
+										"label": "Pick up",
+										"type": "handler",
+										"handler": "claimCase"
+									},
+									"chevron": false,
 									"rowRoute": "CaseDetail",
-									"emptyText": "Nothing is waiting for your teams",
-									"prompt": "Cases waiting for your teams show here"
+									"emptyText": "Nothing is waiting for your teams"
 								}
 							},
 							{

@@ -1736,7 +1736,8 @@
 								"gridY": 2,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": true
+								"showTitle": true,
+								"sizeToContent": true
 							},
 							{
 								"id": "t5",
@@ -1745,7 +1746,8 @@
 								"gridY": 2,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": true
+								"showTitle": true,
+								"sizeToContent": true
 							},
 							{
 								"id": "t6",
@@ -1754,7 +1756,8 @@
 								"gridY": 6,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": true
+								"showTitle": true,
+								"sizeToContent": true
 							},
 							{
 								"id": "t7",
@@ -1763,7 +1766,8 @@
 								"gridY": 6,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": true
+								"showTitle": true,
+								"sizeToContent": true
 							}
 						]
 					}
