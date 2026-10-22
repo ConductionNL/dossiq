@@ -770,6 +770,273 @@
 			}
 		},
 		{
+			"key": "bezwaar-parkeerboete-havenstraat",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "bezwaar",
+						"icon": "Gavel"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Bezwaar parkeerboete Havenstraat",
+				"description": "Mevrouw El Amrani maakt bezwaar tegen een parkeerboete aan de Havenstraat. Zij stond volgens haar op een plek waar het bord niet te zien was. Zij wil gehoord worden.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-fatima.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:fatima.displayName}}",
+				"portalSubject": "{{cast:fatima.uid}}",
+				"portalParty": "subject:{{cast:fatima.uid}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "intern",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-juridische-zaken",
+				"startDate": "{{date:-16}}",
+				"receivedAt": "{{datetime:-16 11:20}}",
+				"currentStatusEnteredAt": "{{datetime:-12 09:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-16 11:20}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-12 09:00}}"
+					}
+				],
+				"tags": [
+					"havenstraat",
+					"parkeren"
+				]
+			}
+		},
+		{
+			"key": "woo-parkeervergunningen-binnenstad",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek"
+					}
+				},
+				"ontvangst": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangst"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Zoeken documenten"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Parkeervergunningen binnenstad",
+				"description": "Mevrouw Bakker vraagt alle stukken over het aantal parkeervergunningen in de binnenstad en de wachtlijst, uit 2025 en 2026.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-linda.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:linda.displayName}}",
+				"portalSubject": "{{cast:linda.uid}}",
+				"portalParty": "subject:{{cast:linda.uid}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "intern",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "behandelaars",
+				"startDate": "{{date:-28}}",
+				"receivedAt": "{{datetime:-28 10:05}}",
+				"currentStatusEnteredAt": "{{datetime:-9 14:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangst}}",
+						"enteredAt": "{{datetime:-28 10:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-9 14:00}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Parkeervergunningen binnenstad",
+					"omschrijving": "Het aantal parkeervergunningen in de binnenstad, de wachtlijst en de besluiten daarover, 2025 en 2026.",
+					"periodeVan": "{{date:-300}}",
+					"periodeTot": "{{date:-28}}",
+					"origin": "portal"
+				},
+				"tags": [
+					"parkeren",
+					"binnenstad"
+				]
+			}
+		},
+		{
+			"key": "woo-vergunningen-evenementen",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek"
+					}
+				},
+				"ontvangst": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangst"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Beoordeling ontvankelijkheid"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Woo-verzoek vergunningen evenementen",
+				"description": "Slagerij Van der Berg vraagt de evenementenvergunningen voor de Markt van het afgelopen jaar en de adviezen van de politie daarover.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:bedrijf-slagerij.id}}",
+				"initiatorType": "company",
+				"initiatorDisplayName": "{{cast:slagerij.name}}",
+				"portalSubject": "{{cast:janwillem.uid}}",
+				"portalParty": "kvk:{{cast:slagerij.kvk}}",
+				"portalBranch": "{{cast:slagerij.vestigingsnummer}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "intern",
+				"assignedGroup": "behandelaars",
+				"startDate": "{{date:-3}}",
+				"receivedAt": "{{datetime:-3 16:40}}",
+				"currentStatusEnteredAt": "{{datetime:-2 09:10}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangst}}",
+						"enteredAt": "{{datetime:-3 16:40}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 09:10}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Vergunningen evenementen Markt",
+					"omschrijving": "De evenementenvergunningen voor de Markt van het afgelopen jaar en de adviezen van de politie.",
+					"periodeVan": "{{date:-365}}",
+					"periodeTot": "{{date:-3}}",
+					"origin": "portal"
+				},
+				"tags": [
+					"evenementen",
+					"markt"
+				]
+			}
+		},
+		{
+			"key": "kapvergunning-essen-parkweg",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Kapvergunning essen Parkweg",
+				"description": "Meneer Bakker wil drie essen aan de Parkweg laten kappen. Ze hebben essentaksterfte. De boomdeskundige heeft ernaar gekeken.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henk.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henk.displayName}}",
+				"portalSubject": "{{cast:henk.uid}}",
+				"portalParty": "subject:{{cast:henk.uid}}",
+				"intakeChannel": "phone",
+				"communicationChannel": "post",
+				"confidentiality": "openbaar",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-11}}",
+				"receivedAt": "{{datetime:-11 13:15}}",
+				"currentStatusEnteredAt": "{{datetime:-8 08:45}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-11 13:15}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-8 08:45}}"
+					}
+				],
+				"tags": [
+					"parkweg",
+					"kap"
+				]
+			}
+		},
+		{
 			"key": "woo-zaaksysteem",
 			"register": "dossiq",
 			"schema": "case",
@@ -1616,7 +1883,7 @@
 			"data": {
 				"title": "Hoorzitting inplannen",
 				"description": "Plan de hoorzitting met de indiener en de commissie.",
-				"objectUuid": "{{object:kapvergunning-molenweg.id}}",
+				"objectUuid": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
 				"state": "active",
 				"assignee": "{{cast:pieter.uid}}",
 				"priority": "high",
@@ -1643,6 +1910,70 @@
 						"checked": false
 					}
 				]
+			}
+		},
+		{
+			"key": "bezwaarschrift-aanvullen",
+			"data": {
+				"title": "Bezwaarschrift aanvullen bij de indiener",
+				"description": "Vraag de gronden van het bezwaar op; het bezwaarschrift noemt ze niet.",
+				"objectUuid": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
+				"state": "active",
+				"priority": "urgent",
+				"dueAt": "{{date:-2}}",
+				"assignee": "{{cast:pieter.uid}}"
+			}
+		},
+		{
+			"key": "advies-boomdeskundige",
+			"data": {
+				"title": "Advies boomdeskundige beoordelen",
+				"description": "Het advies over de essentaksterfte is binnen.",
+				"objectUuid": "{{object:kapvergunning-essen-parkweg.id}}",
+				"state": "active",
+				"priority": "normal",
+				"dueAt": "{{date:3}}",
+				"assignee": "{{cast:pieter.uid}}"
+			}
+		},
+		{
+			"key": "herinnering-verzoeker",
+			"data": {
+				"title": "Herinnering sturen aan verzoeker",
+				"description": "Wij wachten op de periode die de verzoeker bedoelt.",
+				"objectUuid": "{{object:woo-parkeervergunningen-binnenstad.id}}",
+				"state": "available",
+				"priority": "normal",
+				"dueAt": "{{date:7}}",
+				"assignee": "{{cast:pieter.uid}}"
+			}
+		},
+		{
+			"key": "zienswijze-derde",
+			"data": {
+				"title": "Zienswijze derde belanghebbende vragen",
+				"description": "De politie staat in de adviezen; vraag haar zienswijze.",
+				"objectUuid": "{{object:woo-vergunningen-evenementen.id}}",
+				"state": "available",
+				"priority": "normal",
+				"dueAt": "{{date:1}}",
+				"candidateGroups": [
+					"behandelaars"
+				]
+			}
+		},
+		{
+			"key": "ontvangst-parkeervergunningen",
+			"data": {
+				"title": "Ontvangst bevestigen",
+				"description": "Ontvangstbevestiging naar de verzoeker.",
+				"objectUuid": "{{object:woo-parkeervergunningen-binnenstad.id}}",
+				"state": "completed",
+				"priority": "low",
+				"dueAt": "{{date:-27}}",
+				"assignee": "{{cast:pieter.uid}}",
+				"completedAt": "{{datetime:-27 09:30}}",
+				"completedBy": "{{cast:pieter.uid}}"
 			}
 		}
 	],
