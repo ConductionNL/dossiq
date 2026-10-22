@@ -4517,7 +4517,10 @@
 					}
 				],
 				"showViewToggle": true,
-				"showAdd": false
+				"showAdd": false,
+				"_massCopyDeleteNote": "DqZaken, DqZakenSorteren, DqFilterInMenu: the bulk band holds the case acts only. Copying and deleting the selection stay in the Actions menu above (`copy-selected`, `delete-selected`).",
+				"showMassCopy": false,
+				"showMassDelete": false
 			},
 			"configPatch": {
 				"quickFilters": {
