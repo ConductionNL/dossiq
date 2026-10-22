@@ -139,14 +139,20 @@ class WorkQueueService {
 	 * open tasks (assignee match, non-terminal status), scores every item,
 	 * and returns them sorted by score descending (most urgent first).
 	 *
+	 * Open cases the user covers for an absent colleague ({@see Substitution\CoveredWork})
+	 * join the ranking when given, scored the same way and never twice; each case item carries
+	 * `coveredFor` (`null` for the user's own), on the item and on its row.
+	 *
 	 * @param string $userId The Nextcloud user id to scope to.
 	 * @param DateTimeImmutable|null $now Optional "now" override for testing.
+	 * @param array<int, array<string, mixed>> $covered Open covered cases, each with `coveredFor`; already read-checked.
 	 *
 	 * @return array<int, array<string, mixed>> Scored, sorted queue items.
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	public function computeQueue(string $userId, ?DateTimeImmutable $now = null): array {
+	public function computeQueue(string $userId, ?DateTimeImmutable $now = null, array $covered = []): array {
 		$now = ($now ?? new DateTimeImmutable());
 
 		$objectService = $this->settingsService->getObjectService();
@@ -168,6 +174,22 @@ class WorkQueueService {
 			profile: $profile
 		);
 		foreach ($caseItems as $item) {
+			$items[] = $item;
+		}
+
+		$coveredItems = $this->scoreCases(
+			objectService: $objectService,
+			register: $register,
+			cases: array_values(
+				array_filter(
+					$covered,
+					static fn (array $case): bool => in_array((string)($case['id'] ?? ''), array_column($caseItems, 'id'), true) === false
+				)
+			),
+			now: $now,
+			profile: $profile
+		);
+		foreach ($coveredItems as $item) {
 			$items[] = $item;
 		}
 
@@ -393,6 +415,35 @@ class WorkQueueService {
 			return [];
 		}
 
+		return $this->scoreCases(
+			objectService: $objectService,
+			register: $register,
+			cases: $cases,
+			now: $now,
+			profile: $profile
+		);
+	}//end queueCaseItems()
+
+	/**
+	 * Score open cases into queue items.
+	 *
+	 * @param object $objectService OpenRegister ObjectService.
+	 * @param string $register Register slug/id.
+	 * @param array<int, array<string, mixed>> $cases The cases.
+	 * @param DateTimeImmutable $now Now.
+	 * @param UrgencyProfile $profile The instance profile.
+	 *
+	 * @return array<int, array<string, mixed>> One item per open case, each with `coveredFor`.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	private function scoreCases(
+		object $objectService,
+		string $register,
+		array $cases,
+		DateTimeImmutable $now,
+		UrgencyProfile $profile,
+	): array {
 		$profilesByType = [];
 		$items = [];
 		foreach ($cases as $case) {
@@ -425,6 +476,7 @@ class WorkQueueService {
 				profile: $profilesByType[$caseTypeId]
 			);
 
+			$case['coveredFor'] = ($case['coveredFor'] ?? null);
 			$items[] = array_merge(
 				[
 					'itemType' => 'case',
@@ -435,6 +487,7 @@ class WorkQueueService {
 					'status' => ($case['status'] ?? null),
 					'priority' => $priority,
 					'deadline' => $deadline,
+					'coveredFor' => $case['coveredFor'],
 					'case' => $case,
 				],
 				$scoring
@@ -442,7 +495,7 @@ class WorkQueueService {
 		}//end foreach
 
 		return $items;
-	}//end queueCaseItems()
+	}//end scoreCases()
 
 	/**
 	 * Build scored task queue items for one user.

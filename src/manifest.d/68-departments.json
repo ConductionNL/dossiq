@@ -38,6 +38,14 @@
 					"href": "/index.php/settings/admin/dossiq"
 				},
 				"headerMeta": "from Nextcloud groups, with function and absence",
+				"_headerButtonsNote": "Board DqAfdelingen: Downloaden in the header downloads the staff the list shows as CSV (the users source's columns).",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					}
+				],
 				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		}

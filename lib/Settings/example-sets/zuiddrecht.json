@@ -239,6 +239,75 @@
 			}
 		},
 		{
+			"key": "persoon-pieterbos",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:pieterbos.bsn}}",
+				"name": {
+					"givenNames": "{{cast:pieterbos.givenName}}",
+					"surname": "{{cast:pieterbos.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:pieterbos.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:pieterbos.address.street}}",
+					"houseNumber": "{{cast:pieterbos.address.number}}",
+					"postcode": "{{cast:pieterbos.address.postcode}}",
+					"city": "{{cast:pieterbos.address.city}}"
+				},
+				"displayName": "{{cast:pieterbos.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
+			"key": "persoon-henkvisser",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:henkvisser.bsn}}",
+				"name": {
+					"givenNames": "{{cast:henkvisser.givenName}}",
+					"surname": "{{cast:henkvisser.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:henkvisser.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:henkvisser.address.street}}",
+					"houseNumber": "{{cast:henkvisser.address.number}}",
+					"postcode": "{{cast:henkvisser.address.postcode}}",
+					"city": "{{cast:henkvisser.address.city}}"
+				},
+				"displayName": "{{cast:henkvisser.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
+			"key": "persoon-jvanwijk",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:jvanwijk.bsn}}",
+				"name": {
+					"givenNames": "{{cast:jvanwijk.givenName}}",
+					"surname": "{{cast:jvanwijk.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:jvanwijk.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:jvanwijk.address.street}}",
+					"houseNumber": "{{cast:jvanwijk.address.number}}",
+					"postcode": "{{cast:jvanwijk.address.postcode}}",
+					"city": "{{cast:jvanwijk.address.city}}"
+				},
+				"displayName": "{{cast:jvanwijk.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
 			"key": "bedrijf-slagerij",
 			"register": "dossiq",
 			"schema": "kvkCompany",
@@ -287,6 +356,65 @@
 					"place": "{{cast:buurtoost.address.city}}"
 				},
 				"description": "Organiseert het buurtfeest en de speeldagen in Oosthaven. Voorbeeldvereniging van de gemeente Zuiddrecht, geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-visserbouw",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:visserbouw.kvk}}",
+				"tradeName": "{{cast:visserbouw.name}}",
+				"legalForm": "{{cast:visserbouw.legalForm}}",
+				"address": {
+					"streetName": "{{cast:visserbouw.address.street}}",
+					"houseNumber": "{{cast:visserbouw.address.number}}",
+					"postcode": "{{cast:visserbouw.address.postcode}}",
+					"place": "{{cast:visserbouw.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-vanwijk",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:vanwijk.kvk}}",
+				"tradeName": "{{cast:vanwijk.name}}",
+				"legalForm": "{{cast:vanwijk.legalForm}}",
+				"address": {
+					"streetName": "{{cast:vanwijk.address.street}}",
+					"houseNumber": "{{cast:vanwijk.address.number}}",
+					"postcode": "{{cast:vanwijk.address.postcode}}",
+					"place": "{{cast:vanwijk.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-bewonerslindelaan",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:bewonerslindelaan.kvk}}",
+				"tradeName": "{{cast:bewonerslindelaan.name}}",
+				"legalForm": "{{cast:bewonerslindelaan.legalForm}}",
+				"address": {
+					"streetName": "{{cast:bewonerslindelaan.address.street}}",
+					"houseNumber": "{{cast:bewonerslindelaan.address.number}}",
+					"postcode": "{{cast:bewonerslindelaan.address.postcode}}",
+					"place": "{{cast:bewonerslindelaan.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging.",
+				"indicators": [
+					{
+						"key": "meerdere-meldingen",
+						"label": "Meerdere meldingen",
+						"effect": "warn",
+						"note": "Meldt vaker over de Lindelaan, ook via de balie."
+					}
+				]
 			}
 		},
 		{
@@ -448,7 +576,8 @@
 				"nature": "new_request",
 				"summary": "Meneer Bakker wil een bewonersvergunning voor het Kerkplein. Hij heeft geen computer. Kenteken en adres samen doorgenomen en de aanvraag voor hem ingevoerd. Hij krijgt het besluit per post.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-henk.id}}"
 			}
 		},
 		{
@@ -468,7 +597,8 @@
 				"nature": "informatieverzoek",
 				"summary": "Meneer Bakker teruggebeld: het kenteken in de aanvraag klopte niet met het kentekenbewijs. Hij brengt het bewijs langs bij de balie.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-henk.id}}"
 			}
 		},
 		{
@@ -488,7 +618,8 @@
 				"nature": "new_request",
 				"summary": "Meneer Bakker kwam met zijn kentekenbewijs aan de balie. Kenteken gecorrigeerd en een kopie van het bewijs bij de zaak gevoegd.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-henk.id}}"
 			}
 		},
 		{
@@ -508,7 +639,8 @@
 				"nature": "statusverzoek",
 				"summary": "Meneer Bakker vroeg wanneer de vergunning komt. Het besluit is gisteren per post verstuurd; hij heeft het binnen twee dagen.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-henk.id}}"
 			}
 		},
 		{
@@ -664,7 +796,8 @@
 				"nature": "report",
 				"summary": "Melding van een kapotte bank en zwerfafval bij de speeltuin. Mevrouw vindt het formulier op de website lastig. Afspraak aan de balie gemaakt om de melding samen aan te vullen.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-fatima.id}}"
 			}
 		},
 		{
@@ -828,6 +961,42 @@
 					"terras",
 					"ondernemer"
 				]
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten, met een eigen veld voor de situatietekening.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 5,
+				"isDraft": true,
+				"versionDate": "{{date:-2}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-regulier-situatietekening",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"data": {
+				"name": "situatietekening",
+				"definition": "Situatietekening",
+				"description": "Tekening van de situatie na de verbouwing, met maten.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"propertyType": "file",
+				"isRequired": true,
+				"hideOnCreate": true
 			}
 		},
 		{
@@ -1579,6 +1748,22 @@
 				"finalIntervention": "last_under_penaltypayment",
 				"override": false,
 				"recommendedBy": "{{cast:thomas.displayName}}"
+			}
+		},
+		{
+			"key": "lhs-advies-molenweg-4",
+			"register": "dossiq",
+			"schema": "lhsRecommendation",
+			"data": {
+				"case": "{{object:kapvergunning-molenweg.id}}",
+				"severity": "ernstig",
+				"behaviour": "goedwillend",
+				"actorType": "burger",
+				"matrixVersion": 1,
+				"recommendedIntervention": "last_under_penaltypayment",
+				"finalIntervention": "last_under_penaltypayment",
+				"override": false,
+				"recommendedBy": "{{cast:lars.uid}}"
 			}
 		},
 		{
