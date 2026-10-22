@@ -5247,7 +5247,7 @@
 										"case-type-rules-summary",
 										"case-type-rights",
 										"case-type-privacy",
-										"case-type-translations"
+										"case-type-translations-summary"
 									],
 									"layout": [
 										{
@@ -5267,7 +5267,7 @@
 											"gridWidth": 6
 										},
 										{
-											"widgetId": "case-type-translations",
+											"widgetId": "case-type-translations-summary",
 											"gridWidth": 6
 										}
 									]
@@ -5530,6 +5530,19 @@
 						"type": "audit-trail",
 						"title": "Record history",
 						"icon": "History"
+					},
+					{
+						"id": "case-type-translations-summary",
+						"type": "CaseTypeTranslationsWidget",
+						"title": "Translations",
+						"_note": "DqZaaktypeOverzicht Vertalingen: one row per language with its labels and a pill, fully translated or the number missing. The editor stays on the Translations tab, which Edit opens.",
+						"headerLink": {
+							"label": "Edit",
+							"tab": "translations"
+						},
+						"content": {
+							"mode": "summary"
+						}
 					},
 					{
 						"id": "case-type-phase-board",
