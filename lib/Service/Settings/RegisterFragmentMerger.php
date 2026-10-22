@@ -105,7 +105,8 @@ class RegisterFragmentMerger {
 	 * Associative arrays (OpenAPI objects like `components.schemas`, `paths`)
 	 * are merged key-by-key, recursing on shared keys; list arrays (numeric,
 	 * sequential keys) are concatenated; scalar values from the override
-	 * overwrite the base. Disjoint fragments therefore union cleanly without
+	 * overwrite the base, except a lower `version` number, which never undoes
+	 * a higher one. Disjoint fragments therefore union cleanly without
 	 * collision.
 	 *
 	 * @param array<int|string,mixed> $base The base array.
@@ -128,11 +129,42 @@ class RegisterFragmentMerger {
 				continue;
 			}
 
+			if ($key === 'version' && $this->isLowerVersion(value: $value, than: ($base[$key] ?? null)) === true) {
+				continue;
+			}
+
 			$base[$key] = $value;
 		}//end foreach
 
 		return $base;
 	}//end deepMerge()
+
+	/**
+	 * Whether a fragment's `version` is a lower version number than the one
+	 * already merged. Fragments merge in filename order, so a fragment that
+	 * bumps a schema can sort before one that still names an older version;
+	 * the higher one stands, or an instance never re-imports the schema. A
+	 * value that is not a version number is overwritten as before.
+	 *
+	 * @param mixed $value The fragment's value.
+	 * @param mixed $than  The merged value so far.
+	 *
+	 * @return bool True when both are version numbers and `$value` is lower.
+	 *
+	 * @spec openspec/changes/register-version-is-the-highest/specs/admin-settings/spec.md#requirement-a-merged-schema-carries-the-highest-version-its-fragments-declare
+	 */
+	private function isLowerVersion(mixed $value, mixed $than): bool {
+		$pattern = '/^\d+\.\d+\.\d+$/';
+		if (is_string($value) === false || is_string($than) === false) {
+			return false;
+		}
+
+		if (preg_match($pattern, $value) !== 1 || preg_match($pattern, $than) !== 1) {
+			return false;
+		}
+
+		return version_compare($value, $than, '<');
+	}//end isLowerVersion()
 
 	/**
 	 * Determine whether an array is a sequential list (vs. an associative map).
