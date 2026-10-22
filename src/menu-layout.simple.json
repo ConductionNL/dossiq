@@ -600,6 +600,7 @@
 								"id": "archival-reviews",
 								"type": "decision-list",
 								"title": "My archival reviews",
+								"subtitle": "Archival decisions waiting for your signature",
 								"icon": "ArchiveOutline",
 								"content": {
 									"source": {
@@ -2010,6 +2011,7 @@
 							"op": "empty"
 						},
 						"title": "Flows",
+						"subtitle": "What ran on this case or is still planned",
 						"_headerActionsNote": "DqZaak/DqZaakMeer Flows: \"Flow uitvoeren\" in the card's title row, the case's own start-flow dialog, shown while the case has a flow it may start (as the header action of the same name).",
 						"headerActions": [
 							{ "label": "Run flow", "icon": "Play", "visibleWhen": { "field": "hasStartableFlows", "op": "eq", "value": true }, "action": { "type": "open-modal", "target": "CaseStartFlowDialog" } }
@@ -2023,6 +2025,7 @@
 						"title": "Record hours"
 					},
 					"case-archival-panel": {
+						"subtitle": "What happens to this case once it is closed",
 						"_headerActionsNote": "DqZaakArchivering: \"Nominatie herberekenen\" in the Archiving card's title row. It recomputes the case's archival nomination through OpenRegister (POST /api/archival/objects/{id}/nomination/recompute), which an archivist may do, asks for a reason, and records the actor, the reason and the previous nomination. The library action dialog asks the reason; OpenRegister refuses anyone who is not an archivist, with its own sentence.",
 						"headerActions": [
 							{
@@ -2507,6 +2510,7 @@
 						"id": "case-acknowledgement-card",
 						"type": "data",
 						"title": "Receipt confirmation",
+						"subtitle": "Awb 4:3a: the requester hears that the request has arrived",
 						"_note": "ontvangstbevestiging REQ-TERM-023 and REQ-TERM-024: whether this case confirmed receipt under Awb 4:3a, when, to whom and by which channel, and the messages it sent on its own. It sits in Communication rather than Data because it IS correspondence, beside the contact a handler logs by hand. A `data` widget and not a bespoke component: both fields are declared on the case schema, so the library renders them from the schema and this change adds no widget to the custom-widget ratchet. Read-only throughout: the duty is written by the acknowledgement service and cleared through the Record receipt confirmed action, never by typing over the field, because a duty a handler can edit silently is the state this feature exists to make visible.",
 						"content": {
 							"title": "Receipt confirmation",
@@ -2546,6 +2550,7 @@
 						],
 						"content": { "actionsInHeader": true },
 						"title": "Live conversation",
+						"subtitle": "A Talk conversation, started from this case",
 						"_note": "A conversation held live from this case, in Nextcloud Talk, and what the case recorded of the ones already held: the moment, who joined and how long it lasted. It sits in Communication rather than in a tab of its own because a handler reading what was said on this case is already here, and a call and a contact moment are the same question asked of two moments. Rendered by TYPE (case-conversations-pane in registry.js): a section child resolves from the widget registry, and a component registered only by name draws an empty panel and logs nothing. The icon is PhoneInTalk, which src/icons.js carries; an icon a manifest names but no registry holds renders the default glyph and breaks nothing visibly, which is how that goes unnoticed."
 					},
 					{
@@ -2744,13 +2749,15 @@
 						"integrationId": "calendar",
 						"props": { "headerActions": ["link", "create"] },
 						"_headerActionsNote": "DqZaakTaken Afspraken: \"Bestaande koppelen\" and \"Afspraak maken\" in the card's title row, the calendar leaf's own link-existing and create flows (nextcloud-vue calendar card headerActions).",
-						"title": "Appointments"
+						"title": "Appointments",
+						"subtitle": "From the calendar, linked to this case"
 					},
 					{
 						"id": "case-deck-card",
 						"type": "integration",
 						"integrationId": "deck",
 						"title": "Cards",
+						"subtitle": "Coordination in Deck, linked to this case",
 						"_note": "leaf-integrations REQ-LEAF-105: a board for the ad-hoc coordination around a case, beside the tasks and never instead of them. NOTHING IN DOSSIQ READS OR WRITES A DECK CARD FROM A `task`, OR THE OTHER WAY ROUND. Task lifecycle belongs to WorkflowEngineService alone and the kanban WorkflowBoardView is the workflow surface; a mirror would give a handler two places to finish the same work and no rule about which one counts. A SECTION of the Work panel rather than a body widget with a layout entry, which is what the design named: the case body is a tab strip and its grid is full, and a card board is work, so it belongs beside the tasks. The leaf owns link, create and unlink, so dossiq ships no Deck code at all; with the Deck app absent the library renders its own empty state rather than an error."
 					},
 					{
@@ -3949,6 +3956,7 @@
 						"id": "case-decision-letter",
 						"type": "facts",
 						"title": "Decision letter",
+						"subtitle": "The document that goes to the requester",
 						"icon": "FileDocumentOutline",
 						"_note": "DqZaakBesluiten Beschikking: the decision document the case's document step writes, with Document genereren as the card's action.",
 						"content": {
