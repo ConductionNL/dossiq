@@ -47,6 +47,9 @@ describe('the Configuratie section', () => {
 		expect(adminRoot).toContain('<CnRegisterMapping')
 		expect(adminRoot).toContain('id="section-configuration"')
 		expect(adminRoot).toContain('@save="saveRegisterMapping"')
+		// DqBeheerinstellingen: the register, then the schemas three to a row.
+		const tag = adminRoot.slice(adminRoot.indexOf('<CnRegisterMapping'))
+		expect(tag.slice(0, tag.indexOf('/>'))).toContain('boardLayout="selects"')
 		expect(adminRoot).toContain("axios.put(generateUrl('/apps/dossiq/api/settings'), configuration)")
 	})
 
