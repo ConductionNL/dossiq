@@ -7041,6 +7041,7 @@
 						"id": "task-appointments",
 						"type": "events",
 						"title": "Appointments",
+						"subtitle": "From the calendar, linked to this task",
 						"content": {
 							"source": {
 								"kind": "flow-task"
