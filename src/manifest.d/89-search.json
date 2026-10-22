@@ -15,10 +15,12 @@
 				"entitySource": "search",
 				"sourceConfig": {
 					"termQuery": "q",
+					"kindAsText": true,
 					"kinds": [
 						{
 							"id": "cases",
 							"label": "Cases",
+							"rowLabel": "Case",
 							"register": "dossiq",
 							"schema": "case",
 							"subtitleField": "identifier",
@@ -34,12 +36,14 @@
 						{
 							"id": "objects",
 							"label": "Objects",
+							"rowLabel": "{objectType}",
 							"register": "dossiq",
 							"schema": "caseObject"
 						},
 						{
 							"id": "documents",
 							"label": "Documents",
+							"rowLabel": "Document",
 							"files": true
 						}
 					],
