@@ -66,6 +66,15 @@
 					"variant": "info",
 					"text": "Renewing and terminating are decisions. dossiq asks decidiq for them, which checks the mandate; the outcome comes back onto the contract. The expiry signal runs in dossiq."
 				},
+				"_defaultFiltersNote": "Board DqContracten opens on the running contracts with \"Status: actief en verlopend\" on the Active line, removable with its chip or Alles wissen: a default filter, not a fixed one. It names every status a running contract has, so only a contract without a status falls outside it.",
+				"defaultFilters": {
+					"status": [
+						"active",
+						"renewal-decision",
+						"termination-decision",
+						"ending"
+					]
+				},
 				"quickFilters": [
 					{
 						"label": "All",
