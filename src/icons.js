@@ -225,6 +225,7 @@ import TableSettings from 'vue-material-design-icons/TableSettings.vue'
 import TagMultiple from 'vue-material-design-icons/TagMultiple.vue'
 import TagOutline from 'vue-material-design-icons/TagOutline.vue'
 import TargetVariant from 'vue-material-design-icons/TargetVariant.vue'
+import TicketOutline from 'vue-material-design-icons/TicketOutline.vue'
 import Timeline from 'vue-material-design-icons/Timeline.vue'
 import TimerOutline from 'vue-material-design-icons/TimerOutline.vue'
 import TimerSandEmpty from 'vue-material-design-icons/TimerSandEmpty.vue'
@@ -452,6 +453,7 @@ export default {
 	TagMultiple,
 	TagOutline,
 	TargetVariant,
+	TicketOutline,
 	Timeline,
 	TimerOutline,
 	TimerSandEmpty,

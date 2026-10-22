@@ -101,6 +101,11 @@ class PipelinqGateway {
 	public const CASE_TYPE_CONTRIBUTIONS = 'OCA\\Pipelinq\\Dossiq\\CaseTypeContributionProvider';
 
 	/**
+	 * The open tickets of parties, read by master entity.
+	 */
+	public const TICKETS = 'OCA\\Pipelinq\\Integration\\TicketLeafProvider';
+
+	/**
 	 * The app id, for the one log line an absent pipelinq produces.
 	 */
 	public const APP_ID = 'pipelinq';
@@ -242,6 +247,39 @@ class PipelinqGateway {
 
 		return ['answered' => true, 'value' => $value, 'reason' => ''];
 	}//end ask()
+
+	/**
+	 * The open tickets of the pipelinq clients that share each master entity.
+	 *
+	 * Read through pipelinq's ticket leaf as the calling user, like every
+	 * other read on this seam. Null when pipelinq is absent, predates the
+	 * leaf, or has no ticket surface configured: the caller then says
+	 * "unavailable" instead of drawing zero tickets.
+	 *
+	 * @param array<int, string> $refs The master entity references.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>>|null Tickets per reference, or null.
+	 *
+	 * @spec openspec/changes/organisation-open-tickets/specs/pipelinq-consumption/spec.md
+	 */
+	public function openTicketsByMasterEntity(array $refs): ?array {
+		$answer = $this->ask(
+			class: self::TICKETS,
+			method: 'openByMasterEntity',
+			arguments: ['refs' => array_values($refs)],
+		);
+		$value = $answer['value'];
+		if ($answer['answered'] === false || is_array($value) === false || ($value['status'] ?? null) !== 200) {
+			return null;
+		}
+
+		$tickets = ($value['tickets'] ?? null);
+		if (is_array($tickets) === false) {
+			return null;
+		}
+
+		return $tickets;
+	}//end openTicketsByMasterEntity()
 
 	/**
 	 * Say once per request which capability is unavailable.

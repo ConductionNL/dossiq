@@ -173,7 +173,8 @@
 					"city": "{{cast:henk.address.city}}"
 				},
 				"displayName": "{{cast:henk.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000011"
 			}
 		},
 		{
@@ -219,7 +220,8 @@
 					"city": "{{cast:sanne.address.city}}"
 				},
 				"displayName": "{{cast:sanne.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000012"
 			}
 		},
 		{
@@ -242,7 +244,8 @@
 					"city": "{{cast:fatima.address.city}}"
 				},
 				"displayName": "{{cast:fatima.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000013"
 			}
 		},
 		{
@@ -351,7 +354,8 @@
 					"postcode": "{{cast:slagerij.address.postcode}}",
 					"place": "{{cast:slagerij.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000001"
 			}
 		},
 		{
@@ -368,7 +372,8 @@
 					"postcode": "{{cast:cloudgemeente.address.postcode}}",
 					"place": "{{cast:cloudgemeente.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000002"
 			}
 		},
 		{
