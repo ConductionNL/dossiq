@@ -26,7 +26,7 @@ function mountDialog() {
 		global: {
 			stubs: {
 				CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
-				CnMapWidget: { name: 'CnMapWidget', props: ['fitControl', 'locateControl', 'fullscreenControl'], template: '<div class="map" />' },
+				CnMapWidget: { name: 'CnMapWidget', props: ['fitControl', 'locateControl', 'fullscreenControl', 'zoomControl'], template: '<div class="map" />' },
 				CnAddressSearch: { name: 'CnAddressSearch', props: ['inputLabel', 'labelOutside'], template: '<div class="search" />' },
 				NcButton: { template: '<button><slot /></button>' },
 				NcCheckboxRadioSwitch: { template: '<label><slot /></label>' },
@@ -49,5 +49,15 @@ describe('the location dialog as the board draws it', () => {
 		expect(map.props('fitControl')).toBe(false)
 		expect(map.props('locateControl')).toBe(false)
 		expect(map.props('fullscreenControl')).toBe(false)
+		expect(map.props('zoomControl')).toBe(false)
+	})
+})
+
+describe('the Locaties card as DqZaakMeer draws it', () => {
+	it('is a preview map without buttons', () => {
+		const layout = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../src/menu-layout.simple.json'), 'utf8'))
+		const page = layout.pages.find((entry) => entry.id === 'CaseDetail')
+		const card = page.configAppend.widgets.find((widget) => widget.id === 'case-locations-card')
+		expect(card.content).toMatchObject({ zoomControl: false, fitControl: false, locateControl: false, fullscreenControl: false })
 	})
 })
