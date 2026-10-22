@@ -1866,7 +1866,6 @@
 									"overflow": true,
 									"widgetIds": [
 										"case-email-panel",
-										"case-linked-mail",
 										"case-notes-panel"
 									]
 								},
@@ -2046,7 +2045,7 @@
 						]
 					},
 					"case-email-panel": {
-						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the linked mail and the notes stand under it as cards, so the mail widget leaves its own linked mail list out. Mail koppelen and Mail opstellen are the library mail tab's own header buttons (content.headerActions).",
+						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the mail linked to the case is listed in the same card, as the board draws it, and the notes stand under it. Mail koppelen and Mail opstellen are the library mail tab's own header buttons (content.headerActions).",
 						"content": {
 							"headerActions": ["link", "compose"],
 							"heading": "Email",
@@ -2067,7 +2066,7 @@
 								"field": "endDate",
 								"op": "notEmpty"
 							},
-							"linkedMail": false
+							"linkedMail": true
 						}
 					}
 				},
@@ -3518,14 +3517,6 @@
 								}
 							}
 						}
-					},
-					{
-						"id": "case-linked-mail",
-						"type": "integration",
-						"integrationId": "email",
-						"title": "Linked mail",
-						"icon": "EmailOutline",
-						"_note": "DqZaakEmail: the mail linked to the case, with Link mail and Compose mail, from the email integration (Nextcloud Mail). Absent where Mail is not installed."
 					},
 					{
 						"id": "case-related-cases-card",
