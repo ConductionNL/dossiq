@@ -146,6 +146,24 @@ describe('process mining', () => {
 		expect(w.subtitle).toContain('not recorded')
 		expect(onGrid('ProcessMiningDashboard', 'pm-dwell-by-assignee')).toBe(true)
 	})
+	it('fits every card but the plot to its content and packs them upward, as DqProcesanalyse draws them', () => {
+		// The board's figures are 120px tiles and each card ends with its
+		// content (Waar zaken blijven hangen shows every row); fixed grid rows
+		// cut the stuck list and stood the tiles 215px tall.
+		// The throughput line is a plot, which takes the height its cell
+		// gives it, so it keeps four rows (296px; the board 294).
+		const config = page('ProcessMiningDashboard').config
+		expect(config.gridFloat).toBe(false)
+		for (const cell of config.layout) {
+			if (cell.widgetId === 'pm-throughput') {
+				expect(cell.sizeToContent).toBeUndefined()
+				expect(cell.gridHeight).toBe(4)
+			} else {
+				expect(cell.sizeToContent, cell.widgetId).toBe(true)
+			}
+		}
+	})
+
 	it('puts the measure, the period and the case type on the description line, in the board\'s order', () => {
 		// DqProcesanalyse: "… · [Gemiddeld | Mediaan] [Laatste 12 maanden]
 		// [Alle zaaktypen]", with no filter row under the header.
