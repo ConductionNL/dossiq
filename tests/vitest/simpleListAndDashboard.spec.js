@@ -158,10 +158,10 @@ describe('the cases list', () => {
 		expect(rest(simple.quickFilters)).toEqual(rest(before.quickFilters))
 	})
 
-	it('narrows Woo requests on the seeded Woo case type', () => {
+	it('narrows Woo requests on every version of the seeded Woo case type', () => {
 		const woo = simple.quickFilters.find((lens) => lens.label === 'Woo requests')
 		expect(woo.filter).toEqual({
-			caseType: WOO,
+			caseTypeIdentifier: 'woo-verzoek',
 			statusHiddenInLists: false,
 			isDraft: false,
 		})

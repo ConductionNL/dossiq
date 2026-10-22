@@ -305,7 +305,11 @@ class AanvullingsverzoekService {
 	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
 	 */
 	private function assertClarification(string $caseId, array $items, string $question): void {
-		if ($this->caseTypeOf(caseId: $caseId) !== WooRequestIntake::CASE_TYPE_ID) {
+		// A Woo request on any version of the case type: the first version by
+		// its fixed id, a later one by the identifier the chain shares.
+		$case = array_map('trim', array_map('strval', array_filter($this->caseRowOf(caseId: $caseId), 'is_scalar')));
+		$woo = ['caseType' => WooRequestIntake::CASE_TYPE_ID, 'caseTypeIdentifier' => WooRequestIntake::CASE_TYPE_IDENTIFIER];
+		if (array_intersect_assoc($woo, $case) === []) {
 			throw new RefusedException(
 				rule: 'aanvullingsverzoek-clarification-woo-only',
 				sentence: 'A clarification can only be asked on a Woo request.',
@@ -323,20 +327,18 @@ class AanvullingsverzoekService {
 	}//end assertKind()
 
 	/**
-	 * The case's type, or '' when it cannot be read.
+	 * The case, or an empty array when it cannot be read.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return string The case type id.
-	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
+	 * @return array<string, mixed> The case.
 	 */
-	protected function caseTypeOf(string $caseId): string {
+	protected function caseRowOf(string $caseId): array {
 		try {
 			[$objectService, $register] = $this->openRegister();
 			$schema = (string)$this->settingsService->getConfigValue('case_schema');
 			if ($schema === '') {
-				return '';
+				return [];
 			}
 
 			$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId);
@@ -345,11 +347,11 @@ class AanvullingsverzoekService {
 				'Dossiq: the case type could not be read for a request',
 				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
 			);
-			return '';
+			return [];
 		}
 
-		return trim((string)(($case ?? [])['caseType'] ?? ''));
-	}//end caseTypeOf()
+		return ($case ?? []);
+	}//end caseRowOf()
 
 	/**
 	 * The case's portal subject, or '' when it has none or cannot be read.
