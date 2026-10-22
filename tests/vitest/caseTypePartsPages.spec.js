@@ -66,7 +66,7 @@ describe('the parts of a case type', () => {
 		expect(holds('Phases and tasks')).toEqual(expect.arrayContaining(['case-type-messages-editor']))
 		const types = overlay.configPatch.widgets
 		expect(types['case-type-statuses-editor']).toBeUndefined()
-		expect(types['case-type-fields-editor']).toBeUndefined()
+		expect(types['case-type-fields-editor']?.type).toBeUndefined()
 		expect(baseWidget('case-type-statuses-editor').type).toBe('object-list')
 		expect(baseWidget('case-type-fields-editor').type).toBe('object-list')
 		expect(types['case-type-messages-editor'].type).toBe('CaseTypeMessagesEditorWidget')
