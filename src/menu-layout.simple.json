@@ -5823,6 +5823,10 @@
 									"path": "suspension"
 								},
 								{
+									"label": "Penalty for a late decision",
+									"path": "penalty"
+								},
+								{
 									"label": "Service target",
 									"path": "serviceTarget"
 								}

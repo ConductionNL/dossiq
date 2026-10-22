@@ -105,7 +105,7 @@ describe('terms in words (REQ-CTB-4)', () => {
 		const terms = widget('case-type-terms-written')
 		expect(terms.type).toBe('facts')
 		expect(terms.content.source).toEqual({ url: '/apps/dossiq/api/case-types/@objectId/terms' })
-		expect(terms.content.fields.map((field) => field.path)).toEqual(['decisionTerm', 'suspension', 'serviceTarget'])
+		expect(terms.content.fields.map((field) => field.path)).toEqual(['decisionTerm', 'suspension', 'penalty', 'serviceTarget'])
 	})
 
 	it('have a route', () => {
