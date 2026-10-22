@@ -1793,7 +1793,11 @@
 									}
 								},
 								{
-									"widgetId": "case-files",
+									"widgetIds": [
+										"case-document-verdicts-card",
+										"case-files",
+										"case-refusal-grounds-card"
+									],
 									"label": "Files",
 									"unreadKey": "files",
 									"countFrom": {
@@ -2022,6 +2026,12 @@
 							"op": "empty"
 						},
 						"title": "Record hours"
+					},
+					"case-files": {
+						"_viewNote": "DqZaakDocumenten: the Files tab holds the verdicts card, the folder and the grounds card, so the folder is a card too; `view: tab` keeps it the full files browser (CnFilesTab) inside that card rather than the compact files card.",
+						"content": {
+							"view": "tab"
+						}
 					},
 					"case-email-panel": {
 						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the linked mail and the notes stand under it as cards, so the mail widget leaves its own linked mail list out.",
@@ -3355,6 +3365,71 @@
 									"open": true
 								}
 							}
+						}
+					},
+					{
+						"id": "case-document-verdicts-card",
+						"type": "stacked-bar",
+						"visibleWhen": {
+							"field": "@context.caseType.documentReview.enabled",
+							"op": "eq",
+							"value": true
+						},
+						"_note": "DqZaakDocumenten \"4 van 7 beoordeeld\": the verdicts so far over the case's documents under review, from /api/cases/{id}/review/verdicts, each verdict in its tone and what is still to assess as the neutral rest. Only on a case type that reviews its documents (documentReview.enabled). Needs nextcloud-vue CnStackedBarWidget endpointSource, colors, remainder and heading (feat/stacked-bar-remainder-colours).",
+						"content": {
+							"inset": true,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/review/verdicts"
+							},
+							"groupsPath": "counts",
+							"totalPath": "documents",
+							"order": [
+								"openbaar",
+								"deels_openbaar",
+								"niet_openbaar"
+							],
+							"labels": {
+								"openbaar": "Public",
+								"deels_openbaar": "Partly public",
+								"niet_openbaar": "Not public"
+							},
+							"colors": {
+								"openbaar": "success",
+								"deels_openbaar": "warning",
+								"niet_openbaar": "error"
+							},
+							"remainder": {
+								"key": "open",
+								"label": "Still to be assessed"
+							},
+							"heading": "{counted} of {total} assessed",
+							"headingMeta": "{remaining} to go before the decision",
+							"emptyText": "No documents on this case yet"
+						}
+					},
+					{
+						"id": "case-refusal-grounds-card",
+						"type": "record-list",
+						"title": "Refusal grounds so far",
+						"visibleWhen": {
+							"field": "@context.caseType.documentReview.enabled",
+							"op": "eq",
+							"value": true
+						},
+						"_note": "DqZaakDocumenten \"Weigeringsgronden tot nu toe\": every ground cited on the case's documents, with its label and the documents citing it (a partly withheld one marked), from /api/cases/{id}/review/verdicts.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/review/verdicts",
+								"responsePath": "grounds"
+							},
+							"presentation": "rows",
+							"title": "{label}",
+							"meta": "{documentList}",
+							"pill": {
+								"field": "code"
+							},
+							"headerNote": "Go into the decision",
+							"emptyText": "No ground cited yet"
 						}
 					},
 					{

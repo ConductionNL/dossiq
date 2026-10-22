@@ -162,7 +162,7 @@ describe('what is new since the reader last looked', () => {
 		const panels = find(page, 'case-panels')
 		expect(panels.content.badgeSource).toBe('readState')
 		const tabs = panels.content.tabs
-		expect(tabs.find((tab) => tab.widgetId === 'case-files').unreadKey).toBe('files')
+		expect(tabs.find((tab) => tab.widgetId === 'case-files' || (tab.widgetIds || []).includes('case-files')).unreadKey).toBe('files')
 		expect(tabs.find((tab) => tab.widgetId === 'case-notes-panel').unreadKey).toBe('notes')
 	})
 
