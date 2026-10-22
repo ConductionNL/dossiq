@@ -587,14 +587,17 @@
 
 			<CnSettingsSection
 				id="section-enforcement-strategy"
-				:name="t('dossiq', 'Enforcement strategy')"
-				:description="
-					t(
-						'dossiq',
-						'The matrix that recommends an intervention from the severity of a violation and the behaviour of the offender.',
-					)
-				">
+				:name="t('dossiq', 'Enforcement strategy')">
+				<CnFactsWidget :content="enforcementMatrixFacts" />
+				<NcButton
+					variant="tertiary"
+					:aria-expanded="String(showEarlierMatrices)"
+					data-testid="enforcement-earlier-versions"
+					@click="showEarlierMatrices = !showEarlierMatrices">
+					{{ showEarlierMatrices ? t('dossiq', 'Hide earlier versions') : t('dossiq', 'Earlier versions') }}
+				</NcButton>
 				<CnWidgetObjectTable
+					v-if="showEarlierMatrices"
 					:hideWrapper="true"
 					:source="enforcementMatrixSource"
 					:columns="enforcementMatrixColumns"
@@ -621,6 +624,7 @@
 <script>
 import {
 	CnAdminSettingsShell,
+	CnFactsWidget,
 	CnRegisterMapping,
 	CnSettingsFieldsSection,
 	CnSettingsSection,
@@ -677,6 +681,7 @@ export default {
 		PrerequisitesTab,
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
+		CnFactsWidget,
 		CnRegisterMapping,
 		CnSettingsFieldsSection,
 		CnSettingsSection,
@@ -725,6 +730,8 @@ export default {
 			registerSaving: false,
 			activeTab: 'general',
 			tabCounts: {},
+			/** Whether the enforcement strategy card shows every matrix version. */
+			showEarlierMatrices: false,
 			ownerApps: loadState('dossiq', 'ownerApps', {
 				integriq: true,
 				shillinq: true,
@@ -1165,6 +1172,26 @@ export default {
 
 				// The section's title row draws Add day.
 				addButton: false,
+			}
+		},
+
+		/**
+		 * The active enforcement matrix as facts (DqVthInstellingen
+		 * Handhavingsstrategie): its name, version and last change.
+		 *
+		 * @return {object} The facts widget content.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		enforcementMatrixFacts() {
+			return {
+				source: { register: 'dossiq', schema: 'lhsMatrix', filter: { active: true } },
+				fields: [
+					{ label: 'Matrix', path: 'name' },
+					{ label: 'Version', path: 'version' },
+					{ label: 'Last changed', path: '@self.updated', format: 'date' },
+				],
+
+				emptyText: 'No active enforcement matrix yet',
 			}
 		},
 
