@@ -3436,6 +3436,22 @@
 				"outcome": "inbox",
 				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
 			}
+		},
+		{
+			"key": "waarneming-anouk-voor-pieter",
+			"register": "dossiq",
+			"schema": "substitution",
+			"data": {
+				"absentee": "{{cast:pieter.uid}}",
+				"substitute": "{{cast:anouk.uid}}",
+				"startDate": "{{date:8}}",
+				"endDate": "{{date:12}}",
+				"scope": "all",
+				"reason": "verlof",
+				"status": "active",
+				"comment": "Vakantie",
+				"createdBy": "{{cast:pieter.uid}}"
+			}
 		}
 	],
 	"views": [
