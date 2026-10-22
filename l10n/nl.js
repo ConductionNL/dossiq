@@ -9448,6 +9448,8 @@ OC.L10N.register(
         "Type: {type}": "Type: {type}",
         "Typed peer relations to other cases, JSON-encoded array of objects {caseId (uuid, required), aardRelatie (enum: vervolg|onderwerp|bijdrage, required), toelichting (string, optional)} per RGBZ/ZRC relevanteAndereZaken. Written symmetrically by CaseRelationService; do not edit directly.": "Getypeerde relaties met andere zaken, als array in JSON met objecten {caseId (uuid, verplicht), aardRelatie (enum: vervolg|onderwerp|bijdrage, verplicht), toelichting (string, optioneel)} volgens relevanteAndereZaken uit RGBZ en de ZRC. Symmetrisch geschreven door CaseRelationService; niet rechtstreeks bewerken.",
         "Typed per the RGBZ, kept in both directions": "Getypeerd volgens het RGBZ, in beide richtingen bijgehouden",
+        "Everyone involved in this case, by role": "Iedereen die bij deze zaak betrokken is, per rol",
+        "From OpenRegister's party model, also for those without an account": "Uit het partijmodel van OpenRegister, ook voor wie geen account heeft",
         "UID": "Uid",
         "UID of the advisor who submitted the response": "Uid van de adviseur die de reactie heeft ingediend",
         "UID of the assessor when approved": "Uid van de beoordelaar bij goedkeuring",
