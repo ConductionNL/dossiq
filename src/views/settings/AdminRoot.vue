@@ -352,6 +352,8 @@
 					v-else
 					:hideWrapper="true"
 					:source="connectionsSource"
+					:sortable="true"
+					:filterable="true"
 					:columns="connectionColumns"
 					:emptyText="
 						t(
@@ -534,6 +536,8 @@
 					v-else
 					:hideWrapper="true"
 					:source="intakeActivitySource"
+					:sortable="true"
+					:filterable="true"
 					:columns="intakeActivityColumns"
 					:emptyText="t('dossiq', 'No activities linked yet.')" />
 			</CnSettingsSection>
@@ -566,6 +570,8 @@
 					v-else
 					:hideWrapper="true"
 					:source="feeScheduleSource"
+					:sortable="true"
+					:filterable="true"
 					:columns="feeScheduleColumns"
 					:emptyText="t('dossiq', 'No fee rules for dossiq yet.')" />
 			</CnSettingsSection>
