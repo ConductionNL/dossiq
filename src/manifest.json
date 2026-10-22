@@ -10734,6 +10734,7 @@
 							],
 							"exportCsv": true,
 							"exportFileName": "deadline-report",
+							"exportId": "deadline-report-quarterly",
 							"emptyText": "No terms started in this quarter."
 						}
 					},
@@ -10768,6 +10769,16 @@
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
 						"type": "sections",
 						"title": "Quarterly report",
+						"headerActions": [
+							{
+								"label": "Download quarterly report",
+								"icon": "TrayArrowDown",
+								"action": {
+									"type": "export",
+									"exportId": "deadline-report-quarterly"
+								}
+							}
+						],
 						"subtitle": "Per case type: total, within the term, overruns, processing time, extensions, notices of default and penalty",
 						"content": {
 							"dividers": false,

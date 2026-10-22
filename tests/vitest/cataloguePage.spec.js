@@ -49,4 +49,10 @@ describe('the catalogue page', () => {
 		expect(widget('catalogue-object-types').content.exportId).toBe('catalogue-object-types')
 		expect(actions[1]).toMatchObject({ label: 'New object type', variant: 'primary', href: '/apps/openregister/schemas' })
 	})
+
+	it('offers Add object type in the object types card, opening OpenRegister\'s schemas', () => {
+		expect(widget('catalogue-object-types').headerActions).toEqual([
+			{ label: 'Add object type', icon: 'Plus', action: { type: 'navigate', target: '/index.php/apps/openregister/schemas' } },
+		])
+	})
 })
