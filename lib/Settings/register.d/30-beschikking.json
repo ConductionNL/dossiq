@@ -353,7 +353,7 @@
           "register": "dossiq",
           "schema": "caseType",
           "slug": "wmo-melding",
-          "version": "1.0.0"
+          "version": "1.0.1"
         },
         "title": "Wmo-melding",
         "identifier": "wmo-melding",
