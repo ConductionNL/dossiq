@@ -21,7 +21,11 @@
 		data-testid="case-location-dialog"
 		@closing="$emit('close')">
 		<div class="case-location-dialog">
-			<CnAddressSearch data-testid="case-location-search" @select="onSelect" />
+			<CnAddressSearch
+				:inputLabel="t('dossiq', 'Search address')"
+				:labelOutside="true"
+				data-testid="case-location-search"
+				@select="onSelect" />
 			<p class="case-location-dialog__hint">
 				{{ t('dossiq', 'Searches the PDOK Locatieserver. Only addresses from the BAG can be saved.') }}
 			</p>
@@ -35,6 +39,9 @@
 						:layers="activeLayers"
 						:markers="markers"
 						height="200px"
+						:fitControl="false"
+						:locateControl="false"
+						:fullscreenControl="false"
 						:ariaLabel="t('dossiq', 'The chosen address on a map')" />
 				</div>
 				<fieldset class="case-location-dialog__layers" data-testid="case-location-layers">
