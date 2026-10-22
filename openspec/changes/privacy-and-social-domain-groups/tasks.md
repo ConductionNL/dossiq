@@ -12,4 +12,6 @@
 - [x] 1.4 Gate the data breach register, its Privacy tab and the three social-domain pages on the roles
   - Files: src/manifest.json, src/manifest.d/70-privacy-and-procurement.json
   - Test: tests/vitest/rolePermissions.spec.js
-- [ ] 1.5 Gate the case page's Indication and Case meeting tabs on `sociaal-domein` (needs a permission term in nextcloud-vue's detail tab visibility)
+- [x] 1.5 Gate the case page's Indication and Case meeting tabs on `sociaal-domein` (nextcloud-vue detail-tab-permission: a tab names its `permission`)
+  - Files: src/menu-layout.simple.json
+  - Test: tests/vitest/socialTabsPermission.spec.js
