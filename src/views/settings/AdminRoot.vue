@@ -511,12 +511,8 @@
 				:actionsInTitle="true"
 				:wide="true"
 				:name="t('dossiq', 'Activities from the Omgevingsloket')"
-				:description="
-					t(
-						'dossiq',
-						'An application from the DSO becomes a case of the linked case type. The mapping is integriq\'s.',
-					)
-				">
+				:description="t('dossiq', 'An application from the DSO becomes a case of the linked case type.')"
+				:footerLink="ownerApps.integriq ? { label: t('dossiq', 'Manage the links in integriq'), href: integriqAdminUrl } : null">
 				<template v-if="ownerApps.integriq" #actions>
 					<NcButton :href="integriqAdminUrl" variant="secondary">
 						<template #icon>
@@ -547,12 +543,8 @@
 				:actionsInTitle="true"
 				:wide="true"
 				:name="t('dossiq', 'Fee rules')"
-				:description="
-					t(
-						'dossiq',
-						'What a case type costs, per rule and validity date. The fee schedules are shillinq\'s.',
-					)
-				">
+				:description="t('dossiq', 'Loaded at installation; adjusted per year.')"
+				:footerLink="ownerApps.shillinq ? { label: t('dossiq', 'Manage fees in shillinq'), href: feeSchedulesUrl } : null">
 				<template v-if="ownerApps.shillinq" #actions>
 					<NcButton :href="feeSchedulesUrl" variant="secondary">
 						<template #icon>
@@ -580,13 +572,7 @@
 
 			<CnSettingsSection
 				:actionsInTitle="true"
-				:name="t('dossiq', 'VTH inspection checklists')"
-				:description="
-					t(
-						'dossiq',
-						'Configure reusable inspection checklists for VTH cases (Toezicht). Checklists are versioned and linked to case types.',
-					)
-				"
+				:name="t('dossiq', 'Inspection checklists')"
 				:loading="!storesReady">
 				<template v-if="storesReady" #actions>
 					<NcButton variant="secondary" @click="$refs.checklists.openEditor(null)">

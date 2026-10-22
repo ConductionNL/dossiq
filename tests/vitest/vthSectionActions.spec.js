@@ -46,7 +46,7 @@ describe('the VTH section header actions', () => {
 		for (const id of ['section-intake-activities', 'section-fee-schedules']) {
 			expect(admin).toMatch(new RegExp(`id="${id}"\\s+:actionsInTitle="true"`))
 		}
-		expect(admin).toMatch(/:actionsInTitle="true"\s+:name="t\('dossiq', 'VTH inspection checklists'\)"/)
+		expect(admin).toMatch(/:actionsInTitle="true"\s+:name="t\('dossiq', 'Inspection checklists'\)"/)
 	})
 
 	it('puts Add day in the working days title row and leaves the calendar\'s own button out', () => {
@@ -55,5 +55,25 @@ describe('the VTH section header actions', () => {
 		expect(admin).toContain('<CnWorkingCalendarWidget ref="workingCalendar" :content="workingCalendarContent" />')
 		expect(admin).toMatch(/addButton: false,/)
 		expect(nl['Add day']).toBe('Dag toevoegen')
+	})
+
+	it('ends each owned list with a link to the app that manages it, as DqVthInstellingen does', () => {
+		// "Koppelingen beheren in integriq" and "Leges beheren in shillinq": a
+		// section footer link (nextcloud-vue footerLink), only with the app there.
+		expect(admin).toMatch(/:footerLink="ownerApps\.integriq \? \{ label: t\('dossiq', 'Manage the links in integriq'\), href: integriqAdminUrl \} : null"/)
+		expect(admin).toMatch(/:footerLink="ownerApps\.shillinq \? \{ label: t\('dossiq', 'Manage fees in shillinq'\), href: feeSchedulesUrl \} : null"/)
+		expect(nl['Manage the links in integriq']).toBe('Koppelingen beheren in integriq')
+		expect(nl['Manage fees in shillinq']).toBe('Leges beheren in shillinq')
+	})
+
+	it('words the VTH sections as the board does', () => {
+		// The owning app is named by the footer link, not in the description.
+		expect(admin).toContain("'An application from the DSO becomes a case of the linked case type.'")
+		expect(admin).toContain("'Loaded at installation; adjusted per year.'")
+		expect(nl['An application from the DSO becomes a case of the linked case type.']).toBe('Een aanvraag uit het DSO wordt een zaak van het gekoppelde zaaktype')
+		expect(nl['Loaded at installation; adjusted per year.']).toBe('Ingeladen bij de installatie; aan te passen per jaar')
+		expect(nl['Inspection checklists']).toBe('Inspectiechecklists')
+		const checklistSection = admin.slice(admin.indexOf("'Inspection checklists'"), admin.indexOf('<ChecklistTemplatesTab'))
+		expect(checklistSection).not.toContain(':description=')
 	})
 })
