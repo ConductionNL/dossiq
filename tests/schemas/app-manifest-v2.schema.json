@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.141.0",
+	"version": "2.141.1",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -3302,6 +3302,10 @@
 							"filter": { "type": "object", "description": "Filters sent with the export, as a list filter takes them." }
 						}
 					}
+				},
+				"exportId": {
+					"type": "string",
+					"description": "export only: the id of the table on the page whose rows the export downloads (an object-table widget's `content.exportId`); the dispatcher emits cn:widget:export with it. Pending in the library schema; its dispatcher already reads it."
 				},
 				"formats": {
 					"type": "array",
