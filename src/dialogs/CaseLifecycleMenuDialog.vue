@@ -175,6 +175,24 @@ import { failedActionsWarning } from '../utils/transitionOutcome.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
+/**
+ * A move's label: "To {status}" when its own label is only the status it
+ * leads to, or empty (board DqVolgendeStap, "Naar Besluit"); else the label an
+ * administrator wrote.
+ *
+ * @param {object} entry A menu entry.
+ * @return {string} The label.
+ * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ */
+function moveLabel(entry) {
+	const own = String(entry?.label ?? '')
+	const status = String(entry?.toStatusName ?? '')
+	if (entry?.kind === 'transition' && status !== '' && (own === '' || own === status)) {
+		return t('dossiq', 'To {status}', { status })
+	}
+	return own
+}
+
 export default {
 	name: 'CaseLifecycleMenuDialog',
 
@@ -416,7 +434,7 @@ export default {
 				case 'promote':
 					return t('dossiq', 'Promote to case')
 				default:
-					return String(entry?.label ?? '')
+					return moveLabel(entry)
 			}
 		},
 

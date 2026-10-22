@@ -9337,6 +9337,7 @@
         "To the board": "Naar werkbord",
         "To the case": "Naar de zaak",
         "To the day close": "Naar dagafsluiting",
+        "To {status}": "Naar {status}",
         "to {subject.advisor}. Answer due {subject.deadline|longdate}. Closing waits until then.": "aan {subject.advisor}. Antwoord uiterlijk {subject.deadline|longdate}. Afronden kan pas daarna.",
         "To:": "Aan:",
         "Today": "Vandaag",
