@@ -4,3 +4,4 @@
 - [x] Suspend and Resume in the header, End under More
 - [x] Dutch strings
 - [x] Spec
+- [x] Edit as an endpoint open-form on OpenRegister's organisation, in the header

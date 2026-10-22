@@ -22,3 +22,16 @@ lifecycle endpoint for the organisation (`suspend`, `activate`, `deprovision`) w
 
 - **GIVEN** an active organisation's page
 - **THEN** the header shows "Opschorten", and "Beëindigen" is under Meer, as on board DqTenant
+
+### Requirement: An organisation's name and description can be edited from its page
+
+`EnvironmentOrganisationDetail` SHALL offer Edit in the header, beside Suspend or Resume. It SHALL open a form with the
+organisation's name and description read from OpenRegister's `GET /api/organisations/{uuid}` and save them with
+`PUT /api/organisations/{uuid}`, which refuses anyone but an administrator or the organisation's own administrator
+before it writes.
+
+#### Scenario: Renaming an organisation
+
+- **GIVEN** an administrator on an organisation's page
+- **WHEN** they press "Bewerken", change the name and save
+- **THEN** the organisation carries the new name and the page shows it, as on board DqTenant
