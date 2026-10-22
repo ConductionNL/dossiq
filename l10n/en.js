@@ -106,6 +106,7 @@ OC.L10N.register(
         "8 weeks": "8 weeks",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source",
         "> 90 dagen": "> 90 dagen",
+        "Add day": "Add day",
         "_%n case_::_%n cases_": ["%n case","%n cases"],
         "_%n day late_::_%n days late_": ["%n day late","%n days late"],
         "_%n day left_::_%n days left_": ["%n day left","%n days left"],

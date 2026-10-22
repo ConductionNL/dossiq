@@ -44,7 +44,15 @@
 					'Red: a holiday or closing day. Terms do not count these days. These days apply to every app that uses the national calendar.',
 				)
 			">
-			<CnWorkingCalendarWidget :content="workingCalendarContent" />
+			<template #actions>
+				<NcButton variant="secondary" data-testid="dossiq-working-days-add" @click="$refs.workingCalendar.openAdd()">
+					<template #icon>
+						<Plus :size="20" />
+					</template>
+					{{ t('dossiq', 'Add day') }}
+				</NcButton>
+			</template>
+			<CnWorkingCalendarWidget ref="workingCalendar" :content="workingCalendarContent" />
 		</CnSettingsSection>
 
 		<template #tab-system>
@@ -1152,6 +1160,8 @@ export default {
 					schema: 'working-calendar',
 					filter: { slug: 'nl-national' },
 				},
+
+				addButton: false,
 			}
 		},
 
