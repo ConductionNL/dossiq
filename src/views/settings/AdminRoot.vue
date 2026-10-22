@@ -67,6 +67,7 @@
 					)
 				"
 				docUrl="https://dossiq.conduction.nl/docs/intro"
+				boardLayout="selects"
 				:groups="registerGroups"
 				:configuration="registerConfiguration"
 				:saving="registerSaving"
@@ -112,6 +113,7 @@
 				url="/apps/dossiq/api/settings/background-service-account"
 				:reloadAfterSave="true"
 				:saveLabel="t('dossiq', 'Use this account')"
+				:saveInline="true"
 				:savedMessage="t('dossiq', 'Background jobs now save as {userId}.')"
 				:fields="backgroundAccountFields" />
 

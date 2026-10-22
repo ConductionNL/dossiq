@@ -785,7 +785,9 @@ const DOSSIQ_SETTINGS_URL = '/apps/dossiq/api/settings'
  * how much, what unclaimed mail becomes, matching mail to cases by number,
  * the sender of dossiq's own mail and who may receive it, and who runs and
  * may not feed intake. Intake keys live on the mailbox endpoint, matching on
- * its own endpoint, the sender on dossiq's settings.
+ * its own endpoint, the sender on dossiq's settings. The six fields
+ * DqBeheerinstellingen draws come first; the rest are `advanced`, behind one
+ * disclosure.
  *
  * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
  * @return {Array<object>} The fields.
@@ -844,6 +846,7 @@ export function sharedMailboxFields(t) {
 		},
 		{
 			key: 'email_transport',
+			advanced: true,
 			label: t('dossiq', 'Transport / source mailbox account'),
 			placeholder: t('dossiq', 'Nextcloud Mail account or functional mailbox id'),
 			hint: t(
@@ -897,6 +900,7 @@ export function sharedMailboxFields(t) {
 		},
 		{
 			key: 'email_case_matching_pattern',
+			advanced: true,
 			label: t('dossiq', 'Case number pattern'),
 			url: CASE_MATCHING_URL,
 			saveMethod: 'PUT',
@@ -911,6 +915,7 @@ export function sharedMailboxFields(t) {
 		},
 		{
 			key: 'email_from_address',
+			advanced: true,
 			label: t('dossiq', 'Sender address'),
 			placeholder: 'zaken@gemeente.nl',
 			...own('email_from_address'),
@@ -921,12 +926,14 @@ export function sharedMailboxFields(t) {
 		},
 		{
 			key: 'email_from_name',
+			advanced: true,
 			label: t('dossiq', 'Sender name'),
 			placeholder: 'Gemeente Voorbeeld',
 			...own('email_from_name'),
 		},
 		{
 			key: 'email_recipient_allowlist',
+			advanced: true,
 			label: t('dossiq', 'Allowed recipients'),
 			placeholder: '@gemeente.nl, team@gemeente.nl',
 			...own('email_recipient_allowlist'),
@@ -937,6 +944,7 @@ export function sharedMailboxFields(t) {
 		},
 		{
 			key: 'email_intake_role',
+			advanced: true,
 			label: t('dossiq', 'Group that runs intake'),
 			placeholder: 'zaakbehandelaars',
 			hint: t(
@@ -946,6 +954,7 @@ export function sharedMailboxFields(t) {
 		},
 		{
 			key: 'email_intake_blocklist',
+			advanced: true,
 			label: t('dossiq', 'Senders that may not open a case'),
 			placeholder: 'spam@voorbeeld.nl, @voorbeeld.nl',
 			hint: t(
@@ -955,6 +964,7 @@ export function sharedMailboxFields(t) {
 		},
 		{
 			key: 'email_intake_junk_rules',
+			advanced: true,
 			label: t('dossiq', 'Junk rules'),
 			type: 'textarea',
 			rows: 3,
