@@ -40,6 +40,6 @@ describe('case type Overview cards', () => {
 describe('phase board', () => {
 	it('links View as flow to the case type\'s workflow canvas', () => {
 		// The canvas sits on a page of its own (case-type-page-follows-its-boards).
-		expect(widget('case-type-phase-board').headerLink).toEqual({ label: 'View as flow', route: 'CaseTypeFlow', params: { id: '@objectId' } })
+		expect(widget('case-type-phase-board').content.actions[0]).toEqual(expect.objectContaining({ type: 'navigate', label: 'View as flow', target: '/settings/case-types/@objectId/flow' }))
 	})
 })
