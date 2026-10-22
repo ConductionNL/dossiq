@@ -3358,6 +3358,80 @@
 						"integrationId": "contacts",
 						"title": "Case parties",
 						"subtitle": "Everyone involved in this case, by role",
+						"bodyActions": [
+							{
+								"label": "Add a party",
+								"icon": "AccountPlusOutline",
+								"visibleWhen": {
+									"field": "@self.archived",
+									"op": "empty"
+								},
+								"action": {
+									"type": "open-form",
+									"register": "dossiq",
+									"schema": "role",
+									"includeFields": [
+										"name",
+										"roleType",
+										"participant",
+										"representedParty",
+										"delegate",
+										"delegateUntil",
+										"description"
+									],
+									"fieldOverrides": {
+										"description": {
+											"widget": "textarea"
+										},
+										"roleType": {
+											"widget": "resource",
+											"label": "Role",
+											"placeholder": "Pick a role",
+											"resource": {
+												"register": "dossiq",
+												"schema": "roleType",
+												"labelField": "name",
+												"scope": {
+													"field": "caseType",
+													"value": "@object.caseType",
+													"includeUnscoped": true,
+													"dedupeOn": "genericRole"
+												},
+												"failedText": "The roles this case takes could not be read. Nothing has been changed on the case."
+											}
+										},
+										"representedParty": {
+											"widget": "party",
+											"placeholder": "Name, BSN, trade name or KvK number",
+											"testid": "initiator-picker-search",
+											"sources": [
+												{
+													"id": "person",
+													"register": "dossiq",
+													"schema": "brpPerson",
+													"label": "Resident",
+													"title": "{displayName}",
+													"secondary": "{residence.street} {residence.houseNumber}"
+												},
+												{
+													"id": "company",
+													"register": "dossiq",
+													"schema": "kvkCompany",
+													"label": "Organisation",
+													"title": "{tradeName}",
+													"secondary": "CoC {kvkNumber}"
+												}
+											],
+											"label": "Represented by"
+										}
+									},
+									"successMessage": "Party added to the case.",
+									"props": {
+										"case": "@objectId"
+									}
+								}
+							}
+						],
 						"content": {
 							"view": "tab"
 						},

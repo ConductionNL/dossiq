@@ -61,3 +61,36 @@ describe('the People tab', () => {
 		expect(en[roles.subtitle]).toBe(roles.subtitle)
 	})
 })
+
+describe('the Partijen button row', () => {
+	it('ends with Partij toevoegen, the same form as the page action', () => {
+		const manifest = read('src/manifest.json')
+		const pageAction = (function find(node) {
+			if (Array.isArray(node)) {
+				for (const child of node) {
+					const found = find(child)
+					if (found) {
+						return found
+					}
+				}
+			} else if (node && typeof node === 'object') {
+				if (node.id === 'add-party' && node.type === 'open-form') {
+					return node
+				}
+				for (const child of Object.values(node)) {
+					const found = find(child)
+					if (found) {
+						return found
+					}
+				}
+			}
+			return null
+		})(manifest)
+		const [entry] = card('case-parties-card').bodyActions
+		expect(nl[entry.label]).toBe('Partij toevoegen')
+		expect(entry.visibleWhen).toEqual(pageAction.visibleWhen)
+		const { id, label, icon, visibleWhen, ...action } = pageAction
+		expect(entry.icon).toBe(icon)
+		expect(entry.action).toEqual(action)
+	})
+})
