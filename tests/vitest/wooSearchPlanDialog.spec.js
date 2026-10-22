@@ -172,9 +172,11 @@ describe('WooSearchPlanDialog', () => {
 			(a) => a.id === 'woo-search-plan',
 		)
 		expect(action.target).toBe('WooSearchPlanDialog')
-		expect(JSON.stringify(action.visibleWhen)).toContain(
-			'3c0f5a00-0000-4000-a000-00000000a001',
-		)
+		expect(action.visibleWhen.all).toContainEqual({
+			field: 'caseTypeIdentifier',
+			op: 'eq',
+			value: 'woo-verzoek',
+		})
 		expect(registrySource).toMatch(/WooSearchPlanDialog: \{\s*kind: 'modal'/)
 	})
 
