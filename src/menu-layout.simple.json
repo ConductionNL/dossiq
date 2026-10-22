@@ -5491,8 +5491,8 @@
 					{
 						"id": "case-type-field-rules",
 						"type": "field-list",
-						"title": "Who sees and fills what",
-						"description": "Hidden or read only, per group and status",
+						"title": "Who sees and fills what, per group and status",
+						"subtitle": "Hidden or read only, per group and status",
 						"_note": "DqZaaktypeVelden: the case type's field rights (fieldRoleRules), read only here; OpenRegister enforces them on every read path.",
 						"content": {
 							"field": "fieldRoleRules",
@@ -5854,6 +5854,9 @@
 					},
 					"case-type-rules": {
 						"type": "CaseTypeRulesWidget"
+					},
+					"case-type-fields-editor": {
+						"subtitle": "The data schema of this case type."
 					}
 				}
 			}
