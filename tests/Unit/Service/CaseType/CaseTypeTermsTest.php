@@ -146,10 +146,10 @@ class CaseTypeTermsTest extends TestCase {
 		$none   = $this->terms(caseType: ['penaltyOnLateDecision' => false])->termsFor(caseTypeId: 'ct');
 		$unset  = $this->terms(caseType: ['processingDeadline' => 'P1W'])->termsFor(caseTypeId: 'ct');
 
-		$this->assertSame('Yes, after a notice of default, at most € 1442', $capped['penalty']);
-		$this->assertSame('Yes, after a notice of default', $plain['penalty']);
-		$this->assertSame('No', $none['penalty']);
-		$this->assertSame('', $unset['penalty']);
+		$this->assertSame(expected: 'Yes, after a notice of default, at most € 1442', actual: $capped['penalty']);
+		$this->assertSame(expected: 'Yes, after a notice of default', actual: $plain['penalty']);
+		$this->assertSame(expected: 'No', actual: $none['penalty']);
+		$this->assertSame(expected: '', actual: $unset['penalty']);
 	}//end testThePenaltyOnALateDecisionReadsAsASentence()
 
 	/**

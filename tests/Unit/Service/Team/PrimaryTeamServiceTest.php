@@ -63,7 +63,7 @@ class PrimaryTeamServiceTest extends TestCase {
 			userGroupIds: ['zuiddrecht-medewerkers', 'zuiddrecht-woo-en-informatie', 'admin'],
 		);
 
-		$this->assertSame(['groupId' => 'zuiddrecht-woo-en-informatie', 'name' => 'Informatie en Woo'], $team);
+		$this->assertSame(expected: ['groupId' => 'zuiddrecht-woo-en-informatie', 'name' => 'Informatie en Woo'], actual: $team);
 	}//end testTheTeamIsTheDeepestRoleThatBindsAGroupOfTheUser()
 
 	/**
@@ -74,8 +74,9 @@ class PrimaryTeamServiceTest extends TestCase {
 	public function testTwoEquallyDeepTeamsAreOrderedByName(): void {
 		$groups = ['zuiddrecht-vergunningen', 'zuiddrecht-woo-en-informatie'];
 
-		$this->assertSame('zuiddrecht-woo-en-informatie', PrimaryTeamService::primaryTeam(roles: self::roles(), userGroupIds: $groups)['groupId']);
-		$this->assertSame('zuiddrecht-woo-en-informatie', PrimaryTeamService::primaryTeam(roles: array_reverse(self::roles()), userGroupIds: array_reverse($groups))['groupId']);
+		$this->assertSame(expected: 'zuiddrecht-woo-en-informatie', actual: PrimaryTeamService::primaryTeam(roles: self::roles(), userGroupIds: $groups)['groupId']);
+		$reversed = PrimaryTeamService::primaryTeam(roles: array_reverse(self::roles()), userGroupIds: array_reverse($groups));
+		$this->assertSame(expected: 'zuiddrecht-woo-en-informatie', actual: $reversed['groupId']);
 	}//end testTwoEquallyDeepTeamsAreOrderedByName()
 
 	/**
@@ -84,8 +85,8 @@ class PrimaryTeamServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAUserInNoBoundGroupHasNoTeam(): void {
-		$this->assertNull(PrimaryTeamService::primaryTeam(roles: self::roles(), userGroupIds: ['admin', 'Unbound']));
-		$this->assertNull(PrimaryTeamService::primaryTeam(roles: [], userGroupIds: ['zuiddrecht-medewerkers']));
+		$this->assertNull(actual: PrimaryTeamService::primaryTeam(roles: self::roles(), userGroupIds: ['admin', 'Unbound']));
+		$this->assertNull(actual: PrimaryTeamService::primaryTeam(roles: [], userGroupIds: ['zuiddrecht-medewerkers']));
 	}//end testAUserInNoBoundGroupHasNoTeam()
 
 	/**
@@ -99,7 +100,7 @@ class PrimaryTeamServiceTest extends TestCase {
 			['id' => 'b', 'roleName' => 'B', 'ncGroupId' => 'gb', 'parentRoleId' => 'a'],
 		];
 
-		$this->assertNotNull(PrimaryTeamService::primaryTeam(roles: $roles, userGroupIds: ['ga']));
+		$this->assertNotNull(actual: PrimaryTeamService::primaryTeam(roles: $roles, userGroupIds: ['ga']));
 	}//end testAParentCycleEnds()
 
 	/**
@@ -108,13 +109,13 @@ class PrimaryTeamServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAUserInNoGroupHasNoTeamWithoutAReadOfTheRoles(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->expects($this->never())->method('getObjectService');
-		$groups = $this->createMock(IGroupManager::class);
+		$groups = $this->createMock(originalClassName: IGroupManager::class);
 		$groups->method('getUserGroupIds')->willReturn([]);
 
 		$service = new PrimaryTeamService(settingsService: $settings, groupManager: $groups, logger: new NullLogger());
 
-		$this->assertNull($service->teamOf(user: $this->createMock(IUser::class)));
+		$this->assertNull(actual: $service->teamOf(user: $this->createMock(originalClassName: IUser::class)));
 	}//end testAUserInNoGroupHasNoTeamWithoutAReadOfTheRoles()
 }//end class

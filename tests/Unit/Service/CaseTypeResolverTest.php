@@ -558,14 +558,16 @@ class CaseTypeResolverTest extends TestCase {
 	 * 6 van 14", "Overschreven"). A shared attribute is neither.
 	 *
 	 * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+	 *
+	 * @return void
 	 */
 	public function testTheBlueprintCountsInheritedAndOverriddenFields(): void {
 		$resolver = $this->resolver(
-			[
+			caseTypes: [
 				'parent' => ['id' => 'parent', 'title' => 'Omgevingsvergunning'],
 				'child' => ['id' => 'child', 'title' => 'Omgevingsvergunning regulier', 'parentCaseType' => 'parent'],
 			],
-			[
+			rows: [
 				'property_definition_schema' => [
 					['id' => 'p1', 'name' => 'locatie', 'order' => 1, 'caseType' => 'parent'],
 					['id' => 'p2', 'name' => 'aanvrager', 'order' => 2, 'caseType' => 'parent'],
@@ -579,22 +581,24 @@ class CaseTypeResolverTest extends TestCase {
 
 		$counts = $resolver->blueprintFor(caseTypeId: 'child')['counts']['propertyDefinitions'];
 
-		self::assertSame(['total' => 5, 'inherited' => 2, 'overridden' => 1], $counts);
+		self::assertSame(expected: ['total' => 5, 'inherited' => 2, 'overridden' => 1], actual: $counts);
 	}//end testTheBlueprintCountsInheritedAndOverriddenFields()
 
 	/**
 	 * A type without a parent inherits and overrides nothing.
 	 *
 	 * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+	 *
+	 * @return void
 	 */
 	public function testATypeWithoutAParentCountsNothingInherited(): void {
 		$resolver = $this->resolver(
-			['solo' => ['id' => 'solo', 'title' => 'Melding']],
-			['property_definition_schema' => [['id' => 'p1', 'name' => 'locatie', 'order' => 1, 'caseType' => 'solo']]]
+			caseTypes: ['solo' => ['id' => 'solo', 'title' => 'Melding']],
+			rows: ['property_definition_schema' => [['id' => 'p1', 'name' => 'locatie', 'order' => 1, 'caseType' => 'solo']]]
 		);
 
 		$counts = $resolver->blueprintFor(caseTypeId: 'solo')['counts']['propertyDefinitions'];
 
-		self::assertSame(['total' => 1, 'inherited' => 0, 'overridden' => 0], $counts);
+		self::assertSame(expected: ['total' => 1, 'inherited' => 0, 'overridden' => 0], actual: $counts);
 	}//end testATypeWithoutAParentCountsNothingInherited()
 }//end class

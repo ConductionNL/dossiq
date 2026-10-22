@@ -30,7 +30,7 @@ class PipelinqOpenTicketsTest extends TestCase {
 	 * @return PipelinqGateway The gateway under test.
 	 */
 	private function gateway(?object $leaf): PipelinqGateway {
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			static function (string $id) use ($leaf): object {
 				if ($leaf === null || $id !== PipelinqGateway::TICKETS) {
@@ -41,7 +41,7 @@ class PipelinqOpenTicketsTest extends TestCase {
 			}
 		);
 
-		return new PipelinqGateway($container, $this->createMock(LoggerInterface::class));
+		return new PipelinqGateway(container: $container, logger: $this->createMock(originalClassName: LoggerInterface::class));
 	}//end gateway()
 
 	/**
@@ -88,7 +88,7 @@ class PipelinqOpenTicketsTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnAbsentPipelinqAnswersNull(): void {
-		$this->assertNull($this->gateway(leaf: null)->openTicketsByMasterEntity(refs: ['m1']));
+		$this->assertNull(actual: $this->gateway(leaf: null)->openTicketsByMasterEntity(refs: ['m1']));
 	}//end testAnAbsentPipelinqAnswersNull()
 
 	/**
@@ -101,8 +101,8 @@ class PipelinqOpenTicketsTest extends TestCase {
 
 		$tickets = $this->gateway(leaf: $leaf)->openTicketsByMasterEntity(refs: ['m1', 'm2']);
 
-		$this->assertSame(['m1' => [['id' => 't1']], 'm2' => []], $tickets);
-		$this->assertSame(['m1', 'm2'], $leaf->asked);
+		$this->assertSame(expected: ['m1' => [['id' => 't1']], 'm2' => []], actual: $tickets);
+		$this->assertSame(expected: ['m1', 'm2'], actual: $leaf->asked);
 	}//end testTheTicketsComeBackPerMasterEntity()
 
 	/**
@@ -113,6 +113,6 @@ class PipelinqOpenTicketsTest extends TestCase {
 	public function testAnUnconfiguredTicketSurfaceAnswersNull(): void {
 		$leaf = $this->leaf(result: ['status' => 503, 'error' => 'The ticket surface is not configured.']);
 
-		$this->assertNull($this->gateway(leaf: $leaf)->openTicketsByMasterEntity(refs: ['m1']));
+		$this->assertNull(actual: $this->gateway(leaf: $leaf)->openTicketsByMasterEntity(refs: ['m1']));
 	}//end testAnUnconfiguredTicketSurfaceAnswersNull()
 }//end class

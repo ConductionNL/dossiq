@@ -31,12 +31,12 @@ class PartyTicketControllerTest extends TestCase {
 	 * @return PartyTicketController The controller under test.
 	 */
 	private function controller(?array $tickets, array $params, array &$asked = []): PartyTicketController {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getParam')->willReturnCallback(
 			static fn (string $key, mixed $default = null): mixed => ($params[$key] ?? $default)
 		);
 
-		$gateway = $this->createMock(PipelinqGateway::class);
+		$gateway = $this->createMock(originalClassName: PipelinqGateway::class);
 		$gateway->method('openTicketsByMasterEntity')->willReturnCallback(
 			static function (array $refs) use ($tickets, &$asked): ?array {
 				$asked[] = $refs;
@@ -44,7 +44,7 @@ class PartyTicketControllerTest extends TestCase {
 			}
 		);
 
-		return new PartyTicketController('dossiq', $request, $gateway);
+		return new PartyTicketController(appName: 'dossiq', request: $request, gateway: $gateway);
 	}//end controller()
 
 	/**
@@ -60,9 +60,9 @@ class PartyTicketControllerTest extends TestCase {
 			asked: $asked
 		)->openTicketCounts();
 
-		$this->assertSame(200, $response->getStatus());
-		$this->assertSame(['available' => true, 'values' => ['m1' => 2, 'm2' => 0]], $response->getData());
-		$this->assertSame([['m1', 'm2']], $asked);
+		$this->assertSame(expected: 200, actual: $response->getStatus());
+		$this->assertSame(expected: ['available' => true, 'values' => ['m1' => 2, 'm2' => 0]], actual: $response->getData());
+		$this->assertSame(expected: [['m1', 'm2']], actual: $asked);
 	}//end testCountsArePerMasterEntity()
 
 	/**
@@ -73,7 +73,7 @@ class PartyTicketControllerTest extends TestCase {
 	public function testAnAbsentPipelinqIsUnavailable(): void {
 		$response = $this->controller(tickets: null, params: ['keys' => ['m1']])->openTicketCounts();
 
-		$this->assertSame(['available' => false], $response->getData());
+		$this->assertSame(expected: ['available' => false], actual: $response->getData());
 	}//end testAnAbsentPipelinqIsUnavailable()
 
 	/**
@@ -84,7 +84,7 @@ class PartyTicketControllerTest extends TestCase {
 	public function testTooManyKeysAreRefused(): void {
 		$keys = array_map(static fn (int $i): string => 'm'.$i, range(1, PartyTicketController::MAX_KEYS + 1));
 
-		$this->assertSame(400, $this->controller(tickets: [], params: ['keys' => $keys])->openTicketCounts()->getStatus());
+		$this->assertSame(expected: 400, actual: $this->controller(tickets: [], params: ['keys' => $keys])->openTicketCounts()->getStatus());
 	}//end testTooManyKeysAreRefused()
 
 	/**
@@ -95,7 +95,7 @@ class PartyTicketControllerTest extends TestCase {
 	public function testThePageReadsOnePartysTickets(): void {
 		$response = $this->controller(tickets: ['m1' => [['id' => 't1', 'title' => 'Vraag']]], params: ['key' => 'm1'])->openTickets();
 
-		$this->assertSame(['available' => true, 'results' => [['id' => 't1', 'title' => 'Vraag']], 'total' => 1], $response->getData());
+		$this->assertSame(expected: ['available' => true, 'results' => [['id' => 't1', 'title' => 'Vraag']], 'total' => 1], actual: $response->getData());
 	}//end testThePageReadsOnePartysTickets()
 
 	/**
@@ -107,7 +107,7 @@ class PartyTicketControllerTest extends TestCase {
 		$asked = [];
 		$response = $this->controller(tickets: [], params: ['key' => ''], asked: $asked)->openTickets();
 
-		$this->assertSame(['available' => true, 'results' => [], 'total' => 0], $response->getData());
-		$this->assertSame([], $asked);
+		$this->assertSame(expected: ['available' => true, 'results' => [], 'total' => 0], actual: $response->getData());
+		$this->assertSame(expected: [], actual: $asked);
 	}//end testAPartyWithoutAMasterEntityHasNone()
 }//end class

@@ -39,8 +39,8 @@ class PauseReasonDefaultDaysTest extends TestCase {
 	 * @return void
 	 */
 	public function testAReasonKeepsAPositiveWholeNumberOfDefaultDays(): void {
-		$this->assertSame(28, PauseReason::normalise(row: ['key' => 'k', 'name' => 'N', 'defaultDays' => 28])['defaultDays']);
-		$this->assertSame(14, PauseReason::normalise(row: ['key' => 'k', 'name' => 'N', 'defaultDays' => '14'])['defaultDays']);
+		$this->assertSame(expected: 28, actual: PauseReason::normalise(row: ['key' => 'k', 'name' => 'N', 'defaultDays' => 28])['defaultDays']);
+		$this->assertSame(expected: 14, actual: PauseReason::normalise(row: ['key' => 'k', 'name' => 'N', 'defaultDays' => '14'])['defaultDays']);
 	}
 
 	/**
@@ -50,7 +50,7 @@ class PauseReasonDefaultDaysTest extends TestCase {
 	 */
 	public function testNoDefaultReadsAsNull(): void {
 		foreach ([[], ['defaultDays' => 0], ['defaultDays' => -3], ['defaultDays' => 'soon']] as $extra) {
-			$this->assertNull(PauseReason::normalise(row: ['key' => 'k', 'name' => 'N'] + $extra)['defaultDays']);
+			$this->assertNull(actual: PauseReason::normalise(row: ['key' => 'k', 'name' => 'N'] + $extra)['defaultDays']);
 		}
 	}
 
@@ -60,19 +60,19 @@ class PauseReasonDefaultDaysTest extends TestCase {
 	 * @return void
 	 */
 	public function testThePickerIsOfferedTheDefault(): void {
-		$reader = $this->createMock(PauseReasonReader::class);
+		$reader = $this->createMock(originalClassName: PauseReasonReader::class);
 		$reader->method('forCase')->willReturn([
 			PauseReason::normalise(row: ['key' => 'machtiging', 'name' => 'Machtiging', 'legalBasis' => 'Awb 4:5', 'defaultDays' => 28]),
 			PauseReason::normalise(row: ['key' => 'advies', 'name' => 'Advies', 'legalBasis' => 'Awb 4:15']),
 		]);
-		$service = new DeadlinePauseService(termService: $this->createMock(TermijnService::class), reasons: $reader);
+		$service = new DeadlinePauseService(termService: $this->createMock(originalClassName: TermijnService::class), reasons: $reader);
 
 		$this->assertSame(
-			[
+			expected: [
 				['key' => 'machtiging', 'name' => 'Machtiging', 'legalBasis' => 'Awb 4:5', 'defaultDays' => 28],
 				['key' => 'advies', 'name' => 'Advies', 'legalBasis' => 'Awb 4:15'],
 			],
-			$service->offeredReasons(caseId: 'case-1')
+			actual: $service->offeredReasons(caseId: 'case-1')
 		);
 	}
 }//end class

@@ -56,7 +56,10 @@ class CaseTypeListExportTest extends TestCase {
 		$caseType = $merged['components']['schemas']['caseType'];
 
 		$this->assertTrue(condition: ($caseType['configuration']['exportable'] ?? false) === true);
-		$this->assertTrue(condition: version_compare($caseType['version'], '1.34.0', '>='), message: 'caseType reaches 1.34.0, its number in the version register');
+		$this->assertTrue(
+			condition: version_compare($caseType['version'], '1.34.0', '>='),
+			message: 'caseType reaches 1.34.0, its number in the version register'
+		);
 	}//end testTheCaseTypeSchemaIsExportable()
 
 	/**
