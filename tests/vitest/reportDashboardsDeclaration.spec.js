@@ -196,8 +196,17 @@ describe('deadline reports', () => {
 
 	it('downloads the quarterly report from its card header, as the board does', () => {
 		const card = widget('TermijnDashboard', 'deadline-report-quarterly-card')
-		expect(card.headerActions[0]).toMatchObject({ label: 'Download quarterly report', action: { type: 'export', exportId: 'deadline-report-quarterly' } })
+		// DqTermijnen: "Kwartaalrapport downloaden" is the card's text link.
+		expect(card.headerActions[0]).toMatchObject({ label: 'Download quarterly report', variant: 'link', action: { type: 'export', exportId: 'deadline-report-quarterly' } })
 		expect(widget('TermijnDashboard', 'deadline-report-quarterly').content.exportId).toBe('deadline-report-quarterly')
+	})
+
+	it('fits every card to its content and packs them upward, as DqTermijnen draws them', () => {
+		const config = page('TermijnDashboard').config
+		expect(config.gridFloat).toBe(false)
+		for (const cell of config.layout) {
+			expect(cell.sizeToContent, cell.widgetId).toBe(true)
+		}
 	})
 
 	it('lists the forfeited payments by case, with the year\'s total above them', () => {

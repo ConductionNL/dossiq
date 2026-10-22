@@ -10529,6 +10529,7 @@
 			"config": {
 				"_headerNote": "Board DqTermijnen's header row is Quarterly report, the buildiq square and Register notice of default, with no Actions menu. There is no in-page Edit button: changing the layout is buildiq's, under the buildiq button (Ruben, 18 Oct).",
 				"allowEdit": false,
+				"gridFloat": false,
 				"showActionsMenu": false,
 				"appId": "dossiq",
 				"pageId": "TermijnDashboard",
@@ -10855,6 +10856,7 @@
 							{
 								"label": "Download quarterly report",
 								"icon": "TrayArrowDown",
+								"variant": "link",
 								"action": {
 									"type": "export",
 									"exportId": "deadline-report-quarterly"
@@ -11015,7 +11017,8 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 2,
@@ -11023,7 +11026,8 @@
 						"gridX": 0,
 						"gridY": 3,
 						"gridWidth": 12,
-						"gridHeight": 4
+						"gridHeight": 4,
+						"sizeToContent": true
 					},
 					{
 						"id": 3,
@@ -11031,7 +11035,8 @@
 						"gridX": 0,
 						"gridY": 7,
 						"gridWidth": 12,
-						"gridHeight": 7
+						"gridHeight": 7,
+						"sizeToContent": true
 					},
 					{
 						"id": 4,
@@ -11039,7 +11044,8 @@
 						"gridX": 0,
 						"gridY": 14,
 						"gridWidth": 12,
-						"gridHeight": 8
+						"gridHeight": 8,
+						"sizeToContent": true
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
