@@ -9161,6 +9161,7 @@ OC.L10N.register(
         "This file has no document record yet; saving creates one.": "This file has no document record yet; saving creates one.",
         "This file is not on a case.": "This file is not on a case.",
         "This flow is how its case type works. The case runs the steps; old webhook steps now run as an external call through Integriq.": "This flow is how its case type works. The case runs the steps; old webhook steps now run as an external call through Integriq.",
+        "This flow is how the case type {name} works. The case runs the steps; old webhook steps now run as an external call through Integriq.": "This flow is how the case type {name} works. The case runs the steps; old webhook steps now run as an external call through Integriq.",
         "This goes on your own calendar and on your queue. It is not a case.": "This goes on your own calendar and on your queue. It is not a case.",
         "This instance keeps the setting here rather than with your other notifications.": "This instance keeps the setting here rather than with your other notifications.",
         "This instance routes no dossiq notifications yet.": "This instance routes no dossiq notifications yet.",

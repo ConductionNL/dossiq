@@ -9208,6 +9208,7 @@
         "This file has no document record yet; saving creates one.": "Dit bestand heeft nog geen documentregistratie; opslaan maakt er een aan.",
         "This file is not on a case.": "Dit bestand staat niet op een zaak.",
         "This flow is how its case type works. The case runs the steps; old webhook steps now run as an external call through Integriq.": "Deze flow is de werkwijze van het zaaktype. De zaak voert de stappen uit; oude webhookstappen lopen nu via een externe aanroep van Integriq.",
+        "This flow is how the case type {name} works. The case runs the steps; old webhook steps now run as an external call through Integriq.": "Deze flow is de werkwijze van het zaaktype {name}. De zaak voert de stappen uit; oude webhookstappen lopen nu via een externe aanroep van Integriq.",
         "This goes on your own calendar and on your queue. It is not a case.": "Dit komt in uw eigen agenda en in uw wachtrij. Het is geen zaak.",
         "This instance keeps the setting here rather than with your other notifications.": "Deze omgeving bewaart de instelling hier en niet bij je andere meldingen.",
         "This instance routes no dossiq notifications yet.": "Deze omgeving routeert nog geen dossiq-meldingen.",
