@@ -100,7 +100,7 @@
 					"showHelpLinks": false,
 					"label": "More"
 				},
-				"_headerActionsNote": "Board DqTenant: Suspend in the header, End under More, as the Status card says. A tenant is an OpenRegister organisation, so these are OpenRegister's own lifecycle calls (PUT /api/organisations/{uuid}/suspend | activate | deprovision, admin-only, the service refusing a transition the status does not allow). Resume replaces Suspend while the organisation is suspended. The board's Edit is not here: OpenRegister updates an organisation with PUT /api/organisations/{uuid}, but no library form posts its fields to an endpoint that is not a register schema.",
+				"_headerActionsNote": "Board DqTenant: Suspend in the header, End under More, as the Status card says. A tenant is an OpenRegister organisation, so these are OpenRegister's own lifecycle calls (PUT /api/organisations/{uuid}/suspend | activate | deprovision, admin-only, the service refusing a transition the status does not allow). Resume replaces Suspend while the organisation is suspended. Edit is an open-form over OpenRegister's organisation endpoint (GET for the values, PATCH for the save), which nextcloud-vue's endpoint form mode allows.",
 				"headerActions": [
 					{
 						"id": "organisation-suspend",
@@ -134,6 +134,31 @@
 						}
 					},
 					{
+						"id": "organisation-edit",
+						"type": "open-form",
+						"label": "Edit",
+						"icon": "Pencil",
+						"formTitle": "Edit the organisation",
+						"endpoint": {
+							"url": "/apps/openregister/api/organisations/@objectId",
+							"method": "PATCH",
+							"responsePath": "organisation"
+						},
+						"formProperties": {
+							"name": {
+								"type": "string",
+								"title": "Name"
+							},
+							"description": {
+								"type": "string",
+								"title": "Description",
+								"format": "textarea"
+							}
+						},
+						"successMessage": "The organisation is saved.",
+						"errorMessage": "The organisation was not saved."
+					},
+					{
 						"id": "organisation-end",
 						"type": "api-call",
 						"label": "End the organisation",
@@ -147,7 +172,8 @@
 				],
 				"quickActions": [
 					"organisation-suspend",
-					"organisation-resume"
+					"organisation-resume",
+					"organisation-edit"
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"sideColumn": [
@@ -276,8 +302,35 @@
 									"label": "Billing",
 									"widgetId": "organisation-billing-list",
 									"countFrom": "widget"
+								},
+								{
+									"label": "Record history",
+									"widgetId": "organisation-history"
 								}
 							]
+						}
+					},
+					{
+						"id": "organisation-history",
+						"type": "record-list",
+						"title": "Record history",
+						"_note": "Board DqTenant Historie: what happened to this organisation, newest first. OpenRegister writes an organisation's status changes and edits to the audit trail keyed by its uuid (OrganisationLifecycleAuditor); the admin audit list filters on object_uuid and action. Admin-only, as this page is.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/openregister/api/audit-trails?object_uuid=@objectId&action=organisation.status_changed,organisation.updated&sort=created&order=DESC",
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"title": "{action}",
+							"meta": "{userName} · {created|date}",
+							"valueLabels": {
+								"action": {
+									"organisation.status_changed": "Status changed",
+									"organisation.updated": "Details edited"
+								}
+							},
+							"limit": 25,
+							"emptyText": "Nothing has happened to this organisation yet"
 						}
 					},
 					{
