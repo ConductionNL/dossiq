@@ -2130,11 +2130,11 @@
 									"label": "People",
 									"overflow": true,
 									"widgetIds": [
-										"case-party-roles-card",
 										"case-parties-card",
+										"case-party-roles-card",
 										"case-seats-card"
 									],
-									"_note": "DqZaakBetrokkenen: the people panel's sections as the board's cards: the parties by role first (Partijen), the linked contacts, then the seats. Who follows the case is the header's Follow popover only (Ruben, 20 Oct 2026), so the Followers card left this tab."
+									"_note": "DqZaakBetrokkenen: the people panel's sections as the board's cards: the people on the case by role first (Partijen, the contacts tab in a card), the party model (Rollen), then the seats. Who follows the case is the header's Follow popover only (Ruben, 20 Oct 2026), so the Followers card left this tab."
 								},
 								{
 									"label": "Email",
@@ -3686,13 +3686,18 @@
 						"id": "case-parties-card",
 						"type": "integration",
 						"integrationId": "contacts",
-						"title": "Contacts",
+						"title": "Case parties",
+						"subtitle": "Everyone involved in this case, by role",
+						"content": {
+							"view": "tab"
+						},
 						"_note": "people-on-the-case: everyone involved in THIS case, read as OpenRegister person links rather than raw `role` rows. A person is a Nextcloud user or a contact, linked in one of the case schema's declared role types (SyncCaseRoleVocabulary writes them from the instance's role types), and PersonLinkListener projects the link onto a `role` record, so the resolver, the mandate matrix and the routing rules read what they always read. The contacts integration renders the people grouped by role type with avatar, email, validity window and note, and its picker offers users and contacts; the object-list this replaced showed a roleType uuid and a participant string nobody could act on."
 					},
 					{
 						"id": "case-party-roles-card",
 						"type": "parties",
-						"title": "Case parties",
+						"title": "Roles",
+						"subtitle": "From OpenRegister's party model, also for those without an account",
 						"_note": "The party model OpenRegister shipped in #3761 (`/parties` of this case), by role with the primary party first. A gemachtigde names whom they act for (role rows, `representedParty`). The accepted kinds and the writing language come from pipelinq through dossiq's endpoints; a kind is marked not accepted only when pipelinq answered the kinds. Every indicator carries its verdict, and a blocking one is also a note above the list. A failed read says so and is never \"no parties\".",
 						"content": {
 							"rolesObjects": {

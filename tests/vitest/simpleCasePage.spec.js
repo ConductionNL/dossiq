@@ -417,9 +417,10 @@ describe('the tabs', () => {
 		const peopleSections = find(original, 'case-people-panel').content.sections.map((section) => section.widget.id)
 		const peopleTab = strip.tabs.find((tab) => tab.label === 'People')
 		expect(peopleTab.widgetIds.map((id) => id.replace(/-card$/, '')).sort()).toEqual([...peopleSections].sort())
-		// The parties by role lead, as Partijen; the linked contacts follow (DqZaakBetrokkenen).
-		expect(peopleTab.widgetIds[0]).toBe('case-party-roles-card')
-		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Case parties')
+		// The people by role lead, as Partijen; the party model follows as Rollen (DqZaakBetrokkenen).
+		expect(peopleTab.widgetIds[0]).toBe('case-parties-card')
+		expect(simple.widgets.find((widget) => widget.id === 'case-parties-card').title).toBe('Case parties')
+		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Roles')
 		// Followers are the header popover only (Ruben, 20 Oct 2026), so the seats have the row to themselves.
 		expect(peopleTab.layout).toBeUndefined()
 		expect(peopleTab.widgetIds).not.toContain('case-followers-card')
