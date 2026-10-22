@@ -934,8 +934,18 @@
 				},
 				"quickActions": [
 					"send-digital-post",
-					"generate-document",
-					"log-contact"
+					{
+						"id": "generate-document",
+						"notTabs": [
+							"ai-oversight"
+						]
+					},
+					{
+						"id": "log-contact",
+						"notTabs": [
+							"ai-oversight"
+						]
+					}
 				],
 				"actionsMenu": {
 					"showRefresh": false,
@@ -953,6 +963,9 @@
 					}
 				},
 				"nextStep": {
+					"notTabs": [
+						"ai-oversight"
+					],
 					"stages": {
 						"intake": {
 							"title": "What now? Take the case on",
