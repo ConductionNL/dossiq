@@ -12460,6 +12460,8 @@
 				"showViewAction": false,
 				"searchPlaceholder": "Search by name, KvK number or place",
 				"rowIcon": "OfficeBuildingOutline",
+				"sortKey": "tradeName",
+				"sortOrder": "asc",
 				"defaultSort": [
 					{
 						"field": "tradeName",
