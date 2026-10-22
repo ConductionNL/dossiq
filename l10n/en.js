@@ -7041,6 +7041,7 @@ OC.L10N.register(
         "Searched at": "Searched at",
         "Searched by": "Searched by",
         "Searches the PDOK Locatieserver. Only addresses from the BAG can be saved.": "Searches the PDOK Locatieserver. Only addresses from the BAG can be saved.",
+        "Search address": "Search address",
         "Seat": "Seat",
         "Seats": "Seats",
         "Seats this handover emptied because their holder is not in the receiving team. Recorded rather than silently cleared: a case that arrives with nobody on it must say who came off it.": "Seats this handover emptied because their holder is not in the receiving team. Recorded rather than silently cleared: a case that arrives with nobody on it must say who came off it.",

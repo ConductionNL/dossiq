@@ -7041,6 +7041,7 @@ OC.L10N.register(
         "Searched at": "Gezocht op",
         "Searched by": "Gezocht door",
         "Searches the PDOK Locatieserver. Only addresses from the BAG can be saved.": "Zoekt in de PDOK Locatieserver. Alleen adressen uit de BAG kunnen worden opgeslagen.",
+        "Search address": "Adres zoeken",
         "Seat": "Stoel",
         "Seats": "Zetels",
         "Seats this handover emptied because their holder is not in the receiving team. Recorded rather than silently cleared: a case that arrives with nobody on it must say who came off it.": "Stoelen die deze overdracht heeft leeggemaakt omdat de houder niet in het ontvangende team zit. Vastgelegd in plaats van stil gewist: een zaak die aankomt zonder dat er iemand op zit, moet zeggen wie eraf ging.",
