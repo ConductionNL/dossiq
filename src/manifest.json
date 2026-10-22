@@ -7188,7 +7188,7 @@
 										},
 										{
 											"path": "deadline",
-											"label": "Case deadline",
+											"label": "term of the case",
 											"format": "date"
 										}
 									]

@@ -7962,6 +7962,7 @@ OC.L10N.register(
         "Term in days": "Term in days",
         "Term instance": "Term instance",
         "Term note": "Term note",
+        "term of the case": "term of the case",
         "Term on a case": "Term on a case",
         "Term starts at": "Term starts at",
         "Term Starts On": "Term Starts On",

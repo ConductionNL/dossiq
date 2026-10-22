@@ -7962,6 +7962,7 @@ OC.L10N.register(
         "Term in days": "Termijn in dagen",
         "Term instance": "Termijn Instance",
         "Term note": "Toelichting op de termijn",
+        "term of the case": "termijn van de zaak",
         "Term on a case": "Termijn bij een zaak",
         "Term starts at": "Termijn begint op",
         "Term Starts On": "Termijn begint op",
