@@ -7151,6 +7151,7 @@
 							"op": "notEmpty"
 						},
 						"content": {
+							"summaryInHeader": true,
 							"path": "checklist"
 						}
 					},
@@ -12964,7 +12965,7 @@
 							},
 							"meta": "{startTime|datetime}",
 							"text": "{summary}",
-							"headerNote": "{total} in total",
+							"headerSubtitle": "{total} in total",
 							"emptyText": "No contact moments yet"
 						}
 					},
@@ -13588,7 +13589,7 @@
 							},
 							"meta": "{startTime|datetime}",
 							"text": "{summary}",
-							"headerNote": "{total} in total",
+							"headerSubtitle": "{total} in total",
 							"emptyText": "No contact moments yet"
 						}
 					},
