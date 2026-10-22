@@ -54,6 +54,15 @@ describe('First today and the library banner', () => {
 		expect(card.content.visibleWhen.source.filter.assignee).toBe('@me')
 	})
 
+	it('offers the board\'s ways on: all cases past their term, the board, and the case itself last', () => {
+		// DqMijnWerk "Vandaag eerst": Alle zaken over termijn, Naar het
+		// werkbord, Zaak openen (primary). Termijn opschorten waits on a
+		// banner action that can open a dialog on the subject case.
+		expect(card.content.actions.map((action) => action.label)).toEqual(['Open these cases', 'Go to the board', 'Open case'])
+		expect(card.content.actions[1]).toEqual({ label: 'Go to the board', route: { name: 'Cases', query: { _view: 'board' } } })
+		expect(card.content.actions.filter((action) => action.primary).map((action) => action.label)).toEqual(['Open case'])
+	})
+
 	it('relies on what the installed library actually exports', () => {
 		const index = read(...LIB, 'index.js')
 		expect(index).toMatch(/\bCnBannerWidget\b/)
