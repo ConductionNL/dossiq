@@ -159,6 +159,12 @@
 										"suspended": "Suspended",
 										"provisioning": "Setting up",
 										"deprovisioned": "Ended"
+									},
+									"variantMap": {
+										"active": "success",
+										"suspended": "warning",
+										"provisioning": "info",
+										"deprovisioned": "default"
 									}
 								},
 								{
