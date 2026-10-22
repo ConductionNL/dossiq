@@ -95,6 +95,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'ReconcileCaseDeadlinesWithTerms' => 'writes existing case deadlines from their terms; none exist yet',
 		'RearmBeslistermijnTimers' => 're-arms existing running term timers; none exist yet',
 		'RetireOriRegister' => 'retires a register a fresh install never had',
+		'SupersedeDuplicateSeededCaseTypes' => 'supersedes copies earlier seed runs stored; a fresh install has none',
 		'RewriteRetiredFlowNodes' => 'rewrites stored flows; a fresh install has none',
 		'FoldCasePropertiesOntoCase' => 'backfill over existing cases',
 		'BackfillInformatieobjectMetadata' => 'backfill over existing documents',
