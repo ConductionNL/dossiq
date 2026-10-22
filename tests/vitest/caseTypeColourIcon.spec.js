@@ -66,11 +66,11 @@ describe('case type colour and icon', () => {
 		}
 	})
 
-	it('resolves the type pill on every case board card', () => {
+	it('resolves the type pill on every case board card to its colour, without the icon the boards do not draw', () => {
 		const boards = manifest.pages.map((entry) => entry.config && entry.config.board).filter((board) => board && board.card && board.card.pill === 'caseType')
 		expect(boards.length).toBeGreaterThan(0)
 		for (const board of boards) {
-			expect(board.card.resolve).toEqual(RESOLVE)
+			expect(board.card.resolve).toEqual({ colorField: RESOLVE.colorField })
 		}
 	})
 
