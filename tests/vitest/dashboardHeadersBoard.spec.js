@@ -64,4 +64,16 @@ describe('the dashboard headers', () => {
 		expect(placed.gridY).toBeGreaterThanOrEqual(lowest)
 		expect(placed.gridWidth).toBe(12)
 	})
+
+	it.each(['cases-by-status', 'cases-by-type'])('subtitles the %s chart with what it counts, as DqDashboard does', (id) => {
+		// "Lopende zaken" under "Zaken per status" and "Zaken per type": both
+		// charts count the open cases only (`isFinalStatus: false`). DqMijnTeam
+		// draws the same charts without it, so the subtitle is the simple
+		// Dashboard's, not the shared definition's.
+		const overlay = simple.pages.find((entry) => entry.id === 'Dashboard')
+		const patch = overlay.configPatch.widgets[id]
+		expect(patch.subtitle).toBe('Open cases')
+		expect(patch.content.dataSource.filter.isFinalStatus).toBe(false)
+		expect(page('Dashboard').config.widgets.find((entry) => entry.id === id).subtitle).toBeUndefined()
+	})
 })
