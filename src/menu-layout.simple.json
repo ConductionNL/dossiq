@@ -1059,6 +1059,7 @@
 				},
 				"_sideColumnFromNote": "Side cards per case type (Ruben, 18 October 2026): a case type that lists `sideCards` shows those cards in that order, a case type that lists none shows the column below. The list names ids of this column. Needs nextcloud-vue detail-side-column-from; on an older release the key is ignored and every case shows the column below.",
 				"sideColumnFrom": "@context.caseType.sideCards",
+				"quickActionsFrom": "@context.caseType.quickActions",
 				"sideColumn": [
 					{
 						"id": "side-advice-requested",
