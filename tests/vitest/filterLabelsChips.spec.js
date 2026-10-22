@@ -52,6 +52,11 @@ describe('the cases list names the open-or-closed filter', () => {
 		expect(dutchChip(labels, 'isFinalStatus', 'false')).toBe('Status: lopend')
 	})
 
+	it('names the deadline Termijn and asks for a range from today in words', () => {
+		expect(nl[labels.deadline.label]).toBe('Termijn')
+		expect(labels.deadline.relative).toBe(true)
+	})
+
 	it('reads Status: afgerond for ?isFinalStatus=true', () => {
 		expect(dutchChip(labels, 'isFinalStatus', 'true')).toBe('Status: afgerond')
 	})
