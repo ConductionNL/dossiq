@@ -8322,6 +8322,7 @@
 						"subtitle": "Per case type, average",
 						"content": {
 							"chartKind": "matrix",
+							"matrixLabelWidth": 240,
 							"valueFormat": {
 								"name": "number",
 								"suffix": " d"
