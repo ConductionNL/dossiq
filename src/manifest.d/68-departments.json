@@ -38,6 +38,7 @@
 					"href": "/index.php/settings/admin/dossiq"
 				},
 				"headerMeta": "from Nextcloud groups, with function and absence",
+				"searchPlaceholder": "Search…",
 				"headerButtons": [
 					{
 						"action": "export",
