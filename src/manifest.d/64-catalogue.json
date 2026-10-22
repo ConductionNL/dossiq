@@ -99,6 +99,9 @@
 						"id": "catalogue-store",
 						"type": "record-list",
 						"title": "From the Store",
+						"headerActions": [
+							{ "label": "Import", "icon": "TrayArrowUp", "action": { "type": "open-modal", "target": "CaseTypeImportDialog" } }
+						],
 						"description": "Case types and set-up in and out as a file",
 						"content": {
 							"endpointSource": {
