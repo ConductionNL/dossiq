@@ -6712,6 +6712,7 @@
 			"config": {
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"allowEdit": false,
+				"gridFloat": false,
 				"showActionsMenu": false,
 				"showWidgetActions": false,
 				"breadcrumb": {
