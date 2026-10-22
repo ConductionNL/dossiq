@@ -2299,6 +2299,39 @@
 			}
 		}
 	],
+	"notes": [
+		{
+			"key": "pieter-noteert-parkeervergunningen",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:woo-parkeervergunningen-binnenstad.id}}",
+				"message": "Verzoeker herinnerd aan de ontbrekende machtiging.",
+				"createdAt": "{{datetime:0 09:30}}"
+			}
+		}
+	],
+	"readStates": [
+		{
+			"key": "pieter-opende-bezwaar-parkeerboete",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
+				"register": "dossiq",
+				"schema": "case",
+				"seenAt": "{{datetime:0 08:40}}"
+			}
+		},
+		{
+			"key": "pieter-opende-kapvergunning-essen",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:kapvergunning-essen-parkweg.id}}",
+				"register": "dossiq",
+				"schema": "case",
+				"seenAt": "{{datetime:0 10:15}}"
+			}
+		}
+	],
 	"tasks": [
 		{
 			"key": "hoorzitting-inplannen",

@@ -165,4 +165,41 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 		$this->assertSame(expected: 6, actual: $matching);
 		$this->assertSame(expected: $ids, actual: array_values(array_unique($ids)));
 	}//end testTheInboxHoldsSeventeenUnroutedMessages()
+	/**
+	 * Close out your day has Pieter's day to show: he opened two of his cases
+	 * this morning and wrote a note on a third this afternoon, all on the
+	 * install day.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/example-set-dashboard-data/specs/example-set-dashboard-data/spec.md#requirement-pieter-has-worked-today
+	 */
+	public function testPieterHasWorkedToday(): void {
+		$set   = $this->set();
+		$cases = $this->objectsOf(schema: 'case');
+		$opened = [];
+		foreach (($set['readStates'] ?? []) as $row) {
+			$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $row['data']['user'], message: $row['key']);
+			$this->assertMatchesRegularExpression(pattern: '/^\{\{datetime:0 \d\d:\d\d\}\}$/', string: $row['data']['seenAt'], message: $row['key']);
+			$opened[] = $row['data']['objectUuid'];
+		}
+
+		$noted = [];
+		foreach (($set['notes'] ?? []) as $row) {
+			$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $row['data']['user'], message: $row['key']);
+			$this->assertMatchesRegularExpression(pattern: '/^\{\{datetime:0 \d\d:\d\d\}\}$/', string: $row['data']['createdAt'], message: $row['key']);
+			$this->assertNotSame(expected: '', actual: trim($row['data']['message']), message: $row['key']);
+			$noted[] = $row['data']['objectUuid'];
+		}
+
+		$this->assertSame(
+			expected: ['{{object:bezwaar-parkeerboete-havenstraat.id}}', '{{object:kapvergunning-essen-parkweg.id}}'],
+			actual: $opened
+		);
+		$this->assertSame(expected: ['{{object:woo-parkeervergunningen-binnenstad.id}}'], actual: $noted);
+		foreach ([...$opened, ...$noted] as $reference) {
+			$key = (string)preg_replace(pattern: '/^\{\{object:([a-z0-9-]+)\.id\}\}$/', replacement: '$1', subject: $reference);
+			$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $cases[$key]['data']['assignee'], message: $key);
+		}
+	}//end testPieterHasWorkedToday()
 }//end class

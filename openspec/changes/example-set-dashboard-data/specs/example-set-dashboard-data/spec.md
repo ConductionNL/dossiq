@@ -41,3 +41,14 @@ open case of the set by its number; the other eleven SHALL name no case number.
 
 - **GIVEN** the set installed today
 - **THEN** the inbox lists seventeen messages, six under "Looks like a case" and eleven under "No case"
+
+### Requirement: Pieter has worked today
+
+The set SHALL record that Pieter opened two of his own open cases on the install day and SHALL hold a note of his, written
+on the install day, on a third.
+
+#### Scenario: Dag afsluiten
+
+- **GIVEN** the set installed today
+- **THEN** Close out your day lists Bezwaar parkeerboete Havenstraat and Kapvergunning essen Parkweg as still open and
+  Parkeervergunningen binnenstad as recorded today
