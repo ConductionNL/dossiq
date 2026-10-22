@@ -33,6 +33,12 @@ describe('the departments page', () => {
 		expect(nl['{count} staff']).toBe('{count} medewerkers')
 	})
 
+	it('offers Downloaden in the header, the members as CSV', () => {
+		const nl = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../l10n/nl.json'), 'utf8')).translations
+		expect(page.config.headerButtons).toEqual([{ action: 'export', label: 'Download', icon: 'TrayArrowDown' }])
+		expect(nl.Download).toBe('Downloaden')
+	})
+
 	it('draws no title over the groups pane', () => {
 		expect(page.config.folderSidebar.title).toBeUndefined()
 	})

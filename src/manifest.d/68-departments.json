@@ -38,6 +38,13 @@
 					"href": "/index.php/settings/admin/dossiq"
 				},
 				"headerMeta": "from Nextcloud groups, with function and absence",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					}
+				],
 				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		}
