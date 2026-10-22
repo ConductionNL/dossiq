@@ -70,6 +70,20 @@ describe('the end-of-day page', () => {
 		expect(icons).toContain(`\n\t${widget('eod-open').content.noteAction.recordAll.icon},\n`)
 	})
 
+	it('keeps the side column the board\'s 300px, the lists filling the rest', () => {
+		// DqDagAfsluiten: Uw dag, Morgen eerst and Hoe dit werkt 300px wide.
+		expect(page.config.gridSideColumn).toEqual({ width: 300 })
+		const tracks = Object.fromEntries(page.config.layout.map((cell) => [cell.widgetId, cell.track]))
+		expect(tracks).toEqual({
+			'eod-unavailable': undefined,
+			'eod-open': 'main',
+			'eod-recorded': 'main',
+			'eod-figures': 'side',
+			'eod-tomorrow': 'side',
+			'eod-how': 'side',
+		})
+	})
+
 	it('opens a case and a task on their own pages', () => {
 		for (const id of ['eod-open', 'eod-recorded', 'eod-tomorrow']) {
 			expect(widget(id).content.rowRouteField, id).toBe('routeName')

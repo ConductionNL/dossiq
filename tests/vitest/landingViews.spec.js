@@ -139,6 +139,35 @@ describe('the landing page in the full structure', () => {
 	})
 })
 
+describe('My work in the simple structure keeps the board\'s side column', () => {
+	it('draws the side cards 320px wide and the cards beside them in the rest, the tiles untouched', () => {
+		// DqMijnWerk: Mijn taken and Recente activiteit 320px, Termijnen deze
+		// week, per stap and Verder werken filling the rest; the four counts and
+		// the two half-width cards keep their twelve shares.
+		const mine = pageView(page(builtSimple.pages, 'MyWorkHome'), 'mine')
+		expect(mine.gridSideColumn).toEqual({ width: 320 })
+		const tracks = Object.fromEntries(mine.layout.map((cell) => [cell.widgetId, cell.track]))
+		expect(tracks).toMatchObject({
+			'simple-week': 'main',
+			'simple-per-step': 'main',
+			'simple-continue': 'main',
+			'simple-my-tasks': 'side',
+			'simple-recent-activity': 'side',
+		})
+		for (const cell of mine.layout) {
+			if (cell.track === 'main') {
+				expect(cell.gridX + cell.gridWidth, cell.widgetId).toBeLessThanOrEqual(8)
+			} else if (cell.track === 'side') {
+				expect(cell.gridX, cell.widgetId).toBeGreaterThanOrEqual(8)
+			} else {
+				expect(cell.track, cell.widgetId).toBeUndefined()
+			}
+		}
+		expect(tracks['simple-my-open']).toBeUndefined()
+		expect(tracks['archival-reviews']).toBeUndefined()
+	})
+})
+
 describe('no view is empty, in either structure', () => {
 	it.each([
 		['full', builtFull],
