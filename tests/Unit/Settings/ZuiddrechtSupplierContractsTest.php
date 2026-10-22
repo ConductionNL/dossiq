@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -159,4 +160,26 @@ class ZuiddrechtSupplierContractsTest extends TestCase {
 		);
 		$this->assertSame(expected: $status['enum'], actual: array_keys($status['x-enum-labels']));
 	}//end testEveryContractStatusHasALabel()
+	/**
+	 * Every field a supplier or contract of the set carries is declared on its
+	 * schema; OpenRegister drops an undeclared one on install.
+	 *
+	 * @return void
+	 */
+	public function testEveryFieldIsDeclaredOnItsSchema(): void {
+		$root     = __DIR__.'/../../..';
+		$base     = json_decode(json: (string)file_get_contents(filename: $root.'/lib/Settings/dossiq_register.json'), associative: true);
+		[$merged] = (new RegisterFragmentMerger())->merge(base: $base, fragmentDir: $root.'/lib/Settings/register.d');
+		$schemas  = $merged['components']['schemas'];
+
+		foreach ($this->objects() as $object) {
+			if (in_array(needle: $object['schema'], haystack: ['supplier', 'supplierContract'], strict: true) === false) {
+				continue;
+			}
+
+			$declared  = array_keys($schemas[$object['schema']]['properties']);
+			$undeclared = array_values(array_diff(array_keys($object['data']), $declared));
+			$this->assertSame(expected: [], actual: $undeclared, message: $object['key']);
+		}
+	}//end testEveryFieldIsDeclaredOnItsSchema()
 }//end class
