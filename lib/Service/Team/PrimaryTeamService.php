@@ -168,8 +168,11 @@ class PrimaryTeamService {
 	 * @return string The id, or ''.
 	 */
 	private static function roleId(array $role): string {
-		$self = $role['@self'] ?? [];
-		$id = ($role['id'] ?? ($role['uuid'] ?? (is_array($self) === true ? ($self['id'] ?? '') : '')));
+		$id = ($role['id'] ?? ($role['uuid'] ?? ''));
+		$self = ($role['@self'] ?? null);
+		if ($id === '' && is_array($self) === true) {
+			$id = ($self['id'] ?? '');
+		}
 
 		return trim((string) $id);
 	}//end roleId()
