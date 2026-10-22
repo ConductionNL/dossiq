@@ -2438,6 +2438,7 @@
 						"title": "Contact moments on this case",
 						"_note": "DqZaakContact: the contact moments as a card with no Add of its own, as the board draws it; a contact is logged with Contact vastleggen in the header and on the conversation card.",
 						"content": {
+							"tableBleed": true,
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
@@ -3690,6 +3691,7 @@
 						"icon": "FileTreeOutline",
 						"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Rows deep-link to CaseDetail because a sub-case IS a case. `createAction` opens DeelzaakCreateModal and `summary` is the completion roll-up, as on the full profile's case-sub-cases.",
 						"content": {
+							"tableBleed": true,
 							"register": "dossiq",
 							"schema": "case",
 							"filter": {
@@ -3756,6 +3758,7 @@
 						"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose, because a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
 						"_lensNote": "The Object and Object status columns are LENSES, not stored fields. `objectTitle` and `objectStatus` are declared in `x-openregister-lenses` on the `caseObject` schema and resolved by OpenRegister on every read, so the tab shows what the linked object says about itself now rather than what somebody typed when they linked it. Nothing writes them: OpenRegister refuses a write that names a lens with a 400. They carry `widget: lensedValue` because an unreadable value arrives as `{\"@withheld\": true}`, an object, and the default cell would print `[object Object]`; a blank cell would be worse still, because blank reads as \"there is no object\". CnObjectListWidget forwards `widget` and `widgetProps` to CnCellRenderer, which resolves the name against the app's `cnCellWidgets`, so this needs no change in the library.",
 						"content": {
+							"tableBleed": true,
 							"register": "dossiq",
 							"schema": "caseObject",
 							"filter": {
