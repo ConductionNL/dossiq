@@ -12460,6 +12460,15 @@
 				"showViewAction": false,
 				"searchPlaceholder": "Search by name, KvK number or place",
 				"rowIcon": "OfficeBuildingOutline",
+				"_defaultFiltersNote": "Board DqOrganisaties opens on All with \"Plaats: Zuiddrecht\" on the Active line and a 1 on Filter: the organisations established in the municipality, from the admin setting `municipality_city` (the same one the Contacts lens reads). A removable default filter, not a lens; without the setting it is left out (src/utils/configLenses.js) and the list opens unfiltered. `address.place` is the KvK Zoeken field.",
+				"defaultFilters": {
+					"address.place": "@config.municipalityCity"
+				},
+				"filterLabels": {
+					"address.place": {
+						"label": "Place"
+					}
+				},
 				"defaultSort": [
 					{
 						"field": "tradeName",
@@ -12471,16 +12480,6 @@
 						"label": "All",
 						"showCount": true,
 						"filter": {}
-					},
-					{
-						"label": "Based in @config.municipalityCity",
-						"activeLabel": "Place: @config.municipalityCity",
-						"showCount": true,
-						"_note": "The list opens on the organisations established in the municipality (board DqOrganisaties, Plaats: Zuiddrecht), from the same `municipality_city` setting as the Contacts lens; without one this lens is left out and the list opens on All. `address.place` is a path inside the `address` object.",
-						"filter": {
-							"address.place": "@config.municipalityCity"
-						},
-						"default": true
 					},
 					{
 						"label": "With an open case",
