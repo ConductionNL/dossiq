@@ -3868,7 +3868,7 @@
 							"pill": {
 								"field": "code"
 							},
-							"headerNote": "Go into the decision",
+							"headerSubtitle": "Go into the decision",
 							"emptyText": "No ground cited yet"
 						}
 					},
