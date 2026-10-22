@@ -1967,6 +1967,16 @@
 				"filter": {
 					"isTemplate": false
 				},
+				"_filterLabelsNote": "How the Active line names a filter, also one that came from a link (`/cases?isFinalStatus=false`). Without it the chip read the schema's own words, \"Is Final Status: false\"; the board DqZaken draws \"Status: lopend\".",
+				"filterLabels": {
+					"isFinalStatus": {
+						"label": "Status",
+						"values": {
+							"false": "ongoing",
+							"true": "completed"
+						}
+					}
+				},
 				"allowSavedViews": true,
 				"_wooSavedViewNote": "Woo requests are a view of the case list, not a page of their own (Ruben, 19 October 2026): the default view `woo-requests` is the Woo case type with the same working-list rule as the Woo chip, and a link to the Woo list is `/cases?savedView=default:woo-requests`.",
 				"_defaultSavedViewsNote": "saved-views-manage-and-defaults: views dossiq ships for every user, read-only, listed under Default views above the user's own saved views. A user applies one, or saves a copy to edit and share. They combine conditions the quick-filter chips offer one at a time (Mine and Overdue), so they add a lens instead of repeating a chip. The conditions are the chips' own: the same flat `deadline[lt]` / `deadline[gte]` keys with `@today` tokens, the same working-list rule `statusHiddenInLists: false`.",
@@ -6433,6 +6443,12 @@
 			"config": {
 				"entitySource": "tasks",
 				"rowRoute": "TaskDetail",
+				"_filterLabelsNote": "The due-date range is one chip named as the board DqTaken draws it, \"Deadline: 1 tot en met 31 oktober\", also from a link (`/tasks?dueAt=2026-10-01..2026-10-31`). The sidebar field's own title, Due between, is the filter panel's wording.",
+				"filterLabels": {
+					"dueAt": {
+						"label": "Due by"
+					}
+				},
 				"_sourceNote": "remove-casetask 2.2. The list is the ENGINE's task inbox, not OpenRegister objects over a `caseTask` schema, so `register`, `schema` and `extend` are gone rather than left behind as config nothing reads. `rowRoute` is what keeps the page dossiq's: the source's own `openRow` calls window.location.assign on OpenRegister's task page, and a `row-click` listener cannot recover a navigation that has already left the app, which is why nextcloud-vue#1063 added the prop. `columns` is deliberately ABSENT. The source supplies six, with state and priority as badges whose colour maps are built from the same t() calls as their labels, so the lookup holds in every locale; reproducing that here to rename one header would be a divergent copy of the thing this change removes, and if the wording matters it belongs upstream as a label override. TWO VISIBLE DELTAS, both deliberate: the case column's header now reads Subject, and the Team column is gone because the engine models candidate groups as a LIST and has no single assigneeGroup to read.",
 				"allowSavedViews": true,
 				"savedViewsScope": "source:tasks",

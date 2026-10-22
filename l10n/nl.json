@@ -5500,6 +5500,7 @@
         "One sentence saying why. The access tab shows it beside the field, so a handler who cannot see something reads the rule instead of guessing. OpenRegister returns it as the refusal message when the rule stops a save.": "Eén zin die zegt waarom. Het tabblad Toegang toont hem naast het veld, zodat een behandelaar die iets niet kan zien de regel leest in plaats van te gissen. OpenRegister geeft hem terug als weigeringsbericht wanneer de regel een opslag tegenhoudt.",
         "One term for the whole chain of phases, in working days, split over the phases by the share each declares. A phase that overruns shrinks the phases after it. The chain end never moves, so a chain whose phases have eaten it reports zero days left rather than a later date.": "Een termijn voor de hele keten van fasen, in werkdagen, verdeeld over de fasen volgens het aandeel dat elke fase vastlegt. Een fase die uitloopt verkleint de fasen erna. Het einde van de keten verschuift nooit, dus een keten waarvan de fasen hem hebben opgegeten meldt nul dagen in plaats van een latere datum.",
         "One-time token used to activate this supplier user account": "Eenmalig token om dit leveranciersaccount te activeren",
+        "ongoing": "lopend",
         "Online": "Online",
         "Online form (formulier)": "Onlineformulier (formulier)",
         "Only a closed case can be reopened.": "Alleen een afgesloten zaak kan worden heropend.",
