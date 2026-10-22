@@ -180,11 +180,12 @@ class DeadlinePauseService {
 	}//end registerPauze()
 
 	/**
-	 * The pause reasons the case's case type declares, as a picker offers them.
+	 * The pause reasons the case's case type declares, as a picker offers them,
+	 * each with the days it usually gives when it declares them.
 	 *
 	 * @param string $caseId Case UUID
 	 *
-	 * @return array<int, array{key: string, name: string, legalBasis: string}> Empty when none are declared.
+	 * @return array<int, array{key: string, name: string, legalBasis: string, defaultDays?: int}> Empty when none are declared.
 	 *
 	 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
 	 */
@@ -194,11 +195,18 @@ class DeadlinePauseService {
 		}
 
 		return array_map(
-			static fn (array $reason): array => [
-				'key' => (string)$reason['key'],
-				'name' => (string)$reason['name'],
-				'legalBasis' => (string)$reason['legalBasis'],
-			],
+			static function (array $reason): array {
+				$offered = [
+					'key' => (string)$reason['key'],
+					'name' => (string)$reason['name'],
+					'legalBasis' => (string)$reason['legalBasis'],
+				];
+				if (is_int($reason['defaultDays'] ?? null) === true) {
+					$offered['defaultDays'] = $reason['defaultDays'];
+				}
+
+				return $offered;
+			},
 			$this->reasons->forCase(caseId: $caseId)
 		);
 	}//end offeredReasons()

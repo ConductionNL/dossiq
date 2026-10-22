@@ -168,6 +168,7 @@ export function actForm(entry, { caseType = '', caseId = '', requester = '' } = 
 			widget: 'number',
 			label: t('dossiq', 'Days the applicant is given'),
 			helperFrom: { input: 'pauseReason', key: 'legalBasis' },
+			prefillFrom: { input: 'pauseReason', key: 'defaultDays' },
 			preview: {
 				label: t('dossiq', 'The case comes back on'),
 				template: '{today+days|date}',

@@ -22,4 +22,7 @@
 
 ## 4. Open
 
-- [ ] 4.1 A default number of days per pause reason (case type schema), then prefill Dagen
+- [x] 4.1 A default number of days per pause reason (case type schema), then prefill Dagen
+  - Spec ref: specs/termijn-pause-extension/spec.md
+  - Files: lib/Settings/register.d/99-case-type-pause-reason-days.json (caseType 1.32.0), lib/Service/Pause/PauseReason.php, lib/Service/DeadlinePauseService.php, src/utils/caseActInputs.js (nextcloud-vue `prefillFrom`)
+  - Test: tests/Unit/Service/Pause/PauseReasonDefaultDaysTest.php, tests/vitest/suspendPicksAPauseReason.spec.js
