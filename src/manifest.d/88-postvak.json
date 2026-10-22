@@ -67,7 +67,8 @@
 					},
 					{
 						"action": "actions-menu",
-						"label": "Actions"
+						"label": "Actions",
+						"items": ["refresh", "separator", "documentation"]
 					}
 				],
 				"quickFilters": [
