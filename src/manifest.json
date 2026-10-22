@@ -13971,6 +13971,24 @@
 		},
 		{
 			"registerSlug": "dossiq",
+			"schemaSlug": "caseCustody",
+			"urlTemplate": "/apps/dossiq/cases/{caseId}",
+			"displayName": "Case custody"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "fieldInspection",
+			"urlTemplate": "/apps/dossiq/cases/{caseRef}",
+			"displayName": "Field Inspection"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "toestemming",
+			"urlTemplate": "/apps/dossiq/cases/{caseId}",
+			"displayName": "Consent on a case"
+		},
+		{
+			"registerSlug": "dossiq",
 			"schemaSlug": "consultation",
 			"urlTemplate": "/apps/dossiq/cases/{parentCase}",
 			"displayName": "Consultation"
