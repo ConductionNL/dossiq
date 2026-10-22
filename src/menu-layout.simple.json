@@ -1407,6 +1407,10 @@
 					},
 					"case-banner-stack"
 				],
+				"followRow": {
+					"presence": true,
+					"count": false
+				},
 				"showTypeEyebrow": false,
 				"breadcrumb": {
 					"label": "All cases",
