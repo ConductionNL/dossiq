@@ -5500,6 +5500,7 @@ OC.L10N.register(
         "One sentence saying why. The access tab shows it beside the field, so a handler who cannot see something reads the rule instead of guessing. OpenRegister returns it as the refusal message when the rule stops a save.": "One sentence saying why. The access tab shows it beside the field, so a handler who cannot see something reads the rule instead of guessing. OpenRegister returns it as the refusal message when the rule stops a save.",
         "One term for the whole chain of phases, in working days, split over the phases by the share each declares. A phase that overruns shrinks the phases after it. The chain end never moves, so a chain whose phases have eaten it reports zero days left rather than a later date.": "One term for the whole chain of phases, in working days, split over the phases by the share each declares. A phase that overruns shrinks the phases after it. The chain end never moves, so a chain whose phases have eaten it reports zero days left rather than a later date.",
         "One-time token used to activate this supplier user account": "One-time token used to activate this supplier user account",
+        "ongoing": "ongoing",
         "Online": "Online",
         "Online form (formulier)": "Online form (formulier)",
         "Only a closed case can be reopened.": "Only a closed case can be reopened.",
