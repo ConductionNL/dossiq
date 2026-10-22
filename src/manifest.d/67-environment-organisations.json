@@ -274,6 +274,7 @@
 						"title": "Set up",
 						"icon": "ClipboardCheckOutline",
 						"content": {
+							"headerSubtitle": "{count:status=completed} of {total} steps done",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/saas/tenants/@objectId/onboarding/progress",
 								"responsePath": "progress.steps"

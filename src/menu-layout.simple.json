@@ -2466,6 +2466,7 @@
 						"title": "Contact moments on this case",
 						"_note": "DqZaakContact: the contact moments as a card with no Add of its own, as the board draws it; a contact is logged with Contact vastleggen in the header and on the conversation card.",
 						"content": {
+							"headerSubtitle": "{total} recorded",
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
