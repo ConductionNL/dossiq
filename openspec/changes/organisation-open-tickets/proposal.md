@@ -22,7 +22,7 @@ share one `masterEntityRef`. dossiq's party schemas did not carry it.
 - The organisation list gets an "Open tickets" column: an endpoint aggregate
   keyed on `masterEntityRef` that requires pipelinq (nc-vue
   feat/aggregate-from-endpoint).
-- The organisation page gets a Tickets card in its Overview, visible only when
+- The organisation page and the contact page get a Tickets card in their Overview, visible only when
   pipelinq is installed.
 - The Zuiddrecht example set gives the cast's companies and residents the same
   `masterEntityRef` as their pipelinq clients (pipelinq

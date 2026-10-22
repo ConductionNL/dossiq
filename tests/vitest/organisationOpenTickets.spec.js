@@ -30,8 +30,8 @@ describe('DqOrganisaties Open tickets', () => {
 	})
 })
 
-describe('DqOrganisatie tickets card', () => {
-	const config = page('OrganisationDetail').config
+describe.each(['OrganisationDetail', 'ContactDetail'])('%s tickets card (DqOrganisatie, DqContact)', (pageId) => {
+	const config = page(pageId).config
 	const widget = config.widgets.find((w) => w.id === 'contact-open-tickets')
 
 	it('lists the open tickets from dossiq, only when pipelinq is installed', () => {
