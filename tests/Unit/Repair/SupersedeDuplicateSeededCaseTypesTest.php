@@ -101,12 +101,13 @@ class SupersedeDuplicateSeededCaseTypesTest extends TestCase {
 	 * @param string      $created      When it was stored.
 	 * @param int         $version      Its version.
 	 * @param string|null $supersededBy What replaced it.
+	 * @param string      $organisation The organisation that owns it.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function row(string $id, string $slug, string $created, int $version=1, ?string $supersededBy=null): array {
+	private function row(string $id, string $slug, string $created, int $version=1, ?string $supersededBy=null, string $organisation='org-a'): array {
 		return [
-			'@self' => ['id' => $id, 'slug' => $slug, 'created' => $created],
+			'@self' => ['id' => $id, 'slug' => $slug, 'created' => $created, 'organisation' => $organisation],
 			'title' => $slug,
 			'version' => $version,
 			'supersededBy' => $supersededBy,
@@ -183,4 +184,25 @@ class SupersedeDuplicateSeededCaseTypesTest extends TestCase {
 
 		$this->assertSame([], $objects->patches);
 	}//end testVersionsAndSupersededCopiesAreLeftAlone()
+	/**
+	 * On a multi-tenant install each organisation keeps its own copy: one
+	 * organisation's copy never supersedes another's, so neither drops out of
+	 * its own picker. Within one organisation the older copy still goes.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 */
+	public function testAnOrganisationsCopyIsNeverSupersededByAnothers(): void {
+		$objects = new FakeDuplicateCaseTypeObjectService();
+		$objects->rows = [
+			$this->row(id: 'a-early', slug: 'omgevingsvergunning-kleinbouw', created: '2026-10-10T14:08:00+00:00', organisation: 'org-a'),
+			$this->row(id: 'b-only', slug: 'omgevingsvergunning-kleinbouw', created: '2026-10-11T09:00:00+00:00', organisation: 'org-b'),
+			$this->row(id: 'a-late', slug: 'omgevingsvergunning-kleinbouw', created: '2026-10-10T23:34:00+00:00', organisation: 'org-a'),
+		];
+
+		$this->step(objects: $objects)->run($this->createMock(IOutput::class));
+
+		$this->assertSame([['a-early', ['supersededBy' => 'a-late']]], $objects->patches);
+	}//end testAnOrganisationsCopyIsNeverSupersededByAnothers()
 }//end class

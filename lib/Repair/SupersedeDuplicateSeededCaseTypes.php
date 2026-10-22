@@ -14,6 +14,8 @@
  * and an older one stays reachable from the case type page. So the newest
  * copy stays current and every older copy of the same seed slug and version
  * is superseded by it, the way a published version supersedes the one before.
+ * Each organisation keeps its own copies apart: the read is unscoped, and on a
+ * multi-tenant install one organisation's copy never supersedes another's.
  * Nothing is deleted and no case moves: a case keeps the copy it was opened
  * on, as a running case keeps its version.
  *
@@ -112,7 +114,7 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	}//end run()
 
 	/**
-	 * Supersede the older copies in every group of one slug and version.
+	 * Supersede the older copies in every group of one slug, version and organisation.
 	 *
 	 * @param object $objectService OpenRegister's ObjectService.
 	 * @param string $register      The register id.
@@ -156,8 +158,8 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	}//end supersede()
 
 	/**
-	 * The current copies grouped by seed slug and version, oldest first, only
-	 * where a group holds more than one.
+	 * The current copies grouped by seed slug, version and organisation,
+	 * oldest first, only where a group holds more than one.
 	 *
 	 * @param array<int, array<string, mixed>> $rows The stored case types.
 	 *
@@ -179,7 +181,14 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 				continue;
 			}
 
-			$key = $slug . '#' . (string)($row['version'] ?? '');
+			// Per organisation: the read is unscoped, and one organisation's copy
+			// must never supersede another's on a multi-tenant install.
+			$organisation = ($self['organisation'] ?? '');
+			if (is_array($organisation) === true) {
+				$organisation = ($organisation['uuid'] ?? ($organisation['id'] ?? ''));
+			}
+
+			$key = $slug . '#' . (string)($row['version'] ?? '') . '#' . (string)$organisation;
 			$groups[$key][] = ['id' => $uuid, 'created' => (string)($self['created'] ?? '')];
 		}
 

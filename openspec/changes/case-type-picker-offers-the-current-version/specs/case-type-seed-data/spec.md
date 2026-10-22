@@ -18,8 +18,8 @@ title only for a seed row that carries no slug.
 ### Requirement: An install with a seeded case type stored twice keeps one current copy
 
 An upgrade SHALL keep the newest copy of a seeded case type current and SHALL point every older copy of the same seed
-slug and version at it through `supersededBy`, so the new case picker offers one. It SHALL NOT delete a copy or move a
-case, and SHALL leave versions of a case type, and copies already superseded, alone.
+slug, version and organisation at it through `supersededBy`, so the new case picker offers one. It SHALL NOT delete a copy or move a
+case, and SHALL leave versions of a case type, copies already superseded, and another organisation's copies alone.
 
 #### Scenario: Omgevingsvergunning kleine bouwactiviteit stored twice
 
