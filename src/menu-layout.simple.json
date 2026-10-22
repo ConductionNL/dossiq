@@ -4870,7 +4870,32 @@
 					"label": "Settings",
 					"href": "/index.php/settings/admin/dossiq"
 				},
-				"headerMeta": "{total} case types",
+				"headerMeta": "{total} case types · {count:shipped} shipped, {count:own} own",
+				"_headerMetaCountsNote": "DqZaaktypen: \"14 zaaktypen · 9 meegeleverd, 5 eigen\". Shipped are the case types dossiq delivered (owner __system__, as the Shipped lens), own the rest; current versions only, as every lens.",
+				"headerMetaCounts": {
+					"shipped": {
+						"register": "dossiq",
+						"schema": "caseType",
+						"filter": {
+							"supersededBy": {
+								"isnull": true
+							},
+							"@self": {
+								"owner": "__system__"
+							}
+						}
+					},
+					"own": {
+						"register": "dossiq",
+						"schema": "caseType",
+						"filter": {
+							"supersededBy": {
+								"isnull": true
+							},
+							"@self[owner][ne]": "__system__"
+						}
+					}
+				},
 				"searchPlaceholder": "Search a case type",
 				"headerActions": [
 					{

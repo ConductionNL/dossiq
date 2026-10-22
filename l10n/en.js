@@ -10969,6 +10969,7 @@ OC.L10N.register(
         "{title}": "{title}",
         "{title}, version {version}": "{title}, version {version}",
         "{total} case types": "{total} case types",
+        "{total} case types · {count:shipped} shipped, {count:own} own": "{total} case types · {count:shipped} shipped, {count:own} own",
         "{total} cases": "{total} cases",
         "{total} cases in your name · most urgent first": "{total} cases in your name · most urgent first",
         "{total} cases in your name, most urgent first": "{total} cases in your name, most urgent first",
