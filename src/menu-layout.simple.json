@@ -5383,10 +5383,16 @@
 			"_note": "DqZaaktype, DqZaaktypeOverzicht and DqZaaktypeVelden: one record page with the type's parts as tabs and its versions and facts in the side column. Every widget the full profile shows is still on a tab. The four app widgets are named by their registry type here, because a tab child resolves by type and a type:custom child renders an empty panel.",
 			"config": {
 				"showTypeEyebrow": false,
-				"breadcrumb": {
-					"label": "Case types",
-					"route": "CaseTypes"
-				},
+				"breadcrumb": [
+					{
+						"label": "Settings",
+						"href": "/index.php/settings/admin/dossiq"
+					},
+					{
+						"label": "Case types",
+						"route": "CaseTypes"
+					}
+				],
 				"typePill": {
 					"field": "category"
 				},

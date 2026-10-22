@@ -65,10 +65,16 @@
 				"entitySource": "organisations",
 				"titleField": "name",
 				"showTypeEyebrow": false,
-				"breadcrumb": {
-					"label": "Organisations on this environment",
-					"route": "EnvironmentOrganisations"
-				},
+				"breadcrumb": [
+					{
+						"label": "Settings",
+						"href": "/index.php/settings/admin/dossiq"
+					},
+					{
+						"label": "Organisations",
+						"route": "EnvironmentOrganisations"
+					}
+				],
 				"statusPill": {
 					"field": "status",
 					"labels": {
