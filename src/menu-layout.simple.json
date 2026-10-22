@@ -260,6 +260,15 @@
 											}
 										},
 										{
+											"label": "Go to the board",
+											"route": {
+												"name": "Cases",
+												"query": {
+													"_view": "board"
+												}
+											}
+										},
+										{
 											"label": "Open case",
 											"primary": true,
 											"route": {
