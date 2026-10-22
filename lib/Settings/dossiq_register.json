@@ -11102,7 +11102,7 @@
             "tenantMandate": {
                 "slug": "tenantMandate",
                 "icon": "FileSign",
-                "version": "1.0.1",
+                "version": "1.1.0",
                 "searchable": false,
                 "title": "Tenant Mandate",
                 "description": "Signed mandate authorising a tenant to act on behalf of the issuing authority: backs ketenmachtiging (chain-mandate) flows.",
@@ -11144,6 +11144,33 @@
                         "type": "string",
                         "description": "Reference to the signed mandate document",
                         "title": "Document Ref"
+                    },
+                    "terms": {
+                        "type": "object",
+                        "title": "Terms",
+                        "description": "What the mandate lets the role decide: the ceiling in euros (none is unlimited), the decision types it covers and its enforcement level.",
+                        "properties": {
+                            "plafond": {
+                                "type": "number",
+                                "description": "The amount in euros up to which the role decides; empty is unlimited"
+                            },
+                            "decisionTypes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "The decision types the role may take, such as bezwaar"
+                            },
+                            "enforcement": {
+                                "type": "string",
+                                "enum": [
+                                    "none",
+                                    "warning",
+                                    "full"
+                                ],
+                                "description": "Whether the role may enforce: not, with a warning only, or in full"
+                            }
+                        }
                     }
                 }
             },
