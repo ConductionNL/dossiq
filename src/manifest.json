@@ -850,6 +850,7 @@
 								},
 								"aggregate": {
 									"groupBy": "status",
+									"mergeByLabel": true,
 									"metric": "count",
 									"topN": 5,
 									"labelResolve": {
@@ -1600,6 +1601,7 @@
 										},
 										"aggregate": {
 											"groupBy": "status",
+											"mergeByLabel": true,
 											"metric": "count",
 											"topN": 5,
 											"labelResolve": {

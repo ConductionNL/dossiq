@@ -76,4 +76,17 @@ describe('the dashboard headers', () => {
 		expect(patch.content.dataSource.filter.isFinalStatus).toBe(false)
 		expect(page('Dashboard').config.widgets.find((entry) => entry.id === id).subtitle).toBeUndefined()
 	})
+
+	it('counts the cases per status NAME, as DqDashboard and DqMijnTeam do', () => {
+		// Status types are declared per case type, so every case type's
+		// "Ontvangen" is its own id; the boards draw one Ontvangen bar.
+		const aggregates = [
+			page('Dashboard').config.widgets.find((entry) => entry.id === 'cases-by-status'),
+			page('MyWorkHome').config.views.find((view) => view.id === 'team').widgets.find((entry) => entry.id === 'cases-by-status'),
+			simple.pages.find((entry) => entry.id === 'Dashboard').configPatch.widgets['cases-by-status'],
+		].map((widget) => widget.content.dataSource.aggregate)
+		for (const aggregate of aggregates) {
+			expect(aggregate).toMatchObject({ groupBy: 'status', mergeByLabel: true, labelResolve: { schema: 'statusType' } })
+		}
+	})
 })
