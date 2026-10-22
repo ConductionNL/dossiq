@@ -9,11 +9,18 @@
 		@closing="$emit('close')">
 		<div class="compose-dialog">
 			<div class="compose-dialog__row">
-				<div class="compose-dialog__field">
-					<label class="compose-dialog__label" for="berichtenbox-compose-bsn">{{ t('dossiq', 'BSN') }}</label>
+				<div
+class="compose-dialog__field"
+					@focusin="onBsnFocus"
+					@focusout="onBsnBlur">
+					<label class="compose-dialog__label" for="berichtenbox-compose-bsn">
+						{{ t('dossiq', 'BSN') }}
+						<span v-if="bsnFromCase" class="compose-dialog__optional" data-testid="compose-bsn-optional">{{ t('dossiq', '(optional)') }}</span>
+					</label>
 					<NcTextField
 						id="berichtenbox-compose-bsn"
-						:modelValue="form.bsn"
+						:modelValue="shownBsn"
+						:placeholder="bsnEditing && caseBsn ? maskedCaseBsn : ''"
 						:label="t('dossiq', 'BSN')"
 						:labelOutside="true"
 						:error="!!errors.bsn"
@@ -198,6 +205,10 @@ export default {
 			],
 
 			kase: null,
+			// The requester's BSN as the case holds it, and whether the field is
+			// being typed in: the number is sent but never drawn in full.
+			caseBsn: '',
+			bsnEditing: false,
 			maxBody: 4000,
 			errors: {},
 			sending: false,
@@ -206,6 +217,38 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * Whether the BSN is the case's requester's, so the handler need not type one.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/specs/berichtenbox-integration/spec.md
+		 */
+		bsnFromCase() {
+			return this.caseBsn !== '' && this.form.bsn === this.caseBsn
+		},
+
+		/**
+		 * The case's BSN with all but its last four digits hidden: "*****7609".
+		 *
+		 * @return {string}
+		 * @spec openspec/specs/berichtenbox-integration/spec.md
+		 */
+		maskedCaseBsn() {
+			const bsn = this.caseBsn
+			return bsn.length > 4 ? '*'.repeat(bsn.length - 4) + bsn.slice(-4) : bsn
+		},
+
+		/**
+		 * What the BSN field shows: the case's number masked, or what the
+		 * handler types.
+		 *
+		 * @return {string}
+		 * @spec openspec/specs/berichtenbox-integration/spec.md
+		 */
+		shownBsn() {
+			return this.bsnFromCase && !this.bsnEditing ? this.maskedCaseBsn : this.form.bsn
+		},
+
 		/**
 		 * The case this letter is about, resolved the same defensive way as
 		 * every other open-modal on the case page.
@@ -261,6 +304,33 @@ export default {
 		t,
 
 		/**
+		 * Focus on the BSN field: a masked number cannot be edited, so the field
+		 * empties for another number, the masked one as its placeholder.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/berichtenbox-integration/spec.md
+		 */
+		onBsnFocus() {
+			if (this.bsnFromCase) {
+				this.bsnEditing = true
+				this.form.bsn = ''
+			}
+		},
+
+		/**
+		 * Leaving the BSN field empty goes back to the case's number.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/berichtenbox-integration/spec.md
+		 */
+		onBsnBlur() {
+			if (this.bsnEditing && this.form.bsn.trim() === '') {
+				this.form.bsn = this.caseBsn
+			}
+			this.bsnEditing = false
+		},
+
+		/**
 		 * Fill the BSN from the case's requester.
 		 *
 		 * The case carries the whole initiator projection, and
@@ -291,8 +361,9 @@ export default {
 				if (String(data?.initiatorType || '') !== 'person') {
 					return
 				}
+				this.caseBsn = String(data?.initiatorSourceId || '')
 				if (this.form.bsn === '') {
-					this.form.bsn = String(data?.initiatorSourceId || '')
+					this.form.bsn = this.caseBsn
 				}
 			} catch {
 				this.form.bsn = ''
