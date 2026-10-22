@@ -7,5 +7,6 @@
 - [x] 1.2 `CaseLifecycleController` answers an unexpected failure with
   `code: change_failed`.
   - `tests/Unit/Controller/CaseLifecycleControllerTest.php::testAnUnexpectedFailureWithholdsItsDetail`
-- [ ] 2.1 Frontend lane: map `change_failed` in `src/utils/caseLifecycleHelpers.js`
+- [x] 2.1 Frontend lane: map `change_failed` in `src/utils/caseLifecycleHelpers.js`
   to `t('The case could not be changed.')`.
+  - `tests/vitest/dutchCopyOnTheCasePage.spec.js`
