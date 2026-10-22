@@ -3405,8 +3405,23 @@
 								"balie": "Desk"
 							},
 							"senderField": "callerIdentification",
+							"usAuthorField": "kccEmployeeId",
+							"usAuthorFormat": "user",
+							"themAuthorField": "@object.initiatorDisplayName",
 							"timestampField": "startTime",
 							"bodyField": "summary",
+							"subtitle": "Oldest first, with the channel of each message",
+							"showDirection": true,
+							"channelChips": true,
+							"headerAction": {
+								"label": "Log contact",
+								"icon": "PhonePlusOutline",
+								"type": "open-modal",
+								"target": "LogContactDialog",
+								"props": {
+									"caseId": "@objectId"
+								}
+							},
 							"emptyText": "No messages with the resident yet.",
 							"replyLabel": "Answer to the resident",
 							"replyAction": {
