@@ -320,6 +320,9 @@ describe('the cases list', () => {
 			_mapConfigNote,
 			showAdd,
 			showViewToggle,
+			showMassCopy,
+			showMassDelete,
+			_massCopyDeleteNote,
 			headerFilters,
 			searchPlaceholder,
 			...others
