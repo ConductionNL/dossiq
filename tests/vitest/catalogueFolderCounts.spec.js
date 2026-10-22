@@ -4,7 +4,8 @@
  *
  * DqCatalogus draws a count beside each folder: Zaaktypen, Attributen,
  * Sjablonen and Objecttypen each say how many they hold, counted from the
- * schema or endpoint the folder's own page lists.
+ * schema or endpoint the folder's own page lists, case types once each as
+ * the case types list shows them.
  */
 
 import fs from 'fs'
@@ -21,8 +22,10 @@ const item = (label) => items.find((entry) => entry.label === label)
 const listed = (route) => pages.find((page) => page.route === route).config
 
 describe('the catalogue folder counts (DqCatalogus)', () => {
-	it('counts the case types', () => {
-		expect(item('Case types').countFrom).toEqual({ register: 'dossiq', schema: 'caseType' })
+	it('counts each case type once, with the case types list\'s current-versions filter', () => {
+		const all = read('src/menu-layout.simple.json').pages.find((page) => page.id === 'CaseTypes').config.quickFilters.find((tab) => tab.default)
+		expect(item('Case types').countFrom).toEqual({ register: 'dossiq', schema: 'caseType', filter: all.filter })
+		expect(all.filter).toEqual({ supersededBy: { isnull: true } })
 	})
 
 	it.each([['Attributes', '/settings/attributes'], ['Templates', '/settings/workflow-definitions']])('counts %s from the schema its page lists', (label, route) => {

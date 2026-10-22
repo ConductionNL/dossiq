@@ -53,7 +53,7 @@
 									"label": "Case types",
 									"url": "/index.php/apps/dossiq/settings/case-types",
 									"childrenFrom": { "register": "dossiq", "schema": "caseType", "field": "category", "url": "/index.php/apps/dossiq/settings/case-types?category={value}" },
-									"countFrom": { "register": "dossiq", "schema": "caseType" }
+									"countFrom": { "register": "dossiq", "schema": "caseType", "filter": { "supersededBy": { "isnull": true } } }
 								},
 								{ "label": "Attributes", "url": "/index.php/apps/dossiq/settings/attributes", "countFrom": { "register": "dossiq", "schema": "propertyDefinition" } },
 								{ "label": "Templates", "url": "/index.php/apps/dossiq/settings/workflow-definitions", "countFrom": { "register": "dossiq", "schema": "workflowTemplate" } },
