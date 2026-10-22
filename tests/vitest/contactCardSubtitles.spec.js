@@ -18,7 +18,7 @@ const card = (id) => simple.configAppend.widgets.find((widget) => widget.id === 
 
 describe('the Contact tab cards\' subtitles', () => {
 	it.each([
-		['case-acknowledgement-card', 'Awb 4:3a: de aanvrager hoort dat de aanvraag binnen is'],
+		['case-acknowledgement-card', 'Awb 4:3a: de verzoeker hoort dat het verzoek binnen is'],
 		['case-conversations-card', 'Een gesprek in Talk, gestart vanuit deze zaak'],
 	])('%s reads the board\'s line', (id, line) => {
 		expect(nl[card(id).subtitle]).toBe(line)
