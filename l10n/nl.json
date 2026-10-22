@@ -2251,7 +2251,9 @@
         "Decided within the statutory or extended term": "Beslist binnen de wettelijke of verlengde termijn",
         "Decided within the term": "Beslist binnen de termijn",
         "Decided: {date}": "Besloten: {date}",
+        "Decides objections": "Bezwaar beslissen",
         "Decides the order of the cases assigned to someone. A case type can set the two thresholds itself.": "Bepaalt de volgorde van de zaken die aan iemand zijn toegewezen. Een zaaktype kan de twee drempels zelf instellen.",
+        "Decides up to": "Besluiten tot",
         "Decidesk UUID": "Uuid uit Decidesk",
         "Deciding filter": "Beslissend filter",
         "Decidiq connection (Integriq)": "Decidiq-verbinding (Integriq)",
@@ -9555,6 +9557,7 @@
         "Unknown error": "Onbekende fout",
         "unknown error": "onbekende fout",
         "Unknown type": "Onbekend type",
+        "Unlimited": "Onbeperkt",
         "Unmapped grounds": "Niet omgezette gronden",
         "Unmarked documents and relevant documents without a verdict. What is not relevant is not listed here.": "Ongemarkeerde documenten en relevante documenten zonder oordeel. Wat niet relevant is, staat hier niet.",
         "Unnamed link": "Link zonder naam",
@@ -11033,9 +11036,6 @@
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar",
-        "Decides up to": "Besluiten tot",
-        "Decides objections": "Bezwaar beslissen",
-        "Unlimited": "Onbeperkt"
+        "{years} years": "{years} jaar"
     }
 }
