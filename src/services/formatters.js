@@ -338,6 +338,23 @@ export default {
 	approvalChain: (value) => approvalMarkerLabel(value),
 
 	/**
+	 * A document's direction, by its label, for the Files tab's Direction
+	 * column. A row without one renders nothing.
+	 *
+	 * @param {string} value The direction (`incoming`, `outgoing`, `internal`).
+	 * @return {string} The label.
+	 * @spec openspec/changes/documents-on-the-case/tasks.md
+	 */
+	documentDirection: (value) => {
+		const labels = {
+			incoming: t('dossiq', 'Incoming'),
+			outgoing: t('dossiq', 'Outgoing'),
+			internal: t('dossiq', 'Internal'),
+		}
+		return labels[String(value ?? '')] ?? ''
+	},
+
+	/**
 	 * A document's confidentiality, by its label, for the Files tab's
 	 * Visible to column. The value is the stored level; a row without one
 	 * renders nothing.
