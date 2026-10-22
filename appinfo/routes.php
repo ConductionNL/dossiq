@@ -46,6 +46,8 @@ $extra = [
         // The case types each user chose for My case types (case-types-in-my-menu).
     ['name' => 'menuCaseTypes#index',  'url' => '/api/menu-case-types', 'verb' => 'GET'],
     ['name' => 'menuCaseTypes#update', 'url' => '/api/menu-case-types', 'verb' => 'PUT'],
+        // The current user's primary team, for the @myTeam filter token (my-team-queue).
+    ['name' => 'myTeam#show', 'url' => '/api/me/team', 'verb' => 'GET'],
 
         // AI-Assisted Processing (specific endpoints precede wildcard routes).
     ['name' => 'ai#classify',        'url' => '/api/ai/classify',        'verb' => 'POST'],
