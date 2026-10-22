@@ -1465,6 +1465,7 @@ OC.L10N.register(
         "Change confidentiality": "Wijzig vertrouwelijkheid",
         "Change location": "Locatie wijzigen",
         "Change note": "Wijzigingsnotitie",
+        "Change package": "Pakket wijzigen",
         "Change status": "Status wijzigen",
         "Change status for {count} cases": "Status wijzigen voor {count} zaken",
         "Change status...": "Status wijzigen...",

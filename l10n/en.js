@@ -1465,6 +1465,7 @@ OC.L10N.register(
         "Change confidentiality": "Change confidentiality",
         "Change location": "Change location",
         "Change note": "Change note",
+        "Change package": "Change package",
         "Change status": "Change status",
         "Change status for {count} cases": "Change status for {count} cases",
         "Change status...": "Change status...",
