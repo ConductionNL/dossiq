@@ -3941,6 +3941,10 @@
 												"schema": "role",
 												"field": "case"
 											},
+											"secrecy": {
+												"indicator": "geheimhouding",
+												"kinds": ["person"]
+											},
 											"roleLabels": {
 												"aanvrager": "Requester",
 												"gemachtigde": "Authorised representative",
