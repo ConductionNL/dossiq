@@ -25,4 +25,13 @@ describe('DqTeamwachtrij', () => {
 	it('keeps its side panel, which the toolbar placement sits beside', () => {
 		expect(view.overrides.sidePanel.map((card) => card.id)).toEqual(['queue-team-today', 'queue-by-type'])
 	})
+
+	it('draws the case types as its chips, not the case list\'s lenses', () => {
+		expect(view.overrides.quickFilters).toEqual([])
+		expect(view.overrides.quickFiltersFrom).toMatchObject({ field: 'caseType', allLabel: 'All types' })
+	})
+
+	it('draws the bulk band only once rows are selected', () => {
+		expect(view.overrides.bulkBandAlways).toBe(false)
+	})
 })
