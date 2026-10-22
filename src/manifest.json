@@ -12506,6 +12506,7 @@
 			"type": "index",
 			"title": "Organisations",
 			"config": {
+				"quickFilterPlacement": "toolbar",
 				"register": "dossiq",
 				"schema": "kvkCompany",
 				"allowSavedViews": true,
