@@ -14,3 +14,16 @@ title only for a seed row that carries no slug.
 - **WHEN** the repair step runs again
 - **THEN** it SHALL find that case type by its slug
 - **AND** it SHALL NOT create a second one
+
+### Requirement: An install with a seeded case type stored twice keeps one current copy
+
+An upgrade SHALL keep the newest copy of a seeded case type current and SHALL point every older copy of the same seed
+slug and version at it through `supersededBy`, so the new case picker offers one. It SHALL NOT delete a copy or move a
+case, and SHALL leave versions of a case type, and copies already superseded, alone.
+
+#### Scenario: Omgevingsvergunning kleine bouwactiviteit stored twice
+
+- **GIVEN** two copies with slug `omgevingsvergunning-kleinbouw`, version 1, stored at 14:08 and 23:34 on 10 October
+- **WHEN** the repair runs
+- **THEN** the 14:08 copy is superseded by the 23:34 copy, and its cases stay on it
+
