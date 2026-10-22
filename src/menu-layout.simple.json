@@ -5245,7 +5245,7 @@
 										"case-type-statuses",
 										"case-type-rules-summary",
 										"case-type-rights",
-										"case-type-privacy",
+										"case-type-privacy-summary",
 										"case-type-translations-summary"
 									],
 									"layout": [
@@ -5262,7 +5262,7 @@
 											"gridWidth": 12
 										},
 										{
-											"widgetId": "case-type-privacy",
+											"widgetId": "case-type-privacy-summary",
 											"gridWidth": 6
 										},
 										{
@@ -5529,6 +5529,49 @@
 						"type": "audit-trail",
 						"title": "Record history",
 						"icon": "History"
+					},
+					{
+						"id": "case-type-privacy-summary",
+						"type": "facts",
+						"title": "Privacy",
+						"_note": "DqZaaktypeOverzicht Privacy: the AVG facts the board draws on the Overview tab and the line that the cases count in the register of processing activities. The editable personal data card stays on the Privacy tab.",
+						"content": {
+							"fields": [
+								{
+									"label": "Purpose",
+									"path": "purpose"
+								},
+								{
+									"label": "Basis",
+									"path": "legalBasis"
+								},
+								{
+									"label": "Categories",
+									"parts": [
+										{
+											"path": "personalDataCategories",
+											"format": "list"
+										}
+									]
+								},
+								{
+									"label": "Retention period",
+									"parts": [
+										{
+											"path": "lawfulPurposeRetention"
+										},
+										{
+											"text": "months"
+										}
+									],
+									"separator": " "
+								},
+								{
+									"as": "line",
+									"text": "Counts in the register of processing activities."
+								}
+							]
+						}
 					},
 					{
 						"id": "case-type-translations-summary",
