@@ -12292,6 +12292,7 @@
 					"label": "Test with a case"
 				},
 				"pill": "Case type flow",
+				"pillVariant": "teal",
 				"notice": "This flow is how its case type works. The case runs the steps; old webhook steps now run as an external call through Integriq.",
 				"paletteFootnote": "dossiq only offers steps a case can do itself. The rest comes from the app that does it.",
 				"flowDirection": "down"
