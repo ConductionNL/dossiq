@@ -54,6 +54,7 @@
         "%n working day remaining": "%n working day remaining",
         "%n working days overdue": "%n working days overdue",
         "%n working days remaining": "%n working days remaining",
+        "%s (partly)": "%s (partly)",
         "%s could not be read, so this list is incomplete.": "%s could not be read, so this list is incomplete.",
         "%s has not been asked for yet. Start it in decidiq, then come back to this act.": "%s has not been asked for yet. Start it in decidiq, then come back to this act.",
         "%s mentioned you in a note": "%s mentioned you in a note",

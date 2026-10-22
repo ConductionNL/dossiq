@@ -844,6 +844,7 @@ $extra = [
     ['name' => 'mailPartiesReport#show', 'url' => '/api/cases/{id}/reports/mail-parties', 'verb' => 'GET'],
     // Woo review (woo-review-triage): relevance apart from the verdict, and the case summary.
     ['name' => 'documentReview#summary',   'url' => '/api/cases/{id}/review/summary', 'verb' => 'GET'],
+    ['name' => 'documentVerdicts#forCase', 'url' => '/api/cases/{id}/review/verdicts', 'verb' => 'GET'],
     ['name' => 'documentReview#relevance', 'url' => '/api/cases/{id}/review/documents/{documentRef}/relevance', 'verb' => 'POST'],
     ['name' => 'documentReview#batches',     'url' => '/api/cases/{id}/review/batches', 'verb' => 'GET'],
     ['name' => 'documentReview#createBatch', 'url' => '/api/cases/{id}/review/batches', 'verb' => 'POST'],
