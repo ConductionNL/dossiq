@@ -4127,6 +4127,8 @@
 													"label": "Summary"
 												}
 											],
+											"sortable": true,
+											"filterable": true,
 											"emptyText": "No contact logged on this case yet"
 										}
 									}
