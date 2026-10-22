@@ -36,4 +36,8 @@ describe('the departments page', () => {
 	it('draws no title over the groups pane', () => {
 		expect(page.config.folderSidebar.title).toBeUndefined()
 	})
+
+	it('downloads the staff list from the header, as board DqAfdelingen draws it', () => {
+		expect(page.config.headerButtons).toEqual([{ action: 'export', label: 'Download', icon: 'TrayArrowDown' }])
+	})
 })

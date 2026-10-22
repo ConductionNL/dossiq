@@ -4800,6 +4800,7 @@ OC.L10N.register(
         "New inspection checklist": "Nieuwe inspectiechecklist",
         "New mandaat": "Nieuw mandaat",
         "New message": "Nieuw bericht",
+        "New object type": "Nieuw objecttype",
         "New organisation": "Nieuwe organisatie",
         "New proposal": "Nieuw voorstel",
         "New request": "Nieuwe aanvraag",

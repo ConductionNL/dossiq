@@ -28,13 +28,20 @@
 				"allowEdit": false,
 				"showWidgetActions": false,
 				"documentationUrl": "https://dossiq.conduction.nl",
+				"_headerActionsNote": "Board DqCatalogus: Downloaden, the Actions menu, the buildiq square and New object type. Download asks the object types table for its rows as CSV (exportId, nextcloud-vue feat/header-download-table-csv). An object type is an OpenRegister schema, so New object type opens OpenRegister's schemas, where Add schema creates one. A new case type starts on the Case types page the tree opens.",
 				"headerActions": [
 					{
-						"id": "catalogue-new-case-type",
-						"label": "New case type",
+						"id": "catalogue-download",
+						"label": "Download",
+						"icon": "TrayArrowDown",
+						"type": "export",
+						"exportId": "catalogue-object-types"
+					},
+					{
+						"id": "catalogue-new-object-type",
+						"label": "New object type",
 						"icon": "Plus",
-						"type": "navigate",
-						"route": "CaseTypes",
+						"href": "/apps/openregister/schemas",
 						"variant": "primary"
 					}
 				],
@@ -73,7 +80,9 @@
 								{ "key": "cases", "label": "Used in", "formatter": "caseCount" }
 							],
 							"emptyText": "Object types appear here once cases link objects.",
-							"pageSize": 4
+							"pageSize": 4,
+							"exportId": "catalogue-object-types",
+							"exportFileName": "object-types"
 						}
 					},
 					{
