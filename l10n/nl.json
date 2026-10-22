@@ -1,5 +1,6 @@
 {
     "translations": {
+        "Assess per document whether it can be public. What is partly public, you redact afterwards.": "Per document beoordelen of het openbaar kan. Wat deels openbaar is, lakt u daarna.",
         "Still to be assessed": "Nog beoordelen",
         "{counted} of {total} assessed": "{counted} van {total} beoordeeld",
         "{remaining} to go before the decision": "Nog {remaining} te gaan voor het besluit",

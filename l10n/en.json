@@ -1,5 +1,6 @@
 {
     "translations": {
+        "Assess per document whether it can be public. What is partly public, you redact afterwards.": "Assess per document whether it can be public. What is partly public, you redact afterwards.",
         "Still to be assessed": "Still to be assessed",
         "{counted} of {total} assessed": "{counted} of {total} assessed",
         "{remaining} to go before the decision": "{remaining} to go before the decision",

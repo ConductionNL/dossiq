@@ -106,6 +106,7 @@ OC.L10N.register(
         "8 weeks": "8 weken",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> van de oudere checklist waaruit dit sjabloon is overgenomen, zodat de overname één keer per bron loopt",
         "> 90 dagen": "> 90 dagen",
+        "Assess per document whether it can be public. What is partly public, you redact afterwards.": "Per document beoordelen of het openbaar kan. Wat deels openbaar is, lakt u daarna.",
         "_%n case_::_%n cases_": ["%n zaak","%n zaken"],
         "_%n day late_::_%n days late_": ["%n dag te laat","%n dagen te laat"],
         "_%n day left_::_%n days left_": ["nog %n dag","nog %n dagen"],

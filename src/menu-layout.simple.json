@@ -2028,6 +2028,16 @@
 						"title": "Record hours"
 					},
 					"case-files": {
+						"subtitle": [
+							{
+								"when": {
+									"field": "@context.caseType.documentReview.enabled",
+									"op": "eq",
+									"value": true
+								},
+								"text": "Assess per document whether it can be public. What is partly public, you redact afterwards."
+							}
+						],
 						"_viewNote": "DqZaakDocumenten: the Files tab holds the verdicts card, the folder and the grounds card, so the folder is a card too; `view: tab` keeps it the full files browser (CnFilesTab) inside that card rather than the compact files card.",
 						"content": {
 							"view": "tab"
