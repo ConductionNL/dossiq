@@ -216,6 +216,29 @@
 			}
 		},
 		{
+			"key": "persoon-marja",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:marja.bsn}}",
+				"name": {
+					"givenNames": "{{cast:marja.givenName}}",
+					"surname": "{{cast:marja.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:marja.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:marja.address.street}}",
+					"houseNumber": "{{cast:marja.address.number}}",
+					"postcode": "{{cast:marja.address.postcode}}",
+					"city": "{{cast:marja.address.city}}"
+				},
+				"displayName": "{{cast:marja.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
 			"key": "bedrijf-slagerij",
 			"register": "dossiq",
 			"schema": "kvkCompany",
@@ -247,6 +270,23 @@
 					"place": "{{cast:cloudgemeente.address.city}}"
 				},
 				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-buurtoost",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:buurtoost.kvk}}",
+				"tradeName": "{{cast:buurtoost.name}}",
+				"legalForm": "{{cast:buurtoost.legalForm}}",
+				"address": {
+					"streetName": "{{cast:buurtoost.address.street}}",
+					"houseNumber": "{{cast:buurtoost.address.number}}",
+					"postcode": "{{cast:buurtoost.address.postcode}}",
+					"place": "{{cast:buurtoost.address.city}}"
+				},
+				"description": "Organiseert het buurtfeest en de speeldagen in Oosthaven. Voorbeeldvereniging van de gemeente Zuiddrecht, geen echte vereniging."
 			}
 		},
 		{
@@ -628,6 +668,90 @@
 			}
 		},
 		{
+			"key": "buurtoost-subsidie-vraag",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "inbound",
+				"startTime": "{{datetime:-41 09:10}}",
+				"endTime": "{{datetime:-41 09:22}}",
+				"durationSeconds": 720,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:daan.uid}}",
+				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Mevrouw Verbeek vroeg welke kosten de subsidie dekt. Uitgelegd dat huur van de tent en de geluidsinstallatie meetellen.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "buurtoost-subsidie-aanvulling",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "email",
+				"direction": "inbound",
+				"startTime": "{{datetime:-25 13:00}}",
+				"endTime": "{{datetime:-25 13:05}}",
+				"durationSeconds": 300,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:lars.uid}}",
+				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "new_request",
+				"summary": "De begroting is nagestuurd, met de offerte van de tentverhuurder.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "buurtoost-evenement-uitleg",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "outbound",
+				"startTime": "{{datetime:-110 15:30}}",
+				"endTime": "{{datetime:-110 15:40}}",
+				"durationSeconds": 600,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:esra.uid}}",
+				"case": "{{object:evenement-buurtfeest-2026.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Teruggebeld over de eindtijd van de muziek: tot 23.00 uur mag, met een bericht aan de buren.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "buurtoost-speeltoestel-melding",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "balie",
+				"direction": "inbound",
+				"startTime": "{{datetime:-300 08:30}}",
+				"endTime": "{{datetime:-300 08:40}}",
+				"durationSeconds": 600,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:daan.uid}}",
+				"case": "{{object:melding-speeltoestel-oosthavenplein.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "report",
+				"summary": "Mevrouw Verbeek meldde aan de balie dat de wipkip los zit. Het speeltoestel is dezelfde dag afgezet.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
 			"key": "melding-fatima-afspraak",
 			"register": "dossiq",
 			"schema": "plannedAction",
@@ -766,6 +890,211 @@
 				"tags": [
 					"molenweg",
 					"kap"
+				]
+			}
+		},
+		{
+			"key": "subsidie-buurtfeest-oosthaven",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "subsidieaanvraag"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"beoordeling": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Beoordeling"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluitvorming"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:bedrijf-buurtoost.id}}",
+				"initiatorType": "company",
+				"initiatorDisplayName": "{{cast:buurtoost.name}}",
+				"portalSubject": "{{cast:marja.uid}}",
+				"portalParty": "kvk:{{cast:buurtoost.kvk}}",
+				"portalBranch": "{{cast:buurtoost.vestigingsnummer}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "openbaar",
+				"title": "Subsidie buurtfeest Oosthaven",
+				"description": "Buurtvereniging Oost vraagt een bijdrage voor het buurtfeest op het Oosthavenplein in september.",
+				"assignee": "{{cast:lars.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-40}}",
+				"receivedAt": "{{datetime:-40 10:30}}",
+				"currentStatusEnteredAt": "{{datetime:-3 09:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-40 10:30}}"
+					},
+					{
+						"status": "{{lookup:beoordeling}}",
+						"enteredAt": "{{datetime:-30 11:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-3 09:00}}"
+					}
+				],
+				"tags": [
+					"oosthaven",
+					"buurtfeest"
+				]
+			}
+		},
+		{
+			"key": "evenement-buurtfeest-2026",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "evenementenvergunning"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:bedrijf-buurtoost.id}}",
+				"initiatorType": "company",
+				"initiatorDisplayName": "{{cast:buurtoost.name}}",
+				"portalSubject": "{{cast:marja.uid}}",
+				"portalParty": "kvk:{{cast:buurtoost.kvk}}",
+				"portalBranch": "{{cast:buurtoost.vestigingsnummer}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "openbaar",
+				"title": "Evenementenvergunning buurtfeest 2026",
+				"description": "Vergunning voor het buurtfeest op het Oosthavenplein, met muziek tot 23.00 uur.",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-120}}",
+				"endDate": "{{date:-90}}",
+				"receivedAt": "{{datetime:-120 14:00}}",
+				"currentStatusEnteredAt": "{{datetime:-90 10:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-120 14:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-90 10:00}}"
+					}
+				],
+				"tags": [
+					"oosthaven",
+					"evenement"
+				]
+			}
+		},
+		{
+			"key": "melding-speeltoestel-oosthavenplein",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:bedrijf-buurtoost.id}}",
+				"initiatorType": "company",
+				"initiatorDisplayName": "{{cast:buurtoost.name}}",
+				"portalSubject": "{{cast:marja.uid}}",
+				"portalParty": "kvk:{{cast:buurtoost.kvk}}",
+				"portalBranch": "{{cast:buurtoost.vestigingsnummer}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "openbaar",
+				"title": "Melding kapot speeltoestel Oosthavenplein",
+				"description": "De wipkip op het Oosthavenplein is los gaan zitten. De vereniging meldt het namens de buurt.",
+				"assignee": "{{cast:bram.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-300}}",
+				"endDate": "{{date:-290}}",
+				"receivedAt": "{{datetime:-300 08:40}}",
+				"currentStatusEnteredAt": "{{datetime:-290 15:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-300 08:40}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-290 15:00}}"
+					}
+				],
+				"tags": [
+					"oosthaven",
+					"speelplaats"
 				]
 			}
 		},
