@@ -840,6 +840,42 @@
 			}
 		},
 		{
+			"key": "zaaktype-omgevingsvergunning-regulier",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten, met een eigen veld voor de situatietekening.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 5,
+				"isDraft": true,
+				"versionDate": "{{date:-2}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-regulier-situatietekening",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"data": {
+				"name": "situatietekening",
+				"definition": "Situatietekening",
+				"description": "Tekening van de situatie na de verbouwing, met maten.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"propertyType": "file",
+				"isRequired": true,
+				"hideOnCreate": true
+			}
+		},
+		{
 			"key": "kapvergunning-molenweg",
 			"register": "dossiq",
 			"schema": "case",
