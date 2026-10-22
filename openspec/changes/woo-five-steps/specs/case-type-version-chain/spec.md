@@ -13,3 +13,12 @@ A case SHALL carry `caseTypeIdentifier`, the `identifier` of its case type, mate
 - **GIVEN** a case saved before the field existed
 - **WHEN** the app is upgraded
 - **THEN** the case carries its case type's identifier, and a second run writes nothing
+
+### Requirement: The Woo request case type has a second version with five steps
+
+The register SHALL ship version 2 of the Woo request case type (identifier `woo-verzoek`, `previousVersion` the first version, which names it in `supersededBy`) with five statuses in order: Ontvangen, In behandeling, Besluit, Publiceren, Afgehandeld (final). It SHALL carry its own result, decision and property types, its portal windows SHALL name its own statuses, and the record import SHALL move to it. Its flow SHALL guard "In behandeling → Besluit" with every guard version 1 placed before the decision (documents gathered, all assessed, every partly public one redacted), "Besluit → Publiceren" on the decision being drafted, "Publiceren → Afgehandeld" on the publication, and SHALL let a request that is not admissible or withdrawn go to Afgehandeld once its reason is recorded. Cases on version 1 keep their statuses.
+
+#### Scenario: a new request
+- **GIVEN** version 2 is installed
+- **WHEN** a resident sends a Woo request
+- **THEN** the case starts in Ontvangen and its progress bar shows the five steps the boards draw

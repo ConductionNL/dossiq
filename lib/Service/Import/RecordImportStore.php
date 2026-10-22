@@ -266,15 +266,37 @@ class RecordImportStore {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['identifier' => $caseType, '_limit' => 1]
+				filters: ['identifier' => $caseType, '_limit' => 50]
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('RecordImportStore: the case type could not be read', ['caseType' => $caseType, 'error' => $e->getMessage()]);
 			return null;
 		}
 
-		return ($rows[0] ?? null);
+		return $this->versionInUse(rows: $rows);
 	}//end caseType()
+
+	/**
+	 * Of the versions that share an identifier, the one new cases get: the
+	 * newest published version nothing has superseded, else the first row.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The versions.
+	 *
+	 * @return array<string, mixed>|null The version in use, or null when there is none.
+	 *
+	 * @spec openspec/changes/woo-five-steps/specs/case-type-version-chain/spec.md#requirement-the-woo-request-case-type-has-a-second-version-with-five-steps
+	 */
+	private function versionInUse(array $rows): ?array {
+		$current = array_values(
+			array_filter(
+				$rows,
+				static fn (array $row): bool => trim((string)($row['supersededBy'] ?? '')) === '' && ($row['isDraft'] ?? false) !== true
+			)
+		);
+		usort($current, static fn (array $left, array $right): int => ((int)($right['version'] ?? 0) <=> (int)($left['version'] ?? 0)));
+
+		return ($current[0] ?? ($rows[0] ?? null));
+	}//end versionInUse()
 
 	/**
 	 * Every row of one schema, page by page.
