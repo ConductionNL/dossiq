@@ -493,6 +493,9 @@ describe('the tabs', () => {
 			rowRoute: 'TaskDetail',
 			viewAllRoute: { name: 'Tasks', query: { case: '@objectId' } },
 		})
+		// Status tones as DqZaakTaken draws them: in progress purple, open amber,
+		// done grey (nextcloud-vue tasks-state-variants).
+		expect(tasks.content.stateVariants).toEqual({ available: 'warning', enabled: 'warning', active: 'purple', completed: 'default' })
 	})
 
 	it('turns the stages horizontal and leaves every other widget of the page as it was', () => {

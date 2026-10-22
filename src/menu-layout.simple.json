@@ -2656,7 +2656,13 @@
 							},
 							"viewAllLabel": "All tasks of this case in Tasks",
 							"emptyText": "No tasks for this case yet",
-							"pollSeconds": 30
+							"pollSeconds": 30,
+							"stateVariants": {
+								"available": "warning",
+								"enabled": "warning",
+								"active": "purple",
+								"completed": "default"
+							}
 						}
 					},
 					{
