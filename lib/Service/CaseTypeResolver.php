@@ -251,22 +251,50 @@ class CaseTypeResolver {
 	 *
 	 * @return array<string, mixed> The blueprint: `caseType` (the effective
 	 *                              row), `parents` (the ancestors it merged),
-	 *                              `statusTypes`, `resultTypes` and
-	 *                              `propertyDefinitions`.
+	 *                              `statusTypes`, `resultTypes`,
+	 *                              `propertyDefinitions` and `counts`.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function blueprintFor(string $caseTypeId): array {
-		$chain = $this->chainFor(caseTypeId: $caseTypeId);
+		$chain      = $this->chainFor(caseTypeId: $caseTypeId);
+		$properties = $this->propertyDefinitionsFor(caseTypeId: $caseTypeId);
 
 		return [
 			'caseType' => $this->effectiveCaseType(caseTypeId: $caseTypeId),
 			'parents' => array_slice($chain, 1),
 			'statusTypes' => $this->statusTypesFor(caseTypeId: $caseTypeId),
 			'resultTypes' => $this->resultTypesFor(caseTypeId: $caseTypeId),
-			'propertyDefinitions' => $this->propertyDefinitionsFor(caseTypeId: $caseTypeId),
+			'propertyDefinitions' => $properties,
+			'counts' => ['propertyDefinitions' => $this->originCounts(rows: $properties)],
 		];
 	}//end blueprintFor()
+
+	/**
+	 * How many rows there are, how many a parent gave and how many the type
+	 * overrides (DqZaaktypeVelden Moedertype "Geërfde velden 6 van 14").
+	 *
+	 * @param array<int, array<string, mixed>> $rows The merged rows, each with `origin`.
+	 *
+	 * @return array{total: int, inherited: int, overridden: int} The counts.
+	 *
+	 * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+	 */
+	private function originCounts(array $rows): array {
+		$inherited  = 0;
+		$overridden = 0;
+		foreach ($rows as $row) {
+			if (($row['origin'] ?? '') === self::ORIGIN_INHERITED) {
+				$inherited++;
+			}
+
+			if (($row['overrides'] ?? false) === true) {
+				$overridden++;
+			}
+		}
+
+		return ['total' => count($rows), 'inherited' => $inherited, 'overridden' => $overridden];
+	}//end originCounts()
 
 	/**
 	 * Whether naming a parent would close a loop.
@@ -405,11 +433,18 @@ class CaseTypeResolver {
 			}
 
 			foreach ($this->store->rowsOfType(schemaKey: $schemaKey, caseTypeId: $this->store->rowId(row: $ancestor)) as $row) {
-				$merged[$this->mergeKey(row: $row)] = $this->tag(
+				$key    = $this->mergeKey(row: $row);
+				$tagged = $this->tag(
 					row: $row,
 					origin: $origin,
 					ancestor: $ancestor
 				);
+				// An own row that replaces an ancestor's overrides it.
+				if ($isOwn === true && isset($merged[$key]) === true) {
+					$tagged['overrides'] = true;
+				}
+
+				$merged[$key] = $tagged;
 			}
 		}
 
