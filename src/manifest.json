@@ -11081,6 +11081,7 @@
 					"subject",
 					"origin",
 					"responsibleUnit",
+					"handling.teams",
 					"serviceTarget",
 					"notificationDomain",
 					"colour",
@@ -11104,6 +11105,7 @@
 					"subject": { "order": 13 },
 					"origin": { "order": 14 },
 					"responsibleUnit": { "order": 15 },
+					"handling.teams": { "order": 15.5 },
 					"notificationDomain": { "order": 16 },
 					"colour": { "order": 17, "widget": "select", "optionSwatches": { "blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "teal": "var(--nl-color-teal, #1d5e66)", "teal-light": "var(--nl-color-teal-light, #e3f1f3)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)" } },
 					"icon": { "order": 18, "widget": "select", "enum": ["FileDocumentOutline", "Gavel", "MessageAlertOutline", "MapMarkerOutline", "OfficeBuildingOutline", "AccountHardHat", "MapOutline", "CashMultiple", "Calendar", "CardAccountDetailsOutline", "HandshakeOutline", "ShieldAccountOutline", "ScaleBalance", "HandHeartOutline", "StoreOutline", "FileCertificateOutline", "Domain", "FolderOutline"], "optionIcons": { "FileDocumentOutline": "FileDocumentOutline", "Gavel": "Gavel", "MessageAlertOutline": "MessageAlertOutline", "MapMarkerOutline": "MapMarkerOutline", "OfficeBuildingOutline": "OfficeBuildingOutline", "AccountHardHat": "AccountHardHat", "MapOutline": "MapOutline", "CashMultiple": "CashMultiple", "Calendar": "Calendar", "CardAccountDetailsOutline": "CardAccountDetailsOutline", "HandshakeOutline": "HandshakeOutline", "ShieldAccountOutline": "ShieldAccountOutline", "ScaleBalance": "ScaleBalance", "HandHeartOutline": "HandHeartOutline", "StoreOutline": "StoreOutline", "FileCertificateOutline": "FileCertificateOutline", "Domain": "Domain", "FolderOutline": "FolderOutline" } }
@@ -11216,6 +11218,7 @@
 								"origin",
 								"initiatorAction",
 								"responsibleUnit",
+								"handling.teams",
 								"referenceProcess",
 								"keywords",
 								"publicationText",
