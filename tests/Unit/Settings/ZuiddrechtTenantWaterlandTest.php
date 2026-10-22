@@ -75,4 +75,51 @@ class ZuiddrechtTenantWaterlandTest extends TestCase {
 			$this->assertSame(expected: '{{organisation:waterland}}', actual: $step['data']['organisation']);
 		}
 	}//end testWaterlandHasItsAdministratorMandatesAndBilling()
+
+	/**
+	 * What OpenRegister stores: every field of every tenant record is declared on its schema, and every enum value is one the schema allows, nested ones included.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/example-set-tenant-waterland/specs/example-set-tenant-waterland/spec.md#requirement-the-tenant-page-has-a-tenant-with-an-administrator-mandates-and-billing
+	 */
+	public function testWaterlandsRecordsAreWhatTheSchemasStore(): void {
+		$set     = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$schemas = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/dossiq_register.json'), true)['components']['schemas'];
+
+		$checked = 0;
+		foreach ($set['objects'] as $object) {
+			if (in_array($object['schema'], ['tenantUser', 'tenantMandate', 'tenantBillingEvent'], true) === false) {
+				continue;
+			}
+
+			$this->assertStoredAsDeclared(data: $object['data'], properties: $schemas[$object['schema']]['properties'], where: $object['key']);
+			$checked++;
+		}
+
+		$this->assertSame(expected: 7, actual: $checked);
+	}//end testWaterlandsRecordsAreWhatTheSchemasStore()
+
+	/**
+	 * Assert each field is a declared property and each enum value is allowed, walking nested objects.
+	 *
+	 * @param array<string, mixed> $data       The record's fields.
+	 * @param array<string, mixed> $properties The schema's properties.
+	 * @param string               $where      The record key and path, for messages.
+	 *
+	 * @return void
+	 */
+	private function assertStoredAsDeclared(array $data, array $properties, string $where): void {
+		foreach ($data as $field => $value) {
+			$this->assertArrayHasKey(key: $field, array: $properties, message: $where.': "'.$field.'" is not declared, so OpenRegister drops it');
+			$property = $properties[$field];
+			if (isset($property['enum']) === true && $value !== null) {
+				$this->assertContains(needle: $value, haystack: $property['enum'], message: $where.'.'.$field);
+			}
+
+			if (is_array($value) === true && isset($property['properties']) === true && array_is_list($value) === false) {
+				$this->assertStoredAsDeclared(data: $value, properties: $property['properties'], where: $where.'.'.$field);
+			}
+		}
+	}//end assertStoredAsDeclared()
 }//end class
