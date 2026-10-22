@@ -6837,6 +6837,31 @@
 						}
 					},
 					{
+						"id": "eod-hours",
+						"type": "stat",
+						"title": "Hours",
+						"_note": "DqDagAfsluiten's Uren: what the reader booked today, from humaniq's own day summary (GET /api/time-entries/summary, the caller's entries only). Dossiq keeps no hours of its own (ADR-011). Hidden, not an install prompt, when humaniq is absent or does not answer the summary yet.",
+						"visibleWhen": {
+							"appInstalled": "humaniq",
+							"endpoint": "/apps/humaniq/api/time-entries/summary",
+							"field": "hours",
+							"op": "gte",
+							"value": 0
+						},
+						"content": {
+							"label": "Hours",
+							"caption": "already in humaniq",
+							"format": {
+								"style": "decimal",
+								"decimals": 2
+							},
+							"endpointSource": {
+								"url": "/apps/humaniq/api/time-entries/summary"
+							},
+							"valueField": "hours"
+						}
+					},
+					{
 						"id": "eod-tomorrow",
 						"type": "record-list",
 						"title": "First thing tomorrow",
@@ -6917,10 +6942,19 @@
 						"sizeToContent": true
 					},
 					{
+						"id": 7,
+						"widgetId": "eod-hours",
+						"gridX": 8,
+						"gridY": 4,
+						"gridWidth": 4,
+						"gridHeight": 2,
+						"sizeToContent": true
+					},
+					{
 						"id": 5,
 						"widgetId": "eod-tomorrow",
 						"gridX": 8,
-						"gridY": 4,
+						"gridY": 6,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"sizeToContent": true
@@ -6929,7 +6963,7 @@
 						"id": 6,
 						"widgetId": "eod-how",
 						"gridX": 8,
-						"gridY": 7,
+						"gridY": 9,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"sizeToContent": true

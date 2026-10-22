@@ -86,4 +86,22 @@ describe('the end-of-day page', () => {
 		expect(widget('eod-figures').titleTone).toBe('side')
 		expect(widget('eod-how').titleTone).toBe('side')
 	})
+
+	it('shows the hours booked today from humaniq, and nothing at all without humaniq', () => {
+		// DqDagAfsluiten "Uren 2,75, nu al in humaniq": humaniq's own day
+		// summary of the reader's entries, read through its endpoint.
+		const SUMMARY = '/apps/humaniq/api/time-entries/summary'
+		const hours = widget('eod-hours')
+		expect(hours.type).toBe('stat')
+		expect(hours.content.endpointSource).toEqual({ url: SUMMARY })
+		expect(hours.content.valueField).toBe('hours')
+		expect(hours.content.format).toEqual({ style: 'decimal', decimals: 2 })
+		expect(hours.content.caption).toBe('already in humaniq')
+		// Hidden, not an install prompt, when humaniq is absent or too old to answer.
+		expect(hours.visibleWhen).toEqual({ appInstalled: 'humaniq', endpoint: SUMMARY, field: 'hours', op: 'gte', value: 0 })
+		expect(hours.requiresApp).toBeUndefined()
+		const figures = page.config.layout.find((cell) => cell.widgetId === 'eod-figures')
+		const cell = page.config.layout.find((entry) => entry.widgetId === 'eod-hours')
+		expect(cell).toMatchObject({ gridX: figures.gridX, gridWidth: figures.gridWidth, gridY: figures.gridY + figures.gridHeight })
+	})
 })
