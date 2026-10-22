@@ -106,6 +106,8 @@ OC.L10N.register(
         "8 weeks": "8 weken",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> van de oudere checklist waaruit dit sjabloon is overgenomen, zodat de overname één keer per bron loopt",
         "> 90 dagen": "> 90 dagen",
+        "Internal and external advice on this case": "Interne en externe adviezen op deze zaak",
+        "Per organisation; dossiq checks them at every decision": "Per organisatie; dossiq toetst ze bij elk besluit",
         "_%n case_::_%n cases_": ["%n zaak","%n zaken"],
         "_%n day late_::_%n days late_": ["%n dag te laat","%n dagen te laat"],
         "_%n day left_::_%n days left_": ["nog %n dag","nog %n dagen"],
