@@ -23,11 +23,13 @@ describe('case type versions with their running cases (DqZaaktype)', () => {
 			schema: 'case',
 			op: 'count',
 			where: { caseType: '@self.id', isFinalStatus: false },
+			text: { zero: 'no running cases', one: '{count} running case', other: '{count} running cases' },
 		})
 	})
 
-	it('reads date · n lopende zaken', () => {
-		expect(versions.meta.parts).toEqual(['{validFrom|date}', '{runningCases} running cases'])
-		expect(nl['{runningCases} running cases']).toBe('{runningCases} lopende zaken')
+	it('reads date · n lopende zaken, and geen lopende zaken at zero', () => {
+		expect(versions.meta.parts).toEqual(['{validFrom|date}', '{runningCases}'])
+		const text = versions.aggregates.runningCases.text
+		expect([nl[text.zero], nl[text.one], nl[text.other]]).toEqual(['geen lopende zaken', '{count} lopende zaak', '{count} lopende zaken'])
 	})
 })

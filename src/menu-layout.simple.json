@@ -5034,7 +5034,7 @@
 							"meta": {
 								"parts": [
 									"{validFrom|date}",
-									"{runningCases} running cases"
+									"{runningCases}"
 								]
 							},
 							"aggregates": {
@@ -5045,6 +5045,11 @@
 									"where": {
 										"caseType": "@self.id",
 										"isFinalStatus": false
+									},
+									"text": {
+										"zero": "no running cases",
+										"one": "{count} running case",
+										"other": "{count} running cases"
 									}
 								}
 							},
