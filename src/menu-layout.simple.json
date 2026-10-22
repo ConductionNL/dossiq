@@ -3138,7 +3138,12 @@
 								},
 								{
 									"key": "state",
-									"label": "State"
+									"label": "State",
+									"colorMap": {
+										"open": "warning",
+										"in-behandeling": "purple",
+										"afgehandeld": "success"
+									}
 								},
 								{
 									"key": "assignee",
