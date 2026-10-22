@@ -45,15 +45,20 @@ class DocumentVerdictsControllerTest extends TestCase {
 	 * @return DocumentVerdictsController
 	 */
 	private function controller(DocumentVerdicts&MockObject $verdicts, bool $read = true, bool $loggedIn = true): DocumentVerdictsController {
-		$guard = $this->createMock(CaseAccessGuard::class);
+		$guard = $this->createMock(originalClassName: CaseAccessGuard::class);
 		$guard->method('hasCaseReadAccess')->willReturn($read);
-		$session = $this->createMock(IUserSession::class);
-		$session->method('getUser')->willReturn($loggedIn === true ? $this->createMock(IUser::class) : null);
-		$l10n = $this->createMock(IL10N::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$user = null;
+		if ($loggedIn === true) {
+			$user = $this->createMock(originalClassName: IUser::class);
+		}
+
+		$session->method('getUser')->willReturn($user);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
 		return new DocumentVerdictsController(
-			request: $this->createMock(IRequest::class),
+			request: $this->createMock(originalClassName: IRequest::class),
 			verdicts: $verdicts,
 			caseAccessGuard: $guard,
 			userSession: $session,
@@ -67,13 +72,13 @@ class DocumentVerdictsControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAReaderGetsTheVerdicts(): void {
-		$verdicts = $this->createMock(DocumentVerdicts::class);
+		$verdicts = $this->createMock(originalClassName: DocumentVerdicts::class);
 		$verdicts->expects($this->once())->method('forCase')->with('case-1')->willReturn(['documents' => 7, 'assessed' => 4]);
 
 		$response = $this->controller(verdicts: $verdicts)->forCase(id: 'case-1');
 
-		$this->assertSame(200, $response->getStatus());
-		$this->assertSame(['documents' => 7, 'assessed' => 4], $response->getData());
+		$this->assertSame(expected: 200, actual: $response->getStatus());
+		$this->assertSame(expected: ['documents' => 7, 'assessed' => 4], actual: $response->getData());
 	}//end testAReaderGetsTheVerdicts()
 
 	/**
@@ -82,10 +87,10 @@ class DocumentVerdictsControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAUserWhoMayNotReadTheCaseIsRefusedBeforeAnyRead(): void {
-		$verdicts = $this->createMock(DocumentVerdicts::class);
+		$verdicts = $this->createMock(originalClassName: DocumentVerdicts::class);
 		$verdicts->expects($this->never())->method('forCase');
 
-		$this->assertSame(403, $this->controller(verdicts: $verdicts, read: false)->forCase(id: 'case-1')->getStatus());
-		$this->assertSame(401, $this->controller(verdicts: $verdicts, loggedIn: false)->forCase(id: 'case-1')->getStatus());
+		$this->assertSame(expected: 403, actual: $this->controller(verdicts: $verdicts, read: false)->forCase(id: 'case-1')->getStatus());
+		$this->assertSame(expected: 401, actual: $this->controller(verdicts: $verdicts, loggedIn: false)->forCase(id: 'case-1')->getStatus());
 	}//end testAUserWhoMayNotReadTheCaseIsRefusedBeforeAnyRead()
 }//end class

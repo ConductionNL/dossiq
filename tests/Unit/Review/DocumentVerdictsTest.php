@@ -45,7 +45,7 @@ class DocumentVerdictsTest extends TestCase {
 	 * @return DocumentVerdicts
 	 */
 	private function verdicts(InMemoryRegister $register, bool $groundsReadable = true): DocumentVerdicts {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($register);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => [
@@ -54,25 +54,32 @@ class DocumentVerdictsTest extends TestCase {
 			][$key] ?? $default
 		);
 
-		$assessments = $this->createMock(WOODocumentAssessmentService::class);
+		$assessments = $this->createMock(originalClassName: WOODocumentAssessmentService::class);
 		$assessments->method('getDocumentsUnderReview')->willReturn(['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7']);
 
-		$titles = $this->createMock(OutstandingDocuments::class);
+		$titles = $this->createMock(originalClassName: OutstandingDocuments::class);
 		$titles->method('titleOf')->willReturnCallback(
-			static fn (string $documentId): string => ['d2' => 'Mail aannemer over planning', 'd4' => 'Klachtenlijst bewoners Lindelaan'][$documentId] ?? $documentId
+			static fn (string $documentId): string => [
+				'd2' => 'Mail aannemer over planning',
+				'd4' => 'Klachtenlijst bewoners Lindelaan',
+			][$documentId] ?? $documentId
 		);
 
-		$grounds = $this->createMock(WooRefusalGrounds::class);
+		$grounds = $this->createMock(originalClassName: WooRefusalGrounds::class);
 		if ($groundsReadable === true) {
 			$grounds->method('byCode')->willReturnCallback(
-				static fn (string $code): ?array => ['5.1.2.e' => ['label' => 'Eerbiediging van de persoonlijke levenssfeer']][$code] ?? null
+				static fn (string $code): ?array => [
+					'5.1.2.e' => ['label' => 'Eerbiediging van de persoonlijke levenssfeer'],
+				][$code] ?? null
 			);
 		} else {
 			$grounds->method('byCode')->willThrowException(new RuntimeException('register down'));
 		}
 
-		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnCallback(static fn (string $text, array $params = []): string => vsprintf(str_replace('(partly)', '(deels)', $text), $params));
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $params = []): string => vsprintf(str_replace('(partly)', '(deels)', $text), $params)
+		);
 
 		return new DocumentVerdicts(settingsService: $settings, assessments: $assessments, titles: $titles, grounds: $grounds, l10n: $l10n);
 	}//end verdicts()
@@ -85,9 +92,19 @@ class DocumentVerdictsTest extends TestCase {
 	private function lindelaan(): InMemoryRegister {
 		$register = new InMemoryRegister();
 		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a1', row: ['caseRef' => 'case-1', 'documentRef' => 'd1', 'classification' => 'openbaar']);
-		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a2', row: ['caseRef' => 'case-1', 'documentRef' => 'd2', 'classification' => 'deels_openbaar', 'weigeringsgronden' => ['5.1.2.e']]);
+		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a2', row: [
+				'caseRef' => 'case-1',
+				'documentRef' => 'd2',
+				'classification' => 'deels_openbaar',
+				'weigeringsgronden' => ['5.1.2.e'],
+			]);
 		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a3', row: ['caseRef' => 'case-1', 'documentRef' => 'd3', 'classification' => 'openbaar']);
-		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a4', row: ['caseRef' => 'case-1', 'documentRef' => 'd4', 'classification' => 'niet_openbaar', 'weigeringsgronden' => ['5.1.2.e']]);
+		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a4', row: [
+				'caseRef' => 'case-1',
+				'documentRef' => 'd4',
+				'classification' => 'niet_openbaar',
+				'weigeringsgronden' => ['5.1.2.e'],
+			]);
 		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a5', row: ['caseRef' => 'case-1', 'documentRef' => 'd5']);
 		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a6', row: ['caseRef' => 'case-1', 'documentRef' => 'gone', 'classification' => 'openbaar']);
 		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a7', row: ['caseRef' => 'case-2', 'documentRef' => 'd6', 'classification' => 'openbaar']);
@@ -103,17 +120,17 @@ class DocumentVerdictsTest extends TestCase {
 	public function testCountsTheVerdictsAndListsTheGroundsWithTheirDocuments(): void {
 		$answer = $this->verdicts(register: $this->lindelaan())->forCase(caseId: 'case-1');
 
-		self::assertSame(7, $answer['documents']);
-		self::assertSame(4, $answer['assessed']);
-		self::assertSame(3, $answer['remaining']);
-		self::assertSame(['openbaar' => 2, 'deels_openbaar' => 1, 'niet_openbaar' => 1], $answer['counts']);
+		self::assertSame(expected: 7, actual: $answer['documents']);
+		self::assertSame(expected: 4, actual: $answer['assessed']);
+		self::assertSame(expected: 3, actual: $answer['remaining']);
+		self::assertSame(expected: ['openbaar' => 2, 'deels_openbaar' => 1, 'niet_openbaar' => 1], actual: $answer['counts']);
 		self::assertSame(
-			[[
+			expected: [[
 				'code' => '5.1.2.e',
 				'label' => 'Eerbiediging van de persoonlijke levenssfeer',
 				'documentList' => 'Mail aannemer over planning (deels), Klachtenlijst bewoners Lindelaan',
 			]],
-			$answer['grounds']
+			actual: $answer['grounds']
 		);
 	}//end testCountsTheVerdictsAndListsTheGroundsWithTheirDocuments()
 
@@ -125,8 +142,8 @@ class DocumentVerdictsTest extends TestCase {
 	public function testAnUnreadableGroundsListLeavesTheLabelEmpty(): void {
 		$answer = $this->verdicts(register: $this->lindelaan(), groundsReadable: false)->forCase(caseId: 'case-1');
 
-		self::assertSame('5.1.2.e', $answer['grounds'][0]['code']);
-		self::assertSame('', $answer['grounds'][0]['label']);
+		self::assertSame(expected: '5.1.2.e', actual: $answer['grounds'][0]['code']);
+		self::assertSame(expected: '', actual: $answer['grounds'][0]['label']);
 	}//end testAnUnreadableGroundsListLeavesTheLabelEmpty()
 
 	/**
@@ -137,6 +154,6 @@ class DocumentVerdictsTest extends TestCase {
 	public function testNothingAssessedLeavesEveryDocumentRemaining(): void {
 		$answer = $this->verdicts(register: new InMemoryRegister())->forCase(caseId: 'case-1');
 
-		self::assertSame(['documents' => 7, 'assessed' => 0, 'remaining' => 7, 'counts' => [], 'grounds' => []], $answer);
+		self::assertSame(expected: ['documents' => 7, 'assessed' => 0, 'remaining' => 7, 'counts' => [], 'grounds' => []], actual: $answer);
 	}//end testNothingAssessedLeavesEveryDocumentRemaining()
 }//end class
