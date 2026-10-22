@@ -10727,7 +10727,7 @@
 									}
 								}
 							],
-							"exportCsv": true,
+							"exportId": "deadline-report-quarterly",
 							"exportFileName": "deadline-report",
 							"emptyText": "No terms started in this quarter."
 						}
@@ -10748,7 +10748,10 @@
 							"inputType": "quarter",
 							"writes": "@workspace.quarter",
 							"label": "Quarter (YYYY-Qn)",
-							"submitLabel": "Load report"
+							"submitLabel": "Load report",
+							"exportTable": {
+								"exportId": "deadline-report-quarterly"
+							}
 						}
 					},
 					{
