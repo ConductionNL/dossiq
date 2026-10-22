@@ -207,7 +207,7 @@
 			"data": {
 				"citizenServiceNumber": "{{cast:sanne.bsn}}",
 				"name": {
-					"givenNames": "{{cast:sanne.givenName}}",
+					"givenNames": "{{cast:sanne.firstNames}}",
 					"surname": "{{cast:sanne.familyName}}"
 				},
 				"birth": {
