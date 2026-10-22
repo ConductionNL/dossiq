@@ -5013,6 +5013,10 @@
 												"type": "string",
 												"description": "Same as config.countText."
 											},
+											"countSubtitle": {
+												"type": ["string", "null"],
+												"description": "Same as config.countSubtitle; `null` drops it, so with an empty `countText` a header note that counts (`headerMeta` with `{total}`) is the only count (DqAanMijToegewezen)."
+											},
 											"footerNote": {
 												"type": "string",
 												"description": "Same as config.footerNote."

@@ -28,8 +28,14 @@ describe('DqAanMijToegewezen', () => {
 		expect(overrides.bulkBandAlways).toBe(false)
 	})
 
-	it('keeps copy and delete for the selection in the Actions menu', () => {
+	it('keeps the export and copy and delete for the selection in the Actions menu', () => {
 		const menu = overrides.headerButtons.find((button) => button.action === 'actions-menu')
-		expect(menu.items).toEqual(['header-actions', 'copy-selected', 'delete-selected'])
+		expect(menu.items).toEqual(['header-actions', 'export', 'copy-selected', 'delete-selected'])
+	})
+
+	it('counts once, in the note after the breadcrumb', () => {
+		expect(overrides.headerMeta).toContain('{total}')
+		expect(overrides.countText).toBe('')
+		expect(overrides.countSubtitle).toBeNull()
 	})
 })
