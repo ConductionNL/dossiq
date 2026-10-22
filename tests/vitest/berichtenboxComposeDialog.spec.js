@@ -167,6 +167,39 @@ describe('BerichtenboxComposeDialog', () => {
 		expect(company.vm.form.bsn).toBe('')
 	})
 
+	it('shows the case\'s BSN masked, marks it optional, and still sends it', async () => {
+		mockGet.mockResolvedValue({
+			data: { initiatorType: 'person', initiatorSourceId: '999997609' },
+		})
+		const wrapper = mount(BerichtenboxComposeDialog, {
+			props: { open: true, caseId: 'case-1' },
+		})
+		await flushPromises()
+		const field = () => wrapper.findAllComponents({ name: 'NcTextField' })[0]
+		expect(field().props('modelValue')).toBe('*****7609')
+		expect(wrapper.find('[data-testid="compose-bsn-optional"]').text()).toBe('(optional)')
+		expect(wrapper.html()).not.toContain('999997609')
+		expect(wrapper.vm.form.bsn).toBe('999997609')
+
+		// Focus empties the field for another number; leaving it empty goes back.
+		wrapper.vm.onBsnFocus()
+		await flushPromises()
+		expect(field().props('modelValue')).toBe('')
+		wrapper.vm.onBsnBlur()
+		await flushPromises()
+		expect(wrapper.vm.form.bsn).toBe('999997609')
+		expect(field().props('modelValue')).toBe('*****7609')
+
+		// A typed number is shown as typed and drops the optional mark.
+		wrapper.vm.onBsnFocus()
+		field().vm.$emit('update:modelValue', '123456782')
+		wrapper.vm.onBsnBlur()
+		await flushPromises()
+		expect(wrapper.vm.form.bsn).toBe('123456782')
+		expect(field().props('modelValue')).toBe('123456782')
+		expect(wrapper.find('[data-testid="compose-bsn-optional"]').exists()).toBe(false)
+	})
+
 	it('shows the provider’s own sentence and stays open on a refusal', async () => {
 		mockPost.mockRejectedValue({
 			response: {
