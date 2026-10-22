@@ -315,6 +315,16 @@
 						"id": "organisation-quota",
 						"type": "facts",
 						"title": "Quota",
+						"_headerActionsNote": "Board DqTenant: Pakket wijzigen in the card head. The quota of a tenant is OpenRegister's organisation quota, edited on OpenRegister's organisation page (Edit organisation, Quota), so the button opens that page.",
+						"headerActions": [
+							{
+								"label": "Change package",
+								"action": {
+									"type": "navigate",
+									"target": "/index.php/apps/openregister/organisation"
+								}
+							}
+						],
 						"content": {
 							"fields": [
 								{
