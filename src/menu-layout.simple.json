@@ -2341,6 +2341,7 @@
 							"op": "empty"
 						},
 						"title": "Case plan",
+						"subtitle": "Milestones and parts of this case",
 						"_note": "The adaptive plan as a card of the Overview stack (library widget type plan -> CnPlanWidget). The full profile keeps cmmn-case-plan as a layout cell."
 					},
 					{

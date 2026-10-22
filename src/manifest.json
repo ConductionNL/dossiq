@@ -3388,6 +3388,7 @@
 						"id": "cmmn-case-plan",
 						"type": "plan",
 						"title": "Case plan",
+						"subtitle": "Milestones and parts of this case",
 						"content": {
 							"emptyText": "This case type has no adaptive plan"
 						},
@@ -3915,6 +3916,7 @@
 						"type": "integration",
 						"integrationId": "notes",
 						"title": "Notes",
+						"subtitle": "Internal notes, also visible in the history",
 						"_note": "The Notes tab of the case panels: the library notes tab with @mentions posted to dossiq's notification endpoint and the one act dossiq adds to a note, sending it to the neighbouring register (NotePush). The endpoint answers sent, failed, not-sent or no-register with its own sentence. The sidebar Notes tab stays.",
 						"props": {
 							"mentionUrl": "/apps/dossiq/api/notes/mention",
@@ -4285,6 +4287,7 @@
 							"surface": "sidebar-tab"
 						},
 						"title": "Decisions",
+						"subtitle": "From decidiq's decision-making, shown on the case",
 						"_note": "The Decisions tab: the decidiq decisions leaf (ADR-019/ADR-022), as the library integration widget. decidiq kept the leaf id `decidesk-decisions` across its rename, so that string is the contract, not the app id. A mount-mode leaf is mounted with `surface: sidebar-tab`, the look it had as a tab; when decidiq's leaf is not loaded the tab says \"Decidiq not available\". A decision is an OUTCOME of the case rather than correspondence or a related case, so it earns a tab rather than a section of one. A sidebar tab until the sidebar copies were retired. Labelled in English like every other tab: tab labels are read verbatim out of the manifest with no t() on the path, and the l10n gate refuses a key whose English value is the Dutch word. \"Decisions\" already maps to \"Besluiten\" in nl.json."
 					},
 					{
@@ -5000,6 +5003,7 @@
 						"id": "case-custody-panel",
 						"type": "case-custody-pane",
 						"title": "Custody",
+						"subtitle": "Who has had this case in hand",
 						"_note": "Who has held this case, and who is asking for it (registry type case-custody-pane -> CaseCustodyPanel). Rendered by TYPE because a tab child resolves from cnRegistry[widget.type]: a page `slots` map is read by the widget GRID and never reaches a widget inside a tab panel, which is how two earlier panels in this app shipped as an empty tab that logged nothing. It sits beside Timeline rather than inside it on purpose: the timeline says what CHANGED and this says who HELD it, and reading a sequence of diffs back into a holding is a reconstruction rather than a record. It is a custom widget and NOT a data widget because a holding is only meaningful as a JOIN, between the moment one holding ended and the moment the next began; a row of values per holding would look complete on a chain with a gap in it."
 					},
 					{
@@ -7055,6 +7059,7 @@
 						"type": "integration",
 						"integrationId": "notes",
 						"title": "Notes",
+						"subtitle": "Only for those working on the task",
 						"props": {
 							"source": {
 								"kind": "flow-task",
@@ -9572,6 +9577,7 @@
 						"id": "lhs-matrix",
 						"type": "chart",
 						"title": "Advice under the national enforcement strategy",
+						"subtitle": "The chosen cell is outlined",
 						"icon": "TableLarge",
 						"_typeNote": "A detail page passes the chart its content keys as props, and the chart takes its kind as `type`; `chartKind` is the dashboard dispatcher's name for it. Without `type` the chart drew an empty area chart.",
 						"_note": "DqHandhaving: the LHS matrix the advice was calculated with, read from the lhsMatrix record of the advice's matrixVersion and no other (no matrix rather than one the advice was not calculated with), sliced to the advice's actor type, with the advised cell outlined. The matrix is register data each municipality keeps, never a fixed table in this manifest (nextcloud-vue #1747).",
