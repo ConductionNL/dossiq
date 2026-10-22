@@ -5189,13 +5189,47 @@
 						"title": "Parent type",
 						"tabs": ["fields"],
 						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/blueprint"
+							},
 							"fields": [
 								{
 									"label": "Inherits from",
-									"path": "parentCaseType",
+									"path": "caseType.parentCaseType",
 									"resolve": {
 										"register": "dossiq",
 										"schema": "caseType"
+									},
+									"when": {
+										"field": "caseType.parentCaseType",
+										"op": "notEmpty"
+									}
+								},
+								{
+									"label": "Inherited fields",
+									"parts": [
+										{
+											"path": "counts.propertyDefinitions.inherited"
+										},
+										{
+											"text": "of"
+										},
+										{
+											"path": "counts.propertyDefinitions.total"
+										}
+									],
+									"separator": " ",
+									"when": {
+										"field": "caseType.parentCaseType",
+										"op": "notEmpty"
+									}
+								},
+								{
+									"label": "Overridden",
+									"path": "counts.propertyDefinitions.overridden",
+									"when": {
+										"field": "caseType.parentCaseType",
+										"op": "notEmpty"
 									}
 								}
 							],
