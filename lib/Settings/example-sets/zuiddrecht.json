@@ -1836,6 +1836,19 @@
 			}
 		},
 		{
+			"key": "waterland-factuur-pakket",
+			"register": "dossiq",
+			"schema": "tenantBillingEvent",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"eventType": "subscription_fee",
+				"quantity": 1,
+				"unitPrice": 450,
+				"currency": "EUR",
+				"occurredAt": "{{datetime:-21 00:00}}"
+			}
+		},
+		{
 			"key": "waterland-factuur-zaak",
 			"register": "dossiq",
 			"schema": "tenantBillingEvent",

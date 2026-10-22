@@ -35,7 +35,7 @@ use PHPUnit\Framework\TestCase;
 class ZuiddrechtTenantWaterlandTest extends TestCase {
 
 	/**
-	 * Every tenant record points at Waterland; Marieke is its administrator and signed its three mandates; billing has a case and its refund.
+	 * Every tenant record points at Waterland; Marieke is its administrator and signed its three mandates; billing has the package fee, a case and its refund.
 	 *
 	 * @return void
 	 */
@@ -53,6 +53,6 @@ class ZuiddrechtTenantWaterlandTest extends TestCase {
 		$this->assertSame(expected: 'admin', actual: $records['tenantUser'][0]['role']);
 		$this->assertSame(expected: ['Behandelaar', 'Teamleider', 'Afdelingshoofd'], actual: array_column($records['tenantMandate'], 'mandateMatrixRef'));
 		$this->assertSame(expected: ['{{cast:marieke.uid}}'], actual: array_values(array_unique(array_column($records['tenantMandate'], 'signedBy'))));
-		$this->assertSame(expected: ['case_created', 'case_refund'], actual: array_column($records['tenantBillingEvent'], 'eventType'));
+		$this->assertSame(expected: ['subscription_fee', 'case_created', 'case_refund'], actual: array_column($records['tenantBillingEvent'], 'eventType'));
 	}//end testWaterlandHasItsAdministratorMandatesAndBilling()
 }//end class
