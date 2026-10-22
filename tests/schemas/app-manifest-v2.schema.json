@@ -5516,6 +5516,21 @@
 							"minLength": 1,
 							"description": "type='index', board look: the plural the bulk band names (\"With the selected cases\"), an i18n key, lower-cased after translation. Wins over the schema's plural; without either the band says \"items\". Maps to CnIndexPage `bulkNoun`."
 						},
+						"bulkBandViews": {
+							"type": "object",
+							"description": "type='index', board look: another shape of the bulk band per view mode (`board`, `cards`, ...). In such a view the band shows only with a selection and without the built-in copy and delete (DqWerkbord: \"1 zaak geselecteerd · Status wijzigen · Annuleren\"). Maps to CnIndexPage `bulkBandViews`.",
+							"propertyNames": { "enum": ["table", "cards", "list", "map", "board", "dateAxis", "calendar"] },
+							"additionalProperties": {
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"lead": { "type": "object", "additionalProperties": false, "description": "The lead counting the selection, `{count}` filled; i18n keys.", "properties": { "one": { "type": "string", "minLength": 1 }, "other": { "type": "string", "minLength": 1 } } },
+									"actions": { "type": "array", "description": "The bulk actions offered, in order: an id, or `{ id, label }` to relabel one (i18n key).", "items": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["id"], "properties": { "id": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 } } }] } },
+									"cancel": { "type": "boolean", "description": "A Cancel button at the end that clears the selection." },
+									"hint": { "type": "boolean", "description": "`true` keeps `bulkHint` in this view." }
+								}
+							}
+						},
 						"cardFields": {
 							"type": "array",
 							"description": "type='index': the property keys the cards view shows as the facts list of each card, in order; defaults to the first four list columns under the board look (screens-card-parity). Maps to CnIndexPage `cardFields`.",
