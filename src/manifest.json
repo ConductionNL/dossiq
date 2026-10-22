@@ -11404,6 +11404,8 @@
 								"processingDeadline",
 								"serviceTarget",
 								"suspensionAllowed",
+								"penaltyOnLateDecision",
+								"penaltyMaxAmount",
 								"extensionAllowed",
 								"extensionPeriod",
 								"maxExtensions",
