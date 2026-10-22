@@ -6801,6 +6801,7 @@
 						"id": "eod-figures",
 						"type": "record-list",
 						"title": "Your day",
+						"titleTone": "side",
 						"content": {
 							"endpointSource": {
 								"url": "/apps/dossiq/api/personal-queue/end-of-day",
@@ -6848,6 +6849,7 @@
 						"id": "eod-how",
 						"type": "text",
 						"title": "How this works",
+						"titleTone": "side",
 						"content": {
 							"contentMode": "markdown",
 							"text": "This lists what you opened yourself today, not what a colleague changed. A note goes on the case or task itself. Hours go to humaniq."

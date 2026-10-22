@@ -412,6 +412,7 @@ OC.L10N.register(
         "Add comment": "Reactie toevoegen",
         "Add condition": "Voorwaarde toevoegen",
         "Add custom bevoegd gezag": "Aangepast bevoegd gezag toevoegen",
+        "Add day": "Dag toevoegen",
         "Add Decision": "Besluit toevoegen",
         "Add decision": "Besluit toevoegen",
         "Add Decision Table": "Beslistabel toevoegen",
