@@ -1136,6 +1136,7 @@
 			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first.",
 			"config": {
 				"allowEdit": false,
+				"gridFloat": false,
 				"appId": "dossiq",
 				"pageId": "MyWorkHome",
 				"description": "Your open tasks, deadlines and open cases",
