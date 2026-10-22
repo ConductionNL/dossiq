@@ -1,6 +1,14 @@
 OC.L10N.register(
     "dossiq",
     {
+        "Still to be assessed": "Still to be assessed",
+        "{counted} of {total} assessed": "{counted} of {total} assessed",
+        "{remaining} to go before the decision": "{remaining} to go before the decision",
+        "No documents on this case yet": "No documents on this case yet",
+        "Refusal grounds so far": "Refusal grounds so far",
+        "Go into the decision": "Go into the decision",
+        "No ground cited yet": "No ground cited yet",
+        "%s (partly)": "%s (partly)",
         " days": " days",
         "\"{doc}\" is {class} but has no weigeringsgrond selected.": "\"{doc}\" is {class} but has no weigeringsgrond selected.",
         "#": "#",
