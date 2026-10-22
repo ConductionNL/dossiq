@@ -4139,6 +4139,33 @@
 							"rowActions": [
 								{ "label": "All cases on this object", "icon": "BriefcaseSearchOutline", "type": "navigate", "target": "/cases?_related[caseObject][case][objectUrl]=@row.objectUrl", "visibleWhen": { "field": "objectUrl", "op": "notEmpty" } }
 							],
+							"createAction": {
+								"id": "link-object-from-card",
+								"type": "open-form",
+								"label": "Link object",
+								"icon": "Plus",
+								"register": "dossiq",
+								"schema": "caseObject",
+								"includeFields": [
+									"objectType",
+									"objectIdentification",
+									"objectUrl",
+									"description"
+								],
+								"fieldOverrides": {
+									"description": {
+										"widget": "textarea"
+									}
+								},
+								"successMessage": "Object linked to this case.",
+								"props": {
+									"case": "@objectId"
+								},
+								"visibleWhen": {
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							},
 							"footerLinks": [
 								{ "label": "Manage object types", "href": "/index.php/apps/openregister/#/registers/dossiq", "note": "(administrators only)", "group": "admin" }
 							],
