@@ -904,11 +904,11 @@
         "digest": "bb48c2734868033e2a338744b07d51b474182d7f6e3df9ee62829d49ed02ec2b"
     },
     "lib/Settings/register.d/25-brp-kvk.json::brpPerson": {
-        "version": "1.3.0",
+        "version": "1.4.0",
         "digest": "2bd4260b3013465051f81c6a17261b87a3aac2d376b315eaf119847d834021ef"
     },
     "lib/Settings/register.d/25-brp-kvk.json::kvkCompany": {
-        "version": "1.2.0",
+        "version": "1.3.0",
         "digest": "cf10fa72490ba8b0a74088512e2e1b65792dad7229341c047c4446e9645a49ed"
     },
     "lib/Settings/register.d/30-beschikking.json::beschikking": {
@@ -1717,6 +1717,14 @@
     },
     "lib/Settings/register.d/99-case-type-palette.json::caseType": {
         "version": "1.26.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-type-pause-reason-days.json::caseType": {
+        "version": "1.32.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-type-penalty-on-late-decision.json::caseType": {
+        "version": "1.33.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-type-quick-actions.json::caseType": {
