@@ -4,7 +4,8 @@
  *
  * DqZaaktypeVelden's Moedertype card: Erft van, Geërfde velden "6 van 14"
  * and Overschreven, read from the case type's blueprint, which counts them.
- * A type without a parent keeps "erft van geen moedertype".
+ * A type without a parent keeps "erft van geen moedertype". As the board:
+ * "Erft van" links to the parent, and no overridden field reads "Geen".
  */
 
 import fs from 'fs'
@@ -28,6 +29,8 @@ describe('the parent type card (DqZaaktypeVelden)', () => {
 		fields.forEach((field) => expect(field.when).toEqual({ field: 'caseType.parentCaseType', op: 'notEmpty' }))
 		expect(fields[1].parts.map((part) => part.path || part.text)).toEqual(['counts.propertyDefinitions.inherited', 'of', 'counts.propertyDefinitions.total'])
 		expect(fields[2].path).toBe('counts.propertyDefinitions.overridden')
+		expect(nl[fields[2].map['0']]).toBe('Geen')
+		expect(fields[0].route).toEqual({ name: 'CaseTypeDetail', params: { id: '@source.caseType.parentCaseType' } })
 		expect(nl[parent.content.emptyText]).toBeTruthy()
 	})
 })

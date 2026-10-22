@@ -5196,6 +5196,12 @@
 								{
 									"label": "Inherits from",
 									"path": "caseType.parentCaseType",
+									"route": {
+										"name": "CaseTypeDetail",
+										"params": {
+											"id": "@source.caseType.parentCaseType"
+										}
+									},
 									"resolve": {
 										"register": "dossiq",
 										"schema": "caseType"
@@ -5227,6 +5233,9 @@
 								{
 									"label": "Overridden",
 									"path": "counts.propertyDefinitions.overridden",
+									"map": {
+										"0": "None"
+									},
 									"when": {
 										"field": "caseType.parentCaseType",
 										"op": "notEmpty"
