@@ -12599,7 +12599,8 @@
 							"where": {
 								"requester": "@self.id",
 								"isFinalStatus": false
-							}
+							},
+							"filterable": true
 						},
 						"widget": "badge"
 					},
@@ -12616,7 +12617,8 @@
 							"where": {
 								"contact": "@self.id"
 							},
-							"zeroLabel": "No contact yet"
+							"zeroLabel": "No contact yet",
+							"filterable": true
 						}
 					}
 				],
