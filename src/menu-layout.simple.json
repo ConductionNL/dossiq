@@ -4775,7 +4775,7 @@
 						"gridX": 0,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 6,
+						"gridHeight": 5,
 						"showTitle": true,
 						"headerLink": {
 							"label": "View all",
@@ -4785,7 +4785,8 @@
 								"statusHiddenInLists": "false",
 								"isDraft": "false",
 								"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
-							}
+							},
+							"placement": "title"
 						}
 					},
 					{
@@ -4794,14 +4795,15 @@
 						"gridX": 4,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 6,
+						"gridHeight": 5,
 						"showTitle": true,
 						"headerLink": {
 							"label": "View all",
 							"route": "Cases",
 							"query": {
 								"_watching": "true"
-							}
+							},
+							"placement": "title"
 						}
 					},
 					{
@@ -4810,14 +4812,15 @@
 						"gridX": 8,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 6,
+						"gridHeight": 5,
 						"showTitle": true,
 						"headerLink": {
 							"label": "View all",
 							"route": "Cases",
 							"query": {
 								"_recent": "true"
-							}
+							},
+							"placement": "title"
 						}
 					},
 					{
@@ -4827,7 +4830,9 @@
 						"gridY": 10,
 						"gridWidth": 12,
 						"gridHeight": 1,
-						"showTitle": false
+						"showTitle": false,
+						"borderless": true,
+						"sizeToContent": true
 					}
 				]
 			},
@@ -4851,7 +4856,7 @@
 								"field": "@self.updated",
 								"dir": "asc"
 							},
-							"limit": 5,
+							"limit": 3,
 							"presentation": "rows",
 							"title": "{title}",
 							"meta": "{identifier}",
@@ -4870,7 +4875,7 @@
 							"filter": {
 								"_watching": true
 							},
-							"limit": 5,
+							"limit": 3,
 							"presentation": "rows",
 							"title": "{title}",
 							"meta": "{identifier}",
@@ -4888,7 +4893,7 @@
 							"filter": {
 								"_recent": true
 							},
-							"limit": 5,
+							"limit": 3,
 							"presentation": "rows",
 							"title": "{title}",
 							"meta": "{identifier}",

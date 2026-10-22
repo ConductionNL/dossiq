@@ -588,7 +588,7 @@ describe('the landing page', () => {
 				register: table.content.source.register,
 				schema: table.content.source.schema,
 				filter: table.content.source.filter,
-				limit: table.content.source.limit,
+				limit: 3,
 				presentation: 'rows',
 				title: '{title}',
 				meta: '{identifier}',
@@ -600,11 +600,17 @@ describe('the landing page', () => {
 			// The header link opens the list the table's View all opened.
 			const layout = dashboard.config.layout.find((entry) => entry.widgetId === id)
 			const { name, ...rest } = table.content.viewAllRoute
-			expect(layout.headerLink).toEqual({ label: 'View all', route: name, ...rest })
+			// Under the title, where the board draws "Alles bekijken".
+			expect(layout.headerLink).toEqual({ label: 'View all', route: name, ...rest, placement: 'title' })
+			// Three rows in a card the board's height (376px: five grid rows).
+			expect(layout.gridHeight, id).toBe(5)
 		}
 		const stalled = tile(dashboard.config.widgets, 'stalled-cases').content
 		expect(stalled.extend).toEqual(['calculations'])
 		expect(stalled.sort).toEqual({ field: '@self.updated', dir: 'asc' })
+		// The info line under the grid is a line, not a card (DqDashboard).
+		const note = dashboard.config.layout.find((entry) => entry.widgetId === 'layout-note')
+		expect(note).toMatchObject({ borderless: true, sizeToContent: true })
 		expect(tile(dashboard.config.widgets, 'recent-cases').content.lensReasonTexts)
 			.toEqual(tile(before.config.widgets, 'recent-cases').content.lensReasonTexts)
 	})
