@@ -420,10 +420,13 @@ describe('the landing page', () => {
 		expect(simple.config.defaultView).toBe('mine')
 	})
 
-	it('changes only the My work view: My team is the manifest declaration, in both structures', () => {
+	it('changes My team only where DqMijnTeam differs: the stalled cases as rows', () => {
 		const team = (built) => pageView(page(built, 'MyWorkHome'), 'team')
-		expect(team(builtSimple)).toEqual(pageView(original('MyWorkHome'), 'team'))
-		expect(team(builtSimple)).toEqual(team(builtFull))
+		expect(team(builtFull)).toEqual(pageView(original('MyWorkHome'), 'team'))
+		// The stalled-cases rows are held in landingViews.spec.js; the rest of
+		// the view is the manifest's.
+		const rest = (view) => ({ ...view, widgets: withoutNotes(view.widgets.filter((w) => w.id !== 'stalled-cases')) })
+		expect(rest(team(builtSimple))).toEqual(rest(team(builtFull)))
 		expect(simple.config.views.map((view) => view.id)).toEqual(['mine', 'team'])
 	})
 

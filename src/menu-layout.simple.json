@@ -211,6 +211,236 @@
 			},
 			"configPatch": {
 				"views": {
+					"team": {
+						"widgets": [
+							{
+								"id": "your-teams-queue",
+								"type": "object-list",
+								"title": "Your team's queue",
+								"icon": "AccountGroupOutline",
+								"content": {
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"assignedGroup": "@myGroups",
+										"assignee": "IS NULL",
+										"isFinalStatus": false,
+										"statusHiddenInLists": false,
+										"isDraft": false,
+										"isTemplate": false
+									},
+									"limit": 10,
+									"hideHeader": true,
+									"columns": [
+										{
+											"key": "title",
+											"label": "Case",
+											"cellClass": "cn-cell--strong",
+											"secondary": "{identifier} · {deadline|date}"
+										}
+									],
+									"rowActions": [
+										{
+											"id": "claim",
+											"label": "Pick up",
+											"type": "handler",
+											"handler": "claimCase",
+											"variant": "secondary"
+										}
+									],
+									"rowRoute": "CaseDetail",
+									"emptyText": "Nothing is waiting for your teams",
+									"prompt": "Cases waiting for your teams show here"
+								}
+							},
+							{
+								"id": "kpi-open-cases",
+								"type": "stat",
+								"title": "Open Cases",
+								"content": {
+									"label": "Open Cases",
+									"caption": "+{newToday} today",
+									"route": {
+										"name": "Cases"
+									},
+									"icon": "FolderOutline",
+									"iconPlacement": "end",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"endpointSource": {
+										"url": "/apps/dossiq/api/dashboard/kpis"
+									},
+									"valueField": "openCount"
+								}
+							},
+							{
+								"id": "kpi-overdue",
+								"type": "stat",
+								"title": "Late",
+								"content": {
+									"label": "Late",
+									"caption": "action needed",
+									"route": {
+										"name": "Cases",
+										"query": {
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false",
+											"deadline[lt]": "@today"
+										}
+									},
+									"icon": "AlertCircleOutline",
+									"iconPlacement": "end",
+									"variant": "error",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"endpointSource": {
+										"url": "/apps/dossiq/api/dashboard/kpis"
+									},
+									"valueField": "overdueCount"
+								}
+							},
+							{
+								"id": "kpi-completed",
+								"type": "stat",
+								"title": "Completed This Month",
+								"content": {
+									"label": "Completed This Month",
+									"caption": "avg {avgProcessingDays} days",
+									"route": {
+										"name": "Cases",
+										"query": {
+											"endDate[gte]": "@yearStart"
+										}
+									},
+									"icon": "CheckCircleOutline",
+									"iconPlacement": "end",
+									"variant": "success",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"endpointSource": {
+										"url": "/apps/dossiq/api/dashboard/kpis"
+									},
+									"valueField": "completedCount"
+								}
+							},
+							{
+								"id": "cases-by-status",
+								"type": "chart",
+								"title": "Cases by Status",
+								"content": {
+									"chartKind": "bar-list",
+									"footnote": "Click a bar to see the cases",
+									"dataSource": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										},
+										"aggregate": {
+											"groupBy": "status",
+											"metric": "count",
+											"topN": 5,
+											"labelResolve": {
+												"schema": "statusType",
+												"labelField": "name"
+											}
+										},
+										"drilldown": {
+											"route": "Cases",
+											"filterParam": "status"
+										}
+									}
+								}
+							},
+							{
+								"id": "cases-by-type",
+								"type": "chart",
+								"title": "Cases by Type",
+								"content": {
+									"chartKind": "bar-list",
+									"footnote": "Click a bar to see the cases",
+									"dataSource": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										},
+										"aggregate": {
+											"groupBy": "caseType",
+											"metric": "count",
+											"topN": 5,
+											"labelResolve": {
+												"schema": "caseType",
+												"labelField": "title"
+											}
+										},
+										"drilldown": {
+											"route": "Cases",
+											"filterParam": "caseType"
+										}
+									}
+								}
+							},
+							{
+								"id": "stalled-cases",
+								"type": "record-list",
+								"title": "Stalled Cases",
+								"_note": "DqMijnTeam draws Vastgelopen zaken as rows: the title, the case number and its handler under it, how long it has been idle at the end, no chevron. The same query as the Dashboard's table; View all leads to the same list. The other team widgets are the manifest's, restated because an overlay replaces a view's widgets whole (landingViews.spec.js holds them equal).",
+								"headerLink": {
+									"label": "View all",
+									"route": "Cases",
+									"query": {
+										"isFinalStatus": "false",
+										"statusHiddenInLists": "false",
+										"isDraft": "false",
+										"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
+									}
+								},
+								"content": {
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"isFinalStatus": false,
+										"statusHiddenInLists": false,
+										"isDraft": false
+									},
+									"extend": [
+										"calculations"
+									],
+									"sort": {
+										"field": "@self.updated",
+										"dir": "asc"
+									},
+									"limit": 3,
+									"presentation": "rows",
+									"title": "{title}",
+									"meta": {
+										"parts": [
+											"{identifier}",
+											"{assignee|user}"
+										]
+									},
+									"trailing": [
+										"{daysSinceActivity} days idle"
+									],
+									"chevron": false,
+									"rowRoute": "CaseDetail",
+									"emptyText": "All cases active"
+								}
+							}
+						]
+					},
 					"mine": {
 						"widgets": [
 							{
