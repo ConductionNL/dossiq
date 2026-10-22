@@ -1253,6 +1253,22 @@
 			}
 		},
 		{
+			"key": "lhs-advies-molenweg-4",
+			"register": "dossiq",
+			"schema": "lhsRecommendation",
+			"data": {
+				"case": "{{object:kapvergunning-molenweg.id}}",
+				"severity": "ernstig",
+				"behaviour": "goedwillend",
+				"actorType": "burger",
+				"matrixVersion": 1,
+				"recommendedIntervention": "last_under_penaltypayment",
+				"finalIntervention": "last_under_penaltypayment",
+				"override": false,
+				"recommendedBy": "{{cast:lars.uid}}"
+			}
+		},
+		{
 			"key": "iot-woo-document",
 			"register": "dossiq",
 			"schema": "informatieobjecttype",
