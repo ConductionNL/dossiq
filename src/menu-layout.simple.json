@@ -1979,8 +1979,17 @@
 					},
 					"case-terms": {
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-terms"
+								}
+							]
 						},
 						"title": "Term and payment",
 						"content": {
@@ -2006,8 +2015,17 @@
 					},
 					"case-flow-runs": {
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-flow-runs"
+								}
+							]
 						},
 						"title": "Flows",
 						"_headerActionsNote": "DqZaak/DqZaakMeer Flows: \"Flow uitvoeren\" in the card's title row, the case's own start-flow dialog, shown while the case has a flow it may start (as the header action of the same name).",
@@ -2017,8 +2035,17 @@
 					},
 					"case-kpis-hours": {
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-kpis-hours"
+								}
+							]
 						},
 						"title": "Record hours"
 					},
@@ -2107,8 +2134,17 @@
 						"id": "case-request",
 						"type": "facts",
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-request"
+								}
+							]
 						},
 						"title": "The request",
 						"_note": "DqZaak: the card that opens the Overview tab, what the case is about in the requester's words. Read only: the description is edited in the Edit dialog.",
@@ -2126,8 +2162,17 @@
 						"id": "case-details",
 						"type": "data",
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-details"
+								}
+							]
 						},
 						"title": "Case details",
 						"_note": "DqZaak Zaakgegevens: the case's own fields in three columns, in the board's order. Holds what case-core held on the Data tab except the title (the page title), the description (The request) and the priority (its own card beside Locations).",
@@ -2251,8 +2296,17 @@
 						"id": "case-priority-card",
 						"type": "data",
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-priority-card"
+								}
+							]
 						},
 						"title": "Priority",
 						"content": {
@@ -2299,8 +2353,17 @@
 						"id": "case-locations-card",
 						"type": "map",
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-locations-card"
+								}
+							]
 						},
 						"title": "Locations",
 						"_note": "The case on a map: the case-location objects that point at this case (`filter: case = @objectId`), drawn by the library map. An empty answer and a failed read say so in words, a point at (0, 0) is not plotted, and saving a location (CaseLocationDialog emits dossiq:case-location:saved with the caseId) reads the markers again.",
@@ -2334,8 +2397,17 @@
 							"emptyText": "This case type has no adaptive plan"
 						},
 						"visibleWhen": {
-							"field": "@context.caseType.overviewCards",
-							"op": "empty"
+							"any": [
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "empty"
+								},
+								{
+									"field": "@context.caseType.overviewCards",
+									"op": "contains",
+									"value": "case-plan-card"
+								}
+							]
 						},
 						"title": "Case plan",
 						"_note": "The adaptive plan as a card of the Overview stack (library widget type plan -> CnPlanWidget). The full profile keeps cmmn-case-plan as a layout cell."
