@@ -5314,7 +5314,14 @@
 						"key": "title",
 						"label": "Case type",
 						"cellClass": "cn-cell--strong",
-						"secondary": "{subject}"
+						"secondary": "{@self.owner} · {subject}",
+						"_secondaryNote": "DqZaaktypen: \"Meegeleverd · Woo\" under a case type dossiq shipped (owner __system__, as the Shipped lens), \"Eigen zaaktype · ...\" under one an organisation made. Needs nextcloud-vue feat/column-secondary-value-labels; before it the owner shows as stored.",
+						"secondaryLabels": {
+							"@self.owner": {
+								"__system__": "Shipped",
+								"*": "Own case type"
+							}
+						}
 					},
 					{
 						"key": "category",

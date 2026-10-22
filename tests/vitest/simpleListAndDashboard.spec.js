@@ -879,6 +879,15 @@ describe('the case type list', () => {
 		expect(nl[list.config.searchPlaceholder]).toBe('Zoek een zaaktype')
 	})
 
+	it('names each case type shipped or own under its title, as DqZaaktypen does ("Meegeleverd · Woo")', () => {
+		const nl = JSON.parse(read('l10n', 'nl.json')).translations
+		const title = list.config.columns.find((column) => column.key === 'title')
+		expect(title.secondary).toBe('{@self.owner} · {subject}')
+		expect(title.secondaryLabels).toEqual({ '@self.owner': { __system__: 'Shipped', '*': 'Own case type' } })
+		expect(nl.Shipped).toBe('Meegeleverd')
+		expect(nl['Own case type']).toBe('Eigen zaaktype')
+	})
+
 	it('has an Actions menu with the import dialog the case type page already owns', () => {
 		expect(list.config.headerActions).toEqual([
 			expect.objectContaining({
