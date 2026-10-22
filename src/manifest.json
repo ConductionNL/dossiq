@@ -6719,6 +6719,9 @@
 					"route": "MyWorkHome"
 				},
 				"headerMeta": "{today}",
+				"gridSideColumn": {
+					"width": 300
+				},
 				"widgets": [
 					{
 						"id": "eod-unavailable",
@@ -6931,6 +6934,7 @@
 						"gridY": 1,
 						"gridWidth": 8,
 						"gridHeight": 6,
+						"track": "main",
 						"sizeToContent": true
 					},
 					{
@@ -6940,6 +6944,7 @@
 						"gridY": 7,
 						"gridWidth": 8,
 						"gridHeight": 4,
+						"track": "main",
 						"sizeToContent": true
 					},
 					{
@@ -6949,6 +6954,7 @@
 						"gridY": 1,
 						"gridWidth": 4,
 						"gridHeight": 3,
+						"track": "side",
 						"sizeToContent": true
 					},
 					{
@@ -6958,6 +6964,7 @@
 						"gridY": 4,
 						"gridWidth": 4,
 						"gridHeight": 3,
+						"track": "side",
 						"sizeToContent": true
 					},
 					{
@@ -6967,6 +6974,7 @@
 						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 2,
+						"track": "side",
 						"sizeToContent": true
 					}
 				]

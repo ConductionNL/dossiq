@@ -442,6 +442,9 @@
 						]
 					},
 					"mine": {
+						"gridSideColumn": {
+							"width": 320
+						},
 						"widgets": [
 							{
 								"id": "simple-first-today",
@@ -961,6 +964,7 @@
 								"gridY": 4,
 								"gridWidth": 8,
 								"gridHeight": 4,
+								"track": "main",
 								"showTitle": true,
 								"headerLink": {
 									"label": "All deadlines",
@@ -982,6 +986,7 @@
 								"gridY": 4,
 								"gridWidth": 4,
 								"gridHeight": 7,
+								"track": "side",
 								"showTitle": true,
 								"headerLink": {
 									"label": "All tasks",
@@ -995,6 +1000,7 @@
 								"gridY": 8,
 								"gridWidth": 8,
 								"gridHeight": 3,
+								"track": "main",
 								"showTitle": true,
 								"headerLink": {
 									"label": "To the board",
@@ -1009,6 +1015,7 @@
 								"gridY": 11,
 								"gridWidth": 8,
 								"gridHeight": 5,
+								"track": "main",
 								"showTitle": true
 							},
 							{
@@ -1034,6 +1041,7 @@
 								"gridY": 11,
 								"gridWidth": 4,
 								"gridHeight": 5,
+								"track": "side",
 								"showTitle": true
 							},
 							{

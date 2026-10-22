@@ -2021,6 +2021,11 @@
 					"default": true,
 					"description": "`false` drops the widget's footer links (its definition's `buttons`, e.g. a calendar's \"More events\"), for a placement whose card says enough without them (zuiddrecht-pixel-gaps-3)."
 				},
+				"track": {
+					"type": "string",
+					"enum": ["main", "side"],
+					"description": "With the dashboard's `gridSideColumn` (2.142.0): the column this placement is drawn on, the main column sharing what the fixed-width side column leaves. A placement without it keeps the twelve shares."
+				},
 				"sizeToContent": {
 					"type": ["boolean", "integer"],
 					"minimum": 1,
@@ -5219,7 +5224,8 @@
 									"icon": { "type": "string", "minLength": 1, "description": "Optional MDI icon name, reserved for an icon-bearing switch." },
 									"emptyText": { "type": "string", "minLength": 1, "description": "The sentence shown when the view has nothing to draw." },
 									"widgets": { "type": "array", "description": "The view's widget definitions, the same shape as the page's `widgets`.", "items": { "type": "object", "additionalProperties": true } },
-									"layout": { "type": "array", "description": "The view's grid layout, the same shape as the page's `layout`.", "items": { "type": "object", "additionalProperties": true } }
+									"layout": { "type": "array", "description": "The view's grid layout, the same shape as the page's `layout`.", "items": { "type": "object", "additionalProperties": true } },
+									"gridSideColumn": { "type": "object", "additionalProperties": false, "required": ["width"], "description": "type='dashboard': draw the grid's side column at a fixed width (2.142.0, dashboard-side-column-width). The placements with `track: side` are `width` px wide (the card without its margins) from column `from` (default 8), those with `track: main` share the rest; a placement without a track keeps the twelve shares. Only on the full twelve-column grid and not while editing.", "properties": { "width": { "type": "number", "exclusiveMinimum": 0 }, "from": { "type": "integer", "minimum": 1, "maximum": 11 } } }
 								}
 							}
 						},
@@ -5362,6 +5368,7 @@
 							"default": true,
 							"description": "type='dashboard': `false` removes the page Actions menu from the header, for a board page whose header carries only the buildiq square and the primary (screens-dashboard-greeting-header). Maps to CnDashboardPage `showActionsMenu`."
 						},
+						"gridSideColumn": { "type": "object", "additionalProperties": false, "required": ["width"], "description": "type='dashboard': draw the grid's side column at a fixed width (2.142.0, dashboard-side-column-width). The placements with `track: side` are `width` px wide (the card without its margins) from column `from` (default 8), those with `track: main` share the rest; a placement without a track keeps the twelve shares. Only on the full twelve-column grid and not while editing.", "properties": { "width": { "type": "number", "exclusiveMinimum": 0 }, "from": { "type": "integer", "minimum": 1, "maximum": 11 } } },
 						"gridFloat": {
 							"type": "boolean",
 							"default": true,
