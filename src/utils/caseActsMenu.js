@@ -66,8 +66,8 @@ export const TERM_GESTURES = [
 	{
 		act: 'reopen',
 		flag: 'canReopen',
-		label: 'Reopen',
-		reason: 'Only a closed case can be reopened.',
+		label: 'Reopen or restore from the archive',
+		reason: 'Only for a finished or archived case.',
 	},
 ]
 
@@ -127,6 +127,9 @@ function gestureReason(gesture, state) {
 function gestureExplainer(gesture, state) {
 	if (gesture.act === 'suspend') {
 		return 'The term stands still until the answer is in.'
+	}
+	if (gesture.act === 'reopen') {
+		return 'Only for a finished or archived case.'
 	}
 	if (gesture.act !== 'extend') {
 		return ''
@@ -318,9 +321,8 @@ function archiveStateEntries(acts) {
 		{
 			kind: 'state',
 			id: 'unarchive',
-			label: 'Restore from the archive',
-			explainer:
-				'The case comes back into the working lists and can be edited again.',
+			label: 'Reopen or restore from the archive',
+			explainer: 'Only for a finished or archived case.',
 			// Restoring asks the same role archiving does, so the verdict on
 			// `archive` is the verdict on this. An absent verdict disables it
 			// and says so, exactly as the ending acts do: this one writes an
@@ -458,11 +460,17 @@ export function buildActsMenu({ transitions, state, acts } = {}) {
 		const at = ACT_ORDER.indexOf(entry.id)
 		return at === -1 ? ACT_ORDER.length : at
 	}
+	// Reopen and Restore are one entry, as board DqVolgendeStap draws it:
+	// an archived case refuses every write until it is restored, so on an
+	// archived case the entry restores, and otherwise it reopens.
+	const restore = archiveStateEntries(acts)
+	const gestures = gestureEntries(state)
+		.filter((entry) => restore.length === 0 || entry.id !== 'reopen')
 	const acting = [
-		...gestureEntries(state),
+		...gestures,
 		...endingEntries(acts),
 		...stateEntries(acts),
-		...archiveStateEntries(acts),
+		...restore,
 	].sort((a, b) => rank(a) - rank(b))
 
 	return [

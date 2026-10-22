@@ -28,6 +28,10 @@ describe('where cases get stuck', () => {
 		expect(stuck.content.text).toBeUndefined()
 	})
 
+	it('draws its rows compact, as board DqProcesanalyse does (nextcloud-vue 24o density)', () => {
+		expect(stuck.content.density).toBe('compact')
+	})
+
 	it('draws no widget Actions menu, as board DqProcesanalyse', () => {
 		expect(page.config.showWidgetActions).toBe(false)
 	})

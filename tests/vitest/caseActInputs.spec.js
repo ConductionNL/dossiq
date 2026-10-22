@@ -36,7 +36,7 @@ describe('the lifecycle act forms', () => {
 			heading: 'Read only afterwards',
 			text: 'Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.',
 		})
-		expect(fieldsOf({ id: 'archive' })).toEqual(['reason'])
+		expect(fieldsOf({ id: 'archive' })).toEqual(['reason', 'notifyRequester'])
 	})
 
 	it('tells under the archive reason how the case comes back, as board DqArchiveren draws it', () => {
