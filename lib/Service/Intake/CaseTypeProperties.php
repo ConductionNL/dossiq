@@ -6,8 +6,8 @@
  * Answers that answer the case type's own questions: an answer whose name
  * is a property definition of the case type becomes an entry of the case's
  * `properties` bag, where a handler reads it on the case screen. A
- * definition the type does not declare is skipped, never invented, and a
- * read that fails costs the entries, not the case.
+ * definition the type does not declare is skipped, never invented. A read
+ * that fails throws, and the caller keeps the case without the entries.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Intake
@@ -30,7 +30,6 @@ namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
@@ -45,11 +44,9 @@ class CaseTypeProperties {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Names the propertyDefinition schema.
-	 * @param LoggerInterface $logger          Says when the definitions cannot be read.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
@@ -62,6 +59,8 @@ class CaseTypeProperties {
 	 * @param array<string, mixed> $answers       The answers, by name.
 	 *
 	 * @return array<int, array<string, string>> The entries.
+	 *
+	 * @throws Throwable When the case type's property definitions cannot be read.
 	 *
 	 * @spec openspec/changes/case-intake-per-case-type/specs/case-intake-destination/spec.md#requirement-a-case-type-may-say-what-its-intake-does-to-a-received-case
 	 */
@@ -104,20 +103,14 @@ class CaseTypeProperties {
 			return [];
 		}
 
-		try {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['caseType' => $caseTypeId],
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq intake: the case type property definitions could not be read, so the answers stay on the case only',
-				['error' => $e->getMessage()]
-			);
-			return [];
-		}
+		// A read that fails throws to the caller, which decides what a missing
+		// definition costs: the entries, never the case.
+		$rows = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['caseType' => $caseTypeId],
+		);
 
 		$definitions = [];
 		foreach ($rows as $row) {

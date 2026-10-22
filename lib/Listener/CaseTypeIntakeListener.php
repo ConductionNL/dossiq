@@ -118,17 +118,27 @@ class CaseTypeIntakeListener implements IEventListener {
 		$objectService = $this->settingsService->getObjectService();
 		$register      = (string)$this->settingsService->getConfigValue('register');
 		$caseTypeId    = $this->caseTypeIdOf(case: $case);
-		$properties    = new CaseTypeProperties(settingsService: $this->settingsService, logger: $this->logger);
+		$properties    = new CaseTypeProperties(settingsService: $this->settingsService);
+		$logger        = $this->logger;
 
 		return $this->intake->changesFor(
 			case: $case,
 			config: $config,
-			propertiesOf: static function (array $answers) use ($objectService, $register, $caseTypeId, $properties): array {
+			propertiesOf: static function (array $answers) use ($objectService, $register, $caseTypeId, $properties, $logger): array {
 				if ($objectService === null || $register === '') {
 					return [];
 				}
 
-				return $properties->forAnswers(objectService: $objectService, register: $register, caseTypeId: $caseTypeId, answers: $answers);
+				try {
+					return $properties->forAnswers(objectService: $objectService, register: $register, caseTypeId: $caseTypeId, answers: $answers);
+				} catch (Throwable $e) {
+					// The case is received without the entries; the answers stay on it.
+					$logger->warning(
+						'Dossiq intake: the case type property definitions could not be read',
+						['caseType' => $caseTypeId, 'error' => $e->getMessage()]
+					);
+					return [];
+				}
 			}
 		);
 	}//end changesFor()

@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Woo;
 use OCA\Dossiq\Service\Intake\CaseTypeProperties;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * The requester details as entries of a case's `properties` bag.
@@ -76,7 +77,15 @@ class WooRequesterProperties {
 			$answers[$field] = ($wooRequest[$field] ?? '');
 		}
 
-		return (new CaseTypeProperties(settingsService: $this->settingsService, logger: $this->logger))
-			->forAnswers(objectService: $objectService, register: $register, caseTypeId: $caseTypeId, answers: $answers);
+		try {
+			return (new CaseTypeProperties(settingsService: $this->settingsService))
+				->forAnswers(objectService: $objectService, register: $register, caseTypeId: $caseTypeId, answers: $answers);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'WooRequestIntake: the case type property definitions could not be read, so the requester details are kept on the request only',
+				['error' => $e->getMessage()]
+			);
+			return [];
+		}
 	}//end forCaseType()
 }//end class
