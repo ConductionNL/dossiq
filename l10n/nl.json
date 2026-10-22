@@ -4363,7 +4363,7 @@
         "Live": "Productie",
         "Live conversation": "Live gesprek",
         "Live conversations held on this case, one object per conversation: kind (conversation|majorChannel), subject, roomId, roomUrl, startedAt, startedBy, participants, durationSeconds and endedAt. Written by CaseConversationService so the archive sees a call that only Talk would otherwise remember. What a conversation produced is filed separately as a case document, under the case type's visibility declaration.": "Levende gesprekken die op deze zaak zijn gevoerd, één object per gesprek: kind (conversation|majorChannel), subject, roomId, roomUrl, startedAt, startedBy, participants, durationSeconds en endedAt. Geschreven door CaseConversationService, zodat het archief een gesprek ziet dat anders alleen Talk zou onthouden. Wat een gesprek opleverde wordt apart als zaakdocument vastgelegd, onder de zichtbaarheidsverklaring van het zaaktype.",
-        "Living in @config.municipalityCity": "Wonend in @config.municipalityCity",
+        "Living in @config.municipalityCity": "Woonplaats @config.municipalityCity",
         "Lng": "Lengtegraad",
         "Load audit": "Audit laden",
         "Load example cases, case types and documents so lists, the case timeline and the detail pages show a working product right away. Optional, and safe to run more than once. Skip this on a production install.": "Laad voorbeeldzaken, zaaktypen en documenten, zodat lijsten, de zaaktijdlijn en de detailpagina's meteen een werkend product tonen. Optioneel en veilig om vaker uit te voeren. Sla dit over op een productie-installatie.",

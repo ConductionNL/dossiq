@@ -12378,6 +12378,8 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "brpPerson",
+				"sortKey": "displayName",
+				"sortOrder": "asc",
 				"allowSavedViews": true,
 				"showViewAction": false,
 				"_folderSidebarNote": "THE FOLDER SIDEBAR IS STILL ABSENT, AND IT IS NO LONGER WAITED ON. `contacts-domain` recorded why one could not ship, and both measurements still hold against nextcloud-vue 2.41.0. FIRST, there is no `hidden`: `folderSidebarFolders()` hands `folders[]` to CnFolderTree verbatim, so an Organisations folder would render, and selecting it would filter this page's `brpPerson` rows by a value no person carries and show an empty list. SECOND, `filterField: \"@self.schema\"` is not a filter OpenRegister answers: the wire form is a NESTED `@self` object (see `VthSeedLookup`'s `['@self' => ['slug' => ...]]`), so a flat `@self.schema` key reads as a filter on a field no object has and the search returns nothing while looking like an empty register. WHAT CHANGED is the question the sidebar was answering. It was never wanted for its own sake; it was the only way anyone could think of to reach the ten `kvkCompany` rows, which until now were listed on no page at all. The `Organisations` page below is that list, as a CHILD of this entry, so the answer costs no top-level navigation and no folder seam. If B10 ever lands, a folder that swaps the schema becomes a presentation choice between two pages rather than the thing that decides whether organisations are reachable, which is the right size for it.",
