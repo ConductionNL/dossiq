@@ -11022,6 +11022,8 @@
         "{total} cases in your name[, {rows:coveredFor} of them as a substitute] · most urgent first": "{total} zaken op uw naam[, waarvan {rows:coveredFor} als waarnemer] · meest urgente eerst",
         "{total} contracts": "{total} contracten",
         "{total} in total": "{total} in totaal",
+        "{total} location": "{total} locatie",
+        "{total} locations": "{total} locaties",
         "{total} open · term one month, extendable by two": "{total} lopend · termijn 1 maand, te verlengen met 2",
         "{total} organisations": "{total} organisaties",
         "{total} results in cases, objects and documents, only what you may see": "{total} resultaten in zaken, objecten en documenten, alleen wat u mag zien",
