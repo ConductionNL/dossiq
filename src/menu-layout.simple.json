@@ -953,6 +953,7 @@
 					}
 				},
 				"nextStep": {
+					"stagesFrom": "@context.caseType.nextStep",
 					"stages": {
 						"intake": {
 							"title": "What now? Take the case on",
