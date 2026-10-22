@@ -41,6 +41,7 @@
 				"headerMeta": "from Nextcloud groups, with function and absence",
 				"_headerButtonsNote": "Board DqAfdelingen: Downloaden in the header downloads the staff the list shows as CSV (the users source's columns).",
 				"searchPlaceholder": "Search…",
+				"showActionsMenu": true,
 				"headerButtons": [
 					{
 						"action": "export",
