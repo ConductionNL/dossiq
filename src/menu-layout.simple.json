@@ -2009,7 +2009,11 @@
 							"field": "@context.caseType.overviewCards",
 							"op": "empty"
 						},
-						"title": "Flows"
+						"title": "Flows",
+						"_headerActionsNote": "DqZaak/DqZaakMeer Flows: \"Flow uitvoeren\" in the card's title row, the case's own start-flow dialog, shown while the case has a flow it may start (as the header action of the same name).",
+						"headerActions": [
+							{ "label": "Run flow", "icon": "Play", "visibleWhen": { "field": "hasStartableFlows", "op": "eq", "value": true }, "action": { "type": "open-modal", "target": "CaseStartFlowDialog" } }
+						]
 					},
 					"case-kpis-hours": {
 						"visibleWhen": {
@@ -2018,9 +2022,33 @@
 						},
 						"title": "Record hours"
 					},
+					"case-archival-panel": {
+						"_headerActionsNote": "DqZaakArchivering: \"Nominatie herberekenen\" in the Archiving card's title row. It recomputes the case's archival nomination through OpenRegister (POST /api/archival/objects/{id}/nomination/recompute), which an archivist may do, asks for a reason, and records the actor, the reason and the previous nomination. The library action dialog asks the reason; OpenRegister refuses anyone who is not an archivist, with its own sentence.",
+						"headerActions": [
+							{
+								"label": "Recompute nomination",
+								"icon": "Refresh",
+								"action": {
+									"type": "open-modal",
+									"target": "CnActionDialog",
+									"props": {
+										"objectId": "@objectId",
+										"config": {
+											"title": "Recompute the archive nomination",
+											"subtitle": "The nomination is derived again from the current selection list and the case's result. The previous one stays in its history.",
+											"reason": { "label": "Reason", "hint": "Goes into the nomination history of the case." },
+											"confirm": { "label": "Recompute", "icon": "Refresh", "request": { "method": "POST", "url": "/apps/openregister/api/archival/objects/@objectId/nomination/recompute", "body": { "reason": "{reason}" } } },
+											"doneText": "The archive nomination was recomputed."
+										}
+									}
+								}
+							}
+						]
+					},
 					"case-email-panel": {
-						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the linked mail and the notes stand under it as cards, so the mail widget leaves its own linked mail list out.",
+						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the linked mail and the notes stand under it as cards, so the mail widget leaves its own linked mail list out. Mail koppelen and Mail opstellen are the library mail tab's own header buttons (content.headerActions).",
 						"content": {
+							"headerActions": ["link", "compose"],
 							"heading": "Email",
 							"description": "Mail linked to this case, also from a shared mailbox",
 							"hint": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.",
@@ -2512,6 +2540,11 @@
 					{
 						"id": "case-conversations-card",
 						"type": "case-conversations-pane",
+						"headerActions": [
+							{ "label": "Report a major incident", "icon": "AlertOutline", "visibleWhen": { "field": "isMajor", "op": "neq", "value": true }, "action": { "type": "handler", "handler": "declareCaseMajor" } },
+							{ "label": "Start conversation", "icon": "PhoneInTalk", "variant": "primary", "action": { "type": "handler", "handler": "startCaseConversation" } }
+						],
+						"content": { "actionsInHeader": true },
 						"title": "Live conversation",
 						"_note": "A conversation held live from this case, in Nextcloud Talk, and what the case recorded of the ones already held: the moment, who joined and how long it lasted. It sits in Communication rather than in a tab of its own because a handler reading what was said on this case is already here, and a call and a contact moment are the same question asked of two moments. Rendered by TYPE (case-conversations-pane in registry.js): a section child resolves from the widget registry, and a component registered only by name draws an empty panel and logs nothing. The icon is PhoneInTalk, which src/icons.js carries; an icon a manifest names but no registry holds renders the default glyph and breaks nothing visibly, which is how that goes unnoticed."
 					},
@@ -2709,6 +2742,8 @@
 						"id": "case-calendar-card",
 						"type": "integration",
 						"integrationId": "calendar",
+						"props": { "headerActions": ["link", "create"] },
+						"_headerActionsNote": "DqZaakTaken Afspraken: \"Bestaande koppelen\" and \"Afspraak maken\" in the card's title row, the calendar leaf's own link-existing and create flows (nextcloud-vue calendar card headerActions).",
 						"title": "Appointments"
 					},
 					{
@@ -3315,6 +3350,9 @@
 					{
 						"id": "case-resident-thread",
 						"type": "conversation",
+						"headerActions": [
+							{ "label": "Log contact", "icon": "PhonePlusOutline", "visibleWhen": { "field": "@self.archived", "op": "empty" }, "action": { "type": "open-modal", "target": "LogContactDialog", "props": { "caseId": "@objectId" } } }
+						],
 						"title": "Conversation with the resident",
 						"_note": "DqZaakContact \"Gesprek met de inwoner\": the contact moments on the case as a thread, oldest first, ours on the right, with the channel on each. Answering opens the portal message dialog with the reply already written, so the answer goes to the resident through the berichtenbox.",
 						"content": {
@@ -3552,7 +3590,11 @@
 								{
 									"label": "Stop series",
 									"endpoint": "/apps/dossiq/api/case/@objectId/planned/{id}/stop",
-									"method": "POST"
+									"method": "POST",
+									"visibleWhen": {
+										"field": "plannedKind",
+										"value": "series"
+									}
 								}
 							],
 							"footerAction": {
@@ -3588,6 +3630,85 @@
 								}
 							],
 							"footerActions": [
+								{
+									"label": "Link case",
+									"icon": "LinkVariant",
+									"type": "open-modal",
+									"target": "CnActionDialog",
+									"props": {
+										"objectId": "@objectId",
+										"config": {
+											"title": "Link case",
+											"eyebrow": "Related · {identifier}",
+											"subtitle": "Pick the case and how it relates to this one. The link shows on both cases.",
+											"summary": {
+												"source": {
+													"url": "/apps/openregister/api/objects/dossiq/case/@objectId"
+												},
+												"title": "{title}",
+												"meta": "{identifier}"
+											},
+											"fields": [
+												{
+													"field": "targetId",
+													"type": "search",
+													"label": "Case",
+													"required": true,
+													"source": {
+														"register": "dossiq",
+														"schema": "case"
+													},
+													"optionLabel": "{title}",
+													"optionSecondary": "{identifier}",
+													"excludeSelf": true
+												},
+												{
+													"field": "aardRelatie",
+													"type": "select",
+													"label": "Relation type",
+													"required": true,
+													"options": [
+														{
+															"value": "vervolg",
+															"label": "Follow-up"
+														},
+														{
+															"value": "subject",
+															"label": "Subject"
+														},
+														{
+															"value": "bijdrage",
+															"label": "Contribution"
+														},
+														{
+															"value": "samenhang",
+															"label": "Related"
+														},
+														{
+															"value": "waitsOn",
+															"label": "Waits on"
+														}
+													]
+												},
+												{
+													"field": "notes",
+													"type": "text",
+													"label": "Note",
+													"required": false
+												}
+											],
+											"confirm": {
+												"label": "Link it",
+												"icon": "LinkVariant",
+												"request": {
+													"method": "POST",
+													"url": "/apps/dossiq/api/cases/@objectId/relations"
+												}
+											},
+											"doneText": "The case is linked."
+										}
+									}
+								},
 								{
 									"label": "Plan follow-up",
 									"icon": "CalendarClock",
@@ -3708,6 +3829,9 @@
 									"key": "objectUrl",
 									"label": "Link"
 								}
+							],
+							"rowActions": [
+								{ "label": "All cases on this object", "icon": "BriefcaseSearchOutline", "type": "navigate", "target": "/cases?_related[caseObject][case][objectUrl]=@row.objectUrl", "visibleWhen": { "field": "objectUrl", "op": "notEmpty" } }
 							],
 							"footerLinks": [
 								{ "label": "Manage object types", "href": "/index.php/apps/openregister/#/registers/dossiq", "note": "(administrators only)", "group": "admin" }
@@ -4939,6 +5063,7 @@
 						"id": "side-case-type-facts",
 						"type": "facts",
 						"title": "Data",
+						"titleTone": "side",
 						"tabs": ["statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "history"],
 						"content": {
 							"fields": [
@@ -5022,6 +5147,43 @@
 						}
 					},
 					{
+						"id": "side-case-type-choice-list",
+						"type": "field-list",
+						"title": "Choice list: {name}",
+						"_note": "DqZaaktypeVelden Keuzelijst: the options of the field selected in the Fields table, or of its first field with a choice list (nextcloud-vue side-card-follows-row). The options live on that field's own propertyDefinition record, so the card follows the table's selected row and saves to it.",
+						"tabs": ["fields"],
+						"follows": {
+							"widget": "case-type-fields-editor",
+							"register": "dossiq",
+							"schema": "propertyDefinition",
+							"when": {
+								"field": "enumValues",
+								"op": "notEmpty"
+							}
+						},
+						"content": {
+							"field": "enumValues",
+							"add": {
+								"label": "Add option",
+								"trigger": "button",
+								"placement": "footer",
+								"scalar": true,
+								"unique": true,
+								"fields": [
+									{
+										"key": "value",
+										"label": "Option",
+										"required": true
+									}
+								]
+							},
+							"remove": {
+								"label": "Remove"
+							},
+							"emptyText": "This field has no options yet"
+						}
+					},
+					{
 						"id": "side-case-type-parent",
 						"type": "facts",
 						"title": "Parent type",
@@ -5043,8 +5205,15 @@
 					{
 						"id": "side-case-type-history",
 						"type": "audit-trail",
-						"title": "History",
-						"tabs": ["phases"]
+						"title": "Record history",
+						"tabs": ["phases"],
+						"headerLink": {
+							"label": "All history",
+							"tab": "history"
+						},
+						"content": {
+							"excludeActions": ["read"]
+						}
 					}
 				],
 				"layout": [
@@ -5109,6 +5278,7 @@
 										"case-type-fields-editor",
 										"case-type-field-rules",
 										"case-type-core",
+										"case-type-terms",
 										"case-type-list-layout"
 									],
 									"countFrom": {
@@ -5208,6 +5378,16 @@
 						"id": "case-type-rules-summary",
 						"type": "record-list",
 						"title": "Rules",
+						"headerActions": [
+							{
+								"label": "Add a rule",
+								"icon": "Plus",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#rules"
+								}
+							}
+						],
 						"_note": "DqZaaktypeOverzicht Regels: the rules OpenRegister holds for the case schema (GET /apps/openregister/api/schemas/case/rules, the inventory the Fields tab's rules widget reads), one row each with whether it is on. The rules belong to the case schema, not to one case type, which is why every case type lists the same ones. Adding a rule happens on OpenRegister's schema page, so there is no Add here.",
 						"content": {
 							"endpointSource": {
@@ -5236,6 +5416,16 @@
 						"id": "case-type-statuses",
 						"type": "record-list",
 						"title": "Statuses",
+						"headerActions": [
+							{
+								"label": "Edit",
+								"icon": "Pencil",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#statuses"
+								}
+							}
+						],
 						"content": {
 							"register": "dossiq",
 							"schema": "statusType",
@@ -5608,6 +5798,16 @@
 						"id": "case-type-terms-written",
 						"type": "facts",
 						"title": "Terms",
+						"headerActions": [
+							{
+								"label": "Edit",
+								"icon": "Pencil",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#fields"
+								}
+							}
+						],
 						"_note": "DqZaaktype Termijnen (case-type-page-follows-its-boards, REQ-CTB-4): the terms as sentences from GET /api/case-types/{id}/terms, because the stored values are ISO durations and flags a facts card would show as P56D. The raw fields stay editable through the page's Edit dialog.",
 						"content": {
 							"source": {

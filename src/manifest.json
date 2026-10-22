@@ -1927,6 +1927,7 @@
 				},
 				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are NOT on the case: dossiq stores each declared field as a `caseProperty` row pointing back at it, so the query is openregister's `_related[caseProperty][case][\u2026]` (query-related-schema-rows). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. The library's CnRelatedFieldFilters draws it beside the search (`relatedFieldFilters`), names a refused block's field under the bar, and feeds the list's fetch through `sidebarState.onFilterChange`, since the index page drops `_`-prefixed route keys.",
 				"bulkBandAlways": true,
+				"savedViewChips": false,
 				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/utils/caseBulkActions.js, registered in src/registry.js as `kind: 'handler'` entries, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
 					{
@@ -1991,7 +1992,7 @@
 								"label": "My work",
 								"route": "MyWorkHome"
 							},
-							"headerMeta": "{total} cases in your name · most urgent first",
+							"headerMeta": "{total} cases in your name[, {rows:coveredFor} of them as a substitute] · most urgent first",
 							"footerNote": "Urgency follows from the deadline, the priority and how long a case has been idle.",
 							"headerButtons": [
 								{
@@ -2031,6 +2032,21 @@
 							},
 							"rowClickToView": true,
 							"showViewAction": false,
+							"quickFilters": [
+								{
+									"label": "Including work you cover",
+									"activeLabel": "Including work you cover",
+									"_note": "The view opens including the work the reader covers for an absent colleague (board DqAanMijToegewezen, `Inclusief werk waarvoor u waarneemt` on the Active line; removing the chip leaves only their own cases). The server computes the covered cases: the lens asks the urgency source, GET /api/work-queue, for `covering=1` (nextcloud-vue `sourceParams`), and WorkQueueController adds the open cases the active substitutions route to the reader, each one a case CaseAccessGuard already lets them read (CoveredWork), so covering never widens access. Its filter repeats the view's open-case conditions because a lens filter replaces the page's All lens. The Cases page's other lenses are not offered here: the board draws none on this view.",
+									"filter": {
+										"statusHiddenInLists": false,
+										"isDraft": false
+									},
+									"sourceParams": {
+										"covering": "1"
+									},
+									"default": true
+								}
+							],
 							"sortOption": "urgency",
 							"cardLayout": {
 								"headPill": {
@@ -2050,6 +2066,12 @@
 								},
 								"number": "identifier",
 								"title": "title",
+								"meta": [
+									{
+										"field": "coveredFor",
+										"formatter": "coveredFor"
+									}
+								],
 								"description": {
 									"field": "description",
 									"maxLength": 140
@@ -4472,6 +4494,67 @@
 											],
 											"footerActions": [
 												{
+													"label": "Link case",
+													"icon": "LinkVariant",
+													"type": "open-modal",
+													"target": "CnActionDialog",
+													"props": {
+														"objectId": "@objectId",
+														"config": {
+															"title": "Link case",
+															"eyebrow": "Related · {identifier}",
+															"subtitle": "Pick the case and how it relates to this one. The link shows on both cases.",
+															"summary": {
+																"source": {
+																	"url": "/apps/openregister/api/objects/dossiq/case/@objectId"
+																},
+																"title": "{title}",
+																"meta": "{identifier}"
+															},
+															"fields": [
+																{
+																	"field": "targetId",
+																	"type": "search",
+																	"label": "Case",
+																	"required": true,
+																	"source": { "register": "dossiq", "schema": "case" },
+																	"optionLabel": "{title}",
+																	"optionSecondary": "{identifier}",
+																	"excludeSelf": true
+																},
+																{
+																	"field": "aardRelatie",
+																	"type": "select",
+																	"label": "Relation type",
+																	"required": true,
+																	"options": [
+																		{ "value": "vervolg", "label": "Follow-up" },
+																		{ "value": "subject", "label": "Subject" },
+																		{ "value": "bijdrage", "label": "Contribution" },
+																		{ "value": "samenhang", "label": "Related" },
+																		{ "value": "waitsOn", "label": "Waits on" }
+																	]
+																},
+																{
+																	"field": "notes",
+																	"type": "text",
+																	"label": "Note",
+																	"required": false
+																}
+															],
+															"confirm": {
+																"label": "Link it",
+																"icon": "LinkVariant",
+																"request": {
+																	"method": "POST",
+																	"url": "/apps/dossiq/api/cases/@objectId/relations"
+																}
+															},
+															"doneText": "The case is linked."
+														}
+													}
+												},
+												{
 													"label": "Plan follow-up",
 													"icon": "CalendarClock",
 													"type": "open-modal",
@@ -5405,6 +5488,16 @@
 									"title": "Read only afterwards",
 									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
 								},
+								"fields": [
+									{
+										"field": "notifyRequester",
+										"type": "checkbox",
+										"label": "Let {initiatorDisplayName} know the case is completed",
+										"hint": "A message with the result, in the portal, the Berichtenbox or by e-mail",
+										"default": true,
+										"required": false
+									}
+								],
 								"confirm": {
 									"label": "Archive it",
 									"icon": "ArchiveOutline",
@@ -6729,6 +6822,7 @@
 						"id": "eod-figures",
 						"type": "stat-grid",
 						"title": "Your day",
+						"titleTone": "side",
 						"_note": "DqDagAfsluiten's Uw dag: the day's figures two to a row in one card. Opened and Notes recorded read the server's day; Hours reads humaniq's own day summary of the reader's entries (dossiq keeps no hours of its own, ADR-011) and is left out when humaniq is not installed or does not answer the summary yet. The board's fourth figure, Klaar te zetten, counts notes typed in the browser and is not drawn yet.",
 						"content": {
 							"columns": 2,
@@ -6804,6 +6898,7 @@
 						"id": "eod-how",
 						"type": "text",
 						"title": "How this works",
+						"titleTone": "side",
 						"content": {
 							"contentMode": "markdown",
 							"text": "This lists what you opened yourself today, not what a colleague changed. A note goes on the case or task itself. Hours go to humaniq."
@@ -6978,6 +7073,7 @@
 							"source": {
 								"kind": "flow-task"
 							},
+							"headerActions": ["link", "create"],
 							"emptyText": "Nobody has booked an appointment on this task"
 						}
 					},
@@ -6990,7 +7086,8 @@
 							"source": {
 								"kind": "flow-task",
 								"id": "@objectId"
-							}
+							},
+							"composer": "button"
 						}
 					},
 					{
@@ -8138,6 +8235,7 @@
 									"watch": "warning"
 								}
 							},
+							"density": "compact",
 							"emptyText": "No phase stands out in this period",
 							"limit": 3
 						}
@@ -10371,6 +10469,7 @@
 					"layout": "rows",
 					"tabs": false,
 					"filter": "segmented",
+					"filterLabel": "Show only",
 					"next": 0,
 					"statusLabels": {
 						"all": "All",
@@ -10684,6 +10783,7 @@
 							],
 							"exportCsv": true,
 							"exportFileName": "deadline-report",
+							"exportId": "deadline-report-quarterly",
 							"emptyText": "No terms started in this quarter."
 						}
 					},
@@ -10718,6 +10818,16 @@
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
 						"type": "sections",
 						"title": "Quarterly report",
+						"headerActions": [
+							{
+								"label": "Download quarterly report",
+								"icon": "TrayArrowDown",
+								"action": {
+									"type": "export",
+									"exportId": "deadline-report-quarterly"
+								}
+							}
+						],
 						"subtitle": "Per case type: total, within the term, overruns, processing time, extensions, notices of default and penalty",
 						"content": {
 							"dividers": false,
@@ -10808,6 +10918,8 @@
 									}
 								}
 							],
+							"rowRoute": "CaseDetail",
+							"rowIdField": "caseId",
 							"emptyText": "No penalty was forfeited in this year"
 						}
 					},
@@ -11663,6 +11775,7 @@
 							"filter": {
 								"caseType": "@objectId"
 							},
+							"rowSelection": true,
 							"editable": true,
 							"sort": {
 								"field": "category",
@@ -12199,6 +12312,13 @@
 				"app": "dossiq",
 				"palette": "column",
 				"listLabel": "Settings / Flows",
+				"_testSubjectNote": "Board DqFlow: Testen met een zaak. The button tries the saved flow with a picked case through OpenRegister's dry-run, which changes and sends nothing, and shows each step beside the canvas (nextcloud-vue feat/flow-page-dry-run, openregister#4753).",
+				"testSubject": {
+					"register": "dossiq",
+					"schema": "case",
+					"labelField": "title",
+					"label": "Test with a case"
+				},
 				"pill": "Case type flow",
 				"notice": "This flow is how its case type works. The case runs the steps; old webhook steps now run as an external call through Integriq.",
 				"paletteFootnote": "dossiq only offers steps a case can do itself. The rest comes from the app that does it.",

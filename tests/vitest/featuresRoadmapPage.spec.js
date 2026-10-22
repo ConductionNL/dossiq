@@ -21,6 +21,11 @@ describe('the features and roadmap page', () => {
 		expect(nl[board.subtitle]).toBe('Functionaliteiten en roadmap · versie {appVersion} · bijgewerkt bij elke release')
 	})
 
+	it('names the status filter Toon, as the board does', () => {
+		expect(board.filterLabel).toBe('Show only')
+		expect(nl[board.filterLabel]).toBe('Toon')
+	})
+
 	it('keeps the notice that points to the comparison on conduction.nl', () => {
 		expect(board.notice).toMatch(/^How dossiq compares to other case systems/)
 		expect(board.noticeLink.text).toBe('conduction.nl')

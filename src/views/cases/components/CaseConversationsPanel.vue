@@ -37,6 +37,7 @@
 		<template v-else>
 			<div class="case-conversations__actions">
 				<NcButton
+					v-if="!actionsInHeader"
 					variant="primary"
 					:disabled="starting"
 					data-testid="start-conversation"
@@ -48,7 +49,7 @@
 				</NcButton>
 
 				<NcButton
-					v-if="!isMajor"
+					v-if="!isMajor && !actionsInHeader"
 					:disabled="declaring"
 					data-testid="declare-major"
 					@click="declareMajor">
@@ -59,7 +60,7 @@
 				</NcButton>
 
 				<NcButton
-					v-else
+					v-else-if="isMajor"
 					variant="secondary"
 					:href="majorChannelUrl"
 					data-testid="open-major-channel"
@@ -120,6 +121,7 @@ import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/
 import AlertOutline from 'vue-material-design-icons/AlertOutline.vue'
 import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
 import PhoneOff from 'vue-material-design-icons/PhoneOff.vue'
+import { conversationError, declareMajor as postDeclareMajor, startConversation as postStartConversation } from '../../../utils/caseConversation.js'
 
 export default {
 	name: 'CaseConversationsPanel',
@@ -145,6 +147,15 @@ export default {
 		caseObject: {
 			type: Object,
 			default: null,
+		},
+
+		/**
+		 * Start and Declare major stand in the card's title row (the widget's
+		 * headerActions), so the panel leaves its own two buttons out.
+		 */
+		actionsInHeader: {
+			type: Boolean,
+			default: false,
 		},
 	},
 
@@ -236,19 +247,12 @@ export default {
 			this.starting = true
 			this.error = ''
 			try {
-				const { data } = await axios.post(
-					generateUrl('/apps/dossiq/api/cases/{caseId}/conversations', {
-						caseId: this.resolvedCaseId,
-					}),
-					{},
-				)
-				this.conversations = [...this.conversations, data.conversation]
-				if (data.conversation?.roomUrl) {
-					window.open(data.conversation.roomUrl, '_blank', 'noopener')
+				const conversation = await postStartConversation(this.resolvedCaseId)
+				if (conversation) {
+					this.conversations = [...this.conversations, conversation]
 				}
 			} catch (e) {
-				this.error =
-					e?.response?.data?.reason || t('dossiq', 'Unknown error')
+				this.error = conversationError(e)
 			} finally {
 				this.starting = false
 			}
@@ -268,25 +272,10 @@ export default {
 			this.declaring = true
 			this.error = ''
 			try {
-				const { data } = await axios.post(
-					generateUrl('/apps/dossiq/api/cases/{caseId}/major', {
-						caseId: this.resolvedCaseId,
-					}),
-					{},
-				)
+				this.majorChannelUrl = await postDeclareMajor(this.resolvedCaseId)
 				this.isMajor = true
-				this.majorChannelUrl = data.channel?.roomUrl || ''
-				this.openMajorChannel()
 			} catch (e) {
-				const unresolved = e?.response?.data?.unresolved
-				this.error =
-					Array.isArray(unresolved) && unresolved.length
-						? t(
-								'dossiq',
-								'We could not find these responders: {names}',
-								{ names: unresolved.join(', ') },
-							)
-						: e?.response?.data?.reason || t('dossiq', 'Unknown error')
+				this.error = conversationError(e)
 			} finally {
 				this.declaring = false
 			}

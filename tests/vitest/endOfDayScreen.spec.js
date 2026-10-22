@@ -99,4 +99,9 @@ describe('the end-of-day page', () => {
 		expect(widget('eod-hours')).toBeUndefined()
 		expect(page.config.layout.some((cell) => cell.widgetId === 'eod-hours')).toBe(false)
 	})
+
+	it('heads Your day and How this works as side headings, as board DqDagAfsluiten (nextcloud-vue titleTone)', () => {
+		expect(widget('eod-figures').titleTone).toBe('side')
+		expect(widget('eod-how').titleTone).toBe('side')
+	})
 })

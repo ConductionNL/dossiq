@@ -41,4 +41,19 @@ describe('the VTH section header actions', () => {
 		expect(admin).toContain('<template v-if="ownerApps.integriq" #actions>')
 		expect(admin).toContain('<template v-if="ownerApps.shillinq" #actions>')
 	})
+
+	it('draws the actions in the section title row, as the board does (nextcloud-vue actionsInTitle)', () => {
+		for (const id of ['section-intake-activities', 'section-fee-schedules']) {
+			expect(admin).toMatch(new RegExp(`id="${id}"\\s+:actionsInTitle="true"`))
+		}
+		expect(admin).toMatch(/:actionsInTitle="true"\s+:name="t\('dossiq', 'VTH inspection checklists'\)"/)
+	})
+
+	it('puts Add day in the working days title row and leaves the calendar\'s own button out', () => {
+		expect(admin).toMatch(/id="section-working-days"\s+:actionsInTitle="true"/)
+		expect(admin).toContain('@click="$refs.workingCalendar.openAdd()"')
+		expect(admin).toContain('<CnWorkingCalendarWidget ref="workingCalendar" :content="workingCalendarContent" />')
+		expect(admin).toMatch(/addButton: false,/)
+		expect(nl['Add day']).toBe('Dag toevoegen')
+	})
 })

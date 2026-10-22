@@ -650,7 +650,7 @@ Found 2026-09-11 by the spec 5.2 added. The first filing of this blamed
 `RegistryStepDispatcher::scopeSignal()`; that was wrong, and the real cause is
 both simpler and worse.
 
-- [ ] 7.2 (built in openregister, decision 156: ConductionNL/openregister#4541 signals the outcome bag instead of `[]`; tick when it has landed) Stop OpenRegister's empty signal payload from overwriting dossiq's.
+- [x] 7.2 (built in openregister, decision 156: ConductionNL/openregister#4541 signals the outcome bag instead of `[]`; landed 11 Oct) Stop OpenRegister's empty signal payload from overwriting dossiq's.
 
       **Two listeners are registered on `TaskTerminalEvent` and both signal
       the run:**
