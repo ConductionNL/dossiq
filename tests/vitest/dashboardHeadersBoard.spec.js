@@ -64,4 +64,12 @@ describe('the dashboard headers', () => {
 		expect(placed.gridY).toBeGreaterThanOrEqual(lowest)
 		expect(placed.gridWidth).toBe(12)
 	})
+
+	it('sizes the two charts to their rows, as DqDashboard draws them (251px, not four grid rows)', () => {
+		const overlay = simple.pages.find((entry) => entry.id === 'Dashboard')
+		for (const id of ['cases-by-status', 'cases-by-type']) {
+			const placed = overlay.config.layout.find((item) => item.widgetId === id)
+			expect(placed.sizeToContent, id).toBe(true)
+		}
+	})
 })
