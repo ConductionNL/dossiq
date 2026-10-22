@@ -615,6 +615,7 @@
 						"type": "open-form",
 						"label": "New case",
 						"formTitle": "New case",
+						"formConfirmLabel": "Create case",
 						"size": "normal",
 						"columns": 1,
 						"includeFields": [
@@ -1145,6 +1146,7 @@
 						"type": "open-form",
 						"label": "New case",
 						"formTitle": "New case",
+						"formConfirmLabel": "Create case",
 						"size": "normal",
 						"columns": 1,
 						"includeFields": [
