@@ -211,13 +211,247 @@
 			},
 			"configPatch": {
 				"views": {
+					"team": {
+						"widgets": [
+							{
+								"id": "your-teams-queue",
+								"type": "object-list",
+								"title": "Your team's queue",
+								"icon": "AccountGroupOutline",
+								"content": {
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"assignedGroup": "@myGroups",
+										"assignee": "IS NULL",
+										"isFinalStatus": false,
+										"statusHiddenInLists": false,
+										"isDraft": false,
+										"isTemplate": false
+									},
+									"limit": 10,
+									"hideHeader": true,
+									"columns": [
+										{
+											"key": "title",
+											"label": "Case",
+											"cellClass": "cn-cell--strong",
+											"secondary": "{identifier} · {deadline|date}"
+										}
+									],
+									"rowActions": [
+										{
+											"id": "claim",
+											"label": "Pick up",
+											"type": "handler",
+											"handler": "claimCase",
+											"variant": "secondary"
+										}
+									],
+									"rowRoute": "CaseDetail",
+									"emptyText": "Nothing is waiting for your teams",
+									"prompt": "Cases waiting for your teams show here"
+								}
+							},
+							{
+								"id": "kpi-open-cases",
+								"type": "stat",
+								"title": "Open Cases",
+								"content": {
+									"label": "Open Cases",
+									"caption": "+{newToday} today",
+									"route": {
+										"name": "Cases"
+									},
+									"icon": "FolderOutline",
+									"iconPlacement": "end",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"endpointSource": {
+										"url": "/apps/dossiq/api/dashboard/kpis"
+									},
+									"valueField": "openCount"
+								}
+							},
+							{
+								"id": "kpi-overdue",
+								"type": "stat",
+								"title": "Late",
+								"content": {
+									"label": "Late",
+									"caption": "action needed",
+									"route": {
+										"name": "Cases",
+										"query": {
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false",
+											"deadline[lt]": "@today"
+										}
+									},
+									"icon": "AlertCircleOutline",
+									"iconPlacement": "end",
+									"variant": "error",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"endpointSource": {
+										"url": "/apps/dossiq/api/dashboard/kpis"
+									},
+									"valueField": "overdueCount"
+								}
+							},
+							{
+								"id": "kpi-completed",
+								"type": "stat",
+								"title": "Completed This Month",
+								"content": {
+									"label": "Completed This Month",
+									"caption": "avg {avgProcessingDays} days",
+									"route": {
+										"name": "Cases",
+										"query": {
+											"endDate[gte]": "@yearStart"
+										}
+									},
+									"icon": "CheckCircleOutline",
+									"iconPlacement": "end",
+									"variant": "success",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"endpointSource": {
+										"url": "/apps/dossiq/api/dashboard/kpis"
+									},
+									"valueField": "completedCount"
+								}
+							},
+							{
+								"id": "cases-by-status",
+								"type": "chart",
+								"title": "Cases by Status",
+								"content": {
+									"chartKind": "bar-list",
+									"footnote": "Click a bar to see the cases",
+									"dataSource": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										},
+										"aggregate": {
+											"groupBy": "status",
+											"mergeByLabel": true,
+											"metric": "count",
+											"topN": 5,
+											"labelResolve": {
+												"schema": "statusType",
+												"labelField": "name"
+											}
+										},
+										"drilldown": {
+											"route": "Cases",
+											"filterParam": "status"
+										}
+									}
+								}
+							},
+							{
+								"id": "cases-by-type",
+								"type": "chart",
+								"title": "Cases by Type",
+								"content": {
+									"chartKind": "bar-list",
+									"footnote": "Click a bar to see the cases",
+									"dataSource": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										},
+										"aggregate": {
+											"groupBy": "caseType",
+											"metric": "count",
+											"topN": 5,
+											"labelResolve": {
+												"schema": "caseType",
+												"labelField": "title"
+											}
+										},
+										"drilldown": {
+											"route": "Cases",
+											"filterParam": "caseType"
+										}
+									}
+								}
+							},
+							{
+								"id": "stalled-cases",
+								"type": "record-list",
+								"title": "Stalled Cases",
+								"_note": "DqMijnTeam draws Vastgelopen zaken as rows: the title, the case number and its handler under it, how long it has been idle at the end, no chevron. The same query as the Dashboard's table; View all leads to the same list. The other team widgets are the manifest's, restated because an overlay replaces a view's widgets whole (landingViews.spec.js holds them equal).",
+								"headerLink": {
+									"label": "View all",
+									"route": "Cases",
+									"query": {
+										"isFinalStatus": "false",
+										"statusHiddenInLists": "false",
+										"isDraft": "false",
+										"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
+									}
+								},
+								"content": {
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"isFinalStatus": false,
+										"statusHiddenInLists": false,
+										"isDraft": false
+									},
+									"extend": [
+										"calculations"
+									],
+									"sort": {
+										"field": "@self.updated",
+										"dir": "asc"
+									},
+									"limit": 3,
+									"presentation": "rows",
+									"title": "{title}",
+									"meta": {
+										"parts": [
+											"{identifier}",
+											"{assignee|user}"
+										]
+									},
+									"trailing": [
+										"{daysSinceActivity} days idle"
+									],
+									"chevron": false,
+									"rowRoute": "CaseDetail",
+									"emptyText": "All cases active"
+								}
+							}
+						]
+					},
 					"mine": {
+						"gridSideColumn": {
+							"width": 320
+						},
 						"widgets": [
 							{
 								"id": "simple-first-today",
 								"type": "banner",
 								"title": "First today",
-								"_note": "DqMijnWerk names ONE case: the reader's own open case furthest past its deadline, with Open case and the list of all of them. The library banner reads the first row of the ordered query (`visibleWhen.source` with `order` and `extend`) as its subject; with no such case it draws nothing. `content` is still the declaration of what is past term, the same filter appinfo/attention.json carries for LaunchPad.",
+								"_note": "DqMijnWerk names ONE case: the reader's own open case furthest past its deadline, with the list of all of them, the board, Suspend the term (the case's lifecycle menu opened on that act for the named case) and Open case. The library banner reads the first row of the ordered query (`visibleWhen.source` with `order` and `extend`) as its subject; with no such case it draws nothing. `content` is still the declaration of what is past term, the same filter appinfo/attention.json carries for LaunchPad.",
 								"content": {
 									"layout": "attention",
 									"variant": "error",
@@ -257,6 +491,24 @@
 													"isDraft": "false",
 													"deadline[lt]": "@today+1d"
 												}
+											}
+										},
+										{
+											"label": "Go to the board",
+											"route": {
+												"name": "Cases",
+												"query": {
+													"_view": "board"
+												}
+											}
+										},
+										{
+											"label": "Suspend the term",
+											"type": "open-modal",
+											"target": "CaseLifecycleMenuDialog",
+											"props": {
+												"caseId": "@subject.id",
+												"act": "suspend"
 											}
 										},
 										{
@@ -714,6 +966,7 @@
 								"gridY": 4,
 								"gridWidth": 8,
 								"gridHeight": 4,
+								"track": "main",
 								"showTitle": true,
 								"headerLink": {
 									"label": "All deadlines",
@@ -735,6 +988,7 @@
 								"gridY": 4,
 								"gridWidth": 4,
 								"gridHeight": 7,
+								"track": "side",
 								"showTitle": true,
 								"headerLink": {
 									"label": "All tasks",
@@ -748,6 +1002,7 @@
 								"gridY": 8,
 								"gridWidth": 8,
 								"gridHeight": 3,
+								"track": "main",
 								"showTitle": true,
 								"headerLink": {
 									"label": "To the board",
@@ -762,6 +1017,7 @@
 								"gridY": 11,
 								"gridWidth": 8,
 								"gridHeight": 5,
+								"track": "main",
 								"showTitle": true
 							},
 							{
@@ -787,6 +1043,7 @@
 								"gridY": 11,
 								"gridWidth": 4,
 								"gridHeight": 5,
+								"track": "side",
 								"showTitle": true
 							},
 							{
@@ -935,8 +1192,18 @@
 				},
 				"quickActions": [
 					"send-digital-post",
-					"generate-document",
-					"log-contact"
+					{
+						"id": "generate-document",
+						"notTabs": [
+							"ai-oversight"
+						]
+					},
+					{
+						"id": "log-contact",
+						"notTabs": [
+							"ai-oversight"
+						]
+					}
 				],
 				"actionsMenu": {
 					"showRefresh": false,
@@ -955,6 +1222,9 @@
 				},
 				"nextStep": {
 					"stagesFrom": "@context.caseType.nextStep",
+					"notTabs": [
+						"ai-oversight"
+					],
 					"stages": {
 						"intake": {
 							"title": "What now? Take the case on",
@@ -1048,6 +1318,7 @@
 				},
 				"_sideColumnFromNote": "Side cards per case type (Ruben, 18 October 2026): a case type that lists `sideCards` shows those cards in that order, a case type that lists none shows the column below. The list names ids of this column. Needs nextcloud-vue detail-side-column-from; on an older release the key is ignored and every case shows the column below.",
 				"sideColumnFrom": "@context.caseType.sideCards",
+				"quickActionsFrom": "@context.caseType.quickActions",
 				"sideColumn": [
 					{
 						"id": "side-advice-requested",
@@ -1796,8 +2067,13 @@
 								},
 								{
 									"widgetId": "case-files",
-									"label": "Documents",
-									"unreadKey": "files"
+									"label": "Files",
+									"unreadKey": "files",
+									"countFrom": {
+										"endpoint": "/apps/openregister/api/objects/dossiq/case/@objectId/files",
+										"field": "total"
+									},
+									"_labelNote": "DqZaak and every case tab board name this tab \"Bestanden 7\": Files, with the number of files in the case's folder (OpenRegister's file total)."
 								},
 								{
 									"label": "Contact",
@@ -1819,6 +2095,10 @@
 								},
 								{
 									"label": "Tasks",
+									"countFrom": {
+										"endpoint": "/apps/openregister/api/flow-tasks?objectUuid=@objectId&scope=all",
+										"field": "total"
+									},
 									"widgetIds": [
 										"case-tasks-card",
 										"case-planned-actions-card",
@@ -1830,7 +2110,11 @@
 								},
 								{
 									"widgetId": "case-timeline-panel",
-									"label": "Case history"
+									"label": "Case history",
+									"countFrom": {
+										"endpoint": "/apps/openregister/api/objects/dossiq/case/@objectId/timeline",
+										"field": "total"
+									}
 								},
 								{
 									"widgetId": "case-change-proposals",
@@ -1857,11 +2141,11 @@
 									"label": "People",
 									"overflow": true,
 									"widgetIds": [
-										"case-party-roles-card",
 										"case-parties-card",
+										"case-party-roles-card",
 										"case-seats-card"
 									],
-									"_note": "DqZaakBetrokkenen: the people panel's sections as the board's cards: the parties by role first (Partijen), the linked contacts, then the seats. Who follows the case is the header's Follow popover only (Ruben, 20 Oct 2026), so the Followers card left this tab."
+									"_note": "DqZaakBetrokkenen: the people panel's sections as the board's cards: the people on the case by role first (Partijen, the contacts tab in a card), the party model (Rollen), then the seats. Who follows the case is the header's Follow popover only (Ruben, 20 Oct 2026), so the Followers card left this tab."
 								},
 								{
 									"label": "Email",
@@ -2568,7 +2852,8 @@
 									"key": "direction",
 									"label": "Direction",
 									"enum": ["inbound", "outbound"],
-									"enumLabels": { "inbound": "Incoming", "outbound": "Outgoing" }
+									"enumLabels": { "inbound": "Incoming", "outbound": "Outgoing" },
+									"colorMap": { "inbound": "default", "outbound": "info" }
 								},
 								{
 									"key": "summary",
@@ -2779,6 +3064,7 @@
 						"id": "case-incidents-card",
 						"type": "object-list",
 						"title": "Incidents",
+						"subtitle": "Reports within this case, such as a complaint about how it is handled",
 						"_note": "splitting-a-case-and-its-incidents REQ-CM-53. Several dated reports inside one case, which is how repeat reports on one address are handled: the case holds the address and the history, and each report is a record with its own reporter, its own owner and its own outcome. SORTED BY `eventDate` AND NOT BY THE RECORDING MOMENT (D-6): a report written up three weeks late belongs where it happened, and `createdAt` order would quietly rewrite the sequence the case is about. It sits in the Work tab rather than in a tab of its own, because the strip is already eleven entries and an incident is work on the case; `recordedAt` is a column beside the event date so the delay between the two is visible rather than hidden. NOT a deelzaak: an incident has no number, no term and no decision, and making one would give every report a beslistermijn it does not have (D-4).",
 						"content": {
 							"register": "dossiq",
@@ -3456,8 +3742,23 @@
 								"balie": "Desk"
 							},
 							"senderField": "callerIdentification",
+							"usAuthorField": "kccEmployeeId",
+							"usAuthorFormat": "user",
+							"themAuthorField": "@object.initiatorDisplayName",
 							"timestampField": "startTime",
 							"bodyField": "summary",
+							"subtitle": "Oldest first, with the channel of each message",
+							"showDirection": true,
+							"channelChips": true,
+							"headerAction": {
+								"label": "Log contact",
+								"icon": "PhonePlusOutline",
+								"type": "open-modal",
+								"target": "LogContactDialog",
+								"props": {
+									"caseId": "@objectId"
+								}
+							},
 							"emptyText": "No messages with the resident yet.",
 							"replyLabel": "Answer to the resident",
 							"replyAction": {
@@ -3474,13 +3775,18 @@
 						"id": "case-parties-card",
 						"type": "integration",
 						"integrationId": "contacts",
-						"title": "Contacts",
+						"title": "Case parties",
+						"subtitle": "Everyone involved in this case, by role",
+						"content": {
+							"view": "tab"
+						},
 						"_note": "people-on-the-case: everyone involved in THIS case, read as OpenRegister person links rather than raw `role` rows. A person is a Nextcloud user or a contact, linked in one of the case schema's declared role types (SyncCaseRoleVocabulary writes them from the instance's role types), and PersonLinkListener projects the link onto a `role` record, so the resolver, the mandate matrix and the routing rules read what they always read. The contacts integration renders the people grouped by role type with avatar, email, validity window and note, and its picker offers users and contacts; the object-list this replaced showed a roleType uuid and a participant string nobody could act on."
 					},
 					{
 						"id": "case-party-roles-card",
 						"type": "parties",
-						"title": "Case parties",
+						"title": "Roles",
+						"subtitle": "From OpenRegister's party model, also for those without an account",
 						"_note": "The party model OpenRegister shipped in #3761 (`/parties` of this case), by role with the primary party first. A gemachtigde names whom they act for (role rows, `representedParty`). The accepted kinds and the writing language come from pipelinq through dossiq's endpoints; a kind is marked not accepted only when pipelinq answered the kinds. Every indicator carries its verdict, and a blocking one is also a note above the list. A failed read says so and is never \"no parties\".",
 						"content": {
 							"rolesObjects": {
@@ -3605,106 +3911,11 @@
 						"title": "Related cases",
 						"subtitle": "Typed per the RGBZ, kept in both directions",
 						"_note": "DqZaakGerelateerd Gerelateerde zaken: the case's typed peer relations grouped by what they are to this case (the label this side of the relation reads, else the relation type), each with the other case's initials, number, case type and handler and its status, then the planned follow-ups (planned flows and series) under Gepland vervolg. The rows come from /api/cases/{id}/relations?planned=1, which adds the case details only for a case the reader may open. `groupBy` is nextcloud-vue's record-list group headings (d45d382846); on an older library the rows stand ungrouped. A planned row opens no case, so it carries the Stop series menu; Plan follow-up ends the card.",
-						"content": {
-							"endpointSource": {
-								"url": "/apps/dossiq/api/cases/@objectId/relations?planned=1",
-								"responsePath": "results"
-							},
-							"presentation": "rows",
-							"avatar": "{title}",
-							"title": "{title}",
-							"meta": [
-								"{identifier} · {caseTypeTitle} · {assigneeName}",
-								"{identifier} · {caseTypeTitle}",
-								"{caseTypeTitle}",
-								"{plannedKind} · {date}"
-							],
-							"pill": {
-								"field": "statusRole",
-								"labels": {
-									"intake": "Received",
-									"pending-info": "Waiting for information",
-									"in-progress": "In progress",
-									"review": "In review",
-									"closed": "Closed",
-									"stranded": "Stranded",
-									"planned": "Planned"
-								},
-								"colorMap": {
-									"intake": "default",
-									"pending-info": "warning",
-									"in-progress": "purple",
-									"review": "purple",
-									"closed": "success",
-									"stranded": "error",
-									"planned": "info"
-								}
-							},
-							"groupBy": "group",
-							"rowRoute": "CaseDetail",
-							"rowIdField": "caseId",
-							"emptyText": "No related cases yet",
-							"valueLabels": {
-								"group": {
-									"subject": "Subject of this case",
-									"waitsOn": "Waits on",
-									"vervolg": "Follow-up",
-									"bijdrage": "Contribution",
-									"samenhang": "Related",
-									"planned": "Planned follow-up"
-								},
-								"plannedKind": {
-									"flow": "Planned flow",
-									"series": "Series"
-								}
-							},
-							"rowActions": [
-								{
-									"label": "Stop series",
-									"endpoint": "/apps/dossiq/api/case/@objectId/planned/{id}/stop",
-									"method": "POST",
-									"visibleWhen": {
-										"field": "plannedKind",
-										"value": "series"
-									}
-								}
-							],
-							"footerAction": {
-								"type": "open-modal",
-								"target": "CasePlanFollowUpDialog",
-								"label": "Plan follow-up",
-								"icon": "CalendarClock"
-							}
-						}
-					},
-					{
-						"id": "case-related-card",
-						"type": "related",
-						"title": "Parent case",
-						"icon": "LinkVariant",
-						"_note": "The Related cases tab: the library related widget with three sections it reads from dossiq (case-actions-menu A26, planned-case-series 1.8). Planned follow-ups are scheduled FLOWS, not cases, so they open nothing; a series lists the cases it already opened and offers Stop series, which switches the flow off and leaves those cases alone. Typed relations come grouped by the label the server answers per direction (displayLabel, else the ZGW aard), a row only with a readable title. The parent case shows only with a readable title. Plan follow-up opens CasePlanFollowUpDialog. A read that fails is logged and leaves the rest alone. The planned follow-ups and the typed relations moved to case-related-cases-card, so this card keeps the parent case.",
-						"content": {
-							"showObjects": false,
-							"referenceSections": [
-								{
-									"key": "parent",
-									"label": "Parent case",
-									"icon": "FileTreeOutline",
-									"field": "parentCase",
-									"register": "dossiq",
-									"schema": "case",
-									"route": {
-										"name": "CaseDetail",
-										"params": {
-											"id": "{id}"
-										}
-									}
-								}
-							],
-							"footerActions": [
-								{
-									"label": "Link case",
-									"icon": "LinkVariant",
+						"headerActions": [
+							{
+								"label": "Link case",
+								"icon": "LinkVariant",
+								"action": {
 									"type": "open-modal",
 									"target": "CnActionDialog",
 									"props": {
@@ -3780,14 +3991,107 @@
 											"doneText": "The case is linked."
 										}
 									}
+								}
+							}
+						],
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/relations?planned=1",
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"avatar": "{title}",
+							"title": "{title}",
+							"meta": [
+								"{identifier} · {caseTypeTitle} · {assigneeName}",
+								"{identifier} · {caseTypeTitle}",
+								"{caseTypeTitle}",
+								"{plannedKind} · {date}"
+							],
+							"pill": {
+								"field": "statusRole",
+								"labels": {
+									"intake": "Received",
+									"pending-info": "Waiting for information",
+									"in-progress": "In progress",
+									"review": "In review",
+									"closed": "Closed",
+									"stranded": "Stranded",
+									"planned": "Planned"
 								},
+								"colorMap": {
+									"intake": "default",
+									"pending-info": "warning",
+									"in-progress": "purple",
+									"review": "purple",
+									"closed": "success",
+									"stranded": "error",
+									"planned": "info"
+								}
+							},
+							"groupBy": "group",
+							"rowRoute": "CaseDetail",
+							"rowIdField": "caseId",
+							"emptyText": "No related cases yet",
+							"valueLabels": {
+								"group": {
+									"subject": "Subject of this case",
+									"waitsOn": "Waits on",
+									"vervolg": "Follow-up",
+									"bijdrage": "Contribution",
+									"samenhang": "Related",
+									"planned": "Planned follow-up"
+								},
+								"plannedKind": {
+									"flow": "Planned flow",
+									"series": "Series"
+								}
+							},
+							"rowActions": [
 								{
-									"label": "Plan follow-up",
-									"icon": "CalendarClock",
-									"type": "open-modal",
-									"target": "CasePlanFollowUpDialog",
-									"props": {
-										"caseId": "@objectId"
+									"label": "Stop series",
+									"endpoint": "/apps/dossiq/api/case/@objectId/planned/{id}/stop",
+									"method": "POST",
+									"visibleWhen": {
+										"field": "plannedKind",
+										"value": "series"
+									}
+								}
+							],
+							"footerAction": {
+								"type": "open-modal",
+								"target": "CasePlanFollowUpDialog",
+								"label": "Plan follow-up",
+								"icon": "CalendarClock"
+							}
+						}
+					},
+					{
+						"id": "case-related-card",
+						"type": "related",
+						"visibleWhen": {
+							"field": "parentCase",
+							"op": "notEmpty"
+						},
+						"title": "Parent case",
+						"icon": "LinkVariant",
+						"_note": "The Related cases tab: the library related widget with three sections it reads from dossiq (case-actions-menu A26, planned-case-series 1.8). Planned follow-ups are scheduled FLOWS, not cases, so they open nothing; a series lists the cases it already opened and offers Stop series, which switches the flow off and leaves those cases alone. Typed relations come grouped by the label the server answers per direction (displayLabel, else the ZGW aard), a row only with a readable title. The parent case shows only with a readable title. Plan follow-up opens CasePlanFollowUpDialog. A read that fails is logged and leaves the rest alone. The planned follow-ups and the typed relations moved to case-related-cases-card, so this card keeps the parent case and shows only on a case that has one (DqZaakGerelateerd draws no Hoofdzaak card otherwise). Link case sits in the Related cases header, as the board's Zaak koppelen.",
+						"content": {
+							"showObjects": false,
+							"showFiles": false,
+							"referenceSections": [
+								{
+									"key": "parent",
+									"label": "Parent case",
+									"icon": "FileTreeOutline",
+									"field": "parentCase",
+									"register": "dossiq",
+									"schema": "case",
+									"route": {
+										"name": "CaseDetail",
+										"params": {
+											"id": "{id}"
+										}
 									}
 								}
 							]
@@ -3797,6 +4101,7 @@
 						"id": "case-sub-cases-card",
 						"type": "object-list",
 						"title": "Sub-cases",
+						"subtitle": "Cases that hang under this case",
 						"icon": "FileTreeOutline",
 						"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Rows deep-link to CaseDetail because a sub-case IS a case. `createAction` opens DeelzaakCreateModal and `summary` is the completion roll-up, as on the full profile's case-sub-cases.",
 						"content": {
@@ -3862,6 +4167,7 @@
 						"id": "case-objects-card",
 						"type": "object-list",
 						"title": "Objects",
+						"subtitle": "What this case is about, with what the object now says about itself",
 						"icon": "CubeOutline",
 						"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose, because a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
 						"_lensNote": "The Object and Object status columns are LENSES, not stored fields. `objectTitle` and `objectStatus` are declared in `x-openregister-lenses` on the `caseObject` schema and resolved by OpenRegister on every read, so the tab shows what the linked object says about itself now rather than what somebody typed when they linked it. Nothing writes them: OpenRegister refuses a write that names a lens with a 400. They carry `widget: lensedValue` because an unreadable value arrives as `{\"@withheld\": true}`, an object, and the default cell would print `[object Object]`; a blank cell would be worse still, because blank reads as \"there is no object\". CnObjectListWidget forwards `widget` and `widgetProps` to CnCellRenderer, which resolves the name against the app's `cnCellWidgets`, so this needs no change in the library.",
@@ -4128,6 +4434,7 @@
 						"id": "case-advice-requests",
 						"type": "object-list",
 						"title": "Advice on the case",
+						"subtitle": "Internal and external advice on this case",
 						"icon": "CommentQuestionOutline",
 						"_note": "DqZaakBesluiten Adviezen: the internal and external advice requested on this case; Toevoegen asks a new one with the case filled in.",
 						"content": {
@@ -4167,6 +4474,11 @@
 										"requested": "Waiting for answer",
 										"received": "Received",
 										"expired": "Expired"
+									},
+									"colorMap": {
+										"requested": "warning",
+										"received": "success",
+										"expired": "error"
 									}
 								}
 							],
@@ -4288,7 +4600,17 @@
 						"gridY": 4,
 						"gridWidth": 4,
 						"gridHeight": 6,
-						"showTitle": true
+						"showTitle": true,
+						"headerLink": {
+							"label": "View all",
+							"route": "Cases",
+							"query": {
+								"isFinalStatus": "false",
+								"statusHiddenInLists": "false",
+								"isDraft": "false",
+								"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
+							}
+						}
 					},
 					{
 						"id": "14",
@@ -4297,7 +4619,14 @@
 						"gridY": 4,
 						"gridWidth": 4,
 						"gridHeight": 6,
-						"showTitle": true
+						"showTitle": true,
+						"headerLink": {
+							"label": "View all",
+							"route": "Cases",
+							"query": {
+								"_watching": "true"
+							}
+						}
 					},
 					{
 						"id": "15",
@@ -4306,7 +4635,14 @@
 						"gridY": 4,
 						"gridWidth": 4,
 						"gridHeight": 6,
-						"showTitle": true
+						"showTitle": true,
+						"headerLink": {
+							"label": "View all",
+							"route": "Cases",
+							"query": {
+								"_recent": "true"
+							}
+						}
 					},
 					{
 						"id": "16",
@@ -4321,6 +4657,76 @@
 			},
 			"configPatch": {
 				"widgets": {
+					"stalled-cases": {
+						"type": "record-list",
+						"_note": "DqDashboard draws Vastgelopen zaken as rows: the title, the case number and how long it has been idle, without a chevron. The same query as the full structure's table (open cases, least recently changed first); View all is the layout entry's headerLink, to the same list.",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"isFinalStatus": false,
+								"statusHiddenInLists": false,
+								"isDraft": false
+							},
+							"extend": [
+								"calculations"
+							],
+							"sort": {
+								"field": "@self.updated",
+								"dir": "asc"
+							},
+							"limit": 5,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{identifier}",
+							"text": "{daysSinceActivity} days idle",
+							"chevron": false,
+							"rowRoute": "CaseDetail",
+							"emptyText": "All cases active"
+						}
+					},
+					"favourite-cases": {
+						"type": "record-list",
+						"_note": "DqDashboard draws Zaken die u volgt as rows: the title and the case number, without a chevron, over the same `_watching` lens as the full structure's table.",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"_watching": true
+							},
+							"limit": 5,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{identifier}",
+							"chevron": false,
+							"rowRoute": "CaseDetail",
+							"emptyText": "Follow a case to find it here"
+						}
+					},
+					"recent-cases": {
+						"type": "record-list",
+						"_note": "DqDashboard draws Recent geopend as rows: the title, the case number and the day the reader opened it (`@self.viewedAt`, the lens's own moment), without a chevron. The `_recent` lens carries its own order, so no sort.",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"_recent": true
+							},
+							"limit": 5,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{identifier}",
+							"text": "{@self.viewedAt|relative}",
+							"chevron": false,
+							"rowRoute": "CaseDetail",
+							"emptyText": "Cases you open show up here",
+							"lensReasonTexts": {
+								"recent.audit-trail-disabled": "This server does not keep track of which cases you open.",
+								"recent.anonymous": "Sign in to see the cases you opened recently.",
+								"recent.read-history-unavailable": "Your recent cases are not available right now."
+							}
+						}
+					},
 					"kpi-overdue": {
 						"title": "Late",
 						"content": {
@@ -4370,6 +4776,7 @@
 						}
 					},
 					"cases-by-status": {
+						"subtitle": "Open cases",
 						"content": {
 							"chartKind": "bar-list",
 							"footnote": "Click a bar to see the cases",
@@ -4383,6 +4790,7 @@
 								},
 								"aggregate": {
 									"groupBy": "status",
+									"mergeByLabel": true,
 									"metric": "count",
 									"topN": 5,
 									"labelResolve": {
@@ -4398,6 +4806,7 @@
 						}
 					},
 					"cases-by-type": {
+						"subtitle": "Open cases",
 						"content": {
 							"chartKind": "bar-list",
 							"footnote": "Click a bar to see the cases",
@@ -4464,7 +4873,7 @@
 				"searchPlaceholder": "Search by case, number or requester",
 				"quickFilterMaxVisible": 6,
 				"folderSidebar": null,
-				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The line under each title is the case's address and number (`caseAddress` reads the case's first case-location; a case without one shows its number only), and the pills name the case type and the status, the status pill in its status type's colour (`resolve.colorField`). Markers take their status type's colour and a line counts the located cases, as in the full profile. `plotAll` is left out on purpose: the map shows the current page, so the numbered list stays a page long.",
+				"_mapConfigNote": "DqZakenKaart: the map with a numbered list beside it, the rows without a place counted under the list with a way to the table (mapConfig.list). The rest of the map declaration is the full profile's; an overlay replaces a config key whole, so it is restated here. The line under each title is the case's address and number (`caseAddress` reads the case's first case-location; a case without one shows its number only), and the pills name the case type and the status, the status pill in its status type's colour (`resolve.colorField`). Markers take their status type's colour as in the full profile. The header counts the cases with an address (\"· 5 met een adres op de kaart\"), so no count line sits under the map as well (`count` is left out). `plotAll` is left out on purpose: the map shows the current page, so the numbered list stays a page long.",
 				"mapConfig": {
 					"geoField": "geometry",
 					"popupField": "title",
@@ -4472,7 +4881,6 @@
 						52.1326,
 						5.2913
 					],
-					"count": "Showing {located} of {total} located cases",
 					"markerColor": {
 						"field": "status",
 						"source": {
@@ -4633,7 +5041,10 @@
 					}
 				],
 				"showViewToggle": true,
-				"showAdd": false
+				"showAdd": false,
+				"_massCopyDeleteNote": "DqZaken, DqZakenSorteren, DqFilterInMenu: the bulk band holds the case acts only. Copying and deleting the selection stay in the Actions menu above (`copy-selected`, `delete-selected`).",
+				"showMassCopy": false,
+				"showMassDelete": false
 			},
 			"configPatch": {
 				"quickFilters": {
@@ -5059,10 +5470,16 @@
 			"_note": "DqZaaktype, DqZaaktypeOverzicht and DqZaaktypeVelden: one record page with the type's parts as tabs and its versions and facts in the side column. Every widget the full profile shows is still on a tab. The four app widgets are named by their registry type here, because a tab child resolves by type and a type:custom child renders an empty panel.",
 			"config": {
 				"showTypeEyebrow": false,
-				"breadcrumb": {
-					"label": "Case types",
-					"route": "CaseTypes"
-				},
+				"breadcrumb": [
+					{
+						"label": "Settings",
+						"href": "/index.php/settings/admin/dossiq"
+					},
+					{
+						"label": "Case types",
+						"route": "CaseTypes"
+					}
+				],
 				"typePill": {
 					"field": "category"
 				},

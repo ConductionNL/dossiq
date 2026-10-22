@@ -850,6 +850,7 @@
 								},
 								"aggregate": {
 									"groupBy": "status",
+									"mergeByLabel": true,
 									"metric": "count",
 									"topN": 5,
 									"labelResolve": {
@@ -1600,6 +1601,7 @@
 										},
 										"aggregate": {
 											"groupBy": "status",
+											"mergeByLabel": true,
 											"metric": "count",
 											"topN": 5,
 											"labelResolve": {
@@ -1893,6 +1895,7 @@
 			"manualOrder": true,
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
+				"quickFilterPlacementByView": { "board": "toolbar", "map": "toolbar" },
 				"allowExport": true,
 				"showUnreadRows": true,
 				"_showUnreadRowsNote": "unread-state-on-the-case, task 1.1. An unread row reads in bold with the library's unread marker (CnDataTable, from `@self.unread`, which OpenRegister attaches per reader on the render path). The board look marks unread rows only on a page that asks, and this page asks: its Unread chip (`_unread`, resolved inside the query) is one of its own quick filters, so it does not use `personalLenses`. An absent flag reads as read, because `@self.unread` is omitted for an anonymous read.",
@@ -2656,7 +2659,7 @@
 					"moveHandler": "moveCaseStatus",
 					"moveTargetsHandler": "caseStatusTargets",
 					"narrow": { "field": "caseType", "label": "Case type", "allLabel": "All case types", "source": { "schema": "caseType", "labelField": "title", "filter": { "isDraft": false } } },
-					"card": { "title": "title", "sub": ["identifier", "initiatorDisplayName"], "pill": "caseType", "resolve": { "colorField": "colour", "iconField": "icon" }, "due": "deadline", "owner": "assignee", "formatters": { "caseType": "caseTypeName" } },
+					"card": { "title": "title", "sub": ["identifier", "initiatorDisplayName"], "pill": "caseType", "resolve": { "colorField": "colour" }, "due": "deadline", "owner": "assignee", "formatters": { "caseType": "caseTypeName" } },
 					"columnFields": [
 						{ "field": "status", "label": "status", "source": { "schema": "statusType", "labelField": "name", "orderField": "order", "colorField": "colour", "neutralColor": "grey", "colorMap": {"blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "teal": "var(--nl-color-teal, #1d5e66)", "teal-light": "var(--nl-color-teal-light, #e3f1f3)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)"}, "capacityField": "capacity", "mergeBy": "name", "filter": { "isFinal": false }, "narrowBy": { "field": "caseType", "rowField": "caseType" } } },
 						{ "field": "caseType", "label": "type", "source": { "schema": "caseType", "labelField": "title", "filter": { "isDraft": false } }, "readOnly": true },
@@ -5401,7 +5404,12 @@
 						"type": "open-modal",
 						"label": "Lifecycle",
 						"icon": "PlayCircleOutline",
-						"target": "CaseLifecycleMenuDialog"
+						"target": "CaseLifecycleMenuDialog",
+						"props": {
+							"actDialogs": {
+								"archive": "case-archive"
+							}
+						}
 					},
 					{
 						"id": "case-archive",
@@ -6456,6 +6464,7 @@
 			"type": "index",
 			"title": "Tasks",
 			"config": {
+				"quickFilterPlacement": "toolbar",
 				"entitySource": "tasks",
 				"rowRoute": "TaskDetail",
 				"_sourceNote": "remove-casetask 2.2. The list is the ENGINE's task inbox, not OpenRegister objects over a `caseTask` schema, so `register`, `schema` and `extend` are gone rather than left behind as config nothing reads. `rowRoute` is what keeps the page dossiq's: the source's own `openRow` calls window.location.assign on OpenRegister's task page, and a `row-click` listener cannot recover a navigation that has already left the app, which is why nextcloud-vue#1063 added the prop. `columns` is deliberately ABSENT. The source supplies six, with state and priority as badges whose colour maps are built from the same t() calls as their labels, so the lookup holds in every locale; reproducing that here to rename one header would be a divergent copy of the thing this change removes, and if the wording matters it belongs upstream as a label override. TWO VISIBLE DELTAS, both deliberate: the case column's header now reads Subject, and the Team column is gone because the engine models candidate groups as a LIST and has no single assigneeGroup to read.",
@@ -6714,6 +6723,9 @@
 					"route": "MyWorkHome"
 				},
 				"headerMeta": "{today}",
+				"gridSideColumn": {
+					"width": 300
+				},
 				"widgets": [
 					{
 						"id": "eod-unavailable",
@@ -6824,18 +6836,46 @@
 					},
 					{
 						"id": "eod-figures",
-						"type": "record-list",
+						"type": "stat-grid",
 						"title": "Your day",
 						"titleTone": "side",
+						"_note": "DqDagAfsluiten's Uw dag: the day's figures two to a row in one card. Opened and Notes recorded read the server's day; Hours reads humaniq's own day summary of the reader's entries (dossiq keeps no hours of its own, ADR-011) and is left out when humaniq is not installed or does not answer the summary yet. The board's fourth figure, Klaar te zetten, counts notes typed in the browser and is not drawn yet.",
 						"content": {
+							"columns": 2,
 							"endpointSource": {
-								"url": "/apps/dossiq/api/personal-queue/end-of-day",
-								"responsePath": "figures"
+								"url": "/apps/dossiq/api/personal-queue/end-of-day"
 							},
-							"presentation": "rows",
-							"title": "{label}",
-							"meta": "{note}",
-							"trailing": "{value}"
+							"cells": [
+								{
+									"label": "Opened",
+									"valueField": "figures.0.value",
+									"caption": "{figures.0.note}"
+								},
+								{
+									"label": "Notes recorded",
+									"valueField": "figures.1.value",
+									"caption": "{figures.1.note}"
+								},
+								{
+									"label": "Hours",
+									"valueField": "hours",
+									"caption": "already in humaniq",
+									"format": {
+										"style": "decimal",
+										"decimals": 2
+									},
+									"endpointSource": {
+										"url": "/apps/humaniq/api/time-entries/summary"
+									},
+									"visibleWhen": {
+										"appInstalled": "humaniq",
+										"endpoint": "/apps/humaniq/api/time-entries/summary",
+										"field": "hours",
+										"op": "gte",
+										"value": 0
+									}
+								}
+							]
 						}
 					},
 					{
@@ -6898,6 +6938,7 @@
 						"gridY": 1,
 						"gridWidth": 8,
 						"gridHeight": 6,
+						"track": "main",
 						"sizeToContent": true
 					},
 					{
@@ -6907,6 +6948,7 @@
 						"gridY": 7,
 						"gridWidth": 8,
 						"gridHeight": 4,
+						"track": "main",
 						"sizeToContent": true
 					},
 					{
@@ -6916,6 +6958,7 @@
 						"gridY": 1,
 						"gridWidth": 4,
 						"gridHeight": 3,
+						"track": "side",
 						"sizeToContent": true
 					},
 					{
@@ -6925,6 +6968,7 @@
 						"gridY": 4,
 						"gridWidth": 4,
 						"gridHeight": 3,
+						"track": "side",
 						"sizeToContent": true
 					},
 					{
@@ -6934,6 +6978,7 @@
 						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 2,
+						"track": "side",
 						"sizeToContent": true
 					}
 				]
@@ -6944,7 +6989,7 @@
 			"route": "/tasks/:id",
 			"type": "detail",
 			"title": "Task",
-			"_note": "The task page (DqTaak) over OpenRegister's task ENGINE, as a manifest detail page on `entitySource: \"tasks\"` (task-page-on-the-manifest). It replaced TaskDetailView, the custom view it was while a detail page could not read an engine task. THE ROUTE AND THE PAGE ID ARE UNCHANGED: `/tasks/:id` and `TaskDetail`, so notification links and bookmarks still resolve. The library reads the task (GET /api/flow-tasks/{uuid}), offers the engine's verbs read off the task (Finish, Pick up or Hand back, Cancel task in the menu; none on a finished task) and shows a refusal with the engine's message as-is; Finish goes through dossiq's own completion route (`verbEndpoints`), which checks the case type's form and effects before the engine completes the task. The checklist is the library `checklist` widget, ticked through the engine. The notes, appointments and history are the library cards reading the task's own engine endpoints (`source: {kind: flow-task}`: the `notes` integration, `events` and `audit-trail`), and the waiting-case card is the library `notice` with a link to the case. The case card is the library `facts` widget reading the case through `source`. The state pill uses dossiq's words (\"In execution\"); the priority pill shows only for high and urgent. Engine tasks have NO unified-search provider: the engine's tasks live in their own table and no deep-link shape addresses them. There is no version-history tab: an engine task is not an object and nothing writes a version of it.",
+			"_note": "The task page (DqTaak) over OpenRegister's task ENGINE, as a manifest detail page on `entitySource: \"tasks\"` (task-page-on-the-manifest). It replaced TaskDetailView, the custom view it was while a detail page could not read an engine task. THE ROUTE AND THE PAGE ID ARE UNCHANGED: `/tasks/:id` and `TaskDetail`, so notification links and bookmarks still resolve. The library reads the task (GET /api/flow-tasks/{uuid}), offers the engine's verbs read off the task (Finish, Pick up or Hand back, Edit, Cancel task in the menu; none on a finished task; Edit opens a form for the title, description, due date and priority, saved through the engine's PATCH, which decides who may) and shows a refusal with the engine's message as-is; Finish goes through dossiq's own completion route (`verbEndpoints`), which checks the case type's form and effects before the engine completes the task. The checklist is the library `checklist` widget, ticked through the engine. The notes, appointments and history are the library cards reading the task's own engine endpoints (`source: {kind: flow-task}`: the `notes` integration, `events` and `audit-trail`), and the waiting-case card is the library `notice` with a link to the case. The case card is the library `facts` widget reading the case through `source`. The state pill uses dossiq's words (\"In execution\"); the priority pill shows only for high and urgent. Engine tasks have NO unified-search provider: the engine's tasks live in their own table and no deep-link shape addresses them. There is no version-history tab: an engine task is not an object and nothing writes a version of it.",
 			"config": {
 				"entitySource": "tasks",
 				"documentationUrl": "https://dossiq.conduction.nl",
@@ -7077,7 +7122,22 @@
 								"kind": "flow-task"
 							},
 							"maxDisplay": 50,
-							"emptyText": "Nothing has happened to this task yet"
+							"emptyText": "Nothing has happened to this task yet",
+							"actionLabels": {
+								"create": "Task created",
+								"enable": "Task ready to start",
+								"offer": "Task offered to the team",
+								"assign": "Task assigned to {actor}",
+								"reassign": "Task reassigned by {actor}",
+								"claim": "Task picked up by {actor}",
+								"unclaim": "Task handed back by {actor}",
+								"delegate": "Task passed on by {actor}",
+								"checklist": "Checklist updated by {actor}",
+								"edit": "Task edited by {actor}",
+								"complete": "Task finished by {actor}",
+								"cancel": "Task cancelled by {actor}",
+								"terminate": "Task stopped"
+							}
 						}
 					}
 				],
@@ -7167,13 +7227,7 @@
 								{
 									"key": "case-title",
 									"as": "title",
-									"path": "title",
-									"route": {
-										"name": "CaseDetail",
-										"params": {
-											"id": "@object.objectUuid"
-										}
-									}
+									"path": "title"
 								},
 								{
 									"key": "case-meta",
@@ -7200,7 +7254,7 @@
 										},
 										{
 											"path": "deadline",
-											"label": "Case deadline",
+											"label": "term of the case",
 											"format": "date"
 										}
 									]
@@ -7846,7 +7900,7 @@
 									},
 									"colorMap": {
 										"overdue": "error",
-										"critical": "error",
+										"critical": "warning",
 										"warning": "warning",
 										"ok": "success"
 									}
@@ -7907,7 +7961,7 @@
 									},
 									"colorMap": {
 										"overdue": "error",
-										"critical": "error",
+										"critical": "warning",
 										"warning": "warning",
 										"ok": "success"
 									}
@@ -8115,6 +8169,7 @@
 					{
 						"key": "period",
 						"label": "Period",
+						"placement": "description",
 						"default": "12m",
 						"options": [
 							{
@@ -8138,6 +8193,7 @@
 					{
 						"key": "caseType",
 						"label": "Filter by case type",
+						"placement": "description",
 						"clearable": true,
 						"placeholder": "All case types",
 						"optionsFrom": {
@@ -8357,7 +8413,12 @@
 						"type": "chart",
 						"title": "Dwell time by status",
 						"content": {
-							"chartKind": "bar",
+							"chartKind": "bar-list",
+							"valueFormat": {
+								"name": "number",
+								"decimals": 0,
+								"suffix": " h"
+							},
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/process-mining",
 								"params": {
@@ -12464,6 +12525,7 @@
 			"type": "index",
 			"title": "Organisations",
 			"config": {
+				"quickFilterPlacement": "toolbar",
 				"register": "dossiq",
 				"schema": "kvkCompany",
 				"allowSavedViews": true,
@@ -12555,7 +12617,8 @@
 							"where": {
 								"requester": "@self.id",
 								"isFinalStatus": false
-							}
+							},
+							"filterable": true
 						},
 						"widget": "badge"
 					},
@@ -12572,7 +12635,8 @@
 							"where": {
 								"contact": "@self.id"
 							},
-							"zeroLabel": "No contact yet"
+							"zeroLabel": "No contact yet",
+							"filterable": true
 						}
 					}
 				],
@@ -13174,7 +13238,7 @@
 				},
 				"typePill": {
 					"text": "Resident",
-					"variant": "info"
+					"variant": "teal"
 				},
 				"headerMeta": "{residence.street} {residence.houseNumber}, {residence.city}"
 			},

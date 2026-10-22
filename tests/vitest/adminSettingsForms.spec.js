@@ -228,6 +228,11 @@ describe('the background service account', () => {
 		expect(tag).toContain('Background jobs now save as {userId}.')
 	})
 
+	it('puts Use this account beside the user name, as DqBeheerinstellingen draws it', () => {
+		const section = adminRoot.slice(adminRoot.indexOf('id="section-background-service-account"'))
+		expect(section.slice(0, section.indexOf('/>'))).toContain(':saveInline="true"')
+	})
+
 	it('names what is wrong with an unusable account, only while it is unusable', () => {
 		expect(fields.reason).toMatchObject({ type: 'status', tone: 'warning', visibleWhen: { key: 'usable', equals: false } })
 		expect(Object.keys(fields.reason.textMap)).toEqual(['unknown', 'disabled', 'not-in-group', '*'])
@@ -311,6 +316,30 @@ describe('the shared mailbox', () => {
 	it('offers the Mail accounts and warns when Mail is missing', () => {
 		expect(keyed.email_mail_account_id).toMatchObject({ optionsUrl: '/apps/dossiq/api/settings/email/mail-accounts', optionsPath: 'accounts', optionDetail: 'email' })
 		expect(keyed['mail-app-missing']).toMatchObject({ type: 'status', tone: 'warning', valuePath: 'available' })
+	})
+
+	it('shows the board\'s six fields first and the rest behind Advanced, without losing one', () => {
+		// DqBeheerinstellingen Zaak-e-mail: account, folder, interval, batch
+		// size, the case type for unclaimed mail and the case-number switch.
+		const inputs = fields.filter((field) => field.type !== 'status')
+		expect(inputs.filter((field) => !field.advanced).map((field) => field.key)).toEqual([
+			'email_mail_account_id',
+			'email_imap_folder',
+			'email_poll_interval',
+			'email_poll_batch_size',
+			'email_fallback_case_type',
+			'email_case_matching_enabled',
+		])
+		expect(inputs.filter((field) => field.advanced).map((field) => field.key)).toEqual([
+			'email_transport',
+			'email_case_matching_pattern',
+			'email_from_address',
+			'email_from_name',
+			'email_recipient_allowlist',
+			'email_intake_role',
+			'email_intake_blocklist',
+			'email_intake_junk_rules',
+		])
 	})
 
 	it('names the default case number pattern as the server has it', () => {

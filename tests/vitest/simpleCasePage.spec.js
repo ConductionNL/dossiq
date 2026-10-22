@@ -81,6 +81,8 @@ const casePage = (file) => build(file).pages.find((page) => page.id === 'CaseDet
 
 const overlay = simpleFile.pages.find((page) => page.id === 'CaseDetail')
 const simple = casePage(simpleFile).config
+// A quick action is an id, or `{ id, notTabs }` for one a tab leaves out.
+const quickIds = simple.quickActions.map((entry) => (typeof entry === 'string' ? entry : entry.id))
 const original = readJson('src', 'manifest.json').pages.find(
 	(page) => page.id === 'CaseDetail',
 ).config
@@ -217,7 +219,7 @@ describe('the stage', () => {
 		)
 		expect(lifecycle.group).toBeUndefined()
 		expect(lifecycle.adminOnly).toBeUndefined()
-		expect(simple.quickActions).not.toContain('case-lifecycle-menu')
+		expect(quickIds).not.toContain('case-lifecycle-menu')
 	})
 
 	it('shows the card for a Woo request in handling, with the open item first', () => {
@@ -271,7 +273,7 @@ describe('the actions', () => {
 		expect(simple.headerActions.map((action) => action.id).slice(0, overlay.configOrder.headerActions.length)).toEqual(overlay.configOrder.headerActions)
 
 		const placed = simple.headerActions.map((action) => {
-			if (simple.quickActions.includes(action.id)) {
+			if (quickIds.includes(action.id)) {
 				return 'quick'
 			}
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
@@ -318,7 +320,7 @@ describe('the actions', () => {
 	})
 
 	it('keeps three quick actions: message, document, contact', () => {
-		expect(simple.quickActions).toEqual([
+		expect(quickIds).toEqual([
 			'send-digital-post',
 			'generate-document',
 			'log-contact',
@@ -327,7 +329,7 @@ describe('the actions', () => {
 
 	it('puts the admin group last and hides it from a handler, by the library grouping', () => {
 		const entries = simple.headerActions
-			.filter((action) => !simple.quickActions.includes(action.id))
+			.filter((action) => !quickIds.includes(action.id))
 			.map((action) => ({ id: action.id, label: action.label }))
 		const byId = Object.fromEntries(
 			simple.headerActions.map((action) => [action.id, action]),
@@ -381,7 +383,7 @@ describe('the tabs', () => {
 		// behind a visibleWhen (checked under the side column).
 		expect(
 			strip.tabs.filter((tab) => !tab.overflow && !tab.visibleWhen).map((tab) => tab.label),
-		).toEqual(['Overview', 'Documents', 'Contact', 'Tasks', 'Case history'])
+		).toEqual(['Overview', 'Files', 'Contact', 'Tasks', 'Case history'])
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
@@ -415,9 +417,10 @@ describe('the tabs', () => {
 		const peopleSections = find(original, 'case-people-panel').content.sections.map((section) => section.widget.id)
 		const peopleTab = strip.tabs.find((tab) => tab.label === 'People')
 		expect(peopleTab.widgetIds.map((id) => id.replace(/-card$/, '')).sort()).toEqual([...peopleSections].sort())
-		// The parties by role lead, as Partijen; the linked contacts follow (DqZaakBetrokkenen).
-		expect(peopleTab.widgetIds[0]).toBe('case-party-roles-card')
-		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Case parties')
+		// The people by role lead, as Partijen; the party model follows as Rollen (DqZaakBetrokkenen).
+		expect(peopleTab.widgetIds[0]).toBe('case-parties-card')
+		expect(simple.widgets.find((widget) => widget.id === 'case-parties-card').title).toBe('Case parties')
+		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Roles')
 		// Followers are the header popover only (Ruben, 20 Oct 2026), so the seats have the row to themselves.
 		expect(peopleTab.layout).toBeUndefined()
 		expect(peopleTab.widgetIds).not.toContain('case-followers-card')

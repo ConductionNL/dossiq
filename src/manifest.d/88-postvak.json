@@ -12,6 +12,21 @@
 			"type": "index",
 			"title": "Mailbox",
 			"config": {
+				"sidebar": {
+					"enabled": true,
+					"_note": "DqPostvak: the Filter button opens the index side panel. Its one filter is the channel the triage endpoint already takes (`sourceConfig.searchFields.channel`), so the panel narrows the server's answer rather than the rows on screen.",
+					"fields": {
+						"channel": {
+							"type": "string",
+							"title": "Channel",
+							"facetable": true,
+							"order": 1,
+							"inputControl": "select",
+							"enum": ["email", "portal", "webform"],
+							"enumLabels": { "email": "E-mail", "portal": "Portal", "webform": "Web form" }
+						}
+					}
+				},
 				"entitySource": "endpoint",
 				"sourceConfig": {
 					"url": "/apps/dossiq/api/intake/triage",
