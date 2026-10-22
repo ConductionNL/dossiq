@@ -28,7 +28,8 @@ import { contentTemplateOption } from './templatePicker.js'
  * - `columns: 2` sets the inputs side by side (board DqVolgendeStap).
  * - `pauseReasons` offers the case type's pause reasons before the free text.
  * - `reasonWidget` is the reason's field: one line beside the days, else a text area.
- * - `summary` and `notice` show the case and what the act makes of it.
+ * - `summary` and `notice` show the case and what the act makes of it; a
+ *   notice's `icon` names a CnIcon (board DqArchiveren draws a lock).
  * - `reasonNote` replaces the line under the reason.
  * - `title` names the dialog while the act is open; `confirmIcon` sits on its confirm button.
  *
@@ -64,6 +65,7 @@ function actLayouts() {
 			},
 			notice: {
 				type: 'info',
+				icon: 'LockOutline',
 				heading: t('dossiq', 'Read only afterwards'),
 				text: t('dossiq', 'Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.'),
 			},

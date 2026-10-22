@@ -33,6 +33,7 @@ describe('the lifecycle act forms', () => {
 		])
 		expect(notice).toEqual({
 			type: 'info',
+			icon: 'LockOutline',
 			heading: 'Read only afterwards',
 			text: 'Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.',
 		})
