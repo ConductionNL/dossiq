@@ -4094,6 +4094,11 @@
 										"requested": "Waiting for answer",
 										"received": "Received",
 										"expired": "Expired"
+									},
+									"colorMap": {
+										"requested": "warning",
+										"received": "success",
+										"expired": "error"
 									}
 								}
 							],
