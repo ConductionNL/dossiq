@@ -1,6 +1,5 @@
 {
     "translations": {
-        "%s (partly)": "%s (deels)",
         " days": " dagen",
         "\"{doc}\" is {class} but has no weigeringsgrond selected.": "\"{doc}\" is {class} maar heeft geen weigeringsgrond geselecteerd.",
         "#": "#",
@@ -54,6 +53,7 @@
         "%n working day remaining": "%n werkdag resterend",
         "%n working days overdue": "%n werkdagen te laat",
         "%n working days remaining": "%n werkdagen resterend",
+        "%s (partly)": "%s (deels)",
         "%s has not been asked for yet. Start it in decidiq, then come back to this act.": "%s is nog niet aangevraagd. Vraag het aan in decidiq en kom daarna terug naar deze handeling.",
         "%s mentioned you in a note": "%s heeft u genoemd in een notitie",
         "%s needs a status to move the case to: either a \"role\" or a literal \"status\" name.": "%s heeft een status nodig om de zaak naartoe te zetten: een \"role\" of een letterlijke \"status\"-naam.",

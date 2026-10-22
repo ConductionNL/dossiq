@@ -1,6 +1,7 @@
 OC.L10N.register(
     "dossiq",
     {
+        "%s (partly)": "%s (partly)",
         " days": " days",
         "\"{doc}\" is {class} but has no weigeringsgrond selected.": "\"{doc}\" is {class} but has no weigeringsgrond selected.",
         "#": "#",
