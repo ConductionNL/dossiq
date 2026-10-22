@@ -5498,6 +5498,7 @@
 				},
 				"headerMeta": "{total} case types",
 				"searchPlaceholder": "Search a case type",
+				"_actionsMenuNote": "DqZaaktypen's Actions menu: import a case type, export the selected case types as JSON (nextcloud-vue `export-selected`, OpenRegister's export by `_ids`), and reload the shipped templates (POST /api/packages/reload, admin-only on the server; `adminOnly` only hides the entry from others).",
 				"headerActions": [
 					{
 						"id": "case-type-import",
@@ -5505,6 +5506,18 @@
 						"label": "Import case type from a file",
 						"icon": "TrayArrowUp",
 						"target": "CaseTypeImportDialog"
+					},
+					{
+						"id": "case-type-templates-reload",
+						"type": "api-call",
+						"label": "Reload templates",
+						"icon": "Refresh",
+						"url": "/apps/dossiq/api/packages/reload",
+						"method": "POST",
+						"confirm": true,
+						"adminOnly": true,
+						"successMessage": "The shipped templates are up to date.",
+						"errorMessage": "The shipped templates were not reloaded."
 					}
 				],
 				"headerButtons": [
@@ -5515,7 +5528,8 @@
 					},
 					{
 						"action": "actions-menu",
-						"label": "Actions"
+						"label": "Actions",
+						"items": ["case-type-import", "export-selected", "case-type-templates-reload"]
 					},
 					{
 						"action": "add",

@@ -163,17 +163,36 @@ class PackageInstaller {
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 */
 	public function installAutomatic(): array {
-		$outcomes = [];
-		foreach ($this->catalogue() as $entry) {
-			if ($entry['install'] !== 'auto') {
-				continue;
-			}
-
-			$outcomes[] = $this->install(id: $entry['id']);
-		}
-
-		return $outcomes;
+		return $this->installEach(wanted: static fn (array $entry): bool => $entry['install'] === 'auto');
 	}//end installAutomatic()
+
+	/**
+	 * Install every package that is installed here or installs automatically.
+	 *
+	 * Each goes through install(), so one already at the shipped version
+	 * writes nothing and a newer one refreshes the rows nobody edited. An
+	 * on-request package that was never installed is left alone.
+	 *
+	 * @return array<int, array<string, mixed>> One outcome per package, in id order.
+	 *
+	 * @spec openspec/changes/reload-shipped-packages/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
+	 */
+	public function reloadInstalled(): array {
+		return $this->installEach(wanted: static fn (array $entry): bool => $entry['install'] === 'auto' || $entry['installed'] !== '');
+	}//end reloadInstalled()
+
+	/**
+	 * Install every catalogue package the callback wants, in id order.
+	 *
+	 * @param callable(array<string, mixed>): bool $wanted Whether a catalogue entry installs.
+	 *
+	 * @return array<int, array<string, mixed>> One outcome per package installed.
+	 */
+	private function installEach(callable $wanted): array {
+		$entries = array_values(array_filter($this->catalogue(), $wanted));
+
+		return array_map(fn (array $entry): array => $this->install(id: $entry['id']), $entries);
+	}//end installEach()
 
 	/**
 	 * Install one package.
