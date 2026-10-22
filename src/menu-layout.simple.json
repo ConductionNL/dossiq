@@ -5834,6 +5834,20 @@
 			},
 			"configPatch": {
 				"widgets": {
+					"case-type-privacy": {
+						"title": "Privacy",
+						"content": {
+							"title": "Privacy",
+							"columns": 2,
+							"include": [
+								"processesPersonalData",
+								"personalDataCategories",
+								"legalBasis",
+								"verwerkingsactiviteit"
+							],
+							"hideEmpty": false
+						}
+					},
 					"case-type-blueprint": {
 						"type": "CaseTypeBlueprintWidget"
 					},
