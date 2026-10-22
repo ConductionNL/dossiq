@@ -5,7 +5,8 @@
  * A seeded record that names its case holds the case's uuid, through an
  * `@ref:case:<slug>` token the import resolves to a seeded case, so a header
  * search hit on it opens that case (unified-search-opens-every-hit-in-dossiq).
- * The demo portal message used to hold the case number "zaak-2026-vth-09128".
+ * The demo portal message and the three demo beschikkingen used to hold case
+ * numbers ("zaak-2026-vth-09128", "zaak-2026-wmo-04832", ...).
  *
  * @spec openspec/changes/unified-search-opens-every-hit-in-dossiq/specs/case-search-via-or-unified-search/spec.md
  */
@@ -21,15 +22,27 @@ const objects = fs.readdirSync(DIR)
 const caseSlugs = new Set(objects.filter(({ object }) => object['@self']?.schema === 'case').map(({ object }) => object['@self'].slug))
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
-describe('seeded portal messages', () => {
-	const messages = objects.filter(({ object }) => object['@self']?.schema === 'portaalBericht')
+describe.each(['portaalBericht', 'beschikking'])('seeded %s records', (schema) => {
+	const records = objects.filter(({ object }) => object['@self']?.schema === schema)
 
 	it('exist', () => {
-		expect(messages.length).toBeGreaterThan(0)
+		expect(records.length).toBeGreaterThan(0)
 	})
 
-	it.each(messages.map(({ object }) => [object['@self'].slug, object.caseId]))('%s names a seeded case or a case uuid', (slug, caseId) => {
+	it.each(records.map(({ object }) => [object['@self'].slug, object.caseId]))('%s names a seeded case or a case uuid', (slug, caseId) => {
 		const ref = /^@ref:case:(.+)$/.exec(caseId)
 		expect(Boolean((ref && caseSlugs.has(ref[1])) || UUID.test(caseId)), `${slug}.caseId is ${caseId}`).toBe(true)
+	})
+})
+
+describe('the seeded Wmo case the Wmo beschikking belongs to', () => {
+	const byslug = (slug) => objects.find(({ object }) => object['@self']?.slug === slug)?.object
+
+	it('is a case on the seeded Wmo-melding case type', () => {
+		const wmoCase = byslug('case-wmo-huishoudelijke-hulp')
+		expect(wmoCase['@self'].schema).toBe('case')
+		expect(wmoCase.caseType).toBe('@ref:caseType:wmo-melding')
+		expect(byslug('wmo-melding')['@self'].schema).toBe('caseType')
+		expect(byslug('besch-2026-04832').caseId).toBe('@ref:case:case-wmo-huishoudelijke-hulp')
 	})
 })
