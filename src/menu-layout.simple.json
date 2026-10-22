@@ -5031,7 +5031,23 @@
 							"limit": 5,
 							"presentation": "rows",
 							"title": "Version {version}",
-							"meta": "{validFrom|date}",
+							"meta": {
+								"parts": [
+									"{validFrom|date}",
+									"{runningCases} running cases"
+								]
+							},
+							"aggregates": {
+								"runningCases": {
+									"register": "dossiq",
+									"schema": "case",
+									"op": "count",
+									"where": {
+										"caseType": "@self.id",
+										"isFinalStatus": false
+									}
+								}
+							},
 							"pill": {
 								"field": "isDraft",
 								"labels": {

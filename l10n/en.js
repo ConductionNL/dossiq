@@ -10940,6 +10940,7 @@ OC.L10N.register(
         "{reached} of {total} milestones reached": "{reached} of {total} milestones reached",
         "{ready} of {total} cases are ready to transition.": "{ready} of {total} cases are ready to transition.",
         "{reason} The contact moment is kept in dossiq.": "{reason} The contact moment is kept in dossiq.",
+        "{runningCases} running cases": "{runningCases} running cases",
         "{scheduledDate|date}": "{scheduledDate|date}",
         "{sent} sent, {received} received": "{sent} sent, {received} received",
         "{shown} of {total} events": "{shown} of {total} events",

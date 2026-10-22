@@ -10987,6 +10987,7 @@
         "{reached} of {total} milestones reached": "{reached} van {total} mijlpalen bereikt",
         "{ready} of {total} cases are ready to transition.": "{ready} van {total} zaken zijn klaar om over te gaan.",
         "{reason} The contact moment is kept in dossiq.": "{reason} Het contactmoment is wel in dossiq bewaard.",
+        "{runningCases} running cases": "{runningCases} lopende zaken",
         "{scheduledDate|date}": "{scheduledDate|date}",
         "{sent} sent, {received} received": "{sent} verstuurd, {received} ontvangen",
         "{shown} of {total} events": "{shown} van {total} gebeurtenissen",
