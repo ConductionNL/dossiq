@@ -216,6 +216,52 @@
 			}
 		},
 		{
+			"key": "persoon-pieterbos",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:pieterbos.bsn}}",
+				"name": {
+					"givenNames": "{{cast:pieterbos.givenName}}",
+					"surname": "{{cast:pieterbos.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:pieterbos.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:pieterbos.address.street}}",
+					"houseNumber": "{{cast:pieterbos.address.number}}",
+					"postcode": "{{cast:pieterbos.address.postcode}}",
+					"city": "{{cast:pieterbos.address.city}}"
+				},
+				"displayName": "{{cast:pieterbos.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
+			"key": "persoon-henkvisser",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:henkvisser.bsn}}",
+				"name": {
+					"givenNames": "{{cast:henkvisser.givenName}}",
+					"surname": "{{cast:henkvisser.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:henkvisser.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:henkvisser.address.street}}",
+					"houseNumber": "{{cast:henkvisser.address.number}}",
+					"postcode": "{{cast:henkvisser.address.postcode}}",
+					"city": "{{cast:henkvisser.address.city}}"
+				},
+				"displayName": "{{cast:henkvisser.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
 			"key": "bedrijf-slagerij",
 			"register": "dossiq",
 			"schema": "kvkCompany",
@@ -245,6 +291,40 @@
 					"houseNumber": "{{cast:cloudgemeente.address.number}}",
 					"postcode": "{{cast:cloudgemeente.address.postcode}}",
 					"place": "{{cast:cloudgemeente.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-visserbouw",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:visserbouw.kvk}}",
+				"tradeName": "{{cast:visserbouw.name}}",
+				"legalForm": "{{cast:visserbouw.legalForm}}",
+				"address": {
+					"streetName": "{{cast:visserbouw.address.street}}",
+					"houseNumber": "{{cast:visserbouw.address.number}}",
+					"postcode": "{{cast:visserbouw.address.postcode}}",
+					"place": "{{cast:visserbouw.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-vanwijk",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:vanwijk.kvk}}",
+				"tradeName": "{{cast:vanwijk.name}}",
+				"legalForm": "{{cast:vanwijk.legalForm}}",
+				"address": {
+					"streetName": "{{cast:vanwijk.address.street}}",
+					"houseNumber": "{{cast:vanwijk.address.number}}",
+					"postcode": "{{cast:vanwijk.address.postcode}}",
+					"place": "{{cast:vanwijk.address.city}}"
 				},
 				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
 			}
