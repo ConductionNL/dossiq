@@ -1,8 +1,9 @@
 <?php
 
 /**
- * Example data for DqContracten: six suppliers and six contracts in every
- * status, and a contract status named by its label.
+ * Example data for DqContracten: the six contracts the board names among 34,
+ * with the four dossiq ships the 38 the board counts, in every status, and a
+ * contract status named by its label.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Settings
@@ -73,7 +74,8 @@ class ZuiddrechtSupplierContractsTest extends TestCase {
 			];
 		}
 
-		ksort(array: $contracts);
+		$named = array_intersect_key($contracts, array_flip(['CT-2022-021', 'CT-2023-014', 'CT-2024-003', 'CT-2024-011', 'CT-2025-002', 'CT-2025-009']));
+		ksort(array: $named);
 		$this->assertSame(
 			expected: [
 				'CT-2022-021' => ['Leerlingenvervoer', 'Taxi Drechtstad', 'ending'],
@@ -83,9 +85,47 @@ class ZuiddrechtSupplierContractsTest extends TestCase {
 				'CT-2025-002' => ['Straatverlichting onderhoud', 'Lumen Infra BV', 'active'],
 				'CT-2025-009' => ['Softwarelicenties sociaal domein', 'Conduction', 'active'],
 			],
-			actual: $contracts
+			actual: $named
 		);
 	}//end testTheBoardsContractsAreInTheSet()
+
+	/**
+	 * With the contracts dossiq ships, the list counts what the board draws:
+	 * 38 contracts, 29 active, 2 waiting on a decision, 7 ended, 5 with a
+	 * renewal warning.
+	 *
+	 * @return void
+	 */
+	public function testTheListCountsWhatTheBoardDraws(): void {
+		$register = json_decode(json: (string)file_get_contents(filename: __DIR__.'/../../../lib/Settings/dossiq_register.json'), associative: true);
+		$shipped  = array_filter(
+			array: $register['components']['objects'],
+			callback: static fn (array $o): bool => ($o['@self']['schema'] ?? '') === 'supplierContract'
+		);
+		$seeded   = array_map(
+			callback: static fn (array $o): array => $o['data'],
+			array: array_filter(array: $this->objects(), callback: static fn (array $o): bool => $o['schema'] === 'supplierContract')
+		);
+		$all      = array_merge(array_values($shipped), array_values($seeded));
+
+		$statuses = array_count_values(array_column(array: $all, column_key: 'status'));
+		ksort(array: $statuses);
+		$this->assertCount(expectedCount: 38, haystack: $all, message: 'every contract has a status');
+		$this->assertSame(
+			expected: ['active' => 29, 'ending' => 7, 'renewal-decision' => 1, 'termination-decision' => 1],
+			actual: $statuses
+		);
+		$warned = array_filter(array: $all, callback: static fn (array $c): bool => ($c['renewalWarning'] ?? false) === true);
+		$this->assertCount(expectedCount: 5, haystack: $warned);
+
+		$this->assertTrue(
+			condition: version_compare($register['info']['version'], '0.20.64', '>'),
+			message: 'the register version moves past 0.20.64, so the shipped contracts take their status on an existing instance'
+		);
+
+		$numbers = array_column(array: $all, column_key: 'number');
+		$this->assertSame(expected: $numbers, actual: array_values(array_unique($numbers)), message: 'contract numbers are unique');
+	}//end testTheListCountsWhatTheBoardDraws()
 
 	/**
 	 * A supplier's KvK number is in the example range, never a real company's.
@@ -95,7 +135,7 @@ class ZuiddrechtSupplierContractsTest extends TestCase {
 	public function testSupplierKvkNumbersAreInTheExampleRange(): void {
 		$suppliers = array_filter(array: $this->objects(), callback: static fn (array $o): bool => $o['schema'] === 'supplier');
 
-		$this->assertCount(expectedCount: 6, haystack: $suppliers);
+		$this->assertCount(expectedCount: 18, haystack: $suppliers, message: 'with the three dossiq ships, 21 suppliers');
 		foreach ($suppliers as $supplier) {
 			$this->assertMatchesRegularExpression(pattern: '/^000020\d\d$/', string: $supplier['data']['kvkNumber'], message: $supplier['key']);
 		}
