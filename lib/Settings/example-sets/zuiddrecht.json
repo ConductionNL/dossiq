@@ -49,6 +49,36 @@
 			"members": [
 				"noor"
 			]
+		},
+		{
+			"group": "zuiddrecht-fysiek-domein",
+			"displayName": "Fysiek domein",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-toezicht-en-handhaving",
+			"displayName": "Toezicht en handhaving",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-buitenruimte",
+			"displayName": "Buitenruimte",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-jeugdteam",
+			"displayName": "Jeugdteam",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-werk-en-inkomen",
+			"displayName": "Werk en inkomen",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-bedrijfsvoering",
+			"displayName": "Bedrijfsvoering",
+			"members": []
 		}
 	],
 	"serviceAccounts": [
@@ -1787,6 +1817,93 @@
 				"scheduledAt": "{{datetime:0 15:00}}",
 				"status": "planned"
 			}
+		},
+		{
+			"key": "afdeling-gemeente",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Gemeente Zuiddrecht",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-medewerkers"
+			}
+		},
+		{
+			"key": "afdeling-fysiek-domein",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Fysiek domein",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-fysiek-domein",
+				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+			}
+		},
+		{
+			"key": "afdeling-buitenruimte",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Buitenruimte",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-buitenruimte",
+				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+			}
+		},
+		{
+			"key": "afdeling-sociaal-domein",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Sociaal domein",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-sociaal-domein",
+				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+			}
+		},
+		{
+			"key": "afdeling-jeugdteam",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Jeugdteam",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-jeugdteam",
+				"parentRoleId": "{{object:afdeling-sociaal-domein.id}}"
+			}
+		},
+		{
+			"key": "afdeling-werk-en-inkomen",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Werk en inkomen",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-werk-en-inkomen",
+				"parentRoleId": "{{object:afdeling-sociaal-domein.id}}"
+			}
+		},
+		{
+			"key": "afdeling-bedrijfsvoering",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Bedrijfsvoering",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-bedrijfsvoering",
+				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+			}
+		},
+		{
+			"key": "afdeling-informatie-en-woo",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Informatie en Woo",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-woo-en-informatie",
+				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+			}
 		}
 	],
 	"views": [
@@ -1997,6 +2114,30 @@
 				"decisions": [
 					"{{object:woo-zaaksysteem-besluit.id}}"
 				]
+			}
+		},
+		{
+			"key": "team-vergunningen-in-de-boom",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"where": {
+				"roleName": "Team Vergunningen"
+			},
+			"set": {
+				"ncGroupId": "zuiddrecht-vergunningen",
+				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+			}
+		},
+		{
+			"key": "team-handhaving-in-de-boom",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"where": {
+				"roleName": "Team Handhaving"
+			},
+			"set": {
+				"ncGroupId": "zuiddrecht-toezicht-en-handhaving",
+				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
 			}
 		}
 	]
