@@ -39,7 +39,28 @@ function holds(config, key) {
 }
 
 /**
- * The manifest with every lens whose setting is empty left out.
+ * Leave out each default filter whose setting is empty, and the map when none
+ * is left, so the list opens unfiltered rather than on the literal token.
+ *
+ * @param {object|undefined} pageConfig A page's config; changed in place.
+ * @param {object} config The app config.
+ * @return {void}
+ */
+function dropUnsetDefaultFilters(pageConfig, config) {
+	const defaults = pageConfig?.defaultFilters
+	if (!defaults || typeof defaults !== 'object' || Array.isArray(defaults)) {
+		return
+	}
+	const kept = Object.fromEntries(Object.entries(defaults).filter(([, value]) => requiredKeys({ filter: value }).every((key) => holds(config, key))))
+	if (Object.keys(kept).length === 0) {
+		delete pageConfig.defaultFilters
+	} else {
+		pageConfig.defaultFilters = kept
+	}
+}
+
+/**
+ * The manifest with every lens and default filter whose setting is empty left out.
  *
  * @param {object} manifest The manifest; its pages are changed in place.
  * @param {object} config The app config (`loadState('dossiq', 'config')`).
@@ -49,6 +70,7 @@ function holds(config, key) {
 export function withConfiguredLenses(manifest, config) {
 	const values = config && typeof config === 'object' ? config : {}
 	for (const page of manifest?.pages ?? []) {
+		dropUnsetDefaultFilters(page?.config, values)
 		const lenses = page?.config?.quickFilters
 		if (!Array.isArray(lenses)) {
 			continue
