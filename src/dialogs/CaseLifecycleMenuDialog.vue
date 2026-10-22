@@ -361,6 +361,8 @@ export default {
 				notice: this.form.notice,
 				disabled: this.busy,
 				markRequired: false,
+				// The boards mark what is NOT required ("(niet verplicht)").
+				markOptional: true,
 				'data-testid': 'case-act-fields-' + String(this.chosen?.id ?? ''),
 			}
 		},
