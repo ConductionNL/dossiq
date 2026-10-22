@@ -73,6 +73,6 @@ describe('the Files tab on a case type that reviews its documents', () => {
 		expect(grounds.content.endpointSource).toEqual({ url: VERDICTS, responsePath: 'grounds' })
 		expect(grounds.content.title).toBe('{label}')
 		expect(grounds.content.meta).toBe('{documentList}')
-		expect(nl[grounds.content.headerNote]).toBe('Gaan mee in het besluit')
+		expect(nl[grounds.content.headerSubtitle]).toBe('Gaan mee in het besluit')
 	})
 })
