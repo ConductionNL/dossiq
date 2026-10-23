@@ -69,7 +69,7 @@
 				v-model="startTime"
 				data-testid="log-contact-start"
 				type="datetime"
-				:label="t('dossiq', 'Moment')" />
+				:label="t('dossiq', 'Start time (optional)')" />
 
 			<NcTextArea
 				v-model="summary"
@@ -79,7 +79,7 @@
 			<NcTextField
 				v-model="callerIdentification"
 				data-testid="log-contact-caller"
-				:label="t('dossiq', 'Who called or was called')" />
+				:label="t('dossiq', 'Who called (optional)')" />
 
 			<NcCheckboxRadioSwitch
 				:modelValue="visibleToApplicant"
@@ -140,7 +140,10 @@
 					data-testid="log-contact-confirm"
 					:disabled="!canSave"
 					@click="save">
-					{{ t('dossiq', 'Save') }}
+					<template #icon>
+						<PhoneLogOutline :size="20" />
+					</template>
+					{{ t('dossiq', 'Record it') }}
 				</NcButton>
 			</template>
 			<NcButton
@@ -162,6 +165,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import PhoneLogOutline from 'vue-material-design-icons/PhoneLogOutline.vue'
 import {
 	logContactMoment,
 	refusalOf,
@@ -178,6 +182,7 @@ export default {
 		CnDialog,
 		NcTextArea,
 		NcTextField,
+		PhoneLogOutline,
 	},
 
 	props: {
