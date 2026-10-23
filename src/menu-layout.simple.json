@@ -2620,7 +2620,7 @@
 					},
 					{
 						"id": "case-priority-card",
-						"type": "data",
+						"type": "facts",
 						"visibleWhen": {
 							"any": [
 								{
@@ -2635,44 +2635,86 @@
 							]
 						},
 						"title": "Priority",
+						"_note": "Board DqZaak Prioriteit: the priority the case has as a pill in the title row, then where it came from as label-left rows (derived from impact and urgency, the override, the floor a rule raised it to) and the line on how it is set. Overriding stays here, under the facts: the case's Edit form leaves the priority fields out on purpose (it is the create form), so this PATCH of the override and its reason is the one place a handler sets it; the derivation listener stamps who and when.",
 						"content": {
-							"title": "Priority",
-							"columns": 1,
-							"include": [
-								"priorityDerived",
-								"priorityOverride",
-								"priorityOverrideReason",
-								"priorityOverrideBy",
-								"priorityOverrideAt",
-								"priorityFloor",
-								"priorityRaisedBy"
-							],
-							"hideEmpty": true,
-							"overrides": {
-								"priorityDerived": {
-									"readOnly": false,
-									"editable": false
+							"headerPill": {
+								"path": "priority",
+								"map": { "low": "Low", "normal": "Normal", "high": "High", "urgent": "Urgent" },
+								"variantMap": { "low": "default", "normal": "info", "high": "warning", "urgent": "error" }
+							},
+							"fields": [
+								{
+									"key": "priorityDerived",
+									"label": "Derived",
+									"parts": [
+										{ "path": "priorityDerived", "map": { "low": "Low", "normal": "Normal", "high": "High", "urgent": "Urgent" } },
+										{
+											"separator": " ",
+											"parts": [
+												{ "path": "impact", "label": "from impact", "map": { "low": "low", "medium": "medium", "high": "high" } },
+												{ "path": "urgency", "label": "and urgency", "map": { "low": "low", "medium": "medium", "high": "high" } }
+											]
+										}
+									],
+									"separator": ", "
 								},
-								"priorityOverrideReason": {
-									"widget": "textarea"
+								{
+									"key": "priorityOverride",
+									"label": "Overridden",
+									"emptyValue": "No",
+									"parts": [
+										{ "path": "priorityOverride", "map": { "low": "Low", "normal": "Normal", "high": "High", "urgent": "Urgent" } },
+										{ "path": "priorityOverrideReason" }
+									],
+									"separator": ", "
 								},
-								"priorityOverrideBy": {
-									"readOnly": false,
-									"editable": false
+								{
+									"key": "priorityFloor",
+									"label": "Floor",
+									"parts": [
+										{ "path": "priorityFloor", "map": { "low": "Low", "normal": "Normal", "high": "High", "urgent": "Urgent" } },
+										{ "path": "priorityRaisedBy", "label": "by" }
+									],
+									"separator": ", "
 								},
-								"priorityOverrideAt": {
-									"readOnly": false,
-									"editable": false
-								},
-								"priorityFloor": {
-									"readOnly": false,
-									"editable": false
-								},
-								"priorityRaisedBy": {
-									"readOnly": false,
-									"editable": false
+								{
+									"as": "text",
+									"key": "priority-how",
+									"text": "The priority follows from the matrix. Override it with a reason."
 								}
-							}
+							],
+							"actions": [
+								{
+									"id": "priority-override",
+									"type": "open-form",
+									"label": "Override priority",
+									"variant": "tertiary",
+									"formTitle": "Override priority",
+									"visibleWhen": {
+										"field": "@self.archived",
+										"op": "empty"
+									},
+									"endpoint": {
+										"url": "/apps/openregister/api/objects/dossiq/case/@source.id",
+										"method": "PATCH"
+									},
+									"formProperties": {
+										"priorityOverride": {
+											"type": "string",
+											"title": "Priority override",
+											"enum": ["low", "normal", "high", "urgent"],
+											"x-enum-labels": { "low": "Low", "normal": "Normal", "high": "High", "urgent": "Urgent" }
+										},
+										"priorityOverrideReason": {
+											"type": "string",
+											"title": "Override reason",
+											"format": "textarea"
+										}
+									},
+									"successMessage": "The priority is saved.",
+									"errorMessage": "The priority was not saved."
+								}
+							]
 						}
 					},
 					{
