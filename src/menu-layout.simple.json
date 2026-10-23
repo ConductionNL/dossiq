@@ -6869,7 +6869,9 @@
 						"id": "case-type-results",
 						"type": "object-list",
 						"title": "Results",
+						"subtitle": "How a case ends, and what happens to the file afterwards",
 						"content": {
+							"addLabel": "Add result",
 							"register": "dossiq",
 							"schema": "resultType",
 							"filter": {
@@ -6891,7 +6893,8 @@
 								},
 								{
 									"key": "archivalPeriod",
-									"label": "Archival period"
+									"label": "Archival period",
+									"formatter": "isoDuration"
 								}
 							],
 							"emptyText": "This case type has no results yet",
@@ -6952,6 +6955,7 @@
 						"type": "object-list",
 						"title": "Document types",
 						"content": {
+							"addLabel": "Add document type",
 							"register": "dossiq",
 							"schema": "documentType",
 							"filter": {
@@ -6999,6 +7003,7 @@
 						"type": "object-list",
 						"title": "Decision types",
 						"content": {
+							"addLabel": "Add decision type",
 							"register": "dossiq",
 							"schema": "decisionType",
 							"filter": {

@@ -11736,6 +11736,7 @@
 						"type": "object-list",
 						"title": "Statuses",
 						"icon": "ListStatus",
+						"subtitle": "Order, colour and what the applicant sees. Drag to change the order.",
 						"_note": "The statuses of this case type, as manifest config over the library's object list (case-type-status-field-lists-as-config). Drag a row, or Move up and Move down, and the list writes `order` alone on the rows whose number changed. Edit opens the same form as Add on the row and saves a PATCH of the keys it changed, so `capacity`, `phaseTermDays` and `phaseTermShare` and every other key the form does not touch survive (what 07560b78b fixed in the rehosted editor). The checklist, the field rules and the derived conditions are lists inside the status, edited with the library's sub-objects editor; a rule's condition is an optional object behind 'Only in some cases'. The guard that a case type keeps one final status stays on the server; the dialog and the list show its refusal.",
 						"content": {
 							"register": "dossiq",
@@ -11750,24 +11751,20 @@
 							"limit": 50,
 							"columns": [
 								{
-									"key": "order",
-									"label": "#"
-								},
-								{
 									"key": "name",
 									"label": "Status"
 								},
 								{
-									"key": "role",
-									"label": "Role"
-								},
-								{
-									"key": "waitingOn",
-									"label": "Waiting on"
+									"key": "colour",
+									"label": "Colour in lists"
 								},
 								{
 									"key": "isFinal",
-									"label": "Final"
+									"label": "Final status"
+								},
+								{
+									"key": "publicLabel",
+									"label": "What the applicant sees"
 								}
 							],
 							"addLabel": "Add status",
