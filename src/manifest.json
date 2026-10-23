@@ -7051,6 +7051,7 @@
 								"responsePath": "tomorrow"
 							},
 							"presentation": "rows",
+							"duePlacement": "below",
 							"title": "{title}",
 							"due": {
 								"field": "dueAt",
@@ -7062,7 +7063,7 @@
 							},
 							"rowRouteField": "routeName",
 							"rowIdField": "routeId",
-							"headerLink": {
+							"footerLink": {
 								"label": "To My work",
 								"route": "MyWorkHome"
 							}

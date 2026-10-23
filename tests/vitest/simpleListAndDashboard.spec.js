@@ -610,6 +610,13 @@ describe('the landing page', () => {
 			// Three rows in a card the board's height (376px: five grid rows).
 			expect(layout.gridHeight, id).toBe(5)
 		}
+		// Zaken die u volgt and Recent geopend also end with "Alles bekijken"
+		// under the rows, as the board draws them (record-list-footer-link).
+		for (const id of ['favourite-cases', 'recent-cases']) {
+			const { name, ...rest } = tile(before.config.widgets, id).content.viewAllRoute
+			expect(tile(dashboard.config.widgets, id).content.footerLink, id).toEqual({ label: 'View all', route: name, ...rest })
+		}
+		expect(tile(dashboard.config.widgets, 'stalled-cases').content.footerLink).toBeUndefined()
 		const stalled = tile(dashboard.config.widgets, 'stalled-cases').content
 		expect(stalled.extend).toEqual(['calculations'])
 		expect(stalled.sort).toEqual({ field: '@self.updated', dir: 'asc' })

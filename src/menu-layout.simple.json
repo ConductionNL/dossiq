@@ -5185,6 +5185,13 @@
 							"presentation": "rows",
 							"title": "{title}",
 							"meta": "{identifier}",
+							"footerLink": {
+								"label": "View all",
+								"route": "Cases",
+								"query": {
+									"_watching": "true"
+								}
+							},
 							"chevron": false,
 							"rowRoute": "CaseDetail",
 							"emptyText": "Follow a case to find it here"
@@ -5204,6 +5211,13 @@
 							"title": "{title}",
 							"meta": "{identifier}",
 							"text": "{@self.viewedAt|relative}",
+							"footerLink": {
+								"label": "View all",
+								"route": "Cases",
+								"query": {
+									"_recent": "true"
+								}
+							},
 							"chevron": false,
 							"rowRoute": "CaseDetail",
 							"emptyText": "Cases you open show up here",
