@@ -10652,7 +10652,7 @@
 				"appId": "dossiq",
 				"pageId": "TermijnDashboard",
 				"showWidgetActions": false,
-				"description": "Running terms, all teams",
+				"description": "{today|week} · all teams",
 				"_reportsNote": "Board DqTermijnen draws the quarterly report and the annual audit each with its own form in the card: a quarter field with Load report, a year field with Load audit (Ruben, 21 Oct: the page follows the board). Each card is a sections widget holding a workspace-filter input (DEPENDS ON nextcloud-vue feat/workspace-filter-input and feature/sections-card-grid) and the table it drives; the input writes `@workspace.quarter` or `@workspace.year` when loaded, seeded with the current one.",
 				"widgets": [
 					{
@@ -10961,6 +10961,29 @@
 						}
 					},
 					{
+						"id": "deadline-report-quarterly-summary",
+						"roles": ["controllers", "beheerders", "admin"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The quarter's decided terms in one line: the same team figures as the quarterly report table above it, from the same endpoint, so it goes to the same audience.",
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.deadline-report-quarterly-summary",
+							"op": "eq",
+							"value": true
+						},
+						"_note": "Board DqTermijnen: the line under the quarterly table, \"Kwartaal 3 van 2026: 72 zaken beslist, 67 binnen de wettelijke of verlengde termijn (93 %).\" One row the report adds (`summaryRows`), empty when nothing in the quarter was decided.",
+						"type": "record-list",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/deadlines/reports/quarterly",
+								"params": {
+									"period": "@workspace.quarter"
+								},
+								"responsePath": "summaryRows"
+							},
+							"meta": "Quarter {quarter} of {year}: {decided} cases decided, {withinTerm} within the statutory or extended term ({share} %)."
+						}
+					},
+					{
 						"id": "deadline-report-quarterly-card",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
@@ -10987,7 +11010,8 @@
 							"dividers": false,
 							"sections": [
 								{ "widgetId": "deadline-report-quarter-form" },
-								{ "widgetId": "deadline-report-quarterly" }
+								{ "widgetId": "deadline-report-quarterly" },
+								{ "widgetId": "deadline-report-quarterly-summary" }
 							]
 						}
 					},

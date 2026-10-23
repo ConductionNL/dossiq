@@ -1,5 +1,6 @@
 {
     "translations": {
+        "Quarter {quarter} of {year}: {decided} cases decided, {withinTerm} within the statutory or extended term ({share} %).": "Kwartaal {quarter} van {year}: {decided} zaken beslist, {withinTerm} binnen de wettelijke of verlengde termijn ({share} %).",
         " days": " dagen",
         "\"{doc}\" is {class} but has no weigeringsgrond selected.": "\"{doc}\" is {class} maar heeft geen weigeringsgrond geselecteerd.",
         "#": "#",
@@ -7065,7 +7066,7 @@
         "Running": "Lopend",
         "Running cases": "Lopende zaken",
         "Running terms": "Lopende termijnen",
-        "Running terms, all teams": "Lopende termijnen, alle teams",
+        "{today|week} · all teams": "{today|week} · alle teams",
         "Running. {processed} of {total} cases done.": "Bezig. {processed} van {total} zaken gedaan.",
         "Runs in statuses": "Loopt in statussen",
         "Runs one status transition over every selected case, through the transition engine.": "Voert één statusovergang uit op elke geselecteerde zaak, via de overgangsmotor.",

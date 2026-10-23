@@ -1,5 +1,6 @@
 {
     "translations": {
+        "Quarter {quarter} of {year}: {decided} cases decided, {withinTerm} within the statutory or extended term ({share} %).": "Quarter {quarter} of {year}: {decided} cases decided, {withinTerm} within the statutory or extended term ({share} %).",
         " days": " days",
         "\"{doc}\" is {class} but has no weigeringsgrond selected.": "\"{doc}\" is {class} but has no weigeringsgrond selected.",
         "#": "#",
@@ -7065,7 +7066,7 @@
         "Running": "Running",
         "Running cases": "Running cases",
         "Running terms": "Running terms",
-        "Running terms, all teams": "Running terms, all teams",
+        "{today|week} · all teams": "{today|week} · all teams",
         "Running. {processed} of {total} cases done.": "Running. {processed} of {total} cases done.",
         "Runs in statuses": "Runs in statuses",
         "Runs one status transition over every selected case, through the transition engine.": "Runs one status transition over every selected case, through the transition engine.",

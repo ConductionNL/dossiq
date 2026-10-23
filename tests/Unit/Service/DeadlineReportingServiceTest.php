@@ -94,6 +94,30 @@ class DeadlineReportingServiceTest extends TestCase {
 	}
 
 	/**
+	 * The quarter's decided terms in one line a footnote reads (DqTermijnen
+	 * "Kwartaal 2 van 2026: 4 zaken beslist, 3 binnen de termijn (75 %)").
+	 *
+	 * @return void
+	 */
+	public function testQuarterlyReportSummarisesTheDecidedTerms(): void {
+		$report = $this->service->generateQuarterlyReport('2026-Q2');
+
+		self::assertSame(
+			[['period' => '2026-Q2', 'quarter' => 2, 'year' => 2026, 'decided' => 4, 'withinTerm' => 3, 'share' => 75]],
+			$report['summaryRows']
+		);
+	}//end testQuarterlyReportSummarisesTheDecidedTerms()
+
+	/**
+	 * A quarter without a decided term has no summary line.
+	 *
+	 * @return void
+	 */
+	public function testQuarterWithoutDecidedTermsHasNoSummary(): void {
+		self::assertSame([], $this->service->generateQuarterlyReport('2027-Q1')['summaryRows']);
+	}//end testQuarterWithoutDecidedTermsHasNoSummary()
+
+	/**
 	 * Seed a term in 2026 Q4 on a new case of the given case type.
 	 *
 	 * @param string               $id         The instance id.
