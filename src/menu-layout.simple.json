@@ -1624,6 +1624,36 @@
 						}
 					},
 					{
+						"id": "side-social-history",
+						"type": "audit-trail",
+						"title": "Case history",
+						"visibleWhen": {
+							"field": "@context.caseType.specialDataCategories",
+							"op": "notEmpty"
+						},
+						"_note": "DqSociaalDomein Historie: the case's latest events from its audit trail, reads left out, with who opened the case for which purpose (the access purpose dossiq records on the trail, dossiq.case.access-purpose, its purpose in the entry's changed). Only on a case type that holds special categories of personal data, where every opening asks a purpose.",
+						"content": {
+							"maxDisplay": 3,
+							"excludeActions": ["read"],
+							"actionLabels": {
+								"dossiq.case.access-purpose": "Case opened, purpose {changed.purpose}",
+								"create": "Case created",
+								"update": "Case changed"
+							},
+							"valueLabels": {
+								"purpose": {
+									"handling": "handling",
+									"advice": "advice",
+									"quality-check": "quality check",
+									"legal-obligation": "legal obligation",
+									"data-subject-request": "request of the person concerned",
+									"other": "other"
+								}
+							},
+							"emptyText": "Nothing has happened on this case yet"
+						}
+					},
+					{
 						"id": "side-tender-bids",
 						"type": "record-list",
 						"title": "Bids",

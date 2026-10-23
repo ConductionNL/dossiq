@@ -20,11 +20,12 @@ the people as links with a second line.
   they do on one line.
 
 - "Toestemming intrekken" ends the consent today (PATCH `withdrawn` and `validTo`), confirmed first; needs nextcloud-vue `feat/r24-api-call-patch`.
+- A "Historie" side card (`side-social-history`) before Status: the case's audit trail without reads, an access purpose read as "Zaak ingezien, doel behandeling". Only on case types with special categories of personal data.
 
 ## Left
 
-- The board's "Historie" side card (access-purpose log rows and the case's
-  reference) has no source yet.
+- The board's "Kenmerk" line at the foot of Historie, and its "Toestemming
+  vastgelegd" row (an event on the consent, not on the case's trail).
 - The notice shows only when the installed case type carries
   `specialDataCategories: [health]`; :8080 drew none (to re-check after the
   package re-install).

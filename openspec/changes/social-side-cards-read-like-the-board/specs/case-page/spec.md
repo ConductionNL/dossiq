@@ -25,3 +25,14 @@ withdrawn and end it today, changing no other field.
 - GIVEN the Oosthaven consent, withdrawable and not withdrawn
 - WHEN the handler chooses "Toestemming intrekken" and confirms
 - THEN the consent is PATCHed with `withdrawn: true` and `validTo` today
+
+### Requirement: The social domain side column ends with the case's history
+
+On a case type that holds special categories of personal data the side column
+SHALL show, before Status, the case's latest audit events without reads, and
+an access purpose SHALL read as the purpose the reader gave.
+
+#### Scenario: Fatma opened the case for handling
+- GIVEN Fatma Kaya opened the Oosthaven case stating the purpose "handling"
+- WHEN the case page opens
+- THEN Historie lists "Zaak ingezien, doel behandeling" by Fatma Kaya

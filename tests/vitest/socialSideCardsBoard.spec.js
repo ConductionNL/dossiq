@@ -21,7 +21,7 @@ const nl = readJson('l10n', 'nl.json').translations
 describe('DqSociaalDomein side column', () => {
 	it('lists notice, Consent, Who, then Status for Melding Jeugdwet', () => {
 		const caseType = readJson('lib', 'Settings', 'packages', 'jeugdwet', 'case-type.json').caseType
-		expect(caseType.sideCards).toEqual(['side-special-data-health', 'side-social-consent', 'side-social-people', 'case-banner-stack'])
+		expect(caseType.sideCards).toEqual(['side-special-data-health', 'side-social-consent', 'side-social-people', 'side-social-history', 'case-banner-stack'])
 	})
 
 	it('draws the newest consent as label-left facts', () => {
@@ -48,6 +48,17 @@ describe('DqSociaalDomein side column', () => {
 			{ field: 'withdrawn', op: 'neq', value: true },
 		])
 		expect(nl['Withdraw consent']).toBe('Toestemming intrekken')
+	})
+
+	it('ends with the case history, reads left out, saying for which purpose the case was opened', () => {
+		const history = card('side-social-history')
+		expect(history.type).toBe('audit-trail')
+		expect(history.visibleWhen).toEqual({ field: '@context.caseType.specialDataCategories', op: 'notEmpty' })
+		expect(history.content.excludeActions).toEqual(['read'])
+		expect(history.content.actionLabels['dossiq.case.access-purpose']).toBe('Case opened, purpose {changed.purpose}')
+		expect(Object.keys(history.content.valueLabels.purpose)).toEqual(['handling', 'advice', 'quality-check', 'legal-obligation', 'data-subject-request', 'other'])
+		expect(nl['Case opened, purpose {changed.purpose}']).toBe('Zaak ingezien, doel {changed.purpose}')
+		expect(nl['Case history']).toBe('Historie')
 	})
 
 	it('draws each person behind their initials on one line', () => {
