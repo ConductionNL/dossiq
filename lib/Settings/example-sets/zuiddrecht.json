@@ -739,7 +739,8 @@
 					"schema": "roleType",
 					"where": {
 						"name": "Gemachtigde",
-						"genericRole": "gemachtigde"
+						"genericRole": "gemachtigde",
+						"description": "Persoon of organisatie gemachtigd om namens de aanvrager op te treden"
 					}
 				}
 			},
@@ -2340,6 +2341,115 @@
 				"inspectorRef": "{{cast:pieter.uid}}",
 				"scheduledAt": "{{datetime:0 15:00}}",
 				"status": "planned"
+			}
+		},
+		{
+			"key": "waterland-beheerder",
+			"register": "dossiq",
+			"schema": "tenantUser",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"userRef": "{{cast:marieke.uid}}",
+				"role": "admin",
+				"joinedAt": "{{datetime:-50 10:00}}",
+				"lastActiveAt": "{{datetime:-1 16:20}}",
+				"mfaEnabled": true,
+				"eherkenningLevel": "3"
+			}
+		},
+		{
+			"key": "waterland-mandaat-behandelaar",
+			"register": "dossiq",
+			"schema": "tenantMandate",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"mandateMatrixRef": "Behandelaar",
+				"effectiveFrom": "{{datetime:-22 09:00}}",
+				"signedBy": "{{cast:marieke.uid}}",
+				"terms": {
+					"plafond": 5000,
+					"decisionTypes": [
+						"vergunning"
+					],
+					"enforcement": "none"
+				}
+			}
+		},
+		{
+			"key": "waterland-mandaat-teamleider",
+			"register": "dossiq",
+			"schema": "tenantMandate",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"mandateMatrixRef": "Teamleider",
+				"effectiveFrom": "{{datetime:-22 09:00}}",
+				"signedBy": "{{cast:marieke.uid}}",
+				"terms": {
+					"plafond": 50000,
+					"decisionTypes": [
+						"vergunning",
+						"bezwaar"
+					],
+					"enforcement": "warning"
+				}
+			}
+		},
+		{
+			"key": "waterland-mandaat-afdelingshoofd",
+			"register": "dossiq",
+			"schema": "tenantMandate",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"mandateMatrixRef": "Afdelingshoofd",
+				"effectiveFrom": "{{datetime:-22 09:00}}",
+				"signedBy": "{{cast:marieke.uid}}",
+				"terms": {
+					"plafond": null,
+					"decisionTypes": [
+						"vergunning",
+						"bezwaar"
+					],
+					"enforcement": "full"
+				}
+			}
+		},
+		{
+			"key": "waterland-factuur-pakket",
+			"register": "dossiq",
+			"schema": "tenantBillingEvent",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"eventType": "subscription_fee",
+				"quantity": 1,
+				"unitPrice": 450,
+				"currency": "EUR",
+				"occurredAt": "{{datetime:-21 00:00}}"
+			}
+		},
+		{
+			"key": "waterland-factuur-zaak",
+			"register": "dossiq",
+			"schema": "tenantBillingEvent",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"eventType": "case_created",
+				"quantity": 1,
+				"unitPrice": 1.2,
+				"currency": "EUR",
+				"occurredAt": "{{datetime:-15 11:04}}"
+			}
+		},
+		{
+			"key": "waterland-factuur-terugboeking",
+			"register": "dossiq",
+			"schema": "tenantBillingEvent",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"eventType": "case_refund",
+				"quantity": 1,
+				"unitPrice": -1.2,
+				"currency": "EUR",
+				"occurredAt": "{{datetime:-15 11:30}}"
 			}
 		},
 		{
@@ -4156,6 +4266,93 @@
 				"assignee": "{{cast:pieter.uid}}",
 				"completedAt": "{{datetime:-27 09:30}}",
 				"completedBy": "{{cast:pieter.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-contract",
+			"data": {
+				"title": "Contract getekend",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "contract",
+				"state": "completed",
+				"completedAt": "{{datetime:-50 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-mandate-import",
+			"data": {
+				"title": "Mandaten ingesteld",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "mandate_import",
+				"state": "completed",
+				"completedAt": "{{datetime:-22 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-sso-setup",
+			"data": {
+				"title": "Inloggen ingericht",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "sso_setup",
+				"state": "available"
+			}
+		},
+		{
+			"key": "waterland-inrichten-branding",
+			"data": {
+				"title": "Huisstijl gekozen",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "branding",
+				"state": "completed",
+				"completedAt": "{{datetime:-40 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-zaaktype-selection",
+			"data": {
+				"title": "Zaaktypen geladen",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "zaaktype_selection",
+				"state": "completed",
+				"completedAt": "{{datetime:-35 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-first-user",
+			"data": {
+				"title": "Beheerder uitgenodigd",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "first_user",
+				"state": "completed",
+				"completedAt": "{{datetime:-48 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-go-live",
+			"data": {
+				"title": "Live gezet",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "go_live",
+				"state": "available"
 			}
 		}
 	],
