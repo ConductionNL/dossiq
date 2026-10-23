@@ -28,12 +28,31 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Service\CaseTypeResolver;
+
 /**
  * Marks and counts the origin of merged blueprint rows.
  *
  * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
  */
 final class RowOrigins {
+
+	/**
+	 * The origin of the rows a chain member declares.
+	 *
+	 * @param boolean $isOwn Whether the member is the case type itself, not an ancestor.
+	 *
+	 * @return string CaseTypeResolver::ORIGIN_OWN or CaseTypeResolver::ORIGIN_INHERITED.
+	 *
+	 * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+	 */
+	public function originFor(bool $isOwn): string {
+		if ($isOwn === true) {
+			return CaseTypeResolver::ORIGIN_OWN;
+		}
+
+		return CaseTypeResolver::ORIGIN_INHERITED;
+	}//end originFor()
 
 	/**
 	 * Mark an own row that replaces an ancestor's row under the same key.

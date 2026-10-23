@@ -399,13 +399,11 @@ class CaseTypeResolver {
 		}
 
 		// Furthest ancestor first, so a nearer declaration overwrites it.
-		$merged = [];
+		$merged  = [];
+		$origins = new RowOrigins();
 		foreach (array_reverse($chain) as $depth => $ancestor) {
-			$isOwn = ($depth === (count($chain) - 1));
-			$origin = self::ORIGIN_INHERITED;
-			if ($isOwn === true) {
-				$origin = self::ORIGIN_OWN;
-			}
+			$isOwn  = ($depth === (count($chain) - 1));
+			$origin = $origins->originFor(isOwn: $isOwn);
 
 			foreach ($this->store->rowsOfType(schemaKey: $schemaKey, caseTypeId: $this->store->rowId(row: $ancestor)) as $row) {
 				$key    = $this->mergeKey(row: $row);
@@ -414,7 +412,7 @@ class CaseTypeResolver {
 					origin: $origin,
 					ancestor: $ancestor
 				);
-				$merged[$key] = (new RowOrigins())->markOverride(row: $tagged, isOwn: $isOwn, merged: $merged, key: $key);
+				$merged[$key] = $origins->markOverride(row: $tagged, isOwn: $isOwn, merged: $merged, key: $key);
 			}
 		}
 
