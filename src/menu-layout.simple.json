@@ -2074,7 +2074,6 @@
 								},
 								{
 									"widgetIds": [
-										"case-document-verdicts-card",
 										"case-files",
 										"case-refusal-grounds-card"
 									],
@@ -2383,6 +2382,20 @@
 						}
 					},
 					"case-files": {
+						"titleWhen": [
+							{
+								"when": {
+									"field": "@context.caseType.documentReview.enabled",
+									"op": "eq",
+									"value": true
+								},
+								"text": "Documents for this request"
+							},
+							{
+								"text": ""
+							}
+						],
+						"_titleNote": "DqZaakDocumenten titles the Files card \"Documenten bij dit verzoek\" on a case type that reviews its documents; DqDocumentenBeheer draws it with no title row. Needs nextcloud-vue widget-title-when; before it the card keeps \"Files\".",
 						"subtitle": [
 							{
 								"when": {
@@ -2395,7 +2408,10 @@
 						],
 						"_viewNote": "DqZaakDocumenten: the Files tab holds the verdicts card, the folder and the grounds card, so the folder is a card too; `view: tab` keeps it the full files browser (CnFilesTab) inside that card rather than the compact files card.",
 						"content": {
-							"view": "tab"
+							"view": "tab",
+							"leadWidgetIds": [
+								"case-document-verdicts-card"
+							]
 						}
 					},
 					"case-email-panel": {

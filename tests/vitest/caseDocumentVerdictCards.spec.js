@@ -45,9 +45,19 @@ function filesTab(node) {
 }
 
 describe('the Files tab on a case type that reviews its documents', () => {
-	it('holds the verdicts, the folder and the grounds, in that order', () => {
-		expect(filesTab(simple).widgetIds).toEqual(['case-document-verdicts-card', 'case-files', 'case-refusal-grounds-card'])
+	it('holds the folder with the verdicts inside its card, then the grounds', () => {
+		expect(filesTab(simple).widgetIds).toEqual(['case-files', 'case-refusal-grounds-card'])
 		expect(simple.configPatch.widgets['case-files'].content.view).toBe('tab')
+		expect(simple.configPatch.widgets['case-files'].content.leadWidgetIds).toEqual(['case-document-verdicts-card'])
+	})
+
+	it('titles the Files card "Documenten bij dit verzoek" where documents are reviewed, and leaves it untitled elsewhere', () => {
+		const files = simple.configPatch.widgets['case-files']
+		expect(files.titleWhen).toEqual([
+			{ when: { field: '@context.caseType.documentReview.enabled', op: 'eq', value: true }, text: 'Documents for this request' },
+			{ text: '' },
+		])
+		expect(nl['Documents for this request']).toBe('Documenten bij dit verzoek')
 	})
 
 	it('draws the verdicts as a bar headed "4 van 7 beoordeeld"', () => {
