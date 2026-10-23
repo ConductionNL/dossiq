@@ -13998,6 +13998,47 @@
 						}
 					},
 					{
+						"id": "side-open-ticket",
+						"type": "record-list",
+						"title": "Open tickets",
+						"visibleWhen": {
+							"appInstalled": "pipelinq"
+						},
+						"content": {
+							"requiresApp": "pipelinq",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/parties/open-tickets/list",
+								"params": {
+									"key": "@object.masterEntityRef"
+								},
+								"responsePath": "results"
+							},
+							"limit": 1,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{ticketType}",
+							"pill": {
+								"field": "status",
+								"variant": "purple",
+								"labels": {
+									"new": "New",
+									"in_progress": "In progress",
+									"awaiting_customer": "Awaiting customer"
+								}
+							},
+							"trailing": [
+								"Term {slaDeadline|date}"
+							],
+							"valueLabels": {
+								"ticketType": {
+									"request": "Request",
+									"complaint": "Complaint"
+								}
+							},
+							"emptyText": "No open tickets"
+						}
+					},
+					{
 						"id": "side-history",
 						"type": "facts",
 						"title": "Record history",
