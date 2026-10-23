@@ -32,7 +32,7 @@
 				{{
 					t(
 						'dossiq',
-						'The copy keeps the case type, the requester and the filled properties, and starts in the first status of its type. It gets its own case number.',
+						'The copy gets its own case number.',
 					)
 				}}
 			</p>
