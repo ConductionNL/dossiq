@@ -2804,6 +2804,7 @@ OC.L10N.register(
         "End of the period searched.": "End of the period searched.",
         "End of the period the request is about.": "End of the period the request is about.",
         "End role assignment": "End role assignment",
+        "End status": "End status",
         "End the organisation": "End the organisation",
         "End Time": "End Time",
         "End time of the contact": "End time of the contact",

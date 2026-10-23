@@ -2804,6 +2804,7 @@ OC.L10N.register(
         "End of the period searched.": "Einde van de doorzochte periode.",
         "End of the period the request is about.": "Einde van de periode waar het verzoek over gaat.",
         "End role assignment": "Roltoewijzing beëindigen",
+        "End status": "Eind",
         "End the organisation": "Beëindigen",
         "End Time": "Eindtijd",
         "End time of the contact": "Eindtijd van het contact",
