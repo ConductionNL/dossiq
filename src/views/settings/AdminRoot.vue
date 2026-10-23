@@ -366,7 +366,8 @@
 			<CnSettingsFieldsSection
 				id="section-kadaster"
 				appId="dossiq"
-				:name="t('dossiq', 'Kadaster (BRK) and WOZ')"
+				:name="t('dossiq', 'Set up Kadaster (BRK) and WOZ')"
+				:openedFrom="t('dossiq', 'Kadaster (BRK) and WOZ')"
 				:description="
 					t(
 						'dossiq',
@@ -876,6 +877,9 @@ export default {
 					label: this.t('dossiq', 'Link'),
 					cellClass: 'cn-cell--strong',
 					formatter: 'translated',
+					// A row opens its settings card on this page.
+					widget: 'link',
+					widgetProps: { href: '{settingsUrl}', target: '_self' },
 					secondary: (row) =>
 						row.description ? this.t('dossiq', row.description) : '',
 				},
@@ -894,6 +898,7 @@ export default {
 						'unconfigured',
 						'unavailable',
 						'simulated',
+						'disabled',
 						'error',
 					],
 
@@ -902,6 +907,7 @@ export default {
 						unconfigured: 'Off',
 						unavailable: 'Not available',
 						simulated: 'Simulated',
+						disabled: 'Off',
 						error: 'Error',
 					},
 				},

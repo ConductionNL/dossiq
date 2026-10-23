@@ -79,6 +79,7 @@ class IntegrationStatusService {
 		'store',
 		'financial',
 		'brp',
+		'kadaster',
 		'kvk',
 		'pdok',
 		'berichtenbox',
@@ -112,8 +113,8 @@ class IntegrationStatusService {
 	/**
 	 * App-config keys per connection whose save asks integriq to resolve that
 	 * connection again. Each list is the connection's `requiredConfig` plus its
-	 * `adapter.configKey` in `lib/Settings/connections.json`; a unit test keeps
-	 * the two equal.
+	 * `adapter.configKey` and `switch.configKey` in `lib/Settings/connections.json`;
+	 * a unit test keeps the two equal.
 	 *
 	 * StUF, the mailbox and the store are absent on purpose: dossiq probes them
 	 * and reports the outcome, and a saved form says less than a probe does.
@@ -125,6 +126,7 @@ class IntegrationStatusService {
 		'kcc' => ['identification_method'],
 		'dmn' => ['decision_table_schema'],
 		'financial' => ['dwangsom_callback_secret'],
+		'kadaster' => ['integration.brk.mode'],
 		'berichtenbox' => ['digital_post_source', 'berichtenbox_adapter'],
 		'templates' => ['beschikking_template_adapter'],
 	];
