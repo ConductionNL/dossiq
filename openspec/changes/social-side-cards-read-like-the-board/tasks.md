@@ -5,4 +5,4 @@
 - [x] 1.3 Who rows with initials, one line
 - [x] 1.4 nl/en keys, vitest
 - [ ] 2.1 Historie side card (needs a source for the access-purpose log)
-- [ ] 2.2 Withdraw consent act
+- [x] 2.2 Withdraw consent: PATCH withdrawn + validTo today on the consent, confirmed (needs nc-vue api-call PATCH)

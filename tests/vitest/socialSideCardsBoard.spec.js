@@ -34,6 +34,22 @@ describe('DqSociaalDomein side column', () => {
 		expect(nl['Until it is withdrawn']).toBe('Tot intrekking')
 	})
 
+	it('withdraws the consent by ending it today, only while it can be withdrawn', () => {
+		const action = card('side-social-consent').content.actions.find((entry) => entry.id === 'consent-withdraw')
+		expect(action).toMatchObject({
+			type: 'api-call',
+			method: 'PATCH',
+			url: '/apps/openregister/api/objects/dossiq/toestemming/@source.id',
+			payload: { withdrawn: true, validTo: '@today' },
+			confirm: true,
+		})
+		expect(action.visibleWhen.all).toEqual([
+			{ field: 'withdrawalPossible', op: 'eq', value: true },
+			{ field: 'withdrawn', op: 'neq', value: true },
+		])
+		expect(nl['Withdraw consent']).toBe('Toestemming intrekken')
+	})
+
 	it('draws each person behind their initials on one line', () => {
 		const people = card('side-social-people').content
 		expect(people.avatar).toBe('{name}')

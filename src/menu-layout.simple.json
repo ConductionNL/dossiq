@@ -1560,6 +1560,31 @@
 								},
 								{ "path": "validTo", "label": "Valid until", "format": "date-long", "emptyValue": "Until it is withdrawn" }
 							],
+							"actions": [
+								{
+									"id": "consent-withdraw",
+									"type": "api-call",
+									"label": "Withdraw consent",
+									"variant": "secondary",
+									"method": "PATCH",
+									"url": "/apps/openregister/api/objects/dossiq/toestemming/@source.id",
+									"payload": {
+										"withdrawn": true,
+										"validTo": "@today"
+									},
+									"confirm": true,
+									"confirmTitle": "Withdraw consent",
+									"confirmMessage": "The consent ends today. Data shared on it may no longer be used for its purpose.",
+									"visibleWhen": {
+										"all": [
+											{ "field": "withdrawalPossible", "op": "eq", "value": true },
+											{ "field": "withdrawn", "op": "neq", "value": true }
+										]
+									},
+									"successMessage": "The consent is withdrawn.",
+									"errorMessage": "The consent was not withdrawn."
+								}
+							],
 							"emptyText": "No consent recorded"
 						}
 					},
