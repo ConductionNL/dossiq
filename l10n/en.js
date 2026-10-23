@@ -10994,6 +10994,7 @@ OC.L10N.register(
         "{hours} hours ago": "{hours} hours ago",
         "{identifier}": "{identifier}",
         "{id} (no number yet)": "{id} (no number yet)",
+        "{initiatorDisplayName} then gets a message that the case moves to another team, and to which. Leave it off for a move inside the organisation.": "{initiatorDisplayName} then gets a message that the case moves to another team, and to which. Leave it off for a move inside the organisation.",
         "{judged} of {total} judged": "{judged} of {total} judged",
         "{label}": "{label}",
         "{language} is the source. Change a {language} label and its translations are marked out of date.": "{language} is the source. Change a {language} label and its translations are marked out of date.",

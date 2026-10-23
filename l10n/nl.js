@@ -10994,6 +10994,7 @@ OC.L10N.register(
         "{hours} hours ago": "{hours} uur geleden",
         "{identifier}": "{identifier}",
         "{id} (no number yet)": "{id} (nog geen nummer)",
+        "{initiatorDisplayName} then gets a message that the case moves to another team, and to which. Leave it off for a move inside the organisation.": "{initiatorDisplayName} krijgt dan een bericht dat de zaak naar een ander team gaat en naar welk. Bij een interne verschuiving laat u dit uit.",
         "{judged} of {total} judged": "{judged} van {total} beoordeeld",
         "{label}": "{label}",
         "{language} is the source. Change a {language} label and its translations are marked out of date.": "{language} is de bron. Wijzig een {language} label en de vertalingen worden verouderd gemarkeerd.",
