@@ -183,3 +183,74 @@ export function traceOf(result) {
 		message: String(trace.message ?? result?.error?.message ?? ''),
 	}
 }
+
+/**
+ * The properties of one schema, to name a rule by the field it writes.
+ * Nothing on a refusal: the rows then fall back to the rule's own words.
+ *
+ * @param {string} schema The schema slug.
+ * @return {Promise<object>} The properties by key.
+ *
+ * @spec openspec/changes/case-type-rules-as-rows/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
+ */
+export async function fetchSchemaProperties(schema) {
+	try {
+		const { data } = await axios.get(generateUrl(`/apps/openregister/api/schemas/${encodeURIComponent(schema)}`))
+		return data && typeof data.properties === 'object' && data.properties !== null ? data.properties : {}
+	} catch {
+		return {}
+	}
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * "daysOverdue" as "Days overdue".
+ *
+ * @param {string} key A property key.
+ * @return {string} The words.
+ */
+function wordsOf(key) {
+	const words = String(key).replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
+	return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+/**
+ * The first sentence of a description.
+ *
+ * @param {string} text The description.
+ * @return {string} Its first sentence.
+ */
+function firstSentence(text) {
+	const s = String(text || '').trim()
+	const end = s.search(/[.!?](\s|$)/)
+	return end === -1 ? s : s.slice(0, end + 1)
+}
+
+/**
+ * The rules as rows a reader understands: titled by the field a rule writes
+ * (its schema title, else its key in words), a line saying what it does (the
+ * field's first sentence, else the kind's description), and a pill: a
+ * calculation is `calculated`, any other rule `on` or `off`. A rule known only
+ * by an id is titled by its kind. Titles and lines are untranslated.
+ *
+ * @param {Array<object>} rules The inventory rows.
+ * @param {object} properties The schema properties by key.
+ * @param {object} kinds The vocabulary by kind.
+ * @return {Array<{id: string, title: string, line: string, pill: string}>} The rows.
+ *
+ * @spec openspec/changes/case-type-rules-as-rows/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
+ */
+export function ruleRows(rules, properties = {}, kinds = {}) {
+	return (Array.isArray(rules) ? rules : []).map((rule) => {
+		const key = String(rule?.key ?? '')
+		const label = String(rule?.label || key || rule?.id || '')
+		const prop = (properties && properties[key]) || {}
+		const kindText = String(kinds?.[rule?.kind]?.description || rule?.kind || '')
+		const opaque = UUID.test(label)
+		const title = typeof prop.title === 'string' && prop.title !== '' ? prop.title : (opaque ? kindText : wordsOf(label))
+		const line = firstSentence(prop.description) || (opaque ? '' : kindText)
+		const pill = rule?.kind === 'calculation' ? 'calculated' : (rule?.enabled === false ? 'off' : 'on')
+		return { id: String(rule?.id ?? ''), title, line, pill }
+	})
+}

@@ -19,16 +19,6 @@
 -->
 <template>
 	<div class="rules-tab">
-		<h4>{{ t('dossiq', 'Rules on the case') }}</h4>
-		<p class="rules-tab__hint">
-			{{
-				t(
-					'dossiq',
-					'Everything the platform checks when a case is saved, in the order it checks it. Statuses and fields are declared on the other tabs; this is what came of them.',
-				)
-			}}
-		</p>
-
 		<NcLoadingIcon v-if="loading" :size="32" />
 
 		<p v-else-if="error" class="rules-tab__error" role="alert">
@@ -44,44 +34,27 @@
 			}}
 		</p>
 
-		<table v-else class="rules-tab__table" data-testid="rules-table">
-			<thead>
-				<tr>
-					<th scope="col">{{ t('dossiq', 'Rule') }}</th>
-					<th scope="col">{{ t('dossiq', 'Kind') }}</th>
-					<th scope="col">{{ t('dossiq', 'On') }}</th>
-					<th scope="col">{{ t('dossiq', 'Last run') }}</th>
-					<th scope="col">
-						<span class="hidden-visually">{{ t('dossiq', 'Try') }}</span>
-					</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr v-for="rule in rules" :key="rule.id" data-testid="rules-row">
-					<th scope="row">{{ rule.label || rule.key || rule.id }}</th>
-					<td data-testid="rules-kind">{{ kindLabel(rule) }}</td>
-					<td>
-						{{
-							rule.enabled === false
-								? t('dossiq', 'Off')
-								: t('dossiq', 'On')
-						}}
-					</td>
-					<td>{{ rule.lastRun || t('dossiq', 'Never') }}</td>
-					<td>
-						<NcButton
-							variant="tertiary"
-							:disabled="trying === rule.id || caseId === ''"
-							:data-testid="`rules-try-${rule.id}`"
-							@click="tryRule(rule)">
-							{{ t('dossiq', 'Try it') }}
-						</NcButton>
-					</td>
-				</tr>
-			</tbody>
-		</table>
+		<ul v-else class="rules-tab__rows" data-testid="rules-list">
+			<li v-for="row in rows" :key="row.id" class="rules-tab__row" data-testid="rules-row">
+				<span class="rules-tab__text">
+					<span class="rules-tab__title">{{ row.title }}</span>
+					<span v-if="row.line" class="rules-tab__line">{{ row.line }}</span>
+				</span>
+				<span
+					class="rules-tab__pill cn-status-badge"
+					:class="row.pill === 'on' ? 'cn-status-badge--success' : 'cn-status-badge--default'"
+					data-testid="rules-pill">{{ pillLabel(row.pill) }}</span>
+			</li>
+		</ul>
 
-		<div class="rules-tab__trial">
+		<details v-if="rules.length > 0" class="rules-tab__trial">
+			<summary>{{ t('dossiq', 'Try a rule against a case') }}</summary>
+			<NcSelect
+				v-model="picked"
+				:options="rows"
+				label="title"
+				:inputLabel="t('dossiq', 'Rule')"
+				data-testid="rules-pick" />
 			<NcTextField
 				:modelValue="caseId"
 				:label="t('dossiq', 'Case to try a rule against')"
@@ -96,6 +69,12 @@
 					)
 				}}
 			</p>
+			<NcButton
+				:disabled="!picked || trying !== '' || caseId === ''"
+				data-testid="rules-try"
+				@click="tryRule(picked)">
+				{{ t('dossiq', 'Try it') }}
+			</NcButton>
 
 			<div v-if="trace" class="rules-tab__trace" data-testid="rules-trace">
 				<p class="rules-tab__verdict">
@@ -111,17 +90,19 @@
 				</p>
 				<p v-if="trace.message">{{ trace.message }}</p>
 			</div>
-		</div>
+		</details>
 	</div>
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 import {
 	evaluateRule,
 	fetchRuleVocabulary,
+	fetchSchemaProperties,
 	fetchSchemaRules,
 	kindsByName,
+	ruleRows,
 	traceOf,
 } from '../../../services/schemaRules.js'
 import { useSettingsStore } from '../../../store/modules/settings.js'
@@ -132,6 +113,7 @@ export default {
 	components: {
 		NcButton,
 		NcLoadingIcon,
+		NcSelect,
 		NcTextField,
 	},
 
@@ -158,6 +140,8 @@ export default {
 			error: '',
 			rules: [],
 			kinds: {},
+			properties: {},
+			picked: null,
 			caseId: '',
 			trying: '',
 			trace: null,
@@ -165,6 +149,20 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The rules as rows, titled and described in the reader's language.
+		 *
+		 * @return {Array<object>}
+		 * @spec openspec/changes/case-type-rules-as-rows/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
+		 */
+		rows() {
+			return ruleRows(this.rules, this.properties, this.kinds).map((row) => ({
+				...row,
+				title: row.title ? t('dossiq', row.title) : row.id,
+				line: row.line ? t('dossiq', row.line) : '',
+			}))
+		},
+
 		/**
 		 * What the trial decided, as a sentence.
 		 *
@@ -225,6 +223,7 @@ export default {
 			this.loading = true
 			this.error = ''
 			this.kinds = kindsByName(await fetchRuleVocabulary())
+			this.properties = await fetchSchemaProperties(this.schemaSlug())
 
 			try {
 				this.rules = await fetchSchemaRules(this.schemaSlug())
@@ -272,6 +271,16 @@ export default {
 		},
 
 		/**
+		 * The pill text of a row.
+		 *
+		 * @param {string} pill calculated, on or off.
+		 * @return {string} The text.
+		 */
+		pillLabel(pill) {
+			return { calculated: t('dossiq', 'Calculated'), on: t('dossiq', 'On'), off: t('dossiq', 'Off') }[pill] || ''
+		},
+
+		/**
 		 * Try one rule against the case the administrator named.
 		 *
 		 * Keyed on the rule's id and never on its row, because the order is a
@@ -315,28 +324,58 @@ export default {
 </script>
 
 <style scoped>
+.rules-tab__rows {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.rules-tab__row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 0;
+	border-top: 1px solid var(--color-border);
+}
+
+.rules-tab__text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.rules-tab__title {
+	font-size: 14px;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.rules-tab__line {
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+}
+
+.rules-tab__pill {
+	flex: none;
+}
+
 .rules-tab__hint {
 	font-size: 12px;
 	color: var(--color-text-maxcontrast);
 	margin: 4px 0 12px;
 }
 
-.rules-tab__table {
-	width: 100%;
-	border-collapse: collapse;
-}
-
-.rules-tab__table th,
-.rules-tab__table td {
-	text-align: start;
-	padding: 6px 8px;
-	border-bottom: 1px solid var(--color-border);
-}
-
 .rules-tab__trial {
 	margin-top: 16px;
 	border-top: 1px solid var(--color-border);
 	padding-top: 12px;
+}
+
+.rules-tab__trial > summary {
+	cursor: pointer;
+	font-size: 14px;
+	color: var(--color-text-maxcontrast);
 }
 
 .rules-tab__trace {

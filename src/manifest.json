@@ -12222,7 +12222,8 @@
 					{
 						"id": "case-type-rules",
 						"type": "custom",
-						"title": "Rules",
+						"title": "Rules on the case",
+						"subtitle": "Everything the platform checks when a case is saved, in the order it checks it.",
 						"icon": "ScaleBalance",
 						"_note": "The OpenRegister rules of the case schema with a try-it, rehosted from the retired admin-settings editor (CaseTypeRulesWidget); a candidate to move to OpenRegister's schema page."
 					}
