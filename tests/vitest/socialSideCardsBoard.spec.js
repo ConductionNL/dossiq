@@ -61,6 +61,9 @@ describe('DqSociaalDomein side column', () => {
 		expect(nl['Case history']).toBe('Historie')
 		// The case's reference under the trail, as DqZaaktype's Historie (nextcloud-vue audit-trail footnote).
 		expect(history.content.footnote).toBe('Reference {identifier}')
+		// The consent's own trail joins the case's (nextcloud-vue relatedSources).
+		expect(history.content.relatedSources).toEqual([{ as: 'consent', register: 'dossiq', schema: 'toestemming', filter: { caseId: '@objectId' }, limit: 3 }])
+		expect(nl[history.content.actionLabels['consent.create']]).toBe('Toestemming vastgelegd')
 		expect(nl['Reference {identifier}']).toBe('Kenmerk {identifier}')
 	})
 

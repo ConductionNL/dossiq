@@ -1638,8 +1638,21 @@
 							"actionLabels": {
 								"dossiq.case.access-purpose": "Case opened, purpose {changed.purpose}",
 								"create": "Case created",
-								"update": "Case changed"
+								"update": "Case changed",
+								"consent.create": "Consent recorded",
+								"consent.update": "Consent changed"
 							},
+							"relatedSources": [
+								{
+									"as": "consent",
+									"register": "dossiq",
+									"schema": "toestemming",
+									"filter": {
+										"caseId": "@objectId"
+									},
+									"limit": 3
+								}
+							],
 							"valueLabels": {
 								"purpose": {
 									"handling": "handling",
