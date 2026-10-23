@@ -3,10 +3,10 @@
 /**
  * The caseTypeIdentifier backfill: which cases it writes, and what one bad row costs.
  *
- * The store here is a fake that keeps what it is asked to patch. It does NOT
- * compute anything, which OpenRegister does on a real save. So these tests
- * say what the step ASKS for and how it counts; that OpenRegister accepts the
- * write is checked on a live instance, and the PR says so.
+ * The store here is a fake that behaves as OpenRegister does for this field:
+ * the case schema declares `caseTypeIdentifier` readOnly, so a write that
+ * changes it is refused ("Cannot modify readOnly property"), and every save
+ * materialises it from `@ref.caseType.identifier`.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Repair
@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Tests for the caseTypeIdentifier backfill: existing cases get the
@@ -106,12 +107,23 @@ final class BackfillCaseTypeIdentifierTest extends TestCase {
 			 * @param int|string           $schema The schema.
 			 *
 			 * @return array<string, mixed>
+			 *
+			 * @throws RuntimeException When the write changes the readOnly field.
 			 */
 			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
-				$this->patches[] = ['schema' => (string)$schema, 'id' => $objectId, 'data' => $data];
-				$this->rows[(string)$schema][$objectId] = array_merge($this->rows[(string)$schema][$objectId], $data);
+				$stored = $this->rows[(string)$schema][$objectId];
+				if (array_key_exists('caseTypeIdentifier', $data) === true
+					&& $data['caseTypeIdentifier'] !== ($stored['caseTypeIdentifier'] ?? null)
+				) {
+					throw new RuntimeException('Cannot modify readOnly property: caseTypeIdentifier');
+				}
 
-				return $this->rows[(string)$schema][$objectId];
+				$this->patches[] = ['schema' => (string)$schema, 'id' => $objectId, 'data' => $data];
+				$saved = array_merge($stored, $data);
+				$saved['caseTypeIdentifier'] = ($this->rows['7'][(string)($saved['caseType'] ?? '')]['identifier'] ?? null);
+				$this->rows[(string)$schema][$objectId] = $saved;
+
+				return $saved;
 			}
 		};
 	}//end store()
@@ -148,8 +160,9 @@ final class BackfillCaseTypeIdentifierTest extends TestCase {
 	}//end runOver()
 
 	/**
-	 * Cases on either Woo version get the shared identifier; a case already
-	 * right, one on a type without an identifier and one without a type are left.
+	 * Cases on either Woo version get the shared identifier through a re-save
+	 * that does not supply the readOnly field; a case already right, one on a
+	 * type without an identifier and one without a type are left.
 	 *
 	 * @return void
 	 */
@@ -168,11 +181,13 @@ final class BackfillCaseTypeIdentifierTest extends TestCase {
 
 		$this->assertSame(
 			expected: [
-				['schema' => '5', 'id' => 'c-v1', 'data' => ['caseTypeIdentifier' => 'woo-verzoek']],
-				['schema' => '5', 'id' => 'c-v2', 'data' => ['caseTypeIdentifier' => 'woo-verzoek']],
+				['schema' => '5', 'id' => 'c-v1', 'data' => []],
+				['schema' => '5', 'id' => 'c-v2', 'data' => []],
 			],
 			actual: $store->patches
 		);
+		$this->assertSame(expected: 'woo-verzoek', actual: $store->rows['5']['c-v1']['caseTypeIdentifier']);
+		$this->assertSame(expected: 'woo-verzoek', actual: $store->rows['5']['c-v2']['caseTypeIdentifier']);
 		$this->assertSame(expected: 1, actual: $store->systemRuns);
 		$this->assertSame(
 			expected: ['caseTypeIdentifier backfill: 2 filled, 0 written but not confirmed, 0 failed, 3 already right or without an identifier.'],
