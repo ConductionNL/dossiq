@@ -42,6 +42,7 @@ final class StatusTypePalette {
 	 */
 	public const COLOURS = [
 		'Aangemeld' => 'blue',
+		'Aanvraag ontvangen' => 'blue',
 		'Beroep ontvangen' => 'blue',
 		'Melding ontvangen' => 'blue',
 		'Ontvangen' => 'blue',
@@ -54,6 +55,8 @@ final class StatusTypePalette {
 		'Beoordelen documenten' => 'purple',
 		'Beoordeling' => 'purple',
 		'Beoordeling ontvankelijkheid' => 'purple',
+		'Besluit in voorbereiding' => 'purple',
+		'Bijstand loopt' => 'purple',
 		'Constatering' => 'purple',
 		'Evaluatie' => 'purple',
 		'Hercontrole' => 'purple',
@@ -77,6 +80,9 @@ final class StatusTypePalette {
 		'Parafering' => 'purple',
 		'Plan van aanpak' => 'purple',
 		'Rapport' => 'purple',
+		'Re-integratie loopt' => 'purple',
+		'Toetsing' => 'purple',
+		'Toetsing afgerond' => 'purple',
 		'Uitvoering' => 'purple',
 		'Veiligheidstoets' => 'purple',
 		'Verweerschrift in voorbereiding' => 'purple',

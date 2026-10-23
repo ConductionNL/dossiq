@@ -1148,7 +1148,7 @@
         "digest": "564570c26f8253afa0bf2c9947d7cba4043091feba941288be89f1afb86b1ac9"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::participatiewetZaak": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "263e846261b0ad0aa8666a43d43b74c32c95eb7b55521eb26800e13c76f29b74"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::reIntegratieTraject": {
