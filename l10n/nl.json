@@ -4792,7 +4792,7 @@
         "My authorities": "Mijn bevoegdheden",
         "My case types": "Mijn zaaktypen",
         "My cases": "Mijn zaken",
-        "My cases per step": "Mijn zaken per stap",
+        "My {count} cases per step": "Mijn {count} zaken per stap",
         "My daily work digest": "Mijn dagelijkse werkoverzicht",
         "My drafts": "Mijn concepten",
         "My location": "Mijn locatie",

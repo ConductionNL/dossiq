@@ -4792,7 +4792,7 @@
         "My authorities": "My authorities",
         "My case types": "My case types",
         "My cases": "My cases",
-        "My cases per step": "My cases per step",
+        "My {count} cases per step": "My {count} cases per step",
         "My daily work digest": "My daily work digest",
         "My drafts": "My drafts",
         "My location": "My location",

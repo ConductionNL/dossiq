@@ -745,6 +745,16 @@ describe('the landing page', () => {
 		}
 	})
 
+	it('counts the cases in the steps title, as DqMijnWerk does', () => {
+		// "Mijn 14 zaken per stap": `{count}` is the total the bar reports
+		// under headerCount (nextcloud-vue widget-title-count).
+		const bar = widget('simple-per-step')
+		expect(bar.title).toBe('My {count} cases per step')
+		expect(bar.content.headerCount).toBe(true)
+		const nl = readJson('l10n', 'nl.json').translations
+		expect(nl[bar.title]).toBe('Mijn {count} zaken per stap')
+	})
+
 	it('marks only a passed deadline as late in the week strip, like the list and the board', () => {
 		expect(widget('simple-week').content.lateWhen).toEqual({
 			op: 'lt',
