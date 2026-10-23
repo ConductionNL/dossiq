@@ -414,6 +414,7 @@ class MenuCaseTypesService {
 
 	/**
 	 * Keep the ids that name a visible case type, first occurrence only, up to the cap.
+	 * An id of a superseded version counts as the version in use.
 	 *
 	 * @param array<int, mixed> $ids The ids in order.
 	 * @param array<int, array{id: string, title: string}> $visible The visible case types.
@@ -424,10 +425,17 @@ class MenuCaseTypesService {
 	 */
 	private function keepVisible(array $ids, array $visible): array {
 		$byId = array_column($visible, null, 'id');
+		$versions = new OpenCaseCounts(settingsService: $this->settingsService);
 
 		$kept = [];
 		foreach ($ids as $id) {
-			if (is_string($id) === false || isset($byId[$id]) === false || isset($kept[$id]) === true) {
+			if (is_string($id) === false) {
+				continue;
+			}
+
+			// A choice made on a version superseded since names the version in use.
+			$id = $versions->currentVersionOf(uuid: $id, supersededBy: $this->supersededBy);
+			if (isset($byId[$id]) === false || isset($kept[$id]) === true) {
 				continue;
 			}
 

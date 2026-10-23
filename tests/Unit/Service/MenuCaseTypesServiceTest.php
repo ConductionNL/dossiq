@@ -343,6 +343,29 @@ class MenuCaseTypesServiceTest extends TestCase {
 	}//end testNeverChoseDefaultsToWoo()
 
 	/**
+	 * The default and a saved choice name a version that was superseded since:
+	 * the menu lists the version in use, once.
+	 *
+	 * @return void
+	 */
+	public function testAChosenSupersededVersionFoldsToTheVersionInUse(): void {
+		$rows = [
+			['id' => 'b', 'title' => 'Bezwaar'],
+			['id' => self::WOO, 'title' => 'Woo-verzoek', 'supersededBy' => 'woo-v2'],
+			['id' => 'woo-v2', 'title' => 'Woo-verzoek'],
+		];
+
+		$service = $this->service($rows);
+		$this->assertSame([['id' => 'woo-v2', 'title' => 'Woo-verzoek']], $service->chosen('u', $service->visibleCaseTypes()));
+
+		$saved = $this->service($rows, (string)json_encode([self::WOO, 'woo-v2', 'b']));
+		$this->assertSame(
+			[['id' => 'woo-v2', 'title' => 'Woo-verzoek'], ['id' => 'b', 'title' => 'Bezwaar']],
+			$saved->chosen('u', $saved->visibleCaseTypes())
+		);
+	}//end testAChosenSupersededVersionFoldsToTheVersionInUse()
+
+	/**
 	 * A user who never chose and may not see Woo gets nothing.
 	 *
 	 * @return void

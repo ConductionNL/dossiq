@@ -61,6 +61,14 @@ class WooRequestIntake {
 	public const CASE_TYPE_ID = '3c0f5a00-0000-4000-a000-00000000a001';
 
 	/**
+	 * The identifier every version of the Woo request case type shares (the
+	 * version chain is read by identifier).
+	 *
+	 * @var string
+	 */
+	public const CASE_TYPE_IDENTIFIER = 'woo-verzoek';
+
+	/**
 	 * The case object type of a publication from a dossier.
 	 */
 	public const OBJECT_TYPE = CollectionCaseLinks::OBJECT_TYPE;
@@ -316,7 +324,7 @@ class WooRequestIntake {
 	}//end termAnswer()
 
 	/**
-	 * The seeded Woo request case type.
+	 * The version of the seeded Woo request case type that new cases get.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.
 	 * @param string $register      The dossiq register.
@@ -326,7 +334,7 @@ class WooRequestIntake {
 	 * @throws WooRequestRefused UNAVAILABLE when it is not there.
 	 */
 	private function caseType(object $objectService, string $register): array {
-		$caseType = $this->cases->caseType(objectService: $objectService, register: $register, caseTypeId: self::CASE_TYPE_ID);
+		$caseType = $this->cases->currentCaseType(objectService: $objectService, register: $register, caseTypeId: self::CASE_TYPE_ID);
 		if ($caseType === null) {
 			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The Woo request case type is not installed.');
 		}
@@ -386,7 +394,7 @@ class WooRequestIntake {
 		$case = [
 			'title' => $wooRequest['onderwerp'],
 			'description' => $wooRequest['omschrijving'],
-			'caseType' => self::CASE_TYPE_ID,
+			'caseType' => (string)($caseType['id'] ?? self::CASE_TYPE_ID),
 		] + $intake + ['wooRequest' => $wooRequest];
 
 		// A request that starts from an earlier one names it; WooStartFromListener
@@ -414,7 +422,7 @@ class WooRequestIntake {
 		))->forCaseType(
 			objectService: $objectService,
 			register: $register,
-			caseTypeId: self::CASE_TYPE_ID,
+			caseTypeId: (string)($caseType['id'] ?? self::CASE_TYPE_ID),
 			wooRequest: $wooRequest
 		);
 		if ($properties !== []) {
