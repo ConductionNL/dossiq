@@ -734,7 +734,8 @@
 					"schema": "roleType",
 					"where": {
 						"name": "Gemachtigde",
-						"genericRole": "gemachtigde"
+						"genericRole": "gemachtigde",
+						"description": "Persoon of organisatie gemachtigd om namens de aanvrager op te treden"
 					}
 				}
 			},
