@@ -38,7 +38,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Repair\BackfillWooPublicationState
  *
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class BackfillWooPublicationStateTest extends TestCase {

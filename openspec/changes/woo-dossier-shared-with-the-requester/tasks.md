@@ -14,7 +14,7 @@ Read `openspec/woo-build-rules.md` first. Start the term tasks (group 2) only on
 
 ## 3. Result link
 
-- [x] 3.1 (`lib/Woo/WooResultLink.php` through `WooCaseLedger::writeCaseState()` and the backfill repair; `tests/Unit/Woo/WooPortalResultLinkTest.php`) Write and clear `resultLink` from `wooPublicationStatus` (REQ-WDS-003). Verify: `tests/Unit/Portal/WooPortalResultLinkTest.php::testPublishingWritesTheLink`, `::testWithdrawingClearsTheLink`.
+- [x] 3.1 (`lib/Service/Publication/PublicationResultLink.php` through `WooCaseLedger::writeCaseState()` and the backfill repair; `tests/Unit/Woo/WooPortalResultLinkTest.php`) Write and clear `resultLink` from `wooPublicationStatus` (REQ-WDS-003). Verify: `tests/Unit/Portal/WooPortalResultLinkTest.php::testPublishingWritesTheLink`, `::testWithdrawingClearsTheLink`.
 
 ## 4. Clarification
 

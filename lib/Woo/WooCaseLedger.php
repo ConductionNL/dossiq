@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Publication\PublicationResultLink;
 use OCA\Dossiq\Service\Publication\WithheldEntries;
 use OCA\Dossiq\Service\Publication\WithheldListRecorder;
 use OCA\Dossiq\Service\SettingsService;
@@ -221,7 +222,7 @@ class WooCaseLedger {
 		}
 
 		// The requester's link follows the same write (woo-dossier-shared-with-the-requester REQ-WDS-003).
-		$changes = array_merge($changes, (new WooResultLink())->changesFor(state: $changes));
+		$changes = array_merge($changes, (new PublicationResultLink())->changesFor(state: $changes));
 
 		try {
 			$this->patchObjectAsArray(
