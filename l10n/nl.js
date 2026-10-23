@@ -9862,6 +9862,7 @@ OC.L10N.register(
         "View all overdue": "Alle openstaande bekijken",
         "View all Woo cases": "Alle Woo-zaken bekijken",
         "View all {total} cases": "Alle {total} zaken bekijken",
+        "View all {total} tickets": "Alle {total} tickets bekijken",
         "View as flow": "Bekijken als flow",
         "View case": "Bekijk zaak",
         "View flow runs": "Flowruns bekijken",
