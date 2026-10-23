@@ -2358,6 +2358,50 @@
 			}
 		},
 		{
+			"key": "outbox-molenweg-checklist",
+			"register": "dossiq",
+			"schema": "syncQueue",
+			"data": {
+				"deviceId": "toestel-pieter",
+				"operationType": "submit",
+				"targetEntity": "inspectionChecklistRun",
+				"label": "Molenweg 4, checklist",
+				"queuedAt": "{{datetime:0 10:12}}",
+				"attemptCount": 0,
+				"status": "pending"
+			}
+		},
+		{
+			"key": "outbox-kerkplein-foto",
+			"register": "dossiq",
+			"schema": "syncQueue",
+			"data": {
+				"deviceId": "toestel-pieter",
+				"operationType": "upload",
+				"targetEntity": "inspectionChecklistRun",
+				"label": "Kerkplein 7, foto",
+				"queuedAt": "{{datetime:0 10:52}}",
+				"attemptCount": 0,
+				"status": "pending"
+			}
+		},
+		{
+			"key": "outbox-molenweg-bevinding",
+			"register": "dossiq",
+			"schema": "syncQueue",
+			"data": {
+				"deviceId": "toestel-pieter",
+				"operationType": "update",
+				"targetEntity": "inspectionChecklistRun",
+				"label": "Molenweg 4, bevinding",
+				"queuedAt": "{{datetime:0 10:14}}",
+				"attemptCount": 1,
+				"lastAttemptAt": "{{datetime:0 10:15}}",
+				"lastError": "Tekst gewijzigd, ook op kantoor gewijzigd",
+				"status": "conflict"
+			}
+		},
+		{
 			"key": "inspectie-vandaag-molenweg",
 			"register": "dossiq",
 			"schema": "fieldInspection",

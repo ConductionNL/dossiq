@@ -10171,6 +10171,7 @@
         "What the permit is called, as the holder reads it.": "What the permit is called, as the holder reads it.",
         "What the person wrote. Neither act is possible without one.": "What the person wrote. Neither act is possible without one.",
         "What the platform could not erase, named the way a handler can look it up and read it back to the data subject.": "What the platform could not erase, named the way a handler can look it up and read it back to the data subject.",
+        "What the queued change is about in words, written by the device when it queues the change (e.g. Molenweg 4, checklist). Lists fall back to the target entity without one.": "What the queued change is about in words, written by the device when it queues the change (e.g. Molenweg 4, checklist). Lists fall back to the target entity without one.",
         "What the reader got back, in exactly the small answer the projection gives: the domains an open case exists in, or that nothing exists. Never any content.": "What the reader got back, in exactly the small answer the projection gives: the domains an open case exists in, or that nothing exists. Never any content.",
         "What the reminder says. Written once per reason so every applicant asked for the same thing reads the same words.": "What the reminder says. Written once per reason so every applicant asked for the same thing reads the same words.",
         "What the request is about, in the resident's words.": "What the request is about, in the resident's words.",

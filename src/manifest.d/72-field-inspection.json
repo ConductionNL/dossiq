@@ -180,7 +180,7 @@
 							},
 							"limit": 6,
 							"presentation": "rows",
-							"title": "{targetEntity}",
+							"title": ["{label}", "{targetEntity}"],
 							"meta": "{operationType} · {queuedAt|datetime}",
 							"pill": {
 								"field": "status",
