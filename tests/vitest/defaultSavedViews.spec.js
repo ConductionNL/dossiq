@@ -28,8 +28,13 @@ const defaults = byslug('Cases')
 
 describe('default views on Cases', () => {
 
-	it('ships nine, each with a Dutch name', () => {
+	// DqFilterBeheren leads with the board's three (default-views-board-first);
+	// the nine before them follow.
+	it('ships twelve, the board\'s three first, each with a Dutch name', () => {
 		expect(Object.keys(defaults)).toEqual([
+			'my-cases',
+			'all-open-cases',
+			'deadline-passed',
 			'mine-overdue',
 			'mine-due-this-week',
 			'unclaimed-overdue',
