@@ -5591,6 +5591,7 @@
         "Only in {areas}": "Alleen in {areas}",
         "only members of the sensitive data group see the citizen service number": "het BSN ziet alleen wie in de groep voor gevoelige gegevens zit",
         "Only somebody who may open this case sees who has held it": "Alleen wie deze zaak mag openen, ziet wie hem heeft gehad",
+        "Only someone who works with the social domain's sensitive data on this case can see its household.": "Alleen wie met de bijzondere persoonsgegevens van deze zaak werkt, ziet het huishouden.",
         "Only the fields you select below are shared. Never the whole case. The remote organisation gets read-only access to a snapshot; it can collaborate via the activity stream but cannot change the case.": "Alleen de hieronder geselecteerde velden worden gedeeld. Nooit de volledige zaak. De externe organisatie krijgt alleen-lezen toegang tot een momentopname; zij kan samenwerken via het activiteitenoverzicht maar kan de zaak niet wijzigen.",
         "Only the handler of this case can redact its documents.": "Alleen de behandelaar van deze zaak kan de documenten lakken.",
         "Only the latest active version surfaces in the picker": "Alleen de nieuwste actieve versie verschijnt in de kiezer",

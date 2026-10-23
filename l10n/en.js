@@ -5541,6 +5541,7 @@ OC.L10N.register(
         "Only in {areas}": "Only in {areas}",
         "only members of the sensitive data group see the citizen service number": "only members of the sensitive data group see the citizen service number",
         "Only somebody who may open this case sees who has held it": "Only somebody who may open this case sees who has held it",
+        "Only someone who works with the social domain's sensitive data on this case can see its household.": "Only someone who works with the social domain's sensitive data on this case can see its household.",
         "Only the fields you select below are shared. Never the whole case. The remote organisation gets read-only access to a snapshot; it can collaborate via the activity stream but cannot change the case.": "Only the fields you select below are shared. Never the whole case. The remote organisation gets read-only access to a snapshot; it can collaborate via the activity stream but cannot change the case.",
         "Only the handler of this case can redact its documents.": "Only the handler of this case can redact its documents.",
         "Only the latest active version surfaces in the picker": "Only the latest active version surfaces in the picker",
