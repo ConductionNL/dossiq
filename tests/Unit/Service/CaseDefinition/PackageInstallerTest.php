@@ -1070,6 +1070,31 @@ class PackageInstallerTest extends TestCase {
 	}//end testAReloadInstallsWhatIsInstalledOrAutomaticAndNothingElse()
 
 	/**
+	 * An installed on-request package takes a newer version on reload, and an edit here survives.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/repair-updates-installed-packages/specs/case-types/spec.md
+	 */
+	public function testAReloadUpdatesAnInstalledOnRequestPackageAndKeepsAnEdit(): void {
+		$onRequest = static function (string $dir): void {
+			self::editJson(path: $dir . '/package.json', change: static fn (array $m): array => ['install' => 'on-request'] + $m);
+		};
+		$this->installer(root: $this->variant(change: $onRequest))->install(id: 'fixture-case-type');
+		$this->register->rows['caseType'][self::CASE_TYPE]['title'] = 'Edited here';
+		$raised = $this->raisedVersion();
+		$onRequest($raised . '/fixture-case-type');
+
+		$outcomes = $this->installer(root: $raised)->reloadInstalled();
+
+		$this->assertCount(expectedCount: 1, haystack: $outcomes);
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcomes[0]['status'], message: $outcomes[0]['message']);
+		$this->assertSame(expected: 'Registered', actual: $this->register->row('statusType', '0f1c0000-0000-4000-8000-000000000011')['name']);
+		$this->assertSame(expected: 'Edited here', actual: $this->register->row('caseType', self::CASE_TYPE)['title']);
+		$this->assertSame(expected: [self::CASE_TYPE], actual: $outcomes[0]['kept']);
+	}//end testAReloadUpdatesAnInstalledOnRequestPackageAndKeepsAnEdit()
+
+	/**
 	 * Settings fill keys this instance never set and keep an administrator's value.
 	 *
 	 * @return void
