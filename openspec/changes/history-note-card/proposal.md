@@ -7,6 +7,9 @@ Board DqZaakHistorie draws "Notitie toevoegen" as a card of its own under
 
 ## What changes
 
+The history card's visibility filter draws no visible label (`visibilityLabel: false`, nextcloud-vue `fix/r24-timeline-visibility-filter-unlabelled`), the select reading "Intern en openbaar" as the board draws it.
+
+
 The Historie tab stacks the history card (`composer: "separate"`, it keeps
 Add note) and a new `case-note-card` (`composer: "only"`, title "Add note",
 the board's subtitle). Needs nextcloud-vue `feat/r24-timeline-composer-card`;

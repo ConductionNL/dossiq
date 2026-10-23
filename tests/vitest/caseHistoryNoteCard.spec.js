@@ -28,7 +28,7 @@ describe('DqZaakHistorie note card', () => {
 	})
 
 	it('draws the history without a form and the note card as the form alone', () => {
-		expect(widget('case-timeline-panel').content).toMatchObject({ manage: true, composer: 'separate', exportName: 'case-history' })
+		expect(widget('case-timeline-panel').content).toMatchObject({ manage: true, composer: 'separate', exportName: 'case-history', visibilityLabel: false })
 		expect(widget('case-timeline-panel').content.entryActions.map((action) => action.id)).toEqual(['reply'])
 		expect(widget('case-note-card')).toMatchObject({ type: 'timeline', title: 'Add note', content: { manage: true, composer: 'only' } })
 		expect(nl['Add note']).toBe('Notitie toevoegen')
