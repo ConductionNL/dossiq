@@ -93,6 +93,9 @@ class="compose-dialog__field"
 			</div>
 
 			<NcNoteCard type="info">
+				<template #icon>
+					<EmailFastOutline :size="20" />
+				</template>
 				{{ t('dossiq', 'The message goes through integriq to the Berichtenbox of MijnOverheid. Delivered and read come back on the case, under Contact and History.') }}
 			</NcNoteCard>
 
@@ -129,6 +132,7 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import EmailFastOutline from 'vue-material-design-icons/EmailFastOutline.vue'
 import SendIcon from 'vue-material-design-icons/Send.vue'
 import { sendMessage } from '../services/berichtenboxApi.js'
 import { caseEyebrow } from '../services/caseSummary.js'
@@ -155,6 +159,7 @@ export default {
 	name: 'BerichtenboxComposeDialog',
 	components: {
 		CnDialog,
+		EmailFastOutline,
 		SendIcon,
 		NcButton,
 		NcCheckboxRadioSwitch,

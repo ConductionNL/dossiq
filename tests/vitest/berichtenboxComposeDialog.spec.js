@@ -200,6 +200,13 @@ describe('BerichtenboxComposeDialog', () => {
 		expect(wrapper.find('[data-testid="compose-bsn-optional"]').exists()).toBe(false)
 	})
 
+	it('marks the delivery note with the outgoing-mail icon, as board DqBerichtVersturen does', () => {
+		const wrapper = open()
+		const note = wrapper.findAllComponents({ name: 'NcNoteCard' })[0]
+		const icon = note.vm.$slots.icon?.()
+		expect(icon?.[0]?.type?.name).toBe('EmailFastOutlineIcon')
+	})
+
 	it('shows the provider’s own sentence and stays open on a refusal', async () => {
 		mockPost.mockRejectedValue({
 			response: {
