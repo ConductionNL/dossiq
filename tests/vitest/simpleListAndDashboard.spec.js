@@ -618,6 +618,21 @@ describe('the landing page', () => {
 			.toEqual(tile(before.config.widgets, 'recent-cases').content.lensReasonTexts)
 	})
 
+	it('names the dashboard\'s month and who it covers in the description, as the board does', () => {
+		// DqDashboard: "Hoe het team ervoor staat · oktober 2026, alle teams
+		// waar u in zit". `{dateRange}` reads the dashboard's date range as a
+		// period (nextcloud-vue description-period-from-date-range), so the
+		// range must open on a calendar month preset.
+		const dashboard = page(builtSimple, 'Dashboard')
+		expect(dashboard.config.description).toBe('How the team is doing · {dateRange}, all teams you are in')
+		const range = dashboard.config.dateRange
+		expect(range.enabled).toBe(true)
+		const preset = range.presets.find((entry) => entry.id === range.default.preset)
+		expect(preset.period).toBe('month')
+		const nl = readJson('l10n', 'nl.json').translations
+		expect(nl[dashboard.config.description]).toBe('Hoe het team ervoor staat · {dateRange}, alle teams waar u in zit')
+	})
+
 	it('continues where the handler left off, over the recent lens the full dashboard already uses', () => {
 		// "Verder werken" on the design: the cases this reader opened last.
 		// OpenRegister's `_recent` lens carries its own order, so the widget

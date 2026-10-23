@@ -4857,7 +4857,8 @@
 			"id": "Dashboard",
 			"_note": "The dashboard in the simple structure. Since openspec/changes/landing-views it is the dashboard of the full structure: the greeting, First today and the counts of MY cases moved to the landing page (MyWorkHome), whose My work / My team switch now changes views on that page instead of opening this one. The one thing this overlay still adds is the link to Close out your day, because this profile takes that entry out of the menu.",
 			"config": {
-				"description": "How the team is doing",
+				"description": "How the team is doing · {dateRange}, all teams you are in",
+				"_descriptionNote": "Board DqDashboard: \"Hoe het team ervoor staat · oktober 2026, alle teams waar u in zit\". `{dateRange}` is the dashboard's date range read as a period (nextcloud-vue description-period-from-date-range): the range opens on Current month, so it reads the month. The figures are the cases this reader may see, which are the cases of their teams.",
 				"_actionsMenuNote": "Board DqDashboard draws no Actions menu in the header: the row is Close out your day, the buildiq square and New case. The board's Edit layout button is gone too; layout editing is buildiq's (Ruben, 18 Oct).",
 				"showActionsMenu": false,
 				"kpiRow": [
