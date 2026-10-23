@@ -1,4 +1,4 @@
-# dossiq-store-surface Delta: catalogue-holds-case-types-and-marketplace
+# dossiq-store-surface Delta: advanced-holds-the-catalogue-folders
 
 **Status**: draft
 
@@ -20,7 +20,7 @@ The route `/store` and the ids `Store` and `StoreMenu` SHALL stay, so existing l
   Documentation and Reports
 
 #### Scenario: The Dutch menu
-@e2e exclude The Playwright suite runs in English; tests/vitest/catalogueHoldsCaseTypes.spec.js asserts the Dutch catalogue maps Marketplace to Marktplaats.
+@e2e exclude The Playwright suite runs in English; tests/vitest/advancedHoldsCatalogueFolders.spec.js asserts the Dutch catalogue maps Marketplace to Marktplaats.
 
 
 - **GIVEN** a user whose language is Dutch

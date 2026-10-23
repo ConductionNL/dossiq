@@ -230,8 +230,8 @@ test.describe('app chrome (ADR-114)', () => {
 		)
 	})
 
-	// @e2e catalogue::an-administrator-opens-advanced
-	test('Catalogue and Map layers stay in the settings foldout', async ({
+	// @e2e settings-navigation::an-administrator-opens-advanced
+	test('Case types and Map layers stay in the settings foldout', async ({
 		page,
 	}) => {
 		// Both configure how cases behave rather than reporting on them, so
@@ -239,7 +239,7 @@ test.describe('app chrome (ADR-114)', () => {
 		// a later promotion fails here rather than in the footer-order test,
 		// where the cause would be much harder to read.
 		const nav = page.locator('[data-testid="cn-nav"]')
-		for (const id of ['CatalogueMenu', 'WmsLayersMenu']) {
+		for (const id of ['CaseTypesMenu', 'ObjectTypesMenu', 'WmsLayersMenu']) {
 			await expect(
 				nav.locator(`[data-testid="cn-nav-entry-${id}"]`),
 			).toBeAttached({ timeout: 15_000 })
