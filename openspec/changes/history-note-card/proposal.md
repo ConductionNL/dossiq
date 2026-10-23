@@ -7,6 +7,8 @@ Board DqZaakHistorie draws "Notitie toevoegen" as a card of its own under
 
 ## What changes
 
+The history card offers "Ook wie de zaak las" in its footer (`readsToggle`, nextcloud-vue `feat/r24-timeline-reads-toggle`), off by default: switched on, the case's reads join the list.
+
 The history card's visibility filter draws no visible label (`visibilityLabel: false`, nextcloud-vue `fix/r24-timeline-visibility-filter-unlabelled`), the select reading "Intern en openbaar" as the board draws it.
 
 
