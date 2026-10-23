@@ -12656,23 +12656,25 @@
 					{
 						"key": "displayName",
 						"label": "Name",
+						"width": "250px",
 						"widget": "avatar",
 						"secondary": "{residence.street} {residence.houseNumber}, {residence.city}"
 					},
 					{
 						"key": "citizenServiceNumber",
 						"label": "BSN",
+						"width": "211px",
 						"formatter": "masked"
 					},
 					{
 						"key": "residence.city",
 						"label": "Place of residence",
+						"width": "157px",
 						"sortable": false
 					},
 					{
 						"key": "description",
-						"label": "Description",
-						"sortable": false
+						"label": "Description"
 					}
 				],
 				"actions": [
