@@ -119,7 +119,7 @@ class EmailTemplateService {
 			'isActive' => true,
 		];
 
-		return $this->repository->saveTemplate(payload: $payload);
+		return $this->repository->saveTemplate(payload: $this->withDelivery(payload: $payload, data: $data, existing: []));
 	}//end createTemplate()
 
 	/**
@@ -165,8 +165,32 @@ class EmailTemplateService {
 			'previousVersion' => $existing['id'] ?? null,
 		];
 
-		return $this->repository->saveTemplate(payload: $payload);
+		return $this->repository->saveTemplate(payload: $this->withDelivery(payload: $payload, data: $data, existing: $existing));
 	}//end updateTemplate()
+
+	/**
+	 * Add when and how a template goes out: `moment` (a case event),
+	 * `channel` and `messageCategory`, from the edit or else the version it
+	 * replaces. A field neither names is left out.
+	 *
+	 * @param array<string, mixed> $payload  The template to save.
+	 * @param array<string, mixed> $data     The edit.
+	 * @param array<string, mixed> $existing The version it replaces, or [].
+	 *
+	 * @return array<string, mixed> The payload with the delivery fields.
+	 *
+	 * @spec openspec/changes/case-type-messages-moment-channel/specs/case-types/spec.md
+	 */
+	private function withDelivery(array $payload, array $data, array $existing): array {
+		foreach (['moment', 'channel', 'messageCategory'] as $field) {
+			$value = $data[$field] ?? ($existing[$field] ?? null);
+			if (is_string($value) === true && $value !== '') {
+				$payload[$field] = $value;
+			}
+		}
+
+		return $payload;
+	}//end withDelivery()
 
 	/**
 	 * List active templates for a caseType.

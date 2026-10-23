@@ -12,6 +12,8 @@
         "subject": "Bevestiging ontvangst zaak {{zaakNummer}}",
         "body": "Geachte {{contactNaam}},\n\nWij hebben uw aanvraag {{zaakNummer}} ontvangen op {{startDate}}. Wij streven ernaar uw aanvraag binnen de wettelijke termijn te behandelen.\n\nMet vriendelijke groet,\n{{handler}}",
         "version": 1,
+        "moment": "case-received",
+        "channel": "mailbox-then-email",
         "isActive": true
       },
       {
@@ -25,6 +27,8 @@
         "subject": "Aanvullende informatie nodig voor zaak {{zaakNummer}}",
         "body": "Geachte {{contactNaam}},\n\nVoor de behandeling van zaak {{zaakNummer}} hebben wij aanvullende informatie van u nodig. Wij verzoeken u de gevraagde gegevens binnen twee weken aan te leveren.\n\nMet vriendelijke groet,\n{{handler}}",
         "version": 1,
+        "moment": "information-requested",
+        "channel": "mailbox-then-email",
         "isActive": true
       },
       {
@@ -38,6 +42,8 @@
         "subject": "Besluit zaak {{zaakNummer}}",
         "body": "Geachte {{contactNaam}},\n\nWij hebben besloten in uw zaak {{zaakNummer}}. Het besluit is op {{endDate}} genomen. Tegen dit besluit kunt u binnen zes weken bezwaar maken.\n\nMet vriendelijke groet,\n{{handler}}",
         "version": 1,
+        "moment": "decision-made",
+        "channel": "mailbox",
         "isActive": true
       }
     ]

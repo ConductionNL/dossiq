@@ -171,6 +171,8 @@ class EmailTemplateController extends Controller {
 			'name' => (string)$this->request->getParam('name', ''),
 			'subject' => (string)$this->request->getParam('subject', ''),
 			'body' => (string)$this->request->getParam('body', ''),
+			'moment' => $this->request->getParam('moment'),
+			'channel' => $this->request->getParam('channel'),
 		];
 
 		try {
@@ -208,6 +210,8 @@ class EmailTemplateController extends Controller {
 			'name' => $this->request->getParam('name'),
 			'subject' => $this->request->getParam('subject'),
 			'body' => $this->request->getParam('body'),
+			'moment' => $this->request->getParam('moment'),
+			'channel' => $this->request->getParam('channel'),
 		];
 
 		try {

@@ -244,7 +244,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 
 	/**
 	 * An admin's create reaches the backend with the caseType from the ROUTE and
-	 * the name/subject/body from the request body, and answers 200 with the
+	 * the name/subject/body, moment and channel from the request body, and answers 200 with the
 	 * created template.
 	 *
 	 * @return void
@@ -257,6 +257,8 @@ class EmailTemplateControllerContractTest extends TestCase {
 				'name' => 'Ontvangstbevestiging',
 				'subject' => 'Uw aanvraag',
 				'body' => 'Beste {{contactNaam}}',
+				'moment' => 'case-received',
+				'channel' => 'mailbox-then-email',
 			]
 		);
 
@@ -268,6 +270,8 @@ class EmailTemplateControllerContractTest extends TestCase {
 					'name' => 'Ontvangstbevestiging',
 					'subject' => 'Uw aanvraag',
 					'body' => 'Beste {{contactNaam}}',
+					'moment' => 'case-received',
+					'channel' => 'mailbox-then-email',
 				]
 			)
 			->willReturn(['id' => 'tpl-9', 'version' => 1]);
