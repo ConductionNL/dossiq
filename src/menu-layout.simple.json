@@ -434,6 +434,7 @@
 									},
 									"limit": 3,
 									"presentation": "rows",
+									"ruleAbove": true,
 									"title": "{title}",
 									"meta": {
 										"parts": [
@@ -849,6 +850,7 @@
 									],
 									"limit": 5,
 									"presentation": "rows",
+									"ruleAbove": true,
 									"title": "{title}",
 									"meta": "{identifier}",
 									"pill": {
@@ -5165,6 +5167,7 @@
 							},
 							"limit": 3,
 							"presentation": "rows",
+							"ruleAbove": true,
 							"title": "{title}",
 							"meta": "{identifier}",
 							"text": "{daysSinceActivity} days idle",
@@ -5184,6 +5187,7 @@
 							},
 							"limit": 3,
 							"presentation": "rows",
+							"ruleAbove": true,
 							"title": "{title}",
 							"meta": "{identifier}",
 							"footerLink": {
@@ -5209,6 +5213,7 @@
 							},
 							"limit": 3,
 							"presentation": "rows",
+							"ruleAbove": true,
 							"title": "{title}",
 							"meta": "{identifier}",
 							"text": "{@self.viewedAt|relative}",
