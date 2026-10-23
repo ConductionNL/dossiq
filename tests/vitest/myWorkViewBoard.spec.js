@@ -19,8 +19,8 @@ const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.jso
 const overrides = manifest.pages.find((page) => page.id === 'Cases').config.defaultSavedViews.find((item) => item.slug === 'my-work').overrides
 
 describe('DqAanMijToegewezen', () => {
-	it('draws no lenses of the case list', () => {
-		expect(overrides.quickFilters).toEqual([])
+	it('draws no lenses of the case list, only the covering chip the board puts on the Active line', () => {
+		expect(overrides.quickFilters.map((chip) => chip.label)).toEqual(['Including work you cover'])
 		expect(overrides.slots['below-header']).toEqual(['WorkloadSummaryBar'])
 	})
 

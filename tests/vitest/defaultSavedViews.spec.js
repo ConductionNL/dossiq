@@ -61,8 +61,8 @@ describe('Woo requests as a view of Cases', () => {
 })
 
 describe('lists that were pages, as views of Cases', () => {
-	it('keeps the team queue equal to the Unclaimed chip, with its late and this-week windows', () => {
-		expect(defaults['team-queue']).toEqual(chip('Unclaimed'))
+	it('keeps the team queue equal to the Unclaimed chip on the reader\'s team, with its late and this-week windows', () => {
+		expect(defaults['team-queue']).toEqual({ ...chip('Unclaimed'), assignedGroup: '@myTeam' })
 		expect(defaults['unclaimed-overdue']).toEqual({ ...chip('Unclaimed'), ...chip('Overdue') })
 		expect(defaults['unclaimed-due-this-week']).toEqual({ ...chip('Unclaimed'), ...chip('Due this week') })
 	})

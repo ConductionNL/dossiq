@@ -84,7 +84,6 @@
 								}
 							}
 						],
-						"subtitle": "Objects you link to cases, by type",
 						"content": {
 							"endpointSource": {
 								"url": "/apps/dossiq/api/catalogue/object-types",

@@ -127,6 +127,7 @@
 				"icon": "Plus",
 				"type": "open-form",
 				"formTitle": "New case",
+				"formConfirmLabel": "Create case",
 				"size": "normal",
 				"columns": 1,
 				"includeFields": [

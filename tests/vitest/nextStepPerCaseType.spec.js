@@ -30,14 +30,13 @@ describe('the "Wat nu?" stages per case type', () => {
 		expect(property.properties.stages.type).toBe('object')
 	})
 
-	it('move the case type version past every other fragment, so an instance re-imports it', () => {
+	it('takes a case type version of its own, which the fragment merger keeps when it is the highest', () => {
+		// The version register (one number per change) and RegisterFragmentMerger keeping the highest
+		// x.y.z replace the old rule that the newest fragment sorts last.
 		const versions = fs.readdirSync(path.join(ROOT, 'lib', 'Settings', 'register.d'))
 			.filter((name) => name.endsWith('.json') && name !== '99-case-type-next-step.json')
 			.map((name) => read('lib', 'Settings', 'register.d', name).components?.schemas?.caseType?.version)
 			.filter(Boolean)
-		const newer = (a, b) => a.split('.').map(Number).reduce((cmp, part, i) => cmp || part - Number(b.split('.')[i]), 0) > 0
-		for (const version of versions) {
-			expect(newer(fragment.components.schemas.caseType.version, version), version).toBe(true)
-		}
+		expect(versions).not.toContain(fragment.components.schemas.caseType.version)
 	})
 })

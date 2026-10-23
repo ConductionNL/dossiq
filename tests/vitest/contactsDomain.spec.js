@@ -186,6 +186,8 @@ describe.each([
 			// open cases and the latest contact moments under the card.
 			'contact-open-cases',
 			'contact-latest-moments',
+			// The party's open pipelinq tickets (DqContact/DqOrganisatie Tickets card).
+			'contact-open-tickets',
 			'contact-cases',
 			'contact-moments',
 			// The third question this page is for (#2993): what did we send
@@ -243,6 +245,7 @@ describe.each([
 			'contact-card',
 			'contact-open-cases',
 			'contact-latest-moments',
+			'contact-open-tickets',
 		])
 		expect(strip.content.tabs.map((tab) => tab.widgetId)).toEqual([
 			undefined,

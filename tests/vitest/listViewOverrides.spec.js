@@ -27,8 +27,8 @@ const view = (slug) => cases.defaultSavedViews.find((entry) => entry.slug === sl
 describe('the team-queue view', () => {
 	const overrides = view('team-queue').overrides
 
-	it('locks the queue to open cases nobody picked up, which the reader cannot clear', () => {
-		expect(view('team-queue').filters).toEqual({})
+	it('locks the queue to open cases nobody picked up, which the reader cannot clear, and opens on the reader\'s team', () => {
+		expect(view('team-queue').filters).toEqual({ assignedGroup: '@myTeam' })
 		expect(overrides.lockedFilters).toEqual({ assignee: 'IS NULL', isFinalStatus: false, statusHiddenInLists: false, isDraft: false, isTemplate: false })
 	})
 

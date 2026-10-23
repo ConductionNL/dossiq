@@ -439,7 +439,10 @@ describe('the landing page', () => {
 
 	it('keeps My archival reviews, which the design has no stand-in for, as the manifest declares it', () => {
 		const base = pageView(original('MyWorkHome'), 'mine').widgets
-		expect(widget('archival-reviews')).toEqual(
+		// The simple profile adds the board's subtitle (DqMijnWerk "Mijn archiefbeoordelingen").
+		const { subtitle, ...kept } = widget('archival-reviews')
+		expect(subtitle).toBe('Archival decisions waiting for your signature')
+		expect(kept).toEqual(
 			withoutNotes(base.find((w) => w.id === 'archival-reviews')),
 		)
 		expect(widget('archival-reviews').type).toBe('decision-list')
@@ -903,6 +906,12 @@ describe('the case type list', () => {
 				id: 'case-type-import',
 				type: 'open-modal',
 				target: 'CaseTypeImportDialog',
+			}),
+			expect.objectContaining({
+				id: 'case-type-templates-reload',
+				type: 'api-call',
+				url: '/apps/dossiq/api/packages/reload',
+				adminOnly: true,
 			}),
 		])
 		expect(registrySource).toContain('CaseTypeImportDialog')

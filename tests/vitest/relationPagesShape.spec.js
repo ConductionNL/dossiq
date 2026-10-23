@@ -40,6 +40,7 @@ describe.each(['ContactDetail', 'OrganisationDetail'])(
 					'contact-card',
 					'contact-open-cases',
 					'contact-latest-moments',
+					'contact-open-tickets',
 				],
 				label: 'Overview',
 			})

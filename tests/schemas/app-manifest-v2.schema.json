@@ -947,6 +947,11 @@
 			"pattern": "^@subject\\.[A-Za-z][A-Za-z0-9_.]*$",
 			"description": "Subject context: a field of the record an attention card names (the first row of its ordered `visibleWhen` source query), read by the banner widget's action route params and query (@subject.<field>, dot path allowed). Mirrors SENTINEL_TOKEN_PATTERNS.subject."
 		},
+		"sentinelSourceToken": {
+			"type": "string",
+			"pattern": "^@source\\.[A-Za-z][A-Za-z0-9_.@]*$",
+			"description": "Facts source: a field of the object a facts widget shows (@source.<field>, dot path allowed), read by a fact row's `route` params (CnFactsWidget substitutes it, nextcloud-vue feat/r23-facts-row-link). Pending in the library schema; the widget already resolves it."
+		},
 		"sentinelTokenAny": {
 			"$comment": "Union of every canonical context plus the deprecated-during-window overlay. Single source the shared resolver + gate import.",
 			"anyOf": [
@@ -962,6 +967,7 @@
 				{ "$ref": "#/$defs/sentinelRowToken" },
 				{ "$ref": "#/$defs/sentinelSubjectToken" },
 				{ "$ref": "#/$defs/sentinelContextToken" },
+				{ "$ref": "#/$defs/sentinelSourceToken" },
 				{ "$ref": "#/$defs/sentinelDeprecatedToken" }
 			]
 		},
