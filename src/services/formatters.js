@@ -13,6 +13,7 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
+import { loadState } from '@nextcloud/initial-state'
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
@@ -22,6 +23,19 @@ import { approvalMarkerLabel } from './approvalMarker.js'
 import { caseAddress } from './caseAddress.js'
 import { coveredForLabel } from './coveredFor.js'
 import { scanVerdictLabel } from './scanVerdict.js'
+
+/**
+ * The resident portal's name portaliq holds, from the page's `config` state.
+ *
+ * @return {string} The name, or '' when none is set.
+ */
+function portalName() {
+	try {
+		return String(loadState('dossiq', 'config', {})?.portalName ?? '').trim()
+	} catch {
+		return ''
+	}
+}
 
 // Guard so each lookup collection is fetched at most once per page load.
 const lookupFetchStarted = {}
@@ -380,7 +394,9 @@ export default {
 	/**
 	 * The messages a case sent on its own, one line each: what it was, the
 	 * channel it went through and when ("Receipt confirmation via the portal,
-	 * 3 Oct 14:32"). A message no channel took reads "not sent".
+	 * 3 Oct 14:32"). The portal is named as portaliq names it ("Mijn
+	 * Zuiddrecht"), else "the portal". A message no channel took reads
+	 * "not sent".
 	 *
 	 * @param {Array<object>} value The case's outbound communications.
 	 * @return {string} The lines joined with "; ", or '' without messages.
@@ -399,7 +415,7 @@ export default {
 			transfer: t('dossiq', 'Transfer'),
 		}
 		const channels = {
-			'portal-inbox': t('dossiq', 'the portal'),
+			'portal-inbox': portalName() || t('dossiq', 'the portal'),
 			'digital-post': t('dossiq', 'digital post'),
 			email: t('dossiq', 'email'),
 		}

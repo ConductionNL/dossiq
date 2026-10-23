@@ -14,6 +14,8 @@ import fs from 'fs'
 import path from 'path'
 import { describe, expect, it, vi } from 'vitest'
 
+let pageConfig = {}
+vi.mock('@nextcloud/initial-state', () => ({ loadState: (app, key, fallback) => (key === 'config' ? pageConfig : fallback) }))
 vi.mock('../../src/store/modules/object.js', () => ({ useObjectStore: () => ({ collections: {} }) }))
 vi.mock('../../src/store/modules/deelzaak.js', () => ({ useDeelzaakStore: () => ({ subCaseCounts: {} }) }))
 
@@ -58,6 +60,16 @@ describe('the outboundMessages formatter', () => {
 		const when = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(sentAt))
 		expect(formatters.outboundMessages([{ moment: 'acknowledgement', channel: 'portal-inbox', sentAt }]))
 			.toBe(`Receipt confirmation via the portal, ${when}`)
+	})
+
+	it('names the portal as portaliq names it', () => {
+		pageConfig = { portalName: 'Mijn Zuiddrecht' }
+		try {
+			expect(formatters.outboundMessages([{ moment: 'acknowledgement', channel: 'portal-inbox', sentAt: '2026-10-03T12:32:00Z' }]))
+				.toMatch(/^Receipt confirmation via Mijn Zuiddrecht, /)
+		} finally {
+			pageConfig = {}
+		}
 	})
 
 	it('joins several messages and marks one nothing took', () => {
