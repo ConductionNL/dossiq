@@ -12664,7 +12664,15 @@
 						"key": "citizenServiceNumber",
 						"label": "BSN",
 						"width": "211px",
-						"formatter": "masked"
+						"formatter": "masked",
+						"pills": [
+							{
+								"field": "indicatieGeheim",
+								"equals": true,
+								"label": "Data protection",
+								"variant": "warning"
+							}
+						]
 					},
 					{
 						"key": "residence.city",
