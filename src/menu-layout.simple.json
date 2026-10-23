@@ -6695,7 +6695,7 @@
 							"add": {
 								"label": "Add a variant",
 								"trigger": "button",
-								"placement": "header",
+								"placement": "title",
 								"unique": true,
 								"fields": [
 									{
