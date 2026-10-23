@@ -128,6 +128,21 @@ class TenantBillingServiceTest extends TestCase {
 		$this->assertContains('case_refund', TenantBillingService::ALLOWED_EVENT_TYPES);
 	}
 
+	/**
+	 * The monthly package fee is a billing event of its own, in the service and in the schema it writes to.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/billing-subscription-fee/specs/tenant-billing/spec.md#requirement-the-monthly-package-fee-is-a-billing-event
+	 */
+	public function testTheMonthlyPackageFeeIsAnEventType(): void {
+		$this->assertContains(needle: 'subscription_fee', haystack: TenantBillingService::ALLOWED_EVENT_TYPES);
+
+		$register = json_decode((string) file_get_contents(__DIR__.'/../../../lib/Settings/dossiq_register.json'), true);
+		$enum     = $register['components']['schemas']['tenantBillingEvent']['properties']['eventType']['enum'];
+		$this->assertSame(expected: TenantBillingService::ALLOWED_EVENT_TYPES, actual: $enum);
+	}//end testTheMonthlyPackageFeeIsAnEventType()
+
 	public function testAnEventWithNoReadablePriceIsCountedNotBilledAtZero(): void {
 		$events = [
 			['eventType' => 'case_created', 'quantity' => 2.0, 'unitPrice' => 5.0],
