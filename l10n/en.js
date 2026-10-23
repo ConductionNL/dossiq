@@ -11094,6 +11094,8 @@ OC.L10N.register(
         "{sent} sent, {received} received": "{sent} sent, {received} received",
         "{shown} of {total} events": "{shown} of {total} events",
         "{shown} of {total} messages": "{shown} of {total} messages",
+        "{shown} of {total} open cases in your teams": "{shown} of {total} open cases in your teams",
+        "{shown} of {total} open cases in your teams, board view by status": "{shown} of {total} open cases in your teams, board view by status",
         "{shown} of {total} open cases in your teams, sorted by deadline": "{shown} of {total} open cases in your teams, sorted by deadline",
         "{shown} of {total} open cases without a handler · oldest first": "{shown} of {total} open cases without a handler · oldest first",
         "{shown} of {total} open cases without a handler, oldest first": "{shown} of {total} open cases without a handler, oldest first",
