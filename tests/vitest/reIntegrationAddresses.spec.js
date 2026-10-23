@@ -34,7 +34,9 @@ async function router() {
 }
 
 describe('the retired re-integration addresses', () => {
-	beforeEach(() => get.mockReset())
+	beforeEach(() => {
+		get.mockReset()
+	})
 
 	it('opens the re-integration view for the old list', async () => {
 		const r = await router()
@@ -52,13 +54,23 @@ describe('the retired re-integration addresses', () => {
 		expect(r.currentRoute.value.params.id).toBe('case-9')
 	})
 
+	it('follows the trajectory\'s own stamp when no case carries its id', async () => {
+		get.mockImplementation(async (url) => (String(url).endsWith('/case')
+			? { data: { results: [] } }
+			: { data: { id: 'traj-4', migratedTo: 'case-4' } }))
+		const r = await router()
+		await r.push('/settings/re-integratietrajecten/traj-4')
+		expect(get).toHaveBeenCalledWith('/apps/openregister/api/objects/dossiq/reIntegratieTraject/traj-4')
+		expect(r.currentRoute.value.params.id).toBe('case-4')
+	})
+
 	it('opens the view when no case carries the reference, or the lookup fails', async () => {
-		get.mockResolvedValueOnce({ data: { results: [] } })
+		get.mockResolvedValue({ data: { results: [] } })
 		let r = await router()
 		await r.push('/settings/re-integratietrajecten/traj-2')
 		expect(r.currentRoute.value.query.savedView).toBe(VIEW)
 
-		get.mockRejectedValueOnce(new Error('offline'))
+		get.mockImplementation(async () => { throw new Error('offline') })
 		r = await router()
 		await r.push('/settings/re-integratietrajecten/traj-3')
 		expect(r.currentRoute.value.query.savedView).toBe(VIEW)

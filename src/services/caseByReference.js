@@ -11,15 +11,38 @@ import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
 /**
- * The id of the case whose `externalReference` is this reference.
+ * The id of the case a record moved onto: the case whose `externalReference`
+ * is the record's id, else the case the record itself names in `migratedTo`.
  *
  * @param {string} reference The earlier reference, such as the moved record's id.
- * @return {Promise<string>} The case id, or '' when none carries it or the lookup failed.
+ * @param {string} [sourceSchema] The schema the record is kept in, to read its `migratedTo`.
+ * @return {Promise<string>} The case id, or '' when neither answers or the lookups failed.
  */
-export async function caseIdByReference(reference) {
+export async function caseIdByReference(reference, sourceSchema = '') {
 	if (!reference) {
 		return ''
 	}
+	const byCase = await caseIdByExternalReference(reference)
+	if (byCase || !sourceSchema) {
+		return byCase
+	}
+	try {
+		const { data } = await axios.get(
+			generateUrl(`/apps/openregister/api/objects/dossiq/${encodeURIComponent(sourceSchema)}/${encodeURIComponent(reference)}`),
+		)
+		return String(data?.migratedTo ?? '')
+	} catch {
+		return ''
+	}
+}
+
+/**
+ * The id of the case whose `externalReference` is this reference.
+ *
+ * @param {string} reference The earlier reference.
+ * @return {Promise<string>} The case id, or ''.
+ */
+async function caseIdByExternalReference(reference) {
 	try {
 		const { data } = await axios.get(
 			generateUrl('/apps/openregister/api/objects/dossiq/case'),
