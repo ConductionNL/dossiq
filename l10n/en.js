@@ -1452,6 +1452,7 @@ OC.L10N.register(
         "Cases you follow": "Cases you follow",
         "Cases you open show up here": "Cases you open show up here",
         "cases · avg {days} days": "cases · avg {days} days",
+        "Cases, contacts and organisations, all fictional": "Cases, contacts and organisations, all fictional",
         "Cases, deadlines and your workload at a glance": "Cases, deadlines and your workload at a glance",
         "Cases, documents and contacts in the Dossiq search bar.": "Cases, documents and contacts in the Dossiq search bar.",
         "Cases: {penaltyRunningCount}": "Cases: {penaltyRunningCount}",
