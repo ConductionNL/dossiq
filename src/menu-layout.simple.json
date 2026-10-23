@@ -6190,7 +6190,7 @@
 									"widgetIds": [
 										"case-type-statuses",
 										"case-type-rules-summary",
-										"case-type-rights",
+										"case-type-rights-summary",
 										"case-type-privacy-summary",
 										"case-type-translations-summary"
 									],
@@ -6204,7 +6204,7 @@
 											"gridWidth": 12
 										},
 										{
-											"widgetId": "case-type-rights",
+											"widgetId": "case-type-rights-summary",
 											"gridWidth": 12
 										},
 										{
@@ -6411,6 +6411,53 @@
 								"variant": "neutral"
 							},
 							"emptyText": "This case type has no statuses yet"
+						}
+					},
+					{
+						"id": "case-type-rights-summary",
+						"type": "record-list",
+						"title": "Rights",
+						"subtitle": "Who may do what with cases of this type",
+						"_note": "DqZaaktypeOverzicht Rechten: the rights matrix read per role by GET /api/case-types/{id}/rights-by-role (CaseTypeRightsByRole). The full department x confidentiality matrix stays on the Rights tab (case-type-rights), which Edit opens.",
+						"headerActions": [
+							{
+								"label": "Edit",
+								"icon": "Pencil",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#rights"
+								}
+							}
+						],
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/rights-by-role",
+								"responsePath": "rows"
+							},
+							"presentation": "table",
+							"columns": [
+								{
+									"label": "Role",
+									"value": "{role}"
+								},
+								{
+									"label": "See cases",
+									"value": "{seeCases}"
+								},
+								{
+									"label": "Handle",
+									"value": "{handle}"
+								},
+								{
+									"label": "Decide",
+									"value": "{decide}"
+								},
+								{
+									"label": "Documents",
+									"value": "{documents}"
+								}
+							],
+							"emptyText": "No rights declared for this case type yet"
 						}
 					},
 					{
