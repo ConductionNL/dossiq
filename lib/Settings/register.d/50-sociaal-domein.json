@@ -836,7 +836,7 @@
             "participatiewetZaak": {
                 "slug": "participatiewetZaak",
                 "icon": "BriefcaseAccountOutline",
-                "version": "1.2.1",
+                "version": "1.3.0",
                 "searchable": false,
                 "title": "Participation act case",
                 "description": "Sociaal-domein zaaktype bijstandsaanvraag (Participatiewet 2015, art. 18, 31-34, 9). Inkomens- en werkgerichte ondersteuning met vermogens-/inkomenstoets. OpenRegister-backed.",
@@ -998,6 +998,18 @@
                         "title": "Rejection Proposal",
                         "type": "boolean",
                         "description": "Set when assets exceed the exemption, which proposes a refusal"
+                    },
+                    "migratedTo": {
+                        "title": "Moved to case",
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The case of type Bijstandsaanvraag this application moved onto. Written once by the record import, which leaves the application itself as it was."
+                    },
+                    "migratedAt": {
+                        "title": "Moved at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the application moved onto its case."
                     },
                     "gdprClassification": {
                         "title": "GDPR classification",

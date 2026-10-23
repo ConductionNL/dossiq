@@ -7,10 +7,14 @@
 - [x] 1.4 Record import: dedupeBy, references (caseType 1.36.0)
 
 ## 2. nextcloud-vue
-- [ ] 2.1 values.arrayKeyBy, on DQ-EDIT's stored-answer prefill
+- [x] 2.1 values.arrayKeyBy, on DQ-EDIT's stored-answer prefill (nc-vue fix/r25-answers-by-definition-flag)
 
 ## 3. Seeds
-- [ ] 3.1 Fixed ids for the social-domain seed records
+- [x] 3.1 Duplicates: the shipped seeds already carry unique slugs (the 12 Oct duplicates on :8080 are an earlier seeding, not the data); the import joins rows by case number (dedupeBy)
 
 ## 4. Participatiewet
-- [ ] 4.1 Package bijstandsaanvraag, record import over participatiewetZaak, example, view
+- [x] 4.1 Package bijstandsaanvraag, record import over participatiewetZaak (participatiewetZaak 1.3.0), palette
+
+## 5. Wmo, Jeugdwet
+- [ ] 5.1 Wmo-melding package over wmoZaak (indicatiestelling.needsAssessmentId)
+- [ ] 5.2 Jeugdwet: the melding-jeugdwet package imports jeugdwetZaak (gezinsplan, mdoOverleg)
