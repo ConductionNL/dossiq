@@ -106,6 +106,9 @@ describe('the end-of-day page', () => {
 		// (nextcloud-vue record-list-footer-link).
 		expect(widget('eod-tomorrow').content.footerLink).toEqual({ label: 'To My work', route: 'MyWorkHome' })
 		expect(widget('eod-tomorrow').content.headerLink).toBeUndefined()
+		// "3 dagen te laat" under the item, as DqDagAfsluiten draws it
+		// (nextcloud-vue record-list-due-below).
+		expect(widget('eod-tomorrow').content.duePlacement).toBe('below')
 	})
 
 	it('draws Your day as the board\'s grid of figures, Hours from humaniq among them and gone without it', () => {

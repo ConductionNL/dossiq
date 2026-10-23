@@ -6997,6 +6997,7 @@
 								"responsePath": "tomorrow"
 							},
 							"presentation": "rows",
+							"duePlacement": "below",
 							"title": "{title}",
 							"due": {
 								"field": "dueAt",
