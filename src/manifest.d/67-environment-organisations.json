@@ -346,15 +346,13 @@
 						"title": "Set up",
 						"icon": "ClipboardCheckOutline",
 						"content": {
-							"headerSubtitle": "{count:status=completed} of {total} steps done",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/saas/tenants/@objectId/onboarding/progress",
 								"responsePath": "progress.steps"
 							},
 							"limit": 7,
-							"presentation": "rows",
+							"presentation": "checklist",
 							"title": "{step}",
-							"meta": "{completedAt|date}",
 							"valueLabels": {
 								"step": {
 									"contract": "Contract signed",
@@ -366,22 +364,15 @@
 									"go_live": "Gone live"
 								}
 							},
-							"pill": {
+							"emptyText": "Onboarding has not started for this organisation",
+							"done": {
 								"field": "status",
-								"labels": {
-									"pending": "To do",
-									"in_progress": "In progress",
-									"completed": "Done",
-									"skipped": "Skipped"
-								},
-								"colorMap": {
-									"pending": "default",
-									"in_progress": "info",
-									"completed": "success",
-									"skipped": "default"
-								}
+								"op": "eq",
+								"value": "completed"
 							},
-							"emptyText": "Onboarding has not started for this organisation"
+							"progress": true,
+							"columns": 3,
+							"headerNote": "{count:status=completed} of {total} steps done"
 						}
 					},
 					{
