@@ -13263,8 +13263,8 @@
 									"widgetIds": [
 										"contact-card",
 										"contact-open-cases",
-										"contact-latest-moments",
-										"contact-open-tickets"
+										"contact-open-tickets",
+										"contact-latest-moments"
 									],
 									"label": "Overview"
 								},
@@ -13892,8 +13892,8 @@
 									"widgetIds": [
 										"contact-card",
 										"contact-open-cases",
-										"contact-latest-moments",
-										"contact-open-tickets"
+										"contact-open-tickets",
+										"contact-latest-moments"
 									],
 									"label": "Overview"
 								},

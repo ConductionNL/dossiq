@@ -244,8 +244,8 @@ describe.each([
 		expect(strip.content.tabs[0].widgetIds).toEqual([
 			'contact-card',
 			'contact-open-cases',
-			'contact-latest-moments',
 			'contact-open-tickets',
+			'contact-latest-moments',
 		])
 		expect(strip.content.tabs.map((tab) => tab.widgetId)).toEqual([
 			undefined,
