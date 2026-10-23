@@ -5536,19 +5536,25 @@
 						"label": "Subject"
 					},
 					{
-						"key": "stateLabel",
+						"key": "state",
 						"label": "Status",
+						"_note": "Board DqTaken: the state in the task page's words (\"In uitvoering\", the TaskDetail pill), not the library's \"In progress\". The tones are keyed on the state, so they hold in every language.",
+						"enum": ["available", "enabled", "active", "completed", "terminated", "disabled"],
+						"enumLabels": {
+							"available": "Available",
+							"enabled": "Ready to claim",
+							"active": "In execution",
+							"completed": "Completed",
+							"terminated": "Terminated",
+							"disabled": "Disabled"
+						},
 						"widget": "badge",
 						"widgetProps": {
 							"colorMap": {
-								"Ready to claim": "info",
-								"Klaar om op te pakken": "info",
-								"In progress": "purple",
-								"In behandeling": "purple",
-								"Completed": "success",
-								"Afgerond": "success",
-								"Terminated": "error",
-								"Beëindigd": "error"
+								"enabled": "info",
+								"active": "purple",
+								"completed": "success",
+								"terminated": "error"
 							}
 						}
 					},
