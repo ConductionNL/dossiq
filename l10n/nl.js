@@ -6645,6 +6645,7 @@ OC.L10N.register(
         "Reference to the target status type (toStatus)": "Verwijzing naar het doelstatustype (toStatus)",
         "Reference to the TermijnDefinitie this instance materialised from": "Verwijzing naar de TermijnDefinitie waaruit deze instantie is gemaakt",
         "Reference to the waiver confirmation document": "Verwijzing naar het document waarin het afzien van horen is bevestigd",
+        "Reference {identifier}": "Kenmerk {identifier}",
         "Reference: {ref}": "Kenmerk: {ref}",
         "References (Nextcloud file IDs or OpenRegister doc refs) of the signed advice and supporting documents": "Verwijzingen (Nextcloud-bestands-id's of OpenRegister-documentverwijzingen) naar het ondertekende advies en de onderliggende stukken",
         "References to case types (array of zaaktype URLs)": "Verwijzingen naar zaaktypen (array met zaaktype-URL's)",
