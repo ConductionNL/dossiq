@@ -5809,7 +5809,8 @@
 									{
 										"field": "doorzending",
 										"label": "Tell the applicant, this is a doorzending (Awb 2:3)",
-										"note": "The applicant then gets a message that the case moves to another team, and to which. Leave it off for a move inside the organisation."
+										"note": "{initiatorDisplayName} then gets a message that the case moves to another team, and to which. Leave it off for a move inside the organisation.",
+										"noteFallback": "The applicant then gets a message that the case moves to another team, and to which. Leave it off for a move inside the organisation."
 									}
 								],
 								"confirm": {
