@@ -2510,6 +2510,7 @@ OC.L10N.register(
         "Dispute Reason": "Dispute Reason",
         "Disputed": "Disputed",
         "Dissenting Opinions": "Dissenting Opinions",
+        "Benefit case": "Benefit case",
         "Distance to Labour Market": "Distance to Labour Market",
         "District": "District",
         "DKIM": "DKIM",

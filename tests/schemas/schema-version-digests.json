@@ -1152,7 +1152,7 @@
         "digest": "263e846261b0ad0aa8666a43d43b74c32c95eb7b55521eb26800e13c76f29b74"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::reIntegratieTraject": {
-        "version": "1.1.1",
+        "version": "1.2.0",
         "digest": "de8cb58bdbd44cd9a6aeb6a3ce4947b1cbae9c5e6bfe8479c66e4c1da927de62"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::sociaalDomeinAuditLog": {
