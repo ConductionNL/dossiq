@@ -22,3 +22,12 @@ The register SHALL ship version 2 of the Woo request case type (identifier `woo-
 - **GIVEN** version 2 is installed
 - **WHEN** a resident sends a Woo request
 - **THEN** the case starts in Ontvangen and its progress bar shows the five steps the boards draw
+
+### Requirement: A chosen case type follows its version chain
+
+The case types a user keeps in the menu, and the default the menu offers before a user chooses (the Woo request case type), SHALL name the version in use when the chosen version has been superseded since, found along `supersededBy`, and SHALL list it once.
+
+#### Scenario: the default after version 2
+- **GIVEN** a user who never chose, and the first Woo version superseded by the second
+- **WHEN** the menu is built
+- **THEN** it lists version 2 of the Woo request case type

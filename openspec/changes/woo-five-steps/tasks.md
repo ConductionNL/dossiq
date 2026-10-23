@@ -9,6 +9,8 @@
 - [x] 1.4 `SystemCaseStore::currentCaseType`, used by `WooRequestIntake`
 - **spec_ref**: `openspec/changes/woo-five-steps/specs/woo-request-intake/spec.md#requirement-every-version-of-the-woo-case-type-is-a-woo-request`
 - [x] 1.5 A clarification on every version
+- **spec_ref**: `openspec/changes/woo-five-steps/specs/case-type-version-chain/spec.md#requirement-a-chosen-case-type-follows-its-version-chain`
+- [x] 1.6 The menu's chosen case types and its Woo default fold to the version in use
 
 ## 2. Configuration
 - **spec_ref**: `openspec/changes/woo-five-steps/specs/case-type-version-chain/spec.md#requirement-the-woo-request-case-type-has-a-second-version-with-five-steps`
