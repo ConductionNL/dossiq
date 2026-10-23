@@ -22,9 +22,9 @@
     ],
     "sideCards": [
       "side-special-data-health",
-      "case-banner-stack",
       "side-social-consent",
-      "side-social-people"
+      "side-social-people",
+      "case-banner-stack"
     ],
     "overviewCards": [
       "case-summary"

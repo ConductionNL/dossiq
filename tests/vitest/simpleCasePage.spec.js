@@ -751,8 +751,10 @@ describe('the header and the side column', () => {
 			'side-tender-bids',
 		])
 		for (const card of gated) {
-			expect(card.type).toBe('record-list')
-			expect(Object.values(card.content.filter)).toEqual(['@objectId'])
+			// A list of those records, or (Consent) the facts of the newest one.
+			expect(['record-list', 'facts']).toContain(card.type)
+			const filter = card.type === 'facts' ? card.content.source.filter : card.content.filter
+			expect(Object.values(filter)).toEqual(['@objectId'])
 			expect(JSON.stringify(card.visibleWhen)).toContain('@context.caseType.category')
 		}
 	})
