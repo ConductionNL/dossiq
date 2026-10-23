@@ -233,6 +233,16 @@ describe('My work in the simple structure keeps the board\'s side column', () =>
 		expect(tracks['simple-my-open']).toBeUndefined()
 		expect(tracks['archival-reviews']).toBeUndefined()
 	})
+
+	it('fits every card under First today to its content, as DqMijnWerk draws them', () => {
+		// The board's counts are 110px, not two grid rows (136), and each card
+		// below ends where its content ends, so the next one closes up.
+		expect(page(builtSimple.pages, 'MyWorkHome').config.gridFloat).toBe(false)
+		const mine = pageView(page(builtSimple.pages, 'MyWorkHome'), 'mine')
+		for (const cell of mine.layout) {
+			expect(cell.sizeToContent, cell.widgetId).toBe(true)
+		}
+	})
 })
 
 describe('no view is empty, in either structure', () => {

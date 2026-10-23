@@ -935,6 +935,7 @@
 								"gridY": 2,
 								"gridWidth": 3,
 								"gridHeight": 2,
+								"sizeToContent": true,
 								"showTitle": false,
 								"dateChip": false
 							},
@@ -945,6 +946,7 @@
 								"gridY": 2,
 								"gridWidth": 3,
 								"gridHeight": 2,
+								"sizeToContent": true,
 								"showTitle": false,
 								"dateChip": false
 							},
@@ -955,6 +957,7 @@
 								"gridY": 2,
 								"gridWidth": 3,
 								"gridHeight": 2,
+								"sizeToContent": true,
 								"showTitle": false,
 								"dateChip": false
 							},
@@ -965,6 +968,7 @@
 								"gridY": 2,
 								"gridWidth": 3,
 								"gridHeight": 2,
+								"sizeToContent": true,
 								"showTitle": false,
 								"dateChip": false
 							},
@@ -975,6 +979,7 @@
 								"gridY": 4,
 								"gridWidth": 8,
 								"gridHeight": 4,
+								"sizeToContent": true,
 								"track": "main",
 								"showTitle": true,
 								"headerLink": {
@@ -997,6 +1002,7 @@
 								"gridY": 4,
 								"gridWidth": 4,
 								"gridHeight": 7,
+								"sizeToContent": true,
 								"track": "side",
 								"showTitle": true,
 								"headerLink": {
@@ -1011,6 +1017,7 @@
 								"gridY": 8,
 								"gridWidth": 8,
 								"gridHeight": 3,
+								"sizeToContent": true,
 								"track": "main",
 								"showTitle": true,
 								"headerLink": {
@@ -1026,6 +1033,7 @@
 								"gridY": 11,
 								"gridWidth": 8,
 								"gridHeight": 5,
+								"sizeToContent": true,
 								"track": "main",
 								"showTitle": true
 							},
@@ -1036,6 +1044,7 @@
 								"gridY": 16,
 								"gridWidth": 6,
 								"gridHeight": 4,
+								"sizeToContent": true,
 								"showTitle": true,
 								"headerLink": {
 									"label": "View all",
@@ -1052,6 +1061,7 @@
 								"gridY": 11,
 								"gridWidth": 4,
 								"gridHeight": 5,
+								"sizeToContent": true,
 								"track": "side",
 								"showTitle": true
 							},
@@ -1062,6 +1072,7 @@
 								"gridY": 16,
 								"gridWidth": 6,
 								"gridHeight": 4,
+								"sizeToContent": true,
 								"showTitle": true
 							}
 						]
