@@ -393,6 +393,13 @@
 							"fields": [
 								{
 									"as": "meter",
+									"key": "cases",
+									"label": "Cases",
+									"path": "usage.objects",
+									"limitPath": "quota.objects"
+								},
+								{
+									"as": "meter",
 									"key": "storage",
 									"label": "Storage",
 									"path": "usage.storage",
@@ -403,7 +410,8 @@
 									"as": "meter",
 									"key": "users",
 									"label": "Users",
-									"path": "usage.users"
+									"path": "usage.users",
+									"limitPath": "quota.users"
 								},
 								{
 									"as": "meter",
@@ -414,7 +422,8 @@
 								}
 							],
 							"emptyText": "No usage recorded for this organisation"
-						}
+						},
+						"_note": "Board DqTenant Quota: Zaken, Opslag, Gebruikers, each against its limit. OpenRegister counts the organisation's live objects of the schema its object quota names (Waterland: case) and limits its users (openregister#4800). The requests row stays after them."
 					},
 					{
 						"id": "organisation-mandates",
