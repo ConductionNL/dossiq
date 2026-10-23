@@ -5535,7 +5535,19 @@
 						"key": "subjectLabel",
 						"width": "170px",
 						"label": "Subject",
-						"cellClass": "cn-cell--wrap"
+						"cellClass": "cn-cell--wrap",
+						"_note": "Board DqTaken: the subject links to its case with the case number under it. Only a dossiq task's subject is a dossiq case (`appId`); another app's task shows its subject as text. `subject.identifier` comes from openregister's task subject context (task-subject-identifier).",
+						"widget": "link",
+						"widgetProps": {
+							"routeField": "appId",
+							"routeMap": {
+								"dossiq": "CaseDetail"
+							},
+							"params": {
+								"id": "objectUuid"
+							}
+						},
+						"secondary": "{subject.identifier}"
 					},
 					{
 						"key": "stateLabel",
