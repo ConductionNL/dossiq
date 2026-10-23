@@ -177,6 +177,10 @@
             "{total} case, {shown} on this page",
             "{total} cases, {shown} on this page"
         ],
+        "_{total} deleted case_::_{total} deleted cases_": [
+            "{total} deleted case",
+            "{total} deleted cases"
+        ],
         "A BAG nummeraanduiding ID is required when the location source is \"bag\".": "A BAG nummeraanduiding ID is required when the location source is \"bag\".",
         "A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents.": "A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents.",
         "A batch can be taken by the rule that marked its documents, or by a list of documents.": "A batch can be taken by the rule that marked its documents, or by a list of documents.",
@@ -7193,6 +7197,7 @@
         "Search a contract or supplier": "Search a contract or supplier",
         "Search address": "Search address",
         "Search an address": "Search an address",
+        "Search by case number, title or who deleted it": "Search by case number, title or who deleted it",
         "Search by case or person involved": "Search by case or person involved",
         "Search by case or requester": "Search by case or requester",
         "Search by case, number or requester": "Search by case, number or requester",
