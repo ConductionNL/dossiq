@@ -24,4 +24,5 @@
 
 ## 5. Wmo, Jeugdwet
 - [x] 5.1 Wmo-melding package over wmoZaak, adopting the seeded case type by identifier; references indicatiestelling.caseId, toestemming.caseId, mdoOverleg.caseIds (list, caseType 1.37.0); wmoZaak 1.3.0
-- [ ] 5.2 Jeugdwet: the melding-jeugdwet package imports jeugdwetZaak (gezinsplan, mdoOverleg)
+- [x] 5.2 Jeugdwet: the melding-jeugdwet package (1.5.0, install auto, category Jeugdhulp) imports jeugdwetZaak; references gezinsplan.caseId, toestemming.caseId, mdoOverleg.caseIds; jeugdwetZaak 1.3.0
+- [ ] 5.3 Jeugdwet decision term: open question for Ruben (OPEN_QUESTIONS)

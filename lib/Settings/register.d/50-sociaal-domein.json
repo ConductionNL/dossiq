@@ -318,7 +318,7 @@
             "jeugdwetZaak": {
                 "slug": "jeugdwetZaak",
                 "icon": "HumanMaleChild",
-                "version": "1.2.1",
+                "version": "1.3.0",
                 "searchable": false,
                 "title": "Youth act case",
                 "description": "Sociaal-domein zaaktype jeugdwet-melding (Jeugdwet 2015, art. 2.3, 6.1.2, 7.3). Gezinsgerichte, multi-agency jeugdhulp. OpenRegister-backed.",
@@ -451,6 +451,18 @@
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "The history of earlier family plans, which is the extension chain"
+                    },
+                    "migratedTo": {
+                        "title": "Moved to case",
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The case of type Melding Jeugdwet this report moved onto. Written once by the record import, which leaves the report itself as it was."
+                    },
+                    "migratedAt": {
+                        "title": "Moved at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the report moved onto its case."
                     },
                     "gdprClassification": {
                         "title": "GDPR classification",
