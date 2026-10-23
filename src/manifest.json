@@ -8394,6 +8394,7 @@
 									"watch": "warning"
 								}
 							},
+							"ruleAbove": true,
 							"density": "compact",
 							"emptyText": "No phase stands out in this period",
 							"limit": 3
@@ -8631,20 +8632,24 @@
 								},
 								{
 									"key": "medianWorkingHours",
+									"class": "cn-table-col--end",
 									"label": "Hours, wall clock",
 									"labelPath": "labels.workingHours"
 								},
 								{
 									"key": "medianHours",
+									"class": "cn-table-col--end",
 									"label": "Wall-clock hours",
 									"labelPath": "labels.wallHours"
 								},
 								{
 									"key": "visitCount",
+									"class": "cn-table-col--end",
 									"label": "Visits"
 								},
 								{
 									"key": "score",
+									"class": "cn-table-col--end",
 									"label": "Score"
 								}
 							],
@@ -8681,16 +8686,19 @@
 								},
 								{
 									"key": "workingHours",
+									"class": "cn-table-col--end",
 									"label": "Hours, wall clock",
 									"labelPath": "labels.workingHours"
 								},
 								{
 									"key": "wallHours",
+									"class": "cn-table-col--end",
 									"label": "Wall-clock hours",
 									"labelPath": "labels.wallHours"
 								},
 								{
 									"key": "visitCount",
+									"class": "cn-table-col--end",
 									"label": "Visits"
 								}
 							],
