@@ -29,7 +29,7 @@ describe('the card head buttons', () => {
 	})
 
 	it.each([
-		['case-type-terms-written', 'Bewerken', 'fields'],
+		['case-type-terms-written', 'Bewerken', 'properties'],
 		['case-type-statuses', 'Bewerken', 'statuses'],
 		['case-type-rules-summary', 'Regel toevoegen', 'rules'],
 	])('%s opens a tab the page has', (id, label, tab) => {

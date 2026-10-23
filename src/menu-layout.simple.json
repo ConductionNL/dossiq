@@ -5875,7 +5875,7 @@
 						"id": "side-case-type-versions",
 						"type": "record-list",
 						"title": "Versions",
-						"tabs": ["overview", "statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "history"],
+						"tabs": ["overview", "statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "properties", "history"],
 						"content": {
 							"register": "dossiq",
 							"schema": "caseType",
@@ -5943,7 +5943,7 @@
 						"type": "facts",
 						"title": "Data",
 						"titleTone": "side",
-						"tabs": ["overview", "statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "history"],
+						"tabs": ["overview", "statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "properties", "history"],
 						"content": {
 							"fields": [
 								{
@@ -6198,10 +6198,7 @@
 									"label": "Fields",
 									"widgetIds": [
 										"case-type-fields-editor",
-										"case-type-field-rules",
-										"case-type-core",
-										"case-type-terms",
-										"case-type-list-layout"
+										"case-type-field-rules"
 									],
 									"countFrom": {
 										"register": "dossiq",
@@ -6286,6 +6283,16 @@
 									"widgetIds": [
 										"case-type-portal",
 										"case-type-party-kinds"
+									]
+								},
+								{
+									"id": "properties",
+									"label": "Properties",
+									"overflow": true,
+									"widgetIds": [
+										"case-type-core",
+										"case-type-terms",
+										"case-type-list-layout"
 									]
 								},
 								{
@@ -6784,7 +6791,7 @@
 								"icon": "Pencil",
 								"action": {
 									"type": "navigate",
-									"target": "/settings/case-types/@objectId#fields"
+									"target": "/settings/case-types/@objectId#properties"
 								}
 							}
 						],
