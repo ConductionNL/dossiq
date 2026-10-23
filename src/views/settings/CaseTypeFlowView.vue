@@ -20,24 +20,26 @@
 			<p v-if="subtitle" class="case-type-flow__subtitle" data-testid="case-type-flow-subtitle">
 				{{ subtitle }}
 			</p>
-			<WorkflowTab :caseTypeId="caseTypeId" />
+			<WorkflowTab v-if="storesReady" :caseTypeId="caseTypeId" />
+			<NcLoadingIcon v-else data-testid="case-type-flow-loading" />
 		</div>
 	</NcAppContent>
 </template>
 
 <script>
 import { translate as t } from '@nextcloud/l10n'
-import { NcAppContent } from '@nextcloud/vue'
+import { NcAppContent, NcLoadingIcon } from '@nextcloud/vue'
 import WorkflowTab from './tabs/WorkflowTab.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { useWorkflowStore } from '../../store/modules/workflow.js'
+import { initializeStores } from '../../store/store.js'
 
 export default {
 	name: 'CaseTypeFlowView',
-	components: { NcAppContent, WorkflowTab },
+	components: { NcAppContent, NcLoadingIcon, WorkflowTab },
 
 	data() {
-		return { caseTypeName: '' }
+		return { storesReady: false, caseTypeName: '' }
 	},
 
 	computed: {
@@ -73,26 +75,47 @@ export default {
 	},
 
 	watch: {
-		caseTypeId: {
-			immediate: true,
-			/**
-			 * Read the case type's name for the subtitle.
-			 *
-			 * @param {string} id The case type id.
-			 * @return {Promise<void>}
-			 */
-			async handler(id) {
+		caseTypeId(id) {
+			this.loadCaseTypeName(id)
+		},
+	},
+
+	/**
+	 * Start the object stores before the workflow reads its versions: opened
+	 * directly, the page mounts before the app has registered the workflow
+	 * template type. The case type's name for the subtitle is read after.
+	 *
+	 * @return {Promise<void>}
+	 * @spec openspec/changes/case-type-flow-direct-load/specs/case-types/spec.md#requirement-the-case-type-flow-page-loads-its-workflow-when-opened-directly
+	 */
+	async created() {
+		try {
+			await initializeStores()
+		} finally {
+			this.storesReady = true
+		}
+		await this.loadCaseTypeName(this.caseTypeId)
+	},
+
+	methods: {
+		/**
+		 * Read the case type's name for the subtitle.
+		 *
+		 * @param {string} id The case type id.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/case-type-flow-board-look/specs/case-types/spec.md#requirement-the-case-type-flow-page-draws-board-dqzaaktypeflow
+		 */
+		async loadCaseTypeName(id) {
+			this.caseTypeName = ''
+			if (!id) {
+				return
+			}
+			try {
+				const caseType = await useObjectStore().fetchObject('caseType', id)
+				this.caseTypeName = String(caseType?.title || caseType?.name || '')
+			} catch {
 				this.caseTypeName = ''
-				if (!id) {
-					return
-				}
-				try {
-					const caseType = await useObjectStore().fetchObject('caseType', id)
-					this.caseTypeName = String(caseType?.title || caseType?.name || '')
-				} catch {
-					this.caseTypeName = ''
-				}
-			},
+			}
 		},
 	},
 }
