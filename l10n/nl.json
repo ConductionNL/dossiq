@@ -888,6 +888,7 @@
         "Are you sure you want to delete this decision?": "Weet u zeker dat u dit besluit wilt verwijderen?",
         "Are you sure you want to delete this task?": "Weet u zeker dat u deze taak wilt verwijderen?",
         "Are you sure you want to delete this transition?": "Weet u zeker dat u deze overgang wilt verwijderen?",
+        "Are you sure? The confirmation went outside dossiq, by letter for instance. The Awb 4:3a term then counts as met.": "Weet u het zeker? De bevestiging ging buiten dossiq om, bijvoorbeeld per brief. De termijn van Awb 4:3a geldt dan als gehaald.",
         "Area": "Gebied",
         "Area address id": "Adres-id voor gebied",
         "Area fallback role type": "Rol bij terugval gebied",
