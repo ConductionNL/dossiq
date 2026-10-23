@@ -225,7 +225,7 @@ test.describe('the retired scheme surface', () => {
 		if (await toggle.isVisible().catch(() => false)) {
 			await toggle.click().catch(() => {})
 			await sidebarNav(page)
-				.getByRole('link', { name: 'Case types' })
+				.getByRole('link', { name: /^(Case types|Catalogue)$/ })
 				.first()
 				.waitFor({ state: 'visible', timeout: 8000 })
 				.catch(() => {})
@@ -239,8 +239,9 @@ test.describe('the retired scheme surface', () => {
 
 		// BOTH halves. The absence check alone would pass on a build where the
 		// capability vanished; Case types is where schemes are administered now,
-		// which is what keeps this inside ADR-044 Decision 5.
-		expect(labels).toContain('Case types')
+		// which is what keeps this inside ADR-044 Decision 5. An administrator
+		// reaches it through the Catalogue, everyone else through its own entry.
+		expect(labels.some((label) => label === 'Case types' || label === 'Catalogue')).toBe(true)
 	})
 
 	// @e2e case-types::the-retired-route-falls-through-rather-than-erroring

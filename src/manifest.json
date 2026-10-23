@@ -141,15 +141,15 @@
 						"optional": true,
 						"allowManualNext": true,
 						"title": "Where case types come from",
-						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look. You do not need to make one: dossiq ships with a set of them.",
-						"task": "Open Advanced, then Case types",
+						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. The case types are the first folder of the catalogue. You do not need to make one: dossiq ships with a set of them.",
+						"task": "Open Advanced, then Catalogue",
 						"target": {
 							"kind": "nav-item",
-							"ref": "CaseTypes"
+							"ref": "Catalogue"
 						},
 						"advanceOn": {
 							"type": "route-match",
-							"route": "CaseTypes"
+							"route": "Catalogue"
 						}
 					},
 					{
@@ -345,7 +345,7 @@
 		},
 		{
 			"id": "StoreMenu",
-			"label": "Store",
+			"label": "Marketplace",
 			"icon": "StoreOutline",
 			"route": "Store",
 			"section": "footer",
@@ -375,7 +375,8 @@
 			"icon": "FormatListBulletedType",
 			"route": "CaseTypes",
 			"section": "settings",
-			"order": 90
+			"order": 90,
+			"visibleIf": { "user.isAdmin": false }
 		},
 		{
 			"id": "PropertyDefinitionsMenu",
@@ -12432,10 +12433,10 @@
 			"id": "Store",
 			"route": "/store",
 			"type": "store",
-			"title": "Store",
+			"title": "Marketplace",
 			"config": {
 				"app": "dossiq",
-				"title": "Store",
+				"title": "Marketplace",
 				"description": "Install case types, workflows and enforcement tables that other organisations have published.",
 				"kinds": [
 					"case-type",
