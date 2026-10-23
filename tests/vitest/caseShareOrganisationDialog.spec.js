@@ -44,7 +44,7 @@ async function mountDialog() {
 		global: {
 			stubs: {
 				CnDialog: { props: ['eyebrow'], template: '<div><p class="eyebrow">{{ eyebrow }}</p><slot /><slot name="actions" /></div>' },
-				CnChoiceCards: { name: 'CnChoiceCards', props: ['options', 'modelValue', 'layout', 'columns', 'label'], template: '<div class="choice-cards" />' },
+				CnChoiceCards: { name: 'CnChoiceCards', props: ['options', 'modelValue', 'layout', 'columns', 'label', 'hideLabel'], template: '<div class="choice-cards" />' },
 				NcButton: { template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot /></button>' },
 				NcCheckboxRadioSwitch: { template: '<label><slot /></label>' },
 				NcNoteCard: { template: '<div><slot /></div>' },
@@ -129,6 +129,14 @@ describe('CaseShareOrganisationDialog mode picker', () => {
 		])
 		expect(cards.props('modelValue')).toBe('share')
 		expect(wrapper.find('.case-share-org__modes').exists()).toBe(false)
+	})
+
+	it('sets the two acts as option rows side by side under the title, the legend for assistive tech only', async () => {
+		const cards = (await mountDialog()).findComponent({ name: 'CnChoiceCards' })
+		expect(cards.props('layout')).toBe('rows')
+		expect(cards.props('columns')).toBe(2)
+		expect(cards.props('label')).toBe('What you do')
+		expect(cards.props('hideLabel')).toBe(true)
 	})
 
 	it('switches the act from the cards', async () => {
