@@ -304,7 +304,7 @@ class SetupControllerStatusTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheDwangsomSecretIsNotAWizardStep(): void {
-		$config = $this->provisioned() + ['dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling'];
+		$config = $this->provisioned() + ['payout_schema' => 'dwangsomUitbetaling'];
 		$data   = $this->controller($config)->status()->getData();
 
 		$this->assertArrayNotHasKey('dwangsom-secret', $data['steps']);
@@ -318,10 +318,10 @@ class SetupControllerStatusTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheGoLiveFlagReportsTheSecret(): void {
-		$config = $this->provisioned() + ['dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling'];
+		$config = $this->provisioned() + ['payout_schema' => 'dwangsomUitbetaling'];
 		$this->assertFalse($this->controller($config)->status()->getData()['dwangsom_callback_secret_configured']);
 
-		$config['dwangsom_callback_secret'] = 's3cret';
+		$config['payout_callback_secret'] = 's3cret';
 		$this->assertTrue($this->controller($config)->status()->getData()['dwangsom_callback_secret_configured']);
 
 	}//end testTheGoLiveFlagReportsTheSecret()
@@ -737,7 +737,7 @@ class SetupControllerStatusTest extends TestCase {
 			config: [],
 			requestParams: [
 				'_route' => 'dossiq.setup.saveConfig',
-				'dwangsom_callback_secret' => 's3cret',
+				'payout_callback_secret' => 's3cret',
 				'retry_delays' => [1, 5, 15],
 			]
 		);
@@ -745,7 +745,7 @@ class SetupControllerStatusTest extends TestCase {
 		$response = $built['controller']->saveConfig();
 
 		$this->assertTrue($response->getData()['success']);
-		$this->assertSame('s3cret', $built['written']['dwangsom_callback_secret'] ?? null);
+		$this->assertSame('s3cret', $built['written']['payout_callback_secret'] ?? null);
 		$this->assertSame('[1,5,15]', $built['written']['retry_delays'] ?? null);
 		$this->assertArrayNotHasKey('_route', $built['written']);
 

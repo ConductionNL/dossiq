@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Dossiq DwangsomController.
+ * Dossiq AccruingAmountController.
  *
- * REST surface for DwangsomBerekening state + bezwaar lifecycle +
- * beschikking-stop. Defers all business logic to
- * {@see AccruingAmountSettler} and {@see DwangsomBezwaarService}
+ * REST surface for an accruing amount: its state, settling it when the
+ * decision is filed, and the objection against it. Defers all business logic
+ * to {@see AccruingAmountSettler} and {@see AmountObjectionService}
  * (ADR-022).
  *
  * @category Controller
@@ -30,8 +30,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\DwangsomBezwaarService;
 use OCA\Dossiq\Service\Money\AccruingAmountSettler;
+use OCA\Dossiq\Service\Money\AmountObjectionService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\AppFramework\Controller;
@@ -43,20 +43,20 @@ use OCP\IUserSession;
 use Throwable;
 
 /**
- * REST surface for DwangsomBerekening state + bezwaar.
+ * REST surface for an accruing amount and the objection against it.
  *
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class DwangsomController extends Controller {
+class AccruingAmountController extends Controller {
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
 	 * @param AccruingAmountSettler $settler Stops the stored accrual and locks the amount.
-	 * @param DwangsomBezwaarService $objection Bezwaar service.
+	 * @param AmountObjectionService $objection Objection service.
 	 * @param SettingsService $settings Settings.
 	 * @param IUserSession $userSession User session.
 	 * @param CaseAccessGuard $caseAccess Per-case authorization guard.
@@ -66,7 +66,7 @@ class DwangsomController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly AccruingAmountSettler $settler,
-		private readonly DwangsomBezwaarService $objection,
+		private readonly AmountObjectionService $objection,
 		private readonly SettingsService $settings,
 		private readonly IUserSession $userSession,
 		private readonly CaseAccessGuard $caseAccess,
@@ -76,7 +76,7 @@ class DwangsomController extends Controller {
 	}//end __construct()
 
 	/**
-	 * Per-object authorization guard for a DwangsomBerekening.
+	 * Per-object authorization guard for an accruing amount.
 	 *
 	 * Replaces the former `ensureAuthenticated()`, which was documented as a
 	 * "per-object authorization guard" and has never been one: it established
@@ -93,7 +93,7 @@ class DwangsomController extends Controller {
 	 * OpenRegister, or an unconfigured schema all DENY. A berekening whose
 	 * owning case cannot be established is not a berekening anyone may act on.
 	 *
-	 * @param string $calculationId The DwangsomBerekening UUID.
+	 * @param string $calculationId The accruing amount UUID.
 	 * @param bool $mutation True for write verbs, false for reads.
 	 *
 	 * @return JSONResponse|null A refusal, or null when access is granted.
@@ -108,7 +108,7 @@ class DwangsomController extends Controller {
 
 		$caseId = $this->owningCase->resolveVia(
 			objectId: $calculationId,
-			schemaKey: 'dwangsom_berekening_schema',
+			schemaKey: 'accruing_amount_schema',
 			linkField: 'deadlineInstance',
 			viaSchemaKey: 'termijn_instance_schema',
 			caseField: 'case'
@@ -121,7 +121,7 @@ class DwangsomController extends Controller {
 		}
 
 		return new JSONResponse(
-			['message' => 'Not authorized for dwangsom berekening ' . $calculationId],
+			['message' => 'Not authorized for accruing amount ' . $calculationId],
 			Http::STATUS_FORBIDDEN
 		);
 	}//end denyUnlessMayAccess()
@@ -150,7 +150,7 @@ class DwangsomController extends Controller {
 	}//end mayAccessCase()
 
 	/**
-	 * Get a DwangsomBerekening by id.
+	 * Get an accruing amount by id.
 	 *
 	 * @param string $id Id.
 	 *
@@ -168,7 +168,7 @@ class DwangsomController extends Controller {
 
 		$objectService = $this->settings->getObjectService();
 		$register = (string)$this->settings->getConfigValue('register');
-		$schema = (string)$this->settings->getConfigValue('dwangsom_berekening_schema');
+		$schema = (string)$this->settings->getConfigValue('accruing_amount_schema');
 		if ($objectService === null || $register === '' || $schema === '') {
 			return new JSONResponse(['message' => 'Service unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -223,7 +223,7 @@ class DwangsomController extends Controller {
 	}//end normalise()
 
 	/**
-	 * Stop the berekening because a beschikking was filed.
+	 * Settle the amount because the decision was filed: it stops accruing and is locked.
 	 *
 	 * @param string $id Id.
 	 *
@@ -233,22 +233,22 @@ class DwangsomController extends Controller {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
-	public function beschikking(string $id): JSONResponse {
+	public function settle(string $id): JSONResponse {
 		$denied = $this->denyUnlessMayAccess(calculationId: $id, mutation: true);
 		if ($denied !== null) {
 			return $denied;
 		}
 
-		$row = $this->settler->settle(schemaConfigKey: 'dwangsom_berekening_schema', id: $id, status: 'gestopt-wegens-decision');
+		$row = $this->settler->settle(schemaConfigKey: 'accruing_amount_schema', id: $id, status: 'gestopt-wegens-decision');
 		if ($row === null) {
 			return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}
 
 		return new JSONResponse($row);
-	}//end beschikking()
+	}//end settle()
 
 	/**
-	 * Register a bezwaar.
+	 * Register an objection against the amount.
 	 *
 	 * @param string $id Id.
 	 *
@@ -258,7 +258,7 @@ class DwangsomController extends Controller {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
-	public function bezwaar(string $id): JSONResponse {
+	public function objection(string $id): JSONResponse {
 		$denied = $this->denyUnlessMayAccess(calculationId: $id, mutation: true);
 		if ($denied !== null) {
 			return $denied;
@@ -269,15 +269,15 @@ class DwangsomController extends Controller {
 		$rationale = (string)($body['rationale'] ?? '');
 
 		try {
-			$row = $this->objection->registerBezwaar($id, $basis, $rationale);
+			$row = $this->objection->registerObjection($id, $basis, $rationale);
 			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
-	}//end bezwaar()
+	}//end objection()
 
 	/**
-	 * Resolve a bezwaar with a corrected amount.
+	 * Resolve the objection with a reconsidered amount.
 	 *
 	 * @param string $id Id.
 	 *
@@ -287,7 +287,7 @@ class DwangsomController extends Controller {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
-	public function bezwaarHeroverweging(string $id): JSONResponse {
+	public function reconsider(string $id): JSONResponse {
 		$denied = $this->denyUnlessMayAccess(calculationId: $id, mutation: true);
 		if ($denied !== null) {
 			return $denied;
@@ -301,12 +301,80 @@ class DwangsomController extends Controller {
 		}
 
 		try {
-			$row = $this->objection->resolveBezwaar($id, $newAmount, $basis);
+			$row = $this->objection->resolveObjection($id, $newAmount, $basis);
 			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
-	}//end bezwaarHeroverweging()
+	}//end reconsider()
+
+	/**
+	 * Deprecated alias of /api/accruing-amounts/{id}, kept for clients of the old URL.
+	 *
+	 * @param string $id Id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 *
+	 * @contract exclude Deprecated path alias for show(); behaviour covered by the show() tests.
+	 */
+	public function showLegacyPath(string $id): JSONResponse {
+		return $this->show(id: $id);
+	}//end showLegacyPath()
+
+	/**
+	 * Deprecated alias of /api/accruing-amounts/{id}/settle, kept for clients of the old URL.
+	 *
+	 * @param string $id Id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 *
+	 * @contract exclude Deprecated path alias for settle(); behaviour covered by the settle() tests.
+	 */
+	public function settleLegacyPath(string $id): JSONResponse {
+		return $this->settle(id: $id);
+	}//end settleLegacyPath()
+
+	/**
+	 * Deprecated alias of /api/accruing-amounts/{id}/objection, kept for clients of the old URL.
+	 *
+	 * @param string $id Id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 *
+	 * @contract exclude Deprecated path alias for objection(); behaviour covered by the objection() tests.
+	 */
+	public function objectionLegacyPath(string $id): JSONResponse {
+		return $this->objection(id: $id);
+	}//end objectionLegacyPath()
+
+	/**
+	 * Deprecated alias of /api/accruing-amounts/{id}/objection/reconsider, kept for clients of the old URL.
+	 *
+	 * @param string $id Id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 *
+	 * @contract exclude Deprecated path alias for reconsider(); behaviour covered by the reconsider() tests.
+	 */
+	public function reconsiderLegacyPath(string $id): JSONResponse {
+		return $this->reconsider(id: $id);
+	}//end reconsiderLegacyPath()
 
 	/**
 	 * Decode the JSON request body into an associative array.

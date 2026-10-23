@@ -49,10 +49,10 @@
         {
             "key": "financial",
             "title": "Financial system",
-            "description": "The payout signal for a dwangsom, and the callback that confirms it.",
+            "description": "The payout signal for a settled amount, and the callback that confirms it.",
             "order": 70,
             "settingsUrl": "/settings/admin/dossiq?tab=integrations#section-financial",
-            "requiredConfig": ["dwangsom_callback_secret"]
+            "requiredConfig": ["payout_callback_secret"]
         },
         {
             "key": "brp",

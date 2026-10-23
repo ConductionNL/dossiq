@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Termijn;
 
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Throwable;
@@ -77,7 +78,7 @@ class PenaltyPaymentRows {
 
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$paymentSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
+		$paymentSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
 		if ($objectService === null || $register === '' || $paymentSchema === '') {
 			return $empty;
 		}
@@ -128,7 +129,7 @@ class PenaltyPaymentRows {
 		$calculation = $this->read(
 			objectService: $objectService,
 			register: $register,
-			schemaKey: 'dwangsom_berekening_schema',
+			schemaKey: MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
 			id: (string)($payment['penaltyPaymentCalculation'] ?? '')
 		);
 		$term = $this->read(

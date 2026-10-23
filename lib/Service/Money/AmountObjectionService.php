@@ -1,18 +1,18 @@
 <?php
 
 /**
- * Dossiq DwangsomBezwaarService.
+ * Dossiq AmountObjectionService.
  *
- * Handles bezwaar (AWB 7:1) against a DwangsomBerekening:
- *   - registerBezwaar freezes the berekening (status=bezwaar-bevroren),
- *     sets the linked DwangsomUitbetaling to on-hold-bezwaar, and
- *     emits dwangsom-bezwaar-registered.
- *   - resolveBezwaar adjusts definitievBedrag + Uitbetaling.bedrag,
+ * Handles an objection (AWB 7:1) against an accruing amount:
+ *   - registerObjection freezes the berekening (status=bezwaar-bevroren),
+ *     sets the linked payout to on-hold-bezwaar, and
+ *     emits the dwangsom-bezwaar-registered event (its stored name).
+ *   - resolveObjection adjusts definitievBedrag + Uitbetaling.bedrag,
  *     restores Uitbetaling.status to voorbereid, and emits
- *     dwangsom-bezwaar-resolved.
+ *     the dwangsom-bezwaar-resolved event (its stored name).
  *
  * @category Service
- * @package  OCA\Dossiq\Service
+ * @package  OCA\Dossiq\Service\Money
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,20 +30,21 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service;
+namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\Money\PayoutService;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\TermijnService;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * Bezwaar lifecycle for a DwangsomBerekening.
+ * Objection lifecycle for an accruing amount.
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
-class DwangsomBezwaarService {
+class AmountObjectionService {
 	use SearchesObjects;
 
 	/**
@@ -63,12 +64,12 @@ class DwangsomBezwaarService {
 	}//end __construct()
 
 	/**
-	 * Register a bezwaar against a DwangsomBerekening.
+	 * Register an objection against an accruing amount.
 	 *
 	 * Freezes the berekening (status=bezwaar-bevroren) and puts the
 	 * linked uitbetaling on hold.
 	 *
-	 * @param string $calculationId DwangsomBerekening id.
+	 * @param string $calculationId Accruing amount id.
 	 * @param string $basis Legal basis citation.
 	 * @param string $rationale Reasoning.
 	 *
@@ -78,12 +79,12 @@ class DwangsomBezwaarService {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
-	public function registerBezwaar(string $calculationId, string $basis, string $rationale): array {
+	public function registerObjection(string $calculationId, string $basis, string $rationale): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$bSchema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
-		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
-		$objectService = $this->requirePenaltyPaymentObjectService(
+		$bSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
+		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
+		$objectService = $this->requireMoneyObjectService(
 			objectService: $objectService,
 			register: $register,
 			bSchema: $bSchema,
@@ -98,11 +99,11 @@ class DwangsomBezwaarService {
 				id: $calculationId
 			);
 		} catch (\Throwable $e) {
-			throw new RuntimeException('DwangsomBerekening lookup failed: ' . $e->getMessage());
+			throw new RuntimeException('Accruing amount lookup failed: ' . $e->getMessage());
 		}
 
 		if ($calculation === null) {
-			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
+			throw new RuntimeException('Accruing amount not found: ' . $calculationId);
 		}
 
 		$calculation['status'] = 'objection-bevroren';
@@ -119,7 +120,7 @@ class DwangsomBezwaarService {
 				object: $calculation
 			) ?? $calculation);
 		} catch (\Throwable $e) {
-			throw new RuntimeException('DwangsomBerekening persist failed: ' . $e->getMessage());
+			throw new RuntimeException('Accruing amount could not be saved: ' . $e->getMessage());
 		}
 
 		// Move all linked uitbetalingen to on-hold-bezwaar.
@@ -154,9 +155,9 @@ class DwangsomBezwaarService {
 			);
 		}
 
-		$this->logger->info('Dwangsom bezwaar registered', ['berekening' => $calculationId]);
+		$this->logger->info('Objection registered against an accruing amount', ['berekening' => $calculationId]);
 		return $calculation;
-	}//end registerBezwaar()
+	}//end registerObjection()
 
 	/**
 	 * Resolve a bezwaar with a corrected amount.
@@ -171,16 +172,16 @@ class DwangsomBezwaarService {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
-	public function resolveBezwaar(string $calculationId, int $newAmountCents, string $basis): array {
+	public function resolveObjection(string $calculationId, int $newAmountCents, string $basis): array {
 		if ($newAmountCents < 0) {
 			throw new RuntimeException('newBedragCents must be >= 0');
 		}
 
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$bSchema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
-		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
-		$objectService = $this->requirePenaltyPaymentObjectService(
+		$bSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
+		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
+		$objectService = $this->requireMoneyObjectService(
 			objectService: $objectService,
 			register: $register,
 			bSchema: $bSchema,
@@ -195,11 +196,11 @@ class DwangsomBezwaarService {
 				id: $calculationId
 			);
 		} catch (\Throwable $e) {
-			throw new RuntimeException('DwangsomBerekening lookup failed: ' . $e->getMessage());
+			throw new RuntimeException('Accruing amount lookup failed: ' . $e->getMessage());
 		}
 
 		if ($calculation === null) {
-			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
+			throw new RuntimeException('Accruing amount not found: ' . $calculationId);
 		}
 
 		$calculation['definitiveAmount'] = $newAmountCents;
@@ -212,7 +213,7 @@ class DwangsomBezwaarService {
 				object: $calculation
 			) ?? $calculation);
 		} catch (\Throwable $e) {
-			throw new RuntimeException('DwangsomBerekening persist failed: ' . $e->getMessage());
+			throw new RuntimeException('Accruing amount could not be saved: ' . $e->getMessage());
 		}
 
 		$uitbetalingen = $this->findUitbetalingen(
@@ -249,43 +250,43 @@ class DwangsomBezwaarService {
 			);
 		}
 
-		$this->logger->info('Dwangsom bezwaar resolved', ['berekening' => $calculationId, 'newBedrag' => $newAmountCents]);
+		$this->logger->info('Objection against an accruing amount resolved', ['berekening' => $calculationId, 'newBedrag' => $newAmountCents]);
 		return $calculation;
-	}//end resolveBezwaar()
+	}//end resolveObjection()
 
 	/**
-	 * Assert the dwangsom register/schemas are configured and OpenRegister is
+	 * Assert the register and the money schemas are configured and OpenRegister is
 	 * available, narrowing the object service to a non-null value.
 	 *
 	 * @param object|null $objectService Resolved OpenRegister object service.
 	 * @param string $register Register identifier.
-	 * @param string $bSchema DwangsomBerekening schema identifier.
-	 * @param string $uSchema DwangsomUitbetaling schema identifier.
+	 * @param string $bSchema Accruing amount schema identifier.
+	 * @param string $uSchema Payout schema identifier.
 	 *
 	 * @return object The available object service.
 	 *
 	 * @throws RuntimeException When any part of the configuration is missing.
 	 */
-	private function requirePenaltyPaymentObjectService(
+	private function requireMoneyObjectService(
 		?object $objectService,
 		string $register,
 		string $bSchema,
 		string $uSchema,
 	): object {
 		if ($objectService === null || $register === '' || $bSchema === '' || $uSchema === '') {
-			throw new RuntimeException('Dwangsom services not configured');
+			throw new RuntimeException('The accruing amount and payout schemas are not configured');
 		}
 
 		return $objectService;
-	}//end requireDwangsomObjectService()
+	}//end requireMoneyObjectService()
 
 	/**
 	 * Load the uitbetalingen linked to a berekening, tolerating lookup failures.
 	 *
 	 * @param object $objectService OpenRegister object service.
 	 * @param string $register Register identifier.
-	 * @param string $uSchema DwangsomUitbetaling schema identifier.
-	 * @param string $calculationId DwangsomBerekening id.
+	 * @param string $uSchema Payout schema identifier.
+	 * @param string $calculationId Accruing amount id.
 	 *
 	 * @return array<int, array<string, mixed>> The linked uitbetalingen.
 	 */

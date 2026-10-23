@@ -164,10 +164,10 @@ class PenaltyPaymentRowsTest extends TestCase {
 			static fn (string $key): string => match ($key) {
 				'register' => 'dossiq',
 				'termijn_instance_schema' => 'deadlineInstance',
-				'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
+				'accruing_amount_schema' => 'penaltyPaymentCalculation',
 				'case_schema' => 'case',
 				'case_type_schema' => 'caseType',
-				'dwangsom_uitbetaling_schema' => $paymentSchema,
+				'payout_schema' => $paymentSchema,
 				default => '',
 			},
 		);

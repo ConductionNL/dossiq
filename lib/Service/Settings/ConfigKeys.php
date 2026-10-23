@@ -225,14 +225,14 @@ class ConfigKeys {
 		'termijn_definitie_schema',
 		'termijn_instance_schema',
 		'termijn_gebeurtenis_schema',
-		'ingebrekestelling_schema',
-		'dwangsom_berekening_schema',
-		'dwangsom_uitbetaling_schema',
+		'notice_of_default_schema',
+		'accruing_amount_schema',
+		'payout_schema',
 		// Shared secret validating the X-Procest-Signature HMAC-SHA256 header
 		// on the public dwangsom payment-confirmation callback (ADR-005;
 		// enforce-dwangsom-callback-signature spec). Empty = callback fails
 		// closed (401) rather than treated as an implicit pass.
-		'dwangsom_callback_secret',
+		'payout_callback_secret',
 		// Mandaat-matrix authorization engine.
 		'mandaterings_besluit_schema',
 		'mandaat_schema',

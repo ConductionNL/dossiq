@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\PayoutCallbackController;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Money\PayoutService;
 use OCA\Dossiq\Service\Money\SignedPayoutCallback;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
@@ -77,13 +78,16 @@ class PayoutCallbackControllerTest extends TestCase {
 	 * @param array<string, string> $headers Header values by name.
 	 * @param string $body The raw body.
 	 * @param string $secret The configured secret.
+	 * @param string $legacySecret The secret under the key it was stored under before the rename.
 	 *
 	 * @return PayoutCallbackController
 	 */
-	private function controller(array $headers, string $body, string $secret = self::SECRET): PayoutCallbackController {
-		$this->appConfig->method('getValueString')
-			->with('dossiq', SignedPayoutCallback::SECRET_KEY, '')
-			->willReturn($secret);
+	private function controller(array $headers, string $body, string $secret = self::SECRET, string $legacySecret = ''): PayoutCallbackController {
+		$stored = array_filter([SignedPayoutCallback::SECRET_KEY => $secret, MoneyConfigKeys::LEGACY_KEYS[SignedPayoutCallback::SECRET_KEY] => $legacySecret]);
+		$this->appConfig->method('hasKey')->willReturnCallback(static fn (string $app, string $key): bool => array_key_exists($key, $stored));
+		$this->appConfig->method('getValueString')->willReturnCallback(
+			static fn (string $app, string $key, string $default = ''): string => ($stored[$key] ?? $default)
+		);
 		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getHeader')->willReturnCallback(
 			static fn (string $name): string => ($headers[$name] ?? '')
@@ -142,6 +146,27 @@ class PayoutCallbackControllerTest extends TestCase {
 
 		$this->assertSame(expected: 401, actual: $response->getStatus());
 	}//end testCallbackRejectsWhenSecretUnconfigured()
+
+	/**
+	 * A secret stored under its old key still verifies until the upgrade carries it (REQ-DQM-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 */
+	public function testASecretUnderTheOldKeyStillVerifies(): void {
+		$body = (string)json_encode(['reference' => 'REF-123', 'status' => 'paid']);
+		$this->service->expects($this->once())->method('handleCallback')->willReturn(['status' => 'paid']);
+
+		$response = $this->controller(
+			headers: ['X-Shillinq-Signature' => hash_hmac('sha256', $body, self::SECRET)],
+			body: $body,
+			secret: '',
+			legacySecret: self::SECRET
+		)->callback();
+
+		$this->assertSame(expected: 200, actual: $response->getStatus());
+	}//end testASecretUnderTheOldKeyStillVerifies()
 
 	/**
 	 * A signature that does not match the secret is rejected in either header.

@@ -159,15 +159,15 @@ describe('the payment callback', () => {
 	const fields = byKey(paymentCallbackFields(t))
 
 	it('shows the secret back to the administrator who hands it on', () => {
-		expect(fields.dwangsom_callback_secret.type).toBe('password')
+		expect(fields.payout_callback_secret.type).toBe('password')
 	})
 
 	it('warns while no secret is stored', () => {
-		expect(fields['callback-secret-missing']).toMatchObject({ type: 'status', tone: 'warning', visibleWhen: { key: 'dwangsom_callback_secret', empty: true } })
+		expect(fields['callback-secret-missing']).toMatchObject({ type: 'status', tone: 'warning', visibleWhen: { key: 'payout_callback_secret', empty: true } })
 	})
 
 	it('generates a 32-byte secret into the field', () => {
-		expect(fields['generate-callback-secret']).toMatchObject({ type: 'action', fill: { key: 'dwangsom_callback_secret', bytes: 32 } })
+		expect(fields['generate-callback-secret']).toMatchObject({ type: 'action', fill: { key: 'payout_callback_secret', bytes: 32 } })
 	})
 })
 

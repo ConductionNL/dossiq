@@ -389,13 +389,13 @@ export function paymentCallbackFields(t) {
 			tone: 'warning',
 			text: t(
 				'dossiq',
-				'No callback secret is configured. Every dwangsom payment-confirmation callback is currently being rejected with HTTP 401.',
+				'No callback secret is configured. Every payout confirmation callback is currently being rejected with HTTP 401.',
 			),
-			visibleWhen: { key: 'dwangsom_callback_secret', empty: true },
+			visibleWhen: { key: 'payout_callback_secret', empty: true },
 		},
 		{
-			key: 'dwangsom_callback_secret',
-			label: t('dossiq', 'Dwangsom callback secret'),
+			key: 'payout_callback_secret',
+			label: t('dossiq', 'Payout callback secret'),
 			type: 'password',
 			hint: t(
 				'dossiq',
@@ -406,7 +406,7 @@ export function paymentCallbackFields(t) {
 			key: 'generate-callback-secret',
 			label: t('dossiq', 'Generate random secret'),
 			type: 'action',
-			fill: { key: 'dwangsom_callback_secret', bytes: 32 },
+			fill: { key: 'payout_callback_secret', bytes: 32 },
 		},
 	]
 }
