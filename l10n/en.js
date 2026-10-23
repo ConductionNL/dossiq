@@ -10916,6 +10916,8 @@ OC.L10N.register(
         "{caseType}, phase {phase}": "{caseType}, phase {phase}",
         "{case}, location": "{case}, location",
         "{competentCourt}": "{competentCourt}",
+        "{count:open} open case": "{count:open} open case",
+        "{count:open} open cases": "{count:open} open cases",
         "{count:status=completed} of {total} steps done": "{count:status=completed} of {total} steps done",
         "{counted} of {total} assessed": "{counted} of {total} assessed",
         "{count} / {max} characters": "{count} / {max} characters",
