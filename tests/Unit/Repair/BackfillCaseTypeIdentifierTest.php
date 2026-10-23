@@ -124,7 +124,7 @@ final class BackfillCaseTypeIdentifierTest extends TestCase {
 	 * @return array<int, string> The lines written to the upgrade output.
 	 */
 	private function runOver(object $store): array {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => [
@@ -135,14 +135,14 @@ final class BackfillCaseTypeIdentifierTest extends TestCase {
 		);
 
 		$lines = [];
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->method('info')->willReturnCallback(
 			static function (string $line) use (&$lines): void {
 				$lines[] = $line;
 			}
 		);
 
-		(new BackfillCaseTypeIdentifier($settings, $this->createMock(LoggerInterface::class)))->run($output);
+		(new BackfillCaseTypeIdentifier(settingsService: $settings, logger: $this->createMock(originalClassName: LoggerInterface::class)))->run($output);
 
 		return $lines;
 	}//end runOver()
@@ -167,16 +167,16 @@ final class BackfillCaseTypeIdentifierTest extends TestCase {
 		$lines = $this->runOver(store: $store);
 
 		$this->assertSame(
-			[
+			expected: [
 				['schema' => '5', 'id' => 'c-v1', 'data' => ['caseTypeIdentifier' => 'woo-verzoek']],
 				['schema' => '5', 'id' => 'c-v2', 'data' => ['caseTypeIdentifier' => 'woo-verzoek']],
 			],
-			$store->patches
+			actual: $store->patches
 		);
-		$this->assertSame(1, $store->systemRuns);
+		$this->assertSame(expected: 1, actual: $store->systemRuns);
 		$this->assertSame(
-			['caseTypeIdentifier backfill: 2 filled, 0 written but not confirmed, 0 failed, 3 already right or without an identifier.'],
-			$lines
+			expected: ['caseTypeIdentifier backfill: 2 filled, 0 written but not confirmed, 0 failed, 3 already right or without an identifier.'],
+			actual: $lines
 		);
 	}//end testEveryVersionOfAChainGetsTheSharedIdentifier()
 
@@ -186,12 +186,12 @@ final class BackfillCaseTypeIdentifierTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutOpenRegisterItSkips(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->expects($this->once())->method('info')
 			->with('OpenRegister unavailable, skipping the caseTypeIdentifier backfill.');
 
-		(new BackfillCaseTypeIdentifier($settings, $this->createMock(LoggerInterface::class)))->run($output);
+		(new BackfillCaseTypeIdentifier(settingsService: $settings, logger: $this->createMock(originalClassName: LoggerInterface::class)))->run($output);
 	}//end testWithoutOpenRegisterItSkips()
 }//end class

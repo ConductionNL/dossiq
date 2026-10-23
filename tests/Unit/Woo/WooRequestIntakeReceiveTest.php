@@ -283,19 +283,31 @@ class WooRequestIntakeReceiveTest extends TestCase {
 		$this->store->seed(
 			schema: 'caseType',
 			uuid: WooRequestIntake::CASE_TYPE_ID,
-			row: ['title' => 'Woo-verzoek', 'identifier' => 'woo-verzoek', 'version' => 1, 'initialStatus' => '3c0f5a00-0000-4000-a000-00000000b001', 'supersededBy' => 'woo-v2']
+			row: [
+				'title'         => 'Woo-verzoek',
+				'identifier'    => 'woo-verzoek',
+				'version'       => 1,
+				'initialStatus' => '3c0f5a00-0000-4000-a000-00000000b001',
+				'supersededBy'  => 'woo-v2',
+			]
 		);
 		$this->store->seed(
 			schema: 'caseType',
 			uuid: 'woo-v2',
-			row: ['title' => 'Woo-verzoek', 'identifier' => 'woo-verzoek', 'version' => 2, 'initialStatus' => 'woo-v2-ontvangen', 'previousVersion' => WooRequestIntake::CASE_TYPE_ID]
+			row: [
+				'title'           => 'Woo-verzoek',
+				'identifier'      => 'woo-verzoek',
+				'version'         => 2,
+				'initialStatus'   => 'woo-v2-ontvangen',
+				'previousVersion' => WooRequestIntake::CASE_TYPE_ID,
+			]
 		);
 
-		$answer = $this->intake()->receive($this->answers([]), '2026-11-27T10:15:00+01:00');
+		$answer = $this->intake()->receive($this->answers(overrides: []), '2026-11-27T10:15:00+01:00');
 
-		self::assertSame('armed', $answer['outcome'], $answer['message']);
+		self::assertSame(expected: 'armed', actual: $answer['outcome'], message: $answer['message']);
 		$case = $this->store->row(schema: 'case', uuid: $answer['requestId']);
-		self::assertSame('woo-v2', $case['caseType']);
+		self::assertSame(expected: 'woo-v2', actual: $case['caseType']);
 	}//end testARequestIsFiledOnTheCurrentVersionOfTheCaseType()
 
 	/**

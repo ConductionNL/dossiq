@@ -253,14 +253,14 @@ class AanvullingsverzoekServiceTest extends TestCase {
 			question: 'Welke periode bedoelt u?',
 		);
 
-		self::assertSame('verduidelijking', $ask($this->serviceForCase(WooRequestIntake::CASE_TYPE_ID))['kind']);
-		self::assertSame('verduidelijking', $ask($this->serviceForCase('woo-verzoek'))['kind']);
+		self::assertSame(expected: 'verduidelijking', actual: $ask($this->serviceForCase(case: WooRequestIntake::CASE_TYPE_ID))['kind']);
+		self::assertSame(expected: 'verduidelijking', actual: $ask($this->serviceForCase(case: 'woo-verzoek'))['kind']);
 
 		try {
-			$ask($this->serviceForCase('melding-openbare-ruimte'));
-			self::fail('a clarification on another case type is refused');
+			$ask($this->serviceForCase(case: 'melding-openbare-ruimte'));
+			self::fail(message: 'a clarification on another case type is refused');
 		} catch (RefusedException $e) {
-			self::assertSame('aanvullingsverzoek-clarification-woo-only', $e->getRule());
+			self::assertSame(expected: 'aanvullingsverzoek-clarification-woo-only', actual: $e->getRule());
 		}
 	}//end testAClarificationIsAskedOnEveryVersionOfTheWooCaseType()
 

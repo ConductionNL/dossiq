@@ -355,13 +355,13 @@ class MenuCaseTypesServiceTest extends TestCase {
 			['id' => 'woo-v2', 'title' => 'Woo-verzoek'],
 		];
 
-		$service = $this->service($rows);
-		$this->assertSame([['id' => 'woo-v2', 'title' => 'Woo-verzoek']], $service->chosen('u', $service->visibleCaseTypes()));
+		$service = $this->service(rows: $rows);
+		$this->assertSame(expected: [['id' => 'woo-v2', 'title' => 'Woo-verzoek']], actual: $service->chosen('u', $service->visibleCaseTypes()));
 
-		$saved = $this->service($rows, (string)json_encode([self::WOO, 'woo-v2', 'b']));
+		$saved = $this->service(rows: $rows, stored: (string)json_encode([self::WOO, 'woo-v2', 'b']));
 		$this->assertSame(
-			[['id' => 'woo-v2', 'title' => 'Woo-verzoek'], ['id' => 'b', 'title' => 'Bezwaar']],
-			$saved->chosen('u', $saved->visibleCaseTypes())
+			expected: [['id' => 'woo-v2', 'title' => 'Woo-verzoek'], ['id' => 'b', 'title' => 'Bezwaar']],
+			actual: $saved->chosen('u', $saved->visibleCaseTypes())
 		);
 	}//end testAChosenSupersededVersionFoldsToTheVersionInUse()
 

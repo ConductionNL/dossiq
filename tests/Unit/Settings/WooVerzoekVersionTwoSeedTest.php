@@ -87,7 +87,7 @@ class WooVerzoekVersionTwoSeedTest extends TestCase {
 			}
 		}
 
-		self::fail('no case type ' . $id);
+		self::fail(message: 'no case type ' . $id);
 	}//end caseType()
 
 	/**
@@ -122,13 +122,13 @@ class WooVerzoekVersionTwoSeedTest extends TestCase {
 		$first = $this->caseType(id: WooRequestIntake::CASE_TYPE_ID);
 		$second = $this->caseType(id: self::V2);
 
-		self::assertSame(1, $first['version']);
-		self::assertSame(self::V2, $first['supersededBy']);
-		self::assertSame(2, $second['version']);
-		self::assertSame(WooRequestIntake::CASE_TYPE_ID, $second['previousVersion']);
-		self::assertSame(WooRequestIntake::CASE_TYPE_IDENTIFIER, $first['identifier']);
-		self::assertSame(WooRequestIntake::CASE_TYPE_IDENTIFIER, $second['identifier']);
-		self::assertFalse($second['isDraft']);
+		self::assertSame(expected: 1, actual: $first['version']);
+		self::assertSame(expected: self::V2, actual: $first['supersededBy']);
+		self::assertSame(expected: 2, actual: $second['version']);
+		self::assertSame(expected: WooRequestIntake::CASE_TYPE_ID, actual: $second['previousVersion']);
+		self::assertSame(expected: WooRequestIntake::CASE_TYPE_IDENTIFIER, actual: $first['identifier']);
+		self::assertSame(expected: WooRequestIntake::CASE_TYPE_IDENTIFIER, actual: $second['identifier']);
+		self::assertFalse(condition: $second['isDraft']);
 	}//end testVersionTwoSupersedesTheFirst()
 
 	/**
@@ -139,10 +139,10 @@ class WooVerzoekVersionTwoSeedTest extends TestCase {
 	public function testVersionTwoHasTheFiveStepsTheBoardsDraw(): void {
 		$statuses = $this->statuses();
 
-		self::assertSame(['Ontvangen', 'In behandeling', 'Besluit', 'Publiceren', 'Afgehandeld'], array_column($statuses, 'name'));
-		self::assertSame([false, false, false, false, true], array_column($statuses, 'isFinal'));
-		self::assertSame(['intake', 'in-progress', 'review', 'review', 'closed'], array_column($statuses, 'role'));
-		self::assertSame($this->statusNamed(name: 'Ontvangen'), $this->caseType(id: self::V2)['initialStatus']);
+		self::assertSame(expected: ['Ontvangen', 'In behandeling', 'Besluit', 'Publiceren', 'Afgehandeld'], actual: array_column($statuses, 'name'));
+		self::assertSame(expected: [false, false, false, false, true], actual: array_column($statuses, 'isFinal'));
+		self::assertSame(expected: ['intake', 'in-progress', 'review', 'review', 'closed'], actual: array_column($statuses, 'role'));
+		self::assertSame(expected: $this->statusNamed(name: 'Ontvangen'), actual: $this->caseType(id: self::V2)['initialStatus']);
 	}//end testVersionTwoHasTheFiveStepsTheBoardsDraw()
 
 	/**
@@ -153,15 +153,15 @@ class WooVerzoekVersionTwoSeedTest extends TestCase {
 	public function testVersionTwoHasItsOwnTypes(): void {
 		$results = array_column($this->objects(schema: 'resultType', owner: self::V2), 'name');
 		sort($results);
-		self::assertSame(['Deels openbaar gemaakt', 'Ingetrokken', 'Niet openbaar gemaakt', 'Openbaar gemaakt'], $results);
+		self::assertSame(expected: ['Deels openbaar gemaakt', 'Ingetrokken', 'Niet openbaar gemaakt', 'Openbaar gemaakt'], actual: $results);
 
 		$decisions = $this->objects(schema: 'decisionType', owner: self::V2);
-		self::assertCount(1, $decisions);
-		self::assertSame([$decisions[0]['id']], $this->caseType(id: self::V2)['decisionTypes']);
+		self::assertCount(expectedCount: 1, haystack: $decisions);
+		self::assertSame(expected: [$decisions[0]['id']], actual: $this->caseType(id: self::V2)['decisionTypes']);
 
 		self::assertSame(
-			array_column($this->objects(schema: 'propertyDefinition', owner: WooRequestIntake::CASE_TYPE_ID), 'name'),
-			array_column($this->objects(schema: 'propertyDefinition', owner: self::V2), 'name')
+			expected: array_column($this->objects(schema: 'propertyDefinition', owner: WooRequestIntake::CASE_TYPE_ID), 'name'),
+			actual: array_column($this->objects(schema: 'propertyDefinition', owner: self::V2), 'name')
 		);
 	}//end testVersionTwoHasItsOwnTypes()
 
@@ -175,18 +175,18 @@ class WooVerzoekVersionTwoSeedTest extends TestCase {
 		$type = $this->caseType(id: self::V2);
 		$early = [$this->statusNamed(name: 'Ontvangen'), $this->statusNamed(name: 'In behandeling')];
 
-		self::assertSame($early, $type['portalAmendmentWindow']['openStatuses']);
-		self::assertSame($early, $type['portalDocumentWindow']['openStatuses']);
-		self::assertSame($early, $type['portalWithdrawal']['openStatuses']);
-		self::assertSame($this->statusNamed(name: 'Afgehandeld'), $type['portalWithdrawal']['targetStatus']);
+		self::assertSame(expected: $early, actual: $type['portalAmendmentWindow']['openStatuses']);
+		self::assertSame(expected: $early, actual: $type['portalDocumentWindow']['openStatuses']);
+		self::assertSame(expected: $early, actual: $type['portalWithdrawal']['openStatuses']);
+		self::assertSame(expected: $this->statusNamed(name: 'Afgehandeld'), actual: $type['portalWithdrawal']['targetStatus']);
 
 		$statuses = $type['recordImports'][0]['statuses'];
-		self::assertSame($this->statusNamed(name: 'Ontvangen'), $statuses['received']['status']);
-		self::assertSame($this->statusNamed(name: 'In behandeling'), $statuses['in_progress']['status']);
-		self::assertSame($this->statusNamed(name: 'Afgehandeld'), $statuses['withdrawn']['status']);
+		self::assertSame(expected: $this->statusNamed(name: 'Ontvangen'), actual: $statuses['received']['status']);
+		self::assertSame(expected: $this->statusNamed(name: 'In behandeling'), actual: $statuses['in_progress']['status']);
+		self::assertSame(expected: $this->statusNamed(name: 'Afgehandeld'), actual: $statuses['withdrawn']['status']);
 		$withdrawn = array_column($this->objects(schema: 'resultType', owner: self::V2), 'id', 'name')['Ingetrokken'];
-		self::assertSame($withdrawn, $statuses['withdrawn']['result']);
-		self::assertArrayNotHasKey('recordImports', $this->caseType(id: WooRequestIntake::CASE_TYPE_ID));
+		self::assertSame(expected: $withdrawn, actual: $statuses['withdrawn']['result']);
+		self::assertArrayNotHasKey(key: 'recordImports', array: $this->caseType(id: WooRequestIntake::CASE_TYPE_ID));
 	}//end testThePortalAndTheImportNameVersionTwosStatuses()
 
 	/**
@@ -196,9 +196,9 @@ class WooVerzoekVersionTwoSeedTest extends TestCase {
 	 */
 	public function testTheFlowCarriesTheGuardsOntoFiveSteps(): void {
 		$flow = json_decode((string)file_get_contents(dirname(__DIR__, 3) . '/lib/Settings/packages/woo-verzoek/flows/woo-verzoek-version-2.json'), true);
-		self::assertSame(self::V2, $flow['caseType']);
-		self::assertSame($flow['id'], $this->caseType(id: self::V2)['workflowDefinition']);
-		self::assertSame(array_column($this->statuses(), 'id'), array_column(json_decode($flow['steps'], true), 'status'));
+		self::assertSame(expected: self::V2, actual: $flow['caseType']);
+		self::assertSame(expected: $flow['id'], actual: $this->caseType(id: self::V2)['workflowDefinition']);
+		self::assertSame(expected: array_column($this->statuses(), 'id'), actual: array_column(json_decode($flow['steps'], true), 'status'));
 
 		$moves = [];
 		foreach (json_decode($flow['transitions'], true) as $move) {
@@ -207,15 +207,15 @@ class WooVerzoekVersionTwoSeedTest extends TestCase {
 
 		$at = fn (string $from, string $to): array => ($moves[$this->statusNamed(name: $from) . '>' . $this->statusNamed(name: $to)] ?? []);
 
-		self::assertCount(1, $at('Ontvangen', 'In behandeling'));
+		self::assertCount(expectedCount: 1, haystack: $at('Ontvangen', 'In behandeling'));
 		$toDecision = $at('In behandeling', 'Besluit')[0];
-		self::assertSame(['gathered', 'assessed', 'redacted'], array_column($toDecision['guards'], 'require'));
-		self::assertSame('wooPublicationStatus', $at('Besluit', 'Publiceren')[0]['requiresSettled'][0]['field']);
-		self::assertSame('published', $at('Publiceren', 'Afgehandeld')[0]['requiresSettled'][0]['value']);
+		self::assertSame(expected: ['gathered', 'assessed', 'redacted'], actual: array_column($toDecision['guards'], 'require'));
+		self::assertSame(expected: 'wooPublicationStatus', actual: $at('Besluit', 'Publiceren')[0]['requiresSettled'][0]['field']);
+		self::assertSame(expected: 'published', actual: $at('Publiceren', 'Afgehandeld')[0]['requiresSettled'][0]['value']);
 		self::assertSame(
-			['inadmissibilityReason', 'withdrawalReason'],
-			array_map(static fn (array $move): string => $move['requiresSettled'][0]['field'], $at('In behandeling', 'Afgehandeld'))
+			expected: ['inadmissibilityReason', 'withdrawalReason'],
+			actual: array_map(static fn (array $move): string => $move['requiresSettled'][0]['field'], $at('In behandeling', 'Afgehandeld'))
 		);
-		self::assertSame('withdrawalReason', $at('Ontvangen', 'Afgehandeld')[0]['requiresSettled'][0]['field']);
+		self::assertSame(expected: 'withdrawalReason', actual: $at('Ontvangen', 'Afgehandeld')[0]['requiresSettled'][0]['field']);
 	}//end testTheFlowCarriesTheGuardsOntoFiveSteps()
 }//end class
