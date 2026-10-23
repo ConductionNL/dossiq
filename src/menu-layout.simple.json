@@ -6505,7 +6505,7 @@
 					},
 					{
 						"id": "case-type-translations-summary",
-						"type": "CaseTypeTranslationsWidget",
+						"type": "CaseTypeTranslationsSummaryWidget",
 						"title": "Translations",
 						"_note": "DqZaaktypeOverzicht Vertalingen: one row per language with its labels and a pill, fully translated or the number missing. The editor stays on the Translations tab, which Edit opens.",
 						"headerLink": {

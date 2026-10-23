@@ -286,6 +286,17 @@ const registry = {
 		...PANEL_WIDGET_META,
 		_note: "CaseTypeDetail: one chip per language the register declares, and an editor per language for the labels OpenRegister holds as translatable. It counts a stale label as missing, which OpenRegister's own completeness does not: getCompletenessByObject() counts every non-empty row and never reads its status. It writes the WHOLE language map and sends no X-Translation-Target-Language: normalizeTranslationsForSave() refuses a language keyed body that arrives with that header and keeps one that arrives without it.",
 	},
+	// The same widget in its summary mode (`content.mode: "summary"`) on the Overview tab,
+	// drawn as a titled card there as board DqZaaktypeOverzicht draws Vertalingen.
+	// @spec openspec/changes/case-type-translations-summary/specs/case-types/spec.md#requirement-the-overview-tab-summarises-the-translations
+	CaseTypeTranslationsSummaryWidget: {
+		// @custom-widget-ratchet exclude the same reason as CaseTypeTranslationsWidget: the library has no translatable-property surface, so no declared widget can count a language's labels
+		kind: 'widget',
+		chrome: 'card',
+		component: CaseTypeTranslationsWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail Overview: the translations as one row per language, in a card titled from the definition (DqZaaktypeOverzicht Vertalingen). The editor stays on the Translations tab under CaseTypeTranslationsWidget.',
+	},
 	// --- What a case type opens to its applicant (portal-citizen-writes-on-the-case D3). ---
 	// @spec openspec/specs/portal-contribution/spec.md
 	CaseTypePortalWidget: {

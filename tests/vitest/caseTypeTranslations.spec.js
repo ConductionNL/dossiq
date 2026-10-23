@@ -352,7 +352,9 @@ describe('the translations summary (DqZaaktypeOverzicht)', () => {
 		expect(tabs.find((tab) => tab.id === 'overview').widgetIds).toContain('case-type-translations-summary')
 		expect(tabs.find((tab) => tab.id === 'overview').widgetIds).not.toContain('case-type-translations')
 		expect(tabs.find((tab) => tab.id === 'translations').widgetId).toBe('case-type-translations')
-		expect(summary.type).toBe('CaseTypeTranslationsWidget')
+		// Its own registry entry draws it in a titled card in the tab stack, as the board's Vertalingen card.
+		expect(summary.type).toBe('CaseTypeTranslationsSummaryWidget')
+		expect(registrySource).toMatch(/CaseTypeTranslationsSummaryWidget: \{[\s\S]*?chrome: 'card',[\s\S]*?component: CaseTypeTranslationsWidget,/)
 		expect(summary.content.mode).toBe('summary')
 		expect(summary.headerLink).toEqual({ label: 'Edit', tab: 'translations' })
 	})
