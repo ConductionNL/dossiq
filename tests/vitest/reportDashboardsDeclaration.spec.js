@@ -301,3 +301,20 @@ describe('no dashboard reads a dossiq component any more', () => {
 		}
 	})
 })
+
+describe('process mining figures', () => {
+	it('aligns the figures to the end and rules above the first stuck phase, as DqProcesanalyse draws them', () => {
+		const cols = (id) => Object.fromEntries(widget('ProcessMiningDashboard', id).content.columns.map((c) => [c.key, c]))
+		const ranking = cols('pm-bottlenecks')
+		for (const key of ['medianWorkingHours', 'medianHours', 'visitCount', 'score']) {
+			expect(ranking[key].class, key).toBe('cn-table-col--end')
+		}
+		expect(ranking.caseTypeTitle.class).toBeUndefined()
+		const byHandler = cols('pm-dwell-by-assignee')
+		for (const key of ['workingHours', 'wallHours', 'visitCount']) {
+			expect(byHandler[key].class, key).toBe('cn-table-col--end')
+		}
+		// "Waar zaken blijven hangen": a hairline under the title, above the first row.
+		expect(widget('ProcessMiningDashboard', 'pm-stuck').content.ruleAbove).toBe(true)
+	})
+})
