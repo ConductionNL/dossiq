@@ -5419,7 +5419,6 @@ OC.L10N.register(
         "Objections & Appeals": "Bezwaar & Beroep",
         "Objects": "Objecten",
         "Objects and locations": "Objecten en locaties",
-        "Objects you link to cases, by type": "Objecten die u aan zaken koppelt, per soort",
         "Objects you link to cases; you manage their properties here": "Objecten die u aan zaken koppelt; eigenschappen beheert u hier",
         "Obligation": "Verplichting",
         "Obligation kinds": "Soorten verplichting",

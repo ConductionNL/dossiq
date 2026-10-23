@@ -19,7 +19,7 @@ const widget = (id) => widgets.find((entry) => entry.id === id)
 
 describe('the catalogue card subtitles (DqCatalogus)', () => {
 	it.each([
-		['catalogue-object-types', 'Objecten die u aan zaken koppelt, per soort'],
+		['catalogue-object-types', 'Objecten die u aan zaken koppelt; eigenschappen beheert u hier'],
 		['catalogue-store', 'Zaaktypen en inrichting als bestand in en uit'],
 	])('%s draws its line as a subtitle', (id, text) => {
 		expect(nl[widget(id).subtitle]).toBe(text)

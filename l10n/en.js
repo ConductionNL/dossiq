@@ -5419,7 +5419,6 @@ OC.L10N.register(
         "Objections & Appeals": "Objections & Appeals",
         "Objects": "Objects",
         "Objects and locations": "Objects and locations",
-        "Objects you link to cases, by type": "Objects you link to cases, by type",
         "Objects you link to cases; you manage their properties here": "Objects you link to cases; you manage their properties here",
         "Obligation": "Obligation",
         "Obligation kinds": "Obligation kinds",
