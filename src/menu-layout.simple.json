@@ -1494,7 +1494,7 @@
 					},
 					{
 						"id": "side-social-consent",
-						"type": "record-list",
+						"type": "facts",
 						"title": "Consent",
 						"visibleWhen": {
 							"any": [
@@ -1513,21 +1513,33 @@
 								}
 							]
 						},
-						"_note": "DqSociaalDomein Toestemming: the consents recorded on this case (toestemming.caseId): who gave it, for what purpose, until when.",
+						"_note": "DqSociaalDomein Toestemming: the newest consent recorded on this case (toestemming.caseId) as label-left facts: its purpose, who gave it, when and how it was recorded, and until when it holds. A consent without an end date holds until it is withdrawn.",
 						"content": {
-							"register": "dossiq",
-							"schema": "toestemming",
-							"filter": {
-								"caseId": "@objectId"
+							"source": {
+								"register": "dossiq",
+								"schema": "toestemming",
+								"filter": {
+									"caseId": "@objectId"
+								},
+								"sort": {
+									"field": "grantedDate",
+									"dir": "desc"
+								}
 							},
-							"sort": {
-								"field": "grantedDate",
-								"dir": "desc"
-							},
-							"limit": 3,
-							"presentation": "rows",
-							"title": "{tedoel}",
-							"meta": "{grantedByName} · {grantedDate|date}",
+							"fields": [
+								{ "path": "tedoel", "label": "Purpose" },
+								{ "path": "grantedByName", "label": "Given by" },
+								{
+									"key": "recorded",
+									"label": "Recorded",
+									"parts": [
+										{ "path": "grantedDate", "format": "date-long" },
+										{ "path": "recordedViaChannel", "map": { "schriftelijk": "in writing", "mondeling": "spoken", "digitaal": "digitally" } }
+									],
+									"separator": ", "
+								},
+								{ "path": "validTo", "label": "Valid until", "format": "date-long", "emptyValue": "Until it is withdrawn" }
+							],
 							"emptyText": "No consent recorded"
 						}
 					},
@@ -1552,7 +1564,7 @@
 								}
 							]
 						},
-						"_note": "DqSociaalDomein Wie: the people on this case and what they do on it (role.name and role.description), so a need-to-know case shows who may look.",
+						"_note": "DqSociaalDomein Wie: the people on this case and what they do on it (role.name and role.description), each behind their initials, so a need-to-know case shows who may look.",
 						"content": {
 							"register": "dossiq",
 							"schema": "role",
@@ -1561,8 +1573,8 @@
 							},
 							"limit": 5,
 							"presentation": "rows",
-							"title": "{name}",
-							"meta": "{description}",
+							"avatar": "{name}",
+							"title": "{name}, {description}",
 							"emptyText": "Nobody is involved yet"
 						}
 					},
