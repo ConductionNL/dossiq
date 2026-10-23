@@ -595,13 +595,16 @@
 				id="section-enforcement-strategy"
 				:name="t('dossiq', 'Enforcement strategy')">
 				<CnFactsWidget :content="enforcementMatrixFacts" />
-				<NcButton
-					variant="tertiary"
-					:aria-expanded="String(showEarlierMatrices)"
-					data-testid="enforcement-earlier-versions"
-					@click="showEarlierMatrices = !showEarlierMatrices">
-					{{ showEarlierMatrices ? t('dossiq', 'Hide earlier versions') : t('dossiq', 'Earlier versions') }}
-				</NcButton>
+				<p>
+					<a
+						href="#section-enforcement-strategy"
+						role="button"
+						data-testid="enforcement-earlier-versions"
+						:aria-expanded="String(showEarlierMatrices)"
+						@click.prevent="showEarlierMatrices = !showEarlierMatrices">
+						{{ showEarlierMatrices ? t('dossiq', 'Hide earlier versions') : t('dossiq', 'Earlier versions') }}
+					</a>
+				</p>
 				<CnWidgetObjectTable
 					v-if="showEarlierMatrices"
 					:hideWrapper="true"
