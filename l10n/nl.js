@@ -4347,6 +4347,7 @@ OC.L10N.register(
         "Link to case": "Aan zaak koppelen",
         "Link to send": "Link om te versturen",
         "Link to the hoorzittingverslag owned by the bezwaar-lifecycle / hearing-session": "Koppeling naar het hoorzittingverslag, dat bij bezwaar-lifecycle en hearing-session hoort",
+        "Link to the object": "Link naar het object",
         "Link to the work": "Link naar het werk",
         "Linked": "Gekoppeld",
         "Linked BAC advisory request (Awb 7:13); when set, followsAdvice and deviationRationale apply": "Gekoppelde adviesvraag aan de BAC (Awb 7:13); is die gezet, dan gelden followsAdvice en deviationRationale",
