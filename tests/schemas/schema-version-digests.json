@@ -1707,6 +1707,14 @@
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-case-subject-and-sensitive-answers.json::case": {
+        "version": "1.49.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-subject-and-sensitive-answers.json::propertyDefinition": {
+        "version": "1.7.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-case-type-next-step.json::caseType": {
         "version": "1.31.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1733,6 +1741,10 @@
     },
     "lib/Settings/register.d/99-case-type-record-import-case-fields.json::caseType": {
         "version": "1.35.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-type-record-import-references.json::caseType": {
+        "version": "1.36.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-type-special-data.json::caseType": {

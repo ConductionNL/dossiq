@@ -50,6 +50,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
  * @covers \OCA\Dossiq\Service\Import\RecordImportStore
  * @covers \OCA\Dossiq\Service\Import\RecordValues
+ * @covers \OCA\Dossiq\Service\Import\RecordImportReferences
  * @uses   \OCA\Dossiq\Service\Term\TermCarryOver
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
@@ -609,7 +610,7 @@ class CaseRecordImportTest extends TestCase {
 		$answer = $this->runImport(installed: false);
 
 		self::assertSame(
-			['key' => 'opencatalogi-woo-requests', 'sourceApp' => 'opencatalogi', 'installed' => false, 'imported' => 0, 'alreadyImported' => 0, 'failed' => [], 'unmigrated' => 0, 'migrated' => []],
+			['key' => 'opencatalogi-woo-requests', 'sourceApp' => 'opencatalogi', 'installed' => false, 'imported' => 0, 'alreadyImported' => 0, 'failed' => [], 'unmigrated' => 0, 'migrated' => [], 'duplicates' => [], 'repointed' => 0],
 			$answer
 		);
 		self::assertSame(0, $this->store->writes);
@@ -769,6 +770,59 @@ class CaseRecordImportTest extends TestCase {
 		self::assertSame(expected: [], actual: $this->import()->runOnUpgrade());
 		self::assertSame(expected: [], actual: $this->store->all('case'));
 	}//end testAnUpgradeSkipsASupersededVersion()
+
+	/**
+	 * Two source records carrying one number become one case; the second is
+	 * reported as a duplicate, stamped with that case, and a second run moves nothing.
+	 *
+	 * @return void
+	 */
+	public function testADuplicateNumberBecomesOneCaseAndIsReported(): void {
+		$this->seedTrajectoryType(onUpgrade: false);
+		$type = $this->store->row('caseType', 'type-trajectory');
+		$type['recordImports'][0]['dedupeBy'] = 'number';
+		$type['recordImports'][0]['formerReference'] = ['application' => 'dossiq', 'from' => 'number'];
+		$this->store->seed(schema: 'caseType', uuid: 'type-trajectory', row: $type);
+		$this->store->rows['trajectory']['traj-1']['number'] = 'PW-1';
+		$this->store->seed(schema: 'trajectory', uuid: 'traj-2', row: ['id' => 'traj-2', 'start' => '2026-03-01', 'kind' => 'werkfit', 'number' => 'PW-1']);
+
+		$first = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
+		$second = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
+
+		self::assertSame(1, $first['imported']);
+		self::assertCount(1, $first['duplicates']);
+		self::assertCount(1, $this->store->all('case'));
+		$caseId = $first['migrated'][0]['caseId'];
+		self::assertSame($caseId, $first['duplicates'][0]['caseId']);
+		self::assertSame($caseId, $this->store->row('trajectory', 'traj-2')['migratedTo']);
+		self::assertSame(0, $second['imported']);
+		self::assertSame(2, $second['alreadyImported']);
+	}//end testADuplicateNumberBecomesOneCaseAndIsReported()
+
+	/**
+	 * Records that point at a moved record by its id or its slug point at its
+	 * case afterwards; anything else is left alone.
+	 *
+	 * @return void
+	 */
+	public function testReferencesToAMovedRecordPointAtItsCase(): void {
+		$this->seedTrajectoryType(onUpgrade: false);
+		$type = $this->store->row('caseType', 'type-trajectory');
+		$type['recordImports'][0]['references'] = [['schema' => 'consent', 'field' => 'caseId']];
+		$this->store->seed(schema: 'caseType', uuid: 'type-trajectory', row: $type);
+		$this->store->rows['trajectory']['traj-1']['@self'] = ['slug' => 'traj-one'];
+		$this->store->seed(schema: 'consent', uuid: 'c-1', row: ['id' => 'c-1', 'caseId' => 'traj-1']);
+		$this->store->seed(schema: 'consent', uuid: 'c-2', row: ['id' => 'c-2', 'caseId' => 'traj-one']);
+		$this->store->seed(schema: 'consent', uuid: 'c-3', row: ['id' => 'c-3', 'caseId' => 'another-case']);
+
+		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
+
+		$caseId = $answer['migrated'][0]['caseId'];
+		self::assertSame(2, $answer['repointed']);
+		self::assertSame($caseId, $this->store->row('consent', 'c-1')['caseId']);
+		self::assertSame($caseId, $this->store->row('consent', 'c-2')['caseId']);
+		self::assertSame('another-case', $this->store->row('consent', 'c-3')['caseId']);
+	}//end testReferencesToAMovedRecordPointAtItsCase()
 
 	/**
 	 * An unknown case type, or another import key, runs nothing.
