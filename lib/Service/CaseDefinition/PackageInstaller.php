@@ -197,6 +197,8 @@ class PackageInstaller {
 	/**
 	 * Install one package.
 	 *
+	 * A row somebody changed here is kept.
+	 *
 	 * @param string $id The package id.
 	 *
 	 * @return array<string, mixed> status, package, version and message; errors
@@ -207,6 +209,37 @@ class PackageInstaller {
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 */
 	public function install(string $id): array {
+		return $this->installPackage(id: $id, overLocalChanges: false);
+	}//end install()
+
+	/**
+	 * Install one package, and give every row it shipped that somebody changed
+	 * here the keys the package ships; keys it does not ship keep their value.
+	 * Installs a package that is current too.
+	 *
+	 * 🔑 A SECOND NAMED ACT RATHER THAN A FLAG, as
+	 * ShippedConfigurationService::adoptOverLocalChange(): an administrator's
+	 * work goes, and the caller picks that by name.
+	 *
+	 * @param string $id The package id.
+	 *
+	 * @return array<string, mixed> As install().
+	 *
+	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 */
+	public function installOverLocalChanges(string $id): array {
+		return $this->installPackage(id: $id, overLocalChanges: true);
+	}//end installOverLocalChanges()
+
+	/**
+	 * Install one package; see install() and installOverLocalChanges().
+	 *
+	 * @param string  $id               The package id.
+	 * @param boolean $overLocalChanges Whether a row changed here takes the package's keys.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 */
+	private function installPackage(string $id, bool $overLocalChanges): array {
 		$package = $this->packages->read(id: $id);
 		if ($package === null) {
 			return $this->outcome(status: self::REFUSED, id: $id, version: '', message: "No package named '{$id}' is shipped.");
@@ -231,20 +264,33 @@ class PackageInstaller {
 			) + ['missing' => $missing];
 		}
 
-		return $this->write(id: $id, version: $version, manifest: $manifest, files: $package['files']);
-	}//end install()
+		if ($overLocalChanges === false && $this->ledger->isPackageCurrent(set: $id, version: $version, digest: $package['digest']) === true) {
+			return $this->outcome(status: self::CURRENT, id: $id, version: $version, message: "Package '{$id}' {$version} is already installed.");
+		}
+
+		return $this->write(
+			id: $id,
+			version: $version,
+			manifest: $manifest,
+			package: $package,
+			overLocalChanges: $overLocalChanges,
+		);
+	}//end installPackage()
 
 	/**
-	 * Write a valid package whose requirements are met, and record it.
+	 * Write a valid package whose requirements are met and that is not current, and record it.
 	 *
-	 * @param string                $id       The package id.
-	 * @param string                $version  The package version.
-	 * @param array<string, mixed>  $manifest The manifest.
-	 * @param array<string, string> $files    The package files.
+	 * @param string               $id               The package id.
+	 * @param string               $version          The package version.
+	 * @param array<string, mixed> $manifest         The manifest.
+	 * @param array<string, mixed> $package          The package as PackageDirectory::read() gives it.
+	 * @param boolean              $overLocalChanges Whether a row changed here takes the package's keys.
 	 *
 	 * @return array<string, mixed> The outcome.
 	 */
-	private function write(string $id, string $version, array $manifest, array $files): array {
+	private function write(string $id, string $version, array $manifest, array $package, bool $overLocalChanges): array {
+		$files = (array)$package['files'];
+		$digest = (string)$package['digest'];
 		if ($this->ledger->ledgerAvailable() === false) {
 			return $this->outcome(
 				status: self::FAILED,
@@ -252,10 +298,6 @@ class PackageInstaller {
 				version: $version,
 				message: "Package '{$id}' was not installed: the shipped-set ledger is not configured, so its rows could not be recorded.",
 			);
-		}
-
-		if ($this->ledger->installedVersion(set: $id) === $version) {
-			return $this->outcome(status: self::CURRENT, id: $id, version: $version, message: "Package '{$id}' {$version} is already installed.");
 		}
 
 		$parts = (array)($manifest['parts'] ?? []);
@@ -287,7 +329,7 @@ class PackageInstaller {
 
 		$recorded = $this->record(id: $id, version: $version, written: $result['written'])
 			&& $this->record(id: $id, version: $version, written: $this->notYetInThisPackage(id: $id, adopted: $result['adopted']))
-			&& $this->ledger->recordPackage(set: $id, version: $version);
+			&& $this->ledger->recordPackage(set: $id, version: $version, digest: $digest);
 		if ($recorded === false) {
 			$this->writer->undo(written: $result['written']);
 
@@ -301,7 +343,12 @@ class PackageInstaller {
 
 		// After the write and the ledger record: a refreshed row replaces what
 		// was there and cannot be taken back with the rest of a failed install.
-		$refresh = $this->ledger->refreshRows(set: $id, version: $version, rows: $result['held']);
+		$refresh = $this->ledger->refreshRows(
+			set: $id,
+			version: $version,
+			rows: $result['held'],
+			overLocalChanges: $overLocalChanges,
+		);
 
 		$this->applySettings(settings: $settings);
 
@@ -375,11 +422,11 @@ class PackageInstaller {
 		}
 
 		if (in_array('flows', $parts, true) === true) {
-			$groups[] = ['schemaKey' => 'workflow_template_schema', 'rows' => $this->rowsUnder(files: $files, dir: 'flows/')];
+			$groups[] = ['schemaKey' => 'workflow_template_schema', 'rows' => $this->packages->rowsUnder(files: $files, dir: 'flows/')];
 		}
 
 		if (in_array('seed', $parts, true) === true) {
-			foreach ($this->rowsUnder(files: $files, dir: 'seed/') as $seed) {
+			foreach ($this->packages->rowsUnder(files: $files, dir: 'seed/') as $seed) {
 				$groups[] = $this->references->seedGroup(seed: $seed);
 			}
 		}
@@ -407,31 +454,12 @@ class PackageInstaller {
 
 		$examples = new PackageExamples(appConfig: $this->appConfig, logger: $this->logger);
 		$groups = [];
-		foreach ($examples->toWrite(package: $id, examples: $this->rowsUnder(files: $files, dir: 'examples/')) as $example) {
+		foreach ($examples->toWrite(package: $id, examples: $this->packages->rowsUnder(files: $files, dir: 'examples/')) as $example) {
 			$groups[] = $this->references->seedGroup(seed: $example);
 		}
 
 		return $groups;
 	}//end exampleGroups()
-
-	/**
-	 * The decoded .json files under one directory, in name order.
-	 *
-	 * @param array<string, string> $files The package files.
-	 * @param string                $dir   The directory prefix.
-	 *
-	 * @return array<int, array<string, mixed>> The decoded files.
-	 */
-	private function rowsUnder(array $files, string $dir): array {
-		$rows = [];
-		foreach ($files as $path => $content) {
-			if (str_starts_with($path, $dir) === true && str_ends_with($path, '.json') === true) {
-				$rows[] = (array)json_decode($content, true);
-			}
-		}
-
-		return $rows;
-	}//end rowsUnder()
 
 	/**
 	 * Record every written row in the shipped-set ledger, under the package id.

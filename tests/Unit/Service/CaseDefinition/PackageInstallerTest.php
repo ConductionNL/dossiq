@@ -1744,6 +1744,104 @@ class PackageInstallerTest extends TestCase {
 	}//end testARefreshKeepsWhatThisInstanceAddedAndNeverAnEdit()
 
 	/**
+	 * The fixture at its own version, with a changed case type description.
+	 *
+	 * @return string The package root.
+	 */
+	private function changedContentSameVersion(): string {
+		return $this->variant(
+			change: static function (string $dir): void {
+				self::editJson(
+					path: $dir . '/case-type.json',
+					change: static function (array $c): array {
+						$c['caseType']['description'] = 'The description the same version now ships.';
+						return $c;
+					}
+				);
+			}
+		);
+	}//end changedContentSameVersion()
+
+	/**
+	 * The same version with changed files is applied, and is current after that.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 */
+	public function testTheSameVersionWithChangedContentRefreshesUntouchedRows(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+		$root = $this->changedContentSameVersion();
+
+		$outcome = $this->installer(root: $root)->install(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcome['status'], message: $outcome['message']);
+		$this->assertSame(
+			expected: 'The description the same version now ships.',
+			actual: $this->register->row('caseType', self::CASE_TYPE)['description']
+		);
+		$this->assertSame(expected: 1, actual: $outcome['refreshed']);
+
+		$writes = $this->register->writes;
+		$again = $this->installer(root: $root)->install(id: 'fixture-case-type');
+		$this->assertSame(expected: PackageInstaller::CURRENT, actual: $again['status'], message: $again['message']);
+		$this->assertSame(expected: $writes, actual: $this->register->writes);
+	}//end testTheSameVersionWithChangedContentRefreshesUntouchedRows()
+
+	/**
+	 * A package record from before the digest installs once more, writing no row, and is current after that.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 */
+	public function testARecordWithoutADigestInstallsOnceMore(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+		$this->stampLedger(
+			targetObject: 'fixture-case-type',
+			fingerprint: (new ShippedFingerprint())->hashOf(object: ['package' => 'fixture-case-type', 'version' => '1.0.0'])
+		);
+
+		$outcome = $this->installer()->install(id: 'fixture-case-type');
+		$again = $this->installer()->install(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcome['status'], message: $outcome['message']);
+		$this->assertSame(expected: 0, actual: $outcome['written']);
+		$this->assertSame(expected: PackageInstaller::CURRENT, actual: $again['status'], message: $again['message']);
+	}//end testARecordWithoutADigestInstallsOnceMore()
+
+	/**
+	 * `--over-local-changes` takes every key the package ships over an edit here, and keeps a key it does not ship.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 */
+	public function testOverLocalChangesTakesThePackagesKeysAndKeepsTheRest(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+		$shippedTitle = $this->register->row('caseType', self::CASE_TYPE)['title'];
+		$this->register->rows['caseType'][self::CASE_TYPE]['title'] = 'Edited here';
+		$this->register->rows['caseType'][self::CASE_TYPE]['handlingModel'] = 'cmmn';
+
+		$kept = $this->installer()->install(id: 'fixture-case-type');
+		$this->assertSame(
+			expected: 'Edited here',
+			actual: $this->register->row('caseType', self::CASE_TYPE)['title'],
+			message: 'without the option an edit survives'
+		);
+
+		$outcome = $this->installer()->installOverLocalChanges(id: 'fixture-case-type');
+
+		$caseType = $this->register->row('caseType', self::CASE_TYPE);
+		$this->assertSame(expected: PackageInstaller::CURRENT, actual: $kept['status'], message: $kept['message']);
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcome['status'], message: $outcome['message']);
+		$this->assertSame(expected: $shippedTitle, actual: $caseType['title']);
+		$this->assertSame(expected: 'cmmn', actual: $caseType['handlingModel'], message: 'a key the package does not ship keeps its value');
+		$this->assertSame(expected: [], actual: $outcome['kept']);
+		$this->assertSame(expected: '1.0.0', actual: $this->ledgerRowOf(targetObject: self::CASE_TYPE)['setVersion']);
+	}//end testOverLocalChangesTakesThePackagesKeysAndKeepsTheRest()
+
+	/**
 	 * Overwrite the fingerprint the ledger holds for one row.
 	 *
 	 * @param string $targetObject The row id.
