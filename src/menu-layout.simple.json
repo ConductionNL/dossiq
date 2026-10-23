@@ -2411,6 +2411,7 @@
 							"auditTrailLink": true,
 							"auditTrailTab": "audit",
 							"composer": "separate",
+							"visibilityLabel": false,
 							"entryActions": [
 								{
 									"id": "reply",
