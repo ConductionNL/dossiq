@@ -4431,46 +4431,69 @@
 						}
 					},
 					{
-						"id": "case-advice-requests",
-						"type": "object-list",
-						"title": "Advice on the case",
-						"subtitle": "Internal and external advice on this case",
-						"icon": "CommentQuestionOutline",
-						"_note": "DqZaakBesluiten Adviezen: the internal and external advice requested on this case; Toevoegen asks a new one with the case filled in.",
-						"content": {
-							"register": "dossiq",
-							"schema": "adviesAanvraag",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "requestedAt",
-								"dir": "desc"
-							},
-							"limit": 25,
-							"columns": [
+							"id": "case-advice-requests",
+							"type": "record-list",
+							"title": "Advice on the case",
+							"subtitle": "Internal and external advice on this case",
+							"icon": "CommentQuestionOutline",
+							"_note": "DqZaakBesluiten Adviezen: the internal and external advice requested on this case as rows: the advisor's initials, the subject and advisor, when it was asked and when the answer is due or came in, and the status pill in tone. Herinneren posts to dossiq's remind route on an open request only (record-list rowAction endpoint; on an older nextcloud-vue the button goes through the page dispatcher and does nothing). Advies vragen in the title row opens the request form with the case filled in; the line under the list says an open request holds the case back, which the side notice says too.",
+							"headerActions": [
 								{
-									"key": "subject",
-									"label": "Subject"
+									"label": "Ask for advice",
+									"icon": "CommentQuestionOutline",
+									"action": {
+										"type": "open-form",
+										"register": "dossiq",
+										"schema": "adviesAanvraag",
+										"includeFields": [
+											"subject",
+											"advisor",
+											"type",
+											"deadline",
+											"questions"
+										],
+										"fieldOverrides": {
+											"questions": {
+												"widget": "textarea"
+											}
+										},
+										"successMessage": "Advice requested.",
+										"props": {
+											"case": "@objectId"
+										}
+									},
+									"visibleWhen": {
+										"field": "@self.archived",
+										"op": "empty"
+									}
+								}
+							],
+							"content": {
+								"register": "dossiq",
+								"schema": "adviesAanvraag",
+								"filter": {
+									"case": "@objectId"
 								},
-								{
-									"key": "advisor",
-									"label": "Advisor"
+								"sort": {
+									"field": "requestedAt",
+									"dir": "desc"
 								},
-								{
-									"key": "deadline",
-									"label": "Answer by",
-									"format": "date"
-								},
-								{
-									"key": "status",
-									"label": "Status",
-									"enum": [
-										"requested",
-										"received",
-										"expired"
-									],
-									"enumLabels": {
+								"limit": 25,
+								"presentation": "rows",
+								"avatar": "{advisor}",
+								"title": [
+									"{subject}, {advisor}",
+									"{subject}",
+									"{advisor}"
+								],
+								"meta": [
+									"Requested {requestedAt|date} · received {receivedAt|date}",
+									"Requested {requestedAt|date} · answer by {deadline|date}",
+									"Answer by {deadline|date}"
+								],
+								"pill": {
+									"field": "status",
+									"labels": {
 										"requested": "Waiting for answer",
 										"received": "Received",
 										"expired": "Expired"
@@ -4480,12 +4503,25 @@
 										"received": "success",
 										"expired": "error"
 									}
-								}
-							],
-							"rowRoute": "AdviceDetail",
-							"emptyText": "No advice requested on this case yet"
+								},
+								"rowAction": {
+									"label": "Remind",
+									"endpoint": "/apps/dossiq/api/advice/{id}/remind",
+									"method": "POST",
+									"labels": {
+										"field": "status",
+										"map": {
+											"received": "",
+											"expired": ""
+										}
+									},
+									"errorText": "The reminder could not be sent"
+								},
+								"rowRoute": "AdviceDetail",
+								"footnote": "As long as an advice is open, the case cannot be closed.",
+								"emptyText": "No advice requested on this case yet"
+							}
 						}
-					}
 				],
 				"headerActions": [
 					{
