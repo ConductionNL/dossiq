@@ -3466,6 +3466,17 @@
 								{
 									"widgetId": "case-knowledge-panel",
 									"label": "Knowledge"
+								},
+								{
+									"widgetId": "case-synced-from-panel",
+									"label": "Synced from",
+									"visibleWhen": {
+										"appInstalled": "integriq",
+										"endpoint": "/apps/integriq/api/provenance?register=dossiq&schema=case&id=@objectId",
+										"field": "synced",
+										"op": "eq",
+										"value": true
+									}
 								}
 							],
 							"badgeSource": "readState"
@@ -5019,6 +5030,104 @@
 							"archivistGroups": ["archivaris"]
 						},
 						"_note": "What happens to this case when its business use ends, as openregister decided it (library widget type retention -> CnRetentionWidget). Every value is read off @self._retention and @self.archived, which openregister writes; the widget derives nothing, so a records manager never reads a second derivation that could disagree with the stored one. A case nobody could nominate is drawn apart from a case nobody has closed yet. archiveStatus is the case's own ZGW field, and a disagreement with openregister's archived marker is said out loud. Recomputing asks the archivist for a reason before it sends."
+					},
+					{
+						"id": "case-synced-from-panel",
+						"type": "sections",
+						"title": "Synced from",
+						"_note": "Board integriq/IqGesynchroniseerdVan. Where this case came from, as integriq's synchronization knows it (GET /apps/integriq/api/provenance, integriq record-provenance-tab), under the reader's own rights on the case. The tab shows only for a case a synchronization wrote: its visibleWhen asks the same endpoint, so on an instance without integriq, or for a case made here, there is no tab rather than an empty one. ONE TAB, two sections, as every other group tab on this strip: the facts and the log for this record.",
+						"content": {
+							"sections": [
+								{
+									"label": "Synced from",
+									"widget": {
+										"id": "case-synced-from",
+										"type": "facts",
+										"title": "Synced from",
+										"content": {
+											"endpointSource": {
+												"url": "/apps/integriq/api/provenance",
+												"params": {
+													"register": "dossiq",
+													"schema": "case",
+													"id": "@objectId"
+												}
+											},
+											"emptyWhen": "none",
+											"emptyText": "This case was not synchronized from another system",
+											"fields": [
+												{
+													"label": "Source",
+													"path": "source"
+												},
+												{
+													"label": "Source record",
+													"path": "sourceRecord"
+												},
+												{
+													"label": "Last synchronized",
+													"parts": [
+														{
+															"path": "lastSynced",
+															"format": "date"
+														},
+														"synchronization.name"
+													]
+												},
+												{
+													"label": "Owner",
+													"path": "owner"
+												},
+												{
+													"as": "text",
+													"text": "This tab comes from Integriq: every app on OpenRegister shows where a record comes from and which connections touched it."
+												}
+											],
+											"link": {
+												"label": "Open in Integriq",
+												"href": "/apps/integriq/synchronizations/{synchronization.id}"
+											}
+										}
+									}
+								},
+								{
+									"label": "Latest log entries for this record",
+									"widget": {
+										"id": "case-synced-from-log",
+										"type": "record-list",
+										"title": "Latest log entries for this record",
+										"content": {
+											"endpointSource": {
+												"url": "/apps/integriq/api/provenance",
+												"params": {
+													"register": "dossiq",
+													"schema": "case",
+													"id": "@objectId"
+												},
+												"responsePath": "recent"
+											},
+											"requiresApp": "integriq",
+											"presentation": "table",
+											"columns": [
+												{
+													"label": "Time",
+													"value": "{created|datetime}"
+												},
+												{
+													"label": "Result",
+													"value": "{result}"
+												},
+												{
+													"label": "Message",
+													"value": "{message}"
+												}
+											],
+											"emptyText": "No log entries for this record"
+										}
+									}
+								}
+							]
+						}
 					},
 					{
 						"id": "case-knowledge-panel",

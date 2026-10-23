@@ -11052,7 +11052,16 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Synced from": "Gesynchroniseerd van",
+        "This case was not synchronized from another system": "Deze zaak is niet uit een ander systeem gesynchroniseerd",
+        "Source record": "Bronrecord",
+        "Last synchronized": "Laatst gesynchroniseerd",
+        "This tab comes from Integriq: every app on OpenRegister shows where a record comes from and which connections touched it.": "Dit tabblad komt uit Integriq: elke app op OpenRegister toont zo waar een record vandaan komt en welke koppelingen het raakten.",
+        "Open in Integriq": "Openen in Integriq",
+        "Latest log entries for this record": "Laatste logregels voor dit record",
+        "Time": "Tijd",
+        "No log entries for this record": "Geen logregels voor dit record"
     },
     "nplurals=2; plural=(n != 1);"
 )

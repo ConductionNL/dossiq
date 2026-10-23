@@ -116,10 +116,18 @@ const tabs = () => widget('case-panels').content.tabs
  * got, or whether it may stop. It sits after Files because the documents are
  * what it reviews, and it shows only on a case type that enables review.
  * The ceiling is fifteen on that reason, and the next tab writes its own.
+ *
+ * Synced from is the sixteenth (integriq record-provenance-tab, board
+ * integriq/IqGesynchroniseerdVan). It answers where a case came from when a
+ * synchronization wrote it: the source system, the record there, the last
+ * synchronization and who owns the fields. No other tab can say it, because
+ * dossiq does not know; integriq does. Like Review it is conditional: it shows
+ * only for a case a synchronization wrote and only with integriq installed,
+ * so a case made in dossiq still reads fifteen. The ceiling is sixteen.
  */
-const TAB_CEILING = 15
+const TAB_CEILING = 16
 
-/** The fifteen labels, in the order a handler reads them. */
+/** The sixteen labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
 	['case-data-panel', 'Data'],
 	['case-files', 'Files'],
@@ -136,6 +144,7 @@ const EXPECTED_TABS = [
 	['case-custody-panel', 'Custody'],
 	['case-archival-panel', 'Archiving'],
 	['case-knowledge-panel', 'Knowledge'],
+	['case-synced-from-panel', 'Synced from'],
 ]
 
 /**
@@ -193,7 +202,7 @@ describe('the case page tab strip', () => {
 		expect(tabs()).toHaveLength(TAB_CEILING)
 	})
 
-	it('names the fifteen tabs, in order', () => {
+	it('names the sixteen tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
 	})
 

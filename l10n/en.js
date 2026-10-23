@@ -11052,7 +11052,16 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "{value} of your cases are past their deadline or end today.",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Synced from": "Synced from",
+        "This case was not synchronized from another system": "This case was not synchronized from another system",
+        "Source record": "Source record",
+        "Last synchronized": "Last synchronized",
+        "This tab comes from Integriq: every app on OpenRegister shows where a record comes from and which connections touched it.": "This tab comes from Integriq: every app on OpenRegister shows where a record comes from and which connections touched it.",
+        "Open in Integriq": "Open in Integriq",
+        "Latest log entries for this record": "Latest log entries for this record",
+        "Time": "Time",
+        "No log entries for this record": "No log entries for this record"
     },
     "nplurals=2; plural=(n != 1);"
 )
