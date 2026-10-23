@@ -615,6 +615,7 @@
 						"type": "open-form",
 						"label": "New case",
 						"formTitle": "New case",
+						"formConfirmLabel": "Create case",
 						"size": "normal",
 						"columns": 1,
 						"includeFields": [
@@ -1146,6 +1147,7 @@
 						"type": "open-form",
 						"label": "New case",
 						"formTitle": "New case",
+						"formConfirmLabel": "Create case",
 						"size": "normal",
 						"columns": 1,
 						"includeFields": [
@@ -1806,6 +1808,7 @@
 										"type": "select",
 										"label": "Template",
 										"required": false,
+										"placeholder": "Choose a template (optional)",
 										"options": [
 											{
 												"value": "call-back",
@@ -1897,6 +1900,8 @@
 			"config": {
 				"quickFilterPlacementByView": { "board": "toolbar", "map": "toolbar" },
 				"allowExport": true,
+				"searchPlaceholder": "Search by case, number or requester",
+				"searchPlaceholderByView": { "board": "Search by case or requester", "map": "Filter by case or applicant" },
 				"showUnreadRows": true,
 				"_showUnreadRowsNote": "unread-state-on-the-case, task 1.1. An unread row reads in bold with the library's unread marker (CnDataTable, from `@self.unread`, which OpenRegister attaches per reader on the render path). The board look marks unread rows only on a page that asks, and this page asks: its Unread chip (`_unread`, resolved inside the query) is one of its own quick filters, so it does not use `personalLenses`. An absent flag reads as read, because `@self.unread` is omitted for an anonymous read.",
 				"rowIndicators": [
@@ -1930,6 +1935,22 @@
 				},
 				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are NOT on the case: dossiq stores each declared field as a `caseProperty` row pointing back at it, so the query is openregister's `_related[caseProperty][case][\u2026]` (query-related-schema-rows). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. The library's CnRelatedFieldFilters draws it beside the search (`relatedFieldFilters`), names a refused block's field under the bar, and feeds the list's fetch through `sidebarState.onFilterChange`, since the index page drops `_`-prefixed route keys.",
 				"bulkBandAlways": true,
+				"_bulkBandViewsNote": "DqWerkbord: over the board the bulk band counts the selected cards and offers the status move and a way out (\"1 zaak geselecteerd · Status wijzigen · Annuleren\"), only while cards are selected. The other bulk acts stay in the table and card views' band.",
+				"bulkBandViews": {
+					"board": {
+						"lead": {
+							"one": "{count} case selected",
+							"other": "{count} cases selected"
+						},
+						"actions": [
+							{
+								"id": "transition",
+								"label": "Change status"
+							}
+						],
+						"cancel": true
+					}
+				},
 				"savedViewChips": false,
 				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/utils/caseBulkActions.js, registered in src/registry.js as `kind: 'handler'` entries, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
@@ -1970,14 +1991,33 @@
 				"filter": {
 					"isTemplate": false
 				},
+				"_filterLabelsNote": "How the Active line names a filter, also one that came from a link (`/cases?isFinalStatus=false`). Without it the chip read the schema's own words, \"Is Final Status: false\"; the board DqZaken draws \"Status: lopend\". `deadline` with `relative` names a range from today in words: the view Termijn deze week (deadline from @today, before @today+7d) reads \"Termijn: binnen 7 dagen\" (board DqFilterInMenu).",
+				"filterLabels": {
+					"isFinalStatus": {
+						"label": "Status",
+						"values": {
+							"false": "ongoing",
+							"true": "completed"
+						}
+					},
+					"deadline": {
+						"label": "Deadline",
+						"relative": true
+					},
+					"assignedGroup": {
+						"label": "Team"
+					}
+				},
 				"allowSavedViews": true,
 				"_wooSavedViewNote": "Woo requests are a view of the case list, not a page of their own (Ruben, 19 October 2026): the default view `woo-requests` is the Woo case type with the same working-list rule as the Woo chip, and a link to the Woo list is `/cases?savedView=default:woo-requests`.",
+				"_teamQueueChipsNote": "DqTeamwachtrij (view `team-queue`): its chips are the case types in the queue (`quickFiltersFrom`), not this list's lenses. Its `quickFilters: []` sets the lenses aside while the view is active (nextcloud-vue: an empty quickFilters gives way to quickFiltersFrom); status, handler and the rest stay in the Filter panel. Its `bulkBandAlways: false` draws the bulk band only once rows are selected, as the board shows the queue with nothing selected.",
+				"_myWorkViewNote": "DqAanMijToegewezen (view `my-work`): the board draws the team's workload chips and no lenses, so the view's quick filters are only the covering chip (\"Inclusief werk waarvoor u waarneemt\", on by default); the conditions stay in the Filter panel. `bulkBandAlways: false` keeps the bulk band away until cards are selected, and the Actions menu lists the export and copy and delete for the selection, which the simple profile keeps out of the band; an Actions menu listing `export` takes the toolbar's Export over. `countText: \"\"` and `countSubtitle: null` leave the header note (\"{total} cases in your name\") as the only count.",
 				"_defaultSavedViewsNote": "saved-views-manage-and-defaults: views dossiq ships for every user, read-only, listed under Default views above the user's own saved views. A user applies one, or saves a copy to edit and share. They combine conditions the quick-filter chips offer one at a time (Mine and Overdue), so they add a lens instead of repeating a chip. The conditions are the chips' own: the same flat `deadline[lt]` / `deadline[gte]` keys with `@today` tokens, the same working-list rule `statusHiddenInLists: false`.",
 				"defaultSavedViews": [
 					{ "slug": "mine-overdue", "name": "Mine, overdue", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
 					{ "slug": "mine-due-this-week", "name": "Mine, due this week", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
 					{ "slug": "unclaimed-overdue", "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
-					{ "slug": "woo-requests", "name": "Woo requests", "icon": "FileDocumentOutline", "filters": { "caseType": "3c0f5a00-0000-4000-a000-00000000a001", "statusHiddenInLists": false, "isDraft": false } },
+					{ "slug": "woo-requests", "name": "Woo requests", "icon": "FileDocumentOutline", "filters": { "caseTypeIdentifier": "woo-verzoek", "statusHiddenInLists": false, "isDraft": false } },
 					{ "slug": "subsidies", "name": "Subsidies", "filters": { "caseType": "b3c1a000-0000-4000-a000-0000000005ab", "statusHiddenInLists": false, "isDraft": false }, "overrides": { "title": "Subsidies", "columns": ["identifier", "title", { "key": "status", "label": "Status", "formatter": "statusTypeName" }, "assignee", "deadline"] } },
 					{
 						"slug": "my-work",
@@ -1997,10 +2037,19 @@
 							},
 							"headerMeta": "{total} cases in your name[, {rows:coveredFor} of them as a substitute] · most urgent first",
 							"footerNote": "Urgency follows from the deadline, the priority and how long a case has been idle.",
+							"bulkBandAlways": false,
+							"countText": "",
+							"countSubtitle": null,
 							"headerButtons": [
 								{
 									"action": "actions-menu",
-									"label": "Actions"
+									"label": "Actions",
+									"items": [
+										"header-actions",
+										"export",
+										"copy-selected",
+										"delete-selected"
+									]
 								},
 								{
 									"action": "add",
@@ -2105,7 +2154,7 @@
 					{
 						"slug": "team-queue",
 						"name": "Team queue",
-						"filters": {},
+						"filters": { "assignedGroup": "@myTeam" },
 						"sort": [
 							{
 								"key": "startDate",
@@ -2182,6 +2231,8 @@
 							],
 							"quickFilterPlacement": "toolbar",
 							"quickFilterMaxVisible": 4,
+							"quickFilters": [],
+							"bulkBandAlways": false,
 							"quickFiltersFrom": {
 								"field": "caseType",
 								"register": "dossiq",
@@ -2612,7 +2663,7 @@
 						}
 					}
 				],
-				"_listsAsViewsNote": "Lists that were pages of their own are views of this list (Ruben, 19 October 2026): Assigned to me (`my-work`, was /my-work), the team queue (`team-queue`, was /queue; its late window is `unclaimed-overdue`, its week window `unclaimed-due-this-week`) and the data subject requests (`data-subject-requests`, was /privacy/requests). The old addresses redirect here with `?savedView=default:<slug>` (RETIRED_ROUTES). The subsidies (`subsidies`, was /subsidies) are a view too: there are no case-type-specific pages or menu entries (Ruben, 20 October 2026). Complaints is a view per instance, added by the /api/manifest delta, because the complaint case type has no fixed id. The conditions each page applied as a base filter are the view's `overrides.lockedFilters`, which the reader cannot clear, so the view's own `filters` stay empty. Each view carries what its page had as `overrides` (nextcloud-vue saved-view-overrides, openspec/changes/lists-are-views/restore.md): the team queue's counts, case type chips, side cards and columns; Assigned to me's cards, urgency order (`sortOption: urgency`, the server's ranking from GET /api/work-queue) and its two slots; the data subject requests' tabs, notice, chips and columns. The team queue and Assigned to me keep their menu entries `Queue` and `MyWork`, each opening its view, so their pins keep working.",
+				"_listsAsViewsNote": "Lists that were pages of their own are views of this list (Ruben, 19 October 2026): Assigned to me (`my-work`, was /my-work), the team queue (`team-queue`, was /queue; its late window is `unclaimed-overdue`, its week window `unclaimed-due-this-week`) and the data subject requests (`data-subject-requests`, was /privacy/requests). The old addresses redirect here with `?savedView=default:<slug>` (RETIRED_ROUTES). The subsidies (`subsidies`, was /subsidies) are a view too: there are no case-type-specific pages or menu entries (Ruben, 20 October 2026). Complaints is a view per instance, added by the /api/manifest delta, because the complaint case type has no fixed id. The conditions each page applied as a base filter are the view's `overrides.lockedFilters`, which the reader cannot clear, so the view's own `filters` stay empty, except the team queue's `assignedGroup: @myTeam`: the reader's own team as a removable chip (\"Team: Woo en informatie\", board DqTeamwachtrij), dropped for a reader in no team (my-team-queue). Each view carries what its page had as `overrides` (nextcloud-vue saved-view-overrides, openspec/changes/lists-are-views/restore.md): the team queue's counts, case type chips, side cards and columns; Assigned to me's cards, urgency order (`sortOption: urgency`, the server's ranking from GET /api/work-queue) and its two slots; the data subject requests' tabs, notice, chips and columns. The team queue and Assigned to me keep their menu entries `Queue` and `MyWork`, each opening its view, so their pins keep working.",
 				"showSortSelect": true,
 				"sortSelectOptions": [
 					{
@@ -3036,7 +3087,11 @@
 				],
 				"sidebar": {
 					"enabled": true,
-					"showMetadata": true
+					"showMetadata": true,
+					"subtitle": {
+						"singular": "{total} case, {shown} on this page",
+						"plural": "{total} cases, {shown} on this page"
+					}
 				},
 				"folderSidebar": {
 					"source": "register",
@@ -3171,6 +3226,7 @@
 			"title": "Case",
 			"tabInAddress": true,
 			"referencePreview": true,
+			"listNavigation": true,
 			"actionsComponent": "RequesterProjection",
 			"config": {
 				"register": "dossiq",
@@ -3651,6 +3707,7 @@
 										"title": "Locations",
 										"_note": "The case on a map: the case-location objects that point at this case (`filter: case = @objectId`), drawn by the library map. An empty answer and a failed read say so in words, a point at (0, 0) is not plotted, and saving a location (CaseLocationDialog emits dossiq:case-location:saved with the caseId) reads the markers again.",
 										"content": {
+											"headerSubtitle": { "one": "{total} location", "other": "{total} locations" },
 											"height": "260px",
 											"autoFit": true,
 											"ariaLabel": "Locations on this case",
@@ -3744,6 +3801,17 @@
 									"icon": "EmailOutline",
 									"type": "open-modal",
 									"target": "FileRequestDialog"
+								},
+								{
+									"id": "generate-document",
+									"label": "Generate document",
+									"icon": "FileDocumentPlusOutline",
+									"type": "open-modal",
+									"target": "BeschikkingComposerDialog",
+									"props": {
+										"caseId": "@objectId",
+										"open": true
+									}
 								}
 							],
 							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
@@ -3782,8 +3850,28 @@
 										"geheim": "warning",
 										"zeer_geheim": "warning"
 									}
+								},
+								{
+									"key": "direction",
+									"source": "row",
+									"label": "Direction",
+									"property": "direction",
+									"formatter": "documentDirection",
+									"hidden": true
+								},
+								{
+									"key": "keywords",
+									"source": "row",
+									"label": "Keywords",
+									"property": "keywords",
+									"hidden": true
 								}
 							],
+							"facets": [
+								"keywords"
+							],
+							"preferenceApp": "dossiq",
+							"preferenceKey": "case-files-columns",
 							"selectionLabel": "{count} documents selected",
 							"selectionLabelOne": "{count} document selected",
 							"showClearSelection": false,
@@ -3922,6 +4010,7 @@
 						"subtitle": "Internal notes, also visible in the history",
 						"_note": "The Notes tab of the case panels: the library notes tab with @mentions posted to dossiq's notification endpoint and the one act dossiq adds to a note, sending it to the neighbouring register (NotePush). The endpoint answers sent, failed, not-sent or no-register with its own sentence. The sidebar Notes tab stays.",
 						"props": {
+							"composer": "button",
 							"mentionUrl": "/apps/dossiq/api/notes/mention",
 							"noteActions": [
 								{
@@ -3967,6 +4056,10 @@
 												"register": "dossiq",
 												"schema": "role",
 												"field": "case"
+											},
+											"secrecy": {
+												"indicator": "geheimhouding",
+												"kinds": ["person"]
 											},
 											"roleLabels": {
 												"aanvrager": "Requester",
@@ -4129,6 +4222,8 @@
 													"label": "Summary"
 												}
 											],
+											"sortable": true,
+											"filterable": true,
 											"emptyText": "No contact logged on this case yet"
 										}
 									}
@@ -5802,7 +5897,7 @@
 						},
 						"visibleWhen": {
 							"all": [
-								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "caseTypeIdentifier", "op": "eq", "value": "woo-verzoek" },
 								{ "field": "@self.archived", "op": "empty" }
 							]
 						}
@@ -5815,7 +5910,7 @@
 						"target": "WooSearchPlanDialog",
 						"visibleWhen": {
 							"all": [
-								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "caseTypeIdentifier", "op": "eq", "value": "woo-verzoek" },
 								{ "field": "@self.archived", "op": "empty" }
 							]
 						}
@@ -5828,7 +5923,7 @@
 						"target": "GatherDocumentsDialog",
 						"visibleWhen": {
 							"all": [
-								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "caseTypeIdentifier", "op": "eq", "value": "woo-verzoek" },
 								{ "field": "@self.archived", "op": "empty" }
 							]
 						}
@@ -5863,7 +5958,7 @@
 						},
 						"visibleWhen": {
 							"all": [
-								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "caseTypeIdentifier", "op": "eq", "value": "woo-verzoek" },
 								{ "field": "@self.archived", "op": "empty" }
 							]
 						}
@@ -5876,7 +5971,7 @@
 						"target": "/cases/{objectId}/redact",
 						"visibleWhen": {
 							"all": [
-								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "caseTypeIdentifier", "op": "eq", "value": "woo-verzoek" },
 								{ "field": "@self.archived", "op": "empty" }
 							]
 						}
@@ -5915,7 +6010,7 @@
 						},
 						"visibleWhen": {
 							"all": [
-								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "caseTypeIdentifier", "op": "eq", "value": "woo-verzoek" },
 								{ "field": "@self.archived", "op": "empty" },
 								{ "field": "wooPublicationStatus", "op": "empty" }
 							]
@@ -6467,6 +6562,14 @@
 				"quickFilterPlacement": "toolbar",
 				"entitySource": "tasks",
 				"rowRoute": "TaskDetail",
+				"_filterLabelsNote": "The due-date range is one chip named as the board DqTaken draws it, \"Deadline: 1 tot en met 31 oktober\", also from a link (`/tasks?dueAt=2026-10-01..2026-10-31`). The sidebar field's own title, Due between, is the filter panel's wording.",
+				"filterLabels": {
+					"dueAt": {
+						"label": "Due by"
+					}
+				},
+				"defaultFilters": { "dueAt": { "from": "@monthStart", "to": "@monthEnd" } },
+				"_defaultFiltersNote": "Board DqTaken opens on this month's deadlines, \"Deadline: 1 tot en met 31 oktober\", as a removable chip; a link that names a filter or a saved view wins. The chip's wording is filterLabels.dueAt (DQ-BOARDSCFG).",
 				"_sourceNote": "remove-casetask 2.2. The list is the ENGINE's task inbox, not OpenRegister objects over a `caseTask` schema, so `register`, `schema` and `extend` are gone rather than left behind as config nothing reads. `rowRoute` is what keeps the page dossiq's: the source's own `openRow` calls window.location.assign on OpenRegister's task page, and a `row-click` listener cannot recover a navigation that has already left the app, which is why nextcloud-vue#1063 added the prop. `columns` is deliberately ABSENT. The source supplies six, with state and priority as badges whose colour maps are built from the same t() calls as their labels, so the lookup holds in every locale; reproducing that here to rename one header would be a divergent copy of the thing this change removes, and if the wording matters it belongs upstream as a label override. TWO VISIBLE DELTAS, both deliberate: the case column's header now reads Subject, and the Team column is gone because the engine models candidate groups as a LIST and has no single assigneeGroup to read.",
 				"allowSavedViews": true,
 				"savedViewsScope": "source:tasks",
@@ -6882,6 +6985,7 @@
 						"id": "eod-tomorrow",
 						"type": "record-list",
 						"title": "First thing tomorrow",
+						"titleTone": "side",
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/personal-queue/end-of-day",
 							"field": "tomorrow",
@@ -7083,6 +7187,7 @@
 							"op": "notEmpty"
 						},
 						"content": {
+							"summaryInHeader": true,
 							"path": "checklist"
 						}
 					},
@@ -8146,7 +8251,7 @@
 						"successMessage": "Download started"
 					}
 				],
-				"description": "Bottleneck analysis from recorded case status history",
+				"description": "Case status history {filter.period}",
 				"_statisticNote": "Board DqProcesanalyse: the description line carries the Gemiddeld / Mediaan switch, a group named Maat (Measure). The report answers both (`phaseDays.mean` and `phaseDays.median`), and the days-per-phase matrix reads the one the switch names through `@workspace.statistic` in its responsePath.",
 				"pageFilters": [
 					{
@@ -8174,15 +8279,18 @@
 						"options": [
 							{
 								"value": "3m",
-								"label": "Last 3 months"
+								"label": "Last 3 months",
+								"months": 3
 							},
 							{
 								"value": "6m",
-								"label": "Last 6 months"
+								"label": "Last 6 months",
+								"months": 6
 							},
 							{
 								"value": "12m",
-								"label": "Last 12 months"
+								"label": "Last 12 months",
+								"months": 12
 							},
 							{
 								"value": "all",
@@ -8218,6 +8326,7 @@
 						"subtitle": "Per case type, average",
 						"content": {
 							"chartKind": "matrix",
+							"matrixLabelWidth": 240,
 							"valueFormat": {
 								"name": "number",
 								"suffix": " d"
@@ -10515,6 +10624,9 @@
 						"all": "All",
 						"available": "Stable"
 					},
+					"statusVariants": {
+						"planned": "default"
+					},
 					"subtitle": "Features and roadmap · version {appVersion} · updated with every release",
 					"notice": "How dossiq compares to other case systems is not here but in the comparison on conduction.nl. This page only says what dossiq can do and how stable it is.",
 					"noticeLink": {
@@ -10821,9 +10933,8 @@
 									}
 								}
 							],
-							"exportCsv": true,
-							"exportFileName": "deadline-report",
 							"exportId": "deadline-report-quarterly",
+							"exportFileName": "deadline-report",
 							"emptyText": "No terms started in this quarter."
 						}
 					},
@@ -10843,7 +10954,10 @@
 							"inputType": "quarter",
 							"writes": "@workspace.quarter",
 							"label": "Quarter (YYYY-Qn)",
-							"submitLabel": "Load report"
+							"submitLabel": "Load report",
+							"exportTable": {
+								"exportId": "deadline-report-quarterly"
+							}
 						}
 					},
 					{
@@ -11120,6 +11234,21 @@
 					"validUntil"
 				],
 				"showViewAction": false,
+				"_headerActionsNote": "Reload the shipped case type templates (POST /api/packages/reload): admin-only on the server, `adminOnly` hides the entry from others. The simple profile lists it in the Actions menu (DqZaaktypen).",
+				"headerActions": [
+					{
+						"id": "case-type-templates-reload",
+						"type": "api-call",
+						"label": "Reload templates",
+						"icon": "Refresh",
+						"url": "/apps/dossiq/api/packages/reload",
+						"method": "POST",
+						"confirm": true,
+						"adminOnly": true,
+						"successMessage": "The shipped templates are up to date.",
+						"errorMessage": "The shipped templates were not reloaded."
+					}
+				],
 				"actions": [
 					{
 						"id": "view",
@@ -11316,6 +11445,8 @@
 								"processingDeadline",
 								"serviceTarget",
 								"suspensionAllowed",
+								"penaltyOnLateDecision",
+								"penaltyMaxAmount",
 								"extensionAllowed",
 								"extensionPeriod",
 								"maxExtensions",
@@ -12363,9 +12494,19 @@
 					"label": "Test with a case"
 				},
 				"pill": "Case type flow",
-				"notice": "This flow is how its case type works. The case runs the steps; old webhook steps now run as an external call through Integriq.",
+				"pillVariant": "teal",
+				"notice": "This flow is how the case type {name} works. The case runs the steps; old webhook steps now run as an external call through Integriq.",
 				"paletteFootnote": "dossiq only offers steps a case can do itself. The rest comes from the app that does it.",
-				"flowDirection": "down"
+				"flowDirection": "down",
+				"breadcrumb": [
+					{
+						"label": "Settings",
+						"href": "/index.php/settings/admin/dossiq"
+					},
+					{
+						"label": "Flows"
+					}
+				]
 			},
 			"_note": "The shared flow board (CnFlowBoard) over the same native flow store OpenRegister and hermiq use, not an app-owned editor: header, a step palette grouped per providing app, the canvas, and an inspector card for the selected step that replaces the app sidebar (DqFlow)."
 		},
@@ -12449,6 +12590,8 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "brpPerson",
+				"sortKey": "displayName",
+				"sortOrder": "asc",
 				"allowSavedViews": true,
 				"showViewAction": false,
 				"_folderSidebarNote": "THE FOLDER SIDEBAR IS STILL ABSENT, AND IT IS NO LONGER WAITED ON. `contacts-domain` recorded why one could not ship, and both measurements still hold against nextcloud-vue 2.41.0. FIRST, there is no `hidden`: `folderSidebarFolders()` hands `folders[]` to CnFolderTree verbatim, so an Organisations folder would render, and selecting it would filter this page's `brpPerson` rows by a value no person carries and show an empty list. SECOND, `filterField: \"@self.schema\"` is not a filter OpenRegister answers: the wire form is a NESTED `@self` object (see `VthSeedLookup`'s `['@self' => ['slug' => ...]]`), so a flat `@self.schema` key reads as a filter on a field no object has and the search returns nothing while looking like an empty register. WHAT CHANGED is the question the sidebar was answering. It was never wanted for its own sake; it was the only way anyone could think of to reach the ten `kvkCompany` rows, which until now were listed on no page at all. The `Organisations` page below is that list, as a CHILD of this entry, so the answer costs no top-level navigation and no folder seam. If B10 ever lands, a folder that swaps the schema becomes a presentation choice between two pages rather than the thing that decides whether organisations are reachable, which is the right size for it.",
@@ -12532,6 +12675,17 @@
 				"showViewAction": false,
 				"searchPlaceholder": "Search by name, KvK number or place",
 				"rowIcon": "OfficeBuildingOutline",
+				"sortKey": "tradeName",
+				"sortOrder": "asc",
+				"_defaultFiltersNote": "Board DqOrganisaties opens on All with \"Plaats: Zuiddrecht\" on the Active line and a 1 on Filter: the organisations established in the municipality, from the admin setting `municipality_city` (the same one the Contacts lens reads). A removable default filter, not a lens; without the setting it is left out (src/utils/configLenses.js) and the list opens unfiltered. `address.place` is the KvK Zoeken field.",
+				"defaultFilters": {
+					"address.place": "@config.municipalityCity"
+				},
+				"filterLabels": {
+					"address.place": {
+						"label": "Place"
+					}
+				},
 				"defaultSort": [
 					{
 						"field": "tradeName",
@@ -12543,16 +12697,6 @@
 						"label": "All",
 						"showCount": true,
 						"filter": {}
-					},
-					{
-						"label": "Based in @config.municipalityCity",
-						"activeLabel": "Place: @config.municipalityCity",
-						"showCount": true,
-						"_note": "The list opens on the organisations established in the municipality (board DqOrganisaties, Plaats: Zuiddrecht), from the same `municipality_city` setting as the Contacts lens; without one this lens is left out and the list opens on All. `address.place` is a path inside the `address` object.",
-						"filter": {
-							"address.place": "@config.municipalityCity"
-						},
-						"default": true
 					},
 					{
 						"label": "With an open case",
@@ -12623,6 +12767,18 @@
 						"widget": "badge"
 					},
 					{
+						"key": "openTickets",
+						"label": "Open tickets",
+						"sortable": false,
+						"aggregate": {
+							"endpoint": "/apps/dossiq/api/parties/open-tickets",
+							"key": "masterEntityRef",
+							"requiresApp": "pipelinq",
+							"zeroLabel": "None"
+						},
+						"widget": "badge"
+					},
+					{
 						"key": "lastContact",
 						"label": "Last contact",
 						"sortable": false,
@@ -12664,6 +12820,7 @@
 			"type": "detail",
 			"title": "Contact",
 			"config": {
+				"recordLastChange": true,
 				"register": "dossiq",
 				"schema": "brpPerson",
 				"documentationUrl": "https://dossiq.conduction.nl",
@@ -12869,8 +13026,50 @@
 							},
 							"meta": "{startTime|datetime}",
 							"text": "{summary}",
-							"headerNote": "{total} in total",
+							"headerSubtitle": "{total} in total",
 							"emptyText": "No contact moments yet"
+						}
+					},
+					{
+						"id": "contact-open-tickets",
+						"type": "record-list",
+						"title": "Tickets",
+						"icon": "TicketOutline",
+						"visibleWhen": {
+							"appInstalled": "pipelinq"
+						},
+						"content": {
+							"requiresApp": "pipelinq",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/parties/open-tickets/list",
+								"params": {
+									"key": "@object.masterEntityRef"
+								},
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{ticketType}",
+							"pill": {
+								"field": "status",
+								"variant": "purple",
+								"labels": {
+									"new": "New",
+									"in_progress": "In progress",
+									"awaiting_customer": "Awaiting customer"
+								}
+							},
+							"trailing": [
+								"Term {slaDeadline|date}"
+							],
+							"valueLabels": {
+								"ticketType": {
+									"request": "Request",
+									"complaint": "Complaint"
+								}
+							},
+							"headerNote": "{total} open",
+							"emptyText": "No open tickets"
 						}
 					},
 					{
@@ -13031,7 +13230,8 @@
 									"widgetIds": [
 										"contact-card",
 										"contact-open-cases",
-										"contact-latest-moments"
+										"contact-latest-moments",
+										"contact-open-tickets"
 									],
 									"label": "Overview"
 								},
@@ -13186,6 +13386,10 @@
 										{
 											"path": "@self.updated",
 											"format": "date-long"
+										},
+										{
+											"path": "_lastChange.userName",
+											"label": "last changed by"
 										}
 									],
 									"separator": " "
@@ -13250,6 +13454,7 @@
 			"type": "detail",
 			"title": "Organisation",
 			"config": {
+				"recordLastChange": true,
 				"register": "dossiq",
 				"schema": "kvkCompany",
 				"documentationUrl": "https://dossiq.conduction.nl",
@@ -13450,8 +13655,50 @@
 							},
 							"meta": "{startTime|datetime}",
 							"text": "{summary}",
-							"headerNote": "{total} in total",
+							"headerSubtitle": "{total} in total",
 							"emptyText": "No contact moments yet"
+						}
+					},
+					{
+						"id": "contact-open-tickets",
+						"type": "record-list",
+						"title": "Tickets",
+						"icon": "TicketOutline",
+						"visibleWhen": {
+							"appInstalled": "pipelinq"
+						},
+						"content": {
+							"requiresApp": "pipelinq",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/parties/open-tickets/list",
+								"params": {
+									"key": "@object.masterEntityRef"
+								},
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{ticketType}",
+							"pill": {
+								"field": "status",
+								"variant": "purple",
+								"labels": {
+									"new": "New",
+									"in_progress": "In progress",
+									"awaiting_customer": "Awaiting customer"
+								}
+							},
+							"trailing": [
+								"Term {slaDeadline|date}"
+							],
+							"valueLabels": {
+								"ticketType": {
+									"request": "Request",
+									"complaint": "Complaint"
+								}
+							},
+							"headerNote": "{total} open",
+							"emptyText": "No open tickets"
 						}
 					},
 					{
@@ -13612,7 +13859,8 @@
 									"widgetIds": [
 										"contact-card",
 										"contact-open-cases",
-										"contact-latest-moments"
+										"contact-latest-moments",
+										"contact-open-tickets"
 									],
 									"label": "Overview"
 								},
@@ -13764,6 +14012,10 @@
 										{
 											"path": "@self.updated",
 											"format": "date-long"
+										},
+										{
+											"path": "_lastChange.userName",
+											"label": "last changed by"
 										}
 									],
 									"separator": " "

@@ -173,7 +173,8 @@
 					"city": "{{cast:henk.address.city}}"
 				},
 				"displayName": "{{cast:henk.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000011"
 			}
 		},
 		{
@@ -206,7 +207,7 @@
 			"data": {
 				"citizenServiceNumber": "{{cast:sanne.bsn}}",
 				"name": {
-					"givenNames": "{{cast:sanne.givenName}}",
+					"givenNames": "{{cast:sanne.firstNames}}",
 					"surname": "{{cast:sanne.familyName}}"
 				},
 				"birth": {
@@ -219,7 +220,8 @@
 					"city": "{{cast:sanne.address.city}}"
 				},
 				"displayName": "{{cast:sanne.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000012"
 			}
 		},
 		{
@@ -242,7 +244,8 @@
 					"city": "{{cast:fatima.address.city}}"
 				},
 				"displayName": "{{cast:fatima.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000013"
 			}
 		},
 		{
@@ -351,7 +354,8 @@
 					"postcode": "{{cast:slagerij.address.postcode}}",
 					"place": "{{cast:slagerij.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000001"
 			}
 		},
 		{
@@ -368,7 +372,8 @@
 					"postcode": "{{cast:cloudgemeente.address.postcode}}",
 					"place": "{{cast:cloudgemeente.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000002"
 			}
 		},
 		{
@@ -1370,21 +1375,22 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"ontvangst": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Ontvangst"
+						"name": "Ontvangen"
 					}
 				},
 				"status": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Zoeken documenten"
+						"name": "In behandeling"
 					}
 				}
 			},
@@ -1440,21 +1446,22 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"ontvangst": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Ontvangst"
+						"name": "Ontvangen"
 					}
 				},
 				"status": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Beoordeling ontvankelijkheid"
+						"name": "In behandeling"
 					}
 				}
 			},
@@ -1573,14 +1580,15 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"ontvangst": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Ontvangst"
+						"name": "Ontvangen"
 					}
 				},
 				"besluit": {
@@ -1594,7 +1602,7 @@
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Publicatie"
+						"name": "Publiceren"
 					}
 				},
 				"status": {
@@ -1681,7 +1689,8 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"resultType": {
@@ -1708,7 +1717,8 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"decisionType": {
@@ -3541,6 +3551,496 @@
 				"outcome": "inbox",
 				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
 			}
+		},
+		{
+			"key": "waarneming-anouk-voor-pieter",
+			"register": "dossiq",
+			"schema": "substitution",
+			"data": {
+				"absentee": "{{cast:pieter.uid}}",
+				"substitute": "{{cast:anouk.uid}}",
+				"startDate": "{{date:8}}",
+				"endDate": "{{date:12}}",
+				"scope": "all",
+				"reason": "verlof",
+				"status": "active",
+				"comment": "Vakantie",
+				"createdBy": "{{cast:pieter.uid}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"ontvangst": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluit"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Openbare verlichting fietspad Lindelaan",
+				"description": "Meneer Visser vraagt de stukken over de nieuwe verlichting langs het fietspad aan de Lindelaan: het advies, de planning met de aannemer, het raadsvoorstel en de klachten van bewoners.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henkvisser.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henkvisser.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "intern",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "behandelaars",
+				"startDate": "{{date:-24}}",
+				"receivedAt": "{{datetime:-24 09:40}}",
+				"currentStatusEnteredAt": "{{datetime:-2 11:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangst}}",
+						"enteredAt": "{{datetime:-24 09:40}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 11:00}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Verlichting fietspad Lindelaan",
+					"omschrijving": "Het advies over de verlichting, de planning met de aannemer, het raadsvoorstel en de klachten van bewoners over het fietspad aan de Lindelaan.",
+					"periodeVan": "{{date:-400}}",
+					"periodeTot": "{{date:-24}}",
+					"origin": "portal"
+				},
+				"tags": [
+					"woo",
+					"verlichting"
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-advies",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Advies verlichting fietspad",
+				"fileName": "advies-verlichting-fietspad.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-advies",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-advies.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-advies",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-advies.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-advies",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-advies.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-mail-aannemer",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Mail aannemer over planning",
+				"fileName": "mail-aannemer-planning.eml",
+				"format": "message/rfc822",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-mail-aannemer",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-mail-aannemer.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-mail-aannemer",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-mail-aannemer.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-mail-aannemer",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-mail-aannemer.id}}",
+				"classification": "deels_openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}",
+				"weigeringsgronden": [
+					"5.1.2.e"
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Raadsvoorstel fietspad Lindelaan",
+				"fileName": "raadsvoorstel-fietspad-lindelaan.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-raadsvoorstel.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-raadsvoorstel.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-raadsvoorstel.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-klachtenlijst",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Klachtenlijst bewoners Lindelaan",
+				"fileName": "klachtenlijst-bewoners-lindelaan.xlsx",
+				"format": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-klachtenlijst",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-klachtenlijst.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-klachtenlijst",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-klachtenlijst.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-klachtenlijst",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-klachtenlijst.id}}",
+				"classification": "deels_openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}",
+				"weigeringsgronden": [
+					"5.1.2.e"
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-interne-notitie",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Interne notitie budget",
+				"fileName": "interne-notitie-budget.docx",
+				"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-interne-notitie",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-interne-notitie.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-interne-notitie",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-interne-notitie.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-interne-notitie",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-interne-notitie.id}}",
+				"classification": "niet_openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}",
+				"weigeringsgronden": [
+					"5.2.1"
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-offerte",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Offerte lantaarnpalen",
+				"fileName": "offerte-lantaarnpalen.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-offerte",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-offerte.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-offerte",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-offerte.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-offerte",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-offerte.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-plattegrond",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Plattegrond lichtmasten",
+				"fileName": "plattegrond-lichtmasten.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-plattegrond",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-plattegrond.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-plattegrond",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-plattegrond.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-plattegrond",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-plattegrond.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-besluitbrief",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Woo-besluit verlichting fietspad Lindelaan",
+				"fileName": "Besluit Woo-verzoek {{object:woo-fietspad-besluitklaar.identifier}}.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "openbaar",
+				"status": "draft",
+				"informatieobjecttype": "Besluit",
+				"direction": "outgoing",
+				"creatiedatum": "{{date:-1}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-besluitbrief",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-besluitbrief.id}}",
+				"registrationDate": "{{datetime:-1 15:30}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-besluitbrief",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-besluitbrief.id}}",
+				"relevance": "out-of-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-1 15:31}}"
+			}
 		}
 	],
 	"views": [
@@ -3604,6 +4104,7 @@
 			"data": {
 				"name": "Wacht op inwoner",
 				"description": "Zaken die wachten op de aanvrager",
+				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}, {"user": "{{cast:anouk.uid}}", "mode": "write"}],
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": false,
 				"query": {

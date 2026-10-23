@@ -112,6 +112,7 @@ final class StatusTypePalette {
 		'Completed' => 'green',
 		'Gegund' => 'green',
 		'Publicatie' => 'green',
+		'Publiceren' => 'green',
 		'Schikking' => 'green',
 		'Afgewezen' => 'red',
 		'Gestrand' => 'red',

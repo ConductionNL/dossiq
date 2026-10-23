@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.65"
+        "version": "0.20.66"
     },
     "x-openregister": {
         "type": "application",
@@ -1834,7 +1834,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.47.0",
+                "version": "1.48.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -2304,6 +2304,14 @@
                                     },
                                     "us"
                                 ]
+                            }
+                        },
+                        "caseTypeIdentifier": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "The identifier of this case's type, which every version of a case type shares (the version chain is read by it). Materialised so a list, a quick filter or an action can mean every version of a case type with one value; a uuid names one version only. A cross-object @ref lookup resolves in OpenRegister's save-time listener only, so existing cases are filled by the BackfillCaseTypeIdentifier repair step.",
+                            "expression": {
+                                "prop": "@ref.caseType.identifier"
                             }
                         },
                         "statusRole": {
@@ -3237,6 +3245,15 @@
                         "description": "Who this case waits on, taken from the status it sits in (statusType.waitingOn). Computed declaratively by OpenRegister so a queue counts by it server-side rather than by reading four hundred rows into PHP. A status that declares nothing reads as ours to move, which is what makes the count safe on a case type nobody has annotated. After editing a statusType's waitingOn, run occ openregister:rematerialise-calculations.",
                         "title": "Waiting on",
                         "facetable": true,
+                        "visible": false
+                    },
+                    "caseTypeIdentifier": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "The identifier of the case type, shared by every version of it. Taken from the case type.",
+                        "title": "Case type identifier",
+                        "matchType": "exact",
+                        "inputControl": "text",
                         "visible": false
                     },
                     "statusRole": {

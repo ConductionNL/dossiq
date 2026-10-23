@@ -139,6 +139,13 @@ describe('process mining', () => {
 		expect(dwell.content.endpointSource.labelsPath).toBe('statusName')
 	})
 
+	it('draws Days per phase with the board\'s 240px case-type column', () => {
+		// DqProcesanalyse: the case types in a 240px column, the phases sharing the rest.
+		const matrix = widget('ProcessMiningDashboard', 'pm-phase-days')
+		expect(matrix.content.chartKind).toBe('matrix')
+		expect(matrix.content.matrixLabelWidth).toBe(240)
+	})
+
 	it('keeps the by-handler table on the page and on the grid, with its hint', () => {
 		const w = widget('ProcessMiningDashboard', 'pm-dwell-by-assignee')
 		expect(w.type).toBe('object-table')
@@ -146,6 +153,16 @@ describe('process mining', () => {
 		expect(w.subtitle).toContain('not recorded')
 		expect(onGrid('ProcessMiningDashboard', 'pm-dwell-by-assignee')).toBe(true)
 	})
+	it('names the period it measures on the description line, as DqProcesanalyse does', () => {
+		// "… januari tot en met september 2026 · [Gemiddeld | Mediaan] …": the
+		// description reads the period filter's active window (nextcloud-vue
+		// description-period-from-filter), each rolling option its months.
+		const config = page('ProcessMiningDashboard').config
+		expect(config.description).toBe('Case status history {filter.period}')
+		const period = config.pageFilters.find((f) => f.key === 'period')
+		expect(Object.fromEntries(period.options.map((o) => [o.value, o.months]))).toEqual({ '3m': 3, '6m': 6, '12m': 12, all: undefined })
+	})
+
 	it('puts the measure, the period and the case type on the description line, in the board\'s order', () => {
 		// DqProcesanalyse: "… · [Gemiddeld | Mediaan] [Laatste 12 maanden]
 		// [Alle zaaktypen]", with no filter row under the header.
@@ -159,11 +176,15 @@ describe('process mining', () => {
 })
 
 describe('deadline reports', () => {
-	it('draws the quarterly report from its rows, named by case type, with CSV export', () => {
+	it('draws the quarterly report from its rows, named by case type, exported from its form', () => {
 		const w = widget('TermijnDashboard', 'deadline-report-quarterly')
 		expect(w.type).toBe('object-table')
 		expect(w.content.endpointSource).toMatchObject({ responsePath: 'rows', params: { period: '@workspace.quarter' } })
-		expect(w.content.exportCsv).toBe(true)
+		// Board DqTermijnen: "CSV exporteren" beside "Rapport laden" above the
+		// table, so the form carries the export and the table has no footer button.
+		expect(w.content.exportCsv).toBeUndefined()
+		expect(w.content.exportId).toBe('deadline-report-quarterly')
+		expect(widget('TermijnDashboard', 'deadline-report-quarter-form').content.exportTable).toEqual({ exportId: 'deadline-report-quarterly' })
 		const keys = Object.fromEntries(w.content.columns.map((c) => [c.key, c]))
 		expect(keys.caseTypeTitle.label).toBe('Case type')
 		expect(keys.withinTermPct.format).toMatchObject({ decimals: 1, suffix: ' %' })

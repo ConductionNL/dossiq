@@ -60,6 +60,10 @@ describe('the pause reason choice', () => {
 		expect(input(SUSPEND, 'days').helperFrom).toEqual({ input: 'pauseReason', key: 'legalBasis' })
 	})
 
+	it('fills the days with the picked reason\'s default (4.1)', () => {
+		expect(input(SUSPEND, 'days').prefillFrom).toEqual({ input: 'pauseReason', key: 'defaultDays' })
+	})
+
 	it('asks for the free text without reasons, and with them only after Other', () => {
 		const { inputs } = actForm(SUSPEND)
 		const read = (pauseReasons, values) => readTransitionInputs(inputs, values, { context: { pauseReasons } })
@@ -135,6 +139,9 @@ describe('suspending from the lifecycle menu', () => {
 			context: { pauseReasons: REASONS },
 			columns: 2,
 			markRequired: false,
+			// Board DqVolgendeStap marks the inputs that are NOT required:
+			// "Dagen die de aanvrager krijgt (niet verplicht)".
+			markOptional: true,
 			'data-testid': 'case-act-fields-suspend',
 		})
 	})

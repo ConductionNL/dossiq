@@ -36,3 +36,15 @@ When the case type declares pause reasons, the Opschorten form SHALL offer them 
 - **WHEN** a client posts Opschorten with `pauseReason: "made-up"`
 - **THEN** the server answers 422 with code `pause_reason_not_declared`
 - **AND** no pause is registered
+
+### Requirement: A pause reason can carry its default days
+
+A pause reason MAY declare `defaultDays`, a positive whole number. The Opschorten form SHALL fill "Days the applicant
+is given" with it when the handler picks that reason; a reason without it, and Other, SHALL leave the days as they
+were. Zero, a negative or a non-number SHALL read as no default.
+
+#### Scenario: A reason with 28 days
+
+- **GIVEN** the case type's reason "Wacht op machtiging" declares 28 default days
+- **WHEN** the handler picks it in Opschorten
+- **THEN** the days read 28, and the handler can change them before confirming

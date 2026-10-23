@@ -396,6 +396,8 @@ export default {
 				notice: this.form.notice,
 				disabled: this.busy,
 				markRequired: false,
+				// The boards mark what is NOT required ("(niet verplicht)").
+				markOptional: true,
 				'data-testid': 'case-act-fields-' + String(this.chosen?.id ?? ''),
 			}
 		},
@@ -870,7 +872,7 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	padding: 8px 16px 16px;
+	padding: 8px 0 16px;
 }
 
 .case-acts__reason,

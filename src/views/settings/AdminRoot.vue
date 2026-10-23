@@ -352,6 +352,8 @@
 					v-else
 					:hideWrapper="true"
 					:source="connectionsSource"
+					:sortable="true"
+					:filterable="true"
 					:columns="connectionColumns"
 					:emptyText="
 						t(
@@ -511,12 +513,8 @@
 				:actionsInTitle="true"
 				:wide="true"
 				:name="t('dossiq', 'Activities from the Omgevingsloket')"
-				:description="
-					t(
-						'dossiq',
-						'An application from the DSO becomes a case of the linked case type. The mapping is integriq\'s.',
-					)
-				">
+				:description="t('dossiq', 'An application from the DSO becomes a case of the linked case type.')"
+				:footerLink="ownerApps.integriq ? { label: t('dossiq', 'Manage the links in integriq'), href: integriqAdminUrl } : null">
 				<template v-if="ownerApps.integriq" #actions>
 					<NcButton :href="integriqAdminUrl" variant="secondary">
 						<template #icon>
@@ -538,6 +536,8 @@
 					v-else
 					:hideWrapper="true"
 					:source="intakeActivitySource"
+					:sortable="true"
+					:filterable="true"
 					:columns="intakeActivityColumns"
 					:emptyText="t('dossiq', 'No activities linked yet.')" />
 			</CnSettingsSection>
@@ -547,12 +547,8 @@
 				:actionsInTitle="true"
 				:wide="true"
 				:name="t('dossiq', 'Fee rules')"
-				:description="
-					t(
-						'dossiq',
-						'What a case type costs, per rule and validity date. The fee schedules are shillinq\'s.',
-					)
-				">
+				:description="t('dossiq', 'Loaded at installation; adjusted per year.')"
+				:footerLink="ownerApps.shillinq ? { label: t('dossiq', 'Manage fees in shillinq'), href: feeSchedulesUrl } : null">
 				<template v-if="ownerApps.shillinq" #actions>
 					<NcButton :href="feeSchedulesUrl" variant="secondary">
 						<template #icon>
@@ -574,19 +570,15 @@
 					v-else
 					:hideWrapper="true"
 					:source="feeScheduleSource"
+					:sortable="true"
+					:filterable="true"
 					:columns="feeScheduleColumns"
 					:emptyText="t('dossiq', 'No fee rules for dossiq yet.')" />
 			</CnSettingsSection>
 
 			<CnSettingsSection
 				:actionsInTitle="true"
-				:name="t('dossiq', 'VTH inspection checklists')"
-				:description="
-					t(
-						'dossiq',
-						'Configure reusable inspection checklists for VTH cases (Toezicht). Checklists are versioned and linked to case types.',
-					)
-				"
+				:name="t('dossiq', 'Inspection checklists')"
 				:loading="!storesReady">
 				<template v-if="storesReady" #actions>
 					<NcButton variant="secondary" @click="$refs.checklists.openEditor(null)">
@@ -601,14 +593,17 @@
 
 			<CnSettingsSection
 				id="section-enforcement-strategy"
-				:name="t('dossiq', 'Enforcement strategy')"
-				:description="
-					t(
-						'dossiq',
-						'The matrix that recommends an intervention from the severity of a violation and the behaviour of the offender.',
-					)
-				">
+				:name="t('dossiq', 'Enforcement strategy')">
+				<CnFactsWidget :content="enforcementMatrixFacts" />
+				<NcButton
+					variant="tertiary"
+					:aria-expanded="String(showEarlierMatrices)"
+					data-testid="enforcement-earlier-versions"
+					@click="showEarlierMatrices = !showEarlierMatrices">
+					{{ showEarlierMatrices ? t('dossiq', 'Hide earlier versions') : t('dossiq', 'Earlier versions') }}
+				</NcButton>
 				<CnWidgetObjectTable
+					v-if="showEarlierMatrices"
 					:hideWrapper="true"
 					:source="enforcementMatrixSource"
 					:columns="enforcementMatrixColumns"
@@ -635,6 +630,7 @@
 <script>
 import {
 	CnAdminSettingsShell,
+	CnFactsWidget,
 	CnRegisterMapping,
 	CnSettingsFieldsSection,
 	CnSettingsSection,
@@ -691,6 +687,7 @@ export default {
 		PrerequisitesTab,
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
+		CnFactsWidget,
 		CnRegisterMapping,
 		CnSettingsFieldsSection,
 		CnSettingsSection,
@@ -739,6 +736,8 @@ export default {
 			registerSaving: false,
 			activeTab: 'general',
 			tabCounts: {},
+			/** Whether the enforcement strategy card shows every matrix version. */
+			showEarlierMatrices: false,
 			ownerApps: loadState('dossiq', 'ownerApps', {
 				integriq: true,
 				shillinq: true,
@@ -1179,6 +1178,26 @@ export default {
 
 				// The section's title row draws Add day.
 				addButton: false,
+			}
+		},
+
+		/**
+		 * The active enforcement matrix as facts (DqVthInstellingen
+		 * Handhavingsstrategie): its name, version and last change.
+		 *
+		 * @return {object} The facts widget content.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		enforcementMatrixFacts() {
+			return {
+				source: { register: 'dossiq', schema: 'lhsMatrix', filter: { active: true } },
+				fields: [
+					{ label: 'Matrix', path: 'name' },
+					{ label: 'Version', path: 'version' },
+					{ label: 'Last changed', path: '@self.updated', format: 'date' },
+				],
+
+				emptyText: 'No active enforcement matrix yet',
 			}
 		},
 

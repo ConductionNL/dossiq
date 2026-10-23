@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.144.1",
+	"version": "2.149.1",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -884,8 +884,8 @@
 		},
 		"sentinelFilterToken": {
 			"type": "string",
-			"pattern": "^@(?:me(?:\\.(?:displayName|email))?|myGroups|now|today|monthStart|monthEnd|nextMonthStart|quarterStart|yearStart)$|^@today[+-](?:[0-9]+|\\{@config\\.[A-Za-z][A-Za-z0-9_.]*\\})d$",
-			"description": "Filter-value context: relative fetch-time tokens resolved by resolveFilterTokens (@me, @me.displayName, @me.email, @myGroups (the current user's group ids, an IN list), @now, @today, @today±Nd (N may be {@config.<key>}), @monthStart, @monthEnd, @nextMonthStart, @quarterStart, @yearStart). Mirrors SENTINEL_TOKEN_PATTERNS.filter in src/utils/sentinelTokens.js (byte-equality enforced by a unit test)."
+			"pattern": "^@(?:me(?:\\.(?:displayName|email))?|myGroups|myTeam|now|today|monthStart|monthEnd|nextMonthStart|quarterStart|yearStart)$|^@today[+-](?:[0-9]+|\\{@config\\.[A-Za-z][A-Za-z0-9_.]*\\})d$",
+			"description": "Filter-value context: relative fetch-time tokens resolved by resolveFilterTokens (@me, @me.displayName, @me.email, @myGroups (the current user's group ids, an IN list), @myTeam (the current user's primary team as the app answers it; dropped for a user in no team), @now, @today, @today±Nd (N may be {@config.<key>}), @monthStart, @monthEnd, @nextMonthStart, @quarterStart, @yearStart). Mirrors SENTINEL_TOKEN_PATTERNS.filter in src/utils/sentinelTokens.js (byte-equality enforced by a unit test)."
 		},
 		"sentinelConfigToken": {
 			"type": "string",
@@ -896,6 +896,11 @@
 			"type": "string",
 			"pattern": "^@objectId$|^@object\\.[A-Za-z][A-Za-z0-9_]*$",
 			"description": "Object context: detail-page object tokens (@objectId, @object.<field>) resolved only when a { objectId, object } ctx is supplied. Mirrors SENTINEL_TOKEN_PATTERNS.object."
+		},
+		"sentinelLinkToken": {
+			"type": "string",
+			"pattern": "^@object\\.[A-Za-z][A-Za-z0-9_]*\\|(?:tel|mailto|geo)$",
+			"description": "Link context: a record field made a tel:, mailto: or geo: link in an action target (@object.<field>|tel, |mailto, |geo), resolved by the party-actions widget. Mirrors SENTINEL_TOKEN_PATTERNS.link."
 		},
 		"sentinelWorkspaceToken": {
 			"type": "string",
@@ -942,12 +947,18 @@
 			"pattern": "^@subject\\.[A-Za-z][A-Za-z0-9_.]*$",
 			"description": "Subject context: a field of the record an attention card names (the first row of its ordered `visibleWhen` source query), read by the banner widget's action route params and query (@subject.<field>, dot path allowed). Mirrors SENTINEL_TOKEN_PATTERNS.subject."
 		},
+		"sentinelSourceToken": {
+			"type": "string",
+			"pattern": "^@source\\.[A-Za-z][A-Za-z0-9_.@]*$",
+			"description": "Facts source: a field of the object a facts widget shows (@source.<field>, dot path allowed), read by a fact row's `route` params (CnFactsWidget substitutes it, nextcloud-vue feat/r23-facts-row-link). Pending in the library schema; the widget already resolves it."
+		},
 		"sentinelTokenAny": {
 			"$comment": "Union of every canonical context plus the deprecated-during-window overlay. Single source the shared resolver + gate import.",
 			"anyOf": [
 				{ "$ref": "#/$defs/sentinelFilterToken" },
 				{ "$ref": "#/$defs/sentinelConfigToken" },
 				{ "$ref": "#/$defs/sentinelObjectToken" },
+				{ "$ref": "#/$defs/sentinelLinkToken" },
 				{ "$ref": "#/$defs/sentinelWorkspaceToken" },
 				{ "$ref": "#/$defs/sentinelRouteToken" },
 				{ "$ref": "#/$defs/sentinelDeclarativeToken" },
@@ -956,6 +967,7 @@
 				{ "$ref": "#/$defs/sentinelRowToken" },
 				{ "$ref": "#/$defs/sentinelSubjectToken" },
 				{ "$ref": "#/$defs/sentinelContextToken" },
+				{ "$ref": "#/$defs/sentinelSourceToken" },
 				{ "$ref": "#/$defs/sentinelDeprecatedToken" }
 			]
 		},
@@ -1581,9 +1593,14 @@
 					"type": "string",
 					"description": "Named vue-router route to navigate to on click."
 				},
+				"query": {
+					"type": "object",
+					"additionalProperties": { "type": "string" },
+					"description": "Query for `route`, e.g. { \"action\": \"create\" } to open an index page's create flow (detail-band, 2.140.0)."
+				},
 				"href": {
 					"type": "string",
-					"description": "External URL opened in a new tab on click."
+					"description": "External URL opened in a new tab on click. On a detail page it may name the record's fields as @object.<field> tokens."
 				},
 				"payload": {
 					"description": "Free-form payload echoed back to the host inside the @primary-action-click event."
@@ -2013,7 +2030,8 @@
 						"params": { "type": "object", "additionalProperties": true },
 						"query": { "type": "object", "additionalProperties": true },
 						"href": { "type": "string" },
-						"tab": { "type": "string", "minLength": 1 }
+						"tab": { "type": "string", "minLength": 1 },
+						"placement": { "type": "string", "enum": ["title"], "description": "`title` draws the link under the widget title instead of among the header actions (2.145.0, header-link-under-title; DqDashboard \"Alles bekijken\")." }
 					}
 				},
 				"showButtons": {
@@ -3252,6 +3270,10 @@
 					"type": "string",
 					"description": "open-form: the sentence under the create dialog's heading (board look), e.g. which fields are required and what happens on save. Through the host translate. Absent: no sentence."
 				},
+				"formConfirmLabel": {
+					"type": "string",
+					"description": "open-form: the create dialog's confirm button label, e.g. 'Create case'. Through the host translate. Absent: 'Create' (or 'Save' when editing)."
+				},
 				"size": {
 					"type": "string",
 					"enum": ["small", "normal", "large", "full"],
@@ -4069,6 +4091,11 @@
 					"default": false,
 					"description": "Detail pages only. Puts the active tab in the address as ?_tab=<id> so a link points at a tab of a record rather than at the record. The underscore prefix keeps it out of resolveQueryFilters(), which reads every other query key as a filter. Refused on any other page type."
 				},
+				"listNavigation": {
+					"type": "boolean",
+					"default": false,
+					"description": "Detail pages only. Opened from an index page, the record offers previous and next within that list, with its search, sort and filters (the address carries them as `_from` and the list query). CnPageRenderer reads the list from OpenRegister; a list with a source of its own offers no step. Off by default."
+				},
 				"referencePreview": {
 					"type": "boolean",
 					"default": false,
@@ -4604,6 +4631,39 @@
 							"$ref": "#/$defs/headerPill",
 							"description": "type='detail': a pill above the title saying where the record stands."
 						},
+						"band": {
+							"type": "array",
+							"description": "type='detail': a row of widgets across the whole page, above the body and the side column (detail-band). An item is the id of a widget declared on the page, a widget definition, or { widgetId, span, chrome } where span is the share of the row in twelfths (default 12) and chrome is card or bare. The row wraps; each item follows its visibleWhen.",
+							"items": {
+								"oneOf": [
+									{ "type": "string", "minLength": 1 },
+									{
+										"type": "object",
+										"additionalProperties": false,
+										"required": ["widgetId"],
+										"properties": {
+											"widgetId": { "type": "string", "minLength": 1 },
+											"span": { "type": "integer", "minimum": 1, "maximum": 12 },
+											"chrome": { "type": "string", "enum": ["card", "bare"], "description": "card (default) or bare, for a widget that draws its own card; a banner defaults to bare." }
+										}
+									},
+									{
+										"type": "object",
+										"additionalProperties": true,
+										"required": ["type"],
+										"not": { "required": ["widgetId"] },
+										"properties": {
+											"id": { "type": "string" },
+											"type": { "type": "string", "minLength": 1 },
+											"title": { "type": "string" },
+											"span": { "type": "integer", "minimum": 1, "maximum": 12 },
+											"chrome": { "type": "string", "enum": ["card", "bare"], "description": "card (default) or bare, for a widget that draws its own card; a banner defaults to bare." },
+											"content": { "type": "object", "additionalProperties": true }
+										}
+									}
+								]
+							}
+						},
 						"sideColumn": {
 							"type": "array",
 							"description": "type='detail': a column of cards beside the body, for the record's facts. An item is a widget definition, or the id of a widget declared on the page. The column stacks under the body on a narrow page.",
@@ -4951,6 +5011,10 @@
 												"minimum": 0,
 												"description": "Same as config.quickFilterMaxVisible."
 											},
+											"bulkBandAlways": {
+												"type": "boolean",
+												"description": "Same as config.bulkBandAlways: `false` draws the bulk band only once rows are selected while the view is active (DqTeamwachtrij, DqAanMijToegewezen)."
+											},
 											"sidePanel": {
 												"type": "array",
 												"description": "Same as config.sidePanel."
@@ -5008,6 +5072,10 @@
 											"countText": {
 												"type": "string",
 												"description": "Same as config.countText."
+											},
+											"countSubtitle": {
+												"type": ["string", "null"],
+												"description": "Same as config.countSubtitle; `null` drops it, so with an empty `countText` a header note that counts (`headerMeta` with `{total}`) is the only count (DqAanMijToegewezen)."
 											},
 											"footerNote": {
 												"type": "string",
@@ -5294,7 +5362,7 @@
 						},
 						"pageFilters": {
 							"type": "array",
-							"description": "type='dashboard': page-level filter controls in the header. Each selection is written into the page's workspace context, so a widget reads it through a `@page.<key>` / `@workspace.<key>` token (an endpoint widget also in its `responsePath`). Maps to the CnDashboardPage `pageFilters` prop.",
+							"description": "type='dashboard' and type='detail': page-level filter controls, in a dashboard's header and in a detail page's band (detail-page-filters, 2.141.0). Each selection is written into the page's workspace context, so a widget reads it through a `@page.<key>` / `@workspace.<key>` token (an endpoint widget also in its `responsePath`). Maps to the CnDashboardPage `pageFilters` prop.",
 							"items": {
 								"type": "object",
 								"required": ["key"],
@@ -5334,7 +5402,8 @@
 											"additionalProperties": false,
 											"properties": {
 												"value": { "type": ["string", "number"], "description": "Value written into the context when picked." },
-												"label": { "type": "string", "description": "Display text (i18n key or plain text)." }
+												"label": { "type": "string", "description": "Display text (i18n key or plain text)." },
+												"months": { "type": "integer", "minimum": 1, "description": "A rolling window of this many months ending with the current one. A dashboard description's `{filter.<key>}` then reads the months it covers (\"November 2025 through October 2026\"); without it the token reads the label (description-period-from-filter, 2.147.0)." }
 											}
 										}
 									}
@@ -5385,7 +5454,7 @@
 						"showActionsMenu": {
 							"type": "boolean",
 							"default": true,
-							"description": "type='dashboard': `false` removes the page Actions menu from the header, for a board page whose header carries only the buildiq square and the primary (screens-dashboard-greeting-header). Maps to CnDashboardPage `showActionsMenu`."
+							"description": "type='dashboard': `false` removes the page Actions menu from the header, for a board page whose header carries only the buildiq square and the primary (screens-dashboard-greeting-header). Maps to CnDashboardPage `showActionsMenu`. type='index': decides the toolbar's Actions menu; `true` keeps it beside `headerButtons` (DqAfdelingen), `false` leaves it out, and without the key it is drawn unless the header carries buttons. Maps to CnIndexPage `showActionsMenu`."
 						},
 						"gridSideColumn": { "type": "object", "additionalProperties": false, "required": ["width"], "description": "type='dashboard': draw the grid's side column at a fixed width (2.142.0, dashboard-side-column-width). The placements with `track: side` are `width` px wide (the card without its margins) from column `from` (default 8), those with `track: main` share the rest; a placement without a track keeps the twelve shares. Only on the full twelve-column grid and not while editing.", "properties": { "width": { "type": "number", "exclusiveMinimum": 0 }, "from": { "type": "integer", "minimum": 1, "maximum": 11 } } },
 						"gridFloat": {
@@ -5503,6 +5572,26 @@
 							"minLength": 1,
 							"description": "type='index', board look: the 13px hint after the bulk band's buttons (screens-index-list-parity). Maps to CnIndexPage `bulkHint`."
 						},
+						"bulkBandViews": {
+							"type": "object",
+							"description": "type='index', board look: another shape of the bulk band per view mode (`board`, `cards`, ...). In such a view the band shows only with a selection and without the built-in copy and delete (DqWerkbord: \"1 zaak geselecteerd · Status wijzigen · Annuleren\"). Maps to CnIndexPage `bulkBandViews`.",
+							"propertyNames": { "enum": ["table", "cards", "list", "map", "board", "dateAxis", "calendar"] },
+							"additionalProperties": {
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"lead": { "type": "object", "additionalProperties": false, "description": "The lead counting the selection, `{count}` filled; i18n keys.", "properties": { "one": { "type": "string", "minLength": 1 }, "other": { "type": "string", "minLength": 1 } } },
+									"actions": { "type": "array", "description": "The bulk actions offered, in order: an id, or `{ id, label }` to relabel one (i18n key).", "items": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["id"], "properties": { "id": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 } } }] } },
+									"cancel": { "type": "boolean", "description": "A Cancel button at the end that clears the selection." },
+									"hint": { "type": "boolean", "description": "`true` keeps `bulkHint` in this view." }
+								}
+							}
+						},
+						"bulkNoun": {
+							"type": "string",
+							"minLength": 1,
+							"description": "type='index', board look: the plural the bulk band names (\"With the selected cases\"), an i18n key, lower-cased after translation. Wins over the schema's plural; without either the band says \"items\". Maps to CnIndexPage `bulkNoun`."
+						},
 						"cardFields": {
 							"type": "array",
 							"description": "type='index': the property keys the cards view shows as the facts list of each card, in order; defaults to the first four list columns under the board look (screens-card-parity). Maps to CnIndexPage `cardFields`.",
@@ -5518,6 +5607,7 @@
 								"title": { "type": "string", "minLength": 1 },
 								"meta": { "type": "array", "description": "The meta line's parts: a field name reads through the page column it names; `{ field, formatter?, formatterOptions? }` reads as plain text through its own formatter (card-layout-part-formatter).", "items": { "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" } } } ] } },
 								"footerPill": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "resolve": { "type": "object", "additionalProperties": false, "description": "pill-color-field: the field holds the id of a record; the pill takes the tone that record's colour maps onto and shows its icon. Register and schema default to the field's reference.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "colorField": { "type": "string", "minLength": 1 }, "iconField": { "type": "string", "minLength": 1 } } }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "due": { "type": "object", "description": "Read the field as a due date: overdue gives the error variant, within `soonWithin` days the warning one; any other date draws no pill.", "properties": { "soonWithin": { "type": "number", "minimum": 0 } } }, "variantWhen": { "type": "array", "description": "Rules on the days left until the field's date, `{ op, value, variant }`; the first match gives the variant, no match draws no pill.", "items": { "type": "object", "required": ["op", "value", "variant"], "properties": { "op": { "type": "string" }, "value": { "type": "number" }, "variant": { "type": "string" } } } } } },
+								"footerCell": { "description": "A part in the footer before the date, read as a meta part is: a field name draws through the page column it names (its widget, e.g. the handler's picture and name), `{ field, formatter?, formatterOptions? }` reads as text through its own formatter; left out while empty (DqZakenSorteren, 2.145.0).", "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" } } }] },
 								"footerDate": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 }, "overdueVariant": { "type": "string", "enum": ["error", "warning"], "description": "The date's tone once it has passed (2.132.0)." } } },
 								"description": { "description": "A line under the meta line: a field, or `{ field, maxLength? }` cut at maxLength characters (140 by default) with an ellipsis (2.132.0).", "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "maxLength": { "type": "integer", "minimum": 1 } } }] },
 								"chips": { "type": "array", "description": "Pills under the description, one per entry whose field holds a value; the text reads through the entry's formatter, `colorMap` and `labels` work as on a pill (2.132.0).", "items": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "resolve": { "type": "object", "additionalProperties": false, "description": "pill-color-field: the field holds the id of a record; the pill takes the tone that record's colour maps onto and shows its icon. Register and schema default to the field's reference.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "colorField": { "type": "string", "minLength": 1 }, "iconField": { "type": "string", "minLength": 1 } } }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } } }] } }

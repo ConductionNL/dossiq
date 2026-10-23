@@ -127,6 +127,7 @@
 				"icon": "Plus",
 				"type": "open-form",
 				"formTitle": "New case",
+				"formConfirmLabel": "Create case",
 				"size": "normal",
 				"columns": 1,
 				"includeFields": [
@@ -1680,6 +1681,10 @@
 					},
 					"case-banner-stack"
 				],
+				"followRow": {
+					"presence": true,
+					"count": false
+				},
 				"showTypeEyebrow": false,
 				"breadcrumb": {
 					"label": "All cases",
@@ -1956,6 +1961,7 @@
 								{
 									"widgetId": "case-social-indications",
 									"label": "Indication",
+									"permission": "sociaal-domein",
 									"visibleWhen": {
 										"any": [
 											{
@@ -1984,6 +1990,7 @@
 								{
 									"widgetId": "case-social-meetings",
 									"label": "Case meeting",
+									"permission": "sociaal-domein",
 									"visibleWhen": {
 										"any": [
 											{
@@ -2066,7 +2073,11 @@
 									}
 								},
 								{
-									"widgetId": "case-files",
+									"widgetIds": [
+										"case-document-verdicts-card",
+										"case-files",
+										"case-refusal-grounds-card"
+									],
 									"label": "Files",
 									"unreadKey": "files",
 									"countFrom": {
@@ -2192,14 +2203,13 @@
 									"overflow": true
 								},
 								{
-									"widgetId": "case-custody-panel",
-									"label": "Custody",
-									"overflow": true
-								},
-								{
-									"widgetId": "case-archival-panel",
+									"widgetIds": [
+										"case-archival-panel",
+										"case-custody-panel"
+									],
 									"label": "Archiving",
-									"overflow": true
+									"overflow": true,
+									"_note": "DqZaakArchivering: the archiving card and, under it, Bewaring (who has held the case and who asks for it), as one tab."
 								},
 								{
 									"widgetId": "case-knowledge-panel",
@@ -2358,6 +2368,35 @@
 								}
 							}
 						]
+					},
+					"case-status-declaration": {
+						"_note": "The case Status card (DqZaak): where the case stands in one line and the time in the status under it. The withheld moves stay off the card, as the board draws it; the content is the base widget's, repeated because a patch replaces content whole.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case/@objectId/available-transitions"
+							},
+							"labels": {
+								"derivationHeading": "This case moves to {status} once these are on file",
+								"fieldRulesHeading": "What this status asks of the case"
+							},
+							"withheld": false
+						}
+					},
+					"case-files": {
+						"subtitle": [
+							{
+								"when": {
+									"field": "@context.caseType.documentReview.enabled",
+									"op": "eq",
+									"value": true
+								},
+								"text": "Assess per document whether it can be public. What is partly public, you redact afterwards."
+							}
+						],
+						"_viewNote": "DqZaakDocumenten: the Files tab holds the verdicts card, the folder and the grounds card, so the folder is a card too; `view: tab` keeps it the full files browser (CnFilesTab) inside that card rather than the compact files card.",
+						"content": {
+							"view": "tab"
+						}
 					},
 					"case-email-panel": {
 						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the mail linked to the case is listed in the same card, as the board draws it, and the notes stand under it. Mail koppelen and Mail opstellen are the library mail tab's own header buttons (content.headerActions).",
@@ -2655,8 +2694,13 @@
 						"title": "Locations",
 						"_note": "The case on a map: the case-location objects that point at this case (`filter: case = @objectId`), drawn by the library map. An empty answer and a failed read say so in words, a point at (0, 0) is not plotted, and saving a location (CaseLocationDialog emits dossiq:case-location:saved with the caseId) reads the markers again.",
 						"content": {
+							"headerSubtitle": { "one": "{total} location", "other": "{total} locations" },
 							"height": "260px",
 							"autoFit": true,
+							"zoomControl": false,
+							"fitControl": false,
+							"locateControl": false,
+							"fullscreenControl": false,
 							"ariaLabel": "Locations on this case",
 							"markers": {
 								"dataSource": {
@@ -2826,6 +2870,8 @@
 						"title": "Contact moments on this case",
 						"_note": "DqZaakContact: the contact moments as a card with no Add of its own, as the board draws it; a contact is logged with Contact vastleggen in the header and on the conversation card.",
 						"content": {
+							"tableBleed": true,
+							"headerSubtitle": "{total} recorded",
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
@@ -3018,8 +3064,23 @@
 								}
 							},
 							"viewAllLabel": "All tasks of this case in Tasks",
+							"viewAllPlacement": "footer",
+							"dueFormat": "date",
+							"stateLabels": {
+								"active": "In progress",
+								"completed": "Done"
+							},
+							"stateColors": {
+								"active": "purple"
+							},
 							"emptyText": "No tasks for this case yet",
-							"pollSeconds": 30
+							"pollSeconds": 30,
+							"stateVariants": {
+								"available": "warning",
+								"enabled": "warning",
+								"active": "purple",
+								"completed": "default"
+							}
 						}
 					},
 					{
@@ -3092,7 +3153,12 @@
 								},
 								{
 									"key": "state",
-									"label": "State"
+									"label": "State",
+									"colorMap": {
+										"open": "warning",
+										"in-behandeling": "purple",
+										"afgehandeld": "success"
+									}
 								},
 								{
 									"key": "assignee",
@@ -3761,6 +3827,12 @@
 							},
 							"emptyText": "No messages with the resident yet.",
 							"replyLabel": "Answer to the resident",
+							"replyHint": "Goes to the message box in the portal",
+							"replyOption": {
+								"label": "Log as a contact moment on this case",
+								"key": "logContactMoment",
+								"value": true
+							},
 							"replyAction": {
 								"type": "open-modal",
 								"target": "PortalMessageDialog",
@@ -3772,11 +3844,150 @@
 						}
 					},
 					{
+						"id": "case-document-verdicts-card",
+						"type": "stacked-bar",
+						"visibleWhen": {
+							"field": "@context.caseType.documentReview.enabled",
+							"op": "eq",
+							"value": true
+						},
+						"_note": "DqZaakDocumenten \"4 van 7 beoordeeld\": the verdicts so far over the case's documents under review, from /api/cases/{id}/review/verdicts, each verdict in its tone and what is still to assess as the neutral rest. Only on a case type that reviews its documents (documentReview.enabled). Needs nextcloud-vue CnStackedBarWidget endpointSource, colors, remainder and heading (feat/stacked-bar-remainder-colours).",
+						"content": {
+							"inset": true,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/review/verdicts"
+							},
+							"groupsPath": "counts",
+							"totalPath": "documents",
+							"order": [
+								"openbaar",
+								"deels_openbaar",
+								"niet_openbaar"
+							],
+							"labels": {
+								"openbaar": "Public",
+								"deels_openbaar": "Partly public",
+								"niet_openbaar": "Not public"
+							},
+							"colors": {
+								"openbaar": "success",
+								"deels_openbaar": "warning",
+								"niet_openbaar": "error"
+							},
+							"remainder": {
+								"key": "open",
+								"label": "Still to be assessed"
+							},
+							"heading": "{counted} of {total} assessed",
+							"headingMeta": "{remaining} to go before the decision",
+							"emptyText": "No documents on this case yet"
+						}
+					},
+					{
+						"id": "case-refusal-grounds-card",
+						"type": "record-list",
+						"title": "Refusal grounds so far",
+						"visibleWhen": {
+							"field": "@context.caseType.documentReview.enabled",
+							"op": "eq",
+							"value": true
+						},
+						"_note": "DqZaakDocumenten \"Weigeringsgronden tot nu toe\": every ground cited on the case's documents, with its label and the documents citing it (a partly withheld one marked), from /api/cases/{id}/review/verdicts.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/review/verdicts",
+								"responsePath": "grounds"
+							},
+							"presentation": "rows",
+							"title": "{label}",
+							"meta": "{documentList}",
+							"pill": {
+								"field": "code"
+							},
+							"headerSubtitle": "Go into the decision",
+							"emptyText": "No ground cited yet"
+						}
+					},
+					{
 						"id": "case-parties-card",
 						"type": "integration",
 						"integrationId": "contacts",
 						"title": "Case parties",
 						"subtitle": "Everyone involved in this case, by role",
+						"bodyActions": [
+							{
+								"label": "Add a party",
+								"icon": "AccountPlusOutline",
+								"visibleWhen": {
+									"field": "@self.archived",
+									"op": "empty"
+								},
+								"action": {
+									"type": "open-form",
+									"register": "dossiq",
+									"schema": "role",
+									"includeFields": [
+										"name",
+										"roleType",
+										"participant",
+										"representedParty",
+										"delegate",
+										"delegateUntil",
+										"description"
+									],
+									"fieldOverrides": {
+										"description": {
+											"widget": "textarea"
+										},
+										"roleType": {
+											"widget": "resource",
+											"label": "Role",
+											"placeholder": "Pick a role",
+											"resource": {
+												"register": "dossiq",
+												"schema": "roleType",
+												"labelField": "name",
+												"scope": {
+													"field": "caseType",
+													"value": "@object.caseType",
+													"includeUnscoped": true,
+													"dedupeOn": "genericRole"
+												},
+												"failedText": "The roles this case takes could not be read. Nothing has been changed on the case."
+											}
+										},
+										"representedParty": {
+											"widget": "party",
+											"placeholder": "Name, BSN, trade name or KvK number",
+											"testid": "initiator-picker-search",
+											"sources": [
+												{
+													"id": "person",
+													"register": "dossiq",
+													"schema": "brpPerson",
+													"label": "Resident",
+													"title": "{displayName}",
+													"secondary": "{residence.street} {residence.houseNumber}"
+												},
+												{
+													"id": "company",
+													"register": "dossiq",
+													"schema": "kvkCompany",
+													"label": "Organisation",
+													"title": "{tradeName}",
+													"secondary": "CoC {kvkNumber}"
+												}
+											],
+											"label": "Represented by"
+										}
+									},
+									"successMessage": "Party added to the case.",
+									"props": {
+										"case": "@objectId"
+									}
+								}
+							}
+						],
 						"content": {
 							"view": "tab"
 						},
@@ -4105,6 +4316,7 @@
 						"icon": "FileTreeOutline",
 						"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Rows deep-link to CaseDetail because a sub-case IS a case. `createAction` opens DeelzaakCreateModal and `summary` is the completion roll-up, as on the full profile's case-sub-cases.",
 						"content": {
+							"tableBleed": true,
 							"register": "dossiq",
 							"schema": "case",
 							"filter": {
@@ -4172,6 +4384,7 @@
 						"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose, because a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
 						"_lensNote": "The Object and Object status columns are LENSES, not stored fields. `objectTitle` and `objectStatus` are declared in `x-openregister-lenses` on the `caseObject` schema and resolved by OpenRegister on every read, so the tab shows what the linked object says about itself now rather than what somebody typed when they linked it. Nothing writes them: OpenRegister refuses a write that names a lens with a 400. They carry `widget: lensedValue` because an unreadable value arrives as `{\"@withheld\": true}`, an object, and the default cell would print `[object Object]`; a blank cell would be worse still, because blank reads as \"there is no object\". CnObjectListWidget forwards `widget` and `widgetProps` to CnCellRenderer, which resolves the name against the app's `cnCellWidgets`, so this needs no change in the library.",
 						"content": {
+							"tableBleed": true,
 							"register": "dossiq",
 							"schema": "caseObject",
 							"filter": {
@@ -4211,6 +4424,33 @@
 							"rowActions": [
 								{ "label": "All cases on this object", "icon": "BriefcaseSearchOutline", "type": "navigate", "target": "/cases?_related[caseObject][case][objectUrl]=@row.objectUrl", "visibleWhen": { "field": "objectUrl", "op": "notEmpty" } }
 							],
+							"createAction": {
+								"id": "link-object-from-card",
+								"type": "open-form",
+								"label": "Link object",
+								"icon": "Plus",
+								"register": "dossiq",
+								"schema": "caseObject",
+								"includeFields": [
+									"objectType",
+									"objectIdentification",
+									"objectUrl",
+									"description"
+								],
+								"fieldOverrides": {
+									"description": {
+										"widget": "textarea"
+									}
+								},
+								"successMessage": "Object linked to this case.",
+								"props": {
+									"case": "@objectId"
+								},
+								"visibleWhen": {
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							},
 							"footerLinks": [
 								{ "label": "Manage object types", "href": "/index.php/apps/openregister/#/registers/dossiq", "note": "(administrators only)", "group": "admin" }
 							],
@@ -4599,7 +4839,7 @@
 						"gridX": 0,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 6,
+						"gridHeight": 5,
 						"showTitle": true,
 						"headerLink": {
 							"label": "View all",
@@ -4609,7 +4849,8 @@
 								"statusHiddenInLists": "false",
 								"isDraft": "false",
 								"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
-							}
+							},
+							"placement": "title"
 						}
 					},
 					{
@@ -4618,14 +4859,15 @@
 						"gridX": 4,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 6,
+						"gridHeight": 5,
 						"showTitle": true,
 						"headerLink": {
 							"label": "View all",
 							"route": "Cases",
 							"query": {
 								"_watching": "true"
-							}
+							},
+							"placement": "title"
 						}
 					},
 					{
@@ -4634,14 +4876,15 @@
 						"gridX": 8,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 6,
+						"gridHeight": 5,
 						"showTitle": true,
 						"headerLink": {
 							"label": "View all",
 							"route": "Cases",
 							"query": {
 								"_recent": "true"
-							}
+							},
+							"placement": "title"
 						}
 					},
 					{
@@ -4651,7 +4894,9 @@
 						"gridY": 10,
 						"gridWidth": 12,
 						"gridHeight": 1,
-						"showTitle": false
+						"showTitle": false,
+						"borderless": true,
+						"sizeToContent": true
 					}
 				]
 			},
@@ -4675,7 +4920,7 @@
 								"field": "@self.updated",
 								"dir": "asc"
 							},
-							"limit": 5,
+							"limit": 3,
 							"presentation": "rows",
 							"title": "{title}",
 							"meta": "{identifier}",
@@ -4694,7 +4939,7 @@
 							"filter": {
 								"_watching": true
 							},
-							"limit": 5,
+							"limit": 3,
 							"presentation": "rows",
 							"title": "{title}",
 							"meta": "{identifier}",
@@ -4712,7 +4957,7 @@
 							"filter": {
 								"_recent": true
 							},
-							"limit": 5,
+							"limit": 3,
 							"presentation": "rows",
 							"title": "{title}",
 							"meta": "{identifier}",
@@ -5015,6 +5260,7 @@
 				"countText": "{shown} of {total} open cases in your teams, sorted by deadline",
 				"footerNote": "click a column header to sort",
 				"bulkHint": "See what changes first, then carry it out.",
+				"bulkNoun": "cases",
 				"headerButtons": [
 					{
 						"action": "export",
@@ -5044,7 +5290,30 @@
 				"showAdd": false,
 				"_massCopyDeleteNote": "DqZaken, DqZakenSorteren, DqFilterInMenu: the bulk band holds the case acts only. Copying and deleting the selection stay in the Actions menu above (`copy-selected`, `delete-selected`).",
 				"showMassCopy": false,
-				"showMassDelete": false
+				"showMassDelete": false,
+				"_cardLayoutNote": "DqZakenSorteren: each card in the cards view is the record layout. The status pill in its status type's colour heads the card, then the title, the number and case type, and a footer with the handler (picture and name, through the Handler column) and the deadline, red once it has passed.",
+				"cardLayout": {
+					"headPill": {
+						"field": "status",
+						"resolve": {
+							"schema": "statusType",
+							"colorField": "colour"
+						}
+					},
+					"title": "title",
+					"meta": [
+						"identifier",
+						{
+							"field": "caseType",
+							"formatter": "caseTypeName"
+						}
+					],
+					"footerCell": "assignee",
+					"footerDate": {
+						"field": "deadline",
+						"overdueVariant": "error"
+					}
+				}
 			},
 			"configPatch": {
 				"quickFilters": {
@@ -5150,7 +5419,7 @@
 					{
 						"label": "Woo requests",
 						"filter": {
-							"caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+							"caseTypeIdentifier": "woo-verzoek",
 							"statusHiddenInLists": false,
 							"isDraft": false
 						},
@@ -5356,8 +5625,35 @@
 					"label": "Settings",
 					"href": "/index.php/settings/admin/dossiq"
 				},
-				"headerMeta": "{total} case types",
+				"headerMeta": "{total} case types · {count:shipped} shipped, {count:own} own",
+				"_headerMetaCountsNote": "DqZaaktypen: \"14 zaaktypen · 9 meegeleverd, 5 eigen\". Shipped are the case types dossiq delivered (owner __system__, as the Shipped lens), own the rest; current versions only, as every lens.",
+				"headerMetaCounts": {
+					"shipped": {
+						"register": "dossiq",
+						"schema": "caseType",
+						"filter": {
+							"supersededBy": {
+								"isnull": true
+							},
+							"@self": {
+								"owner": "__system__"
+							}
+						}
+					},
+					"own": {
+						"register": "dossiq",
+						"schema": "caseType",
+						"filter": {
+							"supersededBy": {
+								"isnull": true
+							},
+							"@self[owner][ne]": "__system__"
+						}
+					}
+				},
 				"searchPlaceholder": "Search a case type",
+				"allowExport": true,
+				"_actionsMenuNote": "DqZaaktypen's Actions menu: import a case type, export the selected case types as JSON (nextcloud-vue `export-selected`, OpenRegister's export by `_ids`), and reload the shipped templates (POST /api/packages/reload, admin-only on the server; `adminOnly` only hides the entry from others).",
 				"headerActions": [
 					{
 						"id": "case-type-import",
@@ -5365,6 +5661,18 @@
 						"label": "Import case type from a file",
 						"icon": "TrayArrowUp",
 						"target": "CaseTypeImportDialog"
+					},
+					{
+						"id": "case-type-templates-reload",
+						"type": "api-call",
+						"label": "Reload templates",
+						"icon": "Refresh",
+						"url": "/apps/dossiq/api/packages/reload",
+						"method": "POST",
+						"confirm": true,
+						"adminOnly": true,
+						"successMessage": "The shipped templates are up to date.",
+						"errorMessage": "The shipped templates were not reloaded."
 					}
 				],
 				"headerButtons": [
@@ -5375,7 +5683,8 @@
 					},
 					{
 						"action": "actions-menu",
-						"label": "Actions"
+						"label": "Actions",
+						"items": ["case-type-import", "export-selected", "case-type-templates-reload"]
 					},
 					{
 						"action": "add",
@@ -5494,7 +5803,8 @@
 						"true": "warning"
 					}
 				},
-				"headerMeta": "{identifier}",
+				"headerMeta": "last changed {_lastChange.created|date} by {_lastChange.userName}",
+				"headerMetaLastChange": true,
 				"quickActions": [
 					"case-type-export"
 				],
@@ -5523,7 +5833,28 @@
 							"limit": 5,
 							"presentation": "rows",
 							"title": "Version {version}",
-							"meta": "{validFrom|date}",
+							"meta": {
+								"parts": [
+									"{validFrom|date}",
+									"{runningCases}"
+								]
+							},
+							"aggregates": {
+								"runningCases": {
+									"register": "dossiq",
+									"schema": "case",
+									"op": "count",
+									"where": {
+										"caseType": "@self.id",
+										"isFinalStatus": false
+									},
+									"text": {
+										"zero": "no running cases",
+										"one": "{count} running case",
+										"other": "{count} running cases"
+									}
+								}
+							},
 							"pill": {
 								"field": "isDraft",
 								"labels": {
@@ -5681,13 +6012,56 @@
 						"title": "Parent type",
 						"tabs": ["fields"],
 						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/blueprint"
+							},
 							"fields": [
 								{
 									"label": "Inherits from",
-									"path": "parentCaseType",
+									"path": "caseType.parentCaseType",
+									"route": {
+										"name": "CaseTypeDetail",
+										"params": {
+											"id": "@source.caseType.parentCaseType"
+										}
+									},
 									"resolve": {
 										"register": "dossiq",
 										"schema": "caseType"
+									},
+									"when": {
+										"field": "caseType.parentCaseType",
+										"op": "notEmpty"
+									}
+								},
+								{
+									"label": "Inherited fields",
+									"parts": [
+										{
+											"path": "counts.propertyDefinitions.inherited"
+										},
+										{
+											"text": "of"
+										},
+										{
+											"path": "counts.propertyDefinitions.total"
+										}
+									],
+									"separator": " ",
+									"when": {
+										"field": "caseType.parentCaseType",
+										"op": "notEmpty"
+									}
+								},
+								{
+									"label": "Overridden",
+									"path": "counts.propertyDefinitions.overridden",
+									"map": {
+										"0": "None"
+									},
+									"when": {
+										"field": "caseType.parentCaseType",
+										"op": "notEmpty"
 									}
 								}
 							],
@@ -6083,13 +6457,6 @@
 						"type": "grouped-cards",
 						"title": "Phases and tasks",
 						"subtitle": "Every task has its own role, term and form. Running cases keep their version.",
-						"headerLink": {
-							"label": "View as flow",
-							"route": "CaseTypeFlow",
-							"params": {
-								"id": "@objectId"
-							}
-						},
 						"_note": "DqZaaktype Fasen en taken: the case type's statuses as phases, each with the tasks its active workflow runs, and the acts available in every phase, from GET /api/case-types/{id}/phases (the steps are a JSON string no declarative widget can group).",
 						"content": {
 							"endpointSource": {
@@ -6113,13 +6480,22 @@
 								"path": "alwaysAvailable",
 								"itemText": "{label}"
 							},
-							"groupAction": {
-								"id": "case-type-phase-add-task",
-								"type": "navigate",
-								"label": "Add a task",
-								"icon": "Plus",
-								"target": "/settings/case-types/@group.caseTypeId/flow"
-							},
+							"actions": [
+								{
+									"id": "case-type-phases-view-as-flow",
+									"type": "navigate",
+									"label": "View as flow",
+									"icon": "Sync",
+									"target": "/settings/case-types/@objectId/flow"
+								},
+								{
+									"id": "case-type-phase-add-task",
+									"type": "navigate",
+									"label": "Add a task",
+									"icon": "Plus",
+									"target": "/settings/case-types/@objectId/flow"
+								}
+							],
 							"emptyText": "This case type has no phases yet",
 							"groupEmptyText": "No tasks in this phase"
 						}
@@ -6369,6 +6745,10 @@
 								{
 									"label": "Suspension",
 									"path": "suspension"
+								},
+								{
+									"label": "Penalty for a late decision",
+									"path": "penalty"
 								},
 								{
 									"label": "Service target",

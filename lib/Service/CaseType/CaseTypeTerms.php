@@ -61,7 +61,7 @@ class CaseTypeTerms {
 	 *
 	 * @param string $caseTypeId The case type id.
 	 *
-	 * @return array{decisionTerm: string, suspension: string, serviceTarget: string}|null
+	 * @return array{decisionTerm: string, suspension: string, serviceTarget: string, penalty: string}|null
 	 *         The sentences, or null when the case type cannot be read.
 	 *
 	 * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
@@ -76,6 +76,7 @@ class CaseTypeTerms {
 			'decisionTerm'  => $this->decisionTerm(caseType: $caseType),
 			'suspension'    => $this->suspension(caseType: $caseType),
 			'serviceTarget' => $this->durationOrText(value: $caseType['serviceTarget'] ?? null),
+			'penalty'       => $this->penalty(caseType: $caseType),
 		];
 	}//end termsFor()
 
@@ -108,6 +109,35 @@ class CaseTypeTerms {
 
 		return $this->l10n->t('%1$s, extendable by %2$s', [$term, $extension]);
 	}//end decisionTerm()
+
+	/**
+	 * Whether a late decision costs a penalty (Wet dwangsom bij niet tijdig
+	 * beslissen), which runs only after a notice of default, and the most it
+	 * can come to when the case type says.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type.
+	 *
+	 * @return string The sentence, or '' when the case type does not say.
+	 *
+	 * @spec openspec/changes/case-type-penalty-on-late-decision/specs/case-types/spec.md#requirement-a-case-type-says-whether-a-late-decision-costs-a-penalty
+	 */
+	private function penalty(array $caseType): string {
+		$applies = ($caseType['penaltyOnLateDecision'] ?? null);
+		if ($applies === false) {
+			return $this->l10n->t('No');
+		}
+
+		if ($applies !== true) {
+			return '';
+		}
+
+		$amount = ($caseType['penaltyMaxAmount'] ?? null);
+		if (is_numeric($amount) === true && (float) $amount > 0) {
+			return $this->l10n->t('Yes, after a notice of default, at most %1$s', ['€ '.number_format((float) $amount, 0, '', '')]);
+		}
+
+		return $this->l10n->t('Yes, after a notice of default');
+	}//end penalty()
 
 	/**
 	 * Whether a case may be suspended, and for how long at most.

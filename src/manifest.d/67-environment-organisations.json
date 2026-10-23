@@ -237,37 +237,25 @@
 					},
 					{
 						"id": "organisation-side-history",
-						"type": "facts",
+						"type": "record-list",
 						"title": "Record history",
+						"_note": "Board DqTenant Historie side card: the two newest events of the organisation, what, who and when, from the same audit trail the Historie tab lists in full. The organisation's start date stays in the Status card (Since).",
 						"content": {
-							"fields": [
-								{
-									"as": "text",
-									"parts": [
-										{
-											"text": "Last changed on"
-										},
-										{
-											"path": "updated",
-											"format": "date-long"
-										}
-									],
-									"separator": " "
-								},
-								{
-									"as": "text",
-									"parts": [
-										{
-											"text": "Created on"
-										},
-										{
-											"path": "created",
-											"format": "date-long"
-										}
-									],
-									"separator": " "
+							"endpointSource": {
+								"url": "/apps/openregister/api/audit-trails?object_uuid=@objectId&action=organisation.status_changed,organisation.updated&sort=created&order=DESC",
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"title": "{action}",
+							"meta": "{userName} · {created|date}",
+							"valueLabels": {
+								"action": {
+									"organisation.status_changed": "Status changed",
+									"organisation.updated": "Details edited"
 								}
-							]
+							},
+							"limit": 2,
+							"emptyText": "Nothing has happened to this organisation yet"
 						}
 					}
 				],
@@ -339,6 +327,7 @@
 						"title": "Set up",
 						"icon": "ClipboardCheckOutline",
 						"content": {
+							"headerSubtitle": "{count:status=completed} of {total} steps done",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/saas/tenants/@objectId/onboarding/progress",
 								"responsePath": "progress.steps"
@@ -380,6 +369,16 @@
 						"id": "organisation-quota",
 						"type": "facts",
 						"title": "Quota",
+						"_headerActionsNote": "Board DqTenant: Pakket wijzigen in the card head. The quota of a tenant is OpenRegister's organisation quota, edited on OpenRegister's organisation page (Edit organisation, Quota), so the button opens that page.",
+						"headerActions": [
+							{
+								"label": "Change package",
+								"action": {
+									"type": "navigate",
+									"target": "/index.php/apps/openregister/organisation"
+								}
+							}
+						],
 						"content": {
 							"fields": [
 								{

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
+import * as ncVue from '@conduction/nextcloud-vue'
 import {
 	buildManifest,
 	CnPageRenderer,
@@ -36,6 +37,7 @@ import registry from './registry.js'
 import { installCaseLiveUpdates } from './services/caseLiveUpdates.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
+import { installMyTeamSource } from './services/myTeamSource.js'
 import { useObjectStore } from './store/modules/object.js'
 import { withConfiguredLenses } from './utils/configLenses.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
@@ -331,6 +333,9 @@ watch(() => resolvedManifest.value?.menu, retitlePage)
 // screen". See src/services/caseLiveUpdates.js for what an event does, and for
 // the one thing it deliberately does not cover.
 installCaseLiveUpdates(router, () => useObjectStore())
+// The team the team queue opens on (@myTeam). Read through the namespace so
+// a library without the hook does not stop the app from starting.
+installMyTeamSource(ncVue.registerMyTeamSource)
 
 tryLoadTranslations()
 

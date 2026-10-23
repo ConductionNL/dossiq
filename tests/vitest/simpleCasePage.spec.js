@@ -387,7 +387,7 @@ describe('the tabs', () => {
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
-		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Custody', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
+		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
 		// Proposals is not a fixed overflow tab: it shows while proposals wait
 		// (feat/case-proposals-tab), checked in caseProposalsTabInStrip.spec.js.
 		expect(strip.tabs.find((tab) => tab.label === 'Proposals').visibleWhen.appInstalled).toBe('portaliq')
@@ -496,6 +496,9 @@ describe('the tabs', () => {
 			rowRoute: 'TaskDetail',
 			viewAllRoute: { name: 'Tasks', query: { case: '@objectId' } },
 		})
+		// Status tones as DqZaakTaken draws them: in progress purple, open amber,
+		// done grey (nextcloud-vue tasks-state-variants).
+		expect(tasks.content.stateVariants).toEqual({ available: 'warning', enabled: 'warning', active: 'purple', completed: 'default' })
 	})
 
 	it('turns the stages horizontal and leaves every other widget of the page as it was', () => {
@@ -539,8 +542,8 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		// The banner stack is titled Status, as the side card DqZaak draws.
-		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-banner-stack', 'case-attention', 'case-archival-panel']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card']
+		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-status-declaration', 'case-banner-stack', 'case-attention', 'case-archival-panel', 'case-files']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card', 'case-document-verdicts-card', 'case-refusal-grounds-card']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
