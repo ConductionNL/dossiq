@@ -6845,6 +6845,16 @@
 								"path": "alwaysAvailable",
 								"itemText": "{label}"
 							},
+							"itemActions": [
+								{
+									"id": "case-type-task-edit-in-flow",
+									"type": "navigate",
+									"label": "Edit in the flow",
+									"icon": "Pencil",
+									"target": "/settings/case-types/@objectId/flow"
+								}
+							],
+							"itemActionsMenu": true,
 							"actions": [
 								{
 									"id": "case-type-phases-view-as-flow",
