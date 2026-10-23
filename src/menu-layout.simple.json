@@ -5401,6 +5401,7 @@
 						"formEyebrow": "All cases",
 						"formTitle": "New case",
 						"formSubtitle": "Fields marked * are required. The case starts in the first status of its case type. The system fills in the receipt date and the start date itself, from the moment the request came in.",
+						"formConfirmLabel": "Create case",
 						"size": "large",
 						"columns": 2,
 						"includeFields": [
@@ -5417,15 +5418,18 @@
 						],
 						"fieldOverrides": {
 							"description": {
+								"description": "",
 								"widget": "textarea",
 								"order": 5
 							},
 							"requester": {
+								"description": "",
 								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester",
 								"order": 3
 							},
 							"confidentiality": {
+								"description": "",
 								"enumLabels": {
 									"openbaar": "Public",
 									"beperkt_openbaar": "Restricted public",
@@ -5439,24 +5443,31 @@
 								"order": 8
 							},
 							"caseType": {
+								"description": "Determines the statuses, the term and the documents",
 								"order": 1
 							},
 							"title": {
+								"description": "",
 								"order": 2
 							},
 							"intakeChannel": {
+								"description": "How the request came in",
 								"order": 4
 							},
 							"plannedEndDate": {
+								"description": "From the case type's term",
 								"order": 6
 							},
 							"assignee": {
+								"description": "",
 								"order": 7
 							},
 							"impact": {
+								"description": "How much it matters if it goes wrong",
 								"order": 9
 							},
 							"urgency": {
+								"description": "How fast the case matters",
 								"order": 10
 							}
 						},
