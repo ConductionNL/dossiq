@@ -100,6 +100,29 @@ describe('processing time', () => {
 		const status = w.content.columns.find((c) => c.key === 'status')
 		expect(Object.keys(status.enumLabels).sort()).toEqual(['critical', 'good', 'no-target', 'warning'])
 	})
+	it('fits every card but the monthly plot to its content and packs them upward, as DqDoorlooptijd draws them', () => {
+		// Fixed grid rows cut the Throughput card off inside Compliance and
+		// stood an empty Woo deadlines table 300px tall. The monthly line is
+		// a plot, which takes the height its cell gives it, so it keeps rows.
+		const config = page('Doorlooptijd').config
+		expect(config.gridFloat).toBe(false)
+		for (const cell of config.layout) {
+			if (cell.widgetId === 'processing-time-monthly') {
+				expect(cell.sizeToContent).toBeUndefined()
+			} else {
+				expect(cell.sizeToContent, cell.widgetId).toBe(true)
+			}
+		}
+	})
+
+	it('wraps the case and case type names in the two half-width tables, as the board does', () => {
+		// DqDoorlooptijd: "Bezwaar Havenstraat" wraps over two lines; without
+		// wrapping the first column shrank to two letters.
+		const title = widget('Doorlooptijd', 'processing-time-at-risk').content.columns.find((c) => c.key === 'title')
+		const name = widget('Doorlooptijd', 'processing-time-breakdown').content.columns.find((c) => c.key === 'name')
+		expect(title.cellClass).toContain('cn-cell--wrap')
+		expect(name.cellClass).toContain('cn-cell--wrap')
+	})
 })
 
 describe('process mining', () => {
