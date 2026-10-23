@@ -75,7 +75,7 @@ export const RETIRED_ROUTES = [
 	},
 	// Re-integration trajectories are cases of their case type (Ruben, 23
 	// October 2026). An old link to one trajectory opens the case it moved to.
-	...movedRecordRoutes('/settings/re-integratietrajecten', 'default:re-integration-pathways'),
+	...movedRecordRoutes('/settings/re-integratietrajecten', 'default:re-integration-pathways', 'reIntegratieTraject'),
 	// Pages renamed to say what they do (dq-abstract L7).
 	{
 		path: '/woo-reports',
@@ -95,14 +95,16 @@ export const RETIRED_ROUTES = [
 /**
  * The addresses of a list whose records moved onto cases: the list opens the
  * case list's view, and one record opens the case that carries its id as
- * `externalReference`, or the view when none does.
+ * `externalReference` (or that the record names in its `migratedTo`), or
+ * the view when none does.
  *
- * @param {string} path      The retired list's address.
- * @param {string} savedView The view of the case list that replaced it.
+ * @param {string} path         The retired list's address.
+ * @param {string} savedView    The view of the case list that replaced it.
+ * @param {string} sourceSchema The schema the moved records are kept in.
  * @return {Array<object>} The two route records.
  * @spec openspec/changes/re-integration-page-retires/specs/dossiq-sociaal-domein-participatiewet/spec.md
  */
-export function movedRecordRoutes(path, savedView) {
+export function movedRecordRoutes(path, savedView, sourceSchema) {
 	const view = { name: 'Cases', query: { savedView } }
 	return [
 		{ path, redirect: view },
@@ -110,7 +112,7 @@ export function movedRecordRoutes(path, savedView) {
 			path: `${path}/:id`,
 			component: { render: () => null },
 			beforeEnter: async (to) => {
-				const caseId = await caseIdByReference(String(to.params.id || ''))
+				const caseId = await caseIdByReference(String(to.params.id || ''), sourceSchema)
 				return caseId ? { name: 'CaseDetail', params: { id: caseId } } : view
 			},
 		},
