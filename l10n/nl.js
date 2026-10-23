@@ -2500,6 +2500,7 @@ OC.L10N.register(
         "Dispute Reason": "Reden van de betwisting",
         "Disputed": "Betwist",
         "Dissenting Opinions": "Afwijkende meningen",
+        "Benefit case": "Bijstandszaak",
         "Distance to Labour Market": "Afstand tot de arbeidsmarkt",
         "District": "Wijk",
         "DKIM": "DKIM",

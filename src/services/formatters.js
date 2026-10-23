@@ -20,6 +20,7 @@ import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
 import { formatDuration, parseDuration } from '../utils/durationHelpers.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
 import { caseAddress } from './caseAddress.js'
+import { caseAnswerText } from './caseAnswer.js'
 import { coveredForLabel } from './coveredFor.js'
 import { scanVerdictLabel } from './scanVerdict.js'
 
@@ -318,6 +319,19 @@ export default {
 	 * @return {string}
 	 */
 	statusTypeName: (value) => lookupRelatedName('statusType', value),
+
+	/**
+	 * One case-type field of a case, named by the column's
+	 * `formatterOptions.name`, read off the case's `properties`.
+	 *
+	 * @param {Array<object>|null} value The case's `properties`.
+	 * @param {object} row The case.
+	 * @param {object} property The column's property.
+	 * @param {{name: string}} options The column's `formatterOptions`.
+	 * @return {string} The answer as text.
+	 * @spec openspec/changes/re-integration-is-a-case-type/specs/dossiq-sociaal-domein-participatiewet/spec.md
+	 */
+	caseAnswer: (value, row, property, options) => caseAnswerText(value, options),
 
 	/**
 	 * What the virus scanner recorded about a document row.
