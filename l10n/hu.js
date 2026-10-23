@@ -1684,6 +1684,7 @@ OC.L10N.register(
         "SLA adherence and processing time analysis": "SLA-betartás és feldolgozási idő elemzése",
         "SLA Compliance": "SLA-megfelelőség",
         "SLA Compliance %": "SLA-megfelelőség %",
+        "SLA Compliance %%": "SLA-megfelelőség %%",
         "SLA override (days)": "SLA-felülírás (nap)",
         "SLA Target: {days}d": "SLA-cél: {days} nap",
         "Sloopmelding": "Bontási bejelentés",

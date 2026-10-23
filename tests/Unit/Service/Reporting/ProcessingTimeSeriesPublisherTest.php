@@ -60,7 +60,7 @@ class ProcessingTimeSeriesPublisherTest extends TestCase {
 		}
 
 		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnArgument(0);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
 
 		return new ProcessingTimeSeriesPublisher(
 			container: $container,
