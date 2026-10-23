@@ -43,6 +43,9 @@ describe('DqSociaalDomein side column', () => {
 		expect(Object.keys(history.content.valueLabels.purpose)).toEqual(['handling', 'advice', 'quality-check', 'legal-obligation', 'data-subject-request', 'other'])
 		expect(nl['Case opened, purpose {changed.purpose}']).toBe('Zaak ingezien, doel {changed.purpose}')
 		expect(nl['Case history']).toBe('Historie')
+		// The case's reference under the trail, as DqZaaktype's Historie (nextcloud-vue audit-trail footnote).
+		expect(history.content.footnote).toBe('Reference {identifier}')
+		expect(nl['Reference {identifier}']).toBe('Kenmerk {identifier}')
 	})
 
 	it('draws each person behind their initials on one line', () => {

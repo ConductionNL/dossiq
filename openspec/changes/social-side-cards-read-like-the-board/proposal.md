@@ -19,12 +19,11 @@ the people as links with a second line.
 - `side-social-people` draws each person behind their initials, name and what
   they do on one line.
 
-- A "Historie" side card (`side-social-history`) before Status: the case's audit trail without reads, an access purpose read as "Zaak ingezien, doel behandeling". Only on case types with special categories of personal data.
+- A "Historie" side card (`side-social-history`) before Status: the case's audit trail without reads, an access purpose read as "Zaak ingezien, doel behandeling". Only on case types with special categories of personal data. Its foot reads the case's reference, "Kenmerk {identifier}" (nextcloud-vue audit-trail footnote, as DqZaaktype).
 
 ## Left
 
-- The board's "Kenmerk" line at the foot of Historie, and its "Toestemming
-  vastgelegd" row (an event on the consent, not on the case's trail).
+- The board's "Toestemming vastgelegd" row (an event on the consent, not on the case's trail).
 - The board's "Toestemming intrekken" button: there is no withdrawal act for a
   consent yet, and an api-call cannot PATCH.
 - The notice shows only when the installed case type carries

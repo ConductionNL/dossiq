@@ -1605,7 +1605,8 @@
 									"other": "other"
 								}
 							},
-							"emptyText": "Nothing has happened on this case yet"
+							"emptyText": "Nothing has happened on this case yet",
+							"footnote": "Reference {identifier}"
 						}
 					},
 					{
