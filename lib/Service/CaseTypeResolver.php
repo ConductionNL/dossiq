@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\CaseType\RowOrigins;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use RuntimeException;
 
@@ -266,35 +267,9 @@ class CaseTypeResolver {
 			'statusTypes' => $this->statusTypesFor(caseTypeId: $caseTypeId),
 			'resultTypes' => $this->resultTypesFor(caseTypeId: $caseTypeId),
 			'propertyDefinitions' => $properties,
-			'counts' => ['propertyDefinitions' => $this->originCounts(rows: $properties)],
+			'counts' => ['propertyDefinitions' => (new RowOrigins())->counts(rows: $properties, inheritedOrigin: self::ORIGIN_INHERITED)],
 		];
 	}//end blueprintFor()
-
-	/**
-	 * How many rows there are, how many a parent gave and how many the type
-	 * overrides (DqZaaktypeVelden Moedertype "Geërfde velden 6 van 14").
-	 *
-	 * @param array<int, array<string, mixed>> $rows The merged rows, each with `origin`.
-	 *
-	 * @return array{total: int, inherited: int, overridden: int} The counts.
-	 *
-	 * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
-	 */
-	private function originCounts(array $rows): array {
-		$inherited  = 0;
-		$overridden = 0;
-		foreach ($rows as $row) {
-			if (($row['origin'] ?? '') === self::ORIGIN_INHERITED) {
-				$inherited++;
-			}
-
-			if (($row['overrides'] ?? false) === true) {
-				$overridden++;
-			}
-		}
-
-		return ['total' => count($rows), 'inherited' => $inherited, 'overridden' => $overridden];
-	}//end originCounts()
 
 	/**
 	 * Whether naming a parent would close a loop.
@@ -439,12 +414,7 @@ class CaseTypeResolver {
 					origin: $origin,
 					ancestor: $ancestor
 				);
-				// An own row that replaces an ancestor's overrides it.
-				if ($isOwn === true && isset($merged[$key]) === true) {
-					$tagged['overrides'] = true;
-				}
-
-				$merged[$key] = $tagged;
+				$merged[$key] = (new RowOrigins())->markOverride(row: $tagged, isOwn: $isOwn, merged: $merged, key: $key);
 			}
 		}
 
