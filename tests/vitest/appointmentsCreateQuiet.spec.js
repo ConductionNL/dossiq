@@ -4,7 +4,8 @@
  *
  * DqTaak and DqZaakTaken: "Afspraak maken" is an outlined button with a
  * calendar icon in the Afspraken card, not the filled primary. DqTaak draws
- * only that button; DqZaakTaken also "Bestaande koppelen".
+ * only that button and keeps "Bestaande koppelen" in the card's Actions
+ * menu; DqZaakTaken also shows "Bestaande koppelen" in the title row.
  */
 
 import fs from 'fs'
@@ -41,9 +42,9 @@ function findWidget(node, id) {
 }
 
 describe('Afspraken: the create button is the quiet one', () => {
-	it('DqTaak: only "Afspraak maken", outlined with a calendar icon', () => {
+	it('DqTaak: "Afspraak maken" outlined with a calendar icon, "Bestaande koppelen" kept in the Actions menu', () => {
 		const card = findWidget(manifest, 'task-appointments')
-		expect(card.content).toMatchObject({ headerActions: ['create'], createVariant: 'secondary', createIcon: 'CalendarPlusOutline' })
+		expect(card.content).toMatchObject({ headerActions: ['create'], menuActions: ['link'], createVariant: 'secondary', createIcon: 'CalendarPlusOutline' })
 	})
 
 	it('DqZaakTaken: link and create, the create one outlined with a calendar icon', () => {

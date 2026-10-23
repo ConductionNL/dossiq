@@ -79,11 +79,12 @@ describe('per-card buttons on the record boards', () => {
 		expect(calendar.integrationId).toBe('calendar')
 		expect(calendar.props.headerActions).toEqual(['link', 'create'])
 	})
-	it('makes a meeting from a task\'s Afspraken card, on the task itself, as board DqTaak draws only that button', () => {
+	it('links an existing meeting or makes one from a task\'s Afspraken card, on the task itself: make in the title row, link in the card\'s Actions menu', () => {
 		const task = manifest.pages.find((page) => page.id === 'TaskDetail')
 		const appointments = task.config.widgets.find((widget) => widget.id === 'task-appointments')
 		expect(appointments.type).toBe('events')
 		expect(appointments.content.source).toEqual({ kind: 'flow-task' })
 		expect(appointments.content.headerActions).toEqual(['create'])
+		expect(appointments.content.menuActions).toEqual(['link'])
 	})
 })
