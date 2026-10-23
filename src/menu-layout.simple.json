@@ -2145,11 +2145,13 @@
 								{
 									"widgetId": "case-notes-panel",
 									"label": "Notes",
+									"icon": "NoteTextOutline",
 									"overflow": true,
 									"unreadKey": "notes"
 								},
 								{
 									"label": "People",
+									"icon": "AccountMultipleOutline",
 									"overflow": true,
 									"widgetIds": [
 										"case-parties-card",
@@ -2160,6 +2162,7 @@
 								},
 								{
 									"label": "Email",
+									"icon": "EmailOutline",
 									"overflow": true,
 									"widgetIds": [
 										"case-email-panel",
@@ -2168,6 +2171,7 @@
 								},
 								{
 									"label": "Decisions",
+									"icon": "Gavel",
 									"overflow": true,
 									"widgetIds": [
 										"case-decisions-panel",
@@ -2178,6 +2182,7 @@
 								},
 								{
 									"label": "Related",
+									"icon": "LinkVariant",
 									"overflow": true,
 									"widgetIds": [
 										"case-related-cases-card",
@@ -2190,6 +2195,7 @@
 								},
 								{
 									"label": "Fees and payments",
+									"icon": "CashMultiple",
 									"overflow": true,
 									"widgetIds": [
 										"case-payment-requests",
@@ -2200,6 +2206,7 @@
 								{
 									"widgetId": "case-merge-to-pdf",
 									"label": "Merge into one PDF",
+									"icon": "FileDocumentMultipleOutline",
 									"overflow": true
 								},
 								{
@@ -2208,22 +2215,26 @@
 										"case-custody-panel"
 									],
 									"label": "Archiving",
+									"icon": "ArchiveOutline",
 									"overflow": true,
 									"_note": "DqZaakArchivering: the archiving card and, under it, Bewaring (who has held the case and who asks for it), as one tab."
 								},
 								{
 									"widgetId": "case-knowledge-panel",
 									"label": "Knowledge",
+									"icon": "BookOpenVariantOutline",
 									"overflow": true
 								},
 								{
 									"widgetId": "case-publication",
 									"label": "Publication",
+									"icon": "Publish",
 									"overflow": true
 								},
 								{
 									"widgetId": "case-document-review",
 									"label": "Review",
+									"icon": "ClipboardCheckOutline",
 									"overflow": true
 								},
 								{
@@ -2233,6 +2244,7 @@
 										"case-macros"
 									],
 									"label": "AI oversight",
+									"icon": "RobotOutline",
 									"overflow": true,
 									"_note": "DqZaakAssistent: the AI-toezicht tab. Its panel stacks what the assistant did on this case and the macros; the assistant chat itself stands in the side column while this tab is open (`tabs` on case-assistant-chat, the side cards per tab of nextcloud-vue). It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip while it is open. The launcher hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
 								}
