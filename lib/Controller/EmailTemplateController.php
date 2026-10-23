@@ -171,6 +171,8 @@ class EmailTemplateController extends Controller {
 			'name' => (string)$this->request->getParam('name', ''),
 			'subject' => (string)$this->request->getParam('subject', ''),
 			'body' => (string)$this->request->getParam('body', ''),
+			'moment' => $this->request->getParam('moment'),
+			'channel' => $this->request->getParam('channel'),
 		];
 
 		try {
@@ -209,6 +211,15 @@ class EmailTemplateController extends Controller {
 			'subject' => $this->request->getParam('subject'),
 			'body' => $this->request->getParam('body'),
 		];
+
+		// Only a moment or channel the request names reaches the update: an
+		// explicit null clears it, an absent one keeps the current version's.
+		$params = $this->request->getParams();
+		foreach (['moment', 'channel'] as $field) {
+			if (array_key_exists($field, $params) === true) {
+				$data[$field] = $params[$field];
+			}
+		}
 
 		try {
 			return new JSONResponse($this->templateService->updateTemplate(templateId: $templateId, data: $data));

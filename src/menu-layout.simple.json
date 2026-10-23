@@ -6246,6 +6246,14 @@
 										"case-type-phase-board",
 										"case-type-variants",
 										"case-type-terms-written",
+										"case-type-messages"
+									]
+								},
+								{
+									"id": "messages",
+									"label": "Message templates",
+									"overflow": true,
+									"widgetIds": [
 										"case-type-messages-editor"
 									]
 								},
@@ -6792,6 +6800,65 @@
 								"label": "Remove"
 							},
 							"emptyText": "This case type has one route, no variants"
+						}
+					},
+					{
+						"id": "case-type-messages",
+						"type": "record-list",
+						"title": "Messages to the applicant",
+						"headerActions": [
+							{
+								"label": "Add a message",
+								"icon": "Plus",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#messages"
+								}
+							}
+						],
+						"_note": "DqZaaktype Berichten aan de aanvrager: the case type's active message templates as a table, when each goes out (moment, a case event) and how (channel). The templates are written on the Message templates tab under the Actions menu.",
+						"content": {
+							"register": "dossiq",
+							"schema": "emailTemplate",
+							"filter": {
+								"caseType": "@objectId",
+								"isActive": true
+							},
+							"limit": 50,
+							"presentation": "table",
+							"columns": [
+								{
+									"label": "Moment",
+									"value": "{moment}"
+								},
+								{
+									"label": "Channel",
+									"value": "{channel}"
+								},
+								{
+									"label": "Message",
+									"value": "{name}"
+								}
+							],
+							"valueLabels": {
+								"moment": {
+									"case-received": "Case received",
+									"status-changed": "Status changed",
+									"information-requested": "Additional information needed",
+									"term-extended": "Term extended",
+									"decision-made": "Decision made",
+									"case-closed": "Case closed"
+								},
+								"channel": {
+									"mailbox-then-email": "Message box, otherwise e-mail",
+									"mailbox": "Message box",
+									"email": "E-mail",
+									"portal": "Portal",
+									"post": "Post (mail)"
+								}
+							},
+							"footnote": "Anyone who opted out of messages only receives what the law requires. Every e-mail carries an unsubscribe link.",
+							"emptyText": "This case type sends no messages yet"
 						}
 					},
 					{
