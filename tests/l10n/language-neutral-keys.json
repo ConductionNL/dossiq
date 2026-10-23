@@ -121,6 +121,10 @@
         "{identifier}",
         "{subject.title}",
         "initiatorDisplayName",
-        "name"
+        "name",
+        "Dossiq",
+        "Filinq",
+        "Integriq",
+        "OpenRegister"
     ]
 }

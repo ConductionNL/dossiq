@@ -4464,5 +4464,157 @@
 				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
 			}
 		}
+	],
+	"flows": [
+		{
+			"key": "flow-omgevingsvergunning-regulier",
+			"data": {
+				"name": "Omgevingsvergunning regulier",
+				"description": "How a regular environmental permit case runs in Zuiddrecht: register it as received, check that the application is complete, send the receipt, ask the decision table whether the location needs a welstand advice, open that advice as a sub-case, then publish the decision. Shipped switched off; an administrator adopts it.",
+				"trigger": "object.created",
+				"triggerRegister": "dossiq",
+				"triggerSchema": "case",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-object",
+						"name": "Zaak aangemaakt",
+						"position": {
+							"x": 30,
+							"y": 30
+						},
+						"config": {
+							"event": "object.created",
+							"register": "dossiq",
+							"schema": "case"
+						}
+					},
+					{
+						"id": "status-ontvangen",
+						"type": "dossiq.setStatus",
+						"name": "Status: ontvangen",
+						"position": {
+							"x": 30,
+							"y": 130
+						},
+						"config": {
+							"status": "Ontvangen"
+						}
+					},
+					{
+						"id": "volledigheid",
+						"type": "dossiq.askPerson",
+						"name": "Volledigheid toetsen",
+						"position": {
+							"x": 30,
+							"y": 230
+						},
+						"config": {
+							"question": "Is de aanvraag volledig?",
+							"details": "Controleer bouwtekening, situatietekening en constructieberekening. Ontbreekt er iets, vraag het dan op bij de aanvrager.",
+							"assignee": "zuiddrecht-fysiek-domein",
+							"dueInDays": "5",
+							"signalKey": "aanvraagVolledig"
+						}
+					},
+					{
+						"id": "welstand",
+						"type": "openregister.decision-table",
+						"name": "Welstand nodig?",
+						"position": {
+							"x": 290,
+							"y": 230
+						},
+						"config": {
+							"tableRef": "welstandsgebieden-zuiddrecht",
+							"inputMapping": {
+								"locatie": "{{ item.locatie }}"
+							},
+							"resultKey": "welstandNodig"
+						}
+					},
+					{
+						"id": "ontvangstbericht",
+						"type": "openregister.send-email",
+						"name": "Ontvangstbericht",
+						"position": {
+							"x": 30,
+							"y": 340
+						},
+						"config": {
+							"recipients": "{{ item.initiator.email }}",
+							"subject": "Wij hebben uw aanvraag ontvangen",
+							"body": "Uw aanvraag voor een omgevingsvergunning is ontvangen en wordt behandeld. U hoort binnen acht weken van ons."
+						}
+					},
+					{
+						"id": "deelzaak-welstand",
+						"type": "dossiq.createSubCase",
+						"name": "Deelzaak welstandsadvies",
+						"position": {
+							"x": 290,
+							"y": 340
+						},
+						"config": {
+							"caseType": "Welstandsadvies"
+						}
+					},
+					{
+						"id": "besluit-publiceren",
+						"type": "dossiq.besluitvormingPublish",
+						"name": "Besluit publiceren",
+						"position": {
+							"x": 290,
+							"y": 450
+						},
+						"config": {}
+					},
+					{
+						"id": "einde",
+						"type": "openregister.end",
+						"name": "Klaar",
+						"position": {
+							"x": 30,
+							"y": 450
+						},
+						"config": {}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "status-ontvangen"
+					},
+					{
+						"from": "status-ontvangen",
+						"to": "volledigheid"
+					},
+					{
+						"from": "volledigheid",
+						"to": "welstand"
+					},
+					{
+						"from": "volledigheid",
+						"to": "ontvangstbericht"
+					},
+					{
+						"from": "welstand",
+						"to": "deelzaak-welstand"
+					},
+					{
+						"from": "deelzaak-welstand",
+						"to": "besluit-publiceren"
+					},
+					{
+						"from": "ontvangstbericht",
+						"to": "einde"
+					},
+					{
+						"from": "besluit-publiceren",
+						"to": "einde"
+					}
+				]
+			}
+		}
 	]
 }

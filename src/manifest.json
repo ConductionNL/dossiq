@@ -12529,6 +12529,51 @@
 				"notice": "This flow is how the case type {name} works. The case runs the steps; old webhook steps now run as an external call through Integriq.",
 				"paletteFootnote": "dossiq only offers steps a case can do itself. The rest comes from the app that does it.",
 				"flowDirection": "down",
+				"nodeLook": "card",
+				"saveAsVersion": true,
+				"metaParts": ["version"],
+				"metaNote": "changes apply to new cases",
+				"_paletteNote": "Board DqFlow: nine steps in four groups, every other step behind More steps. Deviations: 'Deelzaak of taak aanmaken' is two catalogue steps (createSubCase, createTask); 'Bericht of e-mail' is OpenRegister's send-email, listed under OpenRegister because Integriq offers no message step.",
+				"paletteGroups": [
+					{
+						"app": "dossiq",
+						"label": "Dossiq",
+						"pill": "dossiq",
+						"entries": [
+							{ "type": "dossiq.setStatus", "label": "Set status" },
+							{ "type": "dossiq.createSubCase", "label": "Create a sub-case" },
+							{ "type": "dossiq.createTask", "label": "Create a task" },
+							{ "type": "dossiq.askPerson", "label": "Ask a person", "short": "ask a person" },
+							{ "type": "dossiq.besluitvormingPublish", "label": "Publish decision" }
+						]
+					},
+					{
+						"app": "openregister",
+						"label": "OpenRegister",
+						"tone": "purple",
+						"entries": [
+							{ "type": "openregister.set-fields", "label": "Write a field", "short": "write a field" },
+							{ "type": "openregister.decision-table", "label": "Decision table", "short": "decision table" },
+							{ "type": "openregister.send-email", "label": "Message or e-mail", "short": "message" }
+						]
+					},
+					{
+						"app": "openconnector",
+						"label": "Integriq",
+						"tone": "teal",
+						"entries": [
+							{ "type": "openconnector.source-call", "label": "External call", "short": "external call" }
+						]
+					},
+					{
+						"app": "filinq",
+						"label": "Filinq",
+						"tone": "teal",
+						"entries": [
+							{ "type": "filinq.generate-document", "label": "Create a document", "short": "document" }
+						]
+					}
+				],
 				"breadcrumb": [
 					{
 						"label": "Settings",
