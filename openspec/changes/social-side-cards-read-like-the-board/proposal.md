@@ -21,6 +21,8 @@ the people as links with a second line.
 
 - A "Historie" side card (`side-social-history`) before Status: the case's audit trail without reads, an access purpose read as "Zaak ingezien, doel behandeling". Only on case types with special categories of personal data. Its foot reads the case's reference, "Kenmerk {identifier}" (nextcloud-vue audit-trail footnote, as DqZaaktype). The consent's own events join it ("Toestemming vastgelegd") through nextcloud-vue `relatedSources`.
 
+- "Overleg plannen" above a Melding Jeugdwet case: a `plan-case-meeting` header action (a case meeting, mdoOverleg, on this case; social domain cases only, group Case) that the case type lists as its quick action; package 1.7.0.
+
 ## Left
 
 - The board's "Toestemming intrekken" button: there is no withdrawal act for a

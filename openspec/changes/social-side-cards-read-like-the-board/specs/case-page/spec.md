@@ -25,3 +25,14 @@ an access purpose SHALL read as the purpose the reader gave.
 - GIVEN Fatma Kaya opened the Oosthaven case stating the purpose "handling"
 - WHEN the case page opens
 - THEN Historie lists "Zaak ingezien, doel behandeling" by Fatma Kaya
+
+### Requirement: A social domain case offers to plan a case meeting
+
+A social domain case that is not archived SHALL offer "Plan a case meeting",
+which asks the meeting's date and agenda and files the meeting on this case.
+Melding Jeugdwet SHALL list it as its quick action, above the case.
+
+#### Scenario: Overleg plannen on the Oosthaven case
+- GIVEN the Melding Jeugdwet case of the Oosthaven family
+- WHEN the case page opens
+- THEN "Overleg plannen" stands above the case and opens a form for the date and agenda of a meeting on this case
