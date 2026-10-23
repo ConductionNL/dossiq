@@ -1137,6 +1137,7 @@
 			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first.",
 			"config": {
 				"allowEdit": false,
+				"gridFloat": false,
 				"appId": "dossiq",
 				"pageId": "MyWorkHome",
 				"description": "Your open tasks, deadlines and open cases",
@@ -1738,7 +1739,8 @@
 								"gridY": 2,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": true
+								"showTitle": true,
+								"sizeToContent": true
 							},
 							{
 								"id": "t5",
@@ -1747,7 +1749,8 @@
 								"gridY": 2,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": true
+								"showTitle": true,
+								"sizeToContent": true
 							},
 							{
 								"id": "t6",
@@ -1756,7 +1759,8 @@
 								"gridY": 6,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": true
+								"showTitle": true,
+								"sizeToContent": true
 							},
 							{
 								"id": "t7",
@@ -1765,7 +1769,8 @@
 								"gridY": 6,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": true
+								"showTitle": true,
+								"sizeToContent": true
 							}
 						]
 					}
@@ -1952,6 +1957,8 @@
 					}
 				},
 				"savedViewChips": false,
+				"_viewCountsNote": "DqFilterBeheren: every saved view in the side panel carries its number of cases. One count request per view, grouped where views filter the same field (nextcloud-vue fetchFilterCounts).",
+				"viewCounts": true,
 				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/utils/caseBulkActions.js, registered in src/registry.js as `kind: 'handler'` entries, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
 					{
@@ -3983,6 +3990,8 @@
 							"manage": true,
 							"title": "History of the case",
 							"exportName": "case-history",
+							"auditTrailLink": true,
+							"auditTrailTab": "audit",
 							"entryActions": [
 								{
 									"id": "reply",
@@ -6572,6 +6581,8 @@
 				"_defaultFiltersNote": "Board DqTaken opens on this month's deadlines, \"Deadline: 1 tot en met 31 oktober\", as a removable chip; a link that names a filter or a saved view wins. The chip's wording is filterLabels.dueAt (DQ-BOARDSCFG).",
 				"_sourceNote": "remove-casetask 2.2. The list is the ENGINE's task inbox, not OpenRegister objects over a `caseTask` schema, so `register`, `schema` and `extend` are gone rather than left behind as config nothing reads. `rowRoute` is what keeps the page dossiq's: the source's own `openRow` calls window.location.assign on OpenRegister's task page, and a `row-click` listener cannot recover a navigation that has already left the app, which is why nextcloud-vue#1063 added the prop. `columns` is deliberately ABSENT. The source supplies six, with state and priority as badges whose colour maps are built from the same t() calls as their labels, so the lookup holds in every locale; reproducing that here to rename one header would be a divergent copy of the thing this change removes, and if the wording matters it belongs upstream as a label override. TWO VISIBLE DELTAS, both deliberate: the case column's header now reads Subject, and the Team column is gone because the engine models candidate groups as a LIST and has no single assigneeGroup to read.",
 				"allowSavedViews": true,
+				"_savedViewSaveNote": "The board draws no Weergave opslaan in the toolbar; the saved views stay in the side panel.",
+				"savedViewSave": false,
 				"savedViewsScope": "source:tasks",
 				"_savedViewsNote": "Saved views are managed on every index page (Ruben, 20 October 2026): save, apply, edit, share with people and groups, add to the menu under My views, copy a default, delete, all in the sidebar's Filters tab. This page reads the engine's task inbox, not a schema, so its views are scoped to the source by name, the same key nextcloud-vue gives a named-source page by default. A view keeps the sidebar's fields (case, state, priority, kind, due between) and the search term; the lens chips stay chips.",
 				"showViewAction": false,
@@ -6819,6 +6830,7 @@
 			"config": {
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"allowEdit": false,
+				"gridFloat": false,
 				"showActionsMenu": false,
 				"showWidgetActions": false,
 				"breadcrumb": {
@@ -7200,7 +7212,10 @@
 							"source": {
 								"kind": "flow-task"
 							},
-							"headerActions": ["link", "create"],
+							"headerActions": ["create"],
+							"menuActions": ["link"],
+							"createVariant": "secondary",
+							"createIcon": "CalendarPlusOutline",
 							"emptyText": "Nobody has booked an appointment on this task"
 						}
 					},
@@ -8229,6 +8244,7 @@
 			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from the ProcessMiningService aggregation endpoint, shaped on the server: each widget reads one `view` of /api/reports/process-mining (summary, dwell, throughput, bottlenecks, byAssignee) through its endpointSource. The duration column titles and the dwell series name come from the report (`labels`), because they say which clock the numbers are on. The page owns the heading, the period presets and the case-type filter; each widget renders content only (hydra#316).",
 			"config": {
 				"allowEdit": false,
+				"gridFloat": false,
 				"appId": "dossiq",
 				"pageId": "ProcessMiningDashboard",
 				"showWidgetActions": false,
@@ -8689,7 +8705,8 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 5
+						"gridHeight": 5,
+						"sizeToContent": true
 					},
 					{
 						"id": 0,
@@ -8697,7 +8714,8 @@
 						"gridX": 0,
 						"gridY": 5,
 						"gridWidth": 12,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 1,
@@ -8705,7 +8723,8 @@
 						"gridX": 0,
 						"gridY": 8,
 						"gridWidth": 3,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 7,
@@ -8713,7 +8732,8 @@
 						"gridX": 3,
 						"gridY": 8,
 						"gridWidth": 3,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 8,
@@ -8721,7 +8741,8 @@
 						"gridX": 6,
 						"gridY": 8,
 						"gridWidth": 3,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 9,
@@ -8729,7 +8750,8 @@
 						"gridX": 9,
 						"gridY": 8,
 						"gridWidth": 3,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 2,
@@ -8737,7 +8759,8 @@
 						"gridX": 0,
 						"gridY": 11,
 						"gridWidth": 6,
-						"gridHeight": 6
+						"gridHeight": 6,
+						"sizeToContent": true
 					},
 					{
 						"id": 3,
@@ -8745,7 +8768,7 @@
 						"gridX": 6,
 						"gridY": 11,
 						"gridWidth": 6,
-						"gridHeight": 6
+						"gridHeight": 4
 					},
 					{
 						"id": 4,
@@ -8753,7 +8776,8 @@
 						"gridX": 0,
 						"gridY": 17,
 						"gridWidth": 12,
-						"gridHeight": 6
+						"gridHeight": 6,
+						"sizeToContent": true
 					},
 					{
 						"id": 5,
@@ -8761,7 +8785,8 @@
 						"gridX": 0,
 						"gridY": 23,
 						"gridWidth": 12,
-						"gridHeight": 6
+						"gridHeight": 6,
+						"sizeToContent": true
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
@@ -10648,6 +10673,7 @@
 			"config": {
 				"_headerNote": "Board DqTermijnen's header row is Quarterly report, the buildiq square and Register notice of default, with no Actions menu. There is no in-page Edit button: changing the layout is buildiq's, under the buildiq button (Ruben, 18 Oct).",
 				"allowEdit": false,
+				"gridFloat": false,
 				"showActionsMenu": false,
 				"appId": "dossiq",
 				"pageId": "TermijnDashboard",
@@ -10976,6 +11002,7 @@
 							{
 								"label": "Download quarterly report",
 								"icon": "TrayArrowDown",
+								"variant": "link",
 								"action": {
 									"type": "export",
 									"exportId": "deadline-report-quarterly"
@@ -11136,7 +11163,8 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 2,
@@ -11144,7 +11172,8 @@
 						"gridX": 0,
 						"gridY": 3,
 						"gridWidth": 12,
-						"gridHeight": 4
+						"gridHeight": 4,
+						"sizeToContent": true
 					},
 					{
 						"id": 3,
@@ -11152,7 +11181,8 @@
 						"gridX": 0,
 						"gridY": 7,
 						"gridWidth": 12,
-						"gridHeight": 7
+						"gridHeight": 7,
+						"sizeToContent": true
 					},
 					{
 						"id": 4,
@@ -11160,7 +11190,8 @@
 						"gridX": 0,
 						"gridY": 14,
 						"gridWidth": 12,
-						"gridHeight": 8
+						"gridHeight": 8,
+						"sizeToContent": true
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
@@ -12672,6 +12703,8 @@
 				"register": "dossiq",
 				"schema": "kvkCompany",
 				"allowSavedViews": true,
+				"_savedViewSaveNote": "The board draws no Weergave opslaan in the toolbar; the saved views stay in the side panel.",
+				"savedViewSave": false,
 				"showViewAction": false,
 				"searchPlaceholder": "Search by name, KvK number or place",
 				"rowIcon": "OfficeBuildingOutline",

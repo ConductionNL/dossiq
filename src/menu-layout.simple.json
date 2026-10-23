@@ -216,9 +216,17 @@
 						"widgets": [
 							{
 								"id": "your-teams-queue",
-								"type": "object-list",
+								"type": "record-list",
 								"title": "Your team's queue",
 								"icon": "AccountGroupOutline",
+								"_note": "DqMijnTeam draws the team queue as rows: the title, under it the case number, the case type and the deadline, and Pick up at the end of the row. The same query as the full structure's table, the first three; To the queue opens the team queue view of Cases. Pick up is the registered claimCase handler, as on the queue and the case list.",
+								"headerLink": {
+									"label": "To the queue",
+									"route": "Cases",
+									"query": {
+										"savedView": "default:team-queue"
+									}
+								},
 								"content": {
 									"register": "dossiq",
 									"schema": "case",
@@ -230,28 +238,28 @@
 										"isDraft": false,
 										"isTemplate": false
 									},
-									"limit": 10,
-									"hideHeader": true,
-									"columns": [
-										{
-											"key": "title",
-											"label": "Case",
-											"cellClass": "cn-cell--strong",
-											"secondary": "{identifier} · {deadline|date}"
-										}
+									"extend": [
+										"caseType"
 									],
-									"rowActions": [
-										{
-											"id": "claim",
-											"label": "Pick up",
-											"type": "handler",
-											"handler": "claimCase",
-											"variant": "secondary"
-										}
-									],
+									"limit": 3,
+									"presentation": "rows",
+									"title": "{title}",
+									"meta": {
+										"parts": [
+											"{identifier}",
+											"{caseType.title}",
+											"deadline {deadline|date}"
+										]
+									},
+									"rowAction": {
+										"id": "claim",
+										"label": "Pick up",
+										"type": "handler",
+										"handler": "claimCase"
+									},
+									"chevron": false,
 									"rowRoute": "CaseDetail",
-									"emptyText": "Nothing is waiting for your teams",
-									"prompt": "Cases waiting for your teams show here"
+									"emptyText": "Nothing is waiting for your teams"
 								}
 							},
 							{
@@ -927,6 +935,7 @@
 								"gridY": 2,
 								"gridWidth": 3,
 								"gridHeight": 2,
+								"sizeToContent": true,
 								"showTitle": false,
 								"dateChip": false
 							},
@@ -937,6 +946,7 @@
 								"gridY": 2,
 								"gridWidth": 3,
 								"gridHeight": 2,
+								"sizeToContent": true,
 								"showTitle": false,
 								"dateChip": false
 							},
@@ -947,6 +957,7 @@
 								"gridY": 2,
 								"gridWidth": 3,
 								"gridHeight": 2,
+								"sizeToContent": true,
 								"showTitle": false,
 								"dateChip": false
 							},
@@ -957,6 +968,7 @@
 								"gridY": 2,
 								"gridWidth": 3,
 								"gridHeight": 2,
+								"sizeToContent": true,
 								"showTitle": false,
 								"dateChip": false
 							},
@@ -967,6 +979,7 @@
 								"gridY": 4,
 								"gridWidth": 8,
 								"gridHeight": 4,
+								"sizeToContent": true,
 								"track": "main",
 								"showTitle": true,
 								"headerLink": {
@@ -989,6 +1002,7 @@
 								"gridY": 4,
 								"gridWidth": 4,
 								"gridHeight": 7,
+								"sizeToContent": true,
 								"track": "side",
 								"showTitle": true,
 								"headerLink": {
@@ -1003,6 +1017,7 @@
 								"gridY": 8,
 								"gridWidth": 8,
 								"gridHeight": 3,
+								"sizeToContent": true,
 								"track": "main",
 								"showTitle": true,
 								"headerLink": {
@@ -1018,6 +1033,7 @@
 								"gridY": 11,
 								"gridWidth": 8,
 								"gridHeight": 5,
+								"sizeToContent": true,
 								"track": "main",
 								"showTitle": true
 							},
@@ -1028,6 +1044,7 @@
 								"gridY": 16,
 								"gridWidth": 6,
 								"gridHeight": 4,
+								"sizeToContent": true,
 								"showTitle": true,
 								"headerLink": {
 									"label": "View all",
@@ -1044,6 +1061,7 @@
 								"gridY": 11,
 								"gridWidth": 4,
 								"gridHeight": 5,
+								"sizeToContent": true,
 								"track": "side",
 								"showTitle": true
 							},
@@ -1054,6 +1072,7 @@
 								"gridY": 16,
 								"gridWidth": 6,
 								"gridHeight": 4,
+								"sizeToContent": true,
 								"showTitle": true
 							}
 						]
@@ -3172,7 +3191,7 @@
 						"id": "case-calendar-card",
 						"type": "integration",
 						"integrationId": "calendar",
-						"props": { "headerActions": ["link", "create"] },
+						"props": { "headerActions": ["link", "create"], "createVariant": "secondary", "createIcon": "CalendarPlusOutline" },
 						"_headerActionsNote": "DqZaakTaken Afspraken: \"Bestaande koppelen\" and \"Afspraak maken\" in the card's title row, the calendar leaf's own link-existing and create flows (nextcloud-vue calendar card headerActions).",
 						"title": "Appointments",
 						"subtitle": "From the calendar, linked to this case"
@@ -4121,7 +4140,7 @@
 						"type": "record-list",
 						"title": "Related cases",
 						"subtitle": "Typed per the RGBZ, kept in both directions",
-						"_note": "DqZaakGerelateerd Gerelateerde zaken: the case's typed peer relations grouped by what they are to this case (the label this side of the relation reads, else the relation type), each with the other case's initials, number, case type and handler and its status, then the planned follow-ups (planned flows and series) under Gepland vervolg. The rows come from /api/cases/{id}/relations?planned=1, which adds the case details only for a case the reader may open. `groupBy` is nextcloud-vue's record-list group headings (d45d382846); on an older library the rows stand ungrouped. A planned row opens no case, so it carries the Stop series menu; Plan follow-up ends the card.",
+						"_note": "DqZaakGerelateerd Gerelateerde zaken: the case's typed peer relations grouped by what they are to this case (the label this side of the relation reads, else the relation type), each with the other case's initials, number, case type and handler and its status, then the planned follow-ups (planned flows and series) under Gepland vervolg. The rows come from /api/cases/{id}/relations?planned=1, which adds the case details only for a case the reader may open. `groupBy` is nextcloud-vue's record-list group headings (d45d382846); on an older library the rows stand ungrouped. A planned row opens no case, so it carries the Stop series menu. Vervolg plannen is a tonal pill at the end of the Gepland vervolg heading, which stands even before anything is planned (footerAction.group and variant, nextcloud-vue feat/r24-record-list-group-action; on an older library it stays the button under the card).",
 						"headerActions": [
 							{
 								"label": "Link case",
@@ -4272,8 +4291,10 @@
 							"footerAction": {
 								"type": "open-modal",
 								"target": "CasePlanFollowUpDialog",
-								"label": "Plan follow-up",
-								"icon": "CalendarClock"
+								"label": "Plan what follows",
+								"icon": "CalendarClock",
+								"group": "planned",
+								"variant": "tonal"
 							}
 						}
 					},
@@ -4671,46 +4692,69 @@
 						}
 					},
 					{
-						"id": "case-advice-requests",
-						"type": "object-list",
-						"title": "Advice on the case",
-						"subtitle": "Internal and external advice on this case",
-						"icon": "CommentQuestionOutline",
-						"_note": "DqZaakBesluiten Adviezen: the internal and external advice requested on this case; Toevoegen asks a new one with the case filled in.",
-						"content": {
-							"register": "dossiq",
-							"schema": "adviesAanvraag",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "requestedAt",
-								"dir": "desc"
-							},
-							"limit": 25,
-							"columns": [
+							"id": "case-advice-requests",
+							"type": "record-list",
+							"title": "Advice on the case",
+							"subtitle": "Internal and external advice on this case",
+							"icon": "CommentQuestionOutline",
+							"_note": "DqZaakBesluiten Adviezen: the internal and external advice requested on this case as rows: the advisor's initials, the subject and advisor, when it was asked and when the answer is due or came in, and the status pill in tone. Herinneren posts to dossiq's remind route on an open request only (record-list rowAction endpoint; on an older nextcloud-vue the button goes through the page dispatcher and does nothing). Advies vragen in the title row opens the request form with the case filled in; the line under the list says an open request holds the case back, which the side notice says too.",
+							"headerActions": [
 								{
-									"key": "subject",
-									"label": "Subject"
+									"label": "Ask for advice",
+									"icon": "CommentQuestionOutline",
+									"action": {
+										"type": "open-form",
+										"register": "dossiq",
+										"schema": "adviesAanvraag",
+										"includeFields": [
+											"subject",
+											"advisor",
+											"type",
+											"deadline",
+											"questions"
+										],
+										"fieldOverrides": {
+											"questions": {
+												"widget": "textarea"
+											}
+										},
+										"successMessage": "Advice requested.",
+										"props": {
+											"case": "@objectId"
+										}
+									},
+									"visibleWhen": {
+										"field": "@self.archived",
+										"op": "empty"
+									}
+								}
+							],
+							"content": {
+								"register": "dossiq",
+								"schema": "adviesAanvraag",
+								"filter": {
+									"case": "@objectId"
 								},
-								{
-									"key": "advisor",
-									"label": "Advisor"
+								"sort": {
+									"field": "requestedAt",
+									"dir": "desc"
 								},
-								{
-									"key": "deadline",
-									"label": "Answer by",
-									"format": "date"
-								},
-								{
-									"key": "status",
-									"label": "Status",
-									"enum": [
-										"requested",
-										"received",
-										"expired"
-									],
-									"enumLabels": {
+								"limit": 25,
+								"presentation": "rows",
+								"avatar": "{advisor}",
+								"title": [
+									"{subject}, {advisor}",
+									"{subject}",
+									"{advisor}"
+								],
+								"meta": [
+									"Requested {requestedAt|date} · received {receivedAt|date}",
+									"Requested {requestedAt|date} · answer by {deadline|date}",
+									"Answer by {deadline|date}"
+								],
+								"pill": {
+									"field": "status",
+									"labels": {
 										"requested": "Waiting for answer",
 										"received": "Received",
 										"expired": "Expired"
@@ -4720,12 +4764,25 @@
 										"received": "success",
 										"expired": "error"
 									}
-								}
-							],
-							"rowRoute": "AdviceDetail",
-							"emptyText": "No advice requested on this case yet"
+								},
+								"rowAction": {
+									"label": "Remind",
+									"endpoint": "/apps/dossiq/api/advice/{id}/remind",
+									"method": "POST",
+									"labels": {
+										"field": "status",
+										"map": {
+											"received": "",
+											"expired": ""
+										}
+									},
+									"errorText": "The reminder could not be sent"
+								},
+								"rowRoute": "AdviceDetail",
+								"footnote": "As long as an advice is open, the case cannot be closed.",
+								"emptyText": "No advice requested on this case yet"
+							}
 						}
-					}
 				],
 				"headerActions": [
 					{
@@ -5698,7 +5755,14 @@
 						"key": "title",
 						"label": "Case type",
 						"cellClass": "cn-cell--strong",
-						"secondary": "{subject}"
+						"secondary": "{@self.owner} · {subject}",
+						"_secondaryNote": "DqZaaktypen: \"Meegeleverd · Woo\" under a case type dossiq shipped (owner __system__, as the Shipped lens), \"Eigen zaaktype · ...\" under one an organisation made. Needs nextcloud-vue feat/column-secondary-value-labels; before it the owner shows as stored.",
+						"secondaryLabels": {
+							"@self.owner": {
+								"__system__": "Shipped",
+								"*": "Own case type"
+							}
+						}
 					},
 					{
 						"key": "category",
