@@ -121,6 +121,8 @@
         "{identifier}",
         "{subject.title}",
         "initiatorDisplayName",
-        "name"
+        "name",
+        "{moment} via {channel}",
+        "{moment} via {channel}, {time}"
     ]
 }

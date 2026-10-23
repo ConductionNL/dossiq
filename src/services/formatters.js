@@ -378,6 +378,50 @@ export default {
 	},
 
 	/**
+	 * The messages a case sent on its own, one line each: what it was, the
+	 * channel it went through and when ("Receipt confirmation via the portal,
+	 * 3 Oct 14:32"). A message no channel took reads "not sent".
+	 *
+	 * @param {Array<object>} value The case's outbound communications.
+	 * @return {string} The lines joined with "; ", or '' without messages.
+	 * @spec openspec/changes/receipt-confirmation-card-reads/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
+	 */
+	outboundMessages: (value) => {
+		if (!Array.isArray(value)) {
+			return ''
+		}
+		const moments = {
+			acknowledgement: t('dossiq', 'Receipt confirmation'),
+			'information-request': t('dossiq', 'Information request'),
+			stage: t('dossiq', 'Status update'),
+			extension: t('dossiq', 'Extension'),
+			decision: t('dossiq', 'Decision'),
+			transfer: t('dossiq', 'Transfer'),
+		}
+		const channels = {
+			'portal-inbox': t('dossiq', 'the portal'),
+			'digital-post': t('dossiq', 'digital post'),
+			email: t('dossiq', 'email'),
+		}
+		const when = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+		return value
+			.filter((entry) => entry && typeof entry === 'object')
+			.map((entry) => {
+				const moment = moments[entry.moment] ?? String(entry.moment ?? '')
+				if (!entry.channel) {
+					return t('dossiq', '{moment}, not sent', { moment })
+				}
+				const sentAt = entry.sentAt ? new Date(entry.sentAt) : null
+				const time = sentAt && !Number.isNaN(sentAt.getTime()) ? when.format(sentAt) : ''
+				const channel = channels[entry.channel] ?? entry.channel
+				return time
+					? t('dossiq', '{moment} via {channel}, {time}', { moment, channel, time })
+					: t('dossiq', '{moment} via {channel}', { moment, channel })
+			})
+			.join('; ')
+	},
+
+	/**
 	 * Sub-case count badge for a case row in the case list. Returns "N
 	 * deelzaken" for cases with one or more sub-cases and an empty string
 	 * (no badge) otherwise. The count is read from the reactive deelzaak

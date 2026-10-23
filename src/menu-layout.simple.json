@@ -2921,26 +2921,34 @@
 							"columns": 3,
 							"include": [
 								"receivedAt",
-								"termStartsAt",
 								"receivedOutsideWorkingHours",
-								"acknowledgementDuty",
-								"outboundCommunications"
+								"termStartsAt",
+								"outboundCommunications",
+								"acknowledgementDuty"
 							],
 							"overrides": {
 								"receivedAt": {
-									"editable": false
+									"order": 1,
+									"editable": false,
+									"formatter": "datetime"
 								},
 								"termStartsAt": {
-									"editable": false
+									"order": 3,
+									"editable": false,
+									"formatter": "date"
 								},
 								"receivedOutsideWorkingHours": {
+									"order": 2,
 									"editable": false
 								},
 								"acknowledgementDuty": {
+									"order": 5,
 									"editable": false
 								},
 								"outboundCommunications": {
-									"editable": false
+									"order": 4,
+									"editable": false,
+									"formatter": "outboundMessages"
 								}
 							}
 						}
