@@ -102,6 +102,9 @@ describe('the end-of-day page', () => {
 		expect(widget('eod-how').titleTone).toBe('side')
 		// "Morgen eerst" is the same side heading on the board (15px, 600).
 		expect(widget('eod-tomorrow').titleTone).toBe('side')
+		// "3 dagen te laat" under the item, as DqDagAfsluiten draws it
+		// (nextcloud-vue record-list-due-below).
+		expect(widget('eod-tomorrow').content.duePlacement).toBe('below')
 	})
 
 	it('draws Your day as the board\'s grid of figures, Hours from humaniq among them and gone without it', () => {
