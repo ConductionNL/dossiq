@@ -28,3 +28,14 @@ shows on the case. The record SHALL be left as it was apart from `migratedTo` an
 - **GIVEN** a family plan whose caseId is a stored Jeugdwet report
 - **WHEN** the report moves
 - **THEN** the plan's caseId SHALL be the new case
+
+### Requirement: A Jeugdwet report follows a flow (REQ-JW-CT-003)
+
+The Melding Jeugdwet case type SHALL name a published flow from Melding ontvangen through Onderzoek,
+Indicatie, Overleg and Besluit to Jeugdhulp loopt, Evaluatie, Verlenging aangevraagd and Afgehandeld.
+The move to Indicatie SHALL require the support question and the move to Besluit the family plan,
+both checked as the system so the mover need not read them.
+
+#### Scenario: Every status can be reached
+- **GIVEN** the shipped flow
+- **THEN** every status of the case type SHALL be reachable from Melding ontvangen
