@@ -11008,6 +11008,7 @@ OC.L10N.register(
         "{groups} cannot change this field. {heldBy} can.": "{groups} kunnen dit veld niet wijzigen. {heldBy} wel.",
         "{groups} do not see this field.": "{groups} zien dit veld niet.",
         "{groups} do not see this field. {heldBy} do.": "{groups} zien dit veld niet. {heldBy} wel.",
+        "{group}, unclaimed": "{group}, niet geclaimd",
         "{handler}": "{handler}",
         "{hours} hours ago": "{hours} uur geleden",
         "{identifier}": "{identifier}",
