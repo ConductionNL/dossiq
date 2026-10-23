@@ -171,7 +171,8 @@ class EmailTemplateService {
 	/**
 	 * Add when and how a template goes out: `moment` (a case event),
 	 * `channel` and `messageCategory`, from the edit or else the version it
-	 * replaces. A field neither names is left out.
+	 * replaces. An edit that names a field as null or empty clears it; a field
+	 * neither names is left out.
 	 *
 	 * @param array<string, mixed> $payload  The template to save.
 	 * @param array<string, mixed> $data     The edit.
@@ -183,7 +184,10 @@ class EmailTemplateService {
 	 */
 	private function withDelivery(array $payload, array $data, array $existing): array {
 		foreach (['moment', 'channel', 'messageCategory'] as $field) {
-			$value = $data[$field] ?? ($existing[$field] ?? null);
+			$value = $existing[$field] ?? null;
+			if (array_key_exists($field, $data) === true) {
+				$value = $data[$field];
+			}
 			if (is_string($value) === true && $value !== '') {
 				$payload[$field] = $value;
 			}

@@ -174,6 +174,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 				return ($overrides[$key] ?? $default);
 			}
 		);
+		$this->request->method('getParams')->willReturn($overrides);
 	}//end withRequestParams()
 
 	/**
@@ -529,4 +530,34 @@ class EmailTemplateControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['results' => $templates], $response->getData());
 	}//end testListTemplatesReturnsTheResultsOfTheRouteCaseType()
+
+	/**
+	 * An update forwards a moment or channel the request names, null included
+	 * (it clears the field), and leaves out one the request does not name.
+	 *
+	 * @return void
+	 */
+	public function testUpdateTemplateForwardsOnlyTheDeliveryFieldsTheRequestNames(): void {
+		$this->signIn(uid: 'admin');
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->withRequestParams(['body' => 'Nieuw', 'moment' => null]);
+
+		$this->templateService->expects($this->once())
+			->method('updateTemplate')
+			->with(
+				't-1',
+				$this->callback(
+					static function (array $data): bool {
+						return array_key_exists('moment', $data) === true
+							&& $data['moment'] === null
+							&& array_key_exists('channel', $data) === false;
+					}
+				)
+			)
+			->willReturn(['id' => 't-2', 'version' => 2]);
+
+		$response = $this->controller->updateTemplate(templateId: 't-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}//end testUpdateTemplateForwardsOnlyTheDeliveryFieldsTheRequestNames()
 }//end class

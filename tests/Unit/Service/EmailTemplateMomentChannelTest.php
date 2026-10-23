@@ -128,4 +128,20 @@ class EmailTemplateMomentChannelTest extends TestCase {
 		$this->assertSame('besluit', $saved['messageCategory']);
 		$this->assertSame(3, $saved['version']);
 	}//end testUpdateKeepsWhatTheEditDoesNotName()
+
+	/**
+	 * An edit that names a field as null or empty clears it on the new version.
+	 *
+	 * @return void
+	 */
+	public function testUpdateClearsAFieldTheEditSetsToNothing(): void {
+		$this->repository->method('findTemplate')->willReturn(
+			['id' => 't-1', 'caseType' => 'ct-1', 'name' => 'Besluit', 'version' => 1, 'moment' => 'decision-made', 'channel' => 'mailbox']
+		);
+
+		$saved = $this->service->updateTemplate(templateId: 't-1', data: ['moment' => null, 'channel' => '']);
+
+		$this->assertArrayNotHasKey('moment', $saved);
+		$this->assertArrayNotHasKey('channel', $saved);
+	}//end testUpdateClearsAFieldTheEditSetsToNothing()
 }//end class

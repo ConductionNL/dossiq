@@ -5,13 +5,19 @@
 ### Requirement: A message template says when and how it goes out
 
 A message template SHALL carry an optional `moment` (a generic case event) and `channel`. A new version of a template
-SHALL keep the moment, channel and message category its edit does not name.
+SHALL keep the moment, channel and message category its edit does not name, and SHALL clear one the edit names as null or empty.
 
 #### Scenario: Editing the body of the decision message
 
 - **GIVEN** the template "Besluit" with moment decision-made and channel mailbox
 - **WHEN** an administrator saves a new body
 - **THEN** the new version still goes out on decision-made, by mailbox
+
+#### Scenario: Clearing the moment
+
+- **GIVEN** the template "Besluit" with moment decision-made
+- **WHEN** an administrator saves it with the moment set to nothing (an explicit null)
+- **THEN** the new version has no moment and is only sent by hand
 
 ### Requirement: The case type page lists its messages
 
