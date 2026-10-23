@@ -4718,7 +4718,7 @@
 			"key": "pieter-wacht-op-inwoner",
 			"data": {
 				"name": "Wacht op inwoner",
-				"description": "Zaken die wachten op de aanvrager",
+				"description": "Status wacht op inwoner, gedeeld met team Woo",
 				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}, {"user": "{{cast:anouk.uid}}", "mode": "write"}],
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": false,
@@ -4731,6 +4731,75 @@
 							"statusHiddenInLists": false,
 							"isDraft": false,
 							"isFinalStatus": false
+						}
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
+		},
+		{
+			"key": "pieter-opgeschort",
+			"data": {
+				"name": "Opgeschort",
+				"description": "Status opgeschort, alle teams",
+				"owner": "{{cast:pieter.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"_related[deadlineInstance][case][status]": "paused"
+					},
+					"overrides": {
+						"lockedFilters": {
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
+		},
+		{
+			"key": "anouk-woo-verzoeken-team",
+			"data": {
+				"name": "Woo-verzoeken team",
+				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}],
+				"owner": "{{cast:anouk.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"caseTypeIdentifier": "woo-verzoek"
+					},
+					"overrides": {
+						"lockedFilters": {
+							"statusHiddenInLists": false,
+							"isDraft": false
 						}
 					},
 					"search": "",
