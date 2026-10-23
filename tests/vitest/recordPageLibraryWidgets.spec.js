@@ -255,13 +255,12 @@ describe('the family plan', () => {
 describe('the Related cases tab', () => {
 	// The simple structure lists the planned follow-ups and the typed
 	// relations in case-related-cases-card (typedRelatedCasesCard.spec.js);
-	// its case-related-card keeps the parent case and Plan follow-up.
-	it('keeps the parent case and Plan follow-up on the parent card (simple)', () => {
+	// its case-related-card keeps the parent case (caseRelatedParentOnly.spec.js).
+	it('keeps the parent case on the parent card (simple)', () => {
 		const related = find(simpleCase, 'case-related-card')
 		expect(related.type).toBe('related')
 		expect(related.content.extraSources).toBeUndefined()
 		expect(related.content.referenceSections[0]).toMatchObject({ field: 'parentCase', register: 'dossiq', schema: 'case' })
-		expect(related.content.footerActions[0]).toMatchObject({ type: 'open-modal', target: 'CasePlanFollowUpDialog', props: { caseId: '@objectId' } })
 	})
 
 	it('reads the planned follow-ups, the typed relations and the parent (full)', () => {
@@ -274,7 +273,8 @@ describe('the Related cases tab', () => {
 		expect(planned.rowActions[0].when).toEqual({ field: 'recurrence', op: 'neq', value: 'none' })
 		expect(relations).toMatchObject({ endpoint: '/apps/dossiq/api/cases/@objectId/relations', requireLabel: true })
 		expect(related.content.referenceSections[0]).toMatchObject({ field: 'parentCase', register: 'dossiq', schema: 'case' })
-		expect(related.content.footerActions[0]).toMatchObject({ type: 'open-modal', target: 'CasePlanFollowUpDialog', props: { caseId: '@objectId' } })
+		// "Link case" sits before it in the footer, so it is found by its dialog.
+		expect(related.content.footerActions.find((action) => action.target === 'CasePlanFollowUpDialog')).toMatchObject({ type: 'open-modal', props: { caseId: '@objectId' } })
 	})
 })
 

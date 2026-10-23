@@ -207,6 +207,9 @@ class OfferedTransitions {
 			// renders nothing rather than a blank line.
 			'explanation' => $this->moves->explanationOf(transition: $transition),
 			'toStatus' => (string)($transition['toStatus'] ?? ''),
+			// The destination's name, so a menu can say where the move goes
+			// ("Naar Besluit") when the move's own label is only that name.
+			'toStatusName' => $this->statuses->nameOf(statusTypeId: (string)($transition['toStatus'] ?? '')),
 			'guardsPassed' => count($failed) === 0,
 			'failedGuards' => $failed,
 			// Whether the move closes the case and the results it may close

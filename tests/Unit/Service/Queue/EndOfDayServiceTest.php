@@ -131,15 +131,11 @@ class EndOfDayServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default=''): string => $default
 		);
+		// Nextcloud's IL10N::t() fills `%s` / `%1$s` with vsprintf and leaves
+		// `{name}` as written, so the fake does the same.
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(
-			static function (string $text, array $parameters=[]): string {
-				foreach ($parameters as $name => $value) {
-					$text = str_replace('{' . $name . '}', (string)$value, $text);
-				}
-
-				return $text;
-			}
+			static fn (string $text, array $parameters=[]): string => vsprintf($text, array_values($parameters))
 		);
 
 		return new EndOfDayService(queue: $queue, settings: $settings, l10n: $l10n, logger: new NullLogger());

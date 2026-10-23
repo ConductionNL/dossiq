@@ -292,13 +292,14 @@ describe('the cases list', () => {
 		// The second line is the case address, falling back to the identifier.
 		expect(simple.mapConfig.list.sub).toContain('{identifier}')
 		const { list, ...rest } = simple.mapConfig
-		const { _basemapNote, _parityNote, plotAll, ...fullMap } = before.mapConfig
+		const { _basemapNote, _parityNote, plotAll, count, ...fullMap } = before.mapConfig
 		expect(rest).toEqual(fullMap)
 	})
 
-	it('colours and counts the markers but plots only the current page', () => {
+	it('colours the markers, counts them in the header only and plots only the current page', () => {
 		expect(simple.mapConfig.markerColor).toEqual(before.mapConfig.markerColor)
-		expect(simple.mapConfig.count).toBe(before.mapConfig.count)
+		// The header says "· 5 met een adres op de kaart" with the list; no line under the map repeats it.
+		expect(simple.mapConfig).not.toHaveProperty('count')
 		expect(simple.mapConfig).not.toHaveProperty('plotAll')
 	})
 
@@ -320,6 +321,9 @@ describe('the cases list', () => {
 			_mapConfigNote,
 			showAdd,
 			showViewToggle,
+			showMassCopy,
+			showMassDelete,
+			_massCopyDeleteNote,
 			headerFilters,
 			searchPlaceholder,
 			...others
@@ -420,10 +424,13 @@ describe('the landing page', () => {
 		expect(simple.config.defaultView).toBe('mine')
 	})
 
-	it('changes only the My work view: My team is the manifest declaration, in both structures', () => {
+	it('changes My team only where DqMijnTeam differs: the stalled cases as rows', () => {
 		const team = (built) => pageView(page(built, 'MyWorkHome'), 'team')
-		expect(team(builtSimple)).toEqual(pageView(original('MyWorkHome'), 'team'))
-		expect(team(builtSimple)).toEqual(team(builtFull))
+		expect(team(builtFull)).toEqual(pageView(original('MyWorkHome'), 'team'))
+		// The stalled-cases rows are held in landingViews.spec.js; the rest of
+		// the view is the manifest's.
+		const rest = (view) => ({ ...view, widgets: withoutNotes(view.widgets.filter((w) => w.id !== 'stalled-cases')) })
+		expect(rest(team(builtSimple))).toEqual(rest(team(builtFull)))
 		expect(simple.config.views.map((view) => view.id)).toEqual(['mine', 'team'])
 	})
 
@@ -513,8 +520,13 @@ describe('the landing page', () => {
 			'kpi-overdue': 'Late',
 			'kpi-sla-compliance': 'Within deadline',
 		}
+		// The two charts carry the board's subtitle, "Lopende zaken".
+		const subtitled = ['cases-by-status', 'cases-by-type']
 		const sameButBars = (list) =>
 			list.map((item) => {
+				if (subtitled.includes(item.id)) {
+					return { ...item, subtitle: 'Open cases' }
+				}
 				if (boardWords[item.id]) {
 					return {
 						...item,
@@ -524,8 +536,12 @@ describe('the landing page', () => {
 				}
 				return item
 			})
-		// Plus the board's info line under the grid (DqDashboard), which only the simple structure draws.
-		expect(dashboard.config.widgets.filter((item) => item.id !== 'layout-note')).toEqual(sameButBars(before.config.widgets))
+		// Plus the board's info line under the grid (DqDashboard), which only
+		// the simple structure draws, and the three case tiles, which it draws
+		// as rows (see below).
+		const asRows = ['stalled-cases', 'favourite-cases', 'recent-cases']
+		const kept = (list) => list.filter((item) => item.id !== 'layout-note' && !asRows.includes(item.id))
+		expect(kept(dashboard.config.widgets)).toEqual(sameButBars(kept(before.config.widgets)))
 		expect(dashboard.config.widgets.map((item) => item.id)).toContain('layout-note')
 		expect(dashboard.config.kpiRow).toEqual([
 			'kpi-open-cases',
@@ -547,6 +563,47 @@ describe('the landing page', () => {
 		expect(dashboard.config.headerActions.map((action) => action.id)).toContain(
 			'open-end-of-day',
 		)
+	})
+
+	it('draws the dashboard case tiles as the board\'s rows: title, number, one line, no chevron', () => {
+		// DqDashboard: Vastgelopen zaken, Zaken die u volgt and Recent geopend
+		// are rows of the case title, its number and a muted line, without a
+		// chevron, and their View all sits in the card header.
+		const dashboard = page(builtSimple, 'Dashboard')
+		const before = original('Dashboard')
+		const tile = (list, id) => list.find((item) => item.id === id)
+		const lines = {
+			'stalled-cases': '{daysSinceActivity} days idle',
+			'favourite-cases': undefined,
+			'recent-cases': '{@self.viewedAt|relative}',
+		}
+		for (const [id, text] of Object.entries(lines)) {
+			const rows = tile(dashboard.config.widgets, id)
+			const table = tile(before.config.widgets, id)
+			expect(rows.type).toBe('record-list')
+			expect(rows.content).toMatchObject({
+				register: table.content.source.register,
+				schema: table.content.source.schema,
+				filter: table.content.source.filter,
+				limit: table.content.source.limit,
+				presentation: 'rows',
+				title: '{title}',
+				meta: '{identifier}',
+				chevron: false,
+				rowRoute: 'CaseDetail',
+				emptyText: table.content.emptyText,
+			})
+			expect(rows.content.text).toBe(text)
+			// The header link opens the list the table's View all opened.
+			const layout = dashboard.config.layout.find((entry) => entry.widgetId === id)
+			const { name, ...rest } = table.content.viewAllRoute
+			expect(layout.headerLink).toEqual({ label: 'View all', route: name, ...rest })
+		}
+		const stalled = tile(dashboard.config.widgets, 'stalled-cases').content
+		expect(stalled.extend).toEqual(['calculations'])
+		expect(stalled.sort).toEqual({ field: '@self.updated', dir: 'asc' })
+		expect(tile(dashboard.config.widgets, 'recent-cases').content.lensReasonTexts)
+			.toEqual(tile(before.config.widgets, 'recent-cases').content.lensReasonTexts)
 	})
 
 	it('continues where the handler left off, over the recent lens the full dashboard already uses', () => {

@@ -49,6 +49,36 @@
 			"members": [
 				"noor"
 			]
+		},
+		{
+			"group": "zuiddrecht-fysiek-domein",
+			"displayName": "Fysiek domein",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-toezicht-en-handhaving",
+			"displayName": "Toezicht en handhaving",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-buitenruimte",
+			"displayName": "Buitenruimte",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-jeugdteam",
+			"displayName": "Jeugdteam",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-werk-en-inkomen",
+			"displayName": "Werk en inkomen",
+			"members": []
+		},
+		{
+			"group": "zuiddrecht-bedrijfsvoering",
+			"displayName": "Bedrijfsvoering",
+			"members": []
 		}
 	],
 	"serviceAccounts": [
@@ -216,6 +246,98 @@
 			}
 		},
 		{
+			"key": "persoon-marja",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:marja.bsn}}",
+				"name": {
+					"givenNames": "{{cast:marja.givenName}}",
+					"surname": "{{cast:marja.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:marja.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:marja.address.street}}",
+					"houseNumber": "{{cast:marja.address.number}}",
+					"postcode": "{{cast:marja.address.postcode}}",
+					"city": "{{cast:marja.address.city}}"
+				},
+				"displayName": "{{cast:marja.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
+			"key": "persoon-pieterbos",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:pieterbos.bsn}}",
+				"name": {
+					"givenNames": "{{cast:pieterbos.givenName}}",
+					"surname": "{{cast:pieterbos.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:pieterbos.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:pieterbos.address.street}}",
+					"houseNumber": "{{cast:pieterbos.address.number}}",
+					"postcode": "{{cast:pieterbos.address.postcode}}",
+					"city": "{{cast:pieterbos.address.city}}"
+				},
+				"displayName": "{{cast:pieterbos.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
+			"key": "persoon-henkvisser",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:henkvisser.bsn}}",
+				"name": {
+					"givenNames": "{{cast:henkvisser.givenName}}",
+					"surname": "{{cast:henkvisser.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:henkvisser.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:henkvisser.address.street}}",
+					"houseNumber": "{{cast:henkvisser.address.number}}",
+					"postcode": "{{cast:henkvisser.address.postcode}}",
+					"city": "{{cast:henkvisser.address.city}}"
+				},
+				"displayName": "{{cast:henkvisser.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
+			"key": "persoon-jvanwijk",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:jvanwijk.bsn}}",
+				"name": {
+					"givenNames": "{{cast:jvanwijk.givenName}}",
+					"surname": "{{cast:jvanwijk.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:jvanwijk.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:jvanwijk.address.street}}",
+					"houseNumber": "{{cast:jvanwijk.address.number}}",
+					"postcode": "{{cast:jvanwijk.address.postcode}}",
+					"city": "{{cast:jvanwijk.address.city}}"
+				},
+				"displayName": "{{cast:jvanwijk.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
 			"key": "bedrijf-slagerij",
 			"register": "dossiq",
 			"schema": "kvkCompany",
@@ -247,6 +369,82 @@
 					"place": "{{cast:cloudgemeente.address.city}}"
 				},
 				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-buurtoost",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:buurtoost.kvk}}",
+				"tradeName": "{{cast:buurtoost.name}}",
+				"legalForm": "{{cast:buurtoost.legalForm}}",
+				"address": {
+					"streetName": "{{cast:buurtoost.address.street}}",
+					"houseNumber": "{{cast:buurtoost.address.number}}",
+					"postcode": "{{cast:buurtoost.address.postcode}}",
+					"place": "{{cast:buurtoost.address.city}}"
+				},
+				"description": "Organiseert het buurtfeest en de speeldagen in Oosthaven. Voorbeeldvereniging van de gemeente Zuiddrecht, geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-visserbouw",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:visserbouw.kvk}}",
+				"tradeName": "{{cast:visserbouw.name}}",
+				"legalForm": "{{cast:visserbouw.legalForm}}",
+				"address": {
+					"streetName": "{{cast:visserbouw.address.street}}",
+					"houseNumber": "{{cast:visserbouw.address.number}}",
+					"postcode": "{{cast:visserbouw.address.postcode}}",
+					"place": "{{cast:visserbouw.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-vanwijk",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:vanwijk.kvk}}",
+				"tradeName": "{{cast:vanwijk.name}}",
+				"legalForm": "{{cast:vanwijk.legalForm}}",
+				"address": {
+					"streetName": "{{cast:vanwijk.address.street}}",
+					"houseNumber": "{{cast:vanwijk.address.number}}",
+					"postcode": "{{cast:vanwijk.address.postcode}}",
+					"place": "{{cast:vanwijk.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-bewonerslindelaan",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:bewonerslindelaan.kvk}}",
+				"tradeName": "{{cast:bewonerslindelaan.name}}",
+				"legalForm": "{{cast:bewonerslindelaan.legalForm}}",
+				"address": {
+					"streetName": "{{cast:bewonerslindelaan.address.street}}",
+					"houseNumber": "{{cast:bewonerslindelaan.address.number}}",
+					"postcode": "{{cast:bewonerslindelaan.address.postcode}}",
+					"place": "{{cast:bewonerslindelaan.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging.",
+				"indicators": [
+					{
+						"key": "meerdere-meldingen",
+						"label": "Meerdere meldingen",
+						"effect": "warn",
+						"note": "Meldt vaker over de Lindelaan, ook via de balie."
+					}
+				]
 			}
 		},
 		{
@@ -408,7 +606,8 @@
 				"nature": "new_request",
 				"summary": "Meneer Bakker wil een bewonersvergunning voor het Kerkplein. Hij heeft geen computer. Kenteken en adres samen doorgenomen en de aanvraag voor hem ingevoerd. Hij krijgt het besluit per post.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-henk.id}}"
 			}
 		},
 		{
@@ -428,7 +627,8 @@
 				"nature": "informatieverzoek",
 				"summary": "Meneer Bakker teruggebeld: het kenteken in de aanvraag klopte niet met het kentekenbewijs. Hij brengt het bewijs langs bij de balie.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-henk.id}}"
 			}
 		},
 		{
@@ -448,7 +648,8 @@
 				"nature": "new_request",
 				"summary": "Meneer Bakker kwam met zijn kentekenbewijs aan de balie. Kenteken gecorrigeerd en een kopie van het bewijs bij de zaak gevoegd.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-henk.id}}"
 			}
 		},
 		{
@@ -468,7 +669,8 @@
 				"nature": "statusverzoek",
 				"summary": "Meneer Bakker vroeg wanneer de vergunning komt. Het besluit is gisteren per post verstuurd; hij heeft het binnen twee dagen.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-henk.id}}"
 			}
 		},
 		{
@@ -532,7 +734,8 @@
 					"schema": "roleType",
 					"where": {
 						"name": "Gemachtigde",
-						"genericRole": "gemachtigde"
+						"genericRole": "gemachtigde",
+						"description": "Persoon of organisatie gemachtigd om namens de aanvrager op te treden"
 					}
 				}
 			},
@@ -624,6 +827,91 @@
 				"nature": "report",
 				"summary": "Melding van een kapotte bank en zwerfafval bij de speeltuin. Mevrouw vindt het formulier op de website lastig. Afspraak aan de balie gemaakt om de melding samen aan te vullen.",
 				"firstTimeFix": false,
+				"visibleToApplicant": true,
+				"contact": "{{object:persoon-fatima.id}}"
+			}
+		},
+		{
+			"key": "buurtoost-subsidie-vraag",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "inbound",
+				"startTime": "{{datetime:-41 09:10}}",
+				"endTime": "{{datetime:-41 09:22}}",
+				"durationSeconds": 720,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:daan.uid}}",
+				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Mevrouw Verbeek vroeg welke kosten de subsidie dekt. Uitgelegd dat huur van de tent en de geluidsinstallatie meetellen.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "buurtoost-subsidie-aanvulling",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "email",
+				"direction": "inbound",
+				"startTime": "{{datetime:-25 13:00}}",
+				"endTime": "{{datetime:-25 13:05}}",
+				"durationSeconds": 300,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:lars.uid}}",
+				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "new_request",
+				"summary": "De begroting is nagestuurd, met de offerte van de tentverhuurder.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "buurtoost-evenement-uitleg",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "outbound",
+				"startTime": "{{datetime:-110 15:30}}",
+				"endTime": "{{datetime:-110 15:40}}",
+				"durationSeconds": 600,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:esra.uid}}",
+				"case": "{{object:evenement-buurtfeest-2026.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Teruggebeld over de eindtijd van de muziek: tot 23.00 uur mag, met een bericht aan de buren.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "buurtoost-speeltoestel-melding",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "balie",
+				"direction": "inbound",
+				"startTime": "{{datetime:-300 08:30}}",
+				"endTime": "{{datetime:-300 08:40}}",
+				"durationSeconds": 600,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:daan.uid}}",
+				"case": "{{object:melding-speeltoestel-oosthavenplein.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "report",
+				"summary": "Mevrouw Verbeek meldde aan de balie dat de wipkip los zit. Het speeltoestel is dezelfde dag afgezet.",
+				"firstTimeFix": false,
 				"visibleToApplicant": true
 			}
 		},
@@ -707,6 +995,42 @@
 			}
 		},
 		{
+			"key": "zaaktype-omgevingsvergunning-regulier",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten, met een eigen veld voor de situatietekening.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 5,
+				"isDraft": true,
+				"versionDate": "{{date:-2}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-regulier-situatietekening",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"data": {
+				"name": "situatietekening",
+				"definition": "Situatietekening",
+				"description": "Tekening van de situatie na de verbouwing, met maten.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"propertyType": "file",
+				"isRequired": true,
+				"hideOnCreate": true
+			}
+		},
+		{
 			"key": "kapvergunning-molenweg",
 			"register": "dossiq",
 			"schema": "case",
@@ -766,6 +1090,211 @@
 				"tags": [
 					"molenweg",
 					"kap"
+				]
+			}
+		},
+		{
+			"key": "subsidie-buurtfeest-oosthaven",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "subsidieaanvraag"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"beoordeling": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Beoordeling"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluitvorming"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:bedrijf-buurtoost.id}}",
+				"initiatorType": "company",
+				"initiatorDisplayName": "{{cast:buurtoost.name}}",
+				"portalSubject": "{{cast:marja.uid}}",
+				"portalParty": "kvk:{{cast:buurtoost.kvk}}",
+				"portalBranch": "{{cast:buurtoost.vestigingsnummer}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "openbaar",
+				"title": "Subsidie buurtfeest Oosthaven",
+				"description": "Buurtvereniging Oost vraagt een bijdrage voor het buurtfeest op het Oosthavenplein in september.",
+				"assignee": "{{cast:lars.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-40}}",
+				"receivedAt": "{{datetime:-40 10:30}}",
+				"currentStatusEnteredAt": "{{datetime:-3 09:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-40 10:30}}"
+					},
+					{
+						"status": "{{lookup:beoordeling}}",
+						"enteredAt": "{{datetime:-30 11:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-3 09:00}}"
+					}
+				],
+				"tags": [
+					"oosthaven",
+					"buurtfeest"
+				]
+			}
+		},
+		{
+			"key": "evenement-buurtfeest-2026",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "evenementenvergunning"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:bedrijf-buurtoost.id}}",
+				"initiatorType": "company",
+				"initiatorDisplayName": "{{cast:buurtoost.name}}",
+				"portalSubject": "{{cast:marja.uid}}",
+				"portalParty": "kvk:{{cast:buurtoost.kvk}}",
+				"portalBranch": "{{cast:buurtoost.vestigingsnummer}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "openbaar",
+				"title": "Evenementenvergunning buurtfeest 2026",
+				"description": "Vergunning voor het buurtfeest op het Oosthavenplein, met muziek tot 23.00 uur.",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-120}}",
+				"endDate": "{{date:-90}}",
+				"receivedAt": "{{datetime:-120 14:00}}",
+				"currentStatusEnteredAt": "{{datetime:-90 10:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-120 14:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-90 10:00}}"
+					}
+				],
+				"tags": [
+					"oosthaven",
+					"evenement"
+				]
+			}
+		},
+		{
+			"key": "melding-speeltoestel-oosthavenplein",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:bedrijf-buurtoost.id}}",
+				"initiatorType": "company",
+				"initiatorDisplayName": "{{cast:buurtoost.name}}",
+				"portalSubject": "{{cast:marja.uid}}",
+				"portalParty": "kvk:{{cast:buurtoost.kvk}}",
+				"portalBranch": "{{cast:buurtoost.vestigingsnummer}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "openbaar",
+				"title": "Melding kapot speeltoestel Oosthavenplein",
+				"description": "De wipkip op het Oosthavenplein is los gaan zitten. De vereniging meldt het namens de buurt.",
+				"assignee": "{{cast:bram.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-300}}",
+				"endDate": "{{date:-290}}",
+				"receivedAt": "{{datetime:-300 08:40}}",
+				"currentStatusEnteredAt": "{{datetime:-290 15:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-300 08:40}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-290 15:00}}"
+					}
+				],
+				"tags": [
+					"oosthaven",
+					"speelplaats"
 				]
 			}
 		},
@@ -1250,6 +1779,22 @@
 				"finalIntervention": "last_under_penaltypayment",
 				"override": false,
 				"recommendedBy": "{{cast:thomas.displayName}}"
+			}
+		},
+		{
+			"key": "lhs-advies-molenweg-4",
+			"register": "dossiq",
+			"schema": "lhsRecommendation",
+			"data": {
+				"case": "{{object:kapvergunning-molenweg.id}}",
+				"severity": "ernstig",
+				"behaviour": "goedwillend",
+				"actorType": "burger",
+				"matrixVersion": 1,
+				"recommendedIntervention": "last_under_penaltypayment",
+				"finalIntervention": "last_under_penaltypayment",
+				"override": false,
+				"recommendedBy": "{{cast:lars.uid}}"
 			}
 		},
 		{
@@ -1896,6 +2441,1106 @@
 				"currency": "EUR",
 				"occurredAt": "{{datetime:-15 11:30}}"
 			}
+		},
+		{
+			"key": "leverancier-kindzorg",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002001",
+				"legalName": "Stichting Kindzorg Drechtsteden",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-groen-en-co",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002002",
+				"legalName": "Groen & Co",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-taxi-drechtstad",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002003",
+				"legalName": "Taxi Drechtstad",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-lumen-infra",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002004",
+				"legalName": "Lumen Infra BV",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-schoon-zuid",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002005",
+				"legalName": "Schoon Zuid",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-conduction",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002006",
+				"legalName": "Conduction",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "contract-jeugdhulp-ambulant",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-kindzorg.id}}",
+				"number": "CT-2023-014",
+				"subject": "Jeugdhulp ambulant 2023-2026",
+				"startDate": "2023-01-01",
+				"endDate": "2026-12-31",
+				"value": 2400000,
+				"status": "renewal-decision",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-groenonderhoud-oost",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-groen-en-co.id}}",
+				"number": "CT-2024-003",
+				"subject": "Groenonderhoud oost",
+				"startDate": "2024-05-01",
+				"endDate": "2027-04-30",
+				"value": 610000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-leerlingenvervoer",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-taxi-drechtstad.id}}",
+				"number": "CT-2022-021",
+				"subject": "Leerlingenvervoer",
+				"startDate": "2022-08-01",
+				"endDate": "2026-07-31",
+				"value": 1850000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-straatverlichting",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-lumen-infra.id}}",
+				"number": "CT-2025-002",
+				"subject": "Straatverlichting onderhoud",
+				"startDate": "2025-04-01",
+				"endDate": "2027-03-31",
+				"value": 340000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-schoonmaak-stadhuis",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-schoon-zuid.id}}",
+				"number": "CT-2024-011",
+				"subject": "Schoonmaak stadhuis",
+				"startDate": "2024-03-01",
+				"endDate": "2027-02-28",
+				"value": 290000,
+				"status": "termination-decision",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-softwarelicenties",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-conduction.id}}",
+				"number": "CT-2025-009",
+				"subject": "Softwarelicenties sociaal domein",
+				"startDate": "2025-01-01",
+				"endDate": "2027-12-31",
+				"value": 96000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "leverancier-rivierland-installatie",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002007",
+				"legalName": "Rivierland Installatietechniek",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-zuidwaard-catering",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002008",
+				"legalName": "Zuidwaard Catering",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-kade-advies",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002009",
+				"legalName": "Kade & Co Advies",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-polderlicht",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002010",
+				"legalName": "Polderlicht Elektra",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-oosthaven-drukwerk",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002011",
+				"legalName": "Oosthaven Drukwerk",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-waalmond-ict",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002012",
+				"legalName": "Waalmond ICT",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-linde-facilitair",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002013",
+				"legalName": "Linde Facilitair",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-molenwerf-bouw",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002014",
+				"legalName": "Molenwerf Bouw",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-grachtzicht-juridisch",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002015",
+				"legalName": "Grachtzicht Juridisch Advies",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-dijkveld-beveiliging",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002016",
+				"legalName": "Dijkveld Beveiliging",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-haventoren-archief",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002017",
+				"legalName": "Haventoren Archiefdiensten",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-zandpad-verhuizingen",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002018",
+				"legalName": "Zandpad Verhuizingen",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "contract-ct-2024-007",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-rivierland-installatie.id}}",
+				"number": "CT-2024-007",
+				"subject": "Onderhoud klimaatinstallaties",
+				"startDate": "2024-01-01",
+				"endDate": "2027-12-31",
+				"value": 420000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-004",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-zuidwaard-catering.id}}",
+				"number": "CT-2025-004",
+				"subject": "Catering raadszaal",
+				"startDate": "2025-02-01",
+				"endDate": "2027-01-31",
+				"value": 85000,
+				"status": "active",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-ct-2023-019",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-kade-advies.id}}",
+				"number": "CT-2023-019",
+				"subject": "Advies omgevingsvisie",
+				"startDate": "2023-09-01",
+				"endDate": "2026-08-31",
+				"value": 135000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-011",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-polderlicht.id}}",
+				"number": "CT-2025-011",
+				"subject": "Openbare verlichting buitengebied",
+				"startDate": "2025-06-01",
+				"endDate": "2028-05-31",
+				"value": 510000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-015",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-oosthaven-drukwerk.id}}",
+				"number": "CT-2024-015",
+				"subject": "Drukwerk en verzending",
+				"startDate": "2024-04-01",
+				"endDate": "2027-03-31",
+				"value": 64000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-013",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-waalmond-ict.id}}",
+				"number": "CT-2025-013",
+				"subject": "Werkplekbeheer",
+				"startDate": "2025-01-01",
+				"endDate": "2027-12-31",
+				"value": 780000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-022",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-linde-facilitair.id}}",
+				"number": "CT-2024-022",
+				"subject": "Facilitaire dienstverlening stadskantoor",
+				"startDate": "2024-07-01",
+				"endDate": "2027-06-30",
+				"value": 355000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-016",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-molenwerf-bouw.id}}",
+				"number": "CT-2025-016",
+				"subject": "Renovatie sporthal Oosthaven",
+				"startDate": "2025-03-01",
+				"endDate": "2026-12-31",
+				"value": 1250000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2023-008",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-grachtzicht-juridisch.id}}",
+				"number": "CT-2023-008",
+				"subject": "Juridisch advies aanbestedingen",
+				"startDate": "2023-01-01",
+				"endDate": "2026-06-30",
+				"value": 120000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-018",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-dijkveld-beveiliging.id}}",
+				"number": "CT-2024-018",
+				"subject": "Beveiliging gemeentelijke gebouwen",
+				"startDate": "2024-05-01",
+				"endDate": "2027-04-30",
+				"value": 290000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-020",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-haventoren-archief.id}}",
+				"number": "CT-2025-020",
+				"subject": "Digitalisering bouwarchief",
+				"startDate": "2025-09-01",
+				"endDate": "2027-08-31",
+				"value": 175000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-024",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-zandpad-verhuizingen.id}}",
+				"number": "CT-2024-024",
+				"subject": "Verhuizing archief en werkplekken",
+				"startDate": "2024-10-01",
+				"endDate": "2026-09-30",
+				"value": 48000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-021",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-rivierland-installatie.id}}",
+				"number": "CT-2025-021",
+				"subject": "Onderhoud liften",
+				"startDate": "2025-01-01",
+				"endDate": "2028-12-31",
+				"value": 96000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-026",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-zuidwaard-catering.id}}",
+				"number": "CT-2024-026",
+				"subject": "Koffie- en theevoorziening",
+				"startDate": "2024-02-01",
+				"endDate": "2027-01-31",
+				"value": 38000,
+				"status": "active",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-ct-2025-023",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-polderlicht.id}}",
+				"number": "CT-2025-023",
+				"subject": "Laadpalen gemeentelijk wagenpark",
+				"startDate": "2025-05-01",
+				"endDate": "2028-04-30",
+				"value": 260000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-029",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-waalmond-ict.id}}",
+				"number": "CT-2024-029",
+				"subject": "Netwerkbeheer",
+				"startDate": "2024-01-01",
+				"endDate": "2027-12-31",
+				"value": 330000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-025",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-linde-facilitair.id}}",
+				"number": "CT-2025-025",
+				"subject": "Schoonmaak buitenlocaties",
+				"startDate": "2025-04-01",
+				"endDate": "2027-03-31",
+				"value": 140000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2023-027",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-molenwerf-bouw.id}}",
+				"number": "CT-2023-027",
+				"subject": "Onderhoud gemeentelijk vastgoed",
+				"startDate": "2023-05-01",
+				"endDate": "2026-04-30",
+				"value": 890000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-027",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-dijkveld-beveiliging.id}}",
+				"number": "CT-2025-027",
+				"subject": "Cameratoezicht centrum",
+				"startDate": "2025-08-01",
+				"endDate": "2028-07-31",
+				"value": 215000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-031",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-haventoren-archief.id}}",
+				"number": "CT-2024-031",
+				"subject": "Scannen en indexeren dossiers",
+				"startDate": "2024-03-01",
+				"endDate": "2027-02-28",
+				"value": 72000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-029",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-kade-advies.id}}",
+				"number": "CT-2025-029",
+				"subject": "Advies duurzame mobiliteit",
+				"startDate": "2025-10-01",
+				"endDate": "2027-09-30",
+				"value": 98000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2023-031",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-oosthaven-drukwerk.id}}",
+				"number": "CT-2023-031",
+				"subject": "Huisstijlmaterialen",
+				"startDate": "2023-07-01",
+				"endDate": "2026-06-30",
+				"value": 26000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-031",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-grachtzicht-juridisch.id}}",
+				"number": "CT-2025-031",
+				"subject": "Juridische ondersteuning bezwaarzaken",
+				"startDate": "2025-01-01",
+				"endDate": "2027-12-31",
+				"value": 160000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-033",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-zandpad-verhuizingen.id}}",
+				"number": "CT-2025-033",
+				"subject": "Inzet verhuisteam evenementen",
+				"startDate": "2025-03-01",
+				"endDate": "2027-02-28",
+				"value": 22000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2026-002",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-rivierland-installatie.id}}",
+				"number": "CT-2026-002",
+				"subject": "Onderhoud sanitaire voorzieningen",
+				"startDate": "2026-01-01",
+				"endDate": "2028-12-31",
+				"value": 58000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2026-004",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-polderlicht.id}}",
+				"number": "CT-2026-004",
+				"subject": "Verlichting sportvelden",
+				"startDate": "2026-02-01",
+				"endDate": "2029-01-31",
+				"value": 185000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2026-006",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-waalmond-ict.id}}",
+				"number": "CT-2026-006",
+				"subject": "Cloudopslag archief",
+				"startDate": "2026-03-01",
+				"endDate": "2029-02-28",
+				"value": 112000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2026-008",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-linde-facilitair.id}}",
+				"number": "CT-2026-008",
+				"subject": "Postverwerking",
+				"startDate": "2026-04-01",
+				"endDate": "2028-03-31",
+				"value": 67000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "afdeling-gemeente",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Gemeente Zuiddrecht",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-medewerkers"
+			}
+		},
+		{
+			"key": "afdeling-fysiek-domein",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Fysiek domein",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-fysiek-domein",
+				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+			}
+		},
+		{
+			"key": "afdeling-buitenruimte",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Buitenruimte",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-buitenruimte",
+				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+			}
+		},
+		{
+			"key": "afdeling-sociaal-domein",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Sociaal domein",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-sociaal-domein",
+				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+			}
+		},
+		{
+			"key": "afdeling-jeugdteam",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Jeugdteam",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-jeugdteam",
+				"parentRoleId": "{{object:afdeling-sociaal-domein.id}}"
+			}
+		},
+		{
+			"key": "afdeling-werk-en-inkomen",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Werk en inkomen",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-werk-en-inkomen",
+				"parentRoleId": "{{object:afdeling-sociaal-domein.id}}"
+			}
+		},
+		{
+			"key": "afdeling-bedrijfsvoering",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Bedrijfsvoering",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-bedrijfsvoering",
+				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+			}
+		},
+		{
+			"key": "afdeling-informatie-en-woo",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Informatie en Woo",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-woo-en-informatie",
+				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+			}
+		},
+		{
+			"key": "termijn-woo-parkeervergunningen-binnenstad",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:woo-parkeervergunningen-binnenstad.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-28 10:05}}",
+				"endDateCalculated": "{{date:0}}",
+				"endDateCurrent": "{{date:0}}",
+				"status": "lopend"
+			}
+		},
+		{
+			"key": "waarneming-pieter-voor-esra",
+			"register": "dossiq",
+			"schema": "substitution",
+			"data": {
+				"absentee": "{{cast:esra.uid}}",
+				"substitute": "{{cast:pieter.uid}}",
+				"startDate": "{{date:-1}}",
+				"endDate": "{{date:6}}",
+				"scope": "all",
+				"reason": "verlof",
+				"status": "active",
+				"comment": "Esra is deze week met verlof; Pieter neemt haar zaken waar.",
+				"createdBy": "{{cast:esra.uid}}"
+			}
+		},
+		{
+			"key": "postvak-01",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-01@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:henk.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Vraag over mijn kapvergunning {{object:kapvergunning-molenweg.identifier}}",
+				"receivedAt": "{{datetime:0 08:42}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-02",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-02@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:linda.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Aanvulling op mijn Woo-verzoek {{object:woo-parkeervergunningen-binnenstad.identifier}}",
+				"receivedAt": "{{datetime:0 08:15}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar.",
+				"channel": "portal"
+			}
+		},
+		{
+			"key": "postvak-03",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-03@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:fatima.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Re: bezwaar parkeerboete, zaak {{object:bezwaar-parkeerboete-havenstraat.identifier}}",
+				"receivedAt": "{{datetime:-1 16:20}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-04",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-04@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:fatima.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Foto's van de kapotte bank, melding {{object:melding-fatima.identifier}}",
+				"receivedAt": "{{datetime:-1 11:05}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar.",
+				"channel": "portal"
+			}
+		},
+		{
+			"key": "postvak-05",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-05@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:slagerij.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Tekening terrasoverkapping bij {{object:terras-slagerij.identifier}}",
+				"receivedAt": "{{datetime:-2 14:30}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-06",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-06@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:henk.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Nieuw kenteken doorgegeven voor {{object:kenteken-henk.identifier}}",
+				"receivedAt": "{{datetime:-3 09:50}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-07",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-07@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:vandam.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Factuur onderhoud openbare verlichting",
+				"receivedAt": "{{datetime:0 07:58}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-08",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-08@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:sanne.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Bericht via Mijn Zuiddrecht",
+				"receivedAt": "{{datetime:0 07:31}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar.",
+				"channel": "portal"
+			}
+		},
+		{
+			"key": "postvak-09",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-09@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:karin.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Klacht over afvalinzameling",
+				"receivedAt": "{{datetime:-1 19:12}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-10",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-10@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:mark.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Vraag over een evenementenvergunning",
+				"receivedAt": "{{datetime:-1 10:40}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-11",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-11@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:janwillem.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Offerte herinrichting Dorpsstraat",
+				"receivedAt": "{{datetime:-2 15:03}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-12",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-12@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:cloudgemeente.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Uitnodiging gebruikersdag zaaksysteem",
+				"receivedAt": "{{datetime:-2 09:12}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-13",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-13@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:linda.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Wanneer wordt de stoep gerepareerd?",
+				"receivedAt": "{{datetime:-3 20:45}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar.",
+				"channel": "portal"
+			}
+		},
+		{
+			"key": "postvak-14",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-14@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:sanne.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Overlast van bladblazers in de Lindelaan",
+				"receivedAt": "{{datetime:-4 13:27}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-15",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-15@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:henk.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Afmelding afvalpas",
+				"receivedAt": "{{datetime:-4 10:02}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-16",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-16@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:karin.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Vraag over de hondenbelasting",
+				"receivedAt": "{{datetime:-5 17:36}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
+		},
+		{
+			"key": "postvak-17",
+			"register": "dossiq",
+			"schema": "mailIntakeEntry",
+			"data": {
+				"mailMessageId": "<postvak-17@zuiddrecht.example>",
+				"mailbox": "INBOX",
+				"sender": "{{cast:vandam.email}}",
+				"recipient": "zaken@zuiddrecht.example",
+				"subject": "Storing lantaarnpaal Kerkplein",
+				"receivedAt": "{{datetime:-6 08:20}}",
+				"filterOutcome": "pass",
+				"outcome": "inbox",
+				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
+			}
 		}
 	],
 	"views": [
@@ -1904,7 +3549,7 @@
 			"data": {
 				"name": "Lindelaan",
 				"description": "Alles over de Lindelaan: zaken, objecten en documenten.",
-				"owner": "{{cast:thomas.uid}}",
+				"owner": "{{cast:pieter.uid}}",
 				"isPublic": true,
 				"query": {
 					"filters": {},
@@ -1916,7 +3561,7 @@
 					"operator": "gte",
 					"threshold": 12,
 					"recipients": [
-						"user:{{cast:thomas.uid}}"
+						"user:{{cast:pieter.uid}}"
 					]
 				}
 			}
@@ -1963,10 +3608,14 @@
 				"isPublic": false,
 				"query": {
 					"filters": {
-						"waitingOnApplicant": true,
-						"statusHiddenInLists": false,
-						"isDraft": false,
-						"isFinalStatus": false
+						"waitingOnApplicant": true
+					},
+					"overrides": {
+						"lockedFilters": {
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
 					},
 					"search": "",
 					"sort": [
@@ -1983,6 +3632,39 @@
 						"case"
 					]
 				}
+			}
+		}
+	],
+	"notes": [
+		{
+			"key": "pieter-noteert-parkeervergunningen",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:woo-parkeervergunningen-binnenstad.id}}",
+				"message": "Verzoeker herinnerd aan de ontbrekende machtiging.",
+				"createdAt": "{{datetime:0 09:30}}"
+			}
+		}
+	],
+	"readStates": [
+		{
+			"key": "pieter-opende-bezwaar-parkeerboete",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
+				"register": "dossiq",
+				"schema": "case",
+				"seenAt": "{{datetime:0 08:40}}"
+			}
+		},
+		{
+			"key": "pieter-opende-kapvergunning-essen",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:kapvergunning-essen-parkweg.id}}",
+				"register": "dossiq",
+				"schema": "case",
+				"seenAt": "{{datetime:0 10:15}}"
 			}
 		}
 	],
@@ -2193,6 +3875,30 @@
 				"decisions": [
 					"{{object:woo-zaaksysteem-besluit.id}}"
 				]
+			}
+		},
+		{
+			"key": "team-vergunningen-in-de-boom",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"where": {
+				"roleName": "Team Vergunningen"
+			},
+			"set": {
+				"ncGroupId": "zuiddrecht-vergunningen",
+				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+			}
+		},
+		{
+			"key": "team-handhaving-in-de-boom",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"where": {
+				"roleName": "Team Handhaving"
+			},
+			"set": {
+				"ncGroupId": "zuiddrecht-toezicht-en-handhaving",
+				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
 			}
 		}
 	]

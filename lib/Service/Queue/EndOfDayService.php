@@ -126,12 +126,12 @@ class EndOfDayService {
 				[
 					'label' => $this->l10n->t('Opened'),
 					'value' => $opened,
-					'note' => $this->l10n->t('{cases} cases, {tasks} tasks', ['cases' => $cases, 'tasks' => ($opened - $cases)]),
+					'note' => $this->l10n->t('%1$s cases, %2$s tasks', [$cases, ($opened - $cases)]),
 				],
 				[
 					'label' => $this->l10n->t('Notes recorded'),
 					'value' => count($recorded),
-					'note' => $this->l10n->t('of the {total}', ['total' => $opened]),
+					'note' => $this->l10n->t('of the %s', [$opened]),
 				],
 			],
 			'unavailable' => $queue['unavailable'],
@@ -311,7 +311,7 @@ class EndOfDayService {
 		$sentences = [];
 		foreach ($unavailable as $source) {
 			$label = (string)($source['label'] ?? $source['source'] ?? '');
-			$sentences[] = $this->l10n->t('{source} could not be read, so this list is incomplete.', ['source' => $label]);
+			$sentences[] = $this->l10n->t('%s could not be read, so this list is incomplete.', [$label]);
 		}
 
 		return implode(' ', $sentences);

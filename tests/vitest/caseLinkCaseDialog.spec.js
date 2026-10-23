@@ -106,10 +106,12 @@ describe('Link case on the Related tab', () => {
 		}
 	})
 
-	it('is offered on the simple profile\'s Related cases card as well, the same dialog', () => {
-		const card = widgetWithId(simple, 'case-related-card')
-		expect(card.content.footerActions.map((entry) => entry.label)).toEqual(['Link case', 'Plan follow-up'])
-		expect(card.content.footerActions[0]).toEqual(linkCase())
+	it('is offered in the header of the simple profile\'s Related cases card, the same dialog', () => {
+		const card = widgetWithId(simple, 'case-related-cases-card')
+		const [entry] = card.headerActions
+		const { label, icon, ...action } = linkCase()
+		expect({ label: entry.label, icon: entry.icon }).toEqual({ label, icon })
+		expect(entry.action).toEqual(action)
 	})
 
 	it('posts to the relations API and needs no reason', () => {

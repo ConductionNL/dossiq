@@ -36,6 +36,7 @@ const widget = (id) => simple.widgets.find((candidate) => candidate.id === id)
 const overview = simple.widgets.find((candidate) => candidate.id === 'case-panels').content.tabs[0].widgetIds
 const GENERIC = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-terms', 'case-flow-runs', 'case-kpis-hours']
 const STEPS_ASIDE = { field: '@context.caseType.overviewCards', op: 'empty' }
+const optedIn = (id) => ({ field: '@context.caseType.overviewCards', op: 'contains', value: id })
 
 /**
  * The case types a package ships.
@@ -49,10 +50,10 @@ function packageCaseTypes(id) {
 }
 
 describe('overview cards per case type', () => {
-	it('shows every generic Overview card only while the case type lists no cards of its own', () => {
+	it('shows every generic Overview card while the case type lists no cards of its own, or where it lists that card', () => {
 		for (const id of GENERIC) {
 			expect(overview, id).toContain(id)
-			expect(widget(id).visibleWhen, id).toEqual(STEPS_ASIDE)
+			expect(widget(id).visibleWhen, id).toEqual({ any: [STEPS_ASIDE, optedIn(id)] })
 		}
 	})
 

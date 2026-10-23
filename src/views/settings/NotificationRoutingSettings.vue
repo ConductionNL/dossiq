@@ -40,7 +40,8 @@
 				:modelValue="selectedDomain"
 				:options="domainOptions"
 				:aria-label-combobox="t('dossiq', 'Notification domain')"
-				:inputLabel="t('dossiq', 'Show the settings as they apply to')"
+				:inputLabel="t('dossiq', 'Notification domain')"
+				:clearable="false"
 				data-testid="notification-routing-scope"
 				@update:modelValue="chooseDomain" />
 		</div>
@@ -183,6 +184,9 @@ export default {
 				entries: this.entries,
 				channels: this.channels,
 				label: (entry) => this.labelFor(entry),
+				// A schema title is a register key ("Work digest"); the reader
+				// gets it in their language.
+				groupLabel: (title) => t('dossiq', title),
 				singleChannelLabel: t('dossiq', 'Notifications'),
 			})
 		},
@@ -407,8 +411,7 @@ export default {
 	gap: 16px;
 }
 
-/* The picker's floating label ("Show the settings as they apply to") is longer
-   than NcSelect's default width, so it was cut off and the value squeezed. */
+/* Wide enough for the longest domain without squeezing the value. */
 .notification-routing__scope :deep(.v-select.select) {
 	min-width: min(100%, 360px);
 }

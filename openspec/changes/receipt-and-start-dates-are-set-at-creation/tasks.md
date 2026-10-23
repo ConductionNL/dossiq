@@ -15,9 +15,12 @@
   (D-6, REQ-TERM-043).
 - [x] 3.1 Woo `receiptDate` definition: `isRequired` false in
   `register.d/81-woo-verzoek.json` and `templates/woo-verzoek.json`.
-- [ ] 3.2 Frontend lane: drop `startDate` from the five create dialogs'
+- [x] 3.2 Frontend lane: drop `startDate` from the five create dialogs'
   `includeFields` in `src/manifest.json`, from `src/utils/caseCreateForm.js`,
-  and from `tests/e2e/case-create-form.spec.ts`'s expected fields.
+  and from `tests/e2e/case-create-form.spec.ts`'s expected fields. Done: the
+  create form (Cases `includeFields`) and `caseCreateForm.js` carry no
+  `startDate`, and the e2e spec asserts it is absent. The case page's EDIT
+  form keeps it, so a start date can still be corrected.
 - [x] 3.3 Design system: drop Startdatum and Ontvangen op from the
   DqNieuweZaak board. Done in ConductionNL/design-system#209.
 - [x] 4.1 `IntakeTermStartListener` sets the stamp and the dates on

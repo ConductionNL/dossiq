@@ -67,6 +67,7 @@
 					)
 				"
 				docUrl="https://dossiq.conduction.nl/docs/intro"
+				boardLayout="selects"
 				:groups="registerGroups"
 				:configuration="registerConfiguration"
 				:saving="registerSaving"
@@ -112,6 +113,7 @@
 				url="/apps/dossiq/api/settings/background-service-account"
 				:reloadAfterSave="true"
 				:saveLabel="t('dossiq', 'Use this account')"
+				:saveInline="true"
 				:savedMessage="t('dossiq', 'Background jobs now save as {userId}.')"
 				:fields="backgroundAccountFields" />
 
@@ -872,11 +874,16 @@ export default {
 			return [
 				{
 					key: 'title',
-					label: this.t('dossiq', 'Connection'),
+					label: this.t('dossiq', 'Link'),
 					cellClass: 'cn-cell--strong',
 					formatter: 'translated',
 					secondary: (row) =>
 						row.description ? this.t('dossiq', row.description) : '',
+				},
+				{
+					key: 'source',
+					label: this.t('dossiq', 'Source'),
+					resolve: { register: 'integriq', schema: 'source', labelField: 'name' },
 				},
 				{
 					key: 'status',
@@ -899,7 +906,12 @@ export default {
 						error: 'Error',
 					},
 				},
-				{ key: '@self.updated', label: this.t('dossiq', 'Last contact') },
+				{
+					key: 'checkedAt',
+					label: this.t('dossiq', 'Last contact'),
+					formatter: 'relativeDate',
+					formatterOptions: { time: true },
+				},
 			]
 		},
 
