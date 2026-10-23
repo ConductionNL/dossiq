@@ -9848,6 +9848,7 @@ OC.L10N.register(
         "View as flow": "Bekijken als flow",
         "View case": "Bekijk zaak",
         "View flow runs": "Flowruns bekijken",
+        "View history": "Historie bekijken",
         "View only": "Alleen bekijken",
         "View proof": "Bewijs bekijken",
         "View publication": "Bekijk publicatie",
