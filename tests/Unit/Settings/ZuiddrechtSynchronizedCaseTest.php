@@ -41,7 +41,12 @@ class ZuiddrechtSynchronizedCaseTest extends TestCase {
 	 */
 	public function testTheSynchronizedMeldingIsInProgress(): void {
 		$set   = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
-		$cases = array_values(array_filter($set['objects'], fn (array $o): bool => $o['schema'] === 'case' && ($o['data']['title'] ?? '') === 'Melding afval Lindelaan'));
+		$cases = array_values(
+			array_filter(
+				$set['objects'],
+				fn (array $o): bool => $o['schema'] === 'case' && ($o['data']['title'] ?? '') === 'Melding afval Lindelaan'
+			)
+		);
 
 		$this->assertCount(expectedCount: 1, haystack: $cases);
 		$this->assertSame(expected: 'melding-afval-lindelaan', actual: $cases[0]['key']);
