@@ -3106,7 +3106,7 @@
 						"id": "case-calendar-card",
 						"type": "integration",
 						"integrationId": "calendar",
-						"props": { "headerActions": ["link", "create"] },
+						"props": { "headerActions": ["link", "create"], "createVariant": "secondary", "createIcon": "CalendarPlusOutline" },
 						"_headerActionsNote": "DqZaakTaken Afspraken: \"Bestaande koppelen\" and \"Afspraak maken\" in the card's title row, the calendar leaf's own link-existing and create flows (nextcloud-vue calendar card headerActions).",
 						"title": "Appointments",
 						"subtitle": "From the calendar, linked to this case"
