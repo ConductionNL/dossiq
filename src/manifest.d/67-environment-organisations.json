@@ -422,15 +422,35 @@
 							"columns": [
 								{
 									"key": "mandateMatrixRef",
-									"label": "Mandate"
+									"label": "Role"
 								},
 								{
-									"key": "effectiveFrom",
-									"label": "From"
+									"key": "terms.plafond",
+									"label": "Decides up to",
+									"format": {
+										"style": "currency",
+										"currency": "EUR",
+										"decimals": 0
+									},
+									"emptyLabel": "Unlimited"
 								},
 								{
-									"key": "signedBy",
-									"label": "Signed by"
+									"key": "terms.decisionTypes",
+									"label": "Decides objections",
+									"contains": "bezwaar",
+									"valueLabels": {
+										"true": "Yes",
+										"false": "No"
+									}
+								},
+								{
+									"key": "terms.enforcement",
+									"label": "Enforcement",
+									"valueLabels": {
+										"none": "No",
+										"warning": "Warning",
+										"full": "Yes"
+									}
 								}
 							],
 							"emptyText": "No mandates for this organisation yet"
