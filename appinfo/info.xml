@@ -460,6 +460,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow</step>
             <!--
+                After the package install and the flows: every case type's import
+                flagged runOnUpgrade moves its source records onto cases, before
+                the open cases get their case type's handling team.
+            -->
+            <step>OCA\Dossiq\Repair\RunUpgradeRecordImports</step>
+            <!--
                 After the package install: an open case filed while its case type
                 had no handling block gets the case type's handling team.
             -->
@@ -1061,6 +1067,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 flow the backfill bound them to (woo-stages-are-guarded-by-their-flow).
             -->
             <step>OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow</step>
+            <!--
+                After the package install and the flows: every case type's import
+                flagged runOnUpgrade moves its source records onto cases, before
+                the open cases get their case type's handling team.
+            -->
+            <step>OCA\Dossiq\Repair\RunUpgradeRecordImports</step>
             <!--
                 After the package install: an open case filed while its case type
                 had no handling block gets the case type's handling team.

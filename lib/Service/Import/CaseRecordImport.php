@@ -109,6 +109,41 @@ class CaseRecordImport {
 	}//end dryRun()
 
 	/**
+	 * Run every declaration flagged `runOnUpgrade` of every case type version in use.
+	 *
+	 * @return list<array<string, mixed>> One answer per declaration, as {@see run()} gives them,
+	 *                                    each with the `caseType` it belongs to.
+	 *
+	 * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+	 */
+	public function runOnUpgrade(): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return [];
+		}
+
+		return (array)$this->runAsSystemIfAvailable(
+			objectService: $objectService,
+			operation: function () use ($objectService): array {
+				$answers = [];
+				foreach ($this->store->caseTypesInUse(objectService: $objectService) as $type) {
+					foreach ((array)($type['recordImports'] ?? []) as $import) {
+						$import = (array)$import;
+						if (($import['runOnUpgrade'] ?? false) !== true) {
+							continue;
+						}
+
+						$answers[] = ['caseType' => $this->store->idOf(row: $type)]
+							+ $this->runOne(objectService: $objectService, caseType: $type, import: $import, dryRun: false);
+					}
+				}
+
+				return $answers;
+			}
+		);
+	}//end runOnUpgrade()
+
+	/**
 	 * Both runs.
 	 *
 	 * @param string $caseType  The case type.
@@ -280,14 +315,16 @@ class CaseRecordImport {
 			}
 		}
 
-		$carried = $this->term->carry(
-			caseId: $caseId,
-			term: $mapped['term'],
-			definitionSlug: (string)($caseType['identifier'] ?? ''),
-			extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
-		);
-		if ($mapped['term']['state'] !== TermCarryOver::STATE_CLOSED && in_array($carried['outcome'], self::ARMED, true) === false) {
-			return $failed('The case ' . $caseId . ' was written, but its term could not be armed (' . $carried['outcome'] . ').');
+		if (($import['carriesTerm'] ?? true) !== false) {
+			$carried = $this->term->carry(
+				caseId: $caseId,
+				term: $mapped['term'],
+				definitionSlug: (string)($caseType['identifier'] ?? ''),
+				extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
+			);
+			if ($mapped['term']['state'] !== TermCarryOver::STATE_CLOSED && in_array($carried['outcome'], self::ARMED, true) === false) {
+				return $failed('The case ' . $caseId . ' was written, but its term could not be armed (' . $carried['outcome'] . ').');
+			}
 		}
 
 		if ($this->store->stamp(objectService: $objectService, import: $import, sourceId: $sourceId, caseId: $caseId) === false) {
