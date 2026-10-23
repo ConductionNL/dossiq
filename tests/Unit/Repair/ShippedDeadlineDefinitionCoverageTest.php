@@ -71,7 +71,12 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	 *
 	 * @var array<string, string>
 	 */
-	private const OPEN_QUESTIONS = [];
+	private const OPEN_QUESTIONS = [
+		// 23 Oct: the Jeugdwet package installs on every instance now (its
+		// reports moved onto it), and declares P8W. Which term binds a Jeugdwet
+		// report is Ruben's to decide; until then no clock is invented.
+		'melding-jeugdwet' => 'Jeugdwet: no decided decision term yet',
+	];
 
 	/**
 	 * The terms decided for the register's case types (Ruben, 10 and 11 Oct).

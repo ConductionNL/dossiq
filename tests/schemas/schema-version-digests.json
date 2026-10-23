@@ -1140,7 +1140,7 @@
         "digest": "950f517937bf6d7c715da967366935f04ca0a16838864093302a1942ed0ed00f"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::jeugdwetZaak": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "94a9d3ea607649eee74f71e3063a20a8fb7d6acdf818fa8f30c43ec11979ad37"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::mdoOverleg": {

@@ -88,14 +88,15 @@ class SocialDomainCaseTypesTest extends TestCase {
 	}//end import()
 
 	/**
-	 * The procedures: package, source schema, domain, the sensitive answers each record carries.
+	 * The procedures: package, source schema, domain, the sensitive answers each record carries, the source's BSN field.
 	 *
-	 * @return array<string, array{0: string, 1: string, 2: string, 3: array<int, string>}>
+	 * @return array<string, array{0: string, 1: string, 2: string, 3: array<int, string>, 4: string}>
 	 */
 	public static function procedures(): array {
 		return [
-			'Participatiewet' => ['bijstandsaanvraag', 'participatiewetZaak', 'Participatiewet', ['huishoudsituatie', 'vermogenstoets', 'inkomenstoets']],
-			'Wmo' => ['wmo-melding', 'wmoZaak', 'Wmo', ['hulpvraag', 'huishoudsamenstelling']],
+			'Participatiewet' => ['bijstandsaanvraag', 'participatiewetZaak', 'Participatiewet', ['huishoudsituatie', 'vermogenstoets', 'inkomenstoets'], 'bsn'],
+			'Wmo' => ['wmo-melding', 'wmoZaak', 'Wmo', ['hulpvraag', 'huishoudsamenstelling'], 'bsn'],
+			'Jeugdwet' => ['jeugdwet', 'jeugdwetZaak', 'Jeugdwet', ['hulpvraag', 'gezinsplan', 'mdoOverleggen', 'ondertoezichtstelling'], 'jeugdigeBsn'],
 		];
 	}//end procedures()
 
@@ -105,7 +106,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 * @return void
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
-	public function testThePackageShipsTheCaseTypeInItsDomain(string $package, string $source, string $domain, array $sensitive): void {
+	public function testThePackageShipsTheCaseTypeInItsDomain(string $package, string $source, string $domain, array $sensitive, string $bsnKey): void {
 		self::assertSame('auto', $this->json(self::PACKAGES . $package . '/package.json')['install']);
 		$type = $this->caseTypeFile($package)['caseType'];
 		self::assertSame('vertrouwelijk', $type['confidentiality']);
@@ -119,7 +120,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 * @return void
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
-	public function testEveryOldStatusHasAStatus(string $package, string $source, string $domain, array $sensitive): void {
+	public function testEveryOldStatusHasAStatus(string $package, string $source, string $domain, array $sensitive, string $bsnKey): void {
 		$schema = $this->register()['components']['schemas'][$source];
 		$statusIds = array_column($this->caseTypeFile($package)['statusTypes'], 'id');
 		foreach ($schema['properties']['status']['enum'] as $old) {
@@ -135,7 +136,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 * @return void
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
-	public function testARestrictedFieldStaysRestricted(string $package, string $source, string $domain, array $sensitive): void {
+	public function testARestrictedFieldStaysRestricted(string $package, string $source, string $domain, array $sensitive, string $bsnKey): void {
 		$register = $this->register()['components']['schemas'];
 		$restricted = array_keys(array_filter($register[$source]['properties'], static fn (array $prop): bool => isset($prop['authorization']) === true));
 		self::assertNotSame([], $restricted);
@@ -165,7 +166,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 * @return void
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
-	public function testEveryShippedApplicationMapsOntoACase(string $package, string $source, string $domain, array $sensitive): void {
+	public function testEveryShippedApplicationMapsOntoACase(string $package, string $source, string $domain, array $sensitive, string $bsnKey): void {
 		$type = $this->caseTypeFile($package)['caseType'];
 		$rows = array_values(array_filter(
 			$this->json(self::SETTINGS . '/register.d/50-sociaal-domein.json')['components']['objects'],
@@ -175,7 +176,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 		$mapping = new RecordCaseMapping(dates: $this->caseDates());
 		foreach ($rows as $row) {
 			$case = $mapping->map(import: $this->import($package), record: $row, recordId: 'id-' . $row['caseNumber'], caseTypeId: $type['id'])['case'];
-			self::assertSame($row['bsn'], $case['subjectBsn']);
+			self::assertSame($row[$bsnKey], $case['subjectBsn']);
 			self::assertSame($row['handlerId'], $case['assignee']);
 			self::assertSame([['application' => 'dossiq', 'reference' => $row['caseNumber']]], $case['formerReferences']);
 			$hidden = array_column($case['sensitiveProperties'] ?? [], 'name');
@@ -193,7 +194,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 * @return void
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
-	public function testTheImportIsIdempotentAndMovesReferences(string $package, string $source, string $domain, array $sensitive): void {
+	public function testTheImportIsIdempotentAndMovesReferences(string $package, string $source, string $domain, array $sensitive, string $bsnKey): void {
 		$import = $this->import($package);
 		self::assertSame('caseNumber', $import['dedupeBy']);
 		self::assertSame('caseNumber', $import['formerReference']['from']);
