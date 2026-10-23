@@ -1436,6 +1436,7 @@ OC.L10N.register(
         "Cases you follow": "Zaken die u volgt",
         "Cases you open show up here": "Zaken die je opent staan hier",
         "cases · avg {days} days": "zaken · gem. {days} dagen",
+        "Cases, contacts and organisations, all fictional": "Zaken, contacten en organisaties, allemaal fictief",
         "Cases, deadlines and your workload at a glance": "Zaken, termijnen en je werklast in één oogopslag",
         "Cases: {penaltyRunningCount}": "Zaken: {penaltyRunningCount}",
         "caseType or case UUIDs when scope is narrowed": "Uuid's van caseType of van zaken wanneer de reikwijdte is ingeperkt",
