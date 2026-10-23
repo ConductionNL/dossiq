@@ -177,6 +177,10 @@
             "{total} zaak, {shown} op deze pagina",
             "{total} zaken, {shown} op deze pagina"
         ],
+        "_{total} deleted case_::_{total} deleted cases_": [
+            "{total} verwijderde zaak",
+            "{total} verwijderde zaken"
+        ],
         "A BAG nummeraanduiding ID is required when the location source is \"bag\".": "Een BAG-nummeraanduiding-ID is verplicht wanneer de locatiebron \"bag\" is.",
         "A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents.": "Kies de documenten van een partij op persoon, bronsysteem, de regel die ze markeerde, of uit een lijst.",
         "A batch can be taken by the rule that marked its documents, or by a list of documents.": "Kies de documenten van een partij uit een lijst, of op de regel die ze markeerde.",
@@ -7151,6 +7155,7 @@
         "Search a contract or supplier": "Zoek een contract of leverancier",
         "Search address": "Adres zoeken",
         "Search an address": "Adres zoeken",
+        "Search by case number, title or who deleted it": "Zoek op zaaknummer, titel of wie de zaak verwijderde",
         "Search by case or person involved": "Zoek op zaak of betrokkene",
         "Search by case or requester": "Zoek op zaak of verzoeker",
         "Search by case, number or requester": "Zoek op zaak, nummer of verzoeker",

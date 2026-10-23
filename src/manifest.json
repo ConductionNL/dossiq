@@ -3114,7 +3114,20 @@
 				"entitySource": "endpoint",
 				"sourceConfig": {
 					"url": "/apps/dossiq/api/cases/deleted",
-					"rowsPath": "results"
+					"rowsPath": "results",
+					"searchParam": "search"
+				},
+				"_lookNote": "deleted-cases-read-the-case-table: the All cases page's look over the deleted lens. The search box goes to the endpoint as `search` (case number, title, who deleted it), the sidebar counts the rows and holds the saved views, scoped to this source by name. A table only: a deleted case has no board column or place on a map to show it by.",
+				"searchPlaceholder": "Search by case number, title or who deleted it",
+				"viewModes": ["table"],
+				"viewSwitch": ["table"],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": false,
+					"subtitle": {
+						"singular": "{total} deleted case",
+						"plural": "{total} deleted cases"
+					}
 				},
 				"showTitle": true,
 				"description": "A deleted case can be recovered until the date below. After that it can be destroyed, which cannot be undone.",
@@ -3124,7 +3137,8 @@
 				"showEditAction": false,
 				"showCopyAction": false,
 				"showDeleteAction": false,
-				"allowSavedViews": false,
+				"allowSavedViews": true,
+				"savedViewsScope": "source:cases-deleted",
 				"columns": [
 					{
 						"key": "identifier",
