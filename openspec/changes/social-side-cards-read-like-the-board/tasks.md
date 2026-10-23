@@ -7,3 +7,4 @@
 - [x] 2.1 Historie side card over the case audit trail, reads left out, access purposes in words (needs nextcloud-vue feat/r24-audit-label-changed-values); package 1.6.0
 - [ ] 2.2 Withdraw consent act
 - [x] 2.3 Overleg plannen: plan-case-meeting header action, Jeugdwet quickActions, package 1.7.0
+- [x] 2.4 Household card as a table (needs nextcloud-vue feat/r24-record-list-table-column-candidates)

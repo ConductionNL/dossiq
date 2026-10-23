@@ -23,6 +23,8 @@ the people as links with a second line.
 
 - "Overleg plannen" above a Melding Jeugdwet case: a `plan-case-meeting` header action (a case meeting, mdoOverleg, on this case; social domain cases only, group Case) that the case type lists as its quick action; package 1.7.0.
 
+- "Andere zaken van dit huishouden" as the board's table: Zaak, Zaaktype, Status (toned by status role), Zichtbaar voor u ("Ja" for a case the reader may open, "Alleen dat hij bestaat" for an other-domain existence), through nextcloud-vue table column candidates.
+
 ## Left
 
 - The board's "Toestemming intrekken" button: there is no withdrawal act for a
