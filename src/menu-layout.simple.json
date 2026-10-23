@@ -2362,7 +2362,13 @@
 								}
 							]
 						},
-						"title": "Record hours"
+						"title": "Record hours",
+						"_propsNote": "DqZaak/DqZaakMeer Uren registreren: humaniq's hours leaf in the board look. The week line names the case (objectNoun), the header holds the title, the week and the Actions menu, the timer sits in that menu and under the form (compactHeader), and the card ends with the note that hours come through humaniq (sourceNote). Needs humaniq feat/hours-board-look; an older humaniq ignores the props.",
+						"props": {
+							"objectNoun": "this case",
+							"compactHeader": true,
+							"sourceNote": true
+						}
 					},
 					"case-archival-panel": {
 						"subtitle": "What happens to this case once it is closed",
