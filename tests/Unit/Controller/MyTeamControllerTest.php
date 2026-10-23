@@ -91,6 +91,20 @@ class MyTeamControllerTest extends TestCase {
 	}//end testTheSignedInUsersTeamIsAnswered()
 
 	/**
+	 * Roles that cannot be read answer 503, not a guessed or empty team.
+	 *
+	 * @return void
+	 */
+	public function testUnreadableRolesAnswerServiceUnavailable(): void {
+		$teams = $this->createMock(originalClassName: PrimaryTeamService::class);
+		$teams->method('teamOf')->willThrowException(new \RuntimeException('store down'));
+
+		$response = $this->controller(user: $this->createMock(originalClassName: IUser::class), teams: $teams)->show();
+
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
+	}//end testUnreadableRolesAnswerServiceUnavailable()
+
+	/**
 	 * A user in no team gets both fields null, never another team.
 	 *
 	 * @return void

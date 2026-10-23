@@ -18,12 +18,18 @@ import { generateUrl } from '@nextcloud/router'
 /**
  * Read the current user's team.
  *
- * @return {Promise<string|null>} The team's Nextcloud group id, or null for no team.
+ * @return {Promise<string|null>} The team's Nextcloud group id, or null for no team or a
+ *   team the server could not read (503; the server logs why).
  *
  * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
  */
 export async function fetchMyTeam() {
-	const { data } = await axios.get(generateUrl('/apps/dossiq/api/me/team'))
+	let data
+	try {
+		({ data } = await axios.get(generateUrl('/apps/dossiq/api/me/team')))
+	} catch {
+		return null
+	}
 	return data && typeof data.groupId === 'string' && data.groupId !== '' ? data.groupId : null
 }
 

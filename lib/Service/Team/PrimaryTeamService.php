@@ -69,6 +69,8 @@ class PrimaryTeamService {
 	 *
 	 * @return array{groupId: string, name: string}|null The team's group id and role name, or null for no team.
 	 *
+	 * @throws Throwable When the organisation roles cannot be read.
+	 *
 	 * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
 	 */
 	public function teamOf(IUser $user): ?array {
@@ -180,7 +182,9 @@ class PrimaryTeamService {
 	/**
 	 * The organisation's roles, read as the current user.
 	 *
-	 * @return array<int, array<string, mixed>> The roles, empty when they cannot be read.
+	 * @return array<int, array<string, mixed>> The roles; empty when the store or its settings are absent.
+	 *
+	 * @throws Throwable When the store is there but the roles cannot be read.
 	 */
 	private function roles(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -199,10 +203,10 @@ class PrimaryTeamService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Dossiq primary team: the organisation roles could not be read, so the user has no team',
+				'Dossiq primary team: the organisation roles could not be read',
 				['exception' => $e->getMessage()]
 			);
-			return [];
+			throw $e;
 		}
 	}//end roles()
 }//end class

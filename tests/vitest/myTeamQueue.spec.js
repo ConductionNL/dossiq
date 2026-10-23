@@ -13,12 +13,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import manifest from '../../src/manifest.json'
 
 const get = vi.fn()
-vi.mock('@nextcloud/axios', () => ({ default: { get: (...args) => get(...args) } }))
+// A failed request is a plain function, not a vi.fn result: vitest reports a rejected mock result as a test error.
+let failWith = null
+vi.mock('@nextcloud/axios', () => ({ default: { get: (...args) => (failWith ? Promise.reject(failWith) : get(...args)) } }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (url) => `/index.php${url}` }))
 
 const { fetchMyTeam, installMyTeamSource } = await import('../../src/services/myTeamSource.js')
 
-beforeEach(() => get.mockReset())
+beforeEach(() => {
+	get.mockReset()
+	failWith = null
+})
 
 describe('the team queue', () => {
 	it('filters on the reader\'s team', () => {
@@ -36,6 +41,11 @@ describe('the team source', () => {
 
 	it('answers null for a reader in no team', async () => {
 		get.mockResolvedValue({ data: { groupId: null, name: null } })
+		await expect(fetchMyTeam()).resolves.toBeNull()
+	})
+
+	it('answers null when the server cannot read the team', async () => {
+		failWith = new Error('Request failed with status code 503')
 		await expect(fetchMyTeam()).resolves.toBeNull()
 	})
 

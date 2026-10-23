@@ -30,6 +30,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
+use Throwable;
 
 /**
  * The current user's primary team.
@@ -56,7 +57,8 @@ class MyTeamController extends Controller {
 	/**
 	 * The current user's primary team.
 	 *
-	 * @return JSONResponse `{groupId: string|null, name: string|null}`; both null for a user in no team.
+	 * @return JSONResponse `{groupId: string|null, name: string|null}`; both null for a user in no team;
+	 *                      503 when the organisation roles cannot be read, so no team is guessed.
 	 *
 	 * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
 	 */
@@ -69,7 +71,14 @@ class MyTeamController extends Controller {
 			return new JSONResponse(data: ['message' => 'Not logged in'], statusCode: Http::STATUS_UNAUTHORIZED);
 		}
 
-		$team = $this->teams->teamOf(user: $user);
+		try {
+			$team = $this->teams->teamOf(user: $user);
+		} catch (Throwable) {
+			return new JSONResponse(
+				data: ['message' => 'The organisation roles could not be read'],
+				statusCode: Http::STATUS_SERVICE_UNAVAILABLE
+			);
+		}
 
 		return new JSONResponse(
 			data: [
