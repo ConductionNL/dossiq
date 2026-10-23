@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\Queue\DigestPreferences;
 use OCA\Dossiq\Service\Queue\PersonalAgendaItemService;
 use OCA\Dossiq\Service\Queue\PersonalQueueService;
 use OCA\Dossiq\Service\Queue\PersonalStageService;
+use OCA\Dossiq\Service\Queue\PlannedItemDefaults;
 use OCA\Dossiq\Service\Queue\QueueViewPreferences;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -62,6 +63,7 @@ class PersonalQueueController extends Controller {
 	 * @param PersonalStageService      $stages      The reader's private labels.
 	 * @param PersonalAgendaItemService $agenda      The reader's own planned items.
 	 * @param DigestPreferences         $digest      When the reader wants their digest.
+	 * @param PlannedItemDefaults       $planDefaults What a new planned item opens with.
 	 *
 	 * @return void
 	 *
@@ -75,6 +77,7 @@ class PersonalQueueController extends Controller {
 		private readonly PersonalStageService $stages,
 		private readonly PersonalAgendaItemService $agenda,
 		private readonly DigestPreferences $digest,
+		private readonly PlannedItemDefaults $planDefaults,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -199,6 +202,22 @@ class PersonalQueueController extends Controller {
 
 		return new JSONResponse($planned);
 	}//end planItem()
+
+	/**
+	 * What a new planned item opens with: the next working day at 10:00.
+	 *
+	 * @return JSONResponse The defaults.
+	 *
+	 * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
+	 */
+	#[NoAdminRequired]
+	public function planDefaults(): JSONResponse {
+		if ($this->caller() === '') {
+			return $this->unauthenticated();
+		}
+
+		return new JSONResponse($this->planDefaults->startsAt());
+	}//end planDefaults()
 
 	/**
 	 * The caller's own stage on one case.

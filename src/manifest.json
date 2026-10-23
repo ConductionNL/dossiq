@@ -1802,6 +1802,12 @@
 								"title": "Plan an item",
 								"eyebrow": "Your queue · own task",
 								"subtitle": "This goes on your own calendar and on your queue. It is not a case.",
+								"_summaryNote": "DqUwWachtrij (Ruben, 23 Oct): When opens at the next working day at 10:00 from the organisation's working-day calendar, read as the dialog's record (no title, so no summary row) and started through the field's valuePath; the reader can change it.",
+								"summary": {
+									"source": {
+										"url": "/apps/dossiq/api/personal-queue/planned-items/defaults"
+									}
+								},
 								"fields": [
 									{
 										"field": "template",
@@ -1847,7 +1853,8 @@
 									{
 										"field": "startsAt",
 										"type": "datetime",
-										"label": "When"
+										"label": "When",
+										"valuePath": "startsAt"
 									}
 								],
 								"confirm": {
