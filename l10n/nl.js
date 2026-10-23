@@ -2582,6 +2582,7 @@ OC.L10N.register(
         "Documents": "Documenten",
         "Documents are linked to the copy, never duplicated. The file stays where it is.": "Documenten worden aan de kopie gekoppeld, nooit gedupliceerd. Het bestand blijft waar het staat.",
         "Documents final": "Documenten definitief",
+        "Documents for this request": "Documenten bij dit verzoek",
         "Documents from the portal": "Stukken via het portaal",
         "Documents on this case without an assessment.": "Documenten in deze zaak zonder beoordeling.",
         "Documents on this share": "Documenten in deze deling",
