@@ -78,6 +78,9 @@ describe('case type colour and icon', () => {
 		expect(tag.widget).toBe('badge')
 		expect(tag.widgetProps.resolve).toEqual({ register: 'dossiq', schema: 'caseType', colorField: 'colour' })
 		expect(tag.widgetProps.variant).toBeUndefined()
+		const listTag = queue.overrides.listConfig.trailing.find((cell) => cell.key === 'caseType')
+		expect(listTag.widgetProps.resolve).toEqual({ register: 'dossiq', schema: 'caseType', colorField: 'colour' })
+		expect(listTag.widgetProps.variant).toBeUndefined()
 		const mapPills = page(simple, 'Cases').config.mapConfig.list.pills
 		expect(mapPills.find((pill) => pill.path === 'caseType').resolve).toEqual({ register: 'dossiq', schema: 'caseType', colorField: 'colour' })
 	})
