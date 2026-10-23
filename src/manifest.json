@@ -11590,6 +11590,7 @@
 						"id": "case-type-blueprint",
 						"type": "custom",
 						"title": "Statuses, results and attributes",
+						"subtitle": "What this case type offers, also what it inherits from its parent type",
 						"icon": "FormatListBulletedType",
 						"_note": "The one widget on this page that a declared type cannot be. An object-list fetches OpenRegister itself, so the only question it can ask is `statusType where caseType = @objectId` -- the type's OWN rows. A type that derives its lifecycle from a parent has none of those, so three declared lists would render three empty tables about a case type that plainly has four statuses, and nothing would say so. The merge exists only in CaseTypeResolver, and /api/case-types/{id}/blueprint is how a page reads it. It sits in the LAYOUT and not inside a tab strip on purpose: a `type: \"custom\"` widget named as a tab CHILD resolves by registry TYPE, finds nothing, and renders an empty panel without logging anything."
 					},
