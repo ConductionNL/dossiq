@@ -10954,10 +10954,12 @@
 								},
 								{
 									"key": "total",
+									"class": "cn-table-col--end",
 									"label": "Total"
 								},
 								{
 									"key": "withinTermPct",
+									"class": "cn-table-col--end",
 									"label": "Within deadline",
 									"format": {
 										"style": "decimal",
@@ -10967,22 +10969,31 @@
 								},
 								{
 									"key": "overruns",
+									"class": "cn-table-col--end",
 									"label": "Overruns"
 								},
 								{
 									"key": "averageProcessingDays",
-									"label": "Avg. duration"
+									"class": "cn-table-col--end",
+									"label": "Avg. duration",
+									"format": {
+										"style": "decimal",
+										"decimals": 1
+									}
 								},
 								{
 									"key": "extensions",
+									"class": "cn-table-col--end",
 									"label": "Extensions"
 								},
 								{
 									"key": "noticesOfDefault",
+									"class": "cn-table-col--end",
 									"label": "Notices of default"
 								},
 								{
 									"key": "penaltyTotalEuros",
+									"class": "cn-table-col--end",
 									"label": "Total penalty payment",
 									"format": {
 										"style": "currency",
@@ -11116,7 +11127,7 @@
 								{ "key": "caseTypeTitle", "label": "Case type" },
 								{ "key": "requester", "label": "Requester" },
 								{ "key": "forfeitDate", "label": "Forfeited on", "format": "date" },
-								{ "key": "amountEuros", "label": "Amount", "format": { "style": "currency", "currency": "EUR" } },
+								{ "key": "amountEuros", "label": "Amount", "class": "cn-table-col--end", "format": { "style": "currency", "currency": "EUR" } },
 								{
 									"key": "paymentStatus",
 									"label": "Payment",
