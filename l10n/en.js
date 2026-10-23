@@ -2575,6 +2575,7 @@ OC.L10N.register(
         "Domain the contact was routed to": "Domain the contact was routed to",
         "Domein": "Domein",
         "Done": "Done",
+        "Done on {date}": "Done on {date}",
         "Done {endDate|date}": "Done {endDate|date}",
         "Doormandaat": "Sub-mandate",
         "Doorverbinding": "Doorverbinding",

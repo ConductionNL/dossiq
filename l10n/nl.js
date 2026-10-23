@@ -2575,6 +2575,7 @@ OC.L10N.register(
         "Domain the contact was routed to": "Domein waarheen het contact is geleid",
         "Domein": "Domein",
         "Done": "Klaar",
+        "Done on {date}": "Klaar op {date}",
         "Done {endDate|date}": "Klaar {endDate|date}",
         "Doormandaat": "Doormandaat",
         "Doorverbinding": "Doorverbinding",
