@@ -2126,26 +2126,26 @@
 								},
 								"number": "identifier",
 								"title": "title",
+								"_layoutNote": "Board DqAanMijToegewezen: the meta line is the case type and the requester, a covered case adds the cover line in the purple ink (\"Voor Anouk Bakker, tot 10 okt\", nextcloud-vue cardLayout.note), and the footer holds the status pill in its status type's colour beside the deadline.",
 								"meta": [
-									{
-										"field": "coveredFor",
-										"formatter": "coveredFor"
-									}
-								],
-								"description": {
-									"field": "description",
-									"maxLength": 140
-								},
-								"chips": [
 									{
 										"field": "caseType",
 										"formatter": "caseTypeName"
 									},
-									{
-										"field": "status",
-										"formatter": "statusTypeName"
-									}
+									"initiatorDisplayName"
 								],
+								"note": {
+									"field": "coveredFor",
+									"formatter": "coveredFor",
+									"tone": "purple"
+								},
+								"footerPill": {
+									"field": "status",
+									"resolve": {
+										"schema": "statusType",
+										"colorField": "colour"
+									}
+								},
 								"footerDate": {
 									"field": "deadline",
 									"label": "Deadline",
