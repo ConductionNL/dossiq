@@ -11008,6 +11008,8 @@ OC.L10N.register(
         "{case}, location": "{case}, location",
         "{code}, {name}": "{code}, {name}",
         "{competentCourt}": "{competentCourt}",
+        "{count:open} open case": "{count:open} open case",
+        "{count:open} open cases": "{count:open} open cases",
         "{count:status=completed} of {total} steps done": "{count:status=completed} of {total} steps done",
         "{counted} of {total} assessed": "{counted} of {total} assessed",
         "{count} / {max} characters": "{count} / {max} characters",

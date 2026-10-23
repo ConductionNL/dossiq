@@ -14211,20 +14211,22 @@
 						}
 					]
 				},
-				"statusPill": {
-					"countFrom": {
+				"_headerMetaNote": "Board DqOrganisatie: the open cases are named in the header line, \"· 1 lopende zaak\", where the contact page draws a pill.",
+				"headerMetaCounts": {
+					"open": {
 						"register": "dossiq",
 						"schema": "case",
 						"filter": {
 							"requester": "@objectId",
 							"isFinalStatus": false
 						}
-					},
-					"countLabel": {
-						"one": "{count} open case",
-						"other": "{count} open cases"
-					},
-					"variant": "purple"
+					}
+				},
+				"headerMeta": {
+					"count": "open",
+					"one": "{count:open} open case",
+					"other": "{count:open} open cases",
+					"zero": ""
 				},
 				"typePill": {
 					"field": "legalForm",
