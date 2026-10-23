@@ -45,6 +45,8 @@
         "%n more results. Narrow your terms to see them.": "Nog %n resultaten. Maak uw zoektermen nauwkeuriger om ze te zien.",
         "%n open case looks like this one.": "%n openstaande zaak lijkt op deze.",
         "%n open cases look like this one.": "%n openstaande zaken lijken op deze.",
+        "%n option": "%n optie",
+        "%n options": "%n opties",
         "%n passages found. Review each passage; the ground goes into the decision.": "%n passages gevonden. Beoordeel elke passage; de grond komt in het besluit.",
         "%n processing is not attributed to a catalogued activity and landed in the flagged fallback. Review the attribution mappings.": "%n verwerking is niet toegeschreven aan een gecatalogiseerde activiteit en is in de gemarkeerde terugvalcategorie beland. Controleer de attributiekoppelingen.",
         "%n processings are not attributed to a catalogued activity and landed in the flagged fallback. Review the attribution mappings.": "%n verwerkingen zijn niet toegeschreven aan een gecatalogiseerde activiteit en zijn in de gemarkeerde terugvalcategorie beland. Controleer de attributiekoppelingen.",
@@ -135,6 +137,10 @@
         "_%n more in My work_::_%n more in My work_": [
             "%n meer in Mijn werk",
             "%n meer in Mijn werk"
+        ],
+        "_%n option_::_%n options_": [
+            "%n optie",
+            "%n opties"
         ],
         "_%n property_::_%n properties_": [
             "%n eigenschap",
@@ -1563,6 +1569,7 @@
         "Choice from a list": "Keuze uit een lijst",
         "choice from a list": "keuze uit een lijst",
         "Choice list": "Keuzelijst",
+        "Choice list, {options}": "Keuzelijst, {options}",
         "Choice list: {name}": "Keuzelijst: {name}",
         "Choices": "Keuzes",
         "Choose a category": "Kies een categorie",
@@ -3249,6 +3256,7 @@
         "Filinq is not installed, so every beschikking is rendered by a mock. Install filinq to render through it.": "Filinq is niet geïnstalleerd, dus elke beschikking wordt door een testadapter opgemaakt. Installeer filinq om via filinq op te maken.",
         "Filinq made the redacted copy, but it could not be recorded on the case. Try again.": "Filinq heeft de gelakte versie gemaakt, maar die kon niet bij de zaak worden vastgelegd. Probeer het opnieuw.",
         "Filinq wrote no redacted copy of this document. Upload a redacted version instead.": "Filinq heeft geen gelakte versie van dit document gemaakt. Upload in plaats daarvan een gelakte versie.",
+        "Fill in": "Invullen",
         "Fill in an e-mail address, for example naam@voorbeeld.nl.": "Vul een e-mailadres in, bijvoorbeeld naam@voorbeeld.nl.",
         "Fill in the motivation before deciding.": "Vul de motivering in voordat u besluit.",
         "Fill in {field} before completing this task": "Vul {field} in voordat je deze taak afrondt",
@@ -3581,6 +3589,7 @@
         "Group": "Groep",
         "Group ID": "Groeps-id",
         "Group Name": "Groepsnaam",
+        "Group of fields": "Groep velden",
         "Group that runs intake": "Groep die de intake doet",
         "Groups": "Groepen",
         "Groups of case types for which this mandate applies. A samenwerkingsverband names the group once instead of its thirty types, and a type that joins the group later is covered without a second act. Inheritance is OpenRegister's; dossiq does not re-apply the grant per type.": "Groepen zaaktypen waarvoor dit mandaat geldt. Een samenwerkingsverband noemt de groep één keer in plaats van de dertig types erin, en een type dat later bij de groep komt is gedekt zonder tweede handeling. De overerving is die van OpenRegister; dossiq past de verlening niet per type opnieuw toe.",
@@ -4401,6 +4410,7 @@
         "Linked task not found": "Gekoppelde taak niet gevonden",
         "Linked To": "Gekoppeld aan",
         "Links": "Links",
+        "List": "Lijst",
         "List addresses, or whole domains written as @voorbeeld.nl. A blocked sender opens no case by mail. They can still mail a colleague. The allow half of this list is Nextcloud Mail’s trusted senders.": "Noteer adressen, of hele domeinen geschreven als @voorbeeld.nl. Een geblokkeerde afzender opent geen zaak per mail. Diegene kan nog steeds een collega mailen. De toestaanhelft van deze lijst zijn de vertrouwde afzenders van Nextcloud Mail.",
         "List entry": "Type van één item",
         "List entry type": "Type van één item",
@@ -10620,6 +10630,7 @@
         "Who wants to take the case over.": "Wie de zaak wil overnemen.",
         "Who was asked. The applicant on most cases, but a gemachtigde where one is on the case.": "Wie is gevraagd. Op de meeste zaken de aanvrager, maar een gemachtigde waar er een op de zaak staat.",
         "Who works THIS incident. Its own owner, not the case's: the case sits with the area handler while one report inside it is worked by an inspector, and handing the incident over must leave the case's assignee exactly as it was.": "Wie DIT incident behandelt. Zijn eigen eigenaar, niet die van de zaak: de zaak ligt bij de gebiedsbehandelaar terwijl één melding erin door een inspecteur wordt behandeld, en het incident overdragen moet de toegewezene van de zaak precies laten zoals hij was.",
+        "Whole number": "Geheel getal",
         "whole number": "geheel getal",
         "Whom this participant acts for on this case. Filled on a role of type Gemachtigde (Awb 2:1) and empty on every other role. It is NOT delegateFrom: that is the start of a delegation window and RoleDelegationResolver reads it as a date, so writing a party uuid into it would make the resolver substitute a delegate at an unparseable moment.": "Voor wie deze deelnemer op deze zaak optreedt. Gevuld op een rol van het type Gemachtigde (Awb 2:1) en leeg op elke andere rol. Het is NIET delegateFrom: dat is het begin van een delegatievenster en RoleDelegationResolver leest het als een datum, dus een partij-uuid erin schrijven zou de resolver op een onleesbaar moment een gedelegeerde laten inzetten.",
         "Whose files": "Wiens bestanden",
@@ -11045,6 +11056,8 @@
         "{identifier}": "{identifier}",
         "{id} (no number yet)": "{id} (nog geen nummer)",
         "{judged} of {total} judged": "{judged} van {total} beoordeeld",
+        "{kind} from {source}": "{kind} uit {source}",
+        "{kind}, calculated": "{kind}, berekend",
         "{label}": "{label}",
         "{language} is the source. Change a {language} label and its translations are marked out of date.": "{language} is de bron. Wijzig een {language} label en de vertalingen worden verouderd gemarkeerd.",
         "{leadTimeDays} working days": "{leadTimeDays} werkdagen",

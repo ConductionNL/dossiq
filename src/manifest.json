@@ -11962,16 +11962,14 @@
 									"label": "Field"
 								},
 								{
-									"key": "category",
-									"label": "Category"
-								},
-								{
 									"key": "propertyType",
-									"label": "Type"
+									"label": "Kind",
+									"formatter": "fieldKind"
 								},
 								{
 									"key": "isRequired",
-									"label": "Required"
+									"label": "Fill in",
+									"formatter": "fieldFill"
 								}
 							],
 							"addLabel": "Add field",

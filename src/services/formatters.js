@@ -18,6 +18,7 @@ import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
 import { formatDuration, parseDuration } from '../utils/durationHelpers.js'
+import { fieldFill, fieldKind } from '../utils/fieldDescription.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
 import { caseAddress } from './caseAddress.js'
 import { coveredForLabel } from './coveredFor.js'
@@ -184,6 +185,26 @@ export default {
 		const count = Number(value)
 		return Number.isInteger(count) && count >= 0 ? n('dossiq', '%n case', '%n cases', count) : ''
 	},
+
+	/**
+	 * The kind of answer a case type field holds ("Choice list, 6 options").
+	 *
+	 * @param {unknown} value The field's type.
+	 * @param {object} row The field.
+	 * @return {string} The kind.
+	 * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
+	 */
+	fieldKind: (value, row) => fieldKind(row),
+
+	/**
+	 * How a case type field is filled in (Required, Optional, Read only).
+	 *
+	 * @param {unknown} value Whether the field is required.
+	 * @param {object} row The field.
+	 * @return {string} The words.
+	 * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
+	 */
+	fieldFill: (value, row) => fieldFill(row),
 
 	/**
 	 * A schema's number of properties as a phrase ("9 properties"), empty
