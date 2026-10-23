@@ -40,6 +40,10 @@ describe('the field inspection board', () => {
 		}
 	})
 
+	it('names each outbox row by its label, with the technical name as the fallback', () => {
+		expect(widget('inspection-sync-queue').content.title).toEqual(['{label}', '{targetEntity}'])
+	})
+
 	it('opens the running checklist at its first open question', () => {
 		expect(widget('checklist-run').content.startAt).toBe('firstOpen')
 	})
