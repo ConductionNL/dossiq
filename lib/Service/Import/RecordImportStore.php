@@ -281,22 +281,20 @@ class RecordImportStore {
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.
 	 *
-	 * @return list<array<string, mixed>> The case types, or none when they cannot be read.
+	 * @return list<array<string, mixed>> The case types.
+	 *
+	 * @throws Throwable When the case types cannot be read: an unread list is
+	 *                   not "no case type imports anything", so the caller says so.
 	 *
 	 * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
 	 */
 	public function caseTypesInUse(object $objectService): array {
-		try {
-			$rows = $this->listAll(
-				objectService: $objectService,
-				register: (string)$this->settingsService->getConfigValue('register'),
-				schema: (string)$this->settingsService->getConfigValue('case_type_schema'),
-				filters: []
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('RecordImportStore: the case types could not be read', ['error' => $e->getMessage()]);
-			return [];
-		}
+		$rows = $this->listAll(
+			objectService: $objectService,
+			register: (string)$this->settingsService->getConfigValue('register'),
+			schema: (string)$this->settingsService->getConfigValue('case_type_schema'),
+			filters: []
+		);
 
 		return array_values(array_filter($rows, fn (array $row): bool => $this->inUse(row: $row)));
 	}//end caseTypesInUse()
