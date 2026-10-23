@@ -47,3 +47,11 @@ Melding Jeugdwet SHALL list it as its quick action, above the case.
 - GIVEN the Melding Jeugdwet case of the Oosthaven family
 - WHEN the case page opens
 - THEN "Overleg plannen" stands above the case and opens a form for the date and agenda of a meeting on this case
+
+### Requirement: The household reads as a table
+
+"Andere zaken van dit huishouden" SHALL list its rows as a table with the
+columns Zaak, Zaaktype, Status and Zichtbaar voor u. A case the reader may open
+SHALL show its number and title, type, status and "Ja"; an other-domain
+existence SHALL show its domain, its contact and "Alleen dat hij bestaat", and
+nothing more.
