@@ -627,7 +627,8 @@
         "description": "De gevraagde documenten zijn openbaar gemaakt.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y"
+        "archivalPeriod": "P5Y",
+        "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/3fc7002b-31b6-4abe-82af-b6d46a9a1736"
       },
       {
         "@self": {
@@ -641,7 +642,8 @@
         "description": "Een deel van de gevraagde informatie is openbaar gemaakt. Wat niet openbaar is, staat met de reden in het besluit.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y"
+        "archivalPeriod": "P5Y",
+        "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/3fc7002b-31b6-4abe-82af-b6d46a9a1736"
       },
       {
         "@self": {
@@ -655,7 +657,8 @@
         "description": "De gevraagde documenten zijn niet openbaar gemaakt. De reden staat in het besluit.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y"
+        "archivalPeriod": "P5Y",
+        "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/9d6e6675-8764-4c55-9a47-626c2dc399f8"
       },
       {
         "@self": {
@@ -669,7 +672,8 @@
         "description": "Het verzoek is ingetrokken.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y"
+        "archivalPeriod": "P5Y",
+        "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/6f5d3859-78c5-467a-9e2f-43d71cf52a6c"
       },
       {
         "@self": {

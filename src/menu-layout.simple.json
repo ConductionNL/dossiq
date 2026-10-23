@@ -2358,7 +2358,8 @@
 								"fields": { "appraisal": "archivalAction", "period": "archivalPeriod", "selectionListRow": "selectionListClass" },
 								"appraisalLabels": { "vernietigen": "Destroy", "bewaren": "Retain", "blijvend_bewaren": "Retain permanently" },
 								"periodText": "{period} after the decision",
-								"decidedBy": "The case type, when it closes"
+								"decidedBy": "The case type, when it closes",
+								"selectionListLookup": { "url": "/apps/openregister/api/archival/selectielijst/resolve", "param": "url", "label": "{code}, {name}" }
 							},
 							"pendingNote": "This case is not closed yet. Its archival future is recorded once it closes. Recomputing needs the archivist role and a reason.",
 							"legalHold": true,

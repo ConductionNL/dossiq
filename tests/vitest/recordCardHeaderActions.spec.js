@@ -85,6 +85,7 @@ describe('per-card buttons on the record boards', () => {
 		expect(nl[content.expected.periodText]).toBe('{period} na het besluit')
 		expect(nl[content.expected.decidedBy]).toBe('Het zaaktype, bij het sluiten')
 		expect(nl[content.pendingNote]).toBe('Deze zaak is nog niet gesloten. Zijn archieftoekomst wordt vastgelegd zodra hij sluit. Herberekenen vraagt de rol archivaris en een reden.')
+		expect(content.expected.selectionListLookup).toEqual({ url: '/apps/openregister/api/archival/selectielijst/resolve', param: 'url', label: '{code}, {name}' })
 		expect(content.legalHold).toBe(true)
 		expect(content.transfer).toEqual({ keepValues: ['bewaren', 'blijvend_bewaren'] })
 	})
