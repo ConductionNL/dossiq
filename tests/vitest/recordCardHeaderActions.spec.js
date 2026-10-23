@@ -62,17 +62,18 @@ describe('per-card buttons on the record boards', () => {
 		expect(all.visibleWhen).toEqual({ field: 'objectUrl', op: 'notEmpty' })
 		expect(nl[all.label]).toBe('Alle zaken op dit object')
 	})
-	it('recomputes the archive nomination from the Archiving card, with a reason, through OpenRegister', () => {
-		const [recompute] = simple.configPatch.widgets['case-archival-panel'].headerActions
-		expect(nl[recompute.label]).toBe('Nominatie herberekenen')
-		expect(recompute.action).toMatchObject({ type: 'open-modal', target: 'CnActionDialog', props: { objectId: '@objectId' } })
-		const { config } = recompute.action.props
-		expect(config.reason.label).toBe('Reason')
-		expect(config.confirm.request).toEqual({
-			method: 'POST',
-			url: '/apps/openregister/api/archival/objects/@objectId/nomination/recompute',
-			body: { reason: '{reason}' },
+	it('recomputes the archive nomination once, from the Archiving card\'s own title row', () => {
+		const archival = simple.configPatch.widgets['case-archival-panel']
+		// The retention widget draws "Recompute nomination" in its own title row and asks the reason;
+		// a host header action would draw it a second time (DqZaakArchivering).
+		expect(archival.headerActions).toBeUndefined()
+		expect(archival.content.recompute).not.toBe(false)
+		expect(archival.content).toMatchObject({
+			statusField: 'archiveStatus',
+			archivedValues: ['archived', 'archived_retention_period_unknown'],
+			archivistGroups: ['archivaris'],
 		})
+		expect(nl[archival.content.subtitle]).toBe('Wat er met deze zaak gebeurt als hij gesloten is')
 	})
 	it('links an existing meeting or makes one from the Afspraken card, through the calendar leaf', () => {
 		const calendar = appended('case-calendar-card')
