@@ -947,11 +947,6 @@
 			"pattern": "^@subject\\.[A-Za-z][A-Za-z0-9_.]*$",
 			"description": "Subject context: a field of the record an attention card names (the first row of its ordered `visibleWhen` source query), read by the banner widget's action route params and query (@subject.<field>, dot path allowed). Mirrors SENTINEL_TOKEN_PATTERNS.subject."
 		},
-		"sentinelSourceToken": {
-			"type": "string",
-			"pattern": "^@source\\.[A-Za-z][A-Za-z0-9_.@]*$",
-			"description": "Facts source: a field of the object a facts widget shows (@source.<field>, dot path allowed), read by a fact row's `route` params (CnFactsWidget substitutes it, nextcloud-vue feat/r23-facts-row-link). Pending in the library schema; the widget already resolves it."
-		},
 		"sentinelTokenAny": {
 			"$comment": "Union of every canonical context plus the deprecated-during-window overlay. Single source the shared resolver + gate import.",
 			"anyOf": [
@@ -967,7 +962,6 @@
 				{ "$ref": "#/$defs/sentinelRowToken" },
 				{ "$ref": "#/$defs/sentinelSubjectToken" },
 				{ "$ref": "#/$defs/sentinelContextToken" },
-				{ "$ref": "#/$defs/sentinelSourceToken" },
 				{ "$ref": "#/$defs/sentinelDeprecatedToken" }
 			]
 		},
@@ -3322,10 +3316,6 @@
 					"required": ["url"],
 					"additionalProperties": false
 				},
-				"exportId": {
-					"type": "string",
-					"description": "export only: the id of the table on the page whose rows the export downloads (an object-table widget's `content.exportId`); the dispatcher emits cn:widget:export with it. Pending in the library schema; its dispatcher already reads it."
-				},
 				"formProperties": {
 					"type": "object",
 					"description": "open-form with `endpoint` only: the fields the form shows and sends, as JSON-schema properties (`{ \"name\": { \"type\": \"string\", \"title\": \"Name\" } }`).",
@@ -3387,8 +3377,8 @@
 				},
 				"method": {
 					"type": "string",
-					"enum": ["POST", "PUT", "GET"],
-					"description": "api-call: HTTP method (default POST); GET sends the resolved params as the query string, and with download: true downloads the file the endpoint answers (DqDoorlooptijd). toggle writeUrl: default PUT."
+					"enum": ["POST", "PUT", "PATCH", "GET"],
+					"description": "api-call: HTTP method (default POST); PATCH changes only the fields in the body (an OpenRegister object); GET sends the resolved params as the query string, and with download: true downloads the file the endpoint answers (DqDoorlooptijd). toggle writeUrl: default PUT."
 				},
 				"payload": {
 					"type": "object",
@@ -3548,7 +3538,7 @@
 						"properties": { "type": { "const": "open-form" } },
 						"required": ["type"]
 					},
-					"then": { "anyOf": [{ "required": ["schema"] }, { "required": ["endpoint", "formProperties"] }] }
+					"then": { "required": ["schema"] }
 				},
 				{
 					"description": "agent actions MUST declare the target agent uuid via `agent`.",
@@ -4944,6 +4934,14 @@
 										"type": "string",
 										"description": "One label for the control's label filter."
 									},
+									"description": {
+										"type": "string",
+										"description": "default-views-secondary (2.151.0): the line under the view in the side panel, what it shows. Translatable."
+									},
+									"secondary": {
+										"type": "boolean",
+										"description": "default-views-secondary (2.151.0): true lists the view behind \"More default views\" in the side panel, folded until opened or applied."
+									},
 									"icon": {
 										"type": "string",
 										"minLength": 1,
@@ -5631,6 +5629,7 @@
 								"title": { "type": "string", "minLength": 1 },
 								"meta": { "type": "array", "description": "The meta line's parts: a field name reads through the page column it names; `{ field, formatter?, formatterOptions? }` reads as plain text through its own formatter (card-layout-part-formatter).", "items": { "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" } } } ] } },
 								"footerPill": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "resolve": { "type": "object", "additionalProperties": false, "description": "pill-color-field: the field holds the id of a record; the pill takes the tone that record's colour maps onto and shows its icon. Register and schema default to the field's reference.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "colorField": { "type": "string", "minLength": 1 }, "iconField": { "type": "string", "minLength": 1 } } }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "due": { "type": "object", "description": "Read the field as a due date: overdue gives the error variant, within `soonWithin` days the warning one; any other date draws no pill.", "properties": { "soonWithin": { "type": "number", "minimum": 0 } } }, "variantWhen": { "type": "array", "description": "Rules on the days left until the field's date, `{ op, value, variant }`; the first match gives the variant, no match draws no pill.", "items": { "type": "object", "required": ["op", "value", "variant"], "properties": { "op": { "type": "string" }, "value": { "type": "number" }, "variant": { "type": "string" } } } } } },
+								"note": { "description": "A line under the meta line, read as a meta part is (`{ field, formatter?, formatterOptions? }`), left out while empty; `tone` purple or teal inks it in that pill tone's text colour, else the soft text colour (card-layout-note, 2.151.0).", "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" }, "tone": { "type": "string", "enum": ["purple", "teal"] } } },
 								"footerCell": { "description": "A part in the footer before the date, read as a meta part is: a field name draws through the page column it names (its widget, e.g. the handler's picture and name), `{ field, formatter?, formatterOptions? }` reads as text through its own formatter; left out while empty (DqZakenSorteren, 2.145.0).", "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" } } }] },
 								"footerDate": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 }, "overdueVariant": { "type": "string", "enum": ["error", "warning"], "description": "The date's tone once it has passed (2.132.0)." } } },
 								"description": { "description": "A line under the meta line: a field, or `{ field, maxLength? }` cut at maxLength characters (140 by default) with an ellipsis (2.132.0).", "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "maxLength": { "type": "integer", "minimum": 1 } } }] },

@@ -122,6 +122,8 @@
         "{subject.title}",
         "initiatorDisplayName",
         "name",
-        "{name}, {description}"
+        "{name}, {description}",
+        "{filter.period}",
+        "{code}, {name}"
     ]
 }
