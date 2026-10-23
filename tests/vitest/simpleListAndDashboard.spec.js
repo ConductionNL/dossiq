@@ -646,8 +646,10 @@ describe('the landing page', () => {
 		})
 		expect(caseFields.has('identifier')).toBe(true)
 		expect(caseFields.has('caseType')).toBe(true)
-		// When the reader opened it, from the lens, not the case's own change.
-		expect(cont.content.trailing).toEqual(['{@self.viewedAt|relativetime}'])
+		// When the reader opened it, from the lens, not the case's own change,
+		// said as DqMijnWerk does: "10 min geleden", "vanochtend", "vrijdag"
+		// (nextcloud-vue relative-ago-formatter).
+		expect(cont.content.trailing).toEqual(['{@self.viewedAt|ago}'])
 		// An unavailable lens says why, in the same words as the full tile.
 		expect(cont.content.lensReasonTexts).toEqual(recent.content.lensReasonTexts)
 		expect(Object.keys(cont.content.lensReasonTexts).length).toBeGreaterThan(0)
