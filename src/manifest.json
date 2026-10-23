@@ -13427,7 +13427,12 @@
 									],
 									"separator": " "
 								}
-							]
+							],
+							"link": {
+								"label": "View history",
+								"icon": "History",
+								"sidebarTab": "audit"
+							}
 						}
 					}
 				],
@@ -14053,7 +14058,12 @@
 									],
 									"separator": " "
 								}
-							]
+							],
+							"link": {
+								"label": "View history",
+								"icon": "History",
+								"sidebarTab": "audit"
+							}
 						}
 					}
 				],

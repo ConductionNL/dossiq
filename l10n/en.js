@@ -9874,6 +9874,7 @@ OC.L10N.register(
         "View as flow": "View as flow",
         "View case": "View case",
         "View flow runs": "View flow runs",
+        "View history": "View history",
         "View only": "View only",
         "View proof": "View proof",
         "View publication": "View publication",
