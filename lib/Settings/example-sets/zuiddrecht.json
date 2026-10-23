@@ -37,6 +37,13 @@
 			]
 		},
 		{
+			"group": "dossiq-sociaal-domein",
+			"displayName": "Dossiq sociaal domein",
+			"members": [
+				"fatma"
+			]
+		},
+		{
 			"group": "kcc",
 			"displayName": "KCC",
 			"members": [
@@ -837,90 +844,6 @@
 			}
 		},
 		{
-			"key": "buurtoost-subsidie-vraag",
-			"register": "dossiq",
-			"schema": "contactmoment",
-			"data": {
-				"notificationChannel": "phone",
-				"direction": "inbound",
-				"startTime": "{{datetime:-41 09:10}}",
-				"endTime": "{{datetime:-41 09:22}}",
-				"durationSeconds": 720,
-				"identificationMethod": "identificatievragen",
-				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
-				"kccEmployeeId": "{{cast:daan.uid}}",
-				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
-				"contact": "{{object:bedrijf-buurtoost.id}}",
-				"nature": "informatieverzoek",
-				"summary": "Mevrouw Verbeek vroeg welke kosten de subsidie dekt. Uitgelegd dat huur van de tent en de geluidsinstallatie meetellen.",
-				"firstTimeFix": false,
-				"visibleToApplicant": true
-			}
-		},
-		{
-			"key": "buurtoost-subsidie-aanvulling",
-			"register": "dossiq",
-			"schema": "contactmoment",
-			"data": {
-				"notificationChannel": "email",
-				"direction": "inbound",
-				"startTime": "{{datetime:-25 13:00}}",
-				"endTime": "{{datetime:-25 13:05}}",
-				"durationSeconds": 300,
-				"identificationMethod": "identificatievragen",
-				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
-				"kccEmployeeId": "{{cast:lars.uid}}",
-				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
-				"contact": "{{object:bedrijf-buurtoost.id}}",
-				"nature": "new_request",
-				"summary": "De begroting is nagestuurd, met de offerte van de tentverhuurder.",
-				"firstTimeFix": false,
-				"visibleToApplicant": true
-			}
-		},
-		{
-			"key": "buurtoost-evenement-uitleg",
-			"register": "dossiq",
-			"schema": "contactmoment",
-			"data": {
-				"notificationChannel": "phone",
-				"direction": "outbound",
-				"startTime": "{{datetime:-110 15:30}}",
-				"endTime": "{{datetime:-110 15:40}}",
-				"durationSeconds": 600,
-				"identificationMethod": "identificatievragen",
-				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
-				"kccEmployeeId": "{{cast:esra.uid}}",
-				"case": "{{object:evenement-buurtfeest-2026.id}}",
-				"contact": "{{object:bedrijf-buurtoost.id}}",
-				"nature": "informatieverzoek",
-				"summary": "Teruggebeld over de eindtijd van de muziek: tot 23.00 uur mag, met een bericht aan de buren.",
-				"firstTimeFix": false,
-				"visibleToApplicant": true
-			}
-		},
-		{
-			"key": "buurtoost-speeltoestel-melding",
-			"register": "dossiq",
-			"schema": "contactmoment",
-			"data": {
-				"notificationChannel": "balie",
-				"direction": "inbound",
-				"startTime": "{{datetime:-300 08:30}}",
-				"endTime": "{{datetime:-300 08:40}}",
-				"durationSeconds": 600,
-				"identificationMethod": "identificatievragen",
-				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
-				"kccEmployeeId": "{{cast:daan.uid}}",
-				"case": "{{object:melding-speeltoestel-oosthavenplein.id}}",
-				"contact": "{{object:bedrijf-buurtoost.id}}",
-				"nature": "report",
-				"summary": "Mevrouw Verbeek meldde aan de balie dat de wipkip los zit. Het speeltoestel is dezelfde dag afgezet.",
-				"firstTimeFix": false,
-				"visibleToApplicant": true
-			}
-		},
-		{
 			"key": "melding-fatima-afspraak",
 			"register": "dossiq",
 			"schema": "plannedAction",
@@ -1301,6 +1224,90 @@
 					"oosthaven",
 					"speelplaats"
 				]
+			}
+		},
+		{
+			"key": "buurtoost-subsidie-vraag",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "inbound",
+				"startTime": "{{datetime:-41 09:10}}",
+				"endTime": "{{datetime:-41 09:22}}",
+				"durationSeconds": 720,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:daan.uid}}",
+				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Mevrouw Verbeek vroeg welke kosten de subsidie dekt. Uitgelegd dat huur van de tent en de geluidsinstallatie meetellen.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "buurtoost-subsidie-aanvulling",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "email",
+				"direction": "inbound",
+				"startTime": "{{datetime:-25 13:00}}",
+				"endTime": "{{datetime:-25 13:05}}",
+				"durationSeconds": 300,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:lars.uid}}",
+				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "new_request",
+				"summary": "De begroting is nagestuurd, met de offerte van de tentverhuurder.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "buurtoost-evenement-uitleg",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "outbound",
+				"startTime": "{{datetime:-110 15:30}}",
+				"endTime": "{{datetime:-110 15:40}}",
+				"durationSeconds": 600,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:esra.uid}}",
+				"case": "{{object:evenement-buurtfeest-2026.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Teruggebeld over de eindtijd van de muziek: tot 23.00 uur mag, met een bericht aan de buren.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "buurtoost-speeltoestel-melding",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "balie",
+				"direction": "inbound",
+				"startTime": "{{datetime:-300 08:30}}",
+				"endTime": "{{datetime:-300 08:40}}",
+				"durationSeconds": 600,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:daan.uid}}",
+				"case": "{{object:melding-speeltoestel-oosthavenplein.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "report",
+				"summary": "Mevrouw Verbeek meldde aan de balie dat de wipkip los zit. Het speeltoestel is dezelfde dag afgezet.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
 			}
 		},
 		{
@@ -2510,7 +2517,6 @@
 				"effectiveFrom": "{{datetime:-22 09:00}}",
 				"signedBy": "{{cast:marieke.uid}}",
 				"terms": {
-					"plafond": null,
 					"decisionTypes": [
 						"vergunning",
 						"bezwaar"
@@ -4210,7 +4216,16 @@
 			"data": {
 				"name": "Wacht op inwoner",
 				"description": "Zaken die wachten op de aanvrager",
-				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}, {"user": "{{cast:anouk.uid}}", "mode": "write"}],
+				"sharedWith": [
+					{
+						"group": "{{cast:woo-en-informatie.gid}}",
+						"mode": "read"
+					},
+					{
+						"user": "{{cast:anouk.uid}}",
+						"mode": "write"
+					}
+				],
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": false,
 				"query": {
