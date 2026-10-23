@@ -2177,8 +2177,12 @@
 									"_note": "DqZaakTaken: the work panel's sections as the board's cards, the tasks first, then what comes next, incidents, appointments and cards."
 								},
 								{
-									"widgetId": "case-timeline-panel",
 									"label": "Case history",
+									"widgetIds": [
+										"case-timeline-panel",
+										"case-note-card"
+									],
+									"_note": "DqZaakHistorie: the history card, then \"Notitie toevoegen\" as a card of its own under it. The list keeps its Add note button, which brings the note card into view; a note saved there reloads the list.",
 									"countFrom": {
 										"endpoint": "/apps/openregister/api/objects/dossiq/case/@objectId/timeline",
 										"field": "total"
@@ -2464,6 +2468,34 @@
 							"view": "tab"
 						}
 					},
+					"case-timeline-panel": {
+						"_note": "DqZaakHistorie: the history card draws no note form; its Add note brings the case-note-card under it into view. The content is the manifest's with `composer: separate`, and the audit trail link of r24/history-audit-trail-link, because a patch replaces the whole content key.",
+						"content": {
+							"manage": true,
+							"title": "History of the case",
+							"exportName": "case-history",
+							"auditTrailLink": true,
+							"auditTrailTab": "audit",
+							"composer": "separate",
+							"entryActions": [
+								{
+									"id": "reply",
+									"label": "Reply",
+									"kinds": [
+										"portaalbericht-inkomend"
+									],
+									"modal": "PortalMessageDialog",
+									"props": {
+										"open": true,
+										"caseId": "@objectId",
+										"subject": "@row.fields.subject"
+									},
+									"doneEvent": "sent",
+									"closesFollowUp": true
+								}
+							]
+						}
+					},
 					"case-email-panel": {
 						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the mail linked to the case is listed in the same card, as the board draws it, and the notes stand under it. Mail koppelen and Mail opstellen are the library mail tab's own header buttons (content.headerActions).",
 						"content": {
@@ -2522,6 +2554,17 @@
 			},
 			"configAppend": {
 				"widgets": [
+					{
+						"id": "case-note-card",
+						"type": "timeline",
+						"title": "Add note",
+						"subtitle": "Goes on the timeline above, internal unless you make it visible",
+						"_note": "DqZaakHistorie Notitie toevoegen: the case timeline's note form as a card of its own under the history (CnTimelineManage composer only). A saved note reloads the history card above it.",
+						"content": {
+							"manage": true,
+							"composer": "only"
+						}
+					},
 					{
 						"id": "case-request",
 						"type": "facts",
