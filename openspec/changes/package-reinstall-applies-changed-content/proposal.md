@@ -19,6 +19,6 @@ On :8080 (23 Oct) the Melding Jeugdwet case type has no `specialDataCategories` 
 
 ## Impact
 
-- `lib/Service/CaseDefinition/PackageInstaller.php`, `lib/Service/Starter/ShippedConfigurationService.php`, `lib/Command/InstallPackageCommand.php`, `PackageInstallerTest`.
+- `lib/Service/CaseDefinition/PackageDirectory.php`, `lib/Service/CaseDefinition/PackageInstaller.php`, `lib/Service/Starter/ShippedConfigurationService.php`, `lib/Command/InstallPackageCommand.php`, `PackageInstallerTest`, `InstallPackageCommandTest`.
 - No schema change: the digest is part of the package record's existing `fingerprint`.
 - On the first install after this lands, every package already installed reports `installed` once (0 written, rows nobody edited refreshed) instead of `current`.
