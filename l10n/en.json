@@ -181,6 +181,10 @@
             "{total} deleted case",
             "{total} deleted cases"
         ],
+        "_{total} object, {shown} on this page_::_{total} objects, {shown} on this page_": [
+            "{total} object, {shown} on this page",
+            "{total} objects, {shown} on this page"
+        ],
         "A BAG nummeraanduiding ID is required when the location source is \"bag\".": "A BAG nummeraanduiding ID is required when the location source is \"bag\".",
         "A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents.": "A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents.",
         "A batch can be taken by the rule that marked its documents, or by a list of documents.": "A batch can be taken by the rule that marked its documents, or by a list of documents.",
@@ -466,6 +470,7 @@
         "Add advice type": "Add advice type",
         "Add assignment": "Add assignment",
         "Add button": "Add button",
+        "Add case object": "Add case object",
         "Add case type": "Add case type",
         "Add category": "Add category",
         "Add checklist": "Add checklist",
@@ -7203,6 +7208,7 @@
         "Search by case, number or requester": "Search by case, number or requester",
         "Search by name, BSN or place of residence": "Search by name, BSN or place of residence",
         "Search by name, KvK number or place": "Search by name, KvK number or place",
+        "Search by object type, identification or description": "Search by object type, identification or description",
         "Search by sender": "Search by sender",
         "Search by subject, department...": "Search by subject, department...",
         "Search by task or case number": "Search by task or case number",
