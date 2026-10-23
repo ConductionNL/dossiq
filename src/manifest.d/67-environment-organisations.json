@@ -182,6 +182,13 @@
 						"type": "facts",
 						"title": "Status",
 						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "tenantSubscription",
+								"filter": {
+									"tenantRef": "@objectId"
+								}
+							},
 							"fields": [
 								{
 									"as": "pill",
@@ -197,23 +204,36 @@
 										"suspended": "warning",
 										"provisioning": "info",
 										"deprovisioned": "default"
-									}
+									},
+									"from": "object"
 								},
 								{
 									"label": "Since",
 									"path": "created",
-									"format": "date"
+									"format": "date",
+									"from": "object"
 								},
 								{
 									"label": "Reference",
-									"path": "slug"
+									"path": "slug",
+									"from": "object"
+								},
+								{
+									"label": "Package",
+									"path": "packageName"
+								},
+								{
+									"label": "Contract reference",
+									"path": "reference"
 								},
 								{
 									"as": "line",
-									"text": "Suspending blocks signing in; the data stays. Ending is under More."
+									"text": "Suspending blocks signing in; the data stays. Ending is under More.",
+									"from": "object"
 								}
 							]
-						}
+						},
+						"_note": "Board DqTenant Status: the organisation's status, start and slug, and from its subscription record its package and contract reference. The status, start, slug and the line read the organisation (from: object), so they stay for an organisation without a subscription."
 					},
 					{
 						"id": "organisation-side-admin",
