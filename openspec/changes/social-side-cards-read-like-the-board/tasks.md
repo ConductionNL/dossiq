@@ -6,3 +6,4 @@
 - [x] 1.4 nl/en keys, vitest
 - [x] 2.1 Historie side card over the case audit trail, reads left out, access purposes in words (needs nextcloud-vue feat/r24-audit-label-changed-values); package 1.6.0
 - [x] 2.2 Withdraw consent: PATCH withdrawn + validTo today on the consent, confirmed (needs nc-vue api-call PATCH)
+- [x] 2.3 Overleg plannen: plan-case-meeting header action, Jeugdwet quickActions, package 1.7.0

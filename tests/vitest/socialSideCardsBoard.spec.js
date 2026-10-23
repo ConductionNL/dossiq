@@ -67,6 +67,16 @@ describe('DqSociaalDomein side column', () => {
 		expect(nl['Reference {identifier}']).toBe('Kenmerk {identifier}')
 	})
 
+	it('puts "Overleg plannen" above a Melding Jeugdwet case, filing the meeting on the case', () => {
+		const caseType = readJson('lib', 'Settings', 'packages', 'jeugdwet', 'case-type.json').caseType
+		expect(caseType.quickActions).toEqual(['plan-case-meeting'])
+		const page = layout.pages.find((entry) => entry.id === 'CaseDetail')
+		const action = page.configAppend.headerActions.find((entry) => entry.id === 'plan-case-meeting')
+		expect(action).toMatchObject({ type: 'open-form', schema: 'mdoOverleg', includeFields: ['consultationDate', 'agenda'], props: { caseIds: ['@objectId'] } })
+		expect(JSON.stringify(action.visibleWhen)).toContain('Sociaal domein')
+		expect(nl['Plan a case meeting']).toBe('Overleg plannen')
+	})
+
 	it('draws each person behind their initials on one line', () => {
 		const people = card('side-social-people').content
 		expect(people.avatar).toBe('{name}')

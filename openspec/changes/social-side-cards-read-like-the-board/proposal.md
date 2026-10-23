@@ -24,6 +24,8 @@ the people as links with a second line.
 - The Historie card ends with the case's reference ("Kenmerk {identifier}").
 - Historie also lists the events on the case's consents ("Toestemming vastgelegd").
 
+- "Overleg plannen" above a Melding Jeugdwet case: a `plan-case-meeting` header action (a case meeting, mdoOverleg, on this case; social domain cases only, group Case) that the case type lists as its quick action; package 1.7.0.
+
 ## Left
 
 - The notice shows only when the installed case type carries

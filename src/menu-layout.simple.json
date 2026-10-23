@@ -4962,6 +4962,29 @@
 				],
 				"headerActions": [
 					{
+						"id": "plan-case-meeting",
+						"type": "open-form",
+						"label": "Plan a case meeting",
+						"icon": "AccountGroupOutline",
+						"group": "Case",
+						"register": "dossiq",
+						"schema": "mdoOverleg",
+						"includeFields": ["consultationDate", "agenda"],
+						"fieldOverrides": {
+							"agenda": { "widget": "textarea" }
+						},
+						"props": {
+							"caseIds": ["@objectId"]
+						},
+						"successMessage": "The case meeting is planned.",
+						"visibleWhen": {
+							"all": [
+								{ "field": "@self.archived", "op": "empty" },
+								{ "field": "@context.caseType.category", "op": "in", "value": ["Sociaal domein", "Jeugd", "Jeugdhulp"] }
+							]
+						}
+					},
+					{
 						"id": "add-location",
 						"type": "open-modal",
 						"target": "CaseLocationDialog",

@@ -29,6 +29,9 @@
     ],
     "overviewCards": [
       "case-summary"
+    ],
+    "quickActions": [
+      "plan-case-meeting"
     ]
   },
   "statusTypes": [
