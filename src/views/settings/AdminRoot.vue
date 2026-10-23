@@ -21,7 +21,7 @@
 			id="section-house-style"
 			appId="dossiq"
 			:name="t('dossiq', 'House style')"
-			:columns="3"
+			:columns="4"
 			:wide="true"
 			valuesPath="config"
 			:fields="houseStyleFields" />
