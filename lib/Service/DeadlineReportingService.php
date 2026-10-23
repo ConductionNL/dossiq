@@ -167,6 +167,7 @@ class DeadlineReportingService {
 			'until' => $bounds['until'],
 			'perType' => $perType,
 			'rows' => $this->perTypeRows->listOf(perType: $perType),
+			'summaryRows' => $this->quarterSummary(period: $period, perType: $perType),
 			'metadata' => [
 				'generatedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 				'rowsScanned' => count($rows),
@@ -176,6 +177,43 @@ class DeadlineReportingService {
 			],
 		];
 	}//end generateQuarterlyReport()
+
+	/**
+	 * The quarter's decided terms as one row a footnote reads: how many were
+	 * decided, how many within the statutory or extended term, and the share.
+	 * Empty when nothing was decided, so no line says "0 decided".
+	 *
+	 * @param string $period The quarter, YYYY-Qn.
+	 * @param array<string, array<string, mixed>> $perType The per-case-type figures.
+	 *
+	 * @return array<int, array<string, int|string>> The summary row, or none.
+	 *
+	 * @spec openspec/changes/termijnen-week-and-footnote/specs/termijnen-week-and-footnote/spec.md#requirement-the-quarterly-report-summarises-the-decided-terms
+	 */
+	private function quarterSummary(string $period, array $perType): array {
+		$met = 0;
+		$decided = 0;
+		foreach ($perType as $figures) {
+			$met += (int)($figures['met'] ?? 0);
+			$decided += ((int)($figures['met'] ?? 0) + (int)($figures['missed'] ?? 0));
+		}
+
+		if ($decided === 0) {
+			return [];
+		}
+
+		[$year, $quarter] = explode('-Q', $period);
+		return [
+			[
+				'period' => $period,
+				'quarter' => (int)$quarter,
+				'year' => (int)$year,
+				'decided' => $decided,
+				'withinTerm' => $met,
+				'share' => (int)round(($met / $decided) * 100),
+			],
+		];
+	}//end quarterSummary()
 
 	/**
 	 * Bucket instance rows per case type, skipping rows outside the department filter.

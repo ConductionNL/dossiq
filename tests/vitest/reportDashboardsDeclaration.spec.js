@@ -219,7 +219,7 @@ describe('deadline reports', () => {
 			expect(w.content).toMatchObject({ style: 'input', inputType: type, writes: `@workspace.${type}`, submitLabel: submit })
 		}
 		const cards = {
-			'deadline-report-quarterly-card': ['deadline-report-quarter-form', 'deadline-report-quarterly'],
+			'deadline-report-quarterly-card': ['deadline-report-quarter-form', 'deadline-report-quarterly', 'deadline-report-quarterly-summary'],
 			'deadline-report-annual-card': ['deadline-report-year-form', 'deadline-report-annual-summary', 'deadline-report-annual-payments-list', 'deadline-report-annual-warnings'],
 		}
 		for (const [id, children] of Object.entries(cards)) {
@@ -231,6 +231,20 @@ describe('deadline reports', () => {
 				expect(onGrid('TermijnDashboard', child)).toBe(false)
 			}
 		}
+	})
+
+	it('names the week and the quarter\'s decided terms, as board DqTermijnen does', () => {
+		// "Week 41 · alle teams" (nextcloud-vue description-today-week) and
+		// "Kwartaal 3 van 2026: 72 zaken beslist, 67 binnen ... (93 %)." under
+		// the table, from the report's one summary row.
+		expect(page('TermijnDashboard').config.description).toBe('{today|week} · all teams')
+		const summary = widget('TermijnDashboard', 'deadline-report-quarterly-summary')
+		expect(summary.type).toBe('record-list')
+		expect(summary.content.endpointSource).toMatchObject({ url: '/apps/dossiq/api/deadlines/reports/quarterly', params: { period: '@workspace.quarter' }, responsePath: 'summaryRows' })
+		for (const token of ['{quarter}', '{year}', '{decided}', '{withinTerm}', '{share}']) {
+			expect(summary.content.meta).toContain(token)
+		}
+		expect(summary.roles).toEqual(widget('TermijnDashboard', 'deadline-report-quarterly').roles)
 	})
 
 	it('downloads the quarterly report from its card header, as the board does', () => {
