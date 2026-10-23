@@ -191,18 +191,18 @@ class RecordCaseMappingTest extends TestCase {
 			caseTypeId: 'type-9'
 		);
 
-		self::assertSame('s-running', $mapped['case']['status']);
-		self::assertSame('km-1', $mapped['case']['assignee']);
-		self::assertTrue($mapped['case']['meta']['flag']);
+		self::assertSame(expected: 's-running', actual: $mapped['case']['status']);
+		self::assertSame(expected: 'km-1', actual: $mapped['case']['assignee']);
+		self::assertTrue(condition: $mapped['case']['meta']['flag']);
 		self::assertSame(
-			[
+			expected: [
 				['propertyDefinition' => 'def-exempt', 'name' => 'exempt', 'value' => 'true'],
 				['propertyDefinition' => 'def-mandatory', 'name' => 'mandatory', 'value' => 'false'],
 				['propertyDefinition' => 'def-budget', 'name' => 'budget', 'value' => '1250.5'],
 				['propertyDefinition' => 'def-items', 'name' => 'items', 'value' => '[{"kind":"jobcoaching","budget":900}]'],
 				['propertyDefinition' => 'def-reason', 'name' => 'reason', 'value' => 'Medisch'],
 			],
-			$mapped['case']['properties']
+			actual: $mapped['case']['properties']
 		);
 	}//end testANestedTypedRecordAnswersTheCaseTypesFields()
 }//end class

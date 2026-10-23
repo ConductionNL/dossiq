@@ -52,6 +52,9 @@ class EmailTemplateMomentChannelTest extends TestCase {
 	 */
 	private array $saved = [];
 
+	/**
+	 * @var EmailTemplateService
+	 */
 	private EmailTemplateService $service;
 
 	/**
@@ -60,7 +63,7 @@ class EmailTemplateMomentChannelTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->repository = $this->createMock(EmailTemplateRepository::class);
+		$this->repository = $this->createMock(originalClassName: EmailTemplateRepository::class);
 		$this->repository->method('saveTemplate')->willReturnCallback(
 			function (array $payload): array {
 				$this->saved[] = $payload;
@@ -70,7 +73,7 @@ class EmailTemplateMomentChannelTest extends TestCase {
 		$this->service = new EmailTemplateService(
 			repository: $this->repository,
 			logger: new NullLogger(),
-			integrationStatus: $this->createMock(IntegrationStatusService::class),
+			integrationStatus: $this->createMock(originalClassName: IntegrationStatusService::class),
 		);
 	}//end setUp()
 
@@ -85,8 +88,8 @@ class EmailTemplateMomentChannelTest extends TestCase {
 			data: ['name' => 'Ontvangstbevestiging', 'moment' => 'case-received', 'channel' => 'mailbox-then-email'],
 		);
 
-		$this->assertSame('case-received', $saved['moment']);
-		$this->assertSame('mailbox-then-email', $saved['channel']);
+		$this->assertSame(expected: 'case-received', actual: $saved['moment']);
+		$this->assertSame(expected: 'mailbox-then-email', actual: $saved['channel']);
 	}//end testCreateStoresMomentAndChannel()
 
 	/**
@@ -97,8 +100,8 @@ class EmailTemplateMomentChannelTest extends TestCase {
 	public function testCreateLeavesOutAnUnsetMomentAndChannel(): void {
 		$saved = $this->service->createTemplate(caseTypeId: 'ct-1', data: ['name' => 'Los bericht']);
 
-		$this->assertArrayNotHasKey('moment', $saved);
-		$this->assertArrayNotHasKey('channel', $saved);
+		$this->assertArrayNotHasKey(key: 'moment', array: $saved);
+		$this->assertArrayNotHasKey(key: 'channel', array: $saved);
 	}//end testCreateLeavesOutAnUnsetMomentAndChannel()
 
 	/**
@@ -123,10 +126,10 @@ class EmailTemplateMomentChannelTest extends TestCase {
 
 		$saved = $this->service->updateTemplate(templateId: 't-1', data: ['body' => 'Nieuwe tekst', 'channel' => 'post']);
 
-		$this->assertSame('decision-made', $saved['moment']);
-		$this->assertSame('post', $saved['channel']);
-		$this->assertSame('besluit', $saved['messageCategory']);
-		$this->assertSame(3, $saved['version']);
+		$this->assertSame(expected: 'decision-made', actual: $saved['moment']);
+		$this->assertSame(expected: 'post', actual: $saved['channel']);
+		$this->assertSame(expected: 'besluit', actual: $saved['messageCategory']);
+		$this->assertSame(expected: 3, actual: $saved['version']);
 	}//end testUpdateKeepsWhatTheEditDoesNotName()
 
 	/**
@@ -141,7 +144,7 @@ class EmailTemplateMomentChannelTest extends TestCase {
 
 		$saved = $this->service->updateTemplate(templateId: 't-1', data: ['moment' => null, 'channel' => '']);
 
-		$this->assertArrayNotHasKey('moment', $saved);
-		$this->assertArrayNotHasKey('channel', $saved);
+		$this->assertArrayNotHasKey(key: 'moment', array: $saved);
+		$this->assertArrayNotHasKey(key: 'channel', array: $saved);
 	}//end testUpdateClearsAFieldTheEditSetsToNothing()
 }//end class

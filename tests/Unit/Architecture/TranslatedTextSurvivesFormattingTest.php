@@ -86,8 +86,8 @@ class TranslatedTextSurvivesFormattingTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheScanFindsTexts(): void {
-		self::assertGreaterThan(100, count($this->textsWithoutParameters()));
-		self::assertFalse($this->formats(text: 'SLA Compliance %'), 'A bare percent sign must fail the check.');
+		self::assertGreaterThan(expected: 100, actual: count($this->textsWithoutParameters()));
+		self::assertFalse(condition: $this->formats(text: 'SLA Compliance %'), message: 'A bare percent sign must fail the check.');
 	}//end testTheScanFindsTexts()
 
 	/**
@@ -97,7 +97,7 @@ class TranslatedTextSurvivesFormattingTest extends TestCase {
 	 */
 	public function testEveryTextFormats(): void {
 		$raw = file_get_contents(dirname(__DIR__, 3) . '/l10n/nl.json');
-		self::assertIsString($raw);
+		self::assertIsString(actual: $raw);
 		$dutch = json_decode($raw, true, 512, JSON_THROW_ON_ERROR)['translations'];
 
 		$broken = [];
@@ -112,6 +112,6 @@ class TranslatedTextSurvivesFormattingTest extends TestCase {
 			}
 		}
 
-		self::assertSame([], $broken, 'Write a literal percent sign as %% in a text translated without parameters.');
+		self::assertSame(expected: [], actual: $broken, message: 'Write a literal percent sign as %% in a text translated without parameters.');
 	}//end testEveryTextFormats()
 }//end class

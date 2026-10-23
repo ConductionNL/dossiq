@@ -179,7 +179,7 @@ class DemoDataServiceTest extends TestCase {
 		$this->assertDoesNotMatchRegularExpression('/\d/', $choices[0]['description']);
 		// DqInstellen: "Zaken, contacten en organisaties, allemaal fictief". That
 		// they can be deleted afterwards is the step's own question.
-		$this->assertSame('Cases, contacts and organisations, all fictional', $choices[0]['description']);
+		$this->assertSame(expected: 'Cases, contacts and organisations, all fictional', actual: $choices[0]['description']);
 
 	}//end testTheShippedDatasetIsOfferedWithItsRealCount()
 

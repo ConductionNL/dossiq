@@ -353,8 +353,8 @@ class CaseRecycleServiceTest extends TestCase {
 
 		$rows = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true);
 
-		$this->assertSame(1, $rows['total']);
-		$this->assertSame('case-9', $rows['results'][0]['id']);
+		$this->assertSame(expected: 1, actual: $rows['total']);
+		$this->assertSame(expected: 'case-9', actual: $rows['results'][0]['id']);
 	}//end testTheLensPagesAfterKeepingTheCases()
 
 	/**
@@ -412,10 +412,10 @@ class CaseRecycleServiceTest extends TestCase {
 
 		$rows = $this->service(lens: true)->deletedCases(limit: 1, forUser: 'archivaris', isAdmin: true);
 
-		$this->assertFalse($this->mapper->scanned);
-		$this->assertSame('true', $this->mapper->query['_deleted']);
-		$this->assertSame(2, $rows['total']);
-		$this->assertCount(1, $rows['results']);
+		$this->assertFalse(condition: $this->mapper->scanned);
+		$this->assertSame(expected: 'true', actual: $this->mapper->query['_deleted']);
+		$this->assertSame(expected: 2, actual: $rows['total']);
+		$this->assertCount(expectedCount: 1, haystack: $rows['results']);
 	}//end testTheLensReadsTheCaseTableOnly()
 
 	/**
@@ -430,9 +430,9 @@ class CaseRecycleServiceTest extends TestCase {
 		$title = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true, search: 'AANSLAG');
 		$miss = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true, search: '0010');
 
-		$this->assertSame(1, $hit['total']);
-		$this->assertSame(1, $title['total']);
-		$this->assertSame(0, $miss['total']);
+		$this->assertSame(expected: 1, actual: $hit['total']);
+		$this->assertSame(expected: 1, actual: $title['total']);
+		$this->assertSame(expected: 0, actual: $miss['total']);
 	}//end testTheLensNarrowsBySearch()
 
 	/**
