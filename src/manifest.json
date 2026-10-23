@@ -8240,6 +8240,7 @@
 			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from the ProcessMiningService aggregation endpoint, shaped on the server: each widget reads one `view` of /api/reports/process-mining (summary, dwell, throughput, bottlenecks, byAssignee) through its endpointSource. The duration column titles and the dwell series name come from the report (`labels`), because they say which clock the numbers are on. The page owns the heading, the period presets and the case-type filter; each widget renders content only (hydra#316).",
 			"config": {
 				"allowEdit": false,
+				"gridFloat": false,
 				"appId": "dossiq",
 				"pageId": "ProcessMiningDashboard",
 				"showWidgetActions": false,
@@ -8700,7 +8701,8 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 5
+						"gridHeight": 5,
+						"sizeToContent": true
 					},
 					{
 						"id": 0,
@@ -8708,7 +8710,8 @@
 						"gridX": 0,
 						"gridY": 5,
 						"gridWidth": 12,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 1,
@@ -8716,7 +8719,8 @@
 						"gridX": 0,
 						"gridY": 8,
 						"gridWidth": 3,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 7,
@@ -8724,7 +8728,8 @@
 						"gridX": 3,
 						"gridY": 8,
 						"gridWidth": 3,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 8,
@@ -8732,7 +8737,8 @@
 						"gridX": 6,
 						"gridY": 8,
 						"gridWidth": 3,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 9,
@@ -8740,7 +8746,8 @@
 						"gridX": 9,
 						"gridY": 8,
 						"gridWidth": 3,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 2,
@@ -8748,7 +8755,8 @@
 						"gridX": 0,
 						"gridY": 11,
 						"gridWidth": 6,
-						"gridHeight": 6
+						"gridHeight": 6,
+						"sizeToContent": true
 					},
 					{
 						"id": 3,
@@ -8756,7 +8764,7 @@
 						"gridX": 6,
 						"gridY": 11,
 						"gridWidth": 6,
-						"gridHeight": 6
+						"gridHeight": 4
 					},
 					{
 						"id": 4,
@@ -8764,7 +8772,8 @@
 						"gridX": 0,
 						"gridY": 17,
 						"gridWidth": 12,
-						"gridHeight": 6
+						"gridHeight": 6,
+						"sizeToContent": true
 					},
 					{
 						"id": 5,
@@ -8772,7 +8781,8 @@
 						"gridX": 0,
 						"gridY": 23,
 						"gridWidth": 12,
-						"gridHeight": 6
+						"gridHeight": 6,
+						"sizeToContent": true
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
