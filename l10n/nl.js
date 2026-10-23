@@ -8020,6 +8020,7 @@ OC.L10N.register(
         "Tasks with a deadline inside this window.": "Taken met een termijn binnen dit venster.",
         "tasks · {n} due today": "taken · {n} vandaag te doen",
         "Team": "Team",
+        "team lead {value}": "teamleider {value}",
         "Team leader": "Teamleider",
         "Team queue": "Wachtrij",
         "Team the contact was routed to": "Team waarheen het contact is geleid",

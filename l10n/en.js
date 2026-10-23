@@ -8020,6 +8020,7 @@ OC.L10N.register(
         "Tasks with a deadline inside this window.": "Tasks with a deadline inside this window.",
         "tasks · {n} due today": "tasks · {n} due today",
         "Team": "Team",
+        "team lead {value}": "team lead {value}",
         "Team leader": "Team leader",
         "Team queue": "Team queue",
         "Team the contact was routed to": "Team the contact was routed to",
