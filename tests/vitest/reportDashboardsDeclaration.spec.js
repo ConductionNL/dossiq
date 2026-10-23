@@ -318,3 +318,16 @@ describe('process mining figures', () => {
 		expect(widget('ProcessMiningDashboard', 'pm-stuck').content.ruleAbove).toBe(true)
 	})
 })
+
+describe('throughput per week', () => {
+	it('names the weeks "w40", as DqProcesanalyse and DqDoorlooptijd draw them', () => {
+		// The endpoints key a week as ISO 2026-W40; nextcloud-vue
+		// chart-week-categories writes it as "w40".
+		const mining = widget('ProcessMiningDashboard', 'pm-throughput').content
+		expect(mining.categoryFormat).toBe('week')
+		expect(mining.endpointSource.labelsPath).toBe('week')
+		const processing = widget('Doorlooptijd', 'processing-time-charts-throughput').content
+		expect(processing.categoryFormat).toBe('week')
+		expect(processing.endpointSource.labelsPath).toBe('week')
+	})
+})
