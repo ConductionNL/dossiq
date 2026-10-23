@@ -1363,6 +1363,7 @@ OC.L10N.register(
         "Case share": "Zaakdeling",
         "Case shared with remote organisation": "Zaak gedeeld met externe organisatie",
         "Case status": "Zaakstatus",
+        "Case status history {filter.period}": "Statusgeschiedenis van zaken {filter.period}",
         "Case Summary": "Zaaksamenvatting",
         "Case takeover request": "Verzoek om de zaak over te nemen",
         "Case to try a rule against": "Zaak om een regel op te proberen",
