@@ -2,7 +2,8 @@
 
 /**
  * The Woo request's result types name their VNG Selectielijst row by its URL,
- * so the Archiving card can read "6.1, Ingewilligd" (board DqZaakArchivering).
+ * so the Archiving card can read "6.1, Ingewilligd" (board DqZaakArchivering),
+ * at a version above the one installs already hold, so a re-import updates them.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Settings
@@ -50,6 +51,8 @@ class WooResultTypesSelectionListTest extends TestCase {
 			foreach ($fragment['components']['objects'] as $object) {
 				if (($object['@self']['schema'] ?? '') === 'resultType') {
 					$rows[$object['name']] = ($object['selectionListClass'] ?? null);
+					// OpenRegister updates a shipped object only when its version rises.
+					$this->assertSame(expected: '1.1.0', actual: ($object['@self']['version'] ?? null), message: $object['@self']['slug']);
 				}
 			}
 

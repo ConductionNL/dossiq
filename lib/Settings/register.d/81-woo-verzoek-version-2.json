@@ -583,7 +583,8 @@
         "@self": {
           "register": "dossiq",
           "schema": "resultType",
-          "slug": "woo-verzoek-openbaar-gemaakt-v2"
+          "slug": "woo-verzoek-openbaar-gemaakt-v2",
+          "version": "1.1.0"
         },
         "id": "3c0f5a00-0000-4000-a000-00000000c011",
         "uuid": "3c0f5a00-0000-4000-a000-00000000c011",
@@ -598,7 +599,8 @@
         "@self": {
           "register": "dossiq",
           "schema": "resultType",
-          "slug": "woo-verzoek-deels-openbaar-gemaakt-v2"
+          "slug": "woo-verzoek-deels-openbaar-gemaakt-v2",
+          "version": "1.1.0"
         },
         "id": "3c0f5a00-0000-4000-a000-00000000c012",
         "uuid": "3c0f5a00-0000-4000-a000-00000000c012",
@@ -613,7 +615,8 @@
         "@self": {
           "register": "dossiq",
           "schema": "resultType",
-          "slug": "woo-verzoek-niet-openbaar-gemaakt-v2"
+          "slug": "woo-verzoek-niet-openbaar-gemaakt-v2",
+          "version": "1.1.0"
         },
         "id": "3c0f5a00-0000-4000-a000-00000000c013",
         "uuid": "3c0f5a00-0000-4000-a000-00000000c013",
@@ -628,7 +631,8 @@
         "@self": {
           "register": "dossiq",
           "schema": "resultType",
-          "slug": "woo-verzoek-ingetrokken-v2"
+          "slug": "woo-verzoek-ingetrokken-v2",
+          "version": "1.1.0"
         },
         "id": "3c0f5a00-0000-4000-a000-00000000c014",
         "uuid": "3c0f5a00-0000-4000-a000-00000000c014",
