@@ -5484,6 +5484,8 @@
 					}
 				],
 				"showViewToggle": true,
+				"sortKey": "dueAt",
+				"sortOrder": "asc",
 				"columns": [
 					{
 						"key": "title",
@@ -5516,6 +5518,7 @@
 					{
 						"key": "priorityLabel",
 						"label": "Priority",
+						"sortable": true,
 						"widget": "badge",
 						"widgetProps": {
 							"colorMap": {
@@ -5528,6 +5531,7 @@
 					{
 						"key": "dueAt",
 						"label": "Task deadline",
+						"sortable": true,
 						"widget": "date",
 						"widgetProps": {
 							"due": {
