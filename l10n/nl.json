@@ -11211,6 +11211,7 @@
         "{shown} of {total} open cases in your teams, sorted by deadline": "{shown} van {total} lopende zaken in uw teams · gesorteerd op termijn",
         "{shown} of {total} open cases without a handler · oldest first": "{shown} van {total} open zaken zonder behandelaar · oudste eerst",
         "{shown} of {total} open cases without a handler, oldest first": "{shown} van {total} open zaken zonder behandelaar, oudste eerst",
+        "{shown} of {total} open cases without a handler[ · team {myTeam}] · oldest first": "{shown} van {total} open zaken zonder behandelaar[ · team {myTeam}] · oudste eerst",
         "{shown} of {total} organisations": "{shown} van {total} organisaties",
         "{shown} of {total} organisations in Zuiddrecht, sorted by name": "{shown} van {total} organisaties in Zuiddrecht · gesorteerd op naam",
         "{shown} of {total} people dossiq knows": "{shown} van {total} personen die dossiq kent",
