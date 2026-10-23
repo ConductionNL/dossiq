@@ -85,6 +85,16 @@ describe('the end-of-day page', () => {
 		})
 	})
 
+	it('packs its fitted cards upward, so a short list leaves no band under it', () => {
+		// DqDagAfsluiten: Vandaag vastgelegd starts under Nog open van vandaag,
+		// and Morgen eerst under Uw dag, whatever their length. Every card
+		// sizes to its content; a floating grid would keep each on its row.
+		expect(page.config.gridFloat).toBe(false)
+		for (const cell of page.config.layout) {
+			expect(cell.sizeToContent, cell.widgetId).toBe(true)
+		}
+	})
+
 	it('opens a case and a task on their own pages', () => {
 		for (const id of ['eod-open', 'eod-recorded', 'eod-tomorrow']) {
 			expect(widget(id).content.rowRouteField, id).toBe('routeName')
