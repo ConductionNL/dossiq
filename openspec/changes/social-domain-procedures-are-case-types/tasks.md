@@ -15,6 +15,10 @@
 ## 4. Participatiewet
 - [x] 4.1 Package bijstandsaanvraag, record import over participatiewetZaak (participatiewetZaak 1.3.0), palette
 
+## 4b. Guards on sensitive answers
+- [x] 4b.1 RequiredFieldGuard checks sensitiveProperties as the system (SensitiveAnswerCheck), presence only
+- [x] 4b.2 Bijstandsaanvraag: Toetsing afronden requires vermogenstoets and inkomenstoets
+
 ## 5. Wmo, Jeugdwet
 - [ ] 5.1 Wmo-melding package over wmoZaak (indicatiestelling.needsAssessmentId)
 - [ ] 5.2 Jeugdwet: the melding-jeugdwet package imports jeugdwetZaak (gezinsplan, mdoOverleg)
