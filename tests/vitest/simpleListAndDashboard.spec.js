@@ -158,10 +158,10 @@ describe('the cases list', () => {
 		expect(rest(simple.quickFilters)).toEqual(rest(before.quickFilters))
 	})
 
-	it('narrows Woo requests on the seeded Woo case type', () => {
+	it('narrows Woo requests on every version of the seeded Woo case type', () => {
 		const woo = simple.quickFilters.find((lens) => lens.label === 'Woo requests')
 		expect(woo.filter).toEqual({
-			caseType: WOO,
+			caseTypeIdentifier: 'woo-verzoek',
 			statusHiddenInLists: false,
 			isDraft: false,
 		})
@@ -315,6 +315,7 @@ describe('the cases list', () => {
 			defaultOrder,
 			footerNote,
 			bulkHint,
+			bulkNoun,
 			headerButtons,
 			headerActions,
 			mapConfig,
@@ -324,6 +325,8 @@ describe('the cases list', () => {
 			showMassCopy,
 			showMassDelete,
 			_massCopyDeleteNote,
+			cardLayout,
+			_cardLayoutNote,
 			headerFilters,
 			searchPlaceholder,
 			...others
@@ -436,7 +439,10 @@ describe('the landing page', () => {
 
 	it('keeps My archival reviews, which the design has no stand-in for, as the manifest declares it', () => {
 		const base = pageView(original('MyWorkHome'), 'mine').widgets
-		expect(widget('archival-reviews')).toEqual(
+		// The simple profile adds the board's subtitle (DqMijnWerk "Mijn archiefbeoordelingen").
+		const { subtitle, ...kept } = widget('archival-reviews')
+		expect(subtitle).toBe('Archival decisions waiting for your signature')
+		expect(kept).toEqual(
 			withoutNotes(base.find((w) => w.id === 'archival-reviews')),
 		)
 		expect(widget('archival-reviews').type).toBe('decision-list')
@@ -585,7 +591,7 @@ describe('the landing page', () => {
 				register: table.content.source.register,
 				schema: table.content.source.schema,
 				filter: table.content.source.filter,
-				limit: table.content.source.limit,
+				limit: 3,
 				presentation: 'rows',
 				title: '{title}',
 				meta: '{identifier}',
@@ -597,11 +603,17 @@ describe('the landing page', () => {
 			// The header link opens the list the table's View all opened.
 			const layout = dashboard.config.layout.find((entry) => entry.widgetId === id)
 			const { name, ...rest } = table.content.viewAllRoute
-			expect(layout.headerLink).toEqual({ label: 'View all', route: name, ...rest })
+			// Under the title, where the board draws "Alles bekijken".
+			expect(layout.headerLink).toEqual({ label: 'View all', route: name, ...rest, placement: 'title' })
+			// Three rows in a card the board's height (376px: five grid rows).
+			expect(layout.gridHeight, id).toBe(5)
 		}
 		const stalled = tile(dashboard.config.widgets, 'stalled-cases').content
 		expect(stalled.extend).toEqual(['calculations'])
 		expect(stalled.sort).toEqual({ field: '@self.updated', dir: 'asc' })
+		// The info line under the grid is a line, not a card (DqDashboard).
+		const note = dashboard.config.layout.find((entry) => entry.widgetId === 'layout-note')
+		expect(note).toMatchObject({ borderless: true, sizeToContent: true })
 		expect(tile(dashboard.config.widgets, 'recent-cases').content.lensReasonTexts)
 			.toEqual(tile(before.config.widgets, 'recent-cases').content.lensReasonTexts)
 	})
@@ -874,9 +886,18 @@ describe('the case type list', () => {
 		// A Dutch reader saw "38 case types": the key was in the manifest and
 		// in no catalogue, so the library drew it as written.
 		const nl = JSON.parse(read('l10n', 'nl.json')).translations
-		expect(nl[list.config.headerMeta]).toBe('{total} zaaktypen')
+		// DqZaaktypen: "14 zaaktypen · 9 meegeleverd, 5 eigen".
+		expect(nl[list.config.headerMeta]).toBe('{total} zaaktypen · {count:shipped} meegeleverd, {count:own} eigen')
 		// DqZaaktypen draws the field as "Zoek een zaaktype".
 		expect(nl[list.config.searchPlaceholder]).toBe('Zoek een zaaktype')
+	})
+
+	it('counts the shipped and the own case types, current versions only, for the header line', () => {
+		const current = { supersededBy: { isnull: true } }
+		expect(list.config.headerMetaCounts).toEqual({
+			shipped: { register: 'dossiq', schema: 'caseType', filter: { ...current, '@self': { owner: '__system__' } } },
+			own: { register: 'dossiq', schema: 'caseType', filter: { ...current, '@self[owner][ne]': '__system__' } },
+		})
 	})
 
 	it('has an Actions menu with the import dialog the case type page already owns', () => {
@@ -885,6 +906,12 @@ describe('the case type list', () => {
 				id: 'case-type-import',
 				type: 'open-modal',
 				target: 'CaseTypeImportDialog',
+			}),
+			expect.objectContaining({
+				id: 'case-type-templates-reload',
+				type: 'api-call',
+				url: '/apps/dossiq/api/packages/reload',
+				adminOnly: true,
 			}),
 		])
 		expect(registrySource).toContain('CaseTypeImportDialog')

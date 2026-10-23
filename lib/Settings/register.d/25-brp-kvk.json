@@ -12,7 +12,7 @@
             "brpPerson": {
                 "slug": "brpPerson",
                 "icon": "AccountOutline",
-                "version": "1.3.0",
+                "version": "1.5.0",
                 "x-schema-org": "schema:Person",
                 "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
                 "x-openregister-registry": { "registry": "brp", "identity": "citizenServiceNumber", "owned": ["name", "birth", "residence", "indicatieGeheim"] },
@@ -115,9 +115,32 @@
                         "type": "string",
                         "title": "Description",
                         "description": "Provenance marker: identifies the row as official fictitious test data and names its fixture source."
+                    },
+                    "masterEntityRef": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "title": "Master entity ref",
+                        "facetable": true,
+                        "description": "The master entity this party is, shared by the records in other apps that describe the same party (pipelinq's client carries the same value). dossiq reads the party's open pipelinq tickets by it."
+                    },
+                    "indicators": {
+                        "type": "array",
+                        "title": "Indicators",
+                        "description": "Marks on this party that every case it is on reads, each with the effect OpenRegister's party model honours: key, label, effect and note. A secrecy mark refuses publication.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "key": { "type": "string" },
+                                "label": { "type": "string" },
+                                "effect": { "type": "string" },
+                                "note": { "type": "string" }
+                            }
+                        },
+                        "default": []
                     }
                 },
                 "configuration": {
+                    "x-openregister-party": { "kind": "person", "nameProperty": "displayName" },
                     "objectNameField": "displayName",
                     "objectDescriptionField": "description",
                     "implements": [
@@ -137,7 +160,7 @@
             "kvkCompany": {
                 "slug": "kvkCompany",
                 "icon": "Domain",
-                "version": "1.2.0",
+                "version": "1.4.0",
                 "x-schema-org": "schema:Organization",
                 "x-zgw-equivalent": "Rol betrokkene niet_natuurlijk_persoon",
                 "x-openregister-registry": { "registry": "kvk", "identity": "kvkNumber", "owned": ["tradeName", "legalForm", "address"] },
@@ -196,9 +219,32 @@
                         "type": "string",
                         "title": "Description",
                         "description": "Provenance marker: identifies the row as official fictitious test data and names its fixture source."
+                    },
+                    "masterEntityRef": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "title": "Master entity ref",
+                        "facetable": true,
+                        "description": "The master entity this party is, shared by the records in other apps that describe the same party (pipelinq's client carries the same value). dossiq reads the party's open pipelinq tickets by it."
+                    },
+                    "indicators": {
+                        "type": "array",
+                        "title": "Indicators",
+                        "description": "Marks on this party that every case it is on reads, each with the effect OpenRegister's party model honours: key, label, effect and note. A secrecy mark refuses publication.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "key": { "type": "string" },
+                                "label": { "type": "string" },
+                                "effect": { "type": "string" },
+                                "note": { "type": "string" }
+                            }
+                        },
+                        "default": []
                     }
                 },
                 "configuration": {
+                    "x-openregister-party": { "kind": "organisation", "nameProperty": "tradeName" },
                     "objectNameField": "tradeName",
                     "objectDescriptionField": "description",
                     "implements": [

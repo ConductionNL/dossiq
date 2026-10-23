@@ -173,7 +173,8 @@
 					"city": "{{cast:henk.address.city}}"
 				},
 				"displayName": "{{cast:henk.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000011"
 			}
 		},
 		{
@@ -206,7 +207,7 @@
 			"data": {
 				"citizenServiceNumber": "{{cast:sanne.bsn}}",
 				"name": {
-					"givenNames": "{{cast:sanne.givenName}}",
+					"givenNames": "{{cast:sanne.firstNames}}",
 					"surname": "{{cast:sanne.familyName}}"
 				},
 				"birth": {
@@ -219,7 +220,8 @@
 					"city": "{{cast:sanne.address.city}}"
 				},
 				"displayName": "{{cast:sanne.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000012"
 			}
 		},
 		{
@@ -242,7 +244,8 @@
 					"city": "{{cast:fatima.address.city}}"
 				},
 				"displayName": "{{cast:fatima.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000013"
 			}
 		},
 		{
@@ -351,7 +354,8 @@
 					"postcode": "{{cast:slagerij.address.postcode}}",
 					"place": "{{cast:slagerij.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000001"
 			}
 		},
 		{
@@ -368,7 +372,8 @@
 					"postcode": "{{cast:cloudgemeente.address.postcode}}",
 					"place": "{{cast:cloudgemeente.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000002"
 			}
 		},
 		{
@@ -734,7 +739,8 @@
 					"schema": "roleType",
 					"where": {
 						"name": "Gemachtigde",
-						"genericRole": "gemachtigde"
+						"genericRole": "gemachtigde",
+						"description": "Persoon of organisatie gemachtigd om namens de aanvrager op te treden"
 					}
 				}
 			},
@@ -1369,21 +1375,22 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"ontvangst": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Ontvangst"
+						"name": "Ontvangen"
 					}
 				},
 				"status": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Zoeken documenten"
+						"name": "In behandeling"
 					}
 				}
 			},
@@ -1439,21 +1446,22 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"ontvangst": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Ontvangst"
+						"name": "Ontvangen"
 					}
 				},
 				"status": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Beoordeling ontvankelijkheid"
+						"name": "In behandeling"
 					}
 				}
 			},
@@ -1572,14 +1580,15 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"ontvangst": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Ontvangst"
+						"name": "Ontvangen"
 					}
 				},
 				"besluit": {
@@ -1593,7 +1602,7 @@
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Publicatie"
+						"name": "Publiceren"
 					}
 				},
 				"status": {
@@ -1673,6 +1682,68 @@
 			}
 		},
 		{
+			"key": "melding-afval-lindelaan",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-sanne.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:sanne.displayName}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"portalParty": "subject:{{cast:sanne.uid}}",
+				"intakeChannel": "zgw-api",
+				"confidentiality": "openbaar",
+				"title": "Melding afval Lindelaan",
+				"description": "Bij de glasbak op de Lindelaan staan zakken afval naast de container. De melding komt binnen in het zaaksysteem van de afvalinzameling en wordt via Integriq in dossiq bijgehouden.",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-15}}",
+				"receivedAt": "{{datetime:-15 10:15}}",
+				"currentStatusEnteredAt": "{{datetime:-14 09:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-15 10:15}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-14 09:00}}"
+					}
+				],
+				"tags": [
+					"lindelaan",
+					"afval"
+				]
+			}
+		},
+		{
 			"key": "woo-zaaksysteem-resultaat",
 			"register": "dossiq",
 			"schema": "result",
@@ -1680,7 +1751,8 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"resultType": {
@@ -1707,7 +1779,8 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"decisionType": {
@@ -2333,6 +2406,823 @@
 			}
 		},
 		{
+			"key": "waterland-beheerder",
+			"register": "dossiq",
+			"schema": "tenantUser",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"userRef": "{{cast:marieke.uid}}",
+				"role": "admin",
+				"joinedAt": "{{datetime:-50 10:00}}",
+				"lastActiveAt": "{{datetime:-1 16:20}}",
+				"mfaEnabled": true,
+				"eherkenningLevel": "3"
+			}
+		},
+		{
+			"key": "waterland-mandaat-behandelaar",
+			"register": "dossiq",
+			"schema": "tenantMandate",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"mandateMatrixRef": "Behandelaar",
+				"effectiveFrom": "{{datetime:-22 09:00}}",
+				"signedBy": "{{cast:marieke.uid}}",
+				"terms": {
+					"plafond": 5000,
+					"decisionTypes": [
+						"vergunning"
+					],
+					"enforcement": "none"
+				}
+			}
+		},
+		{
+			"key": "waterland-mandaat-teamleider",
+			"register": "dossiq",
+			"schema": "tenantMandate",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"mandateMatrixRef": "Teamleider",
+				"effectiveFrom": "{{datetime:-22 09:00}}",
+				"signedBy": "{{cast:marieke.uid}}",
+				"terms": {
+					"plafond": 50000,
+					"decisionTypes": [
+						"vergunning",
+						"bezwaar"
+					],
+					"enforcement": "warning"
+				}
+			}
+		},
+		{
+			"key": "waterland-mandaat-afdelingshoofd",
+			"register": "dossiq",
+			"schema": "tenantMandate",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"mandateMatrixRef": "Afdelingshoofd",
+				"effectiveFrom": "{{datetime:-22 09:00}}",
+				"signedBy": "{{cast:marieke.uid}}",
+				"terms": {
+					"plafond": null,
+					"decisionTypes": [
+						"vergunning",
+						"bezwaar"
+					],
+					"enforcement": "full"
+				}
+			}
+		},
+		{
+			"key": "waterland-factuur-pakket",
+			"register": "dossiq",
+			"schema": "tenantBillingEvent",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"eventType": "subscription_fee",
+				"quantity": 1,
+				"unitPrice": 450,
+				"currency": "EUR",
+				"occurredAt": "{{datetime:-21 00:00}}"
+			}
+		},
+		{
+			"key": "waterland-factuur-zaak",
+			"register": "dossiq",
+			"schema": "tenantBillingEvent",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"eventType": "case_created",
+				"quantity": 1,
+				"unitPrice": 1.2,
+				"currency": "EUR",
+				"occurredAt": "{{datetime:-15 11:04}}"
+			}
+		},
+		{
+			"key": "waterland-factuur-terugboeking",
+			"register": "dossiq",
+			"schema": "tenantBillingEvent",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"eventType": "case_refund",
+				"quantity": 1,
+				"unitPrice": -1.2,
+				"currency": "EUR",
+				"occurredAt": "{{datetime:-15 11:30}}"
+			}
+		},
+		{
+			"key": "leverancier-kindzorg",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002001",
+				"legalName": "Stichting Kindzorg Drechtsteden",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-groen-en-co",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002002",
+				"legalName": "Groen & Co",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-taxi-drechtstad",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002003",
+				"legalName": "Taxi Drechtstad",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-lumen-infra",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002004",
+				"legalName": "Lumen Infra BV",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-schoon-zuid",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002005",
+				"legalName": "Schoon Zuid",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-conduction",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002006",
+				"legalName": "Conduction",
+				"status": "active",
+				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "contract-jeugdhulp-ambulant",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-kindzorg.id}}",
+				"number": "CT-2023-014",
+				"subject": "Jeugdhulp ambulant 2023-2026",
+				"startDate": "2023-01-01",
+				"endDate": "2026-12-31",
+				"value": 2400000,
+				"status": "renewal-decision",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-groenonderhoud-oost",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-groen-en-co.id}}",
+				"number": "CT-2024-003",
+				"subject": "Groenonderhoud oost",
+				"startDate": "2024-05-01",
+				"endDate": "2027-04-30",
+				"value": 610000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-leerlingenvervoer",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-taxi-drechtstad.id}}",
+				"number": "CT-2022-021",
+				"subject": "Leerlingenvervoer",
+				"startDate": "2022-08-01",
+				"endDate": "2026-07-31",
+				"value": 1850000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-straatverlichting",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-lumen-infra.id}}",
+				"number": "CT-2025-002",
+				"subject": "Straatverlichting onderhoud",
+				"startDate": "2025-04-01",
+				"endDate": "2027-03-31",
+				"value": 340000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-schoonmaak-stadhuis",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-schoon-zuid.id}}",
+				"number": "CT-2024-011",
+				"subject": "Schoonmaak stadhuis",
+				"startDate": "2024-03-01",
+				"endDate": "2027-02-28",
+				"value": 290000,
+				"status": "termination-decision",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-softwarelicenties",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-conduction.id}}",
+				"number": "CT-2025-009",
+				"subject": "Softwarelicenties sociaal domein",
+				"startDate": "2025-01-01",
+				"endDate": "2027-12-31",
+				"value": 96000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "leverancier-rivierland-installatie",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002007",
+				"legalName": "Rivierland Installatietechniek",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-zuidwaard-catering",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002008",
+				"legalName": "Zuidwaard Catering",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-kade-advies",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002009",
+				"legalName": "Kade & Co Advies",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-polderlicht",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002010",
+				"legalName": "Polderlicht Elektra",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-oosthaven-drukwerk",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002011",
+				"legalName": "Oosthaven Drukwerk",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-waalmond-ict",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002012",
+				"legalName": "Waalmond ICT",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-linde-facilitair",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002013",
+				"legalName": "Linde Facilitair",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-molenwerf-bouw",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002014",
+				"legalName": "Molenwerf Bouw",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-grachtzicht-juridisch",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002015",
+				"legalName": "Grachtzicht Juridisch Advies",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-dijkveld-beveiliging",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002016",
+				"legalName": "Dijkveld Beveiliging",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-haventoren-archief",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002017",
+				"legalName": "Haventoren Archiefdiensten",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "leverancier-zandpad-verhuizingen",
+			"register": "dossiq",
+			"schema": "supplier",
+			"data": {
+				"kvkNumber": "00002018",
+				"legalName": "Zandpad Verhuizingen",
+				"status": "active",
+				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+			}
+		},
+		{
+			"key": "contract-ct-2024-007",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-rivierland-installatie.id}}",
+				"number": "CT-2024-007",
+				"subject": "Onderhoud klimaatinstallaties",
+				"startDate": "2024-01-01",
+				"endDate": "2027-12-31",
+				"value": 420000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-004",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-zuidwaard-catering.id}}",
+				"number": "CT-2025-004",
+				"subject": "Catering raadszaal",
+				"startDate": "2025-02-01",
+				"endDate": "2027-01-31",
+				"value": 85000,
+				"status": "active",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-ct-2023-019",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-kade-advies.id}}",
+				"number": "CT-2023-019",
+				"subject": "Advies omgevingsvisie",
+				"startDate": "2023-09-01",
+				"endDate": "2026-08-31",
+				"value": 135000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-011",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-polderlicht.id}}",
+				"number": "CT-2025-011",
+				"subject": "Openbare verlichting buitengebied",
+				"startDate": "2025-06-01",
+				"endDate": "2028-05-31",
+				"value": 510000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-015",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-oosthaven-drukwerk.id}}",
+				"number": "CT-2024-015",
+				"subject": "Drukwerk en verzending",
+				"startDate": "2024-04-01",
+				"endDate": "2027-03-31",
+				"value": 64000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-013",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-waalmond-ict.id}}",
+				"number": "CT-2025-013",
+				"subject": "Werkplekbeheer",
+				"startDate": "2025-01-01",
+				"endDate": "2027-12-31",
+				"value": 780000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-022",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-linde-facilitair.id}}",
+				"number": "CT-2024-022",
+				"subject": "Facilitaire dienstverlening stadskantoor",
+				"startDate": "2024-07-01",
+				"endDate": "2027-06-30",
+				"value": 355000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-016",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-molenwerf-bouw.id}}",
+				"number": "CT-2025-016",
+				"subject": "Renovatie sporthal Oosthaven",
+				"startDate": "2025-03-01",
+				"endDate": "2026-12-31",
+				"value": 1250000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2023-008",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-grachtzicht-juridisch.id}}",
+				"number": "CT-2023-008",
+				"subject": "Juridisch advies aanbestedingen",
+				"startDate": "2023-01-01",
+				"endDate": "2026-06-30",
+				"value": 120000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-018",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-dijkveld-beveiliging.id}}",
+				"number": "CT-2024-018",
+				"subject": "Beveiliging gemeentelijke gebouwen",
+				"startDate": "2024-05-01",
+				"endDate": "2027-04-30",
+				"value": 290000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-020",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-haventoren-archief.id}}",
+				"number": "CT-2025-020",
+				"subject": "Digitalisering bouwarchief",
+				"startDate": "2025-09-01",
+				"endDate": "2027-08-31",
+				"value": 175000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-024",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-zandpad-verhuizingen.id}}",
+				"number": "CT-2024-024",
+				"subject": "Verhuizing archief en werkplekken",
+				"startDate": "2024-10-01",
+				"endDate": "2026-09-30",
+				"value": 48000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-021",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-rivierland-installatie.id}}",
+				"number": "CT-2025-021",
+				"subject": "Onderhoud liften",
+				"startDate": "2025-01-01",
+				"endDate": "2028-12-31",
+				"value": 96000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-026",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-zuidwaard-catering.id}}",
+				"number": "CT-2024-026",
+				"subject": "Koffie- en theevoorziening",
+				"startDate": "2024-02-01",
+				"endDate": "2027-01-31",
+				"value": 38000,
+				"status": "active",
+				"renewalWarning": true
+			}
+		},
+		{
+			"key": "contract-ct-2025-023",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-polderlicht.id}}",
+				"number": "CT-2025-023",
+				"subject": "Laadpalen gemeentelijk wagenpark",
+				"startDate": "2025-05-01",
+				"endDate": "2028-04-30",
+				"value": 260000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-029",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-waalmond-ict.id}}",
+				"number": "CT-2024-029",
+				"subject": "Netwerkbeheer",
+				"startDate": "2024-01-01",
+				"endDate": "2027-12-31",
+				"value": 330000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-025",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-linde-facilitair.id}}",
+				"number": "CT-2025-025",
+				"subject": "Schoonmaak buitenlocaties",
+				"startDate": "2025-04-01",
+				"endDate": "2027-03-31",
+				"value": 140000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2023-027",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-molenwerf-bouw.id}}",
+				"number": "CT-2023-027",
+				"subject": "Onderhoud gemeentelijk vastgoed",
+				"startDate": "2023-05-01",
+				"endDate": "2026-04-30",
+				"value": 890000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-027",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-dijkveld-beveiliging.id}}",
+				"number": "CT-2025-027",
+				"subject": "Cameratoezicht centrum",
+				"startDate": "2025-08-01",
+				"endDate": "2028-07-31",
+				"value": 215000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2024-031",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-haventoren-archief.id}}",
+				"number": "CT-2024-031",
+				"subject": "Scannen en indexeren dossiers",
+				"startDate": "2024-03-01",
+				"endDate": "2027-02-28",
+				"value": 72000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-029",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-kade-advies.id}}",
+				"number": "CT-2025-029",
+				"subject": "Advies duurzame mobiliteit",
+				"startDate": "2025-10-01",
+				"endDate": "2027-09-30",
+				"value": 98000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2023-031",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-oosthaven-drukwerk.id}}",
+				"number": "CT-2023-031",
+				"subject": "Huisstijlmaterialen",
+				"startDate": "2023-07-01",
+				"endDate": "2026-06-30",
+				"value": 26000,
+				"status": "ending",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-031",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-grachtzicht-juridisch.id}}",
+				"number": "CT-2025-031",
+				"subject": "Juridische ondersteuning bezwaarzaken",
+				"startDate": "2025-01-01",
+				"endDate": "2027-12-31",
+				"value": 160000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2025-033",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-zandpad-verhuizingen.id}}",
+				"number": "CT-2025-033",
+				"subject": "Inzet verhuisteam evenementen",
+				"startDate": "2025-03-01",
+				"endDate": "2027-02-28",
+				"value": 22000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2026-002",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-rivierland-installatie.id}}",
+				"number": "CT-2026-002",
+				"subject": "Onderhoud sanitaire voorzieningen",
+				"startDate": "2026-01-01",
+				"endDate": "2028-12-31",
+				"value": 58000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2026-004",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-polderlicht.id}}",
+				"number": "CT-2026-004",
+				"subject": "Verlichting sportvelden",
+				"startDate": "2026-02-01",
+				"endDate": "2029-01-31",
+				"value": 185000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2026-006",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-waalmond-ict.id}}",
+				"number": "CT-2026-006",
+				"subject": "Cloudopslag archief",
+				"startDate": "2026-03-01",
+				"endDate": "2029-02-28",
+				"value": 112000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
+			"key": "contract-ct-2026-008",
+			"register": "dossiq",
+			"schema": "supplierContract",
+			"data": {
+				"supplierRef": "{{object:leverancier-linde-facilitair.id}}",
+				"number": "CT-2026-008",
+				"subject": "Postverwerking",
+				"startDate": "2026-04-01",
+				"endDate": "2028-03-31",
+				"value": 67000,
+				"status": "active",
+				"renewalWarning": false
+			}
+		},
+		{
 			"key": "afdeling-gemeente",
 			"register": "dossiq",
 			"schema": "organisatieRol",
@@ -2723,6 +3613,496 @@
 				"outcome": "inbox",
 				"reason": "Geen zaak gevonden bij dit bericht; wacht op een behandelaar."
 			}
+		},
+		{
+			"key": "waarneming-anouk-voor-pieter",
+			"register": "dossiq",
+			"schema": "substitution",
+			"data": {
+				"absentee": "{{cast:pieter.uid}}",
+				"substitute": "{{cast:anouk.uid}}",
+				"startDate": "{{date:8}}",
+				"endDate": "{{date:12}}",
+				"scope": "all",
+				"reason": "verlof",
+				"status": "active",
+				"comment": "Vakantie",
+				"createdBy": "{{cast:pieter.uid}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"ontvangst": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluit"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Openbare verlichting fietspad Lindelaan",
+				"description": "Meneer Visser vraagt de stukken over de nieuwe verlichting langs het fietspad aan de Lindelaan: het advies, de planning met de aannemer, het raadsvoorstel en de klachten van bewoners.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henkvisser.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henkvisser.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "intern",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "behandelaars",
+				"startDate": "{{date:-24}}",
+				"receivedAt": "{{datetime:-24 09:40}}",
+				"currentStatusEnteredAt": "{{datetime:-2 11:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangst}}",
+						"enteredAt": "{{datetime:-24 09:40}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 11:00}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Verlichting fietspad Lindelaan",
+					"omschrijving": "Het advies over de verlichting, de planning met de aannemer, het raadsvoorstel en de klachten van bewoners over het fietspad aan de Lindelaan.",
+					"periodeVan": "{{date:-400}}",
+					"periodeTot": "{{date:-24}}",
+					"origin": "portal"
+				},
+				"tags": [
+					"woo",
+					"verlichting"
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-advies",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Advies verlichting fietspad",
+				"fileName": "advies-verlichting-fietspad.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-advies",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-advies.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-advies",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-advies.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-advies",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-advies.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-mail-aannemer",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Mail aannemer over planning",
+				"fileName": "mail-aannemer-planning.eml",
+				"format": "message/rfc822",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-mail-aannemer",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-mail-aannemer.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-mail-aannemer",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-mail-aannemer.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-mail-aannemer",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-mail-aannemer.id}}",
+				"classification": "deels_openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}",
+				"weigeringsgronden": [
+					"5.1.2.e"
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Raadsvoorstel fietspad Lindelaan",
+				"fileName": "raadsvoorstel-fietspad-lindelaan.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-raadsvoorstel.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-raadsvoorstel.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-raadsvoorstel.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-klachtenlijst",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Klachtenlijst bewoners Lindelaan",
+				"fileName": "klachtenlijst-bewoners-lindelaan.xlsx",
+				"format": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-klachtenlijst",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-klachtenlijst.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-klachtenlijst",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-klachtenlijst.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-klachtenlijst",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-klachtenlijst.id}}",
+				"classification": "deels_openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}",
+				"weigeringsgronden": [
+					"5.1.2.e"
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-interne-notitie",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Interne notitie budget",
+				"fileName": "interne-notitie-budget.docx",
+				"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-interne-notitie",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-interne-notitie.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-interne-notitie",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-interne-notitie.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-interne-notitie",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-interne-notitie.id}}",
+				"classification": "niet_openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}",
+				"weigeringsgronden": [
+					"5.2.1"
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-offerte",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Offerte lantaarnpalen",
+				"fileName": "offerte-lantaarnpalen.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-offerte",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-offerte.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-offerte",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-offerte.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-offerte",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-offerte.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-doc-plattegrond",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Plattegrond lichtmasten",
+				"fileName": "plattegrond-lichtmasten.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-60}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-plattegrond",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-doc-plattegrond.id}}",
+				"registrationDate": "{{datetime:-20 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-plattegrond",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-plattegrond.id}}",
+				"relevance": "in-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-12 10:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-beoordeling-plattegrond",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-doc-plattegrond.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:pieter.uid}}",
+				"assessedAt": "{{datetime:-6 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-besluitbrief",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"data": {
+				"title": "Woo-besluit verlichting fietspad Lindelaan",
+				"fileName": "Besluit Woo-verzoek {{object:woo-fietspad-besluitklaar.identifier}}.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "openbaar",
+				"status": "draft",
+				"informatieobjecttype": "Besluit",
+				"direction": "outgoing",
+				"creatiedatum": "{{date:-1}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-zio-besluitbrief",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluitklaar-besluitbrief.id}}",
+				"registrationDate": "{{datetime:-1 15:30}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluitklaar-review-besluitbrief",
+			"register": "dossiq",
+			"schema": "documentReview",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"documentRef": "{{object:woo-fietspad-besluitklaar-besluitbrief.id}}",
+				"relevance": "out-of-scope",
+				"relevanceSource": "reviewer",
+				"markedBy": "{{cast:pieter.uid}}",
+				"markedAt": "{{datetime:-1 15:31}}"
+			}
 		}
 	],
 	"views": [
@@ -2731,7 +4111,7 @@
 			"data": {
 				"name": "Lindelaan",
 				"description": "Alles over de Lindelaan: zaken, objecten en documenten.",
-				"owner": "{{cast:thomas.uid}}",
+				"owner": "{{cast:pieter.uid}}",
 				"isPublic": true,
 				"query": {
 					"filters": {},
@@ -2743,7 +4123,7 @@
 					"operator": "gte",
 					"threshold": 12,
 					"recipients": [
-						"user:{{cast:thomas.uid}}"
+						"user:{{cast:pieter.uid}}"
 					]
 				}
 			}
@@ -2786,14 +4166,19 @@
 			"data": {
 				"name": "Wacht op inwoner",
 				"description": "Zaken die wachten op de aanvrager",
+				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}, {"user": "{{cast:anouk.uid}}", "mode": "write"}],
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": false,
 				"query": {
 					"filters": {
-						"waitingOnApplicant": true,
-						"statusHiddenInLists": false,
-						"isDraft": false,
-						"isFinalStatus": false
+						"waitingOnApplicant": true
+					},
+					"overrides": {
+						"lockedFilters": {
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
 					},
 					"search": "",
 					"sort": [
@@ -2943,6 +4328,93 @@
 				"assignee": "{{cast:pieter.uid}}",
 				"completedAt": "{{datetime:-27 09:30}}",
 				"completedBy": "{{cast:pieter.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-contract",
+			"data": {
+				"title": "Contract getekend",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "contract",
+				"state": "completed",
+				"completedAt": "{{datetime:-50 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-mandate-import",
+			"data": {
+				"title": "Mandaten ingesteld",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "mandate_import",
+				"state": "completed",
+				"completedAt": "{{datetime:-22 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-sso-setup",
+			"data": {
+				"title": "Inloggen ingericht",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "sso_setup",
+				"state": "available"
+			}
+		},
+		{
+			"key": "waterland-inrichten-branding",
+			"data": {
+				"title": "Huisstijl gekozen",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "branding",
+				"state": "completed",
+				"completedAt": "{{datetime:-40 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-zaaktype-selection",
+			"data": {
+				"title": "Zaaktypen geladen",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "zaaktype_selection",
+				"state": "completed",
+				"completedAt": "{{datetime:-35 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-first-user",
+			"data": {
+				"title": "Beheerder uitgenodigd",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "first_user",
+				"state": "completed",
+				"completedAt": "{{datetime:-48 10:00}}",
+				"completedBy": "{{cast:marieke.uid}}"
+			}
+		},
+		{
+			"key": "waterland-inrichten-go-live",
+			"data": {
+				"title": "Live gezet",
+				"objectUuid": "{{organisation:waterland}}",
+				"organisation": "{{organisation:waterland}}",
+				"kind": "dossiq.onboarding",
+				"taskKey": "go_live",
+				"state": "available"
 			}
 		}
 	],

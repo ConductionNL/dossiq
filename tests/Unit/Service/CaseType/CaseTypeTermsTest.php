@@ -133,6 +133,26 @@ class CaseTypeTermsTest extends TestCase {
 	}//end testTheServiceTargetReadsAsADuration()
 
 	/**
+	 * Whether a late decision costs a penalty (Wet dwangsom), after a notice
+	 * of default, with the most it can come to when set; unset stays empty.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-penalty-on-late-decision/specs/case-types/spec.md#requirement-a-case-type-says-whether-a-late-decision-costs-a-penalty
+	 */
+	public function testThePenaltyOnALateDecisionReadsAsASentence(): void {
+		$capped = $this->terms(caseType: ['penaltyOnLateDecision' => true, 'penaltyMaxAmount' => 1442])->termsFor(caseTypeId: 'ct');
+		$plain  = $this->terms(caseType: ['penaltyOnLateDecision' => true])->termsFor(caseTypeId: 'ct');
+		$none   = $this->terms(caseType: ['penaltyOnLateDecision' => false])->termsFor(caseTypeId: 'ct');
+		$unset  = $this->terms(caseType: ['processingDeadline' => 'P1W'])->termsFor(caseTypeId: 'ct');
+
+		$this->assertSame(expected: 'Yes, after a notice of default, at most € 1442', actual: $capped['penalty']);
+		$this->assertSame(expected: 'Yes, after a notice of default', actual: $plain['penalty']);
+		$this->assertSame(expected: 'No', actual: $none['penalty']);
+		$this->assertSame(expected: '', actual: $unset['penalty']);
+	}//end testThePenaltyOnALateDecisionReadsAsASentence()
+
+	/**
 	 * An unreadable case type answers null, not empty words.
 	 *
 	 * @return void

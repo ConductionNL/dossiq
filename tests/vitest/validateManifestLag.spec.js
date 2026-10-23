@@ -203,7 +203,14 @@ describe('check:manifest tells a lag from a defect', () => {
 		// asked about the path itself.
 		const declaresGeneratedFilters = (installed.$defs.page?.properties?.config?.properties?.pageFilters?.items?.properties?.type?.enum || []).includes('quarter')
 
-		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters) {
+		// A page filter option's rolling window `months` (schema 2.147.0) is
+		// derived the same way.
+		const declaresOptionMonths = Object.hasOwn(
+			installed.$defs.page?.properties?.config?.properties?.pageFilters?.items?.properties?.options?.items?.properties || {},
+			'months',
+		)
+
+		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters && declaresOptionMonths) {
 			expect(out).not.toContain('pending a library release')
 			return
 		}
@@ -220,6 +227,9 @@ describe('check:manifest tells a lag from a defect', () => {
 		}
 		if (!declaresGeneratedFilters) {
 			expect(out).toMatch(/\/config\/pageFilters\/0\/type uses "enum", which schema [\d.]+ accepts/)
+		}
+		if (!declaresOptionMonths) {
+			expect(out).toMatch(/\/config\/pageFilters\/\d+\/options\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
 		}
 	}, 30000)
 

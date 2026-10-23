@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
 
@@ -105,11 +106,13 @@ class UrgencyScorer {
 	 * @param LoggerInterface $logger Logger.
 	 * @param WorkingDayRoll|null $calendar The administered calendar the business days are
 	 *        counted on (REQ-OTE-04), or null to count Monday to Friday and say so once.
+	 * @param DayCount $days The one place days between two dates are counted.
 	 */
 	public function __construct(
 		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
 		private readonly ?WorkingDayRoll $calendar = null,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -169,7 +172,7 @@ class UrgencyScorer {
 		if ($referenceParsed !== null) {
 			$idleDays = 0;
 			if ($referenceParsed < $today) {
-				$idleDays = (int)$today->diff($referenceParsed)->days;
+				$idleDays = $this->days->between(from: $today, to: $referenceParsed);
 			}
 
 			$idleComponent = (min($idleDays, self::MAX_IDLE_DAYS) * $profile->idleWeight);

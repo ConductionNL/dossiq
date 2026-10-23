@@ -50,7 +50,9 @@ const overrides = [
 
 describe('party sources', () => {
 	it('declares the party widget on every requester and represented party', () => {
+		// The second representedParty is the simple profile's Partij toevoegen form (DqZaakBetrokkenen).
 		expect(overrides.map((o) => o.field).sort()).toEqual([
+			'representedParty',
 			'representedParty',
 			...Array(9).fill('requester'),
 		])

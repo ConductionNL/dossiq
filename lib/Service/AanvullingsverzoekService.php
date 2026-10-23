@@ -305,7 +305,10 @@ class AanvullingsverzoekService {
 	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
 	 */
 	private function assertClarification(string $caseId, array $items, string $question): void {
-		if ($this->caseTypeOf(caseId: $caseId) !== WooRequestIntake::CASE_TYPE_ID) {
+		// A Woo request on any version of the case type: the first version by
+		// its fixed id, a later one by the identifier the chain shares.
+		$wooKeys = [WooRequestIntake::CASE_TYPE_ID, WooRequestIntake::CASE_TYPE_IDENTIFIER];
+		if (in_array($this->caseTypeOf(caseId: $caseId), $wooKeys, true) === false) {
 			throw new RefusedException(
 				rule: 'aanvullingsverzoek-clarification-woo-only',
 				sentence: 'A clarification can only be asked on a Woo request.',
@@ -323,13 +326,12 @@ class AanvullingsverzoekService {
 	}//end assertKind()
 
 	/**
-	 * The case's type, or '' when it cannot be read.
+	 * The case's type: the identifier its version chain shares when the case
+	 * carries one, else the uuid of its version, or '' when it cannot be read.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return string The case type id.
-	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
+	 * @return string The case type identifier or id.
 	 */
 	protected function caseTypeOf(string $caseId): string {
 		try {
@@ -348,7 +350,12 @@ class AanvullingsverzoekService {
 			return '';
 		}
 
-		return trim((string)(($case ?? [])['caseType'] ?? ''));
+		// The first of the two the case carries: the shared identifier, else the version's uuid.
+		$wanted = ['caseType' => true, 'caseTypeIdentifier' => true];
+		$keys = array_filter(array_map('trim', array_map('strval', array_intersect_key(($case ?? []), $wanted))));
+		krsort($keys);
+
+		return (string)(reset($keys));
 	}//end caseTypeOf()
 
 	/**

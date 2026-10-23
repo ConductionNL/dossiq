@@ -89,8 +89,6 @@ export function textsAndAccessFields(t) {
 		{
 			key: 'portal_intro_text',
 			label: t('dossiq', 'Text above My cases in the portal'),
-			type: 'textarea',
-			rows: 2,
 		},
 		{
 			key: 'allowedWebsites',

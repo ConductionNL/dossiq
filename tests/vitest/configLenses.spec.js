@@ -48,9 +48,22 @@ describe('withConfiguredLenses', () => {
 	})
 })
 
+describe('withConfiguredLenses on default filters', () => {
+	it('keeps a default filter whose setting has a value', () => {
+		const out = withConfiguredLenses({ pages: [{ id: 'P', config: { defaultFilters: { city: '@config.city', kind: 'x' } } }] }, { city: 'Zuiddrecht' })
+		expect(out.pages[0].config.defaultFilters).toEqual({ city: '@config.city', kind: 'x' })
+	})
+
+	it('drops a default filter whose setting is empty, and the map when nothing is left', () => {
+		const one = withConfiguredLenses({ pages: [{ id: 'P', config: { defaultFilters: { city: '@config.city', kind: 'x' } } }] }, {})
+		expect(one.pages[0].config.defaultFilters).toEqual({ kind: 'x' })
+		const none = withConfiguredLenses({ pages: [{ id: 'P', config: { defaultFilters: { city: '@config.city' } } }] }, {})
+		expect(none.pages[0].config).not.toHaveProperty('defaultFilters')
+	})
+})
+
 describe.each([
 	['Contacts', 'residence.city', 'Place of residence: @config.municipalityCity', 'Woonplaats: @config.municipalityCity'],
-	['Organisations', 'address.place', 'Place: @config.municipalityCity', 'Plaats: @config.municipalityCity'],
 ])('the %s list', (id, field, activeLabel, dutch) => {
 	it('opens on the municipality city lens when the city is set', () => {
 		const lenses = lensesOf(id, { municipalityCity: 'Zuiddrecht' })
@@ -66,5 +79,29 @@ describe.each([
 		const lenses = lensesOf(id, { municipalityCity: '' })
 		expect(lenses.find((l) => l.default === true).label).toBe('All')
 		expect(JSON.stringify(lenses)).not.toContain('@config.')
+	})
+})
+
+describe('the Organisations list (DqOrganisaties: All, with "Plaats: Zuiddrecht" in the Filter panel)', () => {
+	/**
+	 * The Organisations page config after the config is applied.
+	 *
+	 * @param {object} config The app config.
+	 * @return {object} The page config.
+	 */
+	const pageOf = (config) => withConfiguredLenses(structuredClone(manifest), config).pages.find((page) => page.id === 'Organisations').config
+
+	it('has no lens on the city, and opens on All filtered to the municipality city', () => {
+		const config = pageOf({ municipalityCity: 'Zuiddrecht' })
+		expect(config.quickFilters.some((lens) => lens.filter && 'address.place' in lens.filter)).toBe(false)
+		expect(config.quickFilters.some((lens) => lens.default === true)).toBe(false)
+		expect(config.defaultFilters).toEqual({ 'address.place': '@config.municipalityCity' })
+		expect(nl[config.filterLabels['address.place'].label]).toBe('Plaats')
+	})
+
+	it('opens unfiltered without a city', () => {
+		const config = pageOf({ municipalityCity: '' })
+		expect(config).not.toHaveProperty('defaultFilters')
+		expect(JSON.stringify(config.quickFilters)).not.toContain('@config.')
 	})
 })

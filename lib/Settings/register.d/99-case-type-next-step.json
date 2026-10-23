@@ -1,0 +1,27 @@
+{
+  "_note": "The \"Wat nu?\" texts per case type (next-step-per-stage 1.4). `nextStep` holds the case type's own stages in the case page's `nextStep.stages` shape: per stage a title, a checklist and what follows. The case page reads it through nextcloud-vue `nextStep.stagesFrom` (detail-next-step-from-record); a case type without it keeps the page's stages. Declared here because OpenRegister stores only declared keys. caseType moves to 1.31.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.31.0",
+        "properties": {
+          "nextStep": {
+            "type": "object",
+            "title": "What now, per stage",
+            "description": "The \"What now?\" card of a case of this type, per stage: a title, a checklist and what follows. Empty keeps the case page's own texts.",
+            "properties": {
+              "stages": {
+                "type": "object",
+                "description": "Keys are stage values; each holds title, checklist and after."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

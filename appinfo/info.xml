@@ -424,6 +424,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\InstallShippedPackages</step>
             <step>OCA\Dossiq\Repair\PublishSeededCaseTypes</step>
             <!--
+                After the case type seeds: an install whose earlier seed runs
+                stored a case type twice keeps the newest copy current and
+                supersedes the older one, so the new case picker offers one.
+                Post-migration only: a fresh install has no copies.
+            -->
+            <step>OCA\Dossiq\Repair\SupersedeDuplicateSeededCaseTypes</step>
+            <!--
                 AFTER EVERY STEP THAT CREATES A CASE TYPE, AND IT USED TO RUN
                 BEFORE THEM ALL. This step projects the implicit lifecycle of a
                 case type that has no workflow yet into a published "basis"
@@ -722,6 +729,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  and the case differs. Idempotent, counted, non-fatal.
                  Post-migration only: a fresh install has no cases. -->
             <step>OCA\Dossiq\Repair\BackfillCaseStatusRole</step>
+            <!-- woo-five-steps: existing cases get `caseTypeIdentifier`, the
+                 identifier every version of their case type shares, which the
+                 lists and quick filters that mean every version read.
+                 OpenRegister computes it on save, so a case saved before the
+                 field existed has none. Same rules as the statusRole step.
+                 Post-migration only: a fresh install has no cases. -->
+            <step>OCA\Dossiq\Repair\BackfillCaseTypeIdentifier</step>
             <!-- communication-portal-conversation-on-the-case D-2: each portal
                  message's attachments are copied into the message folder portaliq
                  serves, once, behind a persisted key. Post-migration only: a
@@ -916,6 +930,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               ReconcileCaseDeadlinesWithTerms   writes existing case deadlines from their terms; none exist yet
               RearmBeslistermijnTimers          re-arms existing running term timers; none exist yet
               RetireOriRegister                 retires a register a fresh install never had
+              SupersedeDuplicateSeededCaseTypes supersedes copies earlier seed runs stored; a fresh install has none
               FoldCasePropertiesOntoCase        backfill over existing cases
               BackfillInformatieobjectMetadata  backfill over existing documents
               BackfillAdviceRequestObjection    backfill over existing bacAdviceRequests
@@ -928,6 +943,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               MigrateCaseTeamsToGroups          moves existing cases from a role to its group; a fresh install has none
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
+              BackfillCaseTypeIdentifier        fills caseTypeIdentifier on existing cases; a fresh install has none
               CopyMessageAttachmentsIntoMessageFolders  copies existing message attachments into the message folder; a fresh install has none
               BackfillPortalParty               fills portalParty on existing portal cases; a fresh install has none
               MoveDecisionTablesToOpenRegister  copies existing dossiq decision tables into OpenRegister; a fresh install has none

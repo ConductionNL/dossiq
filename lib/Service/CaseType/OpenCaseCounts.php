@@ -146,8 +146,10 @@ class OpenCaseCounts {
 	 * @param array<string, string> $supersededBy The superseded links.
 	 *
 	 * @return string The uuid of the version that is not superseded, or where a cycle stopped.
+	 *
+	 * @spec openspec/changes/woo-five-steps/specs/case-type-version-chain/spec.md#requirement-a-chosen-case-type-follows-its-version-chain
 	 */
-	private function currentVersionOf(string $uuid, array $supersededBy): string {
+	public function currentVersionOf(string $uuid, array $supersededBy): string {
 		$hops = 0;
 		while (isset($supersededBy[$uuid]) === true && $hops < self::MAX_HOPS) {
 			$uuid = $supersededBy[$uuid];

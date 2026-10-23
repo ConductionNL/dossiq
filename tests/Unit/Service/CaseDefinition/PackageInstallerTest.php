@@ -1042,6 +1042,34 @@ class PackageInstallerTest extends TestCase {
 	}//end testOnlyAutomaticPackagesInstallAutomatically()
 
 	/**
+	 * A reload installs what is installed here or automatic, and nothing else.
+	 *
+	 * @spec openspec/changes/reload-shipped-packages/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
+	 *
+	 * @return void
+	 */
+	public function testAReloadInstallsWhatIsInstalledOrAutomaticAndNothingElse(): void {
+		$root = $this->variant(
+			change: static function (string $dir): void {
+				self::editJson(path: $dir . '/package.json', change: static fn (array $m): array => ['install' => 'on-request'] + $m);
+			}
+		);
+
+		$reloaded = $this->installer(root: $root)->reloadInstalled();
+		$this->assertSame(expected: [], actual: $reloaded, message: 'an on-request package never installed is left alone');
+		$this->assertSame(expected: 0, actual: $this->register->writes);
+
+		$this->installer(root: $root)->install(id: 'fixture-case-type');
+		$writes = $this->register->writes;
+
+		$outcomes = $this->installer(root: $root)->reloadInstalled();
+
+		$this->assertCount(expectedCount: 1, haystack: $outcomes);
+		$this->assertSame(expected: PackageInstaller::CURRENT, actual: $outcomes[0]['status']);
+		$this->assertSame(expected: $writes, actual: $this->register->writes, message: 'a reload at the shipped version writes nothing');
+	}//end testAReloadInstallsWhatIsInstalledOrAutomaticAndNothingElse()
+
+	/**
 	 * Settings fill keys this instance never set and keep an administrator's value.
 	 *
 	 * @return void

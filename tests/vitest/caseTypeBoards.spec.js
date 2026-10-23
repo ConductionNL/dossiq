@@ -63,14 +63,14 @@ describe('Phases and tasks (REQ-CTB-2)', () => {
 		]))
 	})
 
-	it('opens the workflow canvas on its own page, from the header and from every phase', () => {
+	it('opens the workflow canvas on its own page from the buttons under the card\'s subtitle (DqZaaktype)', () => {
 		const board = widget('case-type-phase-board')
-		expect(board.headerLink).toEqual({ label: 'View as flow', route: 'CaseTypeFlow', params: { id: '@objectId' } })
-		expect(board.content.groupAction).toEqual(expect.objectContaining({
-			type: 'navigate',
-			label: 'Add a task',
-			target: '/settings/case-types/@group.caseTypeId/flow',
-		}))
+		expect(board.headerLink).toBeUndefined()
+		expect(board.content.groupAction).toBeUndefined()
+		expect(board.content.actions.map((action) => action.label)).toEqual(['View as flow', 'Add a task'])
+		board.content.actions.forEach((action) => {
+			expect(action).toEqual(expect.objectContaining({ type: 'navigate', target: '/settings/case-types/@objectId/flow' }))
+		})
 		const flow = page('CaseTypeFlow')
 		expect(flow.route).toBe('/settings/case-types/:id/flow')
 		expect(flow.type).toBe('custom')
@@ -105,7 +105,7 @@ describe('terms in words (REQ-CTB-4)', () => {
 		const terms = widget('case-type-terms-written')
 		expect(terms.type).toBe('facts')
 		expect(terms.content.source).toEqual({ url: '/apps/dossiq/api/case-types/@objectId/terms' })
-		expect(terms.content.fields.map((field) => field.path)).toEqual(['decisionTerm', 'suspension', 'serviceTarget'])
+		expect(terms.content.fields.map((field) => field.path)).toEqual(['decisionTerm', 'suspension', 'penalty', 'serviceTarget'])
 	})
 
 	it('have a route', () => {

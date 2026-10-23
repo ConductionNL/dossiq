@@ -77,3 +77,15 @@ describe('the general admin sections', () => {
 		expect(configKeys).not.toContain("'allowedWebsites',")
 	})
 })
+
+/**
+ * DqInstellingenAlgemeen draws "Tekst boven Mijn zaken in het portaal" as one
+ * line, like the sender above it. The text is one sentence.
+ */
+describe('Teksten en toegang', () => {
+	it('asks the portal text on one line', () => {
+		const field = textsAndAccessFields(t).find((entry) => entry.key === 'portal_intro_text')
+		expect(field.type).toBeUndefined()
+		expect(field.rows).toBeUndefined()
+	})
+})

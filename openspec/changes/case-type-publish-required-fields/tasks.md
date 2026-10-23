@@ -1,4 +1,4 @@
 - [x] PublicationChecks finds each empty required field
 - [x] PHPUnit: each field, a missing field, a translatable field, no writes on refusal
 - [x] serviceTarget on caseType; serviceTarget and notificationDomain on the cards and the create form
-- [ ] handling.teams on the card and forms (needs a dotted-path field in nextcloud-vue)
+- [x] handling.teams on the card and the create form (nextcloud-vue edits a dotted-path field since batch 18a)

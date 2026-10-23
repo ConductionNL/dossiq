@@ -42,6 +42,7 @@
 						:fitControl="false"
 						:locateControl="false"
 						:fullscreenControl="false"
+						:zoomControl="false"
 						:ariaLabel="t('dossiq', 'The chosen address on a map')" />
 				</div>
 				<fieldset class="case-location-dialog__layers" data-testid="case-location-layers">

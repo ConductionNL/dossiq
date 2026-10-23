@@ -46,6 +46,8 @@ $extra = [
         // The case types each user chose for My case types (case-types-in-my-menu).
     ['name' => 'menuCaseTypes#index',  'url' => '/api/menu-case-types', 'verb' => 'GET'],
     ['name' => 'menuCaseTypes#update', 'url' => '/api/menu-case-types', 'verb' => 'PUT'],
+        // The current user's primary team, for the @myTeam filter token (my-team-queue).
+    ['name' => 'myTeam#show', 'url' => '/api/me/team', 'verb' => 'GET'],
 
         // AI-Assisted Processing (specific endpoints precede wildcard routes).
     ['name' => 'ai#classify',        'url' => '/api/ai/classify',        'verb' => 'POST'],
@@ -145,6 +147,9 @@ $extra = [
         // The case surfaces that read and act through pipelinq
         // (parties-and-contact-moments-consume-pipelinq, boards
         // DqZaakContactmomenten, DqZaakPartijen, DqZaaktype).
+    // A party's open pipelinq tickets by master entity (organisation-open-tickets).
+    ['name' => 'partyTicket#openTicketCounts', 'url' => '/api/parties/open-tickets',      'verb' => 'GET'],
+    ['name' => 'partyTicket#openTickets',      'url' => '/api/parties/open-tickets/list', 'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#contactMoments',      'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#logContactMoment',    'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#fileContactMoment',   'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}/file',   'verb' => 'POST'],
@@ -932,6 +937,7 @@ $extra = [
         // are the `besluitvorming` package now, installed on request through the
         // package routes below (hydra ADR-118, decision 190).
     ['name' => 'package#index',   'url' => '/api/packages',              'verb' => 'GET'],
+    ['name' => 'package#reload',  'url' => '/api/packages/reload',       'verb' => 'POST'],
     ['name' => 'package#install', 'url' => '/api/packages/{id}/install', 'verb' => 'POST'],
         // The two `agenda#` routes were removed with the agenda compiler: decidiq
         // owns agenda-building and meetings, and it surfaces them here through the

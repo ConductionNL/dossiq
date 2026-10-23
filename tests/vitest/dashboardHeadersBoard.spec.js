@@ -65,6 +65,14 @@ describe('the dashboard headers', () => {
 		expect(placed.gridWidth).toBe(12)
 	})
 
+	it('sizes the two charts to their rows, as DqDashboard draws them (251px, not four grid rows)', () => {
+		const overlay = simple.pages.find((entry) => entry.id === 'Dashboard')
+		for (const id of ['cases-by-status', 'cases-by-type']) {
+			const placed = overlay.config.layout.find((item) => item.widgetId === id)
+			expect(placed.sizeToContent, id).toBe(true)
+		}
+	})
+
 	it.each(['cases-by-status', 'cases-by-type'])('subtitles the %s chart with what it counts, as DqDashboard does', (id) => {
 		// "Lopende zaken" under "Zaken per status" and "Zaken per type": both
 		// charts count the open cases only (`isFinalStatus: false`). DqMijnTeam

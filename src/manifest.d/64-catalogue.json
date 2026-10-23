@@ -26,6 +26,7 @@
 				"breadcrumb": { "label": "Settings", "href": "/index.php/settings/admin/dossiq" },
 				"headerMeta": "case types, attributes, templates and object types in folders",
 				"allowEdit": false,
+				"gridFloat": false,
 				"showWidgetActions": false,
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"_headerActionsNote": "Board DqCatalogus: Downloaden, the Actions menu, the buildiq square and New object type. Download asks the object types table for its rows as CSV (exportId, nextcloud-vue feat/header-download-table-csv). An object type is an OpenRegister schema, so New object type opens OpenRegister's schemas, where Add schema creates one. A new case type starts on the Case types page the tree opens.",
@@ -59,11 +60,12 @@
 								{
 									"label": "Case types",
 									"url": "/index.php/apps/dossiq/settings/case-types",
-									"childrenFrom": { "register": "dossiq", "schema": "caseType", "field": "category", "url": "/index.php/apps/dossiq/settings/case-types?category={value}" }
+									"childrenFrom": { "register": "dossiq", "schema": "caseType", "field": "category", "url": "/index.php/apps/dossiq/settings/case-types?category={value}" },
+									"countFrom": { "register": "dossiq", "schema": "caseType", "filter": { "supersededBy": { "isnull": true } } }
 								},
-								{ "label": "Attributes", "url": "/index.php/apps/dossiq/settings/attributes" },
-								{ "label": "Templates", "url": "/index.php/apps/dossiq/settings/workflow-definitions" },
-								{ "label": "Object types", "url": "/index.php/apps/dossiq/settings/catalogue" }
+								{ "label": "Attributes", "url": "/index.php/apps/dossiq/settings/attributes", "countFrom": { "register": "dossiq", "schema": "propertyDefinition" } },
+								{ "label": "Templates", "url": "/index.php/apps/dossiq/settings/workflow-definitions", "countFrom": { "register": "dossiq", "schema": "workflowTemplate" } },
+								{ "label": "Object types", "url": "/index.php/apps/dossiq/settings/catalogue", "countFrom": { "url": "/apps/dossiq/api/catalogue/object-types", "responsePath": "results" } }
 							]
 						}
 					},
@@ -71,6 +73,7 @@
 						"id": "catalogue-object-types",
 						"type": "object-table",
 						"title": "Object types",
+						"subtitle": "Objects you link to cases; you manage their properties here",
 						"headerActions": [
 							{
 								"label": "Add object type",
@@ -81,7 +84,6 @@
 								}
 							}
 						],
-						"description": "Objects you link to cases, by type",
 						"content": {
 							"endpointSource": {
 								"url": "/apps/dossiq/api/catalogue/object-types",
@@ -103,7 +105,10 @@
 						"id": "catalogue-store",
 						"type": "record-list",
 						"title": "From the Store",
-						"description": "Case types and set-up in and out as a file",
+						"subtitle": "Case types and set-up in and out as a file",
+						"headerActions": [
+							{ "label": "Import", "icon": "TrayArrowUp", "action": { "type": "open-modal", "target": "CaseTypeImportDialog" } }
+						],
 						"content": {
 							"endpointSource": {
 								"url": "/apps/dossiq/api/store/items",
@@ -118,9 +123,9 @@
 					}
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "catalogue-folders", "gridX": 0, "gridY": 0, "gridWidth": 3, "gridHeight": 5, "showTitle": false },
-					{ "id": "2", "widgetId": "catalogue-object-types", "gridX": 3, "gridY": 0, "gridWidth": 9, "gridHeight": 7, "showTitle": true },
-					{ "id": "3", "widgetId": "catalogue-store", "gridX": 3, "gridY": 7, "gridWidth": 9, "gridHeight": 4, "showTitle": true }
+					{ "id": "1", "widgetId": "catalogue-folders", "gridX": 0, "gridY": 0, "gridWidth": 3, "gridHeight": 5, "showTitle": false, "sizeToContent": true },
+					{ "id": "2", "widgetId": "catalogue-object-types", "gridX": 3, "gridY": 0, "gridWidth": 9, "gridHeight": 7, "showTitle": true, "sizeToContent": true },
+					{ "id": "3", "widgetId": "catalogue-store", "gridX": 3, "gridY": 7, "gridWidth": 9, "gridHeight": 4, "showTitle": true, "sizeToContent": true }
 				]
 			}
 		}

@@ -26,4 +26,14 @@ describe('DqZoekresultaten', () => {
 		expect(page.config.allowSavedViews).toBe(true)
 		expect(page.config.sidePanel.map((card) => card.id)).toEqual(['search-saved', 'search-exports'])
 	})
+
+	it('names each row by what it is, as plain text (nextcloud-vue search-kind-as-text)', () => {
+		const source = page.config.sourceConfig
+		expect(source.kindAsText).toBe(true)
+		expect(source.kinds.map((kind) => [kind.id, kind.rowLabel])).toEqual([
+			['cases', 'Case'],
+			['objects', '{objectType}'],
+			['documents', 'Document'],
+		])
+	})
 })
