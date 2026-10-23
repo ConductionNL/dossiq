@@ -1374,21 +1374,22 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"ontvangst": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Ontvangst"
+						"name": "Ontvangen"
 					}
 				},
 				"status": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Zoeken documenten"
+						"name": "In behandeling"
 					}
 				}
 			},
@@ -1444,21 +1445,22 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"ontvangst": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Ontvangst"
+						"name": "Ontvangen"
 					}
 				},
 				"status": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Beoordeling ontvankelijkheid"
+						"name": "In behandeling"
 					}
 				}
 			},
@@ -1577,14 +1579,15 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"ontvangst": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Ontvangst"
+						"name": "Ontvangen"
 					}
 				},
 				"besluit": {
@@ -1598,7 +1601,7 @@
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Publicatie"
+						"name": "Publiceren"
 					}
 				},
 				"status": {
@@ -1685,7 +1688,8 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"resultType": {
@@ -1712,7 +1716,8 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"decisionType": {

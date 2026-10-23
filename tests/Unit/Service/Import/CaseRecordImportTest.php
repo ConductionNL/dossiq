@@ -59,25 +59,30 @@ class CaseRecordImportTest extends TestCase {
 	use MakesCaseDateNormaliser;
 
 	/**
-	 * The seeded Woo case type's uuid.
+	 * The seeded Woo case type's version in use (version 2), which carries the import.
 	 */
-	private const CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a001';
+	private const CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a002';
+
+	/**
+	 * The first version, superseded, which shares the identifier.
+	 */
+	private const FIRST_VERSION = '3c0f5a00-0000-4000-a000-00000000a001';
 
 	/**
 	 * Its status uuids, as its declaration maps them.
 	 */
 	private const STAGE = [
-		'received' => '3c0f5a00-0000-4000-a000-00000000b001',
-		'in_progress' => '3c0f5a00-0000-4000-a000-00000000b004',
-		'awaiting_clarification' => '3c0f5a00-0000-4000-a000-00000000b002',
-		'decided' => '3c0f5a00-0000-4000-a000-00000000b008',
-		'withdrawn' => '3c0f5a00-0000-4000-a000-00000000b008',
+		'received' => '3c0f5a00-0000-4000-a000-00000000b011',
+		'in_progress' => '3c0f5a00-0000-4000-a000-00000000b012',
+		'awaiting_clarification' => '3c0f5a00-0000-4000-a000-00000000b012',
+		'decided' => '3c0f5a00-0000-4000-a000-00000000b015',
+		'withdrawn' => '3c0f5a00-0000-4000-a000-00000000b015',
 	];
 
 	/**
 	 * The result a withdrawn request ends with.
 	 */
-	private const RESULT_WITHDRAWN = '3c0f5a00-0000-4000-a000-00000000c004';
+	private const RESULT_WITHDRAWN = '3c0f5a00-0000-4000-a000-00000000c014';
 
 	/**
 	 * The register both apps' rows live in.
@@ -141,11 +146,14 @@ class CaseRecordImportTest extends TestCase {
 			$this->store->seed(schema: 'wooRequest', uuid: $row['id'], row: $row);
 		}
 
-		$fragment = json_decode((string)file_get_contents(dirname(__DIR__, 4) . '/lib/Settings/register.d/81-woo-verzoek.json'), true);
-		foreach ($fragment['components']['objects'] as $object) {
-			if (($object['id'] ?? '') === self::CASE_TYPE) {
-				unset($object['@self']);
-				$this->store->seed(schema: 'caseType', uuid: self::CASE_TYPE, row: $object);
+		foreach (['81-woo-verzoek.json', '81-woo-verzoek-version-2.json'] as $file) {
+			$fragment = json_decode((string)file_get_contents(dirname(__DIR__, 4) . '/lib/Settings/register.d/' . $file), true);
+			foreach ($fragment['components']['objects'] as $object) {
+				$id = (string)($object['id'] ?? '');
+				if ($id === self::CASE_TYPE || $id === self::FIRST_VERSION) {
+					unset($object['@self']);
+					$this->store->seed(schema: 'caseType', uuid: $id, row: $object);
+				}
 			}
 		}
 	}//end setUp()

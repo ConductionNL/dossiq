@@ -13,7 +13,10 @@
 - [x] 1.6 The menu's chosen case types and its Woo default fold to the version in use
 
 ## 2. Configuration
-- [ ] 2.1 Woo case type version 2: five statuses, result, decision and property types, flow; version 1 superseded
+- **spec_ref**: `openspec/changes/woo-five-steps/specs/case-type-version-chain/spec.md#requirement-the-woo-request-case-type-has-a-second-version-with-five-steps`
+- [x] 2.1 Woo case type version 2 (register.d/81-woo-verzoek-version-2.json): five statuses, result, decision and property types, record import; version 1 superseded
+- [x] 2.2 Flow flows/woo-verzoek-version-2.json with the guards regrouped; package 1.2.0
+- [x] 2.3 StatusTypePalette: Publiceren green
 
 ## 3. Example data
 - [ ] 3.1 The Zuiddrecht Woo cases and the Lindelaan sub-cases on version 2
