@@ -283,7 +283,7 @@ class ProcessingTimeCalculator {
 	 * @param array<int, array<string, mixed>> $completed Completed records.
 	 * @param int                              $weeks     Weeks to cover.
 	 *
-	 * @return array<int, array{weekLabel: string, count: int}> Oldest week first, or [] without completions.
+	 * @return array<int, array{weekLabel: string, week: string, count: int}> Oldest week first, or [] without completions.
 	 *
 	 * @spec openspec/specs/dashboard/spec.md
 	 */
@@ -306,6 +306,8 @@ class ProcessingTimeCalculator {
 			$monday = $anchor->sub(interval: new DateInterval('P'.($offset * 7).'D'));
 			$buckets[$monday->format('Y-m-d')] = [
 				'weekLabel' => 'W'.(int)$monday->format('W').' '.$monday->format('o'),
+				// The ISO week key a chart writes as "w40".
+				'week'      => $monday->format('o-\\WW'),
 				'count'     => 0,
 			];
 		}

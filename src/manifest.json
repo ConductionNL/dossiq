@@ -7937,6 +7937,7 @@
 						"title": "Throughput (cases closed per week)",
 						"content": {
 							"chartKind": "line",
+							"categoryFormat": "week",
 							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
@@ -7945,7 +7946,7 @@
 									"view": "throughput"
 								},
 								"responsePath": "throughput",
-								"labelsPath": "weekLabel",
+								"labelsPath": "week",
 								"series": [
 									{
 										"name": "Cases closed",
@@ -8598,6 +8599,7 @@
 						"title": "Throughput (cases closed per week)",
 						"content": {
 							"chartKind": "line",
+							"categoryFormat": "week",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/process-mining",
 								"params": {
