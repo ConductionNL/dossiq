@@ -17,6 +17,10 @@ unrelated flow ("Bezwaar advies"), because no example flow of a case type existe
   "Bericht of e-mail" is OpenRegister's send-email and sits under OpenRegister, because Integriq offers no message step.
 - The Zuiddrecht example set ships the flow "Omgevingsvergunning regulier": eight steps placed as on the board (an end
   step "Klaar" in the empty corner, since the engine needs one), switched off until an administrator adopts it.
+- The set also ships the decision table "Welstandsgebieden Zuiddrecht" (decision-tables register, hit policy FIRST:
+  historische kern, beschermd dorpsgezicht and dijkzone need advice, the rest does not); "Welstand nodig?" names it
+  by object id, which the inspector shows in its Beslistabel picker (openregister #4803). The step has one line on, not a
+  Ja/Nee pair: OpenRegister branches on conditioned exits, and two plain lines would run both branches.
 
 ## Reach
 

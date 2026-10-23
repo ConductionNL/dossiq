@@ -61,7 +61,19 @@ describe('the example case type flow', () => {
 		flow.nodes.forEach((node) => expect([...offered, 'openregister.trigger-object', 'openregister.end']).toContain(node.type))
 	})
 
-	it('asks a group the set creates', () => {
+	it('decides welstand with a decision table the set ships', () => {
+		const ref = flow.nodes.find((node) => node.id === 'welstand').config.tableRef
+		const key = /^\{\{object:([a-z0-9-]+)\.id\}\}$/.exec(ref)[1]
+		const table = example.objects.find((object) => object.key === key)
+		expect([table.register, table.schema, table.data.name]).toEqual(['decision-tables', 'decision-table', 'Welstandsgebieden Zuiddrecht'])
+		expect(table.data.inputs.map((input) => input.name)).toEqual(Object.keys(flow.nodes.find((node) => node.id === 'welstand').config.inputMapping))
+		table.data.rules.forEach((rule) => {
+			expect(rule.inputEntries).toHaveLength(table.data.inputs.length)
+			expect(rule.outputEntries).toHaveLength(table.data.outputs.length)
+		})
+	})
+
+		it('asks a group the set creates', () => {
 		const groups = example.groups.map((group) => group.group)
 		expect(groups).toContain(flow.nodes.find((node) => node.id === 'volledigheid').config.assignee)
 	})

@@ -4103,6 +4103,76 @@
 				"markedBy": "{{cast:pieter.uid}}",
 				"markedAt": "{{datetime:-1 15:31}}"
 			}
+		},
+		{
+			"key": "beslistabel-welstandsgebieden",
+			"register": "decision-tables",
+			"schema": "decision-table",
+			"data": {
+				"key": "welstandsgebieden-zuiddrecht",
+				"name": "Welstandsgebieden Zuiddrecht",
+				"description": "Of een bouwplan welstandsadvies nodig heeft, naar het welstandsgebied van de locatie uit de welstandsnota van Zuiddrecht.",
+				"hitPolicy": "FIRST",
+				"owner": "dossiq",
+				"inputs": [
+					{
+						"name": "welstandsgebied",
+						"type": "string"
+					}
+				],
+				"outputs": [
+					{
+						"name": "welstandNodig",
+						"type": "boolean"
+					},
+					{
+						"name": "toelichting",
+						"type": "string"
+					}
+				],
+				"rules": [
+					{
+						"id": "historische-kern",
+						"inputEntries": [
+							"\"Historische kern\""
+						],
+						"outputEntries": [
+							true,
+							"Advies van de commissie ruimtelijke kwaliteit."
+						]
+					},
+					{
+						"id": "beschermd-dorpsgezicht",
+						"inputEntries": [
+							"\"Beschermd dorpsgezicht\""
+						],
+						"outputEntries": [
+							true,
+							"Advies van de commissie ruimtelijke kwaliteit."
+						]
+					},
+					{
+						"id": "dijkzone",
+						"inputEntries": [
+							"\"Dijkzone\""
+						],
+						"outputEntries": [
+							true,
+							"Lichte toets door de stadsbouwmeester."
+						]
+					},
+					{
+						"id": "overig",
+						"inputEntries": [
+							"-"
+						],
+						"outputEntries": [
+							false,
+							"Welstandsvrij of excessenregeling."
+						]
+					}
+				]
+			}
 		}
 	],
 	"views": [
@@ -4526,9 +4596,9 @@
 							"y": 230
 						},
 						"config": {
-							"tableRef": "welstandsgebieden-zuiddrecht",
+							"tableRef": "{{object:beslistabel-welstandsgebieden.id}}",
 							"inputMapping": {
-								"locatie": "{{ item.locatie }}"
+								"welstandsgebied": "locatie.welstandsgebied"
 							},
 							"resultKey": "welstandNodig"
 						}
