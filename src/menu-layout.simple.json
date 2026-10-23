@@ -5529,12 +5529,13 @@
 						"key": "title",
 						"width": "150px",
 						"label": "Task",
-						"cellClass": "cn-cell--strong"
+						"cellClass": "cn-cell--strong cn-cell--wrap"
 					},
 					{
 						"key": "subjectLabel",
 						"width": "170px",
-						"label": "Subject"
+						"label": "Subject",
+						"cellClass": "cn-cell--wrap"
 					},
 					{
 						"key": "stateLabel",
