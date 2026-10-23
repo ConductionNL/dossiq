@@ -2414,7 +2414,8 @@
 							"noTemplatesText": "No templates for this case type yet",
 							"draft": {
 								"url": "/apps/dossiq/api/cases/@objectId/email-templates/{templateId}/draft",
-								"blankTemplateId": "blank"
+								"blankTemplateId": "blank",
+								"blankButton": true
 							},
 							"closedWhen": {
 								"field": "endDate",
