@@ -44,8 +44,8 @@ describe('a planned item starts at the next working day', () => {
 		expect(when.readOnly).toBeUndefined()
 	})
 
-	it('routes the defaults to the personal queue controller', () => {
+	it('routes the defaults to their own controller', () => {
 		const routes = fs.readFileSync(path.join(ROOT, 'appinfo/routes.php'), 'utf8')
-		expect(routes).toMatch(/'personalQueue#planDefaults',\s*'url' => '\/api\/personal-queue\/planned-items\/defaults',\s*'verb' => 'GET'/)
+		expect(routes).toMatch(/'plannedItemDefaults#show',\s*'url' => '\/api\/personal-queue\/planned-items\/defaults',\s*'verb' => 'GET'/)
 	})
 })

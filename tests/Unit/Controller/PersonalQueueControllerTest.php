@@ -35,9 +35,7 @@ use OCA\Dossiq\Service\Queue\DigestPreferences;
 use OCA\Dossiq\Service\Queue\PersonalAgendaItemService;
 use OCA\Dossiq\Service\Queue\PersonalQueueService;
 use OCA\Dossiq\Service\Queue\PersonalStageService;
-use OCA\Dossiq\Service\Queue\PlannedItemDefaults;
 use OCA\Dossiq\Service\Queue\QueueViewPreferences;
-use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -127,7 +125,6 @@ class PersonalQueueControllerTest extends TestCase {
 			stages: $this->stages,
 			agenda: $this->agenda,
 			digest: $this->digest,
-			planDefaults: new PlannedItemDefaults(workingDays: new WorkingDayCalculator()),
 		);
 	}//end setUp()
 
@@ -176,7 +173,6 @@ class PersonalQueueControllerTest extends TestCase {
 			'hideGroup' => ['tasks'],
 			'showGroup' => ['tasks'],
 			'planItem' => [],
-			'planDefaults' => [],
 			'stage' => ['case-1'],
 			'setStage' => ['case-1'],
 			'digestSettings' => [],
@@ -312,22 +308,6 @@ class PersonalQueueControllerTest extends TestCase {
 			$response->getData()['error']
 		);
 	}//end testAnItemThatCannotBePlannedIsRefusedWithTheReason()
-
-	/**
-	 * A new planned item opens at the next working day at 10:00.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
-	 */
-	public function testThePlanDefaultsStartAtTheNextWorkingDayAtTen(): void {
-		$this->signIn(uid: 'alice');
-
-		$startsAt = $this->controller->planDefaults()->getData()['startsAt'];
-
-		self::assertMatchesRegularExpression(pattern: '/^\d{4}-\d{2}-\d{2}T10:00$/', string: $startsAt);
-		self::assertGreaterThan(expected: (new \DateTimeImmutable())->format('Y-m-d'), actual: substr($startsAt, 0, 10));
-	}//end testThePlanDefaultsStartAtTheNextWorkingDayAtTen()
 
 	/**
 	 * The stage endpoints read and write the CALLER's own stage.

@@ -413,7 +413,7 @@ $extra = [
     ['name' => 'personalQueue#hideGroup',          'url' => '/api/personal-queue/groups/{group}/hide', 'verb' => 'POST'],
     ['name' => 'personalQueue#showGroup',          'url' => '/api/personal-queue/groups/{group}/show', 'verb' => 'POST'],
     ['name' => 'personalQueue#planItem',           'url' => '/api/personal-queue/planned-items',     'verb' => 'POST'],
-    ['name' => 'personalQueue#planDefaults',       'url' => '/api/personal-queue/planned-items/defaults', 'verb' => 'GET'],
+    ['name' => 'plannedItemDefaults#show',        'url' => '/api/personal-queue/planned-items/defaults', 'verb' => 'GET'],
     ['name' => 'personalQueue#digestSettings',     'url' => '/api/personal-queue/digest',            'verb' => 'GET'],
     ['name' => 'personalQueue#saveDigestSettings', 'url' => '/api/personal-queue/digest',            'verb' => 'POST'],
     ['name' => 'personalQueue#stage',              'url' => '/api/personal-queue/stages/{caseId}',   'verb' => 'GET'],

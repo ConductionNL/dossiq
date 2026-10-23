@@ -210,8 +210,15 @@ class CaseRecycleService {
 			return [];
 		}
 
+		// A case table that cannot be resolved falls back on the scan of every table.
+		$table = null;
 		try {
 			$table = $this->caseTable();
+		} catch (Throwable $e) {
+			$this->logger->info('Dossiq: the case table could not be resolved: ' . $e->getMessage());
+		}
+
+		try {
 			if ($table !== null && $this->deletedLensAvailable() === true) {
 				return $mapper->searchObjectsInRegisterSchemaTable(
 					query: [
@@ -252,16 +259,11 @@ class CaseRecycleService {
 			return null;
 		}
 
-		// An unconfigured id is a miss the mapper raises, so it lands in the catch.
-		try {
-			return [
-				'register' => $registers->find($this->settingsService->getConfigValue('register')),
-				'schema' => $schemas->find($this->settingsService->getConfigValue('case_schema')),
-			];
-		} catch (Throwable $e) {
-			$this->logger->info('Dossiq: the case table could not be resolved: ' . $e->getMessage());
-			return null;
-		}
+		// An unconfigured id is a miss the mapper raises; the caller falls back on it.
+		return [
+			'register' => $registers->find($this->settingsService->getConfigValue('register')),
+			'schema' => $schemas->find($this->settingsService->getConfigValue('case_schema')),
+		];
 	}//end caseTable()
 
 	/**
