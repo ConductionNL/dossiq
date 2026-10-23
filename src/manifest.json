@@ -12773,23 +12773,33 @@
 					{
 						"key": "displayName",
 						"label": "Name",
+						"width": "250px",
 						"widget": "avatar",
 						"secondary": "{residence.street} {residence.houseNumber}, {residence.city}"
 					},
 					{
 						"key": "citizenServiceNumber",
 						"label": "BSN",
-						"formatter": "masked"
+						"width": "211px",
+						"formatter": "masked",
+						"pills": [
+							{
+								"field": "indicatieGeheim",
+								"equals": true,
+								"label": "Data protection",
+								"variant": "warning"
+							}
+						]
 					},
 					{
 						"key": "residence.city",
 						"label": "Place of residence",
+						"width": "157px",
 						"sortable": false
 					},
 					{
 						"key": "description",
-						"label": "Description",
-						"sortable": false
+						"label": "Description"
 					}
 				],
 				"actions": [
