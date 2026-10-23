@@ -39,3 +39,14 @@ both checked as the system so the mover need not read them.
 #### Scenario: Every status can be reached
 - **GIVEN** the shipped flow
 - **THEN** every status of the case type SHALL be reachable from Melding ontvangen
+
+### Requirement: A Jeugdwet report runs on an eight-week decision term (REQ-JW-CT-004)
+
+Ruben (23 Oct 2026): a statutory term definition (Awb 4:13 lid 2, the Jeugdwet setting no decision
+term of its own) SHALL bind to Melding Jeugdwet for eight weeks, without extension, and the record
+import SHALL carry the term of a report still before its decision onto its case.
+
+#### Scenario: A migrated report before its decision is tracked
+- **GIVEN** a stored report in the family-plan stage
+- **WHEN** it moves onto a case
+- **THEN** the case SHALL carry a running statutory term ending eight weeks after the request date
