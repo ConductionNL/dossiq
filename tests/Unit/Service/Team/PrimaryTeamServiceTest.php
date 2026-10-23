@@ -74,7 +74,8 @@ class PrimaryTeamServiceTest extends TestCase {
 	public function testTwoEquallyDeepTeamsAreOrderedByName(): void {
 		$groups = ['zuiddrecht-vergunningen', 'zuiddrecht-woo-en-informatie'];
 
-		$this->assertSame(expected: 'zuiddrecht-woo-en-informatie', actual: PrimaryTeamService::primaryTeam(roles: self::roles(), userGroupIds: $groups)['groupId']);
+		$inOrder = PrimaryTeamService::primaryTeam(roles: self::roles(), userGroupIds: $groups);
+		$this->assertSame(expected: 'zuiddrecht-woo-en-informatie', actual: $inOrder['groupId']);
 		$reversed = PrimaryTeamService::primaryTeam(roles: array_reverse(self::roles()), userGroupIds: array_reverse($groups));
 		$this->assertSame(expected: 'zuiddrecht-woo-en-informatie', actual: $reversed['groupId']);
 	}//end testTwoEquallyDeepTeamsAreOrderedByName()
