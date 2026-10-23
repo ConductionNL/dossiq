@@ -5549,7 +5549,9 @@
 						"label": "Handler",
 						"widget": "avatar",
 						"widgetProps": {
-							"user": true
+							"user": true,
+							"groupField": "candidateGroups",
+							"groupLabel": "{group}, unclaimed"
 						}
 					}
 				]
