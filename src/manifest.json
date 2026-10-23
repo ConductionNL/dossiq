@@ -12768,7 +12768,8 @@
 				"columns": [
 					{
 						"key": "tradeName",
-						"label": "Name"
+						"label": "Name",
+						"cellClass": "cn-cell--wrap"
 					},
 					{
 						"key": "kvkNumber",
@@ -12795,6 +12796,7 @@
 								"requester": "@self.id",
 								"isFinalStatus": false
 							},
+							"zeroLabel": "None",
 							"filterable": true
 						},
 						"widget": "badge"
