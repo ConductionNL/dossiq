@@ -7008,7 +7008,7 @@
 							},
 							"rowRouteField": "routeName",
 							"rowIdField": "routeId",
-							"headerLink": {
+							"footerLink": {
 								"label": "To My work",
 								"route": "MyWorkHome"
 							}

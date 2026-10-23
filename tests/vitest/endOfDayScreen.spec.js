@@ -102,6 +102,10 @@ describe('the end-of-day page', () => {
 		expect(widget('eod-how').titleTone).toBe('side')
 		// "Morgen eerst" is the same side heading on the board (15px, 600).
 		expect(widget('eod-tomorrow').titleTone).toBe('side')
+		// "Naar Mijn werk" ends the card under the items, not in its header
+		// (nextcloud-vue record-list-footer-link).
+		expect(widget('eod-tomorrow').content.footerLink).toEqual({ label: 'To My work', route: 'MyWorkHome' })
+		expect(widget('eod-tomorrow').content.headerLink).toBeUndefined()
 	})
 
 	it('draws Your day as the board\'s grid of figures, Hours from humaniq among them and gone without it', () => {
