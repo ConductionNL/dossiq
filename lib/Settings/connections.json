@@ -63,6 +63,17 @@
             "sourceTemplate": "brp-haalcentraal"
         },
         {
+            "key": "kadaster",
+            "title": "Kadaster (BRK) and WOZ",
+            "description": "Parcel, owners as a reference, and the WOZ value.",
+            "order": 85,
+            "settingsUrl": "/settings/admin/dossiq?tab=integrations#section-kadaster",
+            "switch": {
+                "configKey": "integration.brk.mode",
+                "offValues": ["", "log"]
+            }
+        },
+        {
             "key": "kvk",
             "title": "KvK",
             "description": "Looking a company up in the chamber-of-commerce register.",
