@@ -50,3 +50,25 @@ describe('fieldFill', () => {
 		expect(fieldFill({ isRequired: true, calculation: 'x' })).toBe('Read only')
 	})
 })
+
+describe('fieldOrigin', () => {
+	it('names an own, an inherited and a shared field', async () => {
+		const { fieldOrigin } = await import('../../src/utils/fieldDescription.js')
+		expect(fieldOrigin({ name: 'bouwkosten' })).toBe('Own field')
+		expect(fieldOrigin({ origin: 'own' })).toBe('Own field')
+		expect(fieldOrigin({ origin: 'inherited', originCaseTypeTitle: 'Omgevingsvergunning' })).toBe('Inherited from Omgevingsvergunning')
+		expect(fieldOrigin({ origin: 'inherited' })).toBe('Inherited')
+		expect(fieldOrigin({ origin: 'shared' })).toBe('Shared')
+	})
+})
+
+describe('fieldInCaseList', () => {
+	it('says whether the case type shows the field as a case list column', async () => {
+		const { fieldInCaseList } = await import('../../src/utils/fieldDescription.js')
+		const caseType = { 'x-index': { columns: ['bouwkosten', 'status'] } }
+		expect(fieldInCaseList({ name: 'bouwkosten' }, caseType)).toBe('Yes')
+		expect(fieldInCaseList({ name: 'welstandsgebied' }, caseType)).toBe('No')
+		expect(fieldInCaseList({ name: 'bouwkosten' }, {})).toBe('No')
+		expect(fieldInCaseList({ name: 'bouwkosten' }, null)).toBe('No')
+	})
+})

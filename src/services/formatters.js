@@ -18,7 +18,7 @@ import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
 import { formatDuration, parseDuration } from '../utils/durationHelpers.js'
-import { fieldFill, fieldKind } from '../utils/fieldDescription.js'
+import { fieldFill, fieldInCaseList, fieldKind, fieldOrigin } from '../utils/fieldDescription.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
 import { caseAddress } from './caseAddress.js'
 import { coveredForLabel } from './coveredFor.js'
@@ -205,6 +205,29 @@ export default {
 	 * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
 	 */
 	fieldFill: (value, row) => fieldFill(row),
+
+	/**
+	 * Where a case type field comes from ("Own field", "Inherited from …").
+	 *
+	 * @param {unknown} value The cell value (unused).
+	 * @param {object} row The field.
+	 * @return {string} The words.
+	 * @spec openspec/changes/case-type-fields-origin-and-list/specs/case-types/spec.md
+	 */
+	fieldOrigin: (value, row) => fieldOrigin(row),
+
+	/**
+	 * Whether the case type on the page shows the field as a case list column.
+	 *
+	 * @param {unknown} value The cell value (unused).
+	 * @param {object} row The field.
+	 * @param {object} property The column's property (unused).
+	 * @param {object} options The column's options (unused).
+	 * @param {{object: (object|null)}} context The page record (nextcloud-vue cell-formatter-page-record).
+	 * @return {string} Yes or No.
+	 * @spec openspec/changes/case-type-fields-origin-and-list/specs/case-types/spec.md
+	 */
+	fieldInCaseList: (value, row, property, options, context) => fieldInCaseList(row, context && context.object),
 
 	/**
 	 * A schema's number of properties as a phrase ("9 properties"), empty

@@ -11970,8 +11970,28 @@
 									"key": "isRequired",
 									"label": "Fill in",
 									"formatter": "fieldFill"
+								},
+								{
+									"key": "id",
+									"label": "Origin",
+									"formatter": "fieldOrigin"
+								},
+								{
+									"key": "caseType",
+									"label": "In the list",
+									"formatter": "fieldInCaseList"
 								}
 							],
+							"readOnlyRows": {
+								"url": "/apps/dossiq/api/case-types/@objectId/blueprint",
+								"responsePath": "propertyDefinitions",
+								"where": {
+									"origin": [
+										"inherited",
+										"shared"
+									]
+								}
+							},
 							"addLabel": "Add field",
 							"emptyText": "This case type has no fields of its own yet",
 							"formSize": "large",

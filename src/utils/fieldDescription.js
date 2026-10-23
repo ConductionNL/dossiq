@@ -75,3 +75,37 @@ export function fieldFill(field) {
 	}
 	return row.isRequired === true ? t('dossiq', 'Required') : t('dossiq', 'Optional')
 }
+
+/**
+ * Where a field comes from: its own case type, the parent type it inherits
+ * from (the blueprint tags `origin` and `originCaseTypeTitle`), or shared. A
+ * row without an origin is the type's own.
+ *
+ * @param {object} field The field.
+ * @return {string} The words.
+ */
+export function fieldOrigin(field) {
+	const row = field && typeof field === 'object' ? field : {}
+	if (row.origin === 'inherited') {
+		const title = typeof row.originCaseTypeTitle === 'string' ? row.originCaseTypeTitle : ''
+		return title !== '' ? t('dossiq', 'Inherited from {caseType}', { caseType: title }) : t('dossiq', 'Inherited')
+	}
+	if (row.origin === 'shared') {
+		return t('dossiq', 'Shared')
+	}
+	return t('dossiq', 'Own field')
+}
+
+/**
+ * Whether the case type shows a field as a column of its case list
+ * (`x-index.columns`, by the field's name).
+ *
+ * @param {object} field The field.
+ * @param {object|null} caseType The case type the page shows.
+ * @return {string} Yes or No.
+ */
+export function fieldInCaseList(field, caseType) {
+	const columns = caseType && caseType['x-index'] && Array.isArray(caseType['x-index'].columns) ? caseType['x-index'].columns : []
+	const name = field && typeof field.name === 'string' ? field.name : ''
+	return name !== '' && columns.includes(name) ? t('dossiq', 'Yes') : t('dossiq', 'No')
+}

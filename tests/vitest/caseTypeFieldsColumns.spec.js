@@ -28,14 +28,26 @@ describe('the Velden table (DqZaaktypeVelden)', () => {
 			{ key: 'name', label: 'Field' },
 			{ key: 'propertyType', label: 'Kind', formatter: 'fieldKind' },
 			{ key: 'isRequired', label: 'Fill in', formatter: 'fieldFill' },
+			{ key: 'id', label: 'Origin', formatter: 'fieldOrigin' },
+			{ key: 'caseType', label: 'In the list', formatter: 'fieldInCaseList' },
 		])
-		expect(editor.content.columns.map((col) => nl[col.label])).toEqual(['Veld', 'Soort', 'Invullen'])
+		expect(editor.content.columns.map((col) => nl[col.label])).toEqual(['Veld', 'Soort', 'Invullen', 'Herkomst', 'In de lijst'])
 	})
 
 	it('has the formatters it names', async () => {
 		const formatters = (await import('../../src/services/formatters.js')).default
 		expect(formatters.fieldKind('enum', { propertyType: 'enum', enumValues: ['a', 'b'] })).toBeTruthy()
 		expect(formatters.fieldFill(true, { isRequired: true })).toBeTruthy()
+	})
+
+	it('adds the inherited fields read only from the blueprint', () => {
+		expect(editor.content.readOnlyRows).toEqual({ url: '/apps/dossiq/api/case-types/@objectId/blueprint', responsePath: 'propertyDefinitions', where: { origin: ['inherited', 'shared'] } })
+	})
+
+	it('has the origin and case list formatters, the latter reading the page record', async () => {
+		const formatters = (await import('../../src/services/formatters.js')).default
+		expect(formatters.fieldOrigin('x', { origin: 'inherited', originCaseTypeTitle: 'Omgevingsvergunning' })).toBeTruthy()
+		expect(formatters.fieldInCaseList('x', { name: 'a' }, {}, undefined, { object: { 'x-index': { columns: ['a'] } } })).toBe('Yes')
 	})
 
 	it('keeps the category in the form', () => {
