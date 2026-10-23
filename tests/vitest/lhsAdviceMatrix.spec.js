@@ -31,6 +31,19 @@ describe('the LHS matrix on the enforcement advice', () => {
 		expect(matrix.content.categories).toBeUndefined()
 	})
 
+	it('names rows, columns and cells where the chart reads them, inside cellSource', () => {
+		// CnChartWidget reads rowLabels, columnLabels and valueLabels off the
+		// cellSource; beside it they were ignored and the cells read
+		// "last_under_penaltypayment" (DqHandhaving: "Last onder dwangsom").
+		const source = matrix.content.cellSource
+		expect(source.valueLabels.last_under_penaltypayment).toBe('Order subject to a penalty')
+		expect(source.rowLabels.goedwillend).toBe('Behaviour: well-meaning')
+		expect(source.columnLabels.ernstig).toBe('Consequence: serious')
+		for (const key of ['rowLabels', 'columnLabels', 'valueLabels']) {
+			expect(matrix.content[key], key).toBeUndefined()
+		}
+	})
+
 	it('outlines the cell of the advice and comes first on the page', () => {
 		expect(matrix.content.highlight).toEqual({ row: '@object.behaviour', column: '@object.severity' })
 		expect(page.config.layout[0].widgetId).toBe('lhs-matrix')

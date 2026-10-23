@@ -9793,26 +9793,26 @@
 								"columnField": "severity",
 								"valueField": "intervention",
 								"rowOrderPath": "behaviourAxis",
-								"columnOrderPath": "severityAxis"
-							},
-							"rowLabels": {
-								"goedwillend": "Behaviour: well-meaning",
-								"onverschillig": "Behaviour: indifferent",
-								"calculerend": "Behaviour: calculating",
-								"crimineel": "Behaviour: criminal"
-							},
-							"columnLabels": {
-								"gering": "Consequence: minor",
-								"aanzienlijk": "Consequence: considerable",
-								"ernstig": "Consequence: serious"
-							},
-							"valueLabels": {
-								"warning": "Warning",
-								"herstelactie": "Remedial action",
-								"last_under_penaltypayment": "Order subject to a penalty",
-								"last_plus_pv": "Order and official report",
-								"bestuursdwang": "Administrative enforcement",
-								"pv_plus_bestuursdwang": "Official report and administrative enforcement"
+								"columnOrderPath": "severityAxis",
+								"rowLabels": {
+									"goedwillend": "Behaviour: well-meaning",
+									"onverschillig": "Behaviour: indifferent",
+									"calculerend": "Behaviour: calculating",
+									"crimineel": "Behaviour: criminal"
+								},
+								"columnLabels": {
+									"gering": "Consequence: minor",
+									"aanzienlijk": "Consequence: considerable",
+									"ernstig": "Consequence: serious"
+								},
+								"valueLabels": {
+									"warning": "Warning",
+									"herstelactie": "Remedial action",
+									"last_under_penaltypayment": "Order subject to a penalty",
+									"last_plus_pv": "Order and official report",
+									"bestuursdwang": "Administrative enforcement",
+									"pv_plus_bestuursdwang": "Official report and administrative enforcement"
+								}
 							},
 							"colorMap": {
 								"herstelactie": "success",
