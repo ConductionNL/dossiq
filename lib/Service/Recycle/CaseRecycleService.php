@@ -113,6 +113,13 @@ class CaseRecycleService {
 	public const DELETED_ROW_CAP = 1000;
 
 	/**
+	 * The constant that names OpenRegister's deleted lens on the object list.
+	 *
+	 * @var string
+	 */
+	public const DELETED_LENS = 'OCA\\OpenRegister\\Db\\MagicMapper\\MagicSearchHandler::DELETED_ONLY';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister plus app config.
@@ -188,8 +195,10 @@ class CaseRecycleService {
 	/**
 	 * The soft-deleted rows the lens chooses from.
 	 *
-	 * The case table's deleted rows when OpenRegister can say which table that
-	 * is, else every deleted row on the instance. Never a page of either: the
+	 * The case table's deleted rows when OpenRegister offers the `_deleted`
+	 * lens and can say which table that is, else every deleted row on the
+	 * instance. An OpenRegister without the lens drops deleted rows from the
+	 * object list, so asking it the table question would answer nothing. Never a page of either: the
 	 * lens scopes the rows first and pages after, or a case behind a page of
 	 * other apps' deletions would never be listed.
 	 *
@@ -203,11 +212,10 @@ class CaseRecycleService {
 
 		try {
 			$table = $this->caseTable();
-			if ($table !== null && method_exists($mapper, 'searchObjectsInRegisterSchemaTable') === true) {
+			if ($table !== null && $this->deletedLensAvailable() === true) {
 				return $mapper->searchObjectsInRegisterSchemaTable(
 					query: [
-						'_includeDeleted' => true,
-						'@self' => ['deleted' => 'IS NOT NULL'],
+						'_deleted' => 'true',
 						'_limit' => self::DELETED_ROW_CAP,
 					],
 					register: $table['register'],
@@ -222,6 +230,15 @@ class CaseRecycleService {
 
 		return [];
 	}//end deletedRows()
+
+	/**
+	 * Whether OpenRegister's object list offers the `_deleted` lens.
+	 *
+	 * @return bool True when it does.
+	 */
+	protected function deletedLensAvailable(): bool {
+		return defined(self::DELETED_LENS);
+	}//end deletedLensAvailable()
 
 	/**
 	 * OpenRegister's register and schema entities of the case table, or null.
@@ -256,14 +273,10 @@ class CaseRecycleService {
 	 * @return bool True when the row stays.
 	 */
 	private function matches(array $case, string $search): bool {
-		$term = trim($search);
-		if ($term === '') {
-			return true;
-		}
-
+		// An empty needle is found at position 0, so an empty term keeps every row.
 		$haystack = implode(' ', [$case['identifier'], $case['title'], $case['deletedBy']]);
 
-		return (mb_stripos($haystack, $term) !== false);
+		return (mb_stripos($haystack, trim($search)) !== false);
 	}//end matches()
 
 	/**

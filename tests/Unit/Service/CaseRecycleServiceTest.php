@@ -109,10 +109,34 @@ class CaseRecycleServiceTest extends TestCase {
 	/**
 	 * Build the service under test.
 	 *
+	 * @param bool $lens Whether OpenRegister offers the `_deleted` lens.
+	 *
 	 * @return CaseRecycleService
 	 */
-	private function service(): CaseRecycleService {
+	private function service(bool $lens = false): CaseRecycleService {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+
+		if ($lens === true) {
+			return new class(
+				settingsService: $this->settingsService,
+				windowReader: new DeletionWindowReader(
+					settingsService: $this->settingsService,
+					logger: $logger
+				),
+				userSession: $this->userSession,
+				logger: $logger
+			) extends CaseRecycleService {
+
+				/**
+				 * An OpenRegister that offers the deleted lens.
+				 *
+				 * @return bool Always true.
+				 */
+				protected function deletedLensAvailable(): bool {
+					return true;
+				}
+			};
+		}
 
 		return new CaseRecycleService(
 			settingsService: $this->settingsService,
@@ -334,8 +358,8 @@ class CaseRecycleServiceTest extends TestCase {
 	}//end testTheLensPagesAfterKeepingTheCases()
 
 	/**
-	 * With the case table at hand the lens asks for that table's deleted rows
-	 * alone, and never scans every table on the instance.
+	 * With OpenRegister's `_deleted` lens and the case table at hand, the lens
+	 * asks for that table's deleted rows alone, and never scans every table.
 	 *
 	 * @return void
 	 *
@@ -386,11 +410,10 @@ class CaseRecycleServiceTest extends TestCase {
 		};
 		$this->withTableMappers();
 
-		$rows = $this->service()->deletedCases(limit: 1, forUser: 'archivaris', isAdmin: true);
+		$rows = $this->service(lens: true)->deletedCases(limit: 1, forUser: 'archivaris', isAdmin: true);
 
 		$this->assertFalse($this->mapper->scanned);
-		$this->assertTrue($this->mapper->query['_includeDeleted']);
-		$this->assertSame(['deleted' => 'IS NOT NULL'], $this->mapper->query['@self']);
+		$this->assertSame('true', $this->mapper->query['_deleted']);
 		$this->assertSame(2, $rows['total']);
 		$this->assertCount(1, $rows['results']);
 	}//end testTheLensReadsTheCaseTableOnly()
