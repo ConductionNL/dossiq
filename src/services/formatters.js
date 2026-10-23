@@ -320,6 +320,23 @@ export default {
 	statusTypeName: (value) => lookupRelatedName('statusType', value),
 
 	/**
+	 * A case's priority as a phrase for a list line ("prioriteit hoog",
+	 * DqTeamwachtrij); '' for an empty or unknown value.
+	 *
+	 * @param {string} value The stored priority (low, normal, high, urgent).
+	 * @return {string}
+	 */
+	priorityPhrase: (value) => {
+		const phrases = {
+			low: t('dossiq', 'priority low'),
+			normal: t('dossiq', 'priority normal'),
+			high: t('dossiq', 'priority high'),
+			urgent: t('dossiq', 'priority urgent'),
+		}
+		return phrases[value] ?? ''
+	},
+
+	/**
 	 * What the virus scanner recorded about a document row.
 	 *
 	 * Read, never inferred: the value is whatever `ScanVerdictReader`

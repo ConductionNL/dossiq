@@ -2362,7 +2362,7 @@
 							"viewMode": "list",
 							"listConfig": {
 								"titleField": "title",
-								"subtitleTemplate": "{identifier} · {initiatorDisplayName} · {priority}",
+								"subtitleTemplate": "{identifier} · {initiatorDisplayName} · {status|statusTypeName} · {priority|priorityPhrase}",
 								"leading": {
 									"key": "startDate",
 									"widget": "age",
