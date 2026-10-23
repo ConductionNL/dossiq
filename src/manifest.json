@@ -2017,7 +2017,7 @@
 				},
 				"allowSavedViews": true,
 				"_wooSavedViewNote": "Woo requests are a view of the case list, not a page of their own (Ruben, 19 October 2026): the default view `woo-requests` is the Woo case type with the same working-list rule as the Woo chip, and a link to the Woo list is `/cases?savedView=default:woo-requests`.",
-				"_teamQueueChipsNote": "DqTeamwachtrij (view `team-queue`): its chips are the case types in the queue (`quickFiltersFrom`), not this list's lenses. Its `quickFilters: []` sets the lenses aside while the view is active (nextcloud-vue: an empty quickFilters gives way to quickFiltersFrom); status, handler and the rest stay in the Filter panel. Its `bulkBandAlways: false` draws the bulk band only once rows are selected, as the board shows the queue with nothing selected.",
+				"_teamQueueChipsNote": "DqTeamwachtrij (view `team-queue`): its chips are the case types in the queue (`quickFiltersFrom`), not this list's lenses. Its `quickFilters: []` sets the lenses aside while the view is active (nextcloud-vue: an empty quickFilters gives way to quickFiltersFrom); status, handler and the rest stay in the Filter panel. Its `bulkBandAlways: false` draws the bulk band only once rows are selected, as the board shows the queue with nothing selected. Its `viewSwitch` draws the board's four views, list first; the table stays, under More views (Ruben, 23 Oct). Its count line names the reader's team, `[ · team {myTeam}]`, left out for a reader in no team.",
 				"_myWorkViewNote": "DqAanMijToegewezen (view `my-work`): the board draws the team's workload chips and no lenses, so the view's quick filters are only the covering chip (\"Inclusief werk waarvoor u waarneemt\", on by default); the conditions stay in the Filter panel. `bulkBandAlways: false` keeps the bulk band away until cards are selected, and the Actions menu lists the export and copy and delete for the selection, which the simple profile keeps out of the band; an Actions menu listing `export` takes the toolbar's Export over. `countText: \"\"` and `countSubtitle: null` leave the header note (\"{total} cases in your name\") as the only count.",
 				"_defaultSavedViewsNote": "saved-views-manage-and-defaults: views dossiq ships for every user, read-only, listed under Default views above the user's own saved views. A user applies one, or saves a copy to edit and share. They combine conditions the quick-filter chips offer one at a time (Mine and Overdue), so they add a lens instead of repeating a chip. The conditions are the chips' own: the same flat `deadline[lt]` / `deadline[gte]` keys with `@today` tokens, the same working-list rule `statusHiddenInLists: false`.",
 				"defaultSavedViews": [
@@ -2359,6 +2359,7 @@
 									}
 								}
 							],
+							"viewSwitch": ["list", "cards", "board", "map"],
 							"viewModes": [
 								"list",
 								"table",
@@ -2421,7 +2422,7 @@
 									}
 								]
 							},
-							"countText": "{shown} of {total} open cases without a handler · oldest first",
+							"countText": "{shown} of {total} open cases without a handler[ · team {myTeam}] · oldest first",
 							"footerNote": "a case leaves the queue as soon as someone picks it up",
 							"headerButtons": [
 								{
