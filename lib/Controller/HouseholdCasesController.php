@@ -41,6 +41,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\ISession;
 use OCP\IUser;
@@ -69,6 +70,7 @@ class HouseholdCasesController extends Controller {
 	 * @param ISession           $session     Where this reader's lookups are kept until they sign out.
 	 * @param CaseAccessGuard    $caseAccess  Whether the reader may read a case.
 	 * @param CitizenLookupGuard $sensitive   Whether the reader may see the social domain's sensitive fields.
+	 * @param IGroupManager      $groups      Whether the reader administers the instance.
 	 * @param HouseholdCases     $household   Builds the rows.
 	 * @param LoggerInterface    $logger      The logger.
 	 */
@@ -78,6 +80,7 @@ class HouseholdCasesController extends Controller {
 		private readonly ISession $session,
 		private readonly CaseAccessGuard $caseAccess,
 		private readonly CitizenLookupGuard $sensitive,
+		private readonly IGroupManager $groups,
 		private readonly HouseholdCases $household,
 		private readonly LoggerInterface $logger,
 	) {
@@ -181,7 +184,9 @@ class HouseholdCasesController extends Controller {
 			return $this->unauthenticated();
 		}
 
-		if ($this->sensitive->maySeeSensitiveFields(user: $user) === false
+		$maySeeHousehold = $this->sensitive->maySeeSensitiveFields(user: $user) === true
+			|| $this->groups->isAdmin($user->getUID()) === true;
+		if ($maySeeHousehold === false
 			|| $this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user) === false
 		) {
 			return new JSONResponse(
