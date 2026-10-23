@@ -77,6 +77,15 @@ export const RETIRED_ROUTES = [
 		path: '/woo-reports',
 		redirect: { name: 'DocumentReviewReports' },
 	},
+	// The catalogue's folders are entries under Advanced (Ruben, 23 October
+	// 2026). A case type folder opens the case types on that folder; the
+	// catalogue itself opens its main card, the object types.
+	{
+		path: '/settings/catalogue',
+		redirect: (to) => (to.query?.category
+			? { name: 'CaseTypes', query: to.query }
+			: { name: 'ObjectTypes', query: to.query ?? {} }),
+	},
 ]
 
 /**

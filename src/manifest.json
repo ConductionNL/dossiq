@@ -141,15 +141,15 @@
 						"optional": true,
 						"allowManualNext": true,
 						"title": "Where case types come from",
-						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. The case types are the first folder of the catalogue. You do not need to make one: dossiq ships with a set of them.",
-						"task": "Open Advanced, then Catalogue",
+						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look. You do not need to make one: dossiq ships with a set of them.",
+						"task": "Open Advanced, then Case types",
 						"target": {
 							"kind": "nav-item",
-							"ref": "Catalogue"
+							"ref": "CaseTypes"
 						},
 						"advanceOn": {
 							"type": "route-match",
-							"route": "Catalogue"
+							"route": "CaseTypes"
 						}
 					},
 					{
@@ -375,8 +375,7 @@
 			"icon": "FormatListBulletedType",
 			"route": "CaseTypes",
 			"section": "settings",
-			"order": 90,
-			"visibleIf": { "user.isAdmin": false }
+			"order": 21
 		},
 		{
 			"id": "PropertyDefinitionsMenu",
@@ -384,7 +383,7 @@
 			"icon": "TagMultiple",
 			"route": "PropertyDefinitions",
 			"section": "settings",
-			"order": 91
+			"order": 22
 		},
 		{
 			"id": "FlowsMenu",
