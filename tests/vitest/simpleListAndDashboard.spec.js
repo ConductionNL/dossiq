@@ -618,6 +618,18 @@ describe('the landing page', () => {
 			.toEqual(tile(before.config.widgets, 'recent-cases').content.lensReasonTexts)
 	})
 
+	it('rules above the first case row as well, as the boards draw their case lists', () => {
+		// DqDashboard, DqMijnWerk and DqMijnTeam draw a hairline above every
+		// row of Vastgelopen zaken and Zaken die u volgt, the first included
+		// (nextcloud-vue record-list ruleAbove).
+		const dashboard = page(builtSimple, 'Dashboard').config.widgets
+		for (const id of ['stalled-cases', 'favourite-cases', 'recent-cases']) {
+			expect(dashboard.find((item) => item.id === id).content.ruleAbove, id).toBe(true)
+		}
+		expect(widget('followed-cases').content.ruleAbove).toBe(true)
+		expect(widget('stalled-cases').content.ruleAbove).toBe(true)
+	})
+
 	it('continues where the handler left off, over the recent lens the full dashboard already uses', () => {
 		// "Verder werken" on the design: the cases this reader opened last.
 		// OpenRegister's `_recent` lens carries its own order, so the widget
