@@ -36,13 +36,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\Publication\PublicationSources;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooCaseLedger;
 use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
@@ -94,9 +94,9 @@ class WooPublicationService {
 	/**
 	 * Finds the case's Woo decision and mirrors the publication state onto the case.
 	 *
-	 * @var WooCaseLedger
+	 * @var CasePublicationState
 	 */
-	private readonly WooCaseLedger $caseLedger;
+	private readonly CasePublicationState $caseLedger;
 
 	/**
 	 * Loads the case, the decision and the disclosable documents.
@@ -121,7 +121,7 @@ class WooPublicationService {
 	 * @param IAppManager $appManager Nextcloud app manager for feature detection.
 	 * @param LoggerInterface $logger Logger.
 	 * @param WooDossierReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
-	 * @param WooCaseLedger|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
+	 * @param CasePublicationState|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
 	 * @param WooCaseDocuments|null $caseDocuments Loads a case document with its file content.
 	 * @param PagesSeen|null $pagesSeen The pages seen per document; publishing waits for the required ones.
 	 * @param NothingToDisclose|null $nothingToDisclose Whether the case records that nothing can be made public,
@@ -134,12 +134,12 @@ class WooPublicationService {
 		private readonly IAppManager $appManager,
 		LoggerInterface $logger,
 		private readonly ?WooDossierReturn $dossierReturn = null,
-		?WooCaseLedger $caseLedger = null,
+		?CasePublicationState $caseLedger = null,
 		?WooCaseDocuments $caseDocuments = null,
 		private readonly ?PagesSeen $pagesSeen = null,
 		private readonly ?NothingToDisclose $nothingToDisclose = null,
 	) {
-		$this->caseLedger = ($caseLedger ?? new WooCaseLedger(settingsService: $settingsService, logger: $logger));
+		$this->caseLedger = ($caseLedger ?? new CasePublicationState(settingsService: $settingsService, logger: $logger));
 		$this->sources    = new PublicationSources(settingsService: $settingsService, caseDocuments: $caseDocuments);
 		$this->transport  = new CatalogTransport(settingsService: $settingsService, apiClient: $apiClient, logger: $logger, caseLedger: $this->caseLedger);
 	}//end __construct()
@@ -283,7 +283,7 @@ class WooPublicationService {
 		}
 
 		if ($decisionId === '') {
-			$resolved = $this->caseLedger->resolveWooDecision(caseId: $caseId);
+			$resolved = $this->caseLedger->resolveDecision(caseId: $caseId);
 			if ($resolved['decisionId'] === '') {
 				return $resolved['refusal'];
 			}
@@ -433,7 +433,7 @@ class WooPublicationService {
 		}
 
 		if ($decisionId === '') {
-			$resolved = $this->caseLedger->resolveWooDecision(caseId: $caseId);
+			$resolved = $this->caseLedger->resolveDecision(caseId: $caseId);
 			if ($resolved['decisionId'] === '') {
 				return $resolved['refusal'];
 			}

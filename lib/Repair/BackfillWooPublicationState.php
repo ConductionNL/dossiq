@@ -30,9 +30,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Publication\PublicationResultLink;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooResultLink;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;
 use OCP\Migration\IOutput;
@@ -240,7 +240,7 @@ class BackfillWooPublicationState implements IRepairStep {
 			}
 
 			// The requester's link travels with the state, as it does on publish and withdraw.
-			$changes = array_merge($state, (new WooResultLink())->changesFor(state: $state));
+			$changes = array_merge($state, (new PublicationResultLink())->changesFor(state: $state));
 			if ($this->alreadyShows(case: $case, state: $changes) === true) {
 				return 'unchanged';
 			}

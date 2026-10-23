@@ -23,7 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Publication;
 use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -44,9 +44,9 @@ class CatalogTransportTest extends TestCase {
 	/**
 	 * The ledger that writes the set around the send.
 	 *
-	 * @var WooCaseLedger&MockObject
+	 * @var CasePublicationState&MockObject
 	 */
-	private WooCaseLedger&MockObject $ledger;
+	private CasePublicationState&MockObject $ledger;
 
 	/**
 	 * The transport under test.
@@ -66,7 +66,7 @@ class CatalogTransportTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getWooPublicationConfigValue')->willReturn('publication');
 		$this->api = $this->createMock(OpenCatalogiApiClient::class);
-		$this->ledger = $this->createMock(WooCaseLedger::class);
+		$this->ledger = $this->createMock(CasePublicationState::class);
 		$this->transport = new CatalogTransport(settingsService: $settings, apiClient: $this->api, logger: new NullLogger(), caseLedger: $this->ledger);
 	}//end setUp()
 
@@ -125,7 +125,7 @@ class CatalogTransportTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFailedDeliveryAnswersItsReason(): void {
-		$failures = ['timeout', WooCaseLedger::SET_NOT_WRITTEN];
+		$failures = ['timeout', CasePublicationState::SET_NOT_WRITTEN];
 		$this->ledger->method('deliver')->willReturnCallback(
 			static function () use (&$failures): array {
 				throw new RuntimeException((string)array_shift($failures));
