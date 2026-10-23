@@ -229,7 +229,7 @@
 		{
 			"id": "Queue",
 			"label": "Queue",
-			"icon": "TrayFull",
+			"icon": "FormatListBulleted",
 			"route": "Cases",
 			"query": { "savedView": "default:team-queue" },
 			"order": 15
@@ -245,14 +245,14 @@
 		{
 			"id": "WorkGroup",
 			"label": "My work",
-			"icon": "ClipboardAccountOutline",
+			"icon": "InboxOutline",
 			"route": "MyWorkHome",
 			"order": 20
 		},
 		{
 			"id": "Contacts",
 			"label": "Contacts",
-			"icon": "AccountGroupOutline",
+			"icon": "AccountMultipleOutline",
 			"route": "Contacts",
 			"order": 25,
 			"open": true
@@ -260,14 +260,14 @@
 		{
 			"id": "OrganisationsMenu",
 			"label": "Organisations",
-			"icon": "OfficeBuildingOutline",
+			"icon": "Domain",
 			"route": "Organisations",
 			"order": 26
 		},
 		{
 			"id": "Cases",
 			"label": "All cases",
-			"icon": "FolderAccountOutline",
+			"icon": "BriefcaseOutline",
 			"route": "Cases",
 			"order": 30
 		},
@@ -288,7 +288,7 @@
 		{
 			"id": "Tasks",
 			"label": "Tasks",
-			"icon": "FormatListChecks",
+			"icon": "CheckboxMarkedOutline",
 			"route": "Tasks",
 			"order": 32
 		},
