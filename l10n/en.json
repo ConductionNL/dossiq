@@ -6668,6 +6668,7 @@
         "Reference to the target status type (toStatus)": "Reference to the target status type (toStatus)",
         "Reference to the TermijnDefinitie this instance materialised from": "Reference to the TermijnDefinitie this instance materialised from",
         "Reference to the waiver confirmation document": "Reference to the waiver confirmation document",
+        "Reference {identifier}": "Reference {identifier}",
         "Reference: {ref}": "Reference: {ref}",
         "References (Nextcloud file IDs or OpenRegister doc refs) of the signed advice and supporting documents": "References (Nextcloud file IDs or OpenRegister doc refs) of the signed advice and supporting documents",
         "References to case types (array of zaaktype URLs)": "References to case types (array of zaaktype URLs)",

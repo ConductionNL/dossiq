@@ -6078,7 +6078,8 @@
 							"tab": "history"
 						},
 						"content": {
-							"excludeActions": ["read"]
+							"excludeActions": ["read"],
+							"footnote": "Reference {identifier}"
 						}
 					}
 				],
