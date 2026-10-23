@@ -1,5 +1,6 @@
 {
     "translations": {
+        "norm {value} days": "norm {value} days",
         " days": " days",
         "\"{doc}\" is {class} but has no weigeringsgrond selected.": "\"{doc}\" is {class} but has no weigeringsgrond selected.",
         "#": "#",
