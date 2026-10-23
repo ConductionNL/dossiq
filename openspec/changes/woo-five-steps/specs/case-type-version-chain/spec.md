@@ -13,3 +13,12 @@ A case SHALL carry `caseTypeIdentifier`, the `identifier` of its case type, mate
 - **GIVEN** a case saved before the field existed
 - **WHEN** the app is upgraded
 - **THEN** the case carries its case type's identifier, and a second run writes nothing
+
+### Requirement: A chosen case type follows its version chain
+
+The case types a user keeps in the menu, and the default the menu offers before a user chooses (the Woo request case type), SHALL name the version in use when the chosen version has been superseded since, found along `supersededBy`, and SHALL list it once.
+
+#### Scenario: the default after version 2
+- **GIVEN** a user who never chose, and the first Woo version superseded by the second
+- **WHEN** the menu is built
+- **THEN** it lists version 2 of the Woo request case type
