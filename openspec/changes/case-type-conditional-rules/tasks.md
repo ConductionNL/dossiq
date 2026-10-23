@@ -1,6 +1,6 @@
 # Tasks: case-type-conditional-rules
 
-Proposal only. Not to be built before the coordinator and Ruben agree on the design and on the open questions in the
+**PROPOSAL ONLY.** Not to be built before the coordinator and Ruben agree on the design and on the open questions in the
 proposal (engine scoping per case type, the add-task route, idempotence).
 
 ### Task 1: The rule model on caseType
@@ -20,3 +20,15 @@ proposal (engine scoping per case type, the add-task route, idempotence).
 - **files**: `src/menu-layout.simple.json`, nc-vue condition editor
 - [ ] Implement
 - [ ] Test
+
+### Task 0: OpenRegister, a scoped rule inventory (built first, in OpenRegister)
+- **spec_ref**: `openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rule-inventory-can-be-asked-for-one-case-types-rules`
+- **files**: OpenRegister `lib/Service/Rules/RuleInventoryService.php`, `lib/Controller/RulesController.php`, rule descriptors
+- [ ] Implement
+- [ ] Test
+
+### Task 4: Idempotent effects
+- **spec_ref**: `openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version`
+- **files**: the projector's flow template (ObjectWriteNode identifier + onConflict fail)
+- [ ] Implement
+- [ ] Test (integration: saved twice, one task)

@@ -1,5 +1,8 @@
 # Proposal: case-type-conditional-rules
 
+> **PROPOSAL ONLY.** Not to be built before Ruben agrees. The open questions below are answered (coordinator, 23 Oct)
+> from a read of OpenRegister development afdd4f2af3.
+
 ## Why
 
 Board DqZaaktypeRegels draws the rules of a case type as sentences a functional administrator writes and reads:
@@ -62,12 +65,32 @@ permit is a line of case type configuration, not code and not a flow someone dra
 - Rules across case types, and rules on objects other than the case.
 - DMN. It is deprecated here, and decision tables answer "which outcome", not "what happens next".
 
-## Risks and open questions
+## Answers to the open questions (23 Oct)
 
-1. Can OpenRegister's rule engine scope a schema rule to the objects of one case type (a `caseType` equality in the
-   condition) without a rule per case type flooding the inventory? If not, the projection writes one rule per case
-   type and the inventory needs a filter by case type. That filter is an OpenRegister change, to build there.
-2. Add task: is there an engine action that creates a related object (a task) today, or is a flow step the only route?
-   That decides whether `addTask` is a schema rule or a flow step.
-3. Re-running: a `saved` rule whose condition stays true must not add the task twice. The projection needs an
-   idempotence key (rule id + case) on what it creates.
+1. **Scoping per case type.** OpenRegister's inventory (`GET /api/schemas/{schema}/rules`, `RulesController::index`)
+   takes only `idleDays` and lists every rule of the schema: calculations, state field rules, lifecycle conditions,
+   administered validations and flow triggers. It cannot filter by case type. The build therefore adds a generic
+   `scope` to OpenRegister: a rule descriptor may carry `scope: { property, value }` (the projector writes
+   `{ property: "caseType", value: <uuid> }`), and the inventory takes `?scope[<property>]=<value>`. That returns the
+   rules with that scope plus the rules with none, which apply to every object. Built in OpenRegister, generic, with its
+   own tests. Dossiq's Rules tab then asks for its own case type's rules.
+2. **Add task.** OpenRegister's rule vocabulary has no create action. The actions are setValue, hideField,
+   readOnlyField, requireField, refuseTransition, refuseWrite and runFlow (`RuleVocabulary`). Its flow engine does
+   create objects: `ObjectWriteNode` with `operation: create`. So `addTask` is a **guarded flow**:
+   `TriggerObjectNode` (event `created` / `updated` on the case register and schema) → `FilterNode` holding the rule's
+   conditions plus `caseType == <uuid>` → `ObjectWriteNode` `create` of the task, with the deterministic identifier
+   from answer 3 and `onConflict: fail`. The projector writes one such flow per rule that adds a task, owned by the
+   case type and listed in the inventory as a `flow` rule with the rule's scope. `sendMessage` can take the same route
+   (`SendEmailNode` / `SendNotificationNode`) where the notifications dialect cannot express the condition.
+3. **Idempotence.** Every effect of a rule is keyed on **rule id + case id + the trigger's version**. The trigger's
+   version is the version of the case the event fired on for `saved`, the status entered for `statusEntered`, and the
+   case's creation for `created`. A task's identifier is that key, and `onConflict: fail` makes a second run for the
+   same key a no-op. A rule that fires again on a later version of the case, with its condition still true, does not
+   add the task again either, because a `saved` rule's effect is keyed on the rule and the case alone when its action
+   creates something. Only `setField` re-applies per version, which is harmless because it writes the same value.
+
+## Risks
+
+- The `scope` filter is an OpenRegister change, and the dossiq build waits on it (build the dependency there).
+- One flow per add-task rule grows the flow list. The flows are owned and named by the case type, so the projector
+  replaces them on every publish and removes the ones a version no longer declares.

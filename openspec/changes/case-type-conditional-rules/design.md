@@ -1,5 +1,7 @@
 # Design: case-type-conditional-rules
 
+> **PROPOSAL ONLY.** Not to be built before Ruben agrees.
+
 ## Stored shape (caseType 1.x, register.d fragment `99-case-type-rules.json`)
 
 ```json
@@ -37,7 +39,7 @@ with `fieldCompare` and `statusIs`. `label` stays: it is what the handler is tol
 | requireDocument | OpenRegister lifecycle | `x-openregister-lifecycle` condition on the states this rule's `when` covers, keyed by statusType uuid, like `CaseStateFieldRuleProjector` |
 | setField (required/value) | OpenRegister schema rules | a rule with the condition (plus `caseType == <uuid>`) and a `setValue` action |
 | sendMessage | OpenRegister notifications (ADR-031) | `x-openregister-notifications` entry with trigger, condition, template |
-| addTask | flow (guarded step), or an engine create action if one exists | a guarded step on the case type's flow |
+| addTask | OpenRegister flow (no create action in the rule vocabulary) | TriggerObjectNode → FilterNode (conditions + caseType) → ObjectWriteNode create, identifier = rule id + case id (+ trigger version where it re-fires), `onConflict: fail` |
 | chooseVariant | case creation | read by the create path that picks the default variant today |
 
 The projector is one service, `CaseTypeRuleProjector`, run where `CaseStateFieldRuleProjector` runs (publish), merging
@@ -61,3 +63,19 @@ per case type and dropping what this type no longer declares.
   - a refusal sends the letter;
   - a case in a welstand area gets the variant.
 - The Rules tab: rows read from the model, the form writes the model (vitest).
+
+## OpenRegister change: a scoped rule inventory
+
+- A rule descriptor gains an optional `scope: { property, value }`.
+- `GET /api/schemas/{schema}/rules?scope[caseType]=<uuid>` returns the descriptors with that scope and those without
+  one.
+- Calculations and other schema-wide rules carry no scope and are always listed.
+- The projector sets the scope on every flow trigger and condition it writes.
+
+## Idempotence key
+
+`<rule id>:<case id>:<trigger version>`:
+
+- trigger version = the case version for `saved`, the statusType uuid for `statusEntered`, `created` for `created`;
+- an `addTask` rule uses `<rule id>:<case id>`, so a task is added once per case;
+- the key is the created object's identifier, and `onConflict: fail` refuses a second create.

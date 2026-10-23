@@ -1,6 +1,6 @@
 # case-types Delta
 
-**Status**: proposed
+**Status**: proposed (PROPOSAL ONLY)
 **Scope**: dossiq
 **OpenSpec changes**:
 
@@ -46,3 +46,26 @@ document types and message templates.
 
 - **GIVEN** the Omgevingsvergunning case type with three rules
 - **THEN** the Rules tab reads "Als Bouwkosten groter is dan € 100.000 / dan taak Toets door constructeur toevoegen" with "Aan"
+
+### Requirement: A rule's effect happens once per rule, case and trigger version
+
+Every effect of a rule SHALL be keyed on the rule id, the case id and the version of the trigger that fired it (the case
+version for saved, the status for status entered, the creation for created), and a second firing with the same key SHALL
+change nothing. A rule that adds a task SHALL add it once per case.
+
+#### Scenario: Saved twice
+
+- **GIVEN** the rule "when saved, if bouwkosten is greater than 100000, add task Toets door constructeur"
+- **WHEN** a case with bouwkosten 150000 is saved, and saved again with another change
+- **THEN** the case has exactly one task Toets door constructeur
+
+### Requirement: The rule inventory can be asked for one case type's rules
+
+OpenRegister's rule inventory SHALL accept a scope filter and return the rules scoped to that value plus the rules
+without a scope. The Rules tab SHALL ask for its own case type's rules.
+
+#### Scenario: Two case types
+
+- **GIVEN** rules projected by two case types
+- **WHEN** the Rules tab of one of them opens
+- **THEN** it lists that type's rules and the schema-wide calculations, and none of the other type's rules
