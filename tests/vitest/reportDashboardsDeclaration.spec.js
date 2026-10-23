@@ -192,6 +192,19 @@ describe('deadline reports', () => {
 		expect(keys.averageProcessingDays).toBeTruthy()
 	})
 
+	it('aligns the figures of the quarterly report and the penalty audit to the end, as board DqTermijnen does', () => {
+		// DqTermijnen: every count, the average duration ("28,1") and the
+		// amounts sit right-aligned under right-aligned headers.
+		const quarterly = Object.fromEntries(widget('TermijnDashboard', 'deadline-report-quarterly').content.columns.map((c) => [c.key, c]))
+		for (const key of ['total', 'withinTermPct', 'overruns', 'averageProcessingDays', 'extensions', 'noticesOfDefault', 'penaltyTotalEuros']) {
+			expect(quarterly[key].class, key).toBe('cn-table-col--end')
+		}
+		expect(quarterly.caseTypeTitle.class).toBeUndefined()
+		expect(quarterly.averageProcessingDays.format).toMatchObject({ style: 'decimal', decimals: 1 })
+		const payments = Object.fromEntries(widget('TermijnDashboard', 'deadline-report-annual-payments-list').content.columns.map((c) => [c.key, c]))
+		expect(payments.amountEuros.class).toBe('cn-table-col--end')
+	})
+
 	it('draws each report card with its own form, as board DqTermijnen does', () => {
 		expect(page('TermijnDashboard').config.pageFilters).toBeUndefined()
 		const forms = { 'deadline-report-quarter-form': ['quarter', 'Load report'], 'deadline-report-year-form': ['year', 'Load audit'] }
