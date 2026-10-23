@@ -427,12 +427,12 @@ describe('the landing page', () => {
 		expect(simple.config.defaultView).toBe('mine')
 	})
 
-	it('changes My team only where DqMijnTeam differs: the stalled cases as rows', () => {
+	it('changes My team only where DqMijnTeam differs: the stalled cases and the team queue as rows', () => {
 		const team = (built) => pageView(page(built, 'MyWorkHome'), 'team')
 		expect(team(builtFull)).toEqual(pageView(original('MyWorkHome'), 'team'))
-		// The stalled-cases rows are held in landingViews.spec.js; the rest of
-		// the view is the manifest's.
-		const rest = (view) => ({ ...view, widgets: withoutNotes(view.widgets.filter((w) => w.id !== 'stalled-cases')) })
+		// The stalled-cases and team-queue rows are held in landingViews.spec.js;
+		// the rest of the view is the manifest's.
+		const rest = (view) => ({ ...view, widgets: withoutNotes(view.widgets.filter((w) => !['stalled-cases', 'your-teams-queue'].includes(w.id))) })
 		expect(rest(team(builtSimple))).toEqual(rest(team(builtFull)))
 		expect(simple.config.views.map((view) => view.id)).toEqual(['mine', 'team'])
 	})
@@ -898,6 +898,15 @@ describe('the case type list', () => {
 			shipped: { register: 'dossiq', schema: 'caseType', filter: { ...current, '@self': { owner: '__system__' } } },
 			own: { register: 'dossiq', schema: 'caseType', filter: { ...current, '@self[owner][ne]': '__system__' } },
 		})
+	})
+
+	it('names each case type shipped or own under its title, as DqZaaktypen does ("Meegeleverd · Woo")', () => {
+		const nl = JSON.parse(read('l10n', 'nl.json')).translations
+		const title = list.config.columns.find((column) => column.key === 'title')
+		expect(title.secondary).toBe('{@self.owner} · {subject}')
+		expect(title.secondaryLabels).toEqual({ '@self.owner': { __system__: 'Shipped', '*': 'Own case type' } })
+		expect(nl.Shipped).toBe('Meegeleverd')
+		expect(nl['Own case type']).toBe('Eigen zaaktype')
 	})
 
 	it('has an Actions menu with the import dialog the case type page already owns', () => {

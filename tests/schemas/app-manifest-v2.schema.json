@@ -1352,7 +1352,8 @@
 							},
 							"readOnly": { "type": "boolean", "default": false, "description": "No drag and no Move to while the columns come from this field." },
 							"moveHandler": { "type": "string", "minLength": 1, "description": "A handler in the app's registry that makes the move: it gets `{ card, toKey, field, value, target }` (value: the referenced id to write; target: its row) and returns a promise; a rejection shows its message as the refusal. Absent, the field is written with a PATCH." },
-							"moveTargetsHandler": { "type": "string", "minLength": 1, "description": "A handler in the app's registry that answers where one card may go: it gets `{ card, field }` and returns the values (referenced ids) it can reach. Columns out of reach fade during a drag, read \"not allowed\" in the card menu, and refuse a drop." }
+							"moveTargetsHandler": { "type": "string", "minLength": 1, "description": "A handler in the app's registry that answers where one card may go: it gets `{ card, field }` and returns the values (referenced ids) it can reach. Columns out of reach fade during a drag, read \"not allowed\" in the card menu, and refuse a drop." },
+							"states": { "$ref": "#/$defs/boardDeclaredStates" }
 						}
 					}
 				},
@@ -1400,7 +1401,30 @@
 					"type": "boolean",
 					"default": false,
 					"description": "screens-board-reference-columns (2.97.0): wrap the columns onto more rows, as many to a row as fit at 240px, instead of one row that scrolls sideways. For a board with more stages than fit."
-				}
+				},
+				"states": { "$ref": "#/$defs/boardDeclaredStates" }
+			}
+		},
+		"boardDeclaredStates": {
+			"type": "array",
+			"minItems": 1,
+			"description": "board-declared-states (2.150.0): the columns the board draws for a field, in order, instead of the field's enum or lifecycle states. Each entry is a value or `{ key, label?, color?, hidden?, closed? }`: `hidden` draws no column (its cards go to Elsewhere), `closed` starts the column folded, `label` is an i18n key. On `board` it applies to the `statusField`; on a `columnFields` entry to that field. Ignored on a `source` or `kind: values` column.",
+			"items": {
+				"oneOf": [
+					{ "type": "string", "minLength": 1 },
+					{
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["key"],
+						"properties": {
+							"key": { "type": "string", "minLength": 1 },
+							"label": { "type": "string" },
+							"color": { "type": "string" },
+							"hidden": { "type": "boolean" },
+							"closed": { "type": "boolean" }
+						}
+					}
+				]
 			}
 		},
 		"headerPill": {

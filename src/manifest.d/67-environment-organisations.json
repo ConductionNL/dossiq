@@ -478,7 +478,17 @@
 								},
 								{
 									"key": "eventType",
-									"label": "Event"
+									"label": "Event",
+									"valueLabels": {
+										"case_created": "Case created",
+										"case_closed": "Case closed",
+										"user_activated": "User activated",
+										"storage_increment": "Extra storage",
+										"api_burst": "Burst of API use",
+										"quota_exceeded": "Quota exceeded",
+										"case_refund": "Refund",
+										"subscription_fee": "Monthly package fee"
+									}
 								},
 								{
 									"key": "unitPrice",
@@ -577,7 +587,17 @@
 								},
 								{
 									"key": "eventType",
-									"label": "Event"
+									"label": "Event",
+									"valueLabels": {
+										"case_created": "Case created",
+										"case_closed": "Case closed",
+										"user_activated": "User activated",
+										"storage_increment": "Extra storage",
+										"api_burst": "Burst of API use",
+										"quota_exceeded": "Quota exceeded",
+										"case_refund": "Refund",
+										"subscription_fee": "Monthly package fee"
+									}
 								},
 								{
 									"key": "quantity",

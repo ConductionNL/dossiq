@@ -179,6 +179,24 @@ describe('process mining', () => {
 		expect(Object.fromEntries(period.options.map((o) => [o.value, o.months]))).toEqual({ '3m': 3, '6m': 6, '12m': 12, all: undefined })
 	})
 
+	it('fits every card but the plot to its content and packs them upward, as DqProcesanalyse draws them', () => {
+		// The board's figures are 120px tiles and each card ends with its
+		// content (Waar zaken blijven hangen shows every row); fixed grid rows
+		// cut the stuck list and stood the tiles 215px tall.
+		// The throughput line is a plot, which takes the height its cell
+		// gives it, so it keeps four rows (296px; the board 294).
+		const config = page('ProcessMiningDashboard').config
+		expect(config.gridFloat).toBe(false)
+		for (const cell of config.layout) {
+			if (cell.widgetId === 'pm-throughput') {
+				expect(cell.sizeToContent).toBeUndefined()
+				expect(cell.gridHeight).toBe(4)
+			} else {
+				expect(cell.sizeToContent, cell.widgetId).toBe(true)
+			}
+		}
+	})
+
 	it('puts the measure, the period and the case type on the description line, in the board\'s order', () => {
 		// DqProcesanalyse: "… · [Gemiddeld | Mediaan] [Laatste 12 maanden]
 		// [Alle zaaktypen]", with no filter row under the header.
@@ -233,8 +251,17 @@ describe('deadline reports', () => {
 
 	it('downloads the quarterly report from its card header, as the board does', () => {
 		const card = widget('TermijnDashboard', 'deadline-report-quarterly-card')
-		expect(card.headerActions[0]).toMatchObject({ label: 'Download quarterly report', action: { type: 'export', exportId: 'deadline-report-quarterly' } })
+		// DqTermijnen: "Kwartaalrapport downloaden" is the card's text link.
+		expect(card.headerActions[0]).toMatchObject({ label: 'Download quarterly report', variant: 'link', action: { type: 'export', exportId: 'deadline-report-quarterly' } })
 		expect(widget('TermijnDashboard', 'deadline-report-quarterly').content.exportId).toBe('deadline-report-quarterly')
+	})
+
+	it('fits every card to its content and packs them upward, as DqTermijnen draws them', () => {
+		const config = page('TermijnDashboard').config
+		expect(config.gridFloat).toBe(false)
+		for (const cell of config.layout) {
+			expect(cell.sizeToContent, cell.widgetId).toBe(true)
+		}
 	})
 
 	it('lists the forfeited payments by case, with the year\'s total above them', () => {

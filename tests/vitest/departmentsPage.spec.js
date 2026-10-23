@@ -52,4 +52,10 @@ describe('the departments page', () => {
 	it('downloads the staff list from the header, as board DqAfdelingen draws it', () => {
 		expect(page.config.headerButtons).toEqual([{ action: 'export', label: 'Download', icon: 'TrayArrowDown' }])
 	})
+
+	it('keeps the Acties menu above the search beside the header button, as board DqAfdelingen draws it', () => {
+		// nextcloud-vue index-actions-menu-with-header-buttons: header buttons
+		// took the menu out of the toolbar unless the page keeps it.
+		expect(page.config.showActionsMenu).toBe(true)
+	})
 })
