@@ -35,6 +35,10 @@ describe.each(['menu-layout.json', 'menu-layout.simple.json'])('the case list in
 		expect(cases.config.allowSavedViews).toBe(true)
 	})
 
+	it('counts every saved view, so the side panel shows its number (DqFilterBeheren)', () => {
+		expect(cases.config.viewCounts).toBe(true)
+	})
+
 	it('draws the board view (DqWerkbord) from the same page', () => {
 		expect(cases.config.viewModes).toContain('board')
 	})
