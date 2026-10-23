@@ -200,6 +200,11 @@ describe('BerichtenboxComposeDialog', () => {
 		expect(wrapper.find('[data-testid="compose-bsn-optional"]').exists()).toBe(false)
 	})
 
+	it('lines the besluit note up with its checkbox label, through the board dialog inset', () => {
+		const source = fs.readFileSync(path.join(ROOT, 'src', 'dialogs', 'BerichtenboxComposeDialog.vue'), 'utf8')
+		expect(source).toMatch(/\.compose-dialog__check-note \{\s*padding-inline-start: var\(--cn-dialog-check-label-inset, 44px\);/)
+	})
+
 	it('shows the provider’s own sentence and stays open on a refusal', async () => {
 		mockPost.mockRejectedValue({
 			response: {
