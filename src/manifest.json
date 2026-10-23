@@ -3983,6 +3983,8 @@
 							"manage": true,
 							"title": "History of the case",
 							"exportName": "case-history",
+							"auditTrailLink": true,
+							"auditTrailTab": "audit",
 							"entryActions": [
 								{
 									"id": "reply",
