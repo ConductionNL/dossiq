@@ -2720,6 +2720,7 @@ OC.L10N.register(
         "Edit checklist": "Edit checklist",
         "Edit Decision": "Edit Decision",
         "Edit decision": "Edit decision",
+        "Edit in the flow": "Edit in the flow",
         "Edit inspection checklist": "Edit inspection checklist",
         "Edit layer": "Edit layer",
         "Edit layout": "Edit layout",

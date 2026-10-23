@@ -2720,6 +2720,7 @@ OC.L10N.register(
         "Edit checklist": "Checklist bewerken",
         "Edit Decision": "Besluit bewerken",
         "Edit decision": "Besluit bewerken",
+        "Edit in the flow": "Bewerken in de flow",
         "Edit inspection checklist": "Inspectiechecklist bewerken",
         "Edit layer": "Laag bewerken",
         "Edit layout": "Indeling aanpassen",
