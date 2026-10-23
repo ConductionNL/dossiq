@@ -75,6 +75,13 @@ describe('the Files tab on a case type that reviews its documents', () => {
 		expect(grounds.content.meta).toBe('{documentList}')
 		expect(nl[grounds.content.headerSubtitle]).toBe('Gaan mee in het besluit')
 	})
+
+	it('leads each ground with its code under a hairline and ends with the rule the board states', () => {
+		const grounds = card('case-refusal-grounds-card')
+		expect(grounds.content.pillAt).toBe('start')
+		expect(grounds.content.ruleAbove).toBe(true)
+		expect(nl[grounds.content.footnote]).toBe('Een document dat niet of deels openbaar is, heeft altijd ten minste één grond nodig.')
+	})
 })
 
 describe('the Files card on a case type that reviews its documents', () => {
