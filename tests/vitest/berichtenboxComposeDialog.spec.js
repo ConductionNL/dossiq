@@ -200,6 +200,12 @@ describe('BerichtenboxComposeDialog', () => {
 		expect(wrapper.find('[data-testid="compose-bsn-optional"]').exists()).toBe(false)
 	})
 
+	it('opens on the kind Status update, as board DqBerichtVersturen does', () => {
+		const wrapper = open()
+		expect(wrapper.vm.form.berichtTypeCode?.code).toBe('status')
+		expect(wrapper.findComponent({ name: 'NcSelect' }).props('modelValue')).toEqual(wrapper.vm.typeCodes.find((type) => type.code === 'status'))
+	})
+
 	it('shows the provider’s own sentence and stays open on a refusal', async () => {
 		mockPost.mockRejectedValue({
 			response: {
