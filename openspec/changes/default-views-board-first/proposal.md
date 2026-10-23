@@ -12,3 +12,6 @@ standaardweergaven".
 The Cases page declares the three as its first default views with a description each, built from the list's own
 lenses (Mine, Overdue, and the open-cases conditions). Every existing default stays, marked `secondary`. Config and
 l10n only; the folding is nc-vue feat/r25-default-views-secondary, and older nc-vue lists all twelve.
+
+Every default view also carries an icon the app registers and a description (Ruben, 23 Oct: the icon stands before
+the view in the menu and the description is its tooltip, nc-vue feat/r25-saved-view-icon-description-count).

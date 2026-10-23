@@ -43,4 +43,13 @@ describe('the case list default views', () => {
 		expect(views[2].filters).toEqual(lens('Overdue'))
 		expect(views[1].filters).toEqual({ isFinalStatus: false, statusHiddenInLists: false, isDraft: false })
 	})
+
+	it('gives every default view an icon the app registers and a translated line (Ruben, 23 Oct)', () => {
+		const icons = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
+		for (const view of views) {
+			expect(typeof view.icon).toBe('string')
+			expect(icons).toMatch(new RegExp(`\\b${view.icon}\\b`))
+			expect(nl[view.description]).toBeTruthy()
+		}
+	})
 })

@@ -2016,29 +2016,34 @@
 				"defaultSavedViews": [
 					{
 						"slug": "my-cases",
+						"icon": "AccountOutline",
 						"name": "My cases",
 						"description": "Handler is me",
 						"filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false }
 					},
 					{
 						"slug": "all-open-cases",
+						"icon": "FolderOutline",
 						"name": "All open cases",
 						"description": "Status not closed",
 						"filters": { "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false }
 					},
 					{
 						"slug": "deadline-passed",
+						"icon": "ClockAlertOutline",
 						"name": "Deadline passed",
 						"description": "Deadline before today, not closed",
 						"filters": { "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" }
 					},
-					{ "slug": "mine-overdue", "secondary": true, "name": "Mine, overdue", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
-					{ "slug": "mine-due-this-week", "secondary": true, "name": "Mine, due this week", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
-					{ "slug": "unclaimed-overdue", "secondary": true, "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
-					{ "slug": "woo-requests", "secondary": true, "name": "Woo requests", "icon": "FileDocumentOutline", "filters": { "caseTypeIdentifier": "woo-verzoek", "statusHiddenInLists": false, "isDraft": false } },
-					{ "slug": "subsidies", "secondary": true, "name": "Subsidies", "filters": { "caseType": "b3c1a000-0000-4000-a000-0000000005ab", "statusHiddenInLists": false, "isDraft": false }, "overrides": { "title": "Subsidies", "columns": ["identifier", "title", { "key": "status", "label": "Status", "formatter": "statusTypeName" }, "assignee", "deadline"] } },
+					{ "slug": "mine-overdue", "icon": "ClockAlertOutline", "description": "Handler is me, deadline before today", "secondary": true, "name": "Mine, overdue", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
+					{ "slug": "mine-due-this-week", "icon": "CalendarClockOutline", "description": "Handler is me, deadline within 7 days", "secondary": true, "name": "Mine, due this week", "filters": { "assignee": "@me", "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
+					{ "slug": "unclaimed-overdue", "icon": "AlertCircleOutline", "description": "No handler, deadline before today", "secondary": true, "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
+					{ "slug": "woo-requests", "description": "Case type Woo request", "secondary": true, "name": "Woo requests", "icon": "FileDocumentOutline", "filters": { "caseTypeIdentifier": "woo-verzoek", "statusHiddenInLists": false, "isDraft": false } },
+					{ "slug": "subsidies", "icon": "CurrencyEur", "description": "Case type subsidy", "secondary": true, "name": "Subsidies", "filters": { "caseType": "b3c1a000-0000-4000-a000-0000000005ab", "statusHiddenInLists": false, "isDraft": false }, "overrides": { "title": "Subsidies", "columns": ["identifier", "title", { "key": "status", "label": "Status", "formatter": "statusTypeName" }, "assignee", "deadline"] } },
 					{
 						"slug": "my-work",
+						"icon": "AccountOutline",
+						"description": "Cases assigned to me",
 						"secondary": true,
 						"name": "Assigned to me",
 						"filters": {},
@@ -2172,6 +2177,8 @@
 					},
 					{
 						"slug": "team-queue",
+						"icon": "AccountGroupOutline",
+						"description": "Unclaimed cases of my team",
 						"secondary": true,
 						"name": "Team queue",
 						"filters": { "assignedGroup": "@myTeam" },
@@ -2494,9 +2501,11 @@
 							"emptyText": "Nothing is waiting. Every open case has someone on it."
 						}
 					},
-					{ "slug": "unclaimed-due-this-week", "secondary": true, "name": "Unclaimed, due this week", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
+					{ "slug": "unclaimed-due-this-week", "icon": "CalendarTextOutline", "description": "No handler, deadline within 7 days", "secondary": true, "name": "Unclaimed, due this week", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[gte]": "@today", "deadline[lt]": "@today+7d" } },
 					{
 						"slug": "data-subject-requests",
+						"icon": "ShieldAccountOutline",
+						"description": "Requests for access, correction and erasure",
 						"secondary": true,
 						"name": "Data subject requests",
 						"filters": {},
