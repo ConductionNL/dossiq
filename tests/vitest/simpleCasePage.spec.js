@@ -897,4 +897,9 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 		expect(byId('case-macros')).toMatchObject({ type: 'macros', title: 'Macros' })
 		expect(byId('case-macros').content.macrosFrom).toBe('@context.caseType.macros')
 	})
+
+	it('draws the Macro\'s line as the card subtitle, as DqZaakAssistent', () => {
+		expect(byId('case-macros').subtitle).toBe('Several steps at once; then you see what changed')
+		expect(byId('case-macros').content.description).toBeUndefined()
+	})
 })

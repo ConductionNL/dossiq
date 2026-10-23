@@ -4650,9 +4650,9 @@
 						"id": "case-macros",
 						"type": "macros",
 						"title": "Macros",
+						"subtitle": "Several steps at once; then you see what changed",
 						"_note": "DqZaakAssistent \"Macro's\": the macros the case schema declares (OpenRegister declared actions with macro: true and a bound manual flow), narrowed to the ones the case type lists in `macros` (macrosFrom), each run as the handler through the declared-action endpoint. A case type that lists none offers none, so a macro written for Woo requests is not offered on an objection.",
 						"content": {
-							"description": "Several steps at once; then you see what changed",
 							"macrosFrom": "@context.caseType.macros",
 							"emptyText": "No macros are set up for this case type"
 						}
