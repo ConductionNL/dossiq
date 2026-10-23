@@ -2213,7 +2213,9 @@
 									"title": "Waiting longest",
 									"content": {
 										"label": "Waiting longest",
-										"caption": "the oldest case in the queue",
+										"_captionNote": "DqTeamwachtrij: the line names the oldest waiting case's type and the days to its deadline, in red (\"Woo-verzoek, termijn over 4 dagen\"); GET /api/dashboard/kpis answers it as queueOldestNote, \"the oldest case in the queue\" when that case has no type or deadline.",
+										"caption": "{queueOldestNote}",
+										"captionVariant": "error",
 										"format": {
 											"style": "decimal",
 											"decimals": 0,

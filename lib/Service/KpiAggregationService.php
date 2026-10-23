@@ -164,7 +164,10 @@ class KpiAggregationService {
 			filters: self::OPEN_WORK
 		);
 
-		return ($this->queueFigures->fold(openCases: $openCases, today: $now, typeTitles: $this->caseTypeTitles(ids: $ids)) + [
+		$queue = $this->queueFigures->fold(openCases: $openCases, today: $now, typeTitles: $this->caseTypeTitles(ids: $ids));
+
+		return ($queue + [
+			'queueOldestNote' => $this->oldestNote(type: (string)$queue['queueOldestType'], dueDays: $queue['queueOldestDueDays']),
 			'openCount' => $this->countCases(ids: $ids, filters: self::OPEN_WORK),
 			'newToday' => $this->countCases(ids: $ids, filters: (self::OPEN_WORK + ['startDate' => $today])),
 			'overdueCount' => $this->countCases(
@@ -253,9 +256,40 @@ class KpiAggregationService {
 			'queueNewToday' => 0,
 			'queueDueSoon' => 0,
 			'queueOldestDays' => 0,
+			'queueOldestType' => '',
+			'queueOldestDueDays' => null,
+			'queueOldestNote' => $this->oldestNote(type: '', dueDays: null),
 			'queueByType' => [],
 		];
 	}//end emptyKpis()
+
+	/**
+	 * The "Waiting longest" tile's line: the oldest waiting case's type and
+	 * the days to its deadline ("Woo-verzoek, termijn over 4 dagen",
+	 * DqTeamwachtrij), else the plain line.
+	 *
+	 * @param string   $type    The oldest case's type title, '' when unknown.
+	 * @param int|null $dueDays Days to its deadline, negative once passed; null without one.
+	 *
+	 * @return string The line.
+	 *
+	 * @spec openspec/changes/queue-oldest-case-note/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	private function oldestNote(string $type, ?int $dueDays): string {
+		if ($type === '' || $dueDays === null) {
+			return $this->l10n->t('the oldest case in the queue');
+		}
+
+		if ($dueDays === 0) {
+			return $this->l10n->t('%s, deadline today', [$type]);
+		}
+
+		if ($dueDays < 0) {
+			return $this->l10n->n('%s, %n day overdue', '%s, %n days overdue', -$dueDays, [$type]);
+		}
+
+		return $this->l10n->n('%s, deadline in %n day', '%s, deadline in %n days', $dueDays, [$type]);
+	}//end oldestNote()
 
 	/**
 	 * Count cases matching a filter.
