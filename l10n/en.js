@@ -9816,6 +9816,8 @@ OC.L10N.register(
         "Version to move to": "Version to move to",
         "Version {n}": "Version {n}",
         "Version {version}": "Version {version}",
+        "Version {version} draft": "Version {version} draft",
+        "Version {version} published": "Version {version} published",
         "version {v}": "version {v}",
         "Version:": "Version:",
         "Versions": "Versions",
