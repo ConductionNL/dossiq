@@ -6507,6 +6507,7 @@ OC.L10N.register(
         "Recovery Trigger": "Aanleiding voor de terugvordering",
         "Recovery window in days": "Terughaaltermijn in dagen",
         "Red": "Rood",
+        "Red: a holiday or closing day. Terms do not count these days. One calendar for the whole organisation.": "Rood: feestdag of sluitingsdag. Termijnen tellen deze dagen niet mee. Een kalender voor de hele organisatie.",
         "Red: a holiday or closing day. Terms do not count these days. These days apply to every app that uses the national calendar.": "Rood: feestdag of sluitingsdag. Termijnen tellen deze dagen niet mee. Deze dagen gelden voor alle apps die de landelijke kalender gebruiken.",
         "Redact": "Lakken",
         "Redact documents": "Documenten lakken",

@@ -6507,6 +6507,7 @@ OC.L10N.register(
         "Recovery Trigger": "Recovery Trigger",
         "Recovery window in days": "Recovery window in days",
         "Red": "Red",
+        "Red: a holiday or closing day. Terms do not count these days. One calendar for the whole organisation.": "Red: a holiday or closing day. Terms do not count these days. One calendar for the whole organisation.",
         "Red: a holiday or closing day. Terms do not count these days. These days apply to every app that uses the national calendar.": "Red: a holiday or closing day. Terms do not count these days. These days apply to every app that uses the national calendar.",
         "Redact": "Redact",
         "Redact documents": "Redact documents",

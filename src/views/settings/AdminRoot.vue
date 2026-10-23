@@ -38,13 +38,7 @@
 		<CnSettingsSection
 			id="section-working-days"
 			:actionsInTitle="true"
-			:name="t('dossiq', 'Working days and holidays')"
-			:description="
-				t(
-					'dossiq',
-					'Red: a holiday or closing day. Terms do not count these days. These days apply to every app that uses the national calendar.',
-				)
-			">
+			:name="t('dossiq', 'Working days and holidays')">
 			<template #actions>
 				<NcButton variant="secondary" data-testid="dossiq-working-days-add" @click="$refs.workingCalendar.openAdd()">
 					<template #icon>
@@ -1178,6 +1172,13 @@ export default {
 
 				// The section's title row draws Add day.
 				addButton: false,
+
+				// DqInstellingenAlgemeen says what the red days mean under
+				// the calendar, not under the card title.
+				footnote: this.t(
+					'dossiq',
+					'Red: a holiday or closing day. Terms do not count these days. One calendar for the whole organisation.',
+				),
 			}
 		},
 
