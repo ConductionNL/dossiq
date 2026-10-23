@@ -49,6 +49,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Import\CaseRecordImport
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
  * @covers \OCA\Dossiq\Service\Import\RecordImportStore
+ * @covers \OCA\Dossiq\Service\Import\RecordValues
  * @uses   \OCA\Dossiq\Service\Term\TermCarryOver
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
@@ -214,7 +215,7 @@ class CaseRecordImportTest extends TestCase {
 		);
 
 		$apps = $this->createMock(IAppManager::class);
-		$apps->method('isInstalled')->willReturnCallback(fn (string $app): bool => $app === 'opencatalogi' && $installed === true);
+		$apps->method('isInstalled')->willReturnCallback(fn (string $app): bool => ($app === 'opencatalogi' && $installed === true) || $app === 'dossiq');
 
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('getDateTime')->willReturn(new DateTime('2026-10-20T09:00:00+02:00'));
@@ -670,6 +671,99 @@ class CaseRecordImportTest extends TestCase {
 		self::assertStringContainsString('channel must be one of', $reasons);
 		self::assertSame([], $this->store->all('case'));
 	}//end testARecordTheDeclarationCannotReadFailsAndWritesNothing()
+
+	/**
+	 * A case type kept in dossiq's own register, without a statutory term,
+	 * whose import moves `trajectory` records and may run on upgrade.
+	 *
+	 * @param bool $onUpgrade Whether the declaration runs on upgrade.
+	 * @param bool $superseded Whether a later version replaced this one.
+	 *
+	 * @return void
+	 */
+	private function seedTrajectoryType(bool $onUpgrade, bool $superseded = false): void {
+		$this->store->seed(
+			schema: 'caseType',
+			uuid: 'type-trajectory',
+			row: [
+				'id' => 'type-trajectory',
+				'identifier' => 'trajectory',
+				'supersededBy' => ($superseded === true) ? 'type-trajectory-2' : '',
+				'recordImports' => [[
+					'key' => 'trajectories',
+					'sourceApp' => 'dossiq',
+					'sourceRegister' => 'dossiq',
+					'sourceSchema' => 'trajectory',
+					'statuses' => ['*' => ['status' => 'status-running']],
+					'fields' => [
+						['to' => 'title', 'value' => 'Trajectory'],
+						['to' => 'startDate', 'from' => 'start', 'as' => 'date'],
+						['to' => 'externalReference', 'from' => '@id'],
+						['to' => 'properties', 'property' => ['definition' => 'def-kind', 'name' => 'kind'], 'from' => 'kind'],
+					],
+					'matchField' => 'externalReference',
+					'stamp' => ['caseId' => 'migratedTo', 'at' => 'migratedAt'],
+					'carriesTerm' => false,
+					'runOnUpgrade' => $onUpgrade,
+				]],
+			]
+		);
+		$this->store->seed(schema: 'trajectory', uuid: 'traj-1', row: ['id' => 'traj-1', 'start' => '2026-03-01', 'kind' => 'werkfit']);
+	}//end seedTrajectoryType()
+
+	/**
+	 * A record moves onto a case type without a term: the term engine is not
+	 * asked, and the record counts as moved.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeWithoutATermImportsWithoutOne(): void {
+		$this->seedTrajectoryType(onUpgrade: false);
+
+		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
+
+		self::assertSame(1, $answer['imported']);
+		self::assertSame([], $answer['failed']);
+		self::assertSame([], $this->instances, 'the term engine is not asked');
+		self::assertSame([], $this->armed);
+		$case = $this->store->row('case', $answer['migrated'][0]['caseId']);
+		self::assertSame('status-running', $case['status']);
+		self::assertSame([['propertyDefinition' => 'def-kind', 'name' => 'kind', 'value' => 'werkfit']], $case['properties']);
+		self::assertSame($case['id'], $this->store->row('trajectory', 'traj-1')['migratedTo']);
+	}//end testACaseTypeWithoutATermImportsWithoutOne()
+
+	/**
+	 * An upgrade runs only the flagged declarations of a version in use, and a
+	 * second upgrade imports nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUpgradeRunsOnlyTheFlaggedImportsOnce(): void {
+		$this->seedTrajectoryType(onUpgrade: true);
+
+		$first = $this->import()->runOnUpgrade();
+		$second = $this->import()->runOnUpgrade();
+
+		self::assertCount(1, $first);
+		self::assertSame('type-trajectory', $first[0]['caseType']);
+		self::assertSame('trajectories', $first[0]['key']);
+		self::assertSame(1, $first[0]['imported']);
+		self::assertCount(1, $this->store->all('case'), 'the Woo import is not flagged, so no Woo request moved');
+		self::assertSame(0, $second[0]['imported']);
+		self::assertSame(1, $second[0]['alreadyImported']);
+	}//end testAnUpgradeRunsOnlyTheFlaggedImportsOnce()
+
+	/**
+	 * A superseded version's flagged import does not run on upgrade.
+	 *
+	 * @return void
+	 */
+	public function testAnUpgradeSkipsASupersededVersion(): void {
+		$this->seedTrajectoryType(onUpgrade: true, superseded: true);
+
+		self::assertSame([], $this->import()->runOnUpgrade());
+		self::assertSame([], $this->store->all('case'));
+	}//end testAnUpgradeSkipsASupersededVersion()
 
 	/**
 	 * An unknown case type, or another import key, runs nothing.

@@ -276,7 +276,43 @@ class RecordImportStore {
 		return $this->versionInUse(rows: $rows);
 	}//end caseType()
 
+		/**
+	 * Every case type version in use: not superseded and not a draft.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 *
+	 * @return list<array<string, mixed>> The case types, or none when they cannot be read.
+	 *
+	 * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+	 */
+	public function caseTypesInUse(object $objectService): array {
+		try {
+			$rows = $this->listAll(
+				objectService: $objectService,
+				register: (string)$this->settingsService->getConfigValue('register'),
+				schema: (string)$this->settingsService->getConfigValue('case_type_schema'),
+				filters: []
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('RecordImportStore: the case types could not be read', ['error' => $e->getMessage()]);
+			return [];
+		}
+
+		return array_values(array_filter($rows, fn (array $row): bool => $this->inUse(row: $row)));
+	}//end caseTypesInUse()
+
 	/**
+	 * Whether a case type version is in use: not superseded and not a draft.
+	 *
+	 * @param array<string, mixed> $row The case type.
+	 *
+	 * @return bool True when in use.
+	 */
+	private function inUse(array $row): bool {
+		return trim((string)($row['supersededBy'] ?? '')) === '' && ($row['isDraft'] ?? false) !== true;
+	}//end inUse()
+
+/**
 	 * Of the versions that share an identifier, the one new cases get: the
 	 * newest published version nothing has superseded, else the first row.
 	 *
@@ -290,7 +326,7 @@ class RecordImportStore {
 		$current = array_values(
 			array_filter(
 				$rows,
-				static fn (array $row): bool => trim((string)($row['supersededBy'] ?? '')) === '' && ($row['isDraft'] ?? false) !== true
+				fn (array $row): bool => $this->inUse(row: $row)
 			)
 		);
 		usort($current, static fn (array $left, array $right): int => ((int)($right['version'] ?? 0) <=> (int)($left['version'] ?? 0)));
