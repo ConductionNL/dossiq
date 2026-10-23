@@ -820,6 +820,28 @@ class CaseRecordImportTest extends TestCase {
 	}//end testReferencesToAMovedRecordPointAtItsCase()
 
 	/**
+	 * A list of references (`list: true`) has the moved record's entry
+	 * replaced by its case, the other entries kept in place.
+	 *
+	 * @return void
+	 */
+	public function testAListOfReferencesPointsAtTheCase(): void {
+		$this->seedTrajectoryType(onUpgrade: false);
+		$type = $this->store->row('caseType', 'type-trajectory');
+		$type['recordImports'][0]['references'] = [['schema' => 'meeting', 'field' => 'caseIds', 'list' => true]];
+		$this->store->seed(schema: 'caseType', uuid: 'type-trajectory', row: $type);
+		$this->store->seed(schema: 'meeting', uuid: 'm-1', row: ['id' => 'm-1', 'caseIds' => ['other-1', 'traj-1', 'other-2']]);
+		$this->store->seed(schema: 'meeting', uuid: 'm-2', row: ['id' => 'm-2', 'caseIds' => ['other-3']]);
+
+		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
+
+		$caseId = $answer['migrated'][0]['caseId'];
+		self::assertSame(1, $answer['repointed']);
+		self::assertSame(['other-1', $caseId, 'other-2'], $this->store->row('meeting', 'm-1')['caseIds']);
+		self::assertSame(['other-3'], $this->store->row('meeting', 'm-2')['caseIds']);
+	}//end testAListOfReferencesPointsAtTheCase()
+
+	/**
 	 * An unknown case type, or another import key, runs nothing.
 	 *
 	 * @return void

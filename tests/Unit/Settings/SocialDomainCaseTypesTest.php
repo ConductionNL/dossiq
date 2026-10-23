@@ -1,7 +1,8 @@
 <?php
 
 /**
- * A Participatiewet application is a case of the Bijstandsaanvraag case type.
+ * The social-domain procedures are cases of their case types: a Participatiewet
+ * application of Bijstandsaanvraag, a Wmo report of Wmo-melding.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Settings
@@ -10,6 +11,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/social-domain-procedures-are-case-types/specs/dossiq-sociaal-domein-participatiewet/spec.md
+ * @spec openspec/changes/social-domain-procedures-are-case-types/specs/dossiq-sociaal-domein-wmo/spec.md
  */
 
 declare(strict_types=1);
@@ -23,7 +25,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The package, and its record import over every shipped participatiewetZaak.
+ * Each package, and its record import over every shipped record of its procedure.
  *
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
  * @covers \OCA\Dossiq\Service\Import\RecordValues
@@ -31,10 +33,10 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore
  */
-class ParticipatiewetCaseTypeTest extends TestCase {
+class SocialDomainCaseTypesTest extends TestCase {
 	use MakesCaseDateNormaliser;
 
-	private const PACKAGE = __DIR__ . '/../../../lib/Settings/packages/bijstandsaanvraag';
+	private const PACKAGES = __DIR__ . '/../../../lib/Settings/packages/';
 
 	private const SETTINGS = __DIR__ . '/../../../lib/Settings';
 
@@ -64,25 +66,51 @@ class ParticipatiewetCaseTypeTest extends TestCase {
 	}//end register()
 
 	/**
-	 * The record import over participatiewetZaak.
+	 * A package's case-type file.
+	 *
+	 * @param string $package The package id.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function import(): array {
-		return $this->json(self::PACKAGE . '/case-type.json')['caseType']['recordImports'][0];
+	private function caseTypeFile(string $package): array {
+		return $this->json(self::PACKAGES . $package . '/case-type.json');
+	}//end caseTypeFile()
+
+	/**
+	 * A package's record import.
+	 *
+	 * @param string $package The package id.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function import(string $package): array {
+		return $this->caseTypeFile($package)['caseType']['recordImports'][0];
 	}//end import()
+
+	/**
+	 * The procedures: package, source schema, domain, the sensitive answers each record carries.
+	 *
+	 * @return array<string, array{0: string, 1: string, 2: string, 3: array<int, string>}>
+	 */
+	public static function procedures(): array {
+		return [
+			'Participatiewet' => ['bijstandsaanvraag', 'participatiewetZaak', 'Participatiewet', ['huishoudsituatie', 'vermogenstoets', 'inkomenstoets']],
+			'Wmo' => ['wmo-melding', 'wmoZaak', 'Wmo', ['hulpvraag', 'huishoudsamenstelling']],
+		];
+	}//end procedures()
 
 	/**
 	 * The package installs everywhere, confidential, handled by the social domain, in the Participatiewet domain.
 	 *
 	 * @return void
 	 */
-	public function testThePackageShipsTheCaseTypeInItsDomain(): void {
-		self::assertSame('auto', $this->json(self::PACKAGE . '/package.json')['install']);
-		$type = $this->json(self::PACKAGE . '/case-type.json')['caseType'];
+	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
+	public function testThePackageShipsTheCaseTypeInItsDomain(string $package, string $source, string $domain, array $sensitive): void {
+		self::assertSame('auto', $this->json(self::PACKAGES . $package . '/package.json')['install']);
+		$type = $this->caseTypeFile($package)['caseType'];
 		self::assertSame('vertrouwelijk', $type['confidentiality']);
 		self::assertSame('dossiq-sociaal-domein', $type['handling']['defaultGroup']);
-		self::assertSame('Participatiewet', (new \ReflectionClass(SociaalDomeinStore::class))->newInstanceWithoutConstructor()->domainOfCategory(category: $type['category']));
+		self::assertSame($domain, (new \ReflectionClass(SociaalDomeinStore::class))->newInstanceWithoutConstructor()->domainOfCategory(category: $type['category']));
 	}//end testThePackageShipsTheCaseTypeInItsDomain()
 
 	/**
@@ -90,11 +118,12 @@ class ParticipatiewetCaseTypeTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testEveryOldStatusHasAStatus(): void {
-		$schema = $this->register()['components']['schemas']['participatiewetZaak'];
-		$statusIds = array_column($this->json(self::PACKAGE . '/case-type.json')['statusTypes'], 'id');
+	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
+	public function testEveryOldStatusHasAStatus(string $package, string $source, string $domain, array $sensitive): void {
+		$schema = $this->register()['components']['schemas'][$source];
+		$statusIds = array_column($this->caseTypeFile($package)['statusTypes'], 'id');
 		foreach ($schema['properties']['status']['enum'] as $old) {
-			self::assertContains($this->import()['statuses'][$old]['status'] ?? null, $statusIds, $old);
+			self::assertContains($this->import($package)['statuses'][$old]['status'] ?? null, $statusIds, $old);
 		}
 	}//end testEveryOldStatusHasAStatus()
 
@@ -105,12 +134,13 @@ class ParticipatiewetCaseTypeTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testARestrictedFieldStaysRestricted(): void {
+	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
+	public function testARestrictedFieldStaysRestricted(string $package, string $source, string $domain, array $sensitive): void {
 		$register = $this->register()['components']['schemas'];
-		$restricted = array_keys(array_filter($register['participatiewetZaak']['properties'], static fn (array $prop): bool => isset($prop['authorization']) === true));
+		$restricted = array_keys(array_filter($register[$source]['properties'], static fn (array $prop): bool => isset($prop['authorization']) === true));
 		self::assertNotSame([], $restricted);
 		$targets = [];
-		foreach ($this->import()['fields'] as $field) {
+		foreach ($this->import($package)['fields'] as $field) {
 			$targets[(string)($field['from'] ?? '')] = (string)$field['to'];
 		}
 
@@ -120,11 +150,11 @@ class ParticipatiewetCaseTypeTest extends TestCase {
 			self::assertSame([['group' => 'dossiq-sensitive']], $register['case']['properties'][$to]['authorization']['read']);
 		}
 
-		$definitions = array_column($this->json(self::PACKAGE . '/case-type.json')['propertyDefinitions'], null, 'id');
-		foreach ($this->import()['fields'] as $field) {
+		$definitions = array_column($this->caseTypeFile($package)['propertyDefinitions'], null, 'id');
+		foreach ($this->import($package)['fields'] as $field) {
 			if (isset($field['property']) === true) {
-				$sensitive = ($definitions[$field['property']['definition']]['sensitive'] ?? false) === true;
-				self::assertSame($sensitive, $field['to'] === 'sensitiveProperties', $field['property']['name']);
+				$flagged = ($definitions[$field['property']['definition']]['sensitive'] ?? false) === true;
+				self::assertSame($flagged, $field['to'] === 'sensitiveProperties', $field['property']['name']);
 			}
 		}
 	}//end testARestrictedFieldStaysRestricted()
@@ -134,23 +164,26 @@ class ParticipatiewetCaseTypeTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testEveryShippedApplicationMapsOntoACase(): void {
-		$type = $this->json(self::PACKAGE . '/case-type.json')['caseType'];
+	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
+	public function testEveryShippedApplicationMapsOntoACase(string $package, string $source, string $domain, array $sensitive): void {
+		$type = $this->caseTypeFile($package)['caseType'];
 		$rows = array_values(array_filter(
 			$this->json(self::SETTINGS . '/register.d/50-sociaal-domein.json')['components']['objects'],
-			static fn (array $object): bool => $object['@self']['schema'] === 'participatiewetZaak'
+			static fn (array $object): bool => $object['@self']['schema'] === $source
 		));
 		self::assertCount(3, $rows);
 		$mapping = new RecordCaseMapping(dates: $this->caseDates());
 		foreach ($rows as $row) {
-			$case = $mapping->map(import: $this->import(), record: $row, recordId: 'id-' . $row['caseNumber'], caseTypeId: $type['id'])['case'];
+			$case = $mapping->map(import: $this->import($package), record: $row, recordId: 'id-' . $row['caseNumber'], caseTypeId: $type['id'])['case'];
 			self::assertSame($row['bsn'], $case['subjectBsn']);
 			self::assertSame($row['handlerId'], $case['assignee']);
 			self::assertSame([['application' => 'dossiq', 'reference' => $row['caseNumber']]], $case['formerReferences']);
-			self::assertSame(['huishoudsituatie', 'vermogenstoets', 'inkomenstoets'], array_column($case['sensitiveProperties'], 'name'));
+			$hidden = array_column($case['sensitiveProperties'] ?? [], 'name');
+			self::assertNotSame([], $hidden, $source);
+			self::assertSame([], array_diff($hidden, $sensitive), $source);
 			$plain = array_column($case['properties'], 'name');
 			self::assertContains('avgClassificatie', $plain);
-			self::assertSame([], array_intersect($plain, ['huishoudsituatie', 'vermogenstoets', 'inkomenstoets']));
+			self::assertSame([], array_intersect($plain, $sensitive));
 		}
 	}//end testEveryShippedApplicationMapsOntoACase()
 
@@ -159,13 +192,14 @@ class ParticipatiewetCaseTypeTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testTheImportIsIdempotentAndMovesReferences(): void {
-		$import = $this->import();
+	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
+	public function testTheImportIsIdempotentAndMovesReferences(string $package, string $source, string $domain, array $sensitive): void {
+		$import = $this->import($package);
 		self::assertSame('caseNumber', $import['dedupeBy']);
 		self::assertSame('caseNumber', $import['formerReference']['from']);
 		self::assertContains(['schema' => 'toestemming', 'field' => 'caseId'], $import['references']);
 		self::assertTrue($import['runOnUpgrade']);
-		$schema = $this->register()['components']['schemas']['participatiewetZaak'];
+		$schema = $this->register()['components']['schemas'][$source];
 		self::assertArrayHasKey('migratedTo', $schema['properties']);
 		self::assertArrayHasKey('migratedAt', $schema['properties']);
 	}//end testTheImportIsIdempotentAndMovesReferences()

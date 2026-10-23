@@ -20,5 +20,5 @@
 - [x] 4b.2 Bijstandsaanvraag: Toetsing afronden requires vermogenstoets and inkomenstoets
 
 ## 5. Wmo, Jeugdwet
-- [ ] 5.1 Wmo-melding package over wmoZaak (indicatiestelling.needsAssessmentId)
+- [x] 5.1 Wmo-melding package over wmoZaak, adopting the seeded case type by identifier; references indicatiestelling.caseId, toestemming.caseId, mdoOverleg.caseIds (list, caseType 1.37.0); wmoZaak 1.3.0
 - [ ] 5.2 Jeugdwet: the melding-jeugdwet package imports jeugdwetZaak (gezinsplan, mdoOverleg)
