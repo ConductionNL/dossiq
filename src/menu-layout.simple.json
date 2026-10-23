@@ -2347,27 +2347,13 @@
 					},
 					"case-archival-panel": {
 						"subtitle": "What happens to this case once it is closed",
-						"_headerActionsNote": "DqZaakArchivering: \"Nominatie herberekenen\" in the Archiving card's title row. It recomputes the case's archival nomination through OpenRegister (POST /api/archival/objects/{id}/nomination/recompute), which an archivist may do, asks for a reason, and records the actor, the reason and the previous nomination. The library action dialog asks the reason; OpenRegister refuses anyone who is not an archivist, with its own sentence.",
-						"headerActions": [
-							{
-								"label": "Recompute nomination",
-								"icon": "Refresh",
-								"action": {
-									"type": "open-modal",
-									"target": "CnActionDialog",
-									"props": {
-										"objectId": "@objectId",
-										"config": {
-											"title": "Recompute the archive nomination",
-											"subtitle": "The nomination is derived again from the current selection list and the case's result. The previous one stays in its history.",
-											"reason": { "label": "Reason", "hint": "Goes into the nomination history of the case." },
-											"confirm": { "label": "Recompute", "icon": "Refresh", "request": { "method": "POST", "url": "/apps/openregister/api/archival/objects/@objectId/nomination/recompute", "body": { "reason": "{reason}" } } },
-											"doneText": "The archive nomination was recomputed."
-										}
-									}
-								}
-							}
-						]
+						"_note": "DqZaakArchivering: the retention widget draws its own title row, with the subtitle and \"Nominatie herberekenen\" (archivists only, asks the reason, POST /api/archival/objects/{id}/nomination/recompute), so no host header action sits beside it. The content repeats the base widget's, because a patch replaces content whole.",
+						"content": {
+							"subtitle": "What happens to this case once it is closed",
+							"statusField": "archiveStatus",
+							"archivedValues": ["archived", "archived_retention_period_unknown"],
+							"archivistGroups": ["archivaris"]
+						}
 					},
 					"case-status-declaration": {
 						"_note": "The case Status card (DqZaak): where the case stands in one line and the time in the status under it. The withheld moves stay off the card, as the board draws it; the content is the base widget's, repeated because a patch replaces content whole.",
