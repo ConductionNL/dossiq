@@ -825,7 +825,7 @@ describe('what this change does NOT move', () => {
 			// attribute catalogue, beside the case types it files for. It
 			// spends no top-level slot either, because it carries
 			// `section: "settings"` like `Case types` and `Flows` do.
-			'Attributes',
+			'Attributes (catalogue)',
 			'Flows',
 			'Objection advisory committees',
 			'Deadline monitoring',
