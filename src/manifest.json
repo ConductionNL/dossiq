@@ -7585,7 +7585,19 @@
 				"showWidgetActions": false,
 				"_granularityNote": "Board DqDoorlooptijd: Maand, Kwartaal and Jaar group the averages per month, quarter or year over a one-year window; they do not shorten the window (Ruben, 21 Oct). The window is the endpoint default, twelve months. The monthly chart sends the grouping as `granularity`.",
 				"_pageFiltersNote": "The case type choice sits on the description line, before the period group, as the DqDoorlooptijd board draws it (\"alle zaaktypen\"). Only case types that declare a processing deadline are offered: a type without one gives a dashboard that can say nothing. Clearing it reads every case type.",
+				"description": "{filter.period}",
+				"_descriptionNote": "Board DqDoorlooptijd opens the line with the period it reports on (\"januari tot en met september 2026 ·\"). The window is fixed at twelve months, the endpoints' default, so the period filter draws no control (control none, nextcloud-vue page-filter-without-control) and the description names its months.",
 				"pageFilters": [
+					{
+						"key": "period",
+						"label": "Period",
+						"control": "none",
+						"placement": "description",
+						"default": "12m",
+						"options": [
+							{ "value": "12m", "label": "Last 12 months", "months": 12 }
+						]
+					},
 					{
 						"key": "caseType",
 						"label": "Filter by case type",
@@ -7767,13 +7779,21 @@
 						"title": "Average processing time per month",
 						"content": {
 							"chartKind": "line",
+							"categoryFormat": "month",
+							"referenceLines": [
+								{
+									"valuePath": "summary.normDays",
+									"label": "norm {value} days"
+								}
+							],
 							"_heightNote": "No height: on a dashboard a chart without one fits its tile (nextcloud-vue CnDashboardPage). A pinned 260px plot was taller than the gridHeight 4 tile and the tile cut it off and scrolled (DqDoorlooptijd).",
 							"footnote": "Chart from the OpenRegister analysis layer. Dossiq works out the norm and what counts as within it.",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
 								"params": {
 									"caseType": "@workspace.caseType?",
-									"granularity": "@workspace.granularity?"
+									"granularity": "@workspace.granularity?",
+									"period": "@workspace.period?"
 								},
 								"labelsPath": "summary.monthlyAvgDays.labels",
 								"series": [

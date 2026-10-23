@@ -51,6 +51,22 @@ describe('processing time', () => {
 		}
 	})
 
+	it('names its period, draws the norm and writes the months, as DqDoorlooptijd does', () => {
+		// "januari tot en met september 2026 ·": a fixed twelve-month period
+		// without a control (nextcloud-vue page-filter-without-control); the
+		// dashed "norm 28 dagen" from the answer and "jan", "feb" on the axis
+		// (chart-reference-line-from-answer).
+		const config = page('Doorlooptijd').config
+		expect(config.description).toBe('{filter.period}')
+		const period = config.pageFilters.find((f) => f.key === 'period')
+		expect(period).toMatchObject({ control: 'none', default: '12m', placement: 'description' })
+		expect(period.options).toEqual([{ value: '12m', label: 'Last 12 months', months: 12 }])
+		const monthly = widget('Doorlooptijd', 'processing-time-monthly').content
+		expect(monthly.categoryFormat).toBe('month')
+		expect(monthly.referenceLines).toEqual([{ valuePath: 'summary.normDays', label: 'norm {value} days' }])
+		expect(monthly.endpointSource.params.period).toBe('@workspace.period?')
+	})
+
 	it('groups the four compliance charts as small cards in one card, three to a row (DqDoorlooptijd Naleving)', () => {
 		const group = widget('Doorlooptijd', 'processing-time-compliance')
 		expect(group.type).toBe('sections')

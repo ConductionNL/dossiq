@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.150.1",
+	"version": "2.151.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -5397,7 +5397,7 @@
 									"label": { "type": "string", "description": "Control label (i18n key or plain text)." },
 									"type": { "type": "string", "enum": ["select", "quarter", "year"], "default": "select", "description": "Control type, carried over from v1. \"quarter\" and \"year\" generate their options: the current quarter or year first, then `count - 1` before it, valued YYYY-Qn or YYYY." },
 									"count": { "type": "integer", "minimum": 1, "description": "With type \"quarter\" or \"year\": how many to offer (default 8 quarters, 5 years)." },
-									"control": { "type": "string", "enum": ["select", "segmented"], "default": "select", "description": "How the filter is drawn: a select, or a compact segmented group." },
+									"control": { "type": "string", "enum": ["select", "segmented", "none"], "default": "select", "description": "How the filter is drawn: a select, a compact segmented group, or none (the value is seeded for the widgets and the description, and no control is drawn)." },
 									"clearable": { "type": "boolean", "default": false, "description": "Lets the reader clear the select back to all; `placeholder` names that state (2.130.0)." },
 									"placeholder": { "type": "string", "description": "What a cleared select shows, e.g. \"All case types\", through the app's translate (2.130.0)." },
 									"optionsFrom": {

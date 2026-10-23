@@ -5330,6 +5330,7 @@
         "None, I will set this up myself": "Geen, ik richt dit zelf in",
         "None: no requests go outside": "Geen: er gaan geen aanvragen naar buiten",
         "Norm per case type": "Norm per zaaktype",
+        "norm {value} days": "norm {value} dagen",
         "Normaal": "Normaal",
         "Normal": "Normaal",
         "Not a data subject request": "Geen AVG-verzoek",
