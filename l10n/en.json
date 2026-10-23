@@ -2722,6 +2722,8 @@
         "Dutch display name shown to end users (e.g. 'Aanvraag ontvangen').": "Dutch display name shown to end users (e.g. 'Aanvraag ontvangen').",
         "Dutch words that flag negative sentiment and trigger an escalation recommendation. One word or phrase per line.": "Dutch words that flag negative sentiment and trigger an escalation recommendation. One word or phrase per line.",
         "Dwangsom Berekening": "Dwangsom Berekening",
+        "Payout callback secret": "Payout callback secret",
+        "No callback secret is configured. Every payout confirmation callback is currently being rejected with HTTP 401.": "No callback secret is configured. Every payout confirmation callback is currently being rejected with HTTP 401.",
         "Dwangsom callback secret": "Dwangsom callback secret",
         "Dwangsom callback signing secret": "Dwangsom callback signing secret",
         "Dwangsom totaal": "Dwangsom totaal",

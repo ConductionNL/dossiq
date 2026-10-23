@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for DwangsomBezwaarService.
+ * Unit tests for AmountObjectionService.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service
@@ -20,12 +20,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service\Money;
 
-use OCA\Dossiq\Service\DwangsomBezwaarService;
+use OCA\Dossiq\Service\Money\AmountObjectionService;
 use OCA\Dossiq\Service\Money\PayoutRequester;
 use OCA\Dossiq\Service\Money\PayoutService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use OCA\Shillinq\Event\PayableCancelRequestedEvent;
 use OCA\Shillinq\Event\PayableRaisedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -36,7 +37,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Dossiq\Service\DwangsomBezwaarService
+ * @covers \OCA\Dossiq\Service\Money\AmountObjectionService
  *
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\Money\PayoutService
@@ -45,12 +46,12 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  */
-class DwangsomBezwaarServiceTest extends TestCase {
+class AmountObjectionServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
 
 	private FakeTermijnStore $objects;
 	private SettingsService $settings;
-	private DwangsomBezwaarService $service;
+	private AmountObjectionService $service;
 
 	protected function setUp(): void {
 		$this->objects = new FakeTermijnStore();
@@ -63,8 +64,8 @@ class DwangsomBezwaarServiceTest extends TestCase {
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
-					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
-					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
+					'accruing_amount_schema' => 'penaltyPaymentCalculation',
+					'payout_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
 			},
@@ -72,7 +73,7 @@ class DwangsomBezwaarServiceTest extends TestCase {
 
 		$this->settings = $settings;
 		$logger = $this->createMock(LoggerInterface::class);
-		$this->service = new DwangsomBezwaarService(
+		$this->service = new AmountObjectionService(
 			$settings,
 			new TermijnService($settings, $logger),
 			$logger
@@ -97,7 +98,7 @@ class DwangsomBezwaarServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testRegisterBezwaarFreezesBerekeningAndHoldsUitbetaling(): void {
-		$b = $this->service->registerBezwaar('b-1', 'AWB 7:1', 'Belanghebbende betwist bedrag');
+		$b = $this->service->registerObjection('b-1', 'AWB 7:1', 'Belanghebbende betwist bedrag');
 		self::assertSame('objection-bevroren', $b['status']);
 
 		$u = $this->objects->store['dwangsomUitbetaling']['u-1'];
@@ -113,8 +114,8 @@ class DwangsomBezwaarServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testResolveBezwaarAdjustsAmountAndResumes(): void {
-		$this->service->registerBezwaar('b-1', 'AWB 7:1', 'foo');
-		$b = $this->service->resolveBezwaar('b-1', 30000, 'AWB 7:11');
+		$this->service->registerObjection('b-1', 'AWB 7:1', 'foo');
+		$b = $this->service->resolveObjection('b-1', 30000, 'AWB 7:11');
 
 		self::assertSame(30000, $b['definitiveAmount']);
 		self::assertSame('completed', $b['status']);
@@ -129,7 +130,7 @@ class DwangsomBezwaarServiceTest extends TestCase {
 	 */
 	public function testResolveBezwaarRejectsNegativeAmount(): void {
 		$this->expectException(RuntimeException::class);
-		$this->service->resolveBezwaar('b-1', -1, 'AWB 7:11');
+		$this->service->resolveObjection('b-1', -1, 'AWB 7:11');
 	}
 
 	/**
@@ -137,7 +138,7 @@ class DwangsomBezwaarServiceTest extends TestCase {
 	 */
 	public function testRegisterBezwaarOnUnknownBerekeningFails(): void {
 		$this->expectException(RuntimeException::class);
-		$this->service->registerBezwaar('does-not-exist', 'AWB 7:1', 'foo');
+		$this->service->registerObjection('does-not-exist', 'AWB 7:1', 'foo');
 	}
 
 	/**
@@ -146,9 +147,9 @@ class DwangsomBezwaarServiceTest extends TestCase {
 	 * @param string|null $cancelRefusal What finance refuses a withdrawal with, or null to accept.
 	 * @param array<int, object> $seen Collects the dispatched commands.
 	 *
-	 * @return DwangsomBezwaarService The service.
+	 * @return AmountObjectionService The service.
 	 */
-	private function withFinance(?string $cancelRefusal, array &$seen): DwangsomBezwaarService {
+	private function withFinance(?string $cancelRefusal, array &$seen): AmountObjectionService {
 		$dispatcher = $this->createMock(IEventDispatcher::class);
 		$dispatcher->method('dispatchTyped')->willReturnCallback(
 			static function (object $event) use ($cancelRefusal, &$seen): void {
@@ -178,7 +179,7 @@ class DwangsomBezwaarServiceTest extends TestCase {
 			'status' => 'voorbereid',
 		]);
 
-		return new DwangsomBezwaarService($this->settings, new TermijnService($this->settings, $logger), $logger, $payouts);
+		return new AmountObjectionService($this->settings, new TermijnService($this->settings, $logger), $logger, $payouts);
 	}//end withFinance()
 
 	/**
@@ -191,14 +192,14 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		$seen = [];
 		$service = $this->withFinance(cancelRefusal: null, seen: $seen);
 
-		$service->registerBezwaar('b-1', 'AWB 7:1', 'Belanghebbende betwist bedrag');
+		$service->registerObjection('b-1', 'AWB 7:1', 'Belanghebbende betwist bedrag');
 		$held = $this->objects->store['dwangsomUitbetaling']['u-1'];
 		self::assertInstanceOf(PayableCancelRequestedEvent::class, $seen[0]);
 		self::assertSame('PROC-DWS-FIRST', $seen[0]->getReference());
 		self::assertSame('on-hold-objection', $held['status']);
 		self::assertSame('', $held['payableId']);
 
-		$service->resolveBezwaar('b-1', 30000, 'AWB 7:11');
+		$service->resolveObjection('b-1', 30000, 'AWB 7:11');
 		$resumed = $this->objects->store['dwangsomUitbetaling']['u-1'];
 		self::assertInstanceOf(PayableRaisedEvent::class, $seen[1]);
 		self::assertSame(300.0, $seen[1]->toArray()['amount']);
@@ -216,7 +217,7 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		$seen = [];
 		$service = $this->withFinance(cancelRefusal: 'The payable under reference PROC-DWS-FIRST is approved, so only finance can undo it.', seen: $seen);
 
-		$service->registerBezwaar('b-1', 'AWB 7:1', 'Belanghebbende betwist bedrag');
+		$service->registerObjection('b-1', 'AWB 7:1', 'Belanghebbende betwist bedrag');
 
 		$row = $this->objects->store['dwangsomUitbetaling']['u-1'];
 		self::assertSame('voorbereid', $row['status']);

@@ -1106,7 +1106,7 @@ $extra = [
     ['name' => 'leaverHandover#preview',   'url' => '/api/leaver-handover/preview',                       'verb' => 'POST'],
     ['name' => 'leaverHandover#execute',   'url' => '/api/leaver-handover/execute',                       'verb' => 'POST'],
 
-        // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
+        // ── Deadlines, accruing amounts and payouts (AWB 4:13/4:14/4:17) ─────────
         // Public webhook for payout callbacks: the finance app (X-Shillinq-Signature)
         // or the external payment provider (frozen X-Procest-Signature).
     ['name' => 'payoutCallback#callback', 'url' => '/api/payments/callback', 'verb' => 'POST'],
@@ -1177,20 +1177,23 @@ $extra = [
     ['name' => 'termijnDefinitie#calendarLegacyPath', 'url' => '/api/termijn/calendar',        'verb' => 'GET'],
     ['name' => 'termijnDefinitie#createLegacyPath',   'url' => '/api/termijn/definities',      'verb' => 'POST'],
     ['name' => 'termijnDefinitie#updateLegacyPath',   'url' => '/api/termijn/definities/{id}', 'verb' => 'PATCH'],
-        // Notice-of-default registration.
-        // Route NAMES follow the renamed controller — a route name resolves to
-        // its class, so it must move with it or the router 500s. The URLs
-        // deliberately do NOT move: /api/termijn/ingebrekestellingen is the
-        // published contract and changing it is a breaking change for every
-        // consumer, which is a separate decision from this rename.
-    ['name' => 'accrualNotice#register', 'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
-    ['name' => 'accrualNotice#show',     'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
-        // Dwangsom state + bezwaar.
-    ['name' => 'dwangsom#show',         'url' => '/api/termijn/dwangsom/{id}',             'verb' => 'GET'],
-    ['name' => 'dwangsom#beschikking',  'url' => '/api/termijn/dwangsom/{id}/beschikking', 'verb' => 'POST'],
-    ['name' => 'payout#prepare',        'url' => '/api/termijn/dwangsom/{id}/uitbetaling', 'verb' => 'POST'],
-    ['name' => 'dwangsom#bezwaar',      'url' => '/api/termijn/dwangsom/{id}/bezwaar',     'verb' => 'POST'],
-    ['name' => 'dwangsom#bezwaarHeroverweging', 'url' => '/api/termijn/dwangsom/{id}/bezwaar/heroverweging', 'verb' => 'POST'],
+        // Notice of default, accruing amount, objection and payout
+        // (case-money-is-configuration, REQ-DQM-003). Named for what they do.
+    ['name' => 'accrualNotice#register',     'url' => '/api/notices-of-default',                       'verb' => 'POST'],
+    ['name' => 'accrualNotice#show',         'url' => '/api/notices-of-default/{id}',                  'verb' => 'GET'],
+    ['name' => 'accruingAmount#show',        'url' => '/api/accruing-amounts/{id}',                    'verb' => 'GET'],
+    ['name' => 'accruingAmount#settle',      'url' => '/api/accruing-amounts/{id}/settle',             'verb' => 'POST'],
+    ['name' => 'payout#prepare',             'url' => '/api/accruing-amounts/{id}/payout',             'verb' => 'POST'],
+    ['name' => 'accruingAmount#objection',   'url' => '/api/accruing-amounts/{id}/objection',          'verb' => 'POST'],
+    ['name' => 'accruingAmount#reconsider',  'url' => '/api/accruing-amounts/{id}/objection/reconsider', 'verb' => 'POST'],
+        // deprecated alias: the URLs above under /api/termijn/, remove one release after case-money-is-configuration.
+    ['name' => 'accrualNotice#registerLegacyPath',    'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
+    ['name' => 'accrualNotice#showLegacyPath',        'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
+    ['name' => 'accruingAmount#showLegacyPath',       'url' => '/api/termijn/dwangsom/{id}',             'verb' => 'GET'],
+    ['name' => 'accruingAmount#settleLegacyPath',     'url' => '/api/termijn/dwangsom/{id}/beschikking', 'verb' => 'POST'],
+    ['name' => 'payout#prepareLegacyPath',            'url' => '/api/termijn/dwangsom/{id}/uitbetaling', 'verb' => 'POST'],
+    ['name' => 'accruingAmount#objectionLegacyPath',  'url' => '/api/termijn/dwangsom/{id}/bezwaar',     'verb' => 'POST'],
+    ['name' => 'accruingAmount#reconsiderLegacyPath', 'url' => '/api/termijn/dwangsom/{id}/bezwaar/heroverweging', 'verb' => 'POST'],
         // Reporting (manager / accountant).
     ['name' => 'deadlineReporting#dashboard',        'url' => '/api/deadlines/dashboard/kpi',          'verb' => 'GET'],
     ['name' => 'deadlineReporting#quarterlyReport',  'url' => '/api/deadlines/reports/quarterly',      'verb' => 'GET'],

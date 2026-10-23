@@ -2672,6 +2672,8 @@ OC.L10N.register(
         "Dutch display name shown to end users (e.g. 'Aanvraag ontvangen').": "Nederlandse weergavenaam voor eindgebruikers (bijvoorbeeld 'Aanvraag ontvangen').",
         "Dutch words that flag negative sentiment and trigger an escalation recommendation. One word or phrase per line.": "Nederlandse woorden die negatief sentiment markeren en een escalatie-aanbeveling triggeren. Eén woord of zin per regel.",
         "Dwangsom Berekening": "Dwangsomberekening",
+        "Payout callback secret": "Callbackgeheim voor uitbetalingen",
+        "No callback secret is configured. Every payout confirmation callback is currently being rejected with HTTP 401.": "Er is geen callbackgeheim ingesteld. Elke bevestiging van een uitbetaling wordt nu geweigerd met HTTP 401.",
         "Dwangsom callback secret": "Dwangsom-callbackgeheim",
         "Dwangsom callback signing secret": "Dwangsom callback-ondertekeningsgeheim",
         "Dwangsom totaal": "Dwangsom totaal",

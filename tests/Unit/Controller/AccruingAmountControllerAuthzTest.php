@@ -1,7 +1,7 @@
 <?php
 
 /**
- * DwangsomController authorization + dead-predicate tests.
+ * AccruingAmountController authorization + dead-predicate tests.
  *
  * Two defects lived on this controller at once, and the second hid the first.
  *
@@ -45,9 +45,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use JsonSerializable;
-use OCA\Dossiq\Controller\DwangsomController;
+use OCA\Dossiq\Controller\AccruingAmountController;
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\DwangsomBezwaarService;
+use OCA\Dossiq\Service\Money\AmountObjectionService;
 use OCA\Dossiq\Service\Money\AccruingAmountSettler;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
@@ -65,7 +65,7 @@ use PHPUnit\Framework\TestCase;
  * `Entity::__call()`, for which `method_exists()` is false. Returning an array
  * here instead would let a broken `is_array()` predicate pass the test.
  */
-class DwangsomBerekeningEntityDouble implements JsonSerializable {
+class AccruingAmountEntityDouble implements JsonSerializable {
 	/**
 	 * Constructor.
 	 *
@@ -101,7 +101,7 @@ class DwangsomBerekeningEntityDouble implements JsonSerializable {
 /**
  * Typed stub for the OpenRegister ObjectService (named-argument safe).
  */
-interface DwangsomObjectServiceStub {
+interface AccruingAmountObjectServiceStub {
 	/**
 	 * Find a single object by ID.
 	 *
@@ -115,11 +115,11 @@ interface DwangsomObjectServiceStub {
 }//end interface
 
 /**
- * Unit tests for DwangsomController per-object authorization and the repair.
+ * Unit tests for AccruingAmountController per-object authorization and the repair.
  *
- * @covers \OCA\Dossiq\Controller\DwangsomController
+ * @covers \OCA\Dossiq\Controller\AccruingAmountController
  */
-class DwangsomControllerAuthzTest extends TestCase {
+class AccruingAmountControllerAuthzTest extends TestCase {
 
 	private const BEREKENING_ID = 'af19757a-ca9b-457c-8839-98e5ef00478a';
 
@@ -131,25 +131,25 @@ class DwangsomControllerAuthzTest extends TestCase {
 	 * @param OwningCaseResolver $owningCase The owning-case resolver.
 	 * @param CaseAccessGuard $caseAccess The per-case guard.
 	 * @param AccruingAmountSettler $calc The accrual settler.
-	 * @param DwangsomBezwaarService $objection The bezwaar service.
+	 * @param AmountObjectionService $objection The bezwaar service.
 	 * @param mixed $found What ObjectService::find() returns.
 	 *
-	 * @return DwangsomController The controller under test.
+	 * @return AccruingAmountController The controller under test.
 	 */
 	private function makeController(
 		OwningCaseResolver $owningCase,
 		CaseAccessGuard $caseAccess,
 		AccruingAmountSettler $calc,
-		DwangsomBezwaarService $objection,
+		AmountObjectionService $objection,
 		mixed $found = null,
-	): DwangsomController {
+	): AccruingAmountController {
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn('pro-attacker2');
 
 		$session = $this->createMock(IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
-		$objectService = $this->createMock(DwangsomObjectServiceStub::class);
+		$objectService = $this->createMock(AccruingAmountObjectServiceStub::class);
 		$objectService->method('find')->willReturn($found);
 
 		$settings = $this->createMock(SettingsService::class);
@@ -160,7 +160,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 			}
 		);
 
-		return new DwangsomController(
+		return new AccruingAmountController(
 			'dossiq',
 			$this->createMock(IRequest::class),
 			$calc,
@@ -189,24 +189,24 @@ class DwangsomControllerAuthzTest extends TestCase {
 		$calc = $this->createMock(AccruingAmountSettler::class);
 		$calc->expects($this->never())->method('settle');
 
-		$objection = $this->createMock(DwangsomBezwaarService::class);
-		$objection->expects($this->never())->method('registerBezwaar');
-		$objection->expects($this->never())->method('resolveBezwaar');
+		$objection = $this->createMock(AmountObjectionService::class);
+		$objection->expects($this->never())->method('registerObjection');
+		$objection->expects($this->never())->method('resolveObjection');
 
 		$controller = $this->makeController(
 			$owningCase,
 			$caseAccess,
 			$calc,
 			$objection,
-			new DwangsomBerekeningEntityDouble(['id' => self::BEREKENING_ID])
+			new AccruingAmountEntityDouble(['id' => self::BEREKENING_ID])
 		);
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->show(self::BEREKENING_ID)->getStatus());
-		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->beschikking(self::BEREKENING_ID)->getStatus());
-		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->bezwaar(self::BEREKENING_ID)->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->settle(self::BEREKENING_ID)->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->objection(self::BEREKENING_ID)->getStatus());
 		$this->assertSame(
 			Http::STATUS_FORBIDDEN,
-			$controller->bezwaarHeroverweging(self::BEREKENING_ID)->getStatus()
+			$controller->reconsider(self::BEREKENING_ID)->getStatus()
 		);
 	}//end testUnrelatedCallerIsRefusedAndTheServicesAreNeverReached()
 
@@ -227,8 +227,8 @@ class DwangsomControllerAuthzTest extends TestCase {
 			$owningCase,
 			$caseAccess,
 			$this->createMock(AccruingAmountSettler::class),
-			$this->createMock(DwangsomBezwaarService::class),
-			new DwangsomBerekeningEntityDouble(['id' => self::BEREKENING_ID])
+			$this->createMock(AmountObjectionService::class),
+			new AccruingAmountEntityDouble(['id' => self::BEREKENING_ID])
 		);
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->show(self::BEREKENING_ID)->getStatus());
@@ -260,8 +260,8 @@ class DwangsomControllerAuthzTest extends TestCase {
 			$owningCase,
 			$caseAccess,
 			$this->createMock(AccruingAmountSettler::class),
-			$this->createMock(DwangsomBezwaarService::class),
-			new DwangsomBerekeningEntityDouble($payload)
+			$this->createMock(AmountObjectionService::class),
+			new AccruingAmountEntityDouble($payload)
 		);
 
 		$response = $controller->show(self::BEREKENING_ID);
@@ -287,7 +287,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 			$owningCase,
 			$caseAccess,
 			$this->createMock(AccruingAmountSettler::class),
-			$this->createMock(DwangsomBezwaarService::class),
+			$this->createMock(AmountObjectionService::class),
 			null
 		);
 
@@ -313,10 +313,10 @@ class DwangsomControllerAuthzTest extends TestCase {
 			$owningCase,
 			$caseAccess,
 			$this->createMock(AccruingAmountSettler::class),
-			$this->createMock(DwangsomBezwaarService::class),
-			new DwangsomBerekeningEntityDouble(['id' => self::BEREKENING_ID])
+			$this->createMock(AmountObjectionService::class),
+			new AccruingAmountEntityDouble(['id' => self::BEREKENING_ID])
 		);
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->beschikking(self::BEREKENING_ID)->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->settle(self::BEREKENING_ID)->getStatus());
 	}//end testWriteVerbsConsultMutationAccess()
 }//end class

@@ -58,8 +58,8 @@ class PayoutServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'dossiq',
-					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
-					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
+					'accruing_amount_schema' => 'penaltyPaymentCalculation',
+					'payout_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
 			},

@@ -83,6 +83,32 @@ final class CarryRenamedSettingKeysTest extends TestCase {
 	}//end testOldValuesAreCarriedOnceAndKept()
 
 	/**
+	 * The money keys that named a procedure reach their generic keys, the callback secret included.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 */
+	public function testMoneyKeysAreCarriedToTheirGenericNames(): void {
+		$this->stored = [
+			'dwangsom_berekening_schema' => '41',
+			'dwangsom_uitbetaling_schema' => '42',
+			'dwangsom_callback_secret' => 's3cret',
+			'ingebrekestelling_schema' => '40',
+		];
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('info')->with($this->stringContains('Carried 4'));
+
+		$this->step()->run($output);
+
+		self::assertSame('41', $this->stored['accruing_amount_schema']);
+		self::assertSame('42', $this->stored['payout_schema']);
+		self::assertSame('s3cret', $this->stored['payout_callback_secret']);
+		self::assertSame('40', $this->stored['notice_of_default_schema']);
+		self::assertSame('s3cret', $this->stored['dwangsom_callback_secret'], 'The old key stays for a rollback.');
+	}//end testMoneyKeysAreCarriedToTheirGenericNames()
+
+	/**
 	 * A current key an administrator already set is never overwritten, and no old keys means nothing to do.
 	 *
 	 * @return void

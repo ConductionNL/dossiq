@@ -24,16 +24,23 @@ penalty (`case-type-penalty-on-late-decision`). What is still named after the pr
 | `DwangsomController` (show, beschikking, bezwaar, bezwaarHeroverweging) | `AccruingAmountController` (show, settle, objection, reconsider) |
 | `DwangsomBezwaarService` | `Money\AmountObjectionService` |
 | routes `/api/termijn/dwangsom/{id}...` | `/api/accruing-amounts/{id}...`; the old URLs stay as aliases |
-| config `dwangsom_berekening_schema`, `dwangsom_uitbetaling_schema`, `dwangsom_callback_secret` | `accruing_amount_schema`, `payout_schema`, `payout_callback_secret`, migrated by repair, old keys still read |
-| payout row known only to dossiq | payout raised with the case as `subject`, so it shows on the case |
+| config `dwangsom_berekening_schema`, `dwangsom_uitbetaling_schema`, `dwangsom_callback_secret`, `ingebrekestelling_schema` | `accruing_amount_schema`, `payout_schema`, `payout_callback_secret`, `notice_of_default_schema`; carried by `CarryRenamedSettingKeys`, old keys still read |
+| routes `/api/termijn/ingebrekestellingen...` | `/api/notices-of-default...`; the old URLs stay as aliases |
+| payout row (`dwangsomUitbetaling`) known only to dossiq | payout read from shillinq, linked to its case; old rows migrated |
 
 ## What changes
 
 - The case detail places `shillinq-financial-documents-panel` where "Fees and payments" is now, with every act the
   old panel had. The linked card lists it instead of `shillinq-payment-requests-panel`.
-- `PayoutRequester` sends the case as `subject` with `PayableRaisedEvent`.
-- The renames in the table above, with route aliases (`RenamedRouteAliasesTest`) and the config key repair
-  (`MigrateAppConfigKeys`).
+- `PayoutRequester` sends the case in `linkedObjects` with `PayableRaisedEvent`.
+- dossiq stops keeping its own payout row. The payout is read from shillinq. A repair step raises each existing
+  `dwangsomUitbetaling` row in shillinq as a payout linked to its case, keeping its state; the stored schema stays
+  readable so nothing is lost. The annual penalty audit reads the payouts from shillinq.
+- A forfeited enforcement penalty (the offender pays) raises a shillinq invoice linked to the enforcement case.
+  The case type says so (`forfeitRaisesInvoice`, with the amount source and the revenue category); no code names
+  the procedure.
+- The renames in the table above, with route aliases (`RenamedRouteAliasesTest`) and the config key carry
+  (`CarryRenamedSettingKeys`).
 - Schema slugs `penaltyPaymentCalculation`, `dwangsomUitbetaling` and `noticeOfDefault` stay: they are in stored data.
   Their titles and descriptions lose the procedure name.
 
@@ -45,7 +52,10 @@ penalty (`case-type-penalty-on-late-decision`). What is still named after the pr
 - The objection that withdraws a payout and raises the new amount.
 - The signed callback URL, with both signature headers.
 
-## Open, for Ruben
+## Decided (Ruben, 23 Oct)
 
-See `R20/DQ-FIN/PROPOSAL.md`: one panel or one per kind, the enforcement penalty ("last onder dwangsom", where the
-offender pays), and whether dossiq keeps its payout row.
+- One "Financial documents" card, narrowed per placement with `kinds` and `actions`.
+- A document links to several objects (`linkedObjects`), frozen once issued.
+- A forfeited enforcement penalty raises a shillinq invoice, as case type configuration.
+- dossiq's payout row retires: payouts are read from shillinq, existing rows migrate, the audit reads shillinq.
+- The `/api/termijn/` aliases live one release; the callback URL stays for good.

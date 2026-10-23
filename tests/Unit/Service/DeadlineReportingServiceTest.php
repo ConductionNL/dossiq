@@ -50,7 +50,7 @@ class DeadlineReportingServiceTest extends TestCase {
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'case_schema' => 'case',
 					'case_type_schema' => 'caseType',
-					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
+					'payout_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
 			},
