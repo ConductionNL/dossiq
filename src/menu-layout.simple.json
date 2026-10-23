@@ -4081,7 +4081,10 @@
 							"pill": {
 								"field": "code"
 							},
-							"headerSubtitle": "Go into the decision",
+							"pillAt": "start",
+							"ruleAbove": true,
+							"footnote": "A document that is not or only partly public always needs at least one ground.",
+							"headerNote": "Go into the decision",
 							"emptyText": "No ground cited yet"
 						}
 					},

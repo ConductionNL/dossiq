@@ -222,6 +222,7 @@
         "a document is on the case": "er een document op de zaak staat",
         "A document on this case was addressed to them.": "Een document bij deze zaak was aan hen geadresseerd.",
         "A document picked here gets its own link. The holder of that link sees the document and nothing else of the case.": "Een document dat u hier kiest krijgt een eigen link. Wie die link heeft ziet het document en verder niets van de zaak.",
+        "A document that is not or only partly public always needs at least one ground.": "Een document dat niet of deels openbaar is, heeft altijd ten minste één grond nodig.",
         "A document that may be made public could not be read, so nothing was published. Check its file on the case and try again.": "Een document dat openbaar mag worden kon niet worden gelezen, dus er is niets gepubliceerd. Controleer het bestand bij de zaak en probeer het opnieuw.",
         "A document without extracted text never matches a text condition, and a mail whose headers were not read never matches a sender domain.": "Een document zonder uitgelezen tekst past nooit op een tekstvoorwaarde, en een mail waarvan de kopregels niet gelezen zijn nooit op een afzenderdomein.",
         "A DPIA is required before using AI features with personal data. This must be acknowledged before AI features can be activated.": "Een DPIA is verplicht voordat AI-functies met persoonsgegevens worden gebruikt. Dit moet worden bevestigd voordat AI-functies kunnen worden geactiveerd.",
