@@ -659,6 +659,7 @@ OC.L10N.register(
         "Also on {count} other cases": "Ook op {count} andere zaken",
         "Also on:": "Ook op:",
         "Also send by e-mail": "Ook per e-mail versturen",
+        "Also who read the case": "Ook wie de zaak las",
         "Also written on %n other case": "Staat ook op %n andere zaak",
         "Also written on %n other cases": "Staat ook op %n andere zaken",
         "Always available": "Altijd mogelijk",

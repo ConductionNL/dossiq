@@ -659,6 +659,7 @@ OC.L10N.register(
         "Also on {count} other cases": "Also on {count} other cases",
         "Also on:": "Also on:",
         "Also send by e-mail": "Also send by e-mail",
+        "Also who read the case": "Also who read the case",
         "Also written on %n other case": "Also written on %n other case",
         "Also written on %n other cases": "Also written on %n other cases",
         "Always available": "Always available",

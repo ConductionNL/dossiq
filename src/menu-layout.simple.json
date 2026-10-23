@@ -2524,6 +2524,7 @@
 							"auditTrailTab": "audit",
 							"composer": "separate",
 							"visibilityLabel": false,
+							"readsToggle": "Also who read the case",
 							"entryActions": [
 								{
 									"id": "reply",
