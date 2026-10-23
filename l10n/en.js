@@ -933,6 +933,7 @@ OC.L10N.register(
         "Attention markers": "Attention markers",
         "Attribute": "Attribute",
         "Attributes": "Attributes",
+        "Attributes (catalogue)": "Attributes",
         "Attribution": "Attribution",
         "Attribution text for the layer": "Attribution text for the layer",
         "Attribution text rendered as escaped text in legend (no HTML)": "Attribution text rendered as escaped text in legend (no HTML)",

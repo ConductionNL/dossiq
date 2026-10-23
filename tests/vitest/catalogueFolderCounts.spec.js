@@ -28,7 +28,7 @@ describe('the catalogue folder counts (DqCatalogus)', () => {
 		expect(all.filter).toEqual({ supersededBy: { isnull: true } })
 	})
 
-	it.each([['Attributes', '/settings/attributes'], ['Templates', '/settings/workflow-definitions']])('counts %s from the schema its page lists', (label, route) => {
+	it.each([['Attributes (catalogue)', '/settings/attributes'], ['Templates', '/settings/workflow-definitions']])('counts %s from the schema its page lists', (label, route) => {
 		const config = listed(route)
 		expect(item(label).countFrom).toEqual({ register: config.register, schema: config.schema })
 	})
