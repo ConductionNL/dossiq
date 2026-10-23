@@ -2,7 +2,9 @@
 // Copyright (C) 2026 Conduction B.V.
 /**
  * The postvak narrows by channel on the server, and its default lens is every
- * channel, named on the Active line (board DqPostvak, "Kanaal: alle").
+ * channel, named on the Active line (board DqPostvak, "Kanaal: alle"). The
+ * board filters the channel through the Filter panel and draws no picker after
+ * the search (`picker: false`, nc-vue feat/r25-source-facet-picker-off).
  *
  * @spec openspec/specs/intake-from-a-channel/spec.md
  */
@@ -19,7 +21,7 @@ describe('Postvak channel filter', () => {
 		expect(page.config.sourceConfig.searchFields.channel).toEqual({ param: 'channel', single: true })
 	})
 
-	it('offers the channels the endpoint counts as a picker after the search', () => {
+	it('reads the channels the endpoint counts', () => {
 		const [facet] = page.config.sourceConfig.facets
 		expect(facet).toMatchObject({ field: 'channel', path: 'channels', label: 'Channel', allLabel: 'all' })
 		expect(page.config.sourceConfig.searchFields[facet.field]).toBeTruthy()
@@ -28,6 +30,12 @@ describe('Postvak channel filter', () => {
 		for (const label of Object.values(facet.labels)) {
 			expect(nl[label]).toBeTruthy()
 		}
+	})
+
+	it('filters the channel in the side panel only, with no picker after the search (DqPostvak)', () => {
+		const [facet] = page.config.sourceConfig.facets
+		expect(facet.picker).toBe(false)
+		expect(page.config.sidebar.fields[facet.field]).toBeTruthy()
 	})
 
 	it('opens on every channel, which the Active line names', () => {
