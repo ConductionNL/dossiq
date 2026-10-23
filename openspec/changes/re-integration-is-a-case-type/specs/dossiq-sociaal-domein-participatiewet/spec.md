@@ -35,3 +35,14 @@ The Cases list SHALL offer the default view `re-integration-pathways`, the cases
 #### Scenario: The view lists the trajectories
 - **WHEN** a user opens `/cases?savedView=default:re-integration-pathways`
 - **THEN** the list SHALL show the cases of the type, newest start first
+
+### Requirement: The package ships an example trajectory (REQ-PW-RI-004)
+
+On an instance that opted into example data, the package SHALL write one trajectory in flight as
+a case of the type, answering only the type's fields and tied to the shipped Participatiewet case
+`zaak-2026-pw-01278`. The demo data SHALL NOT carry placeholder `reIntegratieTraject` rows.
+
+#### Scenario: The example reads as a real trajectory
+- **GIVEN** an instance with example data
+- **WHEN** the package installs
+- **THEN** one case of the type SHALL be In uitvoering with its klantmanager, instruments and benefit case

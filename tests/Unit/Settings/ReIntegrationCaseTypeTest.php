@@ -202,4 +202,40 @@ class ReIntegrationCaseTypeTest extends TestCase {
 		self::assertCount(1, $view);
 		self::assertSame('re-integratietraject', $view[0]['filters']['caseTypeIdentifier']);
 	}//end testTheTrajectoriesAreAViewOfTheCaseList()
+
+	/**
+	 * The example trajectory is a case of the type, answering only declared
+	 * fields, tied to a shipped Participatiewet case; the demo data no longer
+	 * carries placeholder trajectories that would only move onto placeholder cases.
+	 *
+	 * @return void
+	 */
+	public function testTheExampleIsACaseOfTheType(): void {
+		self::assertContains('examples', $this->json(self::PACKAGE . '/package.json')['parts']);
+		$type = $this->caseTypeFile();
+		$case = $this->json(self::PACKAGE . '/examples/20-case.json')['rows'][0];
+
+		self::assertSame($type['caseType']['id'], $case['caseType']);
+		self::assertSame($this->statusId('In uitvoering'), $case['status']);
+		$definitions = array_column($type['propertyDefinitions'], 'name', 'id');
+		foreach ($case['properties'] as $answer) {
+			self::assertSame($answer['name'], $definitions[$answer['propertyDefinition']] ?? null);
+		}
+
+		$benefitCase = array_column($case['properties'], 'value', 'name')['bijstandszaak'];
+		$shipped = array_map(
+			static fn (array $object): string => (string)($object['@self']['slug'] ?? ''),
+			$this->json(__DIR__ . '/../../../lib/Settings/register.d/50-sociaal-domein.json')['components']['objects']
+		);
+		self::assertContains($benefitCase, $shipped);
+
+		$roleTypes = array_column($type['roleTypes'], 'id');
+		foreach ($this->json(self::PACKAGE . '/examples/40-people.json')['rows'] as $role) {
+			self::assertSame($case['id'], $role['case']);
+			self::assertContains($role['roleType'], $roleTypes);
+		}
+
+		$mock = $this->json(__DIR__ . '/../../../lib/Settings/dossiq_mock_register.json')['components']['objects'];
+		self::assertSame([], array_filter($mock, static fn (array $object): bool => ($object['@self']['schema'] ?? '') === 'reIntegratieTraject'));
+	}//end testTheExampleIsACaseOfTheType()
 }//end class
