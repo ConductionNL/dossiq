@@ -789,14 +789,14 @@ class CaseRecordImportTest extends TestCase {
 		$first = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
 		$second = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
 
-		self::assertSame(1, $first['imported']);
-		self::assertCount(1, $first['duplicates']);
-		self::assertCount(1, $this->store->all('case'));
+		self::assertSame(expected: 1, actual: $first['imported']);
+		self::assertCount(expectedCount: 1, haystack: $first['duplicates']);
+		self::assertCount(expectedCount: 1, haystack: $this->store->all('case'));
 		$caseId = $first['migrated'][0]['caseId'];
-		self::assertSame($caseId, $first['duplicates'][0]['caseId']);
-		self::assertSame($caseId, $this->store->row('trajectory', 'traj-2')['migratedTo']);
-		self::assertSame(0, $second['imported']);
-		self::assertSame(2, $second['alreadyImported']);
+		self::assertSame(expected: $caseId, actual: $first['duplicates'][0]['caseId']);
+		self::assertSame(expected: $caseId, actual: $this->store->row('trajectory', 'traj-2')['migratedTo']);
+		self::assertSame(expected: 0, actual: $second['imported']);
+		self::assertSame(expected: 2, actual: $second['alreadyImported']);
 	}//end testADuplicateNumberBecomesOneCaseAndIsReported()
 
 	/**
@@ -818,10 +818,10 @@ class CaseRecordImportTest extends TestCase {
 		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
 
 		$caseId = $answer['migrated'][0]['caseId'];
-		self::assertSame(2, $answer['repointed']);
-		self::assertSame($caseId, $this->store->row('consent', 'c-1')['caseId']);
-		self::assertSame($caseId, $this->store->row('consent', 'c-2')['caseId']);
-		self::assertSame('another-case', $this->store->row('consent', 'c-3')['caseId']);
+		self::assertSame(expected: 2, actual: $answer['repointed']);
+		self::assertSame(expected: $caseId, actual: $this->store->row('consent', 'c-1')['caseId']);
+		self::assertSame(expected: $caseId, actual: $this->store->row('consent', 'c-2')['caseId']);
+		self::assertSame(expected: 'another-case', actual: $this->store->row('consent', 'c-3')['caseId']);
 	}//end testReferencesToAMovedRecordPointAtItsCase()
 
 	/**
@@ -841,9 +841,9 @@ class CaseRecordImportTest extends TestCase {
 		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
 
 		$caseId = $answer['migrated'][0]['caseId'];
-		self::assertSame(1, $answer['repointed']);
-		self::assertSame(['other-1', $caseId, 'other-2'], $this->store->row('meeting', 'm-1')['caseIds']);
-		self::assertSame(['other-3'], $this->store->row('meeting', 'm-2')['caseIds']);
+		self::assertSame(expected: 1, actual: $answer['repointed']);
+		self::assertSame(expected: ['other-1', $caseId, 'other-2'], actual: $this->store->row('meeting', 'm-1')['caseIds']);
+		self::assertSame(expected: ['other-3'], actual: $this->store->row('meeting', 'm-2')['caseIds']);
 	}//end testAListOfReferencesPointsAtTheCase()
 
 	/**

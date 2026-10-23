@@ -294,13 +294,13 @@ class CrossDomainExistenceTest extends TestCase {
 		$found = $this->existence->lookUp(bsn: self::BSN, ownDomain: 'Wmo', ground: 'wettelijke-taak', requester: 'anna');
 
 		self::assertSame(
-			[
+			expected: [
 				['exists' => true, 'domain' => 'Jeugdwet', 'contact' => 'bram'],
 				['exists' => true, 'domain' => 'Participatiewet', 'contact' => 'pieter'],
 			],
-			$found
+			actual: $found
 		);
-		self::assertContains(['schema' => 'case', 'rbac' => false], $this->objects->scopes);
+		self::assertContains(needle: ['schema' => 'case', 'rbac' => false], haystack: $this->objects->scopes);
 	}//end testAnOpenCaseOfTheDomainAnswersReadAsTheSystem()
 
 	/**
@@ -314,7 +314,7 @@ class CrossDomainExistenceTest extends TestCase {
 
 		$found = $this->existence->lookUp(bsn: self::BSN, ownDomain: 'Jeugdwet', ground: 'wettelijke-taak', requester: 'anna');
 
-		self::assertSame([], $found);
+		self::assertSame(expected: [], actual: $found);
 	}//end testAClosedOrUnrelatedCaseAnswersNothing()
 
 	/**
@@ -328,7 +328,7 @@ class CrossDomainExistenceTest extends TestCase {
 
 		$found = $this->existence->lookUp(bsn: self::BSN, ownDomain: 'Wmo', ground: 'wettelijke-taak', requester: 'anna');
 
-		self::assertSame([], $found, 'the moved record no longer answers, and its case is closed');
+		self::assertSame(expected: [], actual: $found, message: 'the moved record no longer answers, and its case is closed');
 	}//end testAMovedRecordAnswersThroughItsCaseOnly()
 
 	/**
