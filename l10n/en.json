@@ -9094,6 +9094,7 @@
         "The team this task belongs to. Setting it never clears the personal assignee.": "The team this task belongs to. Setting it never clears the personal assignee.",
         "The teams a case of this type may be assigned to. Empty means every team.": "The teams a case of this type may be assigned to. Empty means every team.",
         "The teams a case of this type may go to, as Nextcloud groups. Empty means every team.": "The teams a case of this type may go to, as Nextcloud groups. Empty means every team.",
+        "The template could not be filled in for this case.": "The template could not be filled in for this case.",
         "The template it was rendered from.": "The template it was rendered from.",
         "The template library has no templates yet.": "The template library has no templates yet.",
         "The template library is unavailable.": "The template library is unavailable.",
