@@ -203,4 +203,21 @@ class SocialDomainCaseTypesTest extends TestCase {
 		self::assertArrayHasKey('migratedTo', $schema['properties']);
 		self::assertArrayHasKey('migratedAt', $schema['properties']);
 	}//end testTheImportIsIdempotentAndMovesReferences()
+
+	/**
+	 * A benefit application runs on its eight-week decision term (Ruben, 23
+	 * Oct): the case type declares it, a term definition binds to it, and the
+	 * import carries the term of a still-open application onto its case.
+	 *
+	 * @return void
+	 */
+	public function testABenefitApplicationRunsOnItsDecisionTerm(): void {
+		$type = $this->caseTypeFile('bijstandsaanvraag')['caseType'];
+		self::assertSame('P8W', $type['processingDeadline']);
+		self::assertTrue($this->import('bijstandsaanvraag')['carriesTerm']);
+		$definitions = array_column($this->json(self::SETTINGS . '/termijnbewaking_seed_data.json')['termijnDefinities'], null, 'caseType');
+		self::assertSame(56, $definitions['bijstandsaanvraag']['standardDurationDays']);
+		self::assertSame('running', $this->import('bijstandsaanvraag')['statuses']['decision-voorbereiding']['term']);
+		self::assertSame('closed', $this->import('bijstandsaanvraag')['statuses']['social-assistance-active']['term']);
+	}//end testABenefitApplicationRunsOnItsDecisionTerm()
 }//end class

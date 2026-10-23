@@ -27,3 +27,17 @@ the case. The record SHALL be left as it was apart from `migratedTo` and `migrat
 - **GIVEN** each of the three shipped applications
 - **WHEN** the import maps it
 - **THEN** its case SHALL carry the subject BSN, the klantmanager, the former case number, the sensitive answers apart and the ordinary ones in `properties`
+
+### Requirement: A benefit application runs on an eight-week decision term (REQ-PW-CT-003)
+
+The Bijstandsaanvraag case type SHALL declare an eight-week processing deadline, and a statutory
+term definition (Awb 4:13 lid 2, the Participatiewet setting no term of its own) SHALL bind to it,
+so a new application is tracked like any case with a statutory term. On import, an application
+still before its decision SHALL carry its term onto the case from its request date; an application
+past its decision SHALL have its term completed. The term definitions SHALL be seeded before the
+import runs.
+
+#### Scenario: A migrated application before its decision is tracked
+- **GIVEN** a stored application in decision preparation, requested on 2 February
+- **WHEN** it moves onto a case
+- **THEN** the case SHALL carry a running statutory term ending eight weeks after 2 February

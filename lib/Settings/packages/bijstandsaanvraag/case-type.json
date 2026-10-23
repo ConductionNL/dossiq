@@ -9,8 +9,7 @@
     "trigger": "Een aanvraag om bijstand.",
     "subject": "Bijstand",
     "processingDeadline": "P8W",
-    "extensionAllowed": true,
-    "extensionPeriod": "P4W",
+    "extensionAllowed": false,
     "suspensionAllowed": true,
     "internalOrExternal": "extern",
     "publicationRequired": false,
@@ -218,7 +217,7 @@
           "caseId": "migratedTo",
           "at": "migratedAt"
         },
-        "carriesTerm": false,
+        "carriesTerm": true,
         "runOnUpgrade": true
       }
     ]

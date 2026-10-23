@@ -19,6 +19,9 @@
 - [x] 4b.1 RequiredFieldGuard checks sensitiveProperties as the system (SensitiveAnswerCheck), presence only
 - [x] 4b.2 Bijstandsaanvraag: Toetsing afronden requires vermogenstoets and inkomenstoets
 
+## 4c. Bijstandsaanvraag decision term (Ruben, 23 Oct)
+- [x] 4c.1 td-bijstandsaanvraag (56 days, Awb 4:13 lid 2), carriesTerm true, term definitions seeded before the import
+
 ## 5. Wmo, Jeugdwet
 - [x] 5.1 Wmo-melding package over wmoZaak, adopting the seeded case type by identifier; references indicatiestelling.caseId, toestemming.caseId, mdoOverleg.caseIds (list, caseType 1.37.0); wmoZaak 1.3.0
 - [ ] 5.2 Jeugdwet: the melding-jeugdwet package imports jeugdwetZaak (gezinsplan, mdoOverleg)

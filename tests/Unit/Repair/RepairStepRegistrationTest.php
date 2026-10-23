@@ -237,6 +237,7 @@ class RepairStepRegistrationTest extends TestCase {
 				'InitializeSettings',
 				'InstallShippedPackages',
 				'PublishSeededCaseTypes',
+				'SeedDeadlineMonitoringData',
 			],
 			'AssignOpenCasesTheirCaseTypeTeam' => ['RunUpgradeRecordImports'],
 			// It reads the imported register, the installed case types and the reviews an upgrade makes.
