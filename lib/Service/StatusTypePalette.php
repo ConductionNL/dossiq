@@ -41,6 +41,7 @@ final class StatusTypePalette {
 	 * @var array<string, string>
 	 */
 	public const COLOURS = [
+		'Aangemeld' => 'blue',
 		'Beroep ontvangen' => 'blue',
 		'Melding ontvangen' => 'blue',
 		'Ontvangen' => 'blue',
@@ -54,6 +55,7 @@ final class StatusTypePalette {
 		'Beoordeling' => 'purple',
 		'Beoordeling ontvankelijkheid' => 'purple',
 		'Constatering' => 'purple',
+		'Evaluatie' => 'purple',
 		'Hercontrole' => 'purple',
 		'Hoorzitting afgerond' => 'purple',
 		'Identiteit vastgesteld' => 'purple',
@@ -73,6 +75,7 @@ final class StatusTypePalette {
 		'Opvolging' => 'purple',
 		'Overleg' => 'purple',
 		'Parafering' => 'purple',
+		'Plan van aanpak' => 'purple',
 		'Rapport' => 'purple',
 		'Uitvoering' => 'purple',
 		'Veiligheidstoets' => 'purple',
@@ -119,6 +122,7 @@ final class StatusTypePalette {
 		'Invordering' => 'red',
 		'Niet-ontvankelijk' => 'red',
 		'Verbeuring' => 'red',
+		'Beëindigd' => 'grey',
 		'Gearchiveerd' => 'grey',
 		'Ingetrokken' => 'grey',
 	];

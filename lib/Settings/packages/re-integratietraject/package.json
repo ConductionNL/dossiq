@@ -1,0 +1,12 @@
+{
+  "id": "re-integratietraject",
+  "title": "Re-integratietraject",
+  "version": "1.0.0",
+  "requires": [],
+  "parts": [
+    "case-type",
+    "flows"
+  ],
+  "install": "auto",
+  "description": "The re-integration trajectory case type (Participatiewet): statuses, roles, results, its fields and a published flow. Handled by the dossiq-sociaal-domein group, confidential. Installed on every instance, as the re-integration list was. Its record import moves every stored reIntegratieTraject onto a case of this type on upgrade (RunUpgradeRecordImports), stamping the source with migratedTo and migratedAt."
+}

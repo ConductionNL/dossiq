@@ -2019,6 +2019,7 @@
 					{ "slug": "unclaimed-overdue", "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
 					{ "slug": "woo-requests", "name": "Woo requests", "icon": "FileDocumentOutline", "filters": { "caseTypeIdentifier": "woo-verzoek", "statusHiddenInLists": false, "isDraft": false } },
 					{ "slug": "subsidies", "name": "Subsidies", "filters": { "caseType": "b3c1a000-0000-4000-a000-0000000005ab", "statusHiddenInLists": false, "isDraft": false }, "overrides": { "title": "Subsidies", "columns": ["identifier", "title", { "key": "status", "label": "Status", "formatter": "statusTypeName" }, "assignee", "deadline"] } },
+					{ "slug": "re-integration-pathways", "name": "Re-integration pathways", "icon": "BriefcaseAccountOutline", "filters": { "caseTypeIdentifier": "re-integratietraject", "statusHiddenInLists": false, "isDraft": false }, "overrides": { "title": "Re-integration pathways", "columns": ["identifier", "title", "assignee", { "key": "status", "label": "Status", "formatter": "statusTypeName" }, "startDate"], "defaultSort": [{ "key": "startDate", "order": "desc" }] } },
 					{
 						"slug": "my-work",
 						"name": "Assigned to me",
