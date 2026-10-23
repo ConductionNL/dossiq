@@ -4121,7 +4121,7 @@
 						"type": "record-list",
 						"title": "Related cases",
 						"subtitle": "Typed per the RGBZ, kept in both directions",
-						"_note": "DqZaakGerelateerd Gerelateerde zaken: the case's typed peer relations grouped by what they are to this case (the label this side of the relation reads, else the relation type), each with the other case's initials, number, case type and handler and its status, then the planned follow-ups (planned flows and series) under Gepland vervolg. The rows come from /api/cases/{id}/relations?planned=1, which adds the case details only for a case the reader may open. `groupBy` is nextcloud-vue's record-list group headings (d45d382846); on an older library the rows stand ungrouped. A planned row opens no case, so it carries the Stop series menu; Plan follow-up ends the card.",
+						"_note": "DqZaakGerelateerd Gerelateerde zaken: the case's typed peer relations grouped by what they are to this case (the label this side of the relation reads, else the relation type), each with the other case's initials, number, case type and handler and its status, then the planned follow-ups (planned flows and series) under Gepland vervolg. The rows come from /api/cases/{id}/relations?planned=1, which adds the case details only for a case the reader may open. `groupBy` is nextcloud-vue's record-list group headings (d45d382846); on an older library the rows stand ungrouped. A planned row opens no case, so it carries the Stop series menu. Vervolg plannen is a tonal pill at the end of the Gepland vervolg heading, which stands even before anything is planned (footerAction.group and variant, nextcloud-vue feat/r24-record-list-group-action; on an older library it stays the button under the card).",
 						"headerActions": [
 							{
 								"label": "Link case",
@@ -4272,8 +4272,10 @@
 							"footerAction": {
 								"type": "open-modal",
 								"target": "CasePlanFollowUpDialog",
-								"label": "Plan follow-up",
-								"icon": "CalendarClock"
+								"label": "Plan what follows",
+								"icon": "CalendarClock",
+								"group": "planned",
+								"variant": "tonal"
 							}
 						}
 					},
