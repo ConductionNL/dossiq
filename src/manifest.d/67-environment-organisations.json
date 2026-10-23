@@ -95,6 +95,12 @@
 						"key": "slug"
 					}
 				],
+				"headerMeta": "one of {count:organisations} organisations on this environment",
+				"headerMetaCounts": {
+					"organisations": {
+						"entitySource": "organisations"
+					}
+				},
 				"actionsMenu": {
 					"showRefresh": false,
 					"showHelpLinks": false,
