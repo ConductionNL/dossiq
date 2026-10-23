@@ -457,10 +457,10 @@
 			"id": "ReIntegratieTrajectenMenu",
 			"label": "Re-integration pathways",
 			"icon": "BriefcaseAccountOutline",
-			"route": "ReIntegratieTrajecten",
+			"route": "Cases",
+			"query": { "savedView": "default:re-integration-pathways" },
 			"section": "settings",
-			"order": 108,
-			"permission": "sociaal-domein"
+			"order": 108
 		},
 		{
 			"id": "SupplierUsersMenu",
@@ -10053,32 +10053,6 @@
 				],
 				"showViewAction": true,
 				"defaultSort": "-consultationDate",
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://dossiq.conduction.nl"
-			}
-		},
-		{
-			"id": "ReIntegratieTrajecten",
-			"route": "/settings/re-integratietrajecten",
-			"type": "index",
-			"title": "Re-integration pathways",
-			"permission": "sociaal-domein",
-			"_note": "The Participatiewet pathway a klantmanager runs with somebody. `distanceToLabourMarket` is an assessment OF a person and `exemptionWorkObligation` records that somebody was excused from working, often on health grounds; the first is a column because it is what the caseload is steered on, the second is not, because it is the most sensitive field on the record and it opens with the record. `instrumenten` and `collaboratingParties` are lists that would print as arrays in a cell.",
-			"config": {
-				"register": "dossiq",
-				"schema": "reIntegratieTraject",
-				"columns": [
-					"caseId",
-					"caseManagerId",
-					"trajectKind",
-					"startDate",
-					"distanceToLabourMarket"
-				],
-				"showViewAction": true,
-				"defaultSort": "-startDate",
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
