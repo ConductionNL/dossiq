@@ -1413,6 +1413,7 @@
         "Case share": "Case share",
         "Case shared with remote organisation": "Case shared with remote organisation",
         "Case status": "Case status",
+        "Case status history {filter.period}": "Case status history {filter.period}",
         "Case Summary": "Case Summary",
         "Case takeover request": "Case takeover request",
         "Case to try a rule against": "Case to try a rule against",

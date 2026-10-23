@@ -153,6 +153,16 @@ describe('process mining', () => {
 		expect(w.subtitle).toContain('not recorded')
 		expect(onGrid('ProcessMiningDashboard', 'pm-dwell-by-assignee')).toBe(true)
 	})
+	it('names the period it measures on the description line, as DqProcesanalyse does', () => {
+		// "… januari tot en met september 2026 · [Gemiddeld | Mediaan] …": the
+		// description reads the period filter's active window (nextcloud-vue
+		// description-period-from-filter), each rolling option its months.
+		const config = page('ProcessMiningDashboard').config
+		expect(config.description).toBe('Case status history {filter.period}')
+		const period = config.pageFilters.find((f) => f.key === 'period')
+		expect(Object.fromEntries(period.options.map((o) => [o.value, o.months]))).toEqual({ '3m': 3, '6m': 6, '12m': 12, all: undefined })
+	})
+
 	it('puts the measure, the period and the case type on the description line, in the board\'s order', () => {
 		// DqProcesanalyse: "… · [Gemiddeld | Mediaan] [Laatste 12 maanden]
 		// [Alle zaaktypen]", with no filter row under the header.

@@ -5342,7 +5342,8 @@
 											"additionalProperties": false,
 											"properties": {
 												"value": { "type": ["string", "number"], "description": "Value written into the context when picked." },
-												"label": { "type": "string", "description": "Display text (i18n key or plain text)." }
+												"label": { "type": "string", "description": "Display text (i18n key or plain text)." },
+												"months": { "type": "integer", "minimum": 1, "description": "A rolling window of this many months ending with the current one. A dashboard description's `{filter.<key>}` then reads the months it covers (\"November 2025 through October 2026\"); without it the token reads the label (description-period-from-filter, 2.147.0)." }
 											}
 										}
 									}
