@@ -173,6 +173,43 @@ class ZgwBusinessRulesService {
 	}//end validate()
 
 	/**
+	 * The CT-02b publish guard for the ZGW publish endpoint, which saves a stored type back as published.
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param array $existingObject The stored type
+	 * @param object|null $objectService The OpenRegister ObjectService
+	 * @param array|null $mappingConfig The mapping config
+	 *
+	 * @return array|null The refusal, or null when the publish may proceed
+	 *
+	 * @spec openspec/changes/zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 */
+	public function guardPublishEndpoint(
+		string $resource,
+		array $existingObject,
+		?object $objectService,
+		?array $mappingConfig,
+	): ?array {
+		try {
+			$this->ztcRules->setContext($objectService, $mappingConfig);
+
+			return $this->guardCaseTypePublish(
+				resource: $resource,
+				action: 'update',
+				body: ['isDraft' => false],
+				existingObject: $existingObject,
+				mappingConfig: $mappingConfig
+			);
+		} catch (LookupNotCompleted $e) {
+			return $this->results->notVerified(
+				rule: "catalogi/{$resource} publish",
+				object: $e->lookup,
+				cause: $e->getMessage()
+			);
+		}
+	}//end guardPublishEndpoint()
+
+	/**
 	 * Apply the ZTC concept defaults/preservation and the ztc-009/ztc-010
 	 * published-type protection.
 	 *
