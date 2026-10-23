@@ -2500,6 +2500,7 @@ OC.L10N.register(
         "Dispute Reason": "Dispute Reason",
         "Disputed": "Disputed",
         "Dissenting Opinions": "Dissenting Opinions",
+        "Case type re-integration pathway": "Case type re-integration pathway",
         "Benefit case": "Benefit case",
         "Distance to Labour Market": "Distance to Labour Market",
         "District": "District",
