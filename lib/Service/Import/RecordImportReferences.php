@@ -176,8 +176,14 @@ class RecordImportReferences {
 				continue;
 			}
 
-			foreach (array_unique(array_filter($oldValues, static fn (string $value): bool => trim($value) !== '')) as $old) {
-				foreach ($this->store->listAll(objectService: $objectService, register: $register, schema: $schema, filters: [$field => $old]) as $row) {
+			$old = array_values(array_unique(array_filter($oldValues, static fn (string $value): bool => trim($value) !== '')));
+			if (($reference['list'] ?? false) === true) {
+				$moved += $this->repointLists(objectService: $objectService, where: [$register, $schema, $field], oldValues: $old, caseId: $caseId);
+				continue;
+			}
+
+			foreach ($old as $value) {
+				foreach ($this->store->listAll(objectService: $objectService, register: $register, schema: $schema, filters: [$field => $value]) as $row) {
 					$this->patchObjectAsArray(
 						objectService: $objectService,
 						register: $register,
@@ -192,4 +198,57 @@ class RecordImportReferences {
 
 		return $moved;
 	}//end repoint()
+
+	/**
+	 * Replace the moved record's entry in a list of references, keeping the
+	 * other entries and their order. A list cannot be filtered on one of its
+	 * entries, so every row of the schema is read.
+	 *
+	 * @param object             $objectService The OpenRegister ObjectService.
+	 * @param array<int, string> $where         Register, schema and list field.
+	 * @param array<int, string> $oldValues     The moved record's id and slug.
+	 * @param string             $caseId        The case.
+	 *
+	 * @return int How many rows changed.
+	 *
+	 * @throws Throwable When a row cannot be read or written.
+	 */
+	private function repointLists(object $objectService, array $where, array $oldValues, string $caseId): int {
+		[$register, $schema, $field] = $where;
+		$moved = 0;
+		foreach ($this->store->listAll(objectService: $objectService, register: $register, schema: $schema, filters: []) as $row) {
+			$list = $row[$field] ?? null;
+			if (is_array($list) === false || array_intersect($oldValues, $list) === []) {
+				continue;
+			}
+
+			$this->patchObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $this->store->idOf(row: $row),
+				changes: [$field => array_map(fn (mixed $entry): mixed => $this->replaced(entry: $entry, oldValues: $oldValues, caseId: $caseId), $list)]
+			);
+			$moved++;
+		}
+
+		return $moved;
+	}//end repointLists()
+
+	/**
+	 * One entry of a list of references, the case where it named the moved record.
+	 *
+	 * @param mixed              $entry     The entry.
+	 * @param array<int, string> $oldValues The moved record's id and slug.
+	 * @param string             $caseId    The case.
+	 *
+	 * @return mixed The entry.
+	 */
+	private function replaced(mixed $entry, array $oldValues, string $caseId): mixed {
+		if (in_array($entry, $oldValues, true) === true) {
+			return $caseId;
+		}
+
+		return $entry;
+	}//end replaced()
 }//end class
