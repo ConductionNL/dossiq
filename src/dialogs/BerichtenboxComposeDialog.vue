@@ -189,20 +189,22 @@ export default {
 
 	emits: ['close', 'sent'],
 	data() {
+		const typeCodes = [
+			{ code: 'decision', label: t('dossiq', 'Decision (Besluit)') },
+			{ code: 'status', label: t('dossiq', 'Status update') },
+			{ code: 'informatie', label: t('dossiq', 'Information') },
+		]
 		return {
 			form: {
 				bsn: this.bsn,
 				subject: '',
 				body: '',
-				berichtTypeCode: null,
+				// A letter from a running case is most often a status update.
+				berichtTypeCode: typeCodes.find((type) => type.code === 'status'),
 				isBesluit: false,
 			},
 
-			typeCodes: [
-				{ code: 'decision', label: t('dossiq', 'Decision (Besluit)') },
-				{ code: 'status', label: t('dossiq', 'Status update') },
-				{ code: 'informatie', label: t('dossiq', 'Information') },
-			],
+			typeCodes,
 
 			kase: null,
 			// The requester's BSN as the case holds it, and whether the field is
