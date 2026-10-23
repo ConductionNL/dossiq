@@ -2322,7 +2322,11 @@
 									"formatter": "caseTypeName",
 									"widget": "badge",
 									"widgetProps": {
-										"variant": "info"
+										"resolve": {
+											"register": "dossiq",
+											"schema": "caseType",
+											"colorField": "colour"
+										}
 									}
 								},
 								{
@@ -2383,7 +2387,11 @@
 										"formatter": "caseTypeName",
 										"widget": "badge",
 										"widgetProps": {
-											"variant": "info"
+											"resolve": {
+												"register": "dossiq",
+												"schema": "caseType",
+												"colorField": "colour"
+											}
 										},
 										"width": "200px"
 									},
