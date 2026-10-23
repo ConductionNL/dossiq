@@ -6889,7 +6889,8 @@
 								},
 								{
 									"key": "archivalAction",
-									"label": "Archival action"
+									"label": "Archival action",
+									"widget": "label"
 								},
 								{
 									"key": "archivalPeriod",

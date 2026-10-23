@@ -45,4 +45,12 @@ describe('the Statuses tab against DqZaaktypeStatussen', () => {
 		const period = widget('case-type-results').content.columns.find((c) => c.key === 'archivalPeriod')
 		expect(period.formatter).toBe('isoDuration')
 	})
+
+	it('writes Eindstatus as Nee, with only the final ones as an Eind pill, and the archival action as a word', () => {
+		const final = widget('case-type-statuses-editor').content.columns.find((c) => c.key === 'isFinal')
+		expect(final.widgetProps).toEqual({ trueLabel: 'End status', falseLabel: 'No', pill: true })
+		expect([dutch('End status'), dutch('No')]).toEqual(['Eind', 'Nee'])
+		const action = widget('case-type-results').content.columns.find((c) => c.key === 'archivalAction')
+		expect(action.widget).toBe('label')
+	})
 })

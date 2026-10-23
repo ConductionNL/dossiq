@@ -11760,7 +11760,12 @@
 								},
 								{
 									"key": "isFinal",
-									"label": "Final status"
+									"label": "Final status",
+									"widgetProps": {
+										"trueLabel": "End status",
+										"falseLabel": "No",
+										"pill": true
+									}
 								},
 								{
 									"key": "publicLabel",
