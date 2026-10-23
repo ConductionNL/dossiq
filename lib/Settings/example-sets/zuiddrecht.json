@@ -1674,6 +1674,68 @@
 			}
 		},
 		{
+			"key": "melding-afval-lindelaan",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-sanne.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:sanne.displayName}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"portalParty": "subject:{{cast:sanne.uid}}",
+				"intakeChannel": "zgw-api",
+				"confidentiality": "openbaar",
+				"title": "Melding afval Lindelaan",
+				"description": "Bij de glasbak op de Lindelaan staan zakken afval naast de container. De melding komt binnen in het zaaksysteem van de afvalinzameling en wordt via Integriq in dossiq bijgehouden.",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-15}}",
+				"receivedAt": "{{datetime:-15 10:15}}",
+				"currentStatusEnteredAt": "{{datetime:-14 09:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-15 10:15}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-14 09:00}}"
+					}
+				],
+				"tags": [
+					"lindelaan",
+					"afval"
+				]
+			}
+		},
+		{
 			"key": "woo-zaaksysteem-resultaat",
 			"register": "dossiq",
 			"schema": "result",
