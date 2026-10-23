@@ -5947,6 +5947,17 @@
 										}
 									],
 									"separator": ", "
+								},
+								{
+									"label": "Running cases",
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"caseType": "@objectId",
+											"isFinalStatus": false
+										}
+									}
 								}
 							]
 						}
