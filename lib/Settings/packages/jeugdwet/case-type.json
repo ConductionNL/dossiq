@@ -17,6 +17,7 @@
     "isDraft": false,
     "confidentiality": "vertrouwelijk",
     "initialStatus": "6ea508cb-3395-5603-98bc-38d4fd34b511",
+    "workflowDefinition": "8e7765d9-b8cc-56bd-b95e-3a01f46be282",
     "specialDataCategories": [
       "health"
     ],

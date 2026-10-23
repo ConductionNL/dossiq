@@ -221,4 +221,49 @@ class SocialDomainCaseTypesTest extends TestCase {
 		self::assertSame('running', $this->import('bijstandsaanvraag')['statuses']['decision-voorbereiding']['term']);
 		self::assertSame('closed', $this->import('bijstandsaanvraag')['statuses']['social-assistance-active']['term']);
 	}//end testABenefitApplicationRunsOnItsDecisionTerm()
+
+	/**
+	 * Each procedure's flow walks from the first status to every other one, and
+	 * guards only fields its case type declares (or the result).
+	 *
+	 * @param string             $package   The package id.
+	 * @param string             $source    The old record's schema.
+	 * @param string             $domain    The domain.
+	 * @param array<int, string> $sensitive The sensitive answers.
+	 * @param string             $bsnKey    The source's BSN field.
+	 *
+	 * @return void
+	 */
+	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
+	public function testTheFlowReachesEveryStatusAndGuardsDeclaredFields(string $package, string $source, string $domain, array $sensitive, string $bsnKey): void {
+		$file = $this->caseTypeFile($package);
+		$flowFile = self::PACKAGES . $package . '/flows/' . $file['caseType']['identifier'] . '.json';
+		$flow = $this->json($flowFile);
+		self::assertSame($file['caseType']['workflowDefinition'], $flow['id']);
+		$transitions = json_decode($flow['transitions'], true);
+		$names = array_column($file['propertyDefinitions'], 'name');
+		$reached = [$file['caseType']['initialStatus'] => true];
+		$grew = true;
+		while ($grew === true) {
+			$grew = false;
+			foreach ($transitions as $transition) {
+				if (isset($reached[$transition['fromStatus']]) === true && isset($reached[$transition['toStatus']]) === false) {
+					$reached[$transition['toStatus']] = true;
+					$grew = true;
+				}
+			}
+		}
+
+		foreach ($file['statusTypes'] as $status) {
+			self::assertArrayHasKey($status['id'], $reached, $package . ': ' . $status['name'] . ' cannot be reached');
+		}
+
+		foreach ($transitions as $transition) {
+			foreach ($transition['guards'] as $guard) {
+				if (($guard['type'] ?? '') === 'requiredField' && $guard['field'] !== 'result') {
+					self::assertContains($guard['field'], $names, $package . ': ' . $transition['label']);
+				}
+			}
+		}
+	}//end testTheFlowReachesEveryStatusAndGuardsDeclaredFields()
 }//end class
