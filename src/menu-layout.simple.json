@@ -5182,7 +5182,12 @@
 						"pills": [
 							{
 								"path": "caseType",
-								"formatter": "caseTypeName"
+								"formatter": "caseTypeName",
+								"resolve": {
+									"register": "dossiq",
+									"schema": "caseType",
+									"colorField": "colour"
+								}
 							},
 							{
 								"path": "status",
