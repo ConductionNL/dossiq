@@ -20,10 +20,8 @@
 
 		<!-- Header -->
 		<div class="workflow-node__header">
+			<span class="workflow-node__dot" :style="{ backgroundColor: dotColour }" aria-hidden="true" />
 			<span class="workflow-node__name">{{ status.name }}</span>
-			<span v-if="steps.length > 0" class="workflow-node__badge">
-				{{ steps.length }}
-			</span>
 			<span v-if="status.isFinal" class="workflow-node__final-badge">
 				{{ t('dossiq', 'Final') }}
 			</span>
@@ -104,6 +102,7 @@
 
 <script>
 import { NcActionButton, NcActions } from '@nextcloud/vue'
+import { statusColourToken } from '../../../utils/statusColour.js'
 
 export default {
 	name: 'WorkflowNode',
@@ -166,6 +165,17 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The status colour as the title row's dot: the status's own hue,
+		 * grey when it names none.
+		 *
+		 * @return {string} A CSS colour.
+		 * @spec openspec/changes/case-type-flow-board-look/specs/case-types/spec.md#requirement-the-case-type-flow-page-draws-board-dqzaaktypeflow
+		 */
+		dotColour() {
+			return statusColourToken(this.status.colour)
+		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		nodeStyle() {
 			return {
@@ -254,24 +264,21 @@ export default {
 </script>
 
 <style scoped>
+/* A status as the board draws it: a white 200px card, its name on a title
+   row with the status colour as a dot, the steps under a line (DqZaaktypeFlow). */
 .workflow-node {
 	width: 200px;
-	min-height: 80px;
 	background: var(--color-main-background);
-	border: 2px solid var(--color-border);
-	border-radius: var(--border-radius-large, 8px);
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	box-shadow: 0 1px 2px rgba(27, 28, 29, 0.08);
 	cursor: move;
 	user-select: none;
 }
 
 .workflow-node--selected {
-	border-color: var(--color-primary);
-	box-shadow: 0 0 0 2px var(--color-primary-element-light);
-}
-
-.workflow-node--final {
-	border-color: var(--color-success);
+	border-color: var(--color-primary-element);
+	box-shadow: 0 0 0 1px var(--color-primary-element);
 }
 
 .workflow-node__port {
@@ -301,10 +308,22 @@ export default {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	padding: 8px 12px;
-	background: var(--color-background-dark);
-	border-radius: var(--border-radius-large, 8px) var(--border-radius-large, 8px) 0
-		0;
+	min-height: 36px;
+	padding: 0 4px 0 12px;
+	border-bottom: 1px solid var(--color-border);
+	box-sizing: border-box;
+}
+
+.workflow-node__dot {
+	flex-shrink: 0;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+}
+
+/* The ports show on the card that is pointed at or focused. */
+.workflow-node:not(:hover, :focus-within, .workflow-node--selected) .workflow-node__port {
+	opacity: 0;
 }
 
 .workflow-node__actions {
@@ -314,20 +333,10 @@ export default {
 .workflow-node__name {
 	flex: 1;
 	font-weight: 600;
-	font-size: 13px;
+	font-size: 14px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-}
-
-.workflow-node__badge {
-	background: var(--color-primary);
-	color: var(--color-primary-text);
-	border-radius: 10px;
-	padding: 0 6px;
-	font-size: 11px;
-	min-width: 20px;
-	text-align: center;
 }
 
 .workflow-node__final-badge {
@@ -339,7 +348,7 @@ export default {
 }
 
 .workflow-node__steps {
-	padding: 4px 0;
+	padding: 6px 0 0;
 }
 
 .workflow-node__step {
@@ -348,7 +357,7 @@ export default {
 	gap: 4px;
 	padding: 4px 12px;
 	cursor: pointer;
-	font-size: 12px;
+	font-size: 13px;
 }
 
 .workflow-node__step:hover {
@@ -382,13 +391,14 @@ export default {
 .workflow-node__add-step {
 	display: block;
 	width: 100%;
-	padding: 4px 12px;
+	padding: 6px 12px 10px;
 	border: none;
 	background: none;
 	cursor: pointer;
-	font-size: 11px;
-	color: var(--color-text-maxcontrast);
-	text-align: left;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--color-primary-element);
+	text-align: start;
 }
 
 .workflow-node__add-step:hover {

@@ -22,7 +22,11 @@
 				@mouseup="onCanvasMouseUp"
 				@wheel="onCanvasWheel">
 				<!-- SVG layer for transitions -->
-				<svg class="workflow-editor__svg" :viewBox="svgViewBox">
+				<svg
+class="workflow-editor__svg"
+					:width="svgSize.width"
+					:height="svgSize.height"
+					:viewBox="svgViewBox">
 					<!-- Existing transitions -->
 					<WorkflowTransitionArrow
 						v-for="transition in transitions"
@@ -220,9 +224,22 @@ export default {
 			}
 		},
 
+		/**
+		 * The transition layer's size in canvas pixels. It is drawn at one to
+		 * one with the nodes, so a transition meets the node it names; sized to
+		 * the canvas element instead, the view box scaled every line toward the
+		 * top left.
+		 *
+		 * @spec openspec/changes/case-type-flow-board-look/specs/case-types/spec.md#requirement-the-case-type-flow-page-draws-board-dqzaaktypeflow
+		 * @return {{width: number, height: number}} The size.
+		 */
+		svgSize() {
+			return { width: 2000, height: 1500 }
+		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		svgViewBox() {
-			return '0 0 2000 1500'
+			return `0 0 ${this.svgSize.width} ${this.svgSize.height}`
 		},
 	},
 
@@ -300,9 +317,11 @@ export default {
 		getNodeCenter(statusId) {
 			const pos = this.nodePositions[statusId]
 			if (!pos) return { x: 0, y: 0 }
+			// The middle of the node's title row, so lines run between the
+			// headers as the board draws them (node 200px wide, title row 36px).
 			return {
-				x: pos.x + 100, // half of node width (200px)
-				y: pos.y + 40, // half of node height (80px)
+				x: pos.x + 100,
+				y: pos.y + 18,
 			}
 		},
 
@@ -717,13 +736,15 @@ export default {
 .workflow-editor__layout {
 	display: flex;
 	flex: 1;
+	min-height: 560px;
 	overflow: hidden;
 	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
+	border-radius: 12px;
+	background: var(--color-main-background);
 }
 
 .workflow-editor__palette {
-	width: 200px;
+	width: 268px;
 	flex-shrink: 0;
 	border-right: 1px solid var(--color-border);
 }
@@ -733,8 +754,9 @@ export default {
 	position: relative;
 	overflow: hidden;
 	background:
-		linear-gradient(var(--color-border-dark) 1px, transparent 1px),
-		linear-gradient(90deg, var(--color-border-dark) 1px, transparent 1px);
+		linear-gradient(var(--color-border) 1px, transparent 1px),
+		linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+	background-color: var(--color-background-hover);
 	background-size: 20px 20px;
 	cursor: grab;
 }
@@ -747,8 +769,7 @@ export default {
 	position: absolute;
 	top: 0;
 	left: 0;
-	width: 100%;
-	height: 100%;
+	overflow: visible;
 	pointer-events: none;
 }
 

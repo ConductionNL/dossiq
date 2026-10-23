@@ -58,10 +58,10 @@
 				</NcButton>
 
 				<!-- Import / Export -->
-				<NcButton type="tertiary" @click="exportWorkflow">
+				<NcButton type="secondary" @click="exportWorkflow">
 					{{ t('dossiq', 'Export') }}
 				</NcButton>
-				<NcButton type="tertiary" @click="triggerImport">
+				<NcButton type="secondary" @click="triggerImport">
 					{{ t('dossiq', 'Import') }}
 				</NcButton>
 				<input
@@ -421,7 +421,7 @@ export default {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-bottom: 12px;
+	margin-bottom: 20px;
 	flex-wrap: wrap;
 	gap: 8px;
 }
@@ -434,14 +434,16 @@ export default {
 
 .workflow-tab__version-selector label {
 	font-weight: 600;
-	font-size: 13px;
+	font-size: 15px;
 }
 
+/* The version picker as the board draws it: a 34px field with a border. */
 .workflow-tab__select {
-	padding: 6px 8px;
-	border: 1px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
-	font-size: 13px;
+	min-height: 34px;
+	padding: 4px 10px;
+	border: 1px solid var(--color-border-maxcontrast);
+	border-radius: 8px;
+	font-size: 15px;
 }
 
 .workflow-tab__actions {
