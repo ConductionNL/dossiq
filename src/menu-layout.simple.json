@@ -765,7 +765,7 @@
 							{
 								"id": "simple-per-step",
 								"type": "stacked-bar",
-								"title": "My cases per step",
+								"title": "My {count} cases per step",
 								"content": {
 									"source": {
 										"register": "dossiq",
@@ -790,6 +790,7 @@
 										"in-progress": "In handling",
 										"review": "Decision"
 									},
+									"headerCount": true,
 									"emptyText": "You have no open cases"
 								}
 							},
