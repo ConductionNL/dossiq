@@ -624,7 +624,7 @@
         "description": "De gevraagde documenten zijn niet openbaar gemaakt. De reden staat in het besluit.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a002",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y",
+        "archivalPeriod": "P1Y",
         "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/9d6e6675-8764-4c55-9a47-626c2dc399f8"
       },
       {
@@ -640,7 +640,7 @@
         "description": "Het verzoek is ingetrokken.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a002",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y",
+        "archivalPeriod": "P1Y",
         "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/6f5d3859-78c5-467a-9e2f-43d71cf52a6c"
       },
       {

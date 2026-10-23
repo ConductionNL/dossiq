@@ -48,15 +48,23 @@ class WooResultTypesSelectionListTest extends TestCase {
 		foreach (['81-woo-verzoek.json', '81-woo-verzoek-version-2.json'] as $file) {
 			$fragment = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/register.d/'.$file), true);
 			$rows     = [];
+			$periods  = [];
 			foreach ($fragment['components']['objects'] as $object) {
 				if (($object['@self']['schema'] ?? '') === 'resultType') {
 					$rows[$object['name']] = ($object['selectionListClass'] ?? null);
+					$periods[$object['name']] = ($object['archivalPeriod'] ?? null);
 					// OpenRegister updates a shipped object only when its version rises.
 					$this->assertSame(expected: '1.1.0', actual: ($object['@self']['version'] ?? null), message: $object['@self']['slug']);
 				}
 			}
 
 			$this->assertSame(expected: $expected, actual: $rows, message: $file);
+			// The retention period is the one the Selectielijst row prescribes.
+			$this->assertSame(
+				expected: ['Openbaar gemaakt' => 'P5Y', 'Deels openbaar gemaakt' => 'P5Y', 'Niet openbaar gemaakt' => 'P1Y', 'Ingetrokken' => 'P1Y'],
+				actual: $periods,
+				message: $file
+			);
 		}
 	}//end testEveryResultTypeNamesItsRow()
 }//end class
