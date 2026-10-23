@@ -32,8 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Service\Intake\CaseTypeProperties;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -43,8 +43,6 @@ use Throwable;
  * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
  */
 class WooRequesterProperties {
-	use SearchesObjects;
-
 	/**
 	 * Constructor.
 	 *
@@ -74,66 +72,14 @@ class WooRequesterProperties {
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
 	 */
 	public function forCaseType(object $objectService, string $register, string $caseTypeId, array $wooRequest): array {
-		$answers = $this->answers(wooRequest: $wooRequest);
-		if ($answers === []) {
-			return [];
-		}
-
-		$definitions = $this->definitions(objectService: $objectService, register: $register, caseTypeId: $caseTypeId);
-
-		$entries = [];
-		foreach ($answers as $field => $value) {
-			if (isset($definitions[$field]) === false) {
-				continue;
-			}
-
-			$entries[] = ['propertyDefinition' => $definitions[$field], 'name' => $field, 'value' => $value];
-		}
-
-		return $entries;
-	}//end forCaseType()
-
-	/**
-	 * The requester answers that were given, by field name.
-	 *
-	 * @param array<string, mixed> $wooRequest The normalised request.
-	 *
-	 * @return array<string, string> The answers.
-	 */
-	private function answers(array $wooRequest): array {
 		$answers = [];
 		foreach (WooRequestForm::REQUESTER_FIELDS as $field) {
-			$value = trim((string)($wooRequest[$field] ?? ''));
-			if ($value !== '') {
-				$answers[$field] = $value;
-			}
-		}
-
-		return $answers;
-	}//end answers()
-
-	/**
-	 * The case type's property definitions, as id by name.
-	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The dossiq register.
-	 * @param string $caseTypeId    The case type.
-	 *
-	 * @return array<string, string> The definition id per name.
-	 */
-	private function definitions(object $objectService, string $register, string $caseTypeId): array {
-		$schema = (string)$this->settingsService->getConfigValue('property_definition_schema');
-		if ($schema === '') {
-			return [];
+			$answers[$field] = ($wooRequest[$field] ?? '');
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['caseType' => $caseTypeId],
-			);
+			return (new CaseTypeProperties(settingsService: $this->settingsService))
+				->forAnswers(objectService: $objectService, register: $register, caseTypeId: $caseTypeId, answers: $answers);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'WooRequestIntake: the case type property definitions could not be read, so the requester details are kept on the request only',
@@ -141,34 +87,5 @@ class WooRequesterProperties {
 			);
 			return [];
 		}
-
-		$definitions = [];
-		foreach ($rows as $row) {
-			$name = trim((string)($row['name'] ?? ''));
-			$id = $this->idOfRow(row: $row);
-			if ($name !== '' && $id !== '') {
-				$definitions[$name] = $id;
-			}
-		}
-
-		return $definitions;
-	}//end definitions()
-
-	/**
-	 * One row's id, wherever the store put it.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The id, or ''.
-	 */
-	private function idOfRow(array $row): string {
-		foreach ([($row['@self']['id'] ?? null), ($row['id'] ?? null), ($row['uuid'] ?? null)] as $candidate) {
-			$id = trim((string)($candidate ?? ''));
-			if ($id !== '') {
-				return $id;
-			}
-		}
-
-		return '';
-	}//end idOfRow()
+	}//end forCaseType()
 }//end class
