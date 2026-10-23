@@ -937,6 +937,7 @@ OC.L10N.register(
         "Attention markers": "Aandachtsmarkeringen",
         "Attribute": "Kenmerk",
         "Attributes": "Kenmerken",
+        "Attributes (catalogue)": "Attributen",
         "Attribution": "Toeschrijving",
         "Attribution text for the layer": "Bronvermelding bij de kaartlaag",
         "Attribution text rendered as escaped text in legend (no HTML)": "Bronvermelding die als ontsnapte tekst in de legenda wordt getoond (geen HTML)",
