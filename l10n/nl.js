@@ -9857,6 +9857,8 @@ OC.L10N.register(
         "Version to move to": "Versie om naartoe te verplaatsen",
         "Version {n}": "Versie {n}",
         "Version {version}": "Versie {version}",
+        "Version {version} draft": "Versie {version} concept",
+        "Version {version} published": "Versie {version} gepubliceerd",
         "version {v}": "versie {v}",
         "Version:": "Versie:",
         "Versions": "Versies",

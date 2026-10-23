@@ -5999,8 +5999,8 @@
 				"statusPill": {
 					"field": "isDraft",
 					"labels": {
-						"false": "Published",
-						"true": "Draft"
+						"false": "Version {version} published",
+						"true": "Version {version} draft"
 					},
 					"colorMap": {
 						"false": "success",
