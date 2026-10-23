@@ -7202,7 +7202,10 @@
 							"source": {
 								"kind": "flow-task"
 							},
-							"headerActions": ["link", "create"],
+							"headerActions": ["create"],
+							"menuActions": ["link"],
+							"createVariant": "secondary",
+							"createIcon": "CalendarPlusOutline",
 							"emptyText": "Nobody has booked an appointment on this task"
 						}
 					},
