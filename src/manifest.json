@@ -8220,17 +8220,9 @@
 								},
 								{
 									"key": "percentUsedDisplay",
-									"class": "cn-cell--wrap",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Term used",
-									"widget": "progress",
-									"widgetProps": {
-										"max": 100,
-										"lowerIsBetter": true,
-										"thresholds": {
-											"good": 50,
-											"warn": 25
-										}
-									}
+									"format": { "style": "number", "decimals": 0 }
 								}
 							],
 							"rowRoute": "CaseDetail",
