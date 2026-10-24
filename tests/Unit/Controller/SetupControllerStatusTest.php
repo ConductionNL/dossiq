@@ -745,7 +745,7 @@ class SetupControllerStatusTest extends TestCase {
 		$response = $built['controller']->saveConfig();
 
 		$this->assertTrue($response->getData()['success']);
-		$this->assertSame('s3cret', $built['written']['payout_callback_secret'] ?? null);
+		$this->assertSame(expected: 's3cret', actual: $built['written']['payout_callback_secret'] ?? null);
 		$this->assertSame('[1,5,15]', $built['written']['retry_delays'] ?? null);
 		$this->assertArrayNotHasKey('_route', $built['written']);
 

@@ -53,7 +53,7 @@ final class MoneyCodeNamesNoProcedureTest extends TestCase {
 	public function testNoClassFileNamesThePenaltyProcedure(): void {
 		$named = array_values(array_filter(array_keys(self::libFiles()), static fn (string $path): bool => stripos(basename($path), 'dwangsom') !== false));
 
-		self::assertSame([], $named);
+		self::assertSame(expected: [], actual: $named);
 	}//end testNoClassFileNamesThePenaltyProcedure()
 
 	public function testTheProcedureKeysAreReadOnlyThroughTheLegacyMap(): void {
@@ -71,6 +71,6 @@ final class MoneyCodeNamesNoProcedureTest extends TestCase {
 			}
 		}
 
-		self::assertSame([], $readers);
+		self::assertSame(expected: [], actual: $readers);
 	}//end testTheProcedureKeysAreReadOnlyThroughTheLegacyMap()
 }//end class

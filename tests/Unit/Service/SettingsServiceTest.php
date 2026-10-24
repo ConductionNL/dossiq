@@ -311,11 +311,11 @@ class SettingsServiceTest extends TestCase {
 			return ($stored[$key] ?? $default);
 		});
 
-		$this->assertSame('42', $this->service->getConfigValue('payout_schema'));
+		$this->assertSame(expected: '42', actual: $this->service->getConfigValue('payout_schema'));
 
 		$stored['payout_schema'] = '';
-		$this->assertSame('', $this->service->getConfigValue('payout_schema'), 'A current key an admin cleared is not overridden by the legacy one.');
-		$this->assertSame('', $this->service->getConfigValue('case_schema'), 'A key with no legacy name reads only itself.');
+		$this->assertSame(expected: '', actual: $this->service->getConfigValue('payout_schema'), message: 'A current key an admin cleared is not overridden by the legacy one.');
+		$this->assertSame(expected: '', actual: $this->service->getConfigValue('case_schema'), message: 'A key with no legacy name reads only itself.');
 	}//end testARenamedMoneyKeyFallsBackToItsLegacyKey()
 
 	/**

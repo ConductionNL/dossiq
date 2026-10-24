@@ -124,7 +124,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 		$schema = $this->register()['components']['schemas'][$source];
 		$statusIds = array_column($this->caseTypeFile(package: $package)['statusTypes'], 'id');
 		foreach ($schema['properties']['status']['enum'] as $old) {
-			self::assertContains(needle: $this->import(installed: $package)['statuses'][$old]['status'] ?? null, haystack: $statusIds, message: $old);
+			self::assertContains(needle: $this->import(package: $package)['statuses'][$old]['status'] ?? null, haystack: $statusIds, message: $old);
 		}
 	}//end testEveryOldStatusHasAStatus()
 
@@ -141,7 +141,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 		$restricted = array_keys(array_filter($register[$source]['properties'], static fn (array $prop): bool => isset($prop['authorization']) === true));
 		self::assertNotSame([], $restricted);
 		$targets = [];
-		foreach ($this->import(installed: $package)['fields'] as $field) {
+		foreach ($this->import(package: $package)['fields'] as $field) {
 			$targets[(string)($field['from'] ?? '')] = (string)$field['to'];
 		}
 
@@ -152,7 +152,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 		}
 
 		$definitions = array_column($this->caseTypeFile(package: $package)['propertyDefinitions'], null, 'id');
-		foreach ($this->import(installed: $package)['fields'] as $field) {
+		foreach ($this->import(package: $package)['fields'] as $field) {
 			if (isset($field['property']) === true) {
 				$flagged = ($definitions[$field['property']['definition']]['sensitive'] ?? false) === true;
 				self::assertSame(expected: $flagged, actual: $field['to'] === 'sensitiveProperties', message: $field['property']['name']);
@@ -175,7 +175,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 		self::assertCount(expectedCount: 3, haystack: $rows);
 		$mapping = new RecordCaseMapping(dates: $this->caseDates());
 		foreach ($rows as $row) {
-			$case = $mapping->map(import: $this->import(installed: $package), record: $row, recordId: 'id-' . $row['caseNumber'], caseTypeId: $type['id'])['case'];
+			$case = $mapping->map(import: $this->import(package: $package), record: $row, recordId: 'id-' . $row['caseNumber'], caseTypeId: $type['id'])['case'];
 			self::assertSame(expected: $row[$bsnKey], actual: $case['subjectBsn']);
 			self::assertSame(expected: $row['handlerId'], actual: $case['assignee']);
 			self::assertSame(expected: [['application' => 'dossiq', 'reference' => $row['caseNumber']]], actual: $case['formerReferences']);
@@ -195,7 +195,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
 	public function testTheImportIsIdempotentAndMovesReferences(string $package, string $source, string $domain, array $sensitive, string $bsnKey): void {
-		$import = $this->import(installed: $package);
+		$import = $this->import(package: $package);
 		self::assertSame(expected: 'caseNumber', actual: $import['dedupeBy']);
 		self::assertSame(expected: 'caseNumber', actual: $import['formerReference']['from']);
 		self::assertContains(needle: ['schema' => 'toestemming', 'field' => 'caseId'], haystack: $import['references']);
@@ -215,11 +215,11 @@ class SocialDomainCaseTypesTest extends TestCase {
 	public function testABenefitApplicationRunsOnItsDecisionTerm(): void {
 		$type = $this->caseTypeFile(package: 'bijstandsaanvraag')['caseType'];
 		self::assertSame(expected: 'P8W', actual: $type['processingDeadline']);
-		self::assertTrue(condition: $this->import(installed: 'bijstandsaanvraag')['carriesTerm']);
+		self::assertTrue(condition: $this->import(package: 'bijstandsaanvraag')['carriesTerm']);
 		$definitions = array_column($this->json(path: self::SETTINGS . '/termijnbewaking_seed_data.json')['termijnDefinities'], null, 'caseType');
 		self::assertSame(expected: 56, actual: $definitions['bijstandsaanvraag']['standardDurationDays']);
-		self::assertSame(expected: 'running', actual: $this->import(installed: 'bijstandsaanvraag')['statuses']['decision-voorbereiding']['term']);
-		self::assertSame(expected: 'closed', actual: $this->import(installed: 'bijstandsaanvraag')['statuses']['social-assistance-active']['term']);
+		self::assertSame(expected: 'running', actual: $this->import(package: 'bijstandsaanvraag')['statuses']['decision-voorbereiding']['term']);
+		self::assertSame(expected: 'closed', actual: $this->import(package: 'bijstandsaanvraag')['statuses']['social-assistance-active']['term']);
 	}//end testABenefitApplicationRunsOnItsDecisionTerm()
 
 	/**

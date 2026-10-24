@@ -149,7 +149,7 @@ class AccruingAmountControllerAuthzTest extends TestCase {
 		$session = $this->createMock(IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
-		$objectService = $this->createMock(AccruingAmountObjectServiceStub::class);
+		$objectService = $this->createMock(originalClassName: AccruingAmountObjectServiceStub::class);
 		$objectService->method('find')->willReturn($found);
 
 		$settings = $this->createMock(SettingsService::class);
@@ -189,7 +189,7 @@ class AccruingAmountControllerAuthzTest extends TestCase {
 		$calc = $this->createMock(AccruingAmountSettler::class);
 		$calc->expects($this->never())->method('settle');
 
-		$objection = $this->createMock(AmountObjectionService::class);
+		$objection = $this->createMock(originalClassName: AmountObjectionService::class);
 		$objection->expects($this->never())->method('registerObjection');
 		$objection->expects($this->never())->method('resolveObjection');
 
@@ -202,8 +202,8 @@ class AccruingAmountControllerAuthzTest extends TestCase {
 		);
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->show(self::BEREKENING_ID)->getStatus());
-		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->settle(self::BEREKENING_ID)->getStatus());
-		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->objection(self::BEREKENING_ID)->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $controller->settle(self::BEREKENING_ID)->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $controller->objection(self::BEREKENING_ID)->getStatus());
 		$this->assertSame(
 			Http::STATUS_FORBIDDEN,
 			$controller->reconsider(self::BEREKENING_ID)->getStatus()
@@ -227,7 +227,7 @@ class AccruingAmountControllerAuthzTest extends TestCase {
 			$owningCase,
 			$caseAccess,
 			$this->createMock(AccruingAmountSettler::class),
-			$this->createMock(AmountObjectionService::class),
+			$this->createMock(originalClassName: AmountObjectionService::class),
 			new AccruingAmountEntityDouble(['id' => self::BEREKENING_ID])
 		);
 
@@ -260,7 +260,7 @@ class AccruingAmountControllerAuthzTest extends TestCase {
 			$owningCase,
 			$caseAccess,
 			$this->createMock(AccruingAmountSettler::class),
-			$this->createMock(AmountObjectionService::class),
+			$this->createMock(originalClassName: AmountObjectionService::class),
 			new AccruingAmountEntityDouble($payload)
 		);
 
@@ -287,7 +287,7 @@ class AccruingAmountControllerAuthzTest extends TestCase {
 			$owningCase,
 			$caseAccess,
 			$this->createMock(AccruingAmountSettler::class),
-			$this->createMock(AmountObjectionService::class),
+			$this->createMock(originalClassName: AmountObjectionService::class),
 			null
 		);
 
@@ -313,10 +313,10 @@ class AccruingAmountControllerAuthzTest extends TestCase {
 			$owningCase,
 			$caseAccess,
 			$this->createMock(AccruingAmountSettler::class),
-			$this->createMock(AmountObjectionService::class),
+			$this->createMock(originalClassName: AmountObjectionService::class),
 			new AccruingAmountEntityDouble(['id' => self::BEREKENING_ID])
 		);
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->settle(self::BEREKENING_ID)->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $controller->settle(self::BEREKENING_ID)->getStatus());
 	}//end testWriteVerbsConsultMutationAccess()
 }//end class

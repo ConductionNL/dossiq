@@ -96,16 +96,16 @@ final class CarryRenamedSettingKeysTest extends TestCase {
 			'dwangsom_callback_secret' => 's3cret',
 			'ingebrekestelling_schema' => '40',
 		];
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->expects($this->once())->method('info')->with($this->stringContains('Carried 4'));
 
 		$this->step()->run($output);
 
-		self::assertSame('41', $this->stored['accruing_amount_schema']);
-		self::assertSame('42', $this->stored['payout_schema']);
-		self::assertSame('s3cret', $this->stored['payout_callback_secret']);
-		self::assertSame('40', $this->stored['notice_of_default_schema']);
-		self::assertSame('s3cret', $this->stored['dwangsom_callback_secret'], 'The old key stays for a rollback.');
+		self::assertSame(expected: '41', actual: $this->stored['accruing_amount_schema']);
+		self::assertSame(expected: '42', actual: $this->stored['payout_schema']);
+		self::assertSame(expected: 's3cret', actual: $this->stored['payout_callback_secret']);
+		self::assertSame(expected: '40', actual: $this->stored['notice_of_default_schema']);
+		self::assertSame(expected: 's3cret', actual: $this->stored['dwangsom_callback_secret'], message: 'The old key stays for a rollback.');
 	}//end testMoneyKeysAreCarriedToTheirGenericNames()
 
 	/**
