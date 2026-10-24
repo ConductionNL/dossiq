@@ -276,7 +276,41 @@
 					"city": "{{cast:marja.address.city}}"
 				},
 				"displayName": "{{cast:marja.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"contactAddresses": [
+					{
+						"kind": "correspondence",
+						"type": "email",
+						"value": "{{cast:marja.email}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "persoon-kees-dewit",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"name": {
+					"givenNames": "{{cast:keesdewit.givenName}}",
+					"namePrefix": "{{cast:keesdewit.prefix}}",
+					"surname": "{{cast:keesdewit.familyName}}"
+				},
+				"residence": {
+					"street": "{{cast:keesdewit.address.street}}",
+					"houseNumber": "{{cast:keesdewit.address.number}}",
+					"postcode": "{{cast:keesdewit.address.postcode}}",
+					"city": "{{cast:keesdewit.address.city}}"
+				},
+				"displayName": "{{cast:keesdewit.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht, contactpersoon zonder BSN. Geen echte persoon.",
+				"contactAddresses": [
+					{
+						"kind": "correspondence",
+						"type": "email",
+						"value": "{{cast:keesdewit.email}}"
+					}
+				]
 			}
 		},
 		{
@@ -4730,6 +4764,25 @@
 				"relevanceSource": "reviewer",
 				"markedBy": "{{cast:pieter.uid}}",
 				"markedAt": "{{datetime:-1 15:31}}"
+			}
+		}
+	],
+	"parties": [
+		{
+			"key": "buurtoost-voorzitter-marja",
+			"data": {
+				"objectUuid": "{{object:bedrijf-buurtoost.id}}",
+				"partyUuid": "{{object:persoon-marja.id}}",
+				"role": "chair",
+				"primary": true
+			}
+		},
+		{
+			"key": "buurtoost-secretaris-kees",
+			"data": {
+				"objectUuid": "{{object:bedrijf-buurtoost.id}}",
+				"partyUuid": "{{object:persoon-kees-dewit.id}}",
+				"role": "secretary"
 			}
 		}
 	],

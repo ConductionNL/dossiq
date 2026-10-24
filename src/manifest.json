@@ -14107,6 +14107,14 @@
 									}
 								},
 								{
+									"widgetId": "org-contact-persons",
+									"label": "Contact persons",
+									"countFrom": {
+										"endpoint": "/apps/openregister/api/objects/dossiq/kvkCompany/@objectId/parties",
+										"field": "total"
+									}
+								},
+								{
 									"widgetId": "contact-documents",
 									"label": "Files"
 								},
@@ -14122,6 +14130,26 @@
 						"type": "audit-trail",
 						"title": "History",
 						"icon": "History"
+					},
+					{
+						"id": "org-contact-persons",
+						"type": "parties",
+						"title": "Contact persons",
+						"icon": "AccountMultipleOutline",
+						"_note": "The organisation's contact persons: OpenRegister person parties on the kvkCompany, by role with the main contact (the primary party) first. The roles are kvkCompany configuration (linkRoles); roleLabels give the four shipped ones their words, a role a municipality adds shows the label it declares. Changing them is the organisation's update right, which OpenRegister asks on every party write (organisation-contact-persons).",
+						"content": {
+							"roleLabels": {
+								"chair": "Chair",
+								"secretary": "Secretary",
+								"treasurer": "Treasurer",
+								"contact": "Contact person"
+							},
+							"labels": {
+								"primary": "Main contact",
+								"empty": "No contact persons yet",
+								"emptyDetail": "Nobody is named yet as speaking for this organisation."
+							}
+						}
 					}
 				],
 				"follow": false,
@@ -14182,6 +14210,28 @@
 										"requester": "@objectId"
 									}
 								}
+							}
+						}
+					},
+					{
+						"id": "side-main-contact",
+						"type": "parties",
+						"title": "Main contact",
+						"_note": "Board DqOrganisatie Hoofdcontact: the primary party of the organisation, its role and its OWN correspondence e-mail (the organisation's mailbox stays on the organisation, Ruben 24 Oct), and the link to the Contact persons tab.",
+						"content": {
+							"presentation": "primary",
+							"roleLabels": {
+								"chair": "Chair",
+								"secretary": "Secretary",
+								"treasurer": "Treasurer",
+								"contact": "Contact person"
+							},
+							"labels": {
+								"noPrimary": "No main contact yet"
+							},
+							"link": {
+								"label": "All {total} contact persons",
+								"tab": "org-contact-persons"
 							}
 						}
 					},
