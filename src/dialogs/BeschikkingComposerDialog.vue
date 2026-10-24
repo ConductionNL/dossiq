@@ -42,6 +42,9 @@
 				</section>
 
 				<NcNoteCard type="info">
+					<template #icon>
+						<FileDocumentCheckOutline :size="18" />
+					</template>
 					{{ t('dossiq', 'The document is added to the case as a draft, under Documents. You sign and send it afterwards, from Decisions.') }}
 				</NcNoteCard>
 				<NcNoteCard v-if="error" type="error">
@@ -85,6 +88,7 @@ import {
 	NcButton,
 	NcNoteCard,
 } from '@nextcloud/vue'
+import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 
@@ -112,6 +116,7 @@ export default {
 	components: {
 		CnChoiceCards,
 		CnDialog,
+		FileDocumentCheckOutline,
 		FileDocumentEditOutline,
 		NcButton,
 		NcNoteCard,

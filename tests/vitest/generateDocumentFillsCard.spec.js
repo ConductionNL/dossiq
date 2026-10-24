@@ -46,3 +46,12 @@ describe('the template fills card on board DqDocumentGenereren', () => {
 		expect(title).toContain('line-height: 1.2;')
 	})
 })
+
+describe('the note under the template facts (DqDocumentGenereren)', () => {
+	it('carries the board\'s document-with-a-check icon, not the info circle', () => {
+		const template = source.slice(0, source.indexOf('<script'))
+		const note = template.slice(template.indexOf('<NcNoteCard type="info"'), template.indexOf('</NcNoteCard>'))
+		expect(note).toContain('<FileDocumentCheckOutline')
+		expect(source).toContain("import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'")
+	})
+})
