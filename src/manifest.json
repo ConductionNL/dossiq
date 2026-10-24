@@ -11548,6 +11548,24 @@
 						}
 					},
 					{
+						"id": "case-type-collection",
+						"type": "data",
+						"title": "Collection",
+						"icon": "CashMultiple",
+						"_note": "case-money-is-configuration REQ-DQM-005: whether a forfeited penalty on a case of this type raises an invoice in the finance app, who on the case pays, which finance administration bills and which kind of payment it is. Case type configuration, so no procedure is named in code. The board draws no place for it, so the simple profile keeps it behind the Properties tab.",
+						"content": {
+							"title": "Collection",
+							"columns": 2,
+							"include": [
+								"forfeitRaisesInvoice",
+								"forfeitPayerRoleType",
+								"forfeitAdministration",
+								"forfeitRequestType"
+							],
+							"hideEmpty": false
+						}
+					},
+					{
 						"id": "case-type-privacy",
 						"type": "data",
 						"title": "Personal data",
@@ -12419,6 +12437,15 @@
 						"gridY": 95,
 						"gridWidth": 12,
 						"gridHeight": 12,
+						"showTitle": true
+					},
+					{
+						"id": "16",
+						"widgetId": "case-type-collection",
+						"gridX": 0,
+						"gridY": 107,
+						"gridWidth": 12,
+						"gridHeight": 4,
 						"showTitle": true
 					}
 				],
