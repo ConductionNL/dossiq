@@ -50,13 +50,18 @@ describe.each(['ContactDetail', 'OrganisationDetail'])(
 		})
 
 		it('counts open cases on a field the case carries', () => {
-			const pill = p.config.statusPill
-			expect(pill.countFrom.filter).toEqual({
+			// The contact page draws the count as a pill; the organisation page
+			// names it in the header line (DqOrganisatie "· 1 lopende zaak").
+			const filter = p.config.statusPill
+				? p.config.statusPill.countFrom.filter
+				: p.config.headerMetaCounts.open.filter
+			expect(filter).toEqual({
 				requester: '@objectId',
 				isFinalStatus: false,
 			})
 			expect(caseSchema.properties.isFinalStatus.type).toBe('boolean')
-			expect(pill.countLabel.one).toContain('{count}')
+			const one = p.config.statusPill ? p.config.statusPill.countLabel.one : p.config.headerMeta.one
+			expect(one).toMatch(/\{count(:open)?\}/)
 		})
 
 		it('draws the related lists through record-list', () => {

@@ -14,6 +14,7 @@ const ROOT = path.resolve(__dirname, '../..')
 const read = (file) => JSON.parse(fs.readFileSync(path.join(ROOT, file), 'utf8'))
 const page = read('src/manifest.json').pages.find((entry) => entry.id === 'TaskDetail')
 const history = page.config.widgets.find((widget) => widget.id === 'task-history')
+const sideHistory = page.config.sideColumn.find((widget) => widget.id === 'side-history')
 const nl = read('l10n/nl.json').translations
 
 describe('the task history', () => {
@@ -34,5 +35,10 @@ describe('the task history', () => {
 		for (const label of Object.values(history.content.actionLabels)) {
 			expect(nl[label], label).toBeTruthy()
 		}
+	})
+
+	it('words the side Historie card the same way as the history tab', () => {
+		expect(sideHistory.type).toBe('audit-trail')
+		expect(sideHistory.content.actionLabels).toEqual(history.content.actionLabels)
 	})
 })

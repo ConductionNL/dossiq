@@ -25,7 +25,7 @@ use OCP\AppFramework\Http\JSONResponse;
  * `OCP\IRequest::getContent()` is protected on the concrete OC request, so a
  * controller that wants the raw payload reads `php://input` itself. Three
  * controllers wrote the same two helpers out character for character:
- * MandaatMatrixController, TermijnController and DwangsomController.
+ * MandaatMatrixController, TermijnController and AccruingAmountController.
  *
  * Only MandaatMatrixController moves to this copy here; the other two are
  * untouched by this change and still carry their own.

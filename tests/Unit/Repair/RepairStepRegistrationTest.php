@@ -68,6 +68,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'PinCaseTypesAsViews' => 'carries pins from the retired My case types menu over; a fresh install has none',
 		'CarryRenamedSettingKeys' => 'carries settings stored under their earlier keys; a fresh install has none',
 		'RewriteRenamedLayoutIds' => 'rewrites renamed ids in stored buildiq arrangements; a fresh install has none',
+		'MigratePayoutRowsToFinance' => 'hands the payout rows dossiq kept to the finance app; a fresh install has none',
 		'RecolourShippedStatusTypes' => 'recolours status rows an earlier version seeded; a fresh install seeds them in their board colour',
 		'RenameDutchDeadlineColumns' => 'renames columns over existing rows',
 		'RenameDutchDirectionValues' => 'rewrites values in existing rows',
@@ -232,6 +233,14 @@ class RepairStepRegistrationTest extends TestCase {
 				'InstallShippedPackages',
 				'CaseFlowSeedDataRepairStep',
 			],
+			// It imports onto the installed case types, and the cases it writes then get their team.
+			'RunUpgradeRecordImports' => [
+				'InitializeSettings',
+				'InstallShippedPackages',
+				'PublishSeededCaseTypes',
+				'SeedDeadlineMonitoringData',
+			],
+			'AssignOpenCasesTheirCaseTypeTeam' => ['RunUpgradeRecordImports'],
 			// It reads the imported register, the installed case types and the reviews an upgrade makes.
 			'ReconcileCaseRecordGrants' => [
 				'InitializeSettings',

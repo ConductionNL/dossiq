@@ -28,4 +28,16 @@ describe('nextStepOf', () => {
 		expect(nextStepOf(null, 'st-1')).toBeNull()
 		expect(nextStepOf(STATUSES, '')).toBeNull()
 	})
+
+	it('reads a language-tagged status name in the reader\'s language, never as [object Object]', () => {
+		const tagged = [
+			{ id: 'st-1', name: { nl: 'Ontvangen', en: 'Received' }, order: 1 },
+			{ id: 'st-2', name: { nl: 'Besluit', en: 'Decision' }, order: 2 },
+		]
+		globalThis.OC = { getLanguage: () => 'nl' }
+		expect(nextStepOf(tagged, 'st-1')).toEqual({ number: 2, name: 'Besluit' })
+		globalThis.OC = { getLanguage: () => 'en' }
+		expect(nextStepOf(tagged, 'st-1')).toEqual({ number: 2, name: 'Decision' })
+		delete globalThis.OC
+	})
 })

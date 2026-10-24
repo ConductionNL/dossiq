@@ -660,6 +660,7 @@ class StatusTransitionService {
 		return $this->specReader->guardsWithImplicit(
 			transition: $transition,
 			approvalsWired: $this->guardRegistry->knows(type: GuardRegistry::APPROVAL_GATE),
+			entryGuardWired: $this->guardRegistry->knows(type: GuardRegistry::STATUS_ENTRY_REQUIREMENTS),
 		);
 	}//end evaluateGuards()
 

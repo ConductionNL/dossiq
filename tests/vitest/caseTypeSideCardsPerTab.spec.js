@@ -30,7 +30,7 @@ function besides(id) {
 
 describe('case type side column per tab', () => {
 	it('gives every tab an id', () => {
-		expect(tabIds).toEqual(['overview', 'fields', 'statuses', 'phases', 'rules', 'rights', 'privacy', 'translations', 'versions', 'portal', 'history'])
+		expect(tabIds).toEqual(['overview', 'fields', 'statuses', 'phases', 'messages', 'rules', 'rights', 'privacy', 'translations', 'versions', 'portal', 'properties', 'history'])
 	})
 
 	it('names only tabs that exist', () => {

@@ -11,3 +11,8 @@
 - **files**: `lib/Settings/dossiq_register.json`, `l10n/*`
 - [x] Implement: actions and flows, Dutch names
 - [x] Test: `tests/Unit/Flow/CaseMacroDeclarationTest.php`, `tests/Unit/Flow/CaseFlowDeclarationTest.php`
+
+### Task 3: the Macro's line is the card subtitle (DqZaakAssistent)
+- **files**: `src/menu-layout.simple.json`
+- [x] Implement: `subtitle` on `case-macros` instead of `content.description`; the titled card comes from nextcloud-vue fix/macros-widget-titled-card
+- [x] Test: `tests/vitest/simpleCasePage.spec.js` ("draws the Macro's line as the card subtitle")

@@ -58,7 +58,7 @@ describe('side cards per case type: the configuration', () => {
 	})
 
 	it('lets the domain packages list cards of the column, in the order their boards draw them', () => {
-		expect(packageCaseTypes('jeugdwet')[0].sideCards).toEqual(['side-special-data-health', 'case-banner-stack', 'side-social-consent', 'side-social-people'])
+		expect(packageCaseTypes('jeugdwet')[0].sideCards).toEqual(['side-special-data-health', 'side-social-consent', 'side-social-people', 'side-social-history', 'case-banner-stack'])
 		expect(packageCaseTypes('aanbesteding')[0].sideCards).toEqual(['case-tile-deadline', 'case-banner-stack'])
 		const objection = packageCaseTypes('bezwaar-beroep').find((caseType) => caseType.identifier === 'bezwaar')
 		expect(objection.sideCards).toEqual(['case-tile-deadline', 'side-objection-appeal', 'case-banner-stack'])

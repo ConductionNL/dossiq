@@ -69,13 +69,16 @@ describe('the my-work view', () => {
 		expect(overrides.lockedFilters).toEqual({ assignee: '@me', statusHiddenInLists: false, isDraft: false })
 	})
 
-	it('draws the description, the case type and status chips and the overdue deadline', () => {
-		expect(overrides.cardLayout.description).toEqual({ field: 'description', maxLength: 140 })
-		expect(overrides.cardLayout.chips).toEqual([
-			{ field: 'caseType', formatter: 'caseTypeName' },
-			{ field: 'status', formatter: 'statusTypeName' },
-		])
+	// Board DqAanMijToegewezen: "Woo-verzoek · Stichting Kindzorg", the cover line
+	// in the purple ink, and a footer with the status pill in its status type's
+	// colour and "Termijn 9 okt"; no description and no chips.
+	it('draws type and requester, the cover line, and the status pill beside the overdue deadline', () => {
+		expect(overrides.cardLayout.meta).toEqual([{ field: 'caseType', formatter: 'caseTypeName' }, 'initiatorDisplayName'])
+		expect(overrides.cardLayout.note).toEqual({ field: 'coveredFor', formatter: 'coveredFor', tone: 'purple' })
+		expect(overrides.cardLayout.footerPill).toEqual({ field: 'status', resolve: { schema: 'statusType', colorField: 'colour' } })
 		expect(overrides.cardLayout.footerDate).toEqual({ field: 'deadline', label: 'Deadline', overdueVariant: 'error' })
+		expect(overrides.cardLayout.description).toBeUndefined()
+		expect(overrides.cardLayout.chips).toBeUndefined()
 	})
 
 	it('draws the deadline tier as each card\'s head pill', () => {

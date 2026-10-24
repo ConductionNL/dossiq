@@ -61,7 +61,7 @@
 									"lt": "@today+1d"
 								}
 							},
-							"extend": ["caseRef"],
+							"extend": ["caseRef", "checklistTemplateRef"],
 							"sort": {
 								"field": "scheduledAt",
 								"dir": "asc"
@@ -69,9 +69,20 @@
 							"limit": 8,
 							"presentation": "rows",
 							"title": "{caseRef.title}",
-							"meta": "{scheduledAt|datetime}",
+							"meta": "{scheduledAt|time} · {checklistTemplateRef.name}",
 							"pill": {
-								"field": "status"
+								"field": "status",
+								"labels": {
+									"planned": "Planned",
+									"in_progress": "Underway",
+									"synced": "Done",
+									"conflict": "Conflict"
+								},
+								"colorMap": {
+									"in_progress": "info",
+									"synced": "success",
+									"conflict": "error"
+								}
 							},
 							"emptyText": "No inspections planned for today"
 						}
@@ -149,6 +160,7 @@
 							},
 							"recordPhotosField": "photos",
 							"pageSize": 2,
+							"startAt": "firstOpen",
 							"caption": "{templateSnapshot.name} version {templateVersion}"
 						}
 					},
@@ -168,10 +180,24 @@
 							},
 							"limit": 6,
 							"presentation": "rows",
-							"title": "{targetEntity}",
+							"title": ["{label}", "{targetEntity}"],
 							"meta": "{operationType} · {queuedAt|datetime}",
 							"pill": {
-								"field": "status"
+								"field": "status",
+								"labels": {
+									"pending": "Waits",
+									"syncing": "Underway",
+									"synced": "Done",
+									"conflict": "Conflict",
+									"failed": "Failed"
+								},
+								"colorMap": {
+									"pending": "warning",
+									"syncing": "info",
+									"synced": "success",
+									"conflict": "error",
+									"failed": "error"
+								}
 							},
 							"emptyText": "Nothing waits to be synchronised"
 						}

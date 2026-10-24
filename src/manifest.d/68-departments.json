@@ -32,6 +32,9 @@
 					"filterField": "group",
 					"heading": true,
 					"countText": "{count} staff",
+					"headingParts": [
+						{ "field": "teamLead", "text": "team lead {value}", "format": "user" }
+					],
 					"parentsFrom": { "register": "dossiq", "schema": "organisatieRol", "groupField": "ncGroupId", "parentField": "parentRoleId" }
 				},
 				"breadcrumb": {

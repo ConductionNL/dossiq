@@ -61,6 +61,7 @@
              Verbatim copies of the real classes. -->
         <file name="tests/Stubs/Shillinq/Event/PayableRaisedEvent.php" />
         <file name="tests/Stubs/Shillinq/Event/PayableCancelRequestedEvent.php" />
+        <file name="tests/Stubs/Shillinq/Event/PayablesRequestedEvent.php" />
         <!-- The AppHost observability plane (ADR-006/ADR-040). Health and
              Metrics EXTEND these generics, so a suppression would only hide
              the parent rather than resolve it. -->

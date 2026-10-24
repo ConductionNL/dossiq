@@ -1684,6 +1684,7 @@ OC.L10N.register(
         "SLA adherence and processing time analysis": "Respektimi i SLA dhe analiza e kohës së përpunimit",
         "SLA Compliance": "Përputhshmëria me SLA",
         "SLA Compliance %": "Përputhshmëria me SLA %",
+        "SLA Compliance %%": "Përputhshmëria me SLA %%",
         "SLA override (days)": "Mbivendosja e SLA (ditë)",
         "SLA Target: {days}d": "Synimi i SLA: {days}d",
         "Sloopmelding": "Sloopmelding",

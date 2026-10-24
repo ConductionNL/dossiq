@@ -1684,6 +1684,7 @@ OC.L10N.register(
         "SLA adherence and processing time analysis": "Analiza przestrzegania SLA i czasu przetwarzania",
         "SLA Compliance": "Zgodność z SLA",
         "SLA Compliance %": "Zgodność z SLA %",
+        "SLA Compliance %%": "Zgodność z SLA %%",
         "SLA override (days)": "Nadpisanie SLA (dni)",
         "SLA Target: {days}d": "Cel SLA: {days}d",
         "Sloopmelding": "Sloopmelding",

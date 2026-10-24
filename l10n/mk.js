@@ -1360,6 +1360,7 @@ OC.L10N.register(
         "SLA": "SLA",
         "SLA Compliance": "Усогласеност со SLA",
         "SLA Compliance %": "Усогласеност со SLA %",
+        "SLA Compliance %%": "Усогласеност со SLA %%",
         "SLA Target: {days}d": "SLA цел: {days}d",
         "SLA adherence and processing time analysis": "Придржување кон SLA и анализа на времето на обработка",
         "SLA breaches": "Прекршувања на SLA",
