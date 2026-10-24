@@ -20,7 +20,8 @@ the engine task carries as its `key`.
 - [x] Implement setField on a property definition (`dossiq.setCaseAnswer`, merges into `properties[]`), sendMessage
       (`dossiq.sendMessage`, to a role on the case, once per case or per status entry through the send-once ledger) and
       requireDocument on entering a status (`caseType.entryRequirements`, read by the `statusEntryRequirements` guard)
-- [ ] requireDocument with conditions besides the status (named in the publication warnings)
+- [x] requireDocument with conditions besides the status: the conditions travel with the requirement as JSONLogic and
+      the guard evaluates them with OpenRegister's flow expressions (unevaluable reads as required)
 - [x] Test (unit: plan, flow shape, the filter evaluated with OpenRegister's JSONLogic, replace-on-publish)
 - [ ] Test (integration on a live instance)
 

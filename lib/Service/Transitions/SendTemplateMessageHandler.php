@@ -25,7 +25,9 @@ namespace OCA\Dossiq\Service\Transitions;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
+use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Termijn\TermNoticeLedger;
+use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -34,7 +36,10 @@ use Throwable;
  *
  * The template is rendered and sent through CaseEmailService, which keeps its
  * own allowlist, opt-out and timeline entry. The recipients are the people
- * holding `recipientRole` on the case; without one, the applicant.
+ * holding `recipientRole` (a roleType uuid) on the case, read from the case's
+ * role objects through RoleResolverService, delegation included; a
+ * participant is an e-mail address or a Nextcloud user with one. Without a
+ * role, the applicant.
  *
  * With `onceKey` the message is sent once per case, or once per value of the
  * case field `oncePer` (a status rule passes `currentStatusEnteredAt`, so each
@@ -53,6 +58,8 @@ class SendTemplateMessageHandler implements ActionHandlerInterface {
 	 * @param CaseEmailService     $mail      Renders and sends a template.
 	 * @param LoggerInterface      $logger    The logger.
 	 * @param TermNoticeLedger     $ledger    Claims a send-once key.
+	 * @param RoleResolverService  $roles     The participants holding a role on the case.
+	 * @param IUserManager         $users     A participant user's address.
 	 */
 	public function __construct(
 		private readonly AssigneeResolver $assignees,
@@ -60,6 +67,8 @@ class SendTemplateMessageHandler implements ActionHandlerInterface {
 		private readonly CaseEmailService $mail,
 		private readonly LoggerInterface $logger,
 		private readonly TermNoticeLedger $ledger,
+		private readonly RoleResolverService $roles,
+		private readonly IUserManager $users,
 	) {
 	}//end __construct()
 
@@ -81,7 +90,7 @@ class SendTemplateMessageHandler implements ActionHandlerInterface {
 			return new ActionResult(succeeded: false, error: 'send_message_incomplete');
 		}
 
-		$recipients = $this->contacts->addressesForRole(caseData: $case, role: (string)($actionConfig['recipientRole'] ?? ''));
+		$recipients = $this->recipients(case: $case, role: trim((string)($actionConfig['recipientRole'] ?? '')));
 		if ($recipients === []) {
 			return new ActionResult(succeeded: false, error: 'no_recipient');
 		}
@@ -124,6 +133,48 @@ class SendTemplateMessageHandler implements ActionHandlerInterface {
 
 		return new ActionResult(succeeded: true, data: ['sentTo' => $recipients, 'template' => $template]);
 	}//end send()
+
+	/**
+	 * The addresses of the role's holders on the case, or the applicant's without a role.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 * @param string               $role The roleType uuid, or ''.
+	 *
+	 * @return array<int, string> The addresses.
+	 */
+	private function recipients(array $case, string $role): array {
+		if ($role === '') {
+			return $this->contacts->applicantAddresses(caseData: $case);
+		}
+
+		$addresses = [];
+		foreach ($this->roles->resolve(rule: ['strategy' => RoleResolverService::STRATEGY_SINGLE_ROLE, 'roleType' => $role], case: $case) as $participant) {
+			$address = $this->addressOf(participant: (string)$participant);
+			if ($address !== '') {
+				$addresses[] = $address;
+			}
+		}
+
+		return array_values(array_unique($addresses));
+	}//end recipients()
+
+	/**
+	 * A participant's address: the participant itself when it is one, else its user's.
+	 *
+	 * @param string $participant A Nextcloud user id or a contact reference.
+	 *
+	 * @return string The lowercase address, or ''.
+	 */
+	private function addressOf(string $participant): string {
+		$participant = trim($participant);
+		if (filter_var($participant, FILTER_VALIDATE_EMAIL) !== false) {
+			return strtolower($participant);
+		}
+
+		$address = (string)($this->users->get($participant)?->getEMailAddress() ?? '');
+
+		return strtolower(trim($address));
+	}//end addressOf()
 
 	/**
 	 * The ledger key of a send-once message, or '' when it may repeat.

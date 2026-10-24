@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\Dossiq\Service\CaseType\CaseConditionEvaluator;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
@@ -38,15 +39,20 @@ class StatusEntryRequirementsGuardTest extends TestCase {
 	 *
 	 * @return StatusEntryRequirementsGuard The guard.
 	 */
-	private function guard(): StatusEntryRequirementsGuard {
+	private function guard(?bool $holds = true): StatusEntryRequirementsGuard {
 		$caseTypes = $this->createMock(CaseTypeReader::class);
 		$caseTypes->method('read')->willReturn(
-			['entryRequirements' => ['status-besluit' => [['documentType' => 'welstandsadvies', 'rule' => 'r1']]]]
+			['entryRequirements' => [
+				'status-besluit' => [['documentType' => 'welstandsadvies', 'rule' => 'r1']],
+				'status-vergunning' => [['documentType' => 'constructieberekening', 'rule' => 'r2', 'condition' => ['>' => [['var' => 'json.bouwkosten'], 100000]]]],
+			]]
 		);
+		$conditions = $this->createMock(CaseConditionEvaluator::class);
+		$conditions->method('holds')->willReturn($holds);
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text, array $p = []): string => vsprintf(str_replace('%s', '%s', $text), $p));
 
-		return new StatusEntryRequirementsGuard(caseTypes: $caseTypes, documents: new RequiredDocumentGuard(l10n: $l10n));
+		return new StatusEntryRequirementsGuard(caseTypes: $caseTypes, documents: new RequiredDocumentGuard(l10n: $l10n), conditions: $conditions);
 	}//end guard()
 
 	/**
@@ -82,4 +88,38 @@ class StatusEntryRequirementsGuardTest extends TestCase {
 		$unwired = $reader->guardsWithImplicit(transition: $transition, approvalsWired: false);
 		$this->assertNotContains(GuardRegistry::STATUS_ENTRY_REQUIREMENTS, array_column($unwired, 'type'));
 	}//end testTheEngineAppendsTheGuardWhenWired()
+	/**
+	 * A conditional requirement applies while its condition holds, and when it
+	 * cannot be evaluated; it does not when the condition is false.
+	 *
+	 * @return void
+	 */
+	public function testAConditionalRequirementAppliesOnlyWhileItHolds(): void {
+		$case = ['caseType' => 'type-1', 'documents' => []];
+		$into = ['toStatus' => 'status-vergunning'];
+
+		$this->assertFalse($this->guard(holds: true)->evaluate($into, $case, 'pieter')->passed);
+		$this->assertFalse($this->guard(holds: null)->evaluate($into, $case, 'pieter')->passed);
+		$this->assertTrue($this->guard(holds: false)->evaluate($into, $case, 'pieter')->passed);
+	}//end testAConditionalRequirementAppliesOnlyWhileItHolds()
+
+	/**
+	 * The evaluator reads the case under json, as a rule flow's filter does.
+	 *
+	 * @return void
+	 */
+	public function testTheEvaluatorReadsTheCaseAsTheFilterDoes(): void {
+		$library = dirname(__DIR__, 5) . '/openregister/lib/Service/Flow/FlowExpression.php';
+		if (is_file($library) === false) {
+			$this->markTestSkipped('needs a sibling openregister checkout with its vendor');
+		}
+
+		require_once dirname(__DIR__, 5) . '/openregister/vendor/autoload.php';
+		require_once $library;
+		$evaluator = new CaseConditionEvaluator();
+		$condition = ['>' => [['var' => 'json.bouwkosten'], 100000]];
+
+		$this->assertTrue($evaluator->holds(condition: $condition, case: ['bouwkosten' => 150000]));
+		$this->assertFalse($evaluator->holds(condition: $condition, case: ['bouwkosten' => 90000]));
+	}//end testTheEvaluatorReadsTheCaseAsTheFilterDoes()
 }//end class

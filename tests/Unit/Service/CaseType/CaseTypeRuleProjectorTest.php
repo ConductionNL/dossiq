@@ -345,7 +345,7 @@ class CaseTypeRuleProjectorTest extends TestCase {
 	}//end testActionsWithoutAnEngineAreNamed()
 	/**
 	 * A required document on entering a status becomes an entry requirement
-	 * of that status; with further conditions it does not, and is named.
+	 * of that status; its further conditions travel with it as JSONLogic.
 	 *
 	 * @return void
 	 */
@@ -356,12 +356,12 @@ class CaseTypeRuleProjectorTest extends TestCase {
 		$conditional['conditions'] = self::WELSTAND['conditions'];
 		$projector = $this->projector(rules: [$onStatus, $conditional]);
 
-		$this->assertSame(
-			['status-besluit' => [['documentType' => 'welstandsadvies', 'rule' => 'advies-voor-besluit']]],
-			$projector->entryRequirements(caseType: ['rules' => [$onStatus, $conditional]])
-		);
+		$requirements = $projector->entryRequirements(caseType: ['id' => 'type-1', 'rules' => [$onStatus, $conditional]])['status-besluit'];
+		$this->assertSame(['documentType' => 'welstandsadvies', 'rule' => 'advies-voor-besluit'], $requirements[0]);
+		$this->assertSame('alleen-groot', $requirements[1]['rule']);
+		$this->assertSame(['==' => [['var' => 'json.caseType'], 'type-1']], $requirements[1]['condition']['and'][0]);
 		$plan = $projector->plan(caseTypeId: 'type-1');
 		$this->assertSame([], $plan['flows']);
-		$this->assertSame(['alleen-groot: requireDocument'], $plan['unprojected']);
+		$this->assertSame([], $plan['unprojected']);
 	}//end testRequireDocumentOnAStatusIsAnEntryRequirement()
 }//end class
