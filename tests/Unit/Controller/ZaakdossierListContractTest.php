@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ZaakdossierController;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCopier;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -276,4 +277,60 @@ class ZaakdossierListContractTest extends TestCase {
 		$this->assertSame([], $offered);
 		$this->assertSame([], $response->getData());
 	}//end testListDossierOffersAnEmptyListWhenTheDossierHasNoDocuments()
+
+	/**
+	 * The controller with a copier, for the copy route.
+	 *
+	 * @param DocumentCopier $copier The copier.
+	 *
+	 * @return ZaakdossierController
+	 */
+	private function withCopier(DocumentCopier $copier): ZaakdossierController {
+		return new ZaakdossierController(
+			appName: 'dossiq',
+			request: $this->request,
+			fileService: $this->fileService,
+			reader: $this->reader,
+			uploadHandler: $this->uploadHandler,
+			userSession: $this->userSession,
+			approvals: $this->approvals,
+			bulk: new BulkDocumentActions(reader: $this->reader, fileService: $this->fileService),
+			copier: $copier,
+		);
+	}//end withCopier()
+
+	/**
+	 * Copying to a case the caller may not add to is refused before anything is read or written.
+	 *
+	 * @return void
+	 */
+	public function testBulkCopyRefusesATargetCaseTheCallerMayNotAddTo(): void {
+		$this->signIn();
+		$this->request->method('getParam')->willReturnMap(valueMap: [['ids', [], ['doc-1']], ['targetCaseId', '', 'case-2']]);
+		$this->uploadHandler->method('hasCaseUploadAccess')->willReturn(value: false);
+		$copier = $this->createMock(originalClassName: DocumentCopier::class);
+		$copier->expects($this->never())->method('copyAll');
+
+		$response = $this->withCopier(copier: $copier)->bulkCopy();
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+	}//end testBulkCopyRefusesATargetCaseTheCallerMayNotAddTo()
+
+	/**
+	 * A permitted copy answers the copier's per-document results.
+	 *
+	 * @return void
+	 */
+	public function testBulkCopyAnswersThePerDocumentResults(): void {
+		$this->signIn();
+		$this->request->method('getParam')->willReturnMap(valueMap: [['ids', [], ['doc-1']], ['targetCaseId', '', 'case-2']]);
+		$this->uploadHandler->method('hasCaseUploadAccess')->willReturn(value: true);
+		$copier = $this->createMock(originalClassName: DocumentCopier::class);
+		$copier->expects($this->once())->method('copyAll')->willReturn(value: [['id' => 'doc-1', 'success' => true, 'copyId' => 'c-1']]);
+
+		$response = $this->withCopier(copier: $copier)->bulkCopy();
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: ['results' => [['id' => 'doc-1', 'success' => true, 'copyId' => 'c-1']]], actual: $response->getData());
+	}//end testBulkCopyAnswersThePerDocumentResults()
 }//end class

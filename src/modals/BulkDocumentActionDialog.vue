@@ -43,6 +43,18 @@
 				:clearable="false"
 				:disabled="busy" />
 
+			<NcSelect
+				v-if="mode === 'copy-to-case'"
+				v-model="targetCase"
+				data-testid="bulk-document-target-case"
+				:inputLabel="t('dossiq', 'Case to copy to')"
+				:placeholder="t('dossiq', 'Search by case number or title')"
+				:options="caseOptions"
+				:filterable="false"
+				label="label"
+				:clearable="false"
+				:disabled="busy"
+				@search="searchCases" />
 			<p v-if="mode === 'merge-pdf'" class="bulk-document-dialog__intro">
 				{{
 					t(
@@ -86,7 +98,7 @@
 				v-if="results.length === 0"
 				variant="primary"
 				data-testid="bulk-document-confirm"
-				:disabled="busy || (mode === 'confidentiality' && !level)"
+				:disabled="busy || (mode === 'confidentiality' && !level) || (mode === 'copy-to-case' && !targetCase)"
 				@click="onConfirm">
 				{{ confirmLabel }}
 			</NcButton>
@@ -127,7 +139,7 @@ export default {
 			type: String,
 			default: 'mark-final',
 			validator: (value) =>
-				['mark-final', 'confidentiality', 'zip', 'merge-pdf'].includes(value),
+				['mark-final', 'confidentiality', 'zip', 'merge-pdf', 'copy-to-case'].includes(value),
 		},
 
 		/**
@@ -166,6 +178,10 @@ export default {
 	data() {
 		return {
 			level: '',
+			/** The case `copy-to-case` copies to: `{ id, label }`. */
+			targetCase: null,
+			/** The cases the search found, this case left out. */
+			caseOptions: [],
 			busy: false,
 			error: '',
 			results: [],
@@ -211,6 +227,8 @@ export default {
 				return this.t('dossiq', 'Change confidentiality')
 			if (this.mode === 'zip') return this.t('dossiq', 'Download ZIP')
 			if (this.mode === 'merge-pdf') return this.t('dossiq', 'Merge into PDF')
+			if (this.mode === 'copy-to-case')
+				return this.t('dossiq', 'Copy to another case')
 			return this.t('dossiq', 'Mark as final')
 		},
 
@@ -223,6 +241,7 @@ export default {
 		confirmLabel() {
 			if (this.mode === 'zip') return this.t('dossiq', 'Download')
 			if (this.mode === 'merge-pdf') return this.t('dossiq', 'Merge')
+			if (this.mode === 'copy-to-case') return this.t('dossiq', 'Copy')
 			return this.t('dossiq', 'Apply')
 		},
 
@@ -256,6 +275,11 @@ export default {
 					{ metadata: { vertrouwelijkheidaanduiding: this.level } },
 				)
 			if (this.mode === 'merge-pdf') return this.mergePdf()
+			if (this.mode === 'copy-to-case')
+				return this.runBulk(
+					'/apps/dossiq/api/informatieobjecten/bulk/copy',
+					{ targetCaseId: String(this.targetCase?.id ?? '') },
+				)
 			return this.downloadZip()
 		},
 
@@ -284,6 +308,33 @@ export default {
 				showError(this.error)
 			} finally {
 				this.busy = false
+			}
+		},
+
+		/**
+		 * Find cases to copy to by number or title; this case is left out.
+		 *
+		 * @param {string} query What the reader typed.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/documents-copy-to-case/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
+		 */
+		async searchCases(query) {
+			const term = String(query ?? '').trim()
+			if (term === '') {
+				this.caseOptions = []
+				return
+			}
+			try {
+				const url = generateUrl('/apps/openregister/api/objects/dossiq/case')
+				const { data } = await axios.get(`${url}?_search=${encodeURIComponent(term)}&_limit=20`)
+				this.caseOptions = (data?.results || [])
+					.filter((row) => row && row.id && String(row.id) !== this.resolvedCaseId)
+					.map((row) => ({
+						id: String(row.id),
+						label: [row.identifier, row.title].filter(Boolean).join(' · '),
+					}))
+			} catch {
+				this.caseOptions = []
 			}
 		},
 

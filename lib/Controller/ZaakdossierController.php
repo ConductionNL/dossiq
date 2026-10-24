@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
 use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCopier;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -65,6 +66,7 @@ class ZaakdossierController extends Controller {
 	 *        so a document in an unfinished route cannot be made final.
 	 * @param BulkDocumentActions $bulk One act over many documents: the clearance gate that runs
 	 *        before a bulk transition writes anything, and the metadata run that reports per id.
+	 * @param DocumentCopier|null $copier Copies documents to another case.
 	 */
 	public function __construct(
 		string $appName,
@@ -75,6 +77,7 @@ class ZaakdossierController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly DocumentApprovalClearance $approvals,
 		private readonly BulkDocumentActions $bulk,
+		private readonly ?DocumentCopier $copier = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -444,5 +447,37 @@ class ZaakdossierController extends Controller {
 			['results' => $this->bulk->updateAll(user: $user, ids: $ids, metadata: $metadata)]
 		);
 	}//end bulkUpdateMetadata()
+
+	/**
+	 * Copy documents to another case (`ids`, `targetCaseId`).
+	 *
+	 * Refused before anything is read when the caller may not add documents
+	 * to the target case; each document is then copied only when the caller
+	 * may read it.
+	 *
+	 * @return JSONResponse Per-id results, or the refusal.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/documents-copy-to-case/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
+	 */
+	public function bulkCopy(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$ids = (array)$this->request->getParam('ids', []);
+		$targetCaseId = (string)$this->request->getParam('targetCaseId', '');
+		if ($targetCaseId === '' || $ids === [] || $this->copier === null) {
+			return new JSONResponse(['error' => 'Choose the documents and the case to copy them to'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $targetCaseId) === false) {
+			return new JSONResponse(['error' => 'You may not add documents to that case'], Http::STATUS_FORBIDDEN);
+		}
+
+		return new JSONResponse(['results' => $this->copier->copyAll(user: $user, ids: $ids, targetCaseId: $targetCaseId)]);
+	}//end bulkCopy()
 
 }//end class

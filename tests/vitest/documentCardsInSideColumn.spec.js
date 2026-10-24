@@ -28,3 +28,12 @@ describe('merging the ticked documents (DqDocumentenBeheer "Samenvoegen tot pdf"
 		expect(props.bulkActions[0]).toMatchObject({ id: 'bulk-merge-pdf', target: 'BulkDocumentActionDialog', props: { mode: 'merge-pdf' } })
 	})
 })
+
+describe('the bulk bar over the ticked documents (DqDocumentenBeheer)', () => {
+	const props = panels.caseWidget('case-files').props
+
+	it('copies the ticked documents to another case, second after the merge, as the board draws it', () => {
+		expect(props.bulkActions[1]).toMatchObject({ id: 'bulk-copy-to-case', target: 'BulkDocumentActionDialog', props: { mode: 'copy-to-case' } })
+		expect(props.bulkActions.map((action) => action.id)).toEqual(expect.arrayContaining(['bulk-confidentiality', 'bulk-mark-final']))
+	})
+})
