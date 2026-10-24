@@ -86,6 +86,7 @@ final class PayableRaisedEvent extends Event {
 		private readonly string $administrationId = '',
 		private readonly string $dueOn = '',
 		private readonly string $currency = 'EUR',
+		private readonly array $linkedObjects = [],
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -113,6 +114,7 @@ final class PayableRaisedEvent extends Event {
 			'administrationId' => trim($this->administrationId),
 			'dueOn' => trim($this->dueOn),
 			'callbackUrl' => trim($this->callbackUrl),
+			'linkedObjects' => array_values($this->linkedObjects),
 		];
 	}//end toArray()
 

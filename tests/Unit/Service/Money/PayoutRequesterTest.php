@@ -83,6 +83,29 @@ class PayoutRequesterTest extends TestCase {
 	}//end testAnAcceptedPayoutAnswersThePayable()
 
 	/**
+	 * The linked objects reach the finance app with the payout (REQ-DQM-002).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-002)
+	 */
+	public function testTheLinkedObjectsReachFinance(): void {
+		$seen = null;
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (object $event) use (&$seen): void {
+				$seen = $event;
+				$event->accept('payable-1', 'requested');
+			}
+		);
+		$case = ['app' => 'dossiq', 'type' => 'case', 'register' => 'dossiq', 'schema' => 'case', 'id' => 'case-7'];
+
+		(new PayoutRequester(dispatcher: $dispatcher))->request(payout: self::PAYOUT + ['linkedObjects' => [$case]]);
+
+		self::assertSame([$case], $seen->toArray()['linkedObjects']);
+	}//end testTheLinkedObjectsReachFinance()
+
+	/**
 	 * A refusal is an error naming finance's reason.
 	 *
 	 * @return void

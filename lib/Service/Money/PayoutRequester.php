@@ -33,6 +33,7 @@ use OCA\Shillinq\Event\PayableCancelRequestedEvent;
 use OCA\Shillinq\Event\PayableRaisedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 use RuntimeException;
+use ReflectionMethod;
 
 /**
  * Raises and withdraws payouts in the finance app.
@@ -59,8 +60,8 @@ class PayoutRequester {
 	/**
 	 * Raise a payout in the finance app.
 	 *
-	 * @param array<string, int|string> $payout The payout: amountCents, payeeName, iban, reference, and
-	 *        optionally description, category, correlationId, dueOn and callbackUrl.
+	 * @param array<string, mixed> $payout The payout: amountCents, payeeName, iban, reference, and
+	 *        optionally description, category, correlationId, dueOn, callbackUrl and linkedObjects.
 	 *
 	 * @return array{payableId: string, state: string}|null The payable, or null when no finance app answers.
 	 *
@@ -73,22 +74,44 @@ class PayoutRequester {
 			return null;
 		}
 
-		$event = new PayableRaisedEvent(
-			sourceApp: Application::APP_ID,
-			amount: ((int)$payout['amountCents']) / 100,
-			payeeName: (string)$payout['payeeName'],
-			payeeIban: (string)$payout['iban'],
-			reference: (string)$payout['reference'],
-			description: (string)($payout['description'] ?? ''),
-			callbackUrl: (string)($payout['callbackUrl'] ?? ''),
-			category: (string)($payout['category'] ?? ''),
-			correlationId: (string)($payout['correlationId'] ?? ''),
-			dueOn: (string)($payout['dueOn'] ?? ''),
-		);
+		$arguments = [
+			'sourceApp' => Application::APP_ID,
+			'amount' => ((int)$payout['amountCents']) / 100,
+			'payeeName' => (string)$payout['payeeName'],
+			'payeeIban' => (string)$payout['iban'],
+			'reference' => (string)$payout['reference'],
+			'description' => (string)($payout['description'] ?? ''),
+			'callbackUrl' => (string)($payout['callbackUrl'] ?? ''),
+			'category' => (string)($payout['category'] ?? ''),
+			'correlationId' => (string)($payout['correlationId'] ?? ''),
+			'dueOn' => (string)($payout['dueOn'] ?? ''),
+		];
+		// A shillinq older than financial-documents-on-any-object has no linkedObjects
+		// parameter, and an unknown named argument is a fatal error.
+		if ($this->eventTakesLinkedObjects() === true) {
+			$arguments['linkedObjects'] = array_values((array)($payout['linkedObjects'] ?? []));
+		}
+
+		$event = new PayableRaisedEvent(...$arguments);
 		$this->dispatcher->dispatchTyped($event);
 
 		return self::answer(handled: $event->isHandled(), result: $event->getResult(), error: $event->getError());
 	}//end request()
+
+	/**
+	 * Whether the installed finance app's payout command takes linked objects.
+	 *
+	 * @return bool True when PayableRaisedEvent declares `linkedObjects`.
+	 */
+	private function eventTakesLinkedObjects(): bool {
+		foreach ((new ReflectionMethod(PayableRaisedEvent::class, '__construct'))->getParameters() as $parameter) {
+			if ($parameter->getName() === 'linkedObjects') {
+				return true;
+			}
+		}
+
+		return false;
+	}//end eventTakesLinkedObjects()
 
 	/**
 	 * Withdraw a payout the finance app has not acted on.

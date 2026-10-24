@@ -35,8 +35,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCP\IURLGenerator;
@@ -69,6 +71,18 @@ class PayoutService {
 	public const CATEGORY = 'dwangsom';
 
 	/**
+	 * How a case is named to the finance app, the way shillinq's leaf identifies it; the id is added per payout.
+	 *
+	 * @var array<string, string>
+	 */
+	private const CASE_LINK = [
+		'app' => Application::APP_ID,
+		'type' => 'case',
+		'register' => CasePaymentReader::CASE_REGISTER,
+		'schema' => CasePaymentReader::CASE_SCHEMA,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service.
@@ -77,6 +91,7 @@ class PayoutService {
 	 *        statutory term end lands on a day the administered calendar works.
 	 * @param PayoutRequester|null $payouts Hands the payout to the finance app.
 	 * @param IURLGenerator|null $urls Builds the callback address the finance app posts to.
+	 * @param OwningCaseResolver|null $owningCase Finds the case a calculation belongs to, so the payout names it.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -84,6 +99,7 @@ class PayoutService {
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?PayoutRequester $payouts = null,
 		private readonly ?IURLGenerator $urls = null,
+		private readonly ?OwningCaseResolver $owningCase = null,
 	) {
 	}//end __construct()
 
@@ -264,6 +280,7 @@ class PayoutService {
 				'correlationId' => (string)($row['penaltyPaymentCalculation'] ?? ''),
 				'dueOn' => (string)($row['paymentDateLatest'] ?? ''),
 				'callbackUrl' => (string)($this->urls?->linkToRouteAbsolute(self::CALLBACK_ROUTE) ?? ''),
+				'linkedObjects' => $this->caseLinkOf(calculationId: (string)($row['penaltyPaymentCalculation'] ?? '')),
 			]
 		);
 		if ($answer !== null && $answer['payableId'] !== '') {
@@ -272,6 +289,28 @@ class PayoutService {
 
 		return $row;
 	}//end raiseInFinance()
+
+	/**
+	 * The case the calculation belongs to, as a linked object for the finance app.
+	 *
+	 * @param string $calculationId The calculation.
+	 *
+	 * @return array<int, array<string, string>> One link, or none when the case cannot be resolved.
+	 */
+	private function caseLinkOf(string $calculationId): array {
+		$caseId = $this->owningCase?->resolveVia(
+			objectId: $calculationId,
+			schemaKey: MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
+			linkField: 'deadlineInstance',
+			viaSchemaKey: 'termijn_instance_schema',
+			caseField: 'case'
+		);
+		if ($caseId === null || $caseId === '') {
+			return [];
+		}
+
+		return [self::CASE_LINK + ['id' => $caseId]];
+	}//end caseLinkOf()
 
 	/**
 	 * Validate the caller-supplied payment input.
