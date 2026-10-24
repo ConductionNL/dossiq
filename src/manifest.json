@@ -2345,7 +2345,16 @@
 									"key": "startDate",
 									"width": "96px",
 									"label": "Waiting",
-									"widget": "age"
+									"widget": "age",
+									"widgetProps": {
+										"variantWhen": [
+											{
+												"op": "gte",
+												"value": 5,
+												"variant": "error"
+											}
+										]
+									}
 								},
 								{
 									"key": "title",
@@ -2420,7 +2429,16 @@
 								"leading": {
 									"key": "startDate",
 									"widget": "age",
-									"width": "96px"
+									"width": "96px",
+									"widgetProps": {
+										"variantWhen": [
+											{
+												"op": "gte",
+												"value": 5,
+												"variant": "error"
+											}
+										]
+									}
 								},
 								"trailing": [
 									{
