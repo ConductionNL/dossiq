@@ -119,4 +119,43 @@ class PrimaryTeamServiceTest extends TestCase {
 
 		$this->assertNull(actual: $service->teamOf(user: $this->createMock(originalClassName: IUser::class)));
 	}//end testAUserInNoGroupHasNoTeamWithoutAReadOfTheRoles()
+	/**
+	 * A user in two teams belongs to both; the municipality above them and the
+	 * admin group are no team; the primary team comes first.
+	 *
+	 * @return void
+	 */
+	public function testTheTeamsAreEveryBoundLeafRoleOfTheUserPrimaryFirst(): void {
+		$teams = PrimaryTeamService::teams(
+			roles: self::roles(),
+			userGroupIds: ['admin', 'zuiddrecht-medewerkers', 'zuiddrecht-woo-en-informatie', 'zuiddrecht-vergunningen']
+		);
+
+		$this->assertSame(
+			expected: [
+				['groupId' => 'zuiddrecht-woo-en-informatie', 'name' => 'Informatie en Woo'],
+				['groupId' => 'zuiddrecht-vergunningen', 'name' => 'Vergunningen'],
+			],
+			actual: $teams
+		);
+		$this->assertSame(
+			expected: $teams[0],
+			actual: PrimaryTeamService::primaryTeam(roles: self::roles(), userGroupIds: ['zuiddrecht-medewerkers', 'zuiddrecht-woo-en-informatie', 'zuiddrecht-vergunningen'])
+		);
+	}//end testTheTeamsAreEveryBoundLeafRoleOfTheUserPrimaryFirst()
+
+	/**
+	 * A user only in the municipality's group has that one role as team; the
+	 * admin group alone is none.
+	 *
+	 * @return void
+	 */
+	public function testAnAncestorIsATeamOnlyWithoutADeeperOne(): void {
+		$this->assertSame(
+			expected: [['groupId' => 'zuiddrecht-medewerkers', 'name' => 'Gemeente Zuiddrecht']],
+			actual: PrimaryTeamService::teams(roles: self::roles(), userGroupIds: ['zuiddrecht-medewerkers'])
+		);
+		$roles = [...self::roles(), ['id' => 'beheer', 'roleName' => 'Beheer', 'ncGroupId' => 'admin']];
+		$this->assertSame(expected: [], actual: PrimaryTeamService::teams(roles: $roles, userGroupIds: ['admin']));
+	}//end testAnAncestorIsATeamOnlyWithoutADeeperOne()
 }//end class

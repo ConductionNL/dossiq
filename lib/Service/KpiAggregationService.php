@@ -51,11 +51,14 @@ use OCA\Dossiq\Service\Queue\QueueOldestNote;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Team\PrimaryTeamService;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use OCP\IL10N;
+use OCP\IUserManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Dashboard KPI aggregation.
@@ -118,6 +121,8 @@ class KpiAggregationService {
 	 * @param LoggerInterface $logger The logger interface.
 	 * @param LanguageMapText $text Reads a translatable case type title as text.
 	 * @param DayCount $days The one place days between two dates are counted.
+	 * @param PrimaryTeamService|null $teams The reader's teams, which the queue figures count.
+	 * @param IUserManager|null $users Finds the reader by id.
 	 *
 	 * @return void
 	 */
@@ -131,6 +136,8 @@ class KpiAggregationService {
 		private LoggerInterface $logger,
 		private LanguageMapText $text = new LanguageMapText(),
 		private readonly DayCount $days = new DayCount(),
+		private readonly ?PrimaryTeamService $teams = null,
+		private readonly ?IUserManager $users = null,
 	) {
 	}//end __construct()
 
@@ -165,7 +172,11 @@ class KpiAggregationService {
 			filters: self::OPEN_WORK
 		);
 
-		$queue = $this->queueFigures->fold(openCases: $openCases, today: $now, typeTitles: $this->caseTypeTitles(ids: $ids));
+		$queue = $this->queueFigures->fold(
+			openCases: self::inTeams(cases: $openCases, teamGroupIds: $this->teamGroupIdsOf(userId: $userId)),
+			today: $now,
+			typeTitles: $this->caseTypeTitles(ids: $ids)
+		);
 		$oldestNote = (new QueueOldestNote(l10n: $this->l10n))->line(
 			type: (string)$queue['queueOldestType'],
 			dueDays: $queue['queueOldestDueDays']
@@ -207,6 +218,53 @@ class KpiAggregationService {
 			'slaCompliance' => $this->slaCompliance(closed: $closed),
 		]);
 	}//end computeKpis()
+
+	/**
+	 * The group ids of the reader's teams, as the team queue's `@myTeam` resolves them.
+	 *
+	 * @param string $userId The reader.
+	 *
+	 * @return array<int, string> The team group ids; empty for a reader in no team, or when the teams cannot be read.
+	 *
+	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
+	 */
+	private function teamGroupIdsOf(string $userId): array {
+		$user = $this->users?->get($userId);
+		if ($user === null || $this->teams === null) {
+			return [];
+		}
+
+		try {
+			return array_column($this->teams->teamsOf(user: $user), 'groupId');
+		} catch (Throwable $e) {
+			$this->logger->warning('[KpiAggregationService] The reader\'s teams could not be read.', ['exception' => $e->getMessage()]);
+			return [];
+		}
+	}//end teamGroupIdsOf()
+
+	/**
+	 * The cases of the given teams; every case for a reader in no team, as the list drops its team filter then.
+	 *
+	 * @param array<int, mixed>  $cases        The open cases.
+	 * @param array<int, string> $teamGroupIds The team group ids.
+	 *
+	 * @return array<int, mixed> The cases in those teams.
+	 *
+	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
+	 */
+	public static function inTeams(array $cases, array $teamGroupIds): array {
+		if ($teamGroupIds === []) {
+			return $cases;
+		}
+
+		return array_values(
+			array_filter(
+				$cases,
+				static fn ($case): bool => is_array($case) === true
+					&& in_array((string)($case['assignedGroup'] ?? ''), $teamGroupIds, true) === true
+			)
+		);
+	}//end inTeams()
 
 	/**
 	 * Every case type's title, by id.

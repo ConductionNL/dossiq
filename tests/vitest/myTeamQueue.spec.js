@@ -11,6 +11,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import manifest from '../../src/manifest.json'
+import simple from '../../src/menu-layout.simple.json'
 
 const get = vi.fn()
 // A failed request is a plain function, not a vi.fn result: vitest reports a rejected mock result as a test error.
@@ -18,7 +19,7 @@ let failWith = null
 vi.mock('@nextcloud/axios', () => ({ default: { get: (...args) => (failWith ? Promise.reject(failWith) : get(...args)) } }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (url) => `/index.php${url}` }))
 
-const { fetchMyTeam, installMyTeamSource } = await import('../../src/services/myTeamSource.js')
+const { fetchMyTeam, fetchMyTeamName, installMyTeamSource } = await import('../../src/services/myTeamSource.js')
 
 beforeEach(() => {
 	get.mockReset()
@@ -37,6 +38,23 @@ describe('the team source', () => {
 		get.mockResolvedValue({ data: { groupId: 'zuiddrecht-woo-en-informatie', name: 'Informatie en Woo' } })
 		await expect(fetchMyTeam()).resolves.toBe('zuiddrecht-woo-en-informatie')
 		expect(get).toHaveBeenCalledWith('/index.php/apps/dossiq/api/me/team')
+	})
+
+	it('answers every team of a reader in several, the primary first (coordinator 24 Oct)', async () => {
+		get.mockResolvedValue({ data: { groupId: 'woo', name: 'Woo', groupIds: ['woo', 'vergunningen'], names: ['Woo', 'Vergunningen'] } })
+		await expect(fetchMyTeam()).resolves.toEqual(['woo', 'vergunningen'])
+		get.mockResolvedValue({ data: { groupId: 'woo', name: 'Woo', groupIds: ['woo'], names: ['Woo'] } })
+		await expect(fetchMyTeam()).resolves.toBe('woo')
+	})
+
+	it('names every team in the count line', async () => {
+		get.mockResolvedValue({ data: { groupId: 'woo', name: 'Woo en informatie', groupIds: ['woo', 'vergunningen'], names: ['Woo en informatie', 'Vergunningen'] } })
+		await expect(fetchMyTeamName()).resolves.toBe('Woo en informatie, Vergunningen')
+	})
+
+	it('counts the menu badge on the same teams as the list', () => {
+		const queue = simple.menu.find((item) => item.id === 'Queue')
+		expect(queue.count.filter.assignedGroup).toBe('@myTeam')
 	})
 
 	it('answers null for a reader in no team', async () => {

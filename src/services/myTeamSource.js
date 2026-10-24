@@ -16,10 +16,11 @@ import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
 /**
- * Read the current user's team.
+ * Read the current user's teams: every team when they are in several (the team
+ * queue, its tile and its badge count all of them), else the one team.
  *
- * @return {Promise<string|null>} The team's Nextcloud group id, or null for no team or a
- *   team the server could not read (503; the server logs why).
+ * @return {Promise<string|string[]|null>} The team's Nextcloud group id, the ids of several, or null for
+ *   no team or a team the server could not read (503; the server logs why).
  *
  * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
  */
@@ -30,14 +31,18 @@ export async function fetchMyTeam() {
 	} catch {
 		return null
 	}
+	const ids = data && Array.isArray(data.groupIds) ? data.groupIds.filter((id) => typeof id === 'string' && id !== '') : []
+	if (ids.length > 1) {
+		return ids
+	}
 	return data && typeof data.groupId === 'string' && data.groupId !== '' ? data.groupId : null
 }
 
 /**
  * Read the current user's team name, for `{myTeam}` in the team queue's line
- * ("· team Woo en informatie", DqTeamwachtrij).
+ * ("· team Woo en informatie", DqTeamwachtrij); several teams are listed.
  *
- * @return {Promise<string|null>} The team's name, or null for no team or an unreadable team.
+ * @return {Promise<string|null>} The team's name (or names), or null for no team or an unreadable team.
  *
  * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
  */
@@ -47,6 +52,10 @@ export async function fetchMyTeamName() {
 		({ data } = await axios.get(generateUrl('/apps/dossiq/api/me/team')))
 	} catch {
 		return null
+	}
+	const names = data && Array.isArray(data.names) ? data.names.filter((name) => typeof name === 'string' && name !== '') : []
+	if (names.length > 1) {
+		return names.join(', ')
 	}
 	return data && typeof data.name === 'string' && data.name !== '' ? data.name : null
 }
