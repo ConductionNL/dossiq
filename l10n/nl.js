@@ -8848,6 +8848,7 @@ OC.L10N.register(
         "The paths cases actually take, against the paths they were meant to.": "De routes die zaken in de praktijk afleggen, tegenover de bedoelde routes.",
         "The payable the finance app answered with when the payout was handed to it; empty while it is not with finance": "De betaalopdracht waarmee de financiële app antwoordde toen de uitbetaling werd overgedragen; leeg zolang ze niet bij financiën ligt",
         "The payout signal for a dwangsom, and the callback that confirms it.": "Het uitbetalingssignaal voor een dwangsom, en de terugmelding die het bevestigt.",
+        "The payout signal for a settled amount, and the callback that confirms it.": "Het uitbetalingssignaal voor een vastgesteld bedrag, en de terugmelding die het bevestigt.",
         "The people a case of this type may be assigned to. Empty means everyone.": "De mensen aan wie een zaak van dit type toegewezen mag worden. Leeg betekent iedereen.",
         "The people or functions whose files are searched.": "De mensen of functies van wie de bestanden worden doorzocht.",
         "The permit title, with case fields in double braces.": "De titel van de vergunning, met zaakvelden tussen dubbele accolades.",

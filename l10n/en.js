@@ -8848,6 +8848,7 @@ OC.L10N.register(
         "The paths cases actually take, against the paths they were meant to.": "The paths cases actually take, against the paths they were meant to.",
         "The payable the finance app answered with when the payout was handed to it; empty while it is not with finance": "The payable the finance app answered with when the payout was handed to it; empty while it is not with finance",
         "The payout signal for a dwangsom, and the callback that confirms it.": "The payout signal for a dwangsom, and the callback that confirms it.",
+        "The payout signal for a settled amount, and the callback that confirms it.": "The payout signal for a settled amount, and the callback that confirms it.",
         "The people a case of this type may be assigned to. Empty means everyone.": "The people a case of this type may be assigned to. Empty means everyone.",
         "The people or functions whose files are searched.": "The people or functions whose files are searched.",
         "The permit title, with case fields in double braces.": "The permit title, with case fields in double braces.",
