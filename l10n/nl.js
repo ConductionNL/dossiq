@@ -2786,6 +2786,7 @@ OC.L10N.register(
         "Earlier runs": "Eerdere uitvoeringen",
         "Earlier versions": "Eerdere versies",
         "Edit": "Bewerken",
+        "Edit case": "Zaak bewerken",
         "Edit checklist": "Checklist bewerken",
         "Edit Decision": "Besluit bewerken",
         "Edit decision": "Besluit bewerken",

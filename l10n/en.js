@@ -2786,6 +2786,7 @@ OC.L10N.register(
         "Earlier runs": "Earlier runs",
         "Earlier versions": "Earlier versions",
         "Edit": "Edit",
+        "Edit case": "Edit case",
         "Edit checklist": "Edit checklist",
         "Edit Decision": "Edit Decision",
         "Edit decision": "Edit decision",
