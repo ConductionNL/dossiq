@@ -27,11 +27,12 @@ describe('the penalty on a late decision', () => {
 		expect(fragment.properties.penaltyMaxAmount.type).toBe('number')
 	})
 
-	it('reads on the Termijnen card after the suspension', () => {
+	it('reads on the Termijnen card after the decision term, before the suspension (DqZaaktype)', () => {
 		const fields = simple.configAppend.widgets.find((widget) => widget.id === 'case-type-terms-written').content.fields
 		const penalty = fields.find((field) => field.path === 'penalty')
 		expect(nl[penalty.label]).toBe('Dwangsom bij niet tijdig beslissen')
-		expect(fields.indexOf(penalty)).toBe(fields.findIndex((field) => field.path === 'suspension') + 1)
+		expect(fields.indexOf(penalty)).toBe(fields.findIndex((field) => field.path === 'decisionTerm') + 1)
+		expect(fields.indexOf(penalty)).toBe(fields.findIndex((field) => field.path === 'suspension') - 1)
 	})
 
 	it('is edited with the other terms', () => {
