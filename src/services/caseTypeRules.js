@@ -12,7 +12,9 @@
  */
 
 import { conditionSentence } from '@conduction/nextcloud-vue'
+import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 
 /** The editor field that stands for the case's status. */
 export const STATUS_FIELD = 'status'
@@ -62,6 +64,28 @@ export function ruleFields({ propertyDefinitions = [], statusTypes = [], documen
 		}
 	}
 	return fields
+}
+
+/**
+ * The case type's effective property definitions and statuses, inherited ones included.
+ *
+ * A derived case type (Omgevingsvergunning regulier) declares few rows of its
+ * own; the blueprint merges its parents' in, which is what a rule's
+ * conditions may name.
+ *
+ * @param {string} caseTypeId The case type.
+ * @return {Promise<{propertyDefinitions: Array<object>, statusTypes: Array<object>}|null>} Null when unreadable.
+ */
+export async function fetchBlueprintCatalogue(caseTypeId) {
+	try {
+		const { data } = await axios.get(generateUrl(`/apps/dossiq/api/case-types/${encodeURIComponent(caseTypeId)}/blueprint`))
+		if (!Array.isArray(data?.propertyDefinitions) || !Array.isArray(data?.statusTypes)) {
+			return null
+		}
+		return { propertyDefinitions: data.propertyDefinitions, statusTypes: data.statusTypes }
+	} catch {
+		return null
+	}
 }
 
 /**

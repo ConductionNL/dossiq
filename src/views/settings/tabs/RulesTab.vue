@@ -142,7 +142,7 @@
 <script>
 import { NcActionButton, NcActions, NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 import CaseTypeRuleDialog from '../../../modals/CaseTypeRuleDialog.vue'
-import { caseTypeRuleRow, newRuleId, ruleFields } from '../../../services/caseTypeRules.js'
+import { caseTypeRuleRow, fetchBlueprintCatalogue, newRuleId, ruleFields } from '../../../services/caseTypeRules.js'
 import {
 	evaluateRule,
 	fetchRuleVocabulary,
@@ -380,9 +380,10 @@ export default {
 			const store = useObjectStore()
 			const list = async (type) => (await store.fetchCollection(type, { caseType: this.caseTypeId, _limit: 200 }).catch(() => [])) || []
 			this.caseType = (await store.fetchObject('caseType', this.caseTypeId).catch(() => null)) || null
+			const blueprint = await fetchBlueprintCatalogue(this.caseTypeId)
 			this.catalogue = {
-				propertyDefinitions: await list('propertyDefinition'),
-				statusTypes: await list('statusType'),
+				propertyDefinitions: blueprint ? blueprint.propertyDefinitions : await list('propertyDefinition'),
+				statusTypes: blueprint ? blueprint.statusTypes : await list('statusType'),
 				documentTypes: await list('documentType'),
 				emailTemplates: await list('emailTemplate'),
 			}

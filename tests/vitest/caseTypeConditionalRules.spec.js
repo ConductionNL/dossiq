@@ -35,10 +35,15 @@ vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
 vi.mock('../../src/store/modules/settings.js', () => ({ useSettingsStore: () => ({ config: {} }) }))
 
 const CATALOGUE = {
-	propertyDefinition: [{ id: 'p1', name: 'bouwkosten', propertyType: 'number' }, { id: 'p2', name: 'welstandsgebied', title: 'Welstandsgebied', propertyType: 'boolean' }],
+	propertyDefinition: [{ id: 'p0', name: 'situatietekening', propertyType: 'string' }, { id: 'p2', name: 'welstandsgebied', title: 'Welstandsgebied', propertyType: 'boolean' }],
 	statusType: [{ id: 'st-geweigerd', name: 'Geweigerd' }],
 	documentType: [],
 	emailTemplate: [{ id: 'tpl-weigering', name: 'Weigering met bezwaarclausule' }],
+}
+// The parent's bouwkosten comes in through the blueprint; the type's own rows hold only welstandsgebied.
+const BLUEPRINT = {
+	propertyDefinitions: [{ id: 'p1', name: 'bouwkosten', propertyType: 'number', origin: 'inherited' }, ...CATALOGUE.propertyDefinition.slice(1)],
+	statusTypes: CATALOGUE.statusType,
 }
 const RULES = [
 	{ id: 'constructeur', enabled: true, when: { event: 'saved' }, conditions: [{ kind: 'fieldCompare', field: 'bouwkosten', op: 'gt', value: 100000 }], actions: [{ action: 'addTask', title: 'Toets door constructeur' }] },
@@ -85,7 +90,9 @@ const INVENTORY = [
 async function mountTab() {
 	mockGet.mockImplementation((url, options) => Promise.resolve({ data: url.includes('/rules/vocabulary')
 		? { kinds: [], verdicts: [], actions: [] }
-		: url.endsWith('/rules') ? { rules: INVENTORY, asked: options } : { properties: { deadline: { title: 'Uiterste datum' } } } }))
+		: url.endsWith('/rules') ? { rules: INVENTORY, asked: options }
+			: url.endsWith('/blueprint') ? BLUEPRINT
+				: { properties: { deadline: { title: 'Uiterste datum' } } } }))
 	const { default: RulesTab } = await import('../../src/views/settings/tabs/RulesTab.vue')
 	const w = mount(RulesTab, { props: { caseTypeId: 'type-1' }, global: { mocks: { t: (_app, text) => text } } })
 	await flushPromises()
@@ -93,7 +100,7 @@ async function mountTab() {
 }
 
 describe('a case type rule as a row', () => {
-	const fields = ruleFields({ propertyDefinitions: CATALOGUE.propertyDefinition, statusTypes: CATALOGUE.statusType })
+	const fields = ruleFields({ propertyDefinitions: BLUEPRINT.propertyDefinitions, statusTypes: CATALOGUE.statusType })
 	const names = { statuses: { 'st-geweigerd': 'Geweigerd' }, templates: { 'tpl-weigering': 'Weigering met bezwaarclausule' } }
 
 	it('reads as the board draws it', () => {
