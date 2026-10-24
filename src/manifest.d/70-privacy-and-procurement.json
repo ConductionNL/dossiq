@@ -131,7 +131,8 @@
 					{
 						"key": "value",
 						"label": "Value",
-						"formatter": "currency"
+						"formatter": "currency",
+						"formatterOptions": { "decimals": 0 }
 					},
 					{
 						"key": "endDate",
@@ -147,7 +148,7 @@
 								"active": "success",
 								"renewal-decision": "warning",
 								"termination-decision": "warning",
-								"ending": "neutral"
+								"ending": "default"
 							}
 						}
 					}
