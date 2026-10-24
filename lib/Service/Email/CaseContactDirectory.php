@@ -55,6 +55,47 @@ namespace OCA\Dossiq\Service\Email;
  */
 class CaseContactDirectory {
 	/**
+	 * The addresses of the people holding one role on the case.
+	 *
+	 * An empty role, `initiator` or `applicant` is the case's primary contact:
+	 * its own address and its initiator's. Any other role matches a contact on
+	 * the case whose `role`, `roleType` or `rol` equals it, ignoring case.
+	 *
+	 * @param array<string, mixed> $caseData The case.
+	 * @param string               $role     The role, by id or name.
+	 *
+	 * @return array<int, string> The lowercase addresses, without duplicates.
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 */
+	public function addressesForRole(array $caseData, string $role): array {
+		$wanted = strtolower(trim($role));
+		if (in_array($wanted, ['', 'initiator', 'applicant'], true) === true) {
+			return array_values(array_unique($this->collectPrimaryContactEmails(caseData: $caseData)));
+		}
+
+		$emails = [];
+		foreach (['betrokkenen', 'contacts'] as $list) {
+			foreach ((array)($caseData[$list] ?? []) as $contact) {
+				if (is_array($contact) === false) {
+					continue;
+				}
+
+				$roles = array_map(
+					static fn ($value): string => strtolower(trim((string)json_encode($value), '"')),
+					[($contact['role'] ?? ''), ($contact['roleType'] ?? ''), ($contact['rol'] ?? '')]
+				);
+				$addr = $this->normalizeContactEmail(value: (string)($contact['email'] ?? ($contact['emailadres'] ?? '')));
+				if ($addr !== null && in_array($wanted, $roles, true) === true) {
+					$emails[] = $addr;
+				}
+			}
+		}
+
+		return array_values(array_unique($emails));
+	}//end addressesForRole()
+
+	/**
 	 * Collect the normalised (lowercased) email addresses of all contacts on a case.
 	 *
 	 * Inspects the following fields (all optional): `betrokkenen`, `contacts`,
