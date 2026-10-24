@@ -2746,6 +2746,26 @@
 				"showSortSelect": true,
 				"sortSelectOptions": [
 					{
+						"value": "deadline",
+						"label": "Deadline",
+						"order": "deadline"
+					},
+					{
+						"value": "title",
+						"label": "Case",
+						"order": "title"
+					},
+					{
+						"value": "assignee",
+						"label": "Handler",
+						"order": "assignee"
+					},
+					{
+						"value": "updated",
+						"label": "Last changed",
+						"order": "-@self.updated"
+					},
+					{
 						"value": "urgency",
 						"label": "Urgency",
 						"order": "deadline",
