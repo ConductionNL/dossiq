@@ -3479,6 +3479,7 @@
 								{
 									"from": "object",
 									"label": "Handler",
+									"labelPath": "@context.caseType.handlerLabel",
 									"path": "assignee",
 									"format": "user"
 								},
