@@ -117,20 +117,7 @@ class PayoutReader {
 				continue;
 			}
 
-			$payee = (array)($payout['payee'] ?? []);
-			$rows[] = [
-				'id' => (string)($payout['payableId'] ?? ''),
-				'payableId' => (string)($payout['payableId'] ?? ''),
-				'penaltyPaymentCalculation' => (string)($payout['correlationId'] ?? ''),
-				'reference' => (string)($payout['reference'] ?? ''),
-				'amount' => (int)round(((float)($payout['amount'] ?? 0)) * 100),
-				'status' => self::STATUSES[$state],
-				'actualPaymentDate' => (string)($payout['paidOn'] ?? ''),
-				'betalingsreferentie' => (string)($payout['bankReference'] ?? ''),
-				'accountHolderName' => (string)($payee['name'] ?? ''),
-				'iban' => (string)($payee['iban'] ?? ''),
-				'legalBasis' => 'AWB 4:17',
-			];
+			$rows[] = $this->rowOf(payout: $payout, status: self::STATUSES[$state]);
 		}
 
 		foreach ($storedRows as $row) {
@@ -141,4 +128,69 @@ class PayoutReader {
 
 		return $rows;
 	}//end mergedRows()
+
+	/**
+	 * Finance's payouts for one calculation as rows, a withdrawn one with status
+	 * `withdrawn`, so an objection can raise it again with the decided amount.
+	 *
+	 * @param string $calculationId The calculation.
+	 *
+	 * @return array<int, array<string, mixed>> The rows; none without a finance app.
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	public function rowsForCalculation(string $calculationId): array {
+		$rows = [];
+		foreach (($this->payouts(correlationIds: [$calculationId]) ?? []) as $payout) {
+			$state = (string)($payout['state'] ?? '');
+			$rows[] = $this->rowOf(payout: $payout, status: (self::STATUSES[$state] ?? 'withdrawn'));
+		}
+
+		return $rows;
+	}//end rowsForCalculation()
+
+	/**
+	 * Whether finance holds a payout dossiq raised under this reference.
+	 *
+	 * @param string $reference The reference.
+	 *
+	 * @return bool True when finance answers with it.
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	public function holds(string $reference): bool {
+		foreach (($this->payouts() ?? []) as $payout) {
+			if ((string)($payout['reference'] ?? '') === $reference) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end holds()
+
+	/**
+	 * One payout in the row shape dossiq kept.
+	 *
+	 * @param array<string, mixed> $payout The payout as finance answered it.
+	 * @param string $status The row status.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private function rowOf(array $payout, string $status): array {
+		$payee = (array)($payout['payee'] ?? []);
+
+		return [
+			'id' => (string)($payout['payableId'] ?? ''),
+			'payableId' => (string)($payout['payableId'] ?? ''),
+			'penaltyPaymentCalculation' => (string)($payout['correlationId'] ?? ''),
+			'reference' => (string)($payout['reference'] ?? ''),
+			'amount' => (int)round(((float)($payout['amount'] ?? 0)) * 100),
+			'status' => $status,
+			'actualPaymentDate' => (string)($payout['paidOn'] ?? ''),
+			'betalingsreferentie' => (string)($payout['bankReference'] ?? ''),
+			'accountHolderName' => (string)($payee['name'] ?? ''),
+			'iban' => (string)($payee['iban'] ?? ''),
+			'legalBasis' => 'AWB 4:17',
+		];
+	}//end rowOf()
 }//end class

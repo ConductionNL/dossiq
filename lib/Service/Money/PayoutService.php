@@ -161,7 +161,11 @@ class PayoutService {
 			'paymentDateLatest' => $uiterlijk,
 			'status' => 'voorbereid',
 		];
-		$row = $this->raiseInFinance(row: $row);
+		$row = $this->raiseRowInFinance(row: $row);
+		// Finance holds the payout now; dossiq keeps no copy of it (REQ-DQM-004).
+		if ((string)($row['payableId'] ?? '') !== '') {
+			return $row;
+		}
 
 		return $this->persistDisbursement(
 			objectService: $objectService,
@@ -226,23 +230,6 @@ class PayoutService {
 		return $row;
 	}//end withdrawFromFinance()
 
-	/**
-	 * Hand a payout row dossiq kept to the finance app under its own reference,
-	 * with the history it already has (REQ-DQM-004). The caller passes only a
-	 * row finance does not hold yet.
-	 *
-	 * @param array<string, mixed> $row The stored payout row.
-	 * @param array<string, string> $history historicalState, paidOn and bankReference, or nothing for a live payout.
-	 *
-	 * @return array<string, mixed> The row, with payableId when finance took it; not yet saved.
-	 *
-	 * @throws RuntimeException When finance refuses the payout.
-	 *
-	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
-	 */
-	public function raiseRowInFinance(array $row, array $history = []): array {
-		return $this->raiseInFinance(row: $row, history: $history);
-	}//end raiseRowInFinance()
 
 	/**
 	 * Raise a prepared payout in the finance app again under a new reference,
@@ -263,7 +250,7 @@ class PayoutService {
 
 		$previous = (string)($row['reference'] ?? '');
 		$row['reference'] = $this->buildReference(calculationId: (string)($row['penaltyPaymentCalculation'] ?? ''));
-		$raised = $this->raiseInFinance(row: $row);
+		$raised = $this->raiseRowInFinance(row: $row);
 		if ((string)($raised['payableId'] ?? '') === '') {
 			// No finance app answered: keep the reference the provider knows.
 			$row['reference'] = $previous;
@@ -275,6 +262,8 @@ class PayoutService {
 
 	/**
 	 * Hand a payout row to the finance app and note the payable it answers with.
+	 * The repair that moves the rows dossiq kept calls it with their history
+	 * (REQ-DQM-004); it passes only a row finance does not hold yet.
 	 *
 	 * @param array<string, mixed> $row The payout row.
 	 * @param array<string, string> $history For a payout settled before finance kept it: historicalState, paidOn, bankReference.
@@ -282,8 +271,10 @@ class PayoutService {
 	 * @return array<string, mixed> The row, with payableId when finance took it.
 	 *
 	 * @throws RuntimeException When finance refuses the payout.
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
 	 */
-	private function raiseInFinance(array $row, array $history = []): array {
+	public function raiseRowInFinance(array $row, array $history = []): array {
 		if ($this->payouts === null) {
 			return $row;
 		}
@@ -307,7 +298,7 @@ class PayoutService {
 		}
 
 		return $row;
-	}//end raiseInFinance()
+	}//end raiseRowInFinance()
 
 	/**
 	 * The case the calculation belongs to, as a linked object for the finance app.
@@ -579,6 +570,7 @@ class PayoutService {
 	 * @return string
 	 */
 	private function buildReference(string $calculationId): string {
-		return 'PROC-DWS-' . strtoupper(substr(sha1($calculationId . ':' . microtime(true)), 0, 12));
+		// Random bytes, not the clock: two payouts raised in one microsecond must not share a reference.
+		return 'PROC-DWS-' . strtoupper(substr(sha1($calculationId . ':' . bin2hex(random_bytes(8))), 0, 12));
 	}//end buildReferentie()
 }//end class
