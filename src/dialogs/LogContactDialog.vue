@@ -28,42 +28,24 @@
 		data-testid="log-contact-dialog"
 		@closing="$emit('close')">
 		<div v-if="saved === null" class="log-contact">
-			<fieldset class="log-contact__group">
-				<legend>{{ t('dossiq', 'Channel') }}</legend>
-				<NcCheckboxRadioSwitch
-					v-for="option in channels"
-					:key="option.value"
-					type="radio"
-					name="log-contact-channel"
-					:modelValue="channel"
-					:value="option.value"
-					:data-testid="'log-contact-channel-' + option.value"
-					@update:modelValue="channel = $event">
-					{{ option.label }}
-				</NcCheckboxRadioSwitch>
-			</fieldset>
-
-			<fieldset class="log-contact__group">
-				<legend>{{ t('dossiq', 'Direction') }}</legend>
-				<NcCheckboxRadioSwitch
-					type="radio"
-					name="log-contact-direction"
-					:modelValue="direction"
-					value="inbound"
-					data-testid="log-contact-direction-inbound"
-					@update:modelValue="direction = $event">
-					{{ t('dossiq', 'Inbound') }}
-				</NcCheckboxRadioSwitch>
-				<NcCheckboxRadioSwitch
-					type="radio"
-					name="log-contact-direction"
-					:modelValue="direction"
-					value="outbound"
-					data-testid="log-contact-direction-outbound"
-					@update:modelValue="direction = $event">
-					{{ t('dossiq', 'Outbound') }}
-				</NcCheckboxRadioSwitch>
-			</fieldset>
+			<div class="log-contact__pair">
+				<NcSelect
+					v-model="channel"
+					data-testid="log-contact-channel"
+					:inputLabel="t('dossiq', 'Channel (optional)')"
+					:options="channels"
+					:reduce="(option) => option.value"
+					:clearable="false"
+					label="label" />
+				<NcSelect
+					v-model="direction"
+					data-testid="log-contact-direction"
+					:inputLabel="t('dossiq', 'Direction (optional)')"
+					:options="directions"
+					:reduce="(option) => option.value"
+					:clearable="false"
+					label="label" />
+			</div>
 
 			<NcDateTimePicker
 				v-model="startTime"
@@ -163,6 +145,7 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PhoneLogOutline from 'vue-material-design-icons/PhoneLogOutline.vue'
@@ -179,6 +162,7 @@ export default {
 		NcButton,
 		NcCheckboxRadioSwitch,
 		NcDateTimePicker,
+		NcSelect,
 		CnDialog,
 		NcTextArea,
 		NcTextField,
@@ -233,6 +217,14 @@ export default {
 				{ value: 'webformulier', label: t('dossiq', 'Web form') },
 				{ value: 'chat', label: t('dossiq', 'Chat') },
 				{ value: 'social_media', label: t('dossiq', 'Social media') },
+			]
+		},
+
+		/** @spec openspec/changes/case-dialogs-contact-selects/specs/case-dialogs/spec.md#requirement-contact-vastleggen-asks-channel-and-direction-as-two-selects */
+		directions() {
+			return [
+				{ value: 'inbound', label: t('dossiq', 'Inbound') },
+				{ value: 'outbound', label: t('dossiq', 'Outbound') },
 			]
 		},
 
@@ -303,18 +295,10 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 
-	&__group {
-		border: 0;
-		margin: 0;
-		padding: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 4px 12px;
-
-		legend {
-			font-weight: 600;
-			margin-bottom: 4px;
-		}
+	&__pair {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+		gap: 14px 16px;
 	}
 
 	&__saved {
