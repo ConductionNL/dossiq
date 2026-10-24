@@ -64,6 +64,7 @@ class CaseTypeRuleProjector {
 	 * @param ContainerInterface $container OpenRegister's flow services.
 	 * @param LoggerInterface $logger The logger.
 	 * @param CaseTypeResolver|null $resolver The case type's blueprint, for its property definition names.
+	 * @param RuleConditionLogic $logic Writes a requirement's condition.
 	 *
 	 * @return void
 	 */
@@ -74,6 +75,7 @@ class CaseTypeRuleProjector {
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly ?CaseTypeResolver $resolver = null,
+		private readonly RuleConditionLogic $logic = new RuleConditionLogic(),
 	) {
 	}//end __construct()
 
@@ -103,7 +105,7 @@ class CaseTypeRuleProjector {
 			}
 
 			foreach ((array)($rule['actions'] ?? []) as $action) {
-				if ($this->entryRequirementOf(rule: $rule, action: (array)$action) !== null) {
+				if ($this->entryRequirementOf(rule: $rule, action: (array)$action, caseTypeId: $caseTypeId) !== null) {
 					continue;
 				}
 
@@ -132,13 +134,13 @@ class CaseTypeRuleProjector {
 	 * What each status requires before a case enters it, from the case type's rules.
 	 *
 	 * Written onto the case type at publish as `entryRequirements`, keyed by
-	 * statusType uuid, and read by dossiq's StatusEntryRequirementsGuard. Only a
-	 * rule on entering a status, without further conditions, becomes a
-	 * requirement; any other requireDocument is named in the warnings.
+	 * statusType uuid, and read by dossiq's StatusEntryRequirementsGuard. A rule
+	 * on entering a status becomes a requirement; its other conditions travel
+	 * with it as JSONLogic, so it applies only while they hold.
 	 *
 	 * @param array<string, mixed> $caseType The case type, with its rules.
 	 *
-	 * @return array<string, array<int, array{documentType: string, rule: string}>> The requirements.
+	 * @return array<string, array<int, array<string, mixed>>> The requirements.
 	 *
 	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
@@ -150,7 +152,11 @@ class CaseTypeRuleProjector {
 			}
 
 			foreach ((array)($rule['actions'] ?? []) as $action) {
-				$requirement = $this->entryRequirementOf(rule: $rule, action: (array)$action);
+				$requirement = $this->entryRequirementOf(
+					rule: $rule,
+					action: (array)$action,
+					caseTypeId: (string)($caseType['id'] ?? '')
+				);
 				if ($requirement !== null) {
 					$requirements[(string)$rule['when']['status']][] = $requirement;
 				}
@@ -165,19 +171,26 @@ class CaseTypeRuleProjector {
 	 *
 	 * @param array<string, mixed> $rule The rule.
 	 * @param array<string, mixed> $action The action.
+	 * @param string $caseTypeId The case type uuid.
 	 *
-	 * @return array{documentType: string, rule: string}|null The requirement.
+	 * @return array{documentType: string, rule: string, condition?: array<string, mixed>}|null The requirement.
 	 */
-	private function entryRequirementOf(array $rule, array $action): ?array {
+	private function entryRequirementOf(array $rule, array $action, string $caseTypeId): ?array {
 		$documentType = trim((string)($action['documentType'] ?? ''));
 		$status = trim((string)($rule['when']['status'] ?? ''));
 		if (($action['action'] ?? null) !== 'requireDocument' || $documentType === '' || $status === ''
-			|| ($rule['when']['event'] ?? null) !== 'statusEntered' || (array)($rule['conditions'] ?? []) !== []
+			|| ($rule['when']['event'] ?? null) !== 'statusEntered'
 		) {
 			return null;
 		}
 
-		return ['documentType' => $documentType, 'rule' => (string)($rule['id'] ?? '')];
+		$requirement = ['documentType' => $documentType, 'rule' => (string)($rule['id'] ?? '')];
+		$conditions = (array)($rule['conditions'] ?? []);
+		if ($conditions !== []) {
+			$requirement['condition'] = $this->logic->forRule(caseTypeId: $caseTypeId, conditions: $conditions);
+		}
+
+		return $requirement;
 	}//end entryRequirementOf()
 
 	/**
@@ -209,8 +222,8 @@ class CaseTypeRuleProjector {
 		$plan = $this->plan(caseTypeId: $caseTypeId);
 		$warnings = [];
 		foreach ($plan['unprojected'] as $action) {
-			$warnings[] = 'Rule action ' . $action . ' is not carried out: a required document is only carried out '
-				. 'on entering a status without further conditions.';
+			$warnings[] = 'Rule action ' . $action . ' is not carried out: it names no target, or a required document '
+				. 'names no status to enter.';
 		}
 
 		$flowService = $this->service(name: 'OCA\OpenRegister\Service\Flow\FlowService');
