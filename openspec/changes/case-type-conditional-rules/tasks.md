@@ -15,7 +15,12 @@ the engine task carries as its `key`.
 - **files**: `lib/Service/CaseType/CaseTypeRuleProjector.php`, `CaseTypeRuleFlowDocument.php`, `RuleConditionLogic.php`, publish hook
 - [x] Implement addTask: a guarded flow per action (object trigger scoped to the case type, filter with the case type
       guard and the conditions, `dossiq.createTask`), replaced on every publish
-- [ ] Implement setField, requireDocument, sendMessage, chooseVariant (named as publication warnings until then)
+- [x] Implement setField on a case field and chooseVariant (case 1.50.0 `variant`): a guarded flow ending in an
+      `openregister.object-write` update, guarded on the field not holding the value yet
+- [ ] Implement setField on a property definition's answer (a field patch cannot address `properties[]`), requireDocument
+      (dossiq moves cases through its own transition engine, not OpenRegister lifecycle transitions) and sendMessage
+      (the notifications dialect's condition is a field change, it cannot hold the case type guard and the rule's
+      conditions); each is named in the publication warnings
 - [x] Test (unit: plan, flow shape, the filter evaluated with OpenRegister's JSONLogic, replace-on-publish)
 - [ ] Test (integration on a live instance)
 
