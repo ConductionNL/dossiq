@@ -2,8 +2,10 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case boards draw the "Locaties" card with "1 locatie" under its title;
- * the case map says how many places it shows.
+ * The case map says how many places it shows. DqZaak and DqZaakMeer draw
+ * "1 locatie" at the right end of the "Locaties" title row (the simple
+ * profile's card: `headerNote`); the full profile's map keeps it under its
+ * title (`headerSubtitle`).
  */
 
 import fs from 'fs'
@@ -45,10 +47,10 @@ function widget(node, id) {
 
 describe('the case map says how many places it shows', () => {
 	it.each([
-		['src/menu-layout.simple.json', 'case-locations-card'],
-		['src/manifest.json', 'case-location-map'],
-	])('%s %s', (file, id) => {
-		const { one, other } = widget(read(file), id).content.headerSubtitle
+		['src/menu-layout.simple.json', 'case-locations-card', 'headerNote'],
+		['src/manifest.json', 'case-location-map', 'headerSubtitle'],
+	])('%s %s', (file, id, key) => {
+		const { one, other } = widget(read(file), id).content[key]
 		expect(nl[one]).toBe('{total} locatie')
 		expect(nl[other]).toBe('{total} locaties')
 	})
