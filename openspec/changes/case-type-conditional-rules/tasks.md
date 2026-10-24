@@ -17,10 +17,10 @@ the engine task carries as its `key`.
       guard and the conditions, `dossiq.createTask`), replaced on every publish
 - [x] Implement setField on a case field and chooseVariant (case 1.50.0 `variant`): a guarded flow ending in an
       `openregister.object-write` update, guarded on the field not holding the value yet
-- [ ] Implement setField on a property definition's answer (a field patch cannot address `properties[]`), requireDocument
-      (dossiq moves cases through its own transition engine, not OpenRegister lifecycle transitions) and sendMessage
-      (the notifications dialect's condition is a field change, it cannot hold the case type guard and the rule's
-      conditions); each is named in the publication warnings
+- [x] Implement setField on a property definition (`dossiq.setCaseAnswer`, merges into `properties[]`), sendMessage
+      (`dossiq.sendMessage`, to a role on the case, once per case or per status entry through the send-once ledger) and
+      requireDocument on entering a status (`caseType.entryRequirements`, read by the `statusEntryRequirements` guard)
+- [ ] requireDocument with conditions besides the status (named in the publication warnings)
 - [x] Test (unit: plan, flow shape, the filter evaluated with OpenRegister's JSONLogic, replace-on-publish)
 - [ ] Test (integration on a live instance)
 

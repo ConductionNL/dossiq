@@ -239,12 +239,16 @@ class CaseTypeRuleProjectorTest extends TestCase {
 
 		$plan = $this->projector(rules: [$status, $off])->plan(caseTypeId: 'type-1');
 
-		$this->assertCount(1, $plan['flows']);
+		$this->assertCount(2, $plan['flows']);
 		$this->assertSame(
 			['==' => [['var' => 'json.status'], 'status-geweigerd']],
 			$plan['flows'][0]['nodes'][1]['config']['condition']['and'][1]
 		);
-		$this->assertSame(['bij-weigering: sendMessage'], $plan['unprojected']);
+		$this->assertSame(
+			['emailTemplate' => 'weigering', 'onceKey' => 'rule:type-1:bij-weigering', 'oncePer' => 'currentStatusEnteredAt'],
+			$plan['flows'][1]['nodes'][2]['config']
+		);
+		$this->assertSame([], $plan['unprojected']);
 	}//end testStatusRulesOffRulesAndUnprojectedActions()
 
 	/**
@@ -314,20 +318,50 @@ class CaseTypeRuleProjectorTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testActionsWithoutAnEngineAreNamed(): void {
+	public function testAnAnswerIsAGuardedSetCaseAnswerAndAConditionalDocumentIsNamed(): void {
 		$rule = self::WELSTAND;
 		$rule['actions'] = [
-			['action' => 'setField', 'field' => 'bouwkosten', 'value' => 1],
+			['action' => 'setField', 'field' => 'welstandsgebied', 'value' => true],
 			['action' => 'requireDocument', 'documentType' => 'welstandsadvies'],
-			['action' => 'sendMessage', 'emailTemplate' => 'tpl'],
 		];
 
 		$plan = $this->projector(rules: [$rule])->plan(caseTypeId: 'type-1');
 
-		$this->assertSame([], $plan['flows']);
-		$this->assertSame(
-			['welstandsadvies: setField', 'welstandsadvies: requireDocument', 'welstandsadvies: sendMessage'],
-			$plan['unprojected']
-		);
+		$this->assertSame(['welstandsadvies: requireDocument'], $plan['unprojected']);
+		$this->assertCount(1, $plan['flows']);
+		$this->assertSame(['type' => 'dossiq.setCaseAnswer', 'config' => ['name' => 'welstandsgebied', 'value' => true]], array_intersect_key($plan['flows'][0]['nodes'][2], ['type' => 1, 'config' => 1]));
+
+		$library = dirname(__DIR__, 5) . '/openregister/vendor/jwadhams/json-logic-php/src/JWadhams/JsonLogic.php';
+		if (is_file($library) === false) {
+			$this->markTestSkipped('needs a sibling openregister checkout with its vendor, for JSONLogic');
+		}
+
+		require_once $library;
+		$condition = $plan['flows'][0]['nodes'][1]['config']['condition'];
+		$case = ['caseType' => 'type-1', 'properties' => [['name' => 'bouwkosten', 'value' => 150000], ['name' => 'welstandsgebied', 'value' => false]]];
+		$this->assertTrue((bool)\JWadhams\JsonLogic::apply($condition, ['json' => $case]));
+		$case['properties'][1]['value'] = true;
+		$this->assertFalse((bool)\JWadhams\JsonLogic::apply($condition, ['json' => $case]));
 	}//end testActionsWithoutAnEngineAreNamed()
+	/**
+	 * A required document on entering a status becomes an entry requirement
+	 * of that status; with further conditions it does not, and is named.
+	 *
+	 * @return void
+	 */
+	public function testRequireDocumentOnAStatusIsAnEntryRequirement(): void {
+		$onStatus = ['id' => 'advies-voor-besluit', 'when' => ['event' => 'statusEntered', 'status' => 'status-besluit'], 'conditions' => [], 'actions' => [['action' => 'requireDocument', 'documentType' => 'welstandsadvies']]];
+		$conditional = $onStatus;
+		$conditional['id'] = 'alleen-groot';
+		$conditional['conditions'] = self::WELSTAND['conditions'];
+		$projector = $this->projector(rules: [$onStatus, $conditional]);
+
+		$this->assertSame(
+			['status-besluit' => [['documentType' => 'welstandsadvies', 'rule' => 'advies-voor-besluit']]],
+			$projector->entryRequirements(caseType: ['rules' => [$onStatus, $conditional]])
+		);
+		$plan = $projector->plan(caseTypeId: 'type-1');
+		$this->assertSame([], $plan['flows']);
+		$this->assertSame(['alleen-groot: requireDocument'], $plan['unprojected']);
+	}//end testRequireDocumentOnAStatusIsAnEntryRequirement()
 }//end class
