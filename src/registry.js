@@ -39,6 +39,7 @@ import DocumentReviewPanel from './components/case/DocumentReviewPanel.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
+import CaseTypeFieldRightsWidget from './components/caseType/CaseTypeFieldRightsWidget.vue'
 import CaseTypeMessagesEditorWidget from './components/caseType/CaseTypeMessagesEditorWidget.vue'
 // The party kinds a case type accepts, declared into pipelinq
 // (parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype).
@@ -312,6 +313,15 @@ const registry = {
 		component: CaseTypeMessagesEditorWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail Phases and tasks: the messages to the applicant through the email template endpoints, so each change is a new version (EmailTemplateVersionListener keeps that on the object API too).',
+	},
+	// @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+	CaseTypeFieldRightsWidget: {
+		// @custom-widget-ratchet exclude the matrix has one column per status of the case type, read at run time, and its cells combine three stored declarations; a declared table has fixed columns
+		kind: 'widget',
+		chrome: 'card',
+		component: CaseTypeFieldRightsWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail Fields: the field rights as a matrix of fields by status (DqZaaktypeVelden), read from fieldRoleRules, the statuses\' required field rules and requiredAtStatus.',
 	},
 	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
 	CaseTypeRulesWidget: {
