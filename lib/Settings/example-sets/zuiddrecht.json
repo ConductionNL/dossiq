@@ -2429,7 +2429,7 @@
 			"schema": "syncQueue",
 			"data": {
 				"deviceId": "toestel-pieter",
-				"operationType": "submit",
+				"operationType": "update",
 				"targetEntity": "inspectionChecklistRun",
 				"label": "Molenweg 4, checklist",
 				"queuedAt": "{{datetime:0 10:12}}",
