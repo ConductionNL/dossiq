@@ -1,0 +1,2 @@
+- [x] Repair step, registered post-migration and exempt from install
+- [x] PHPUnit: mapping, system identity, second pass writes nothing, failed write retries

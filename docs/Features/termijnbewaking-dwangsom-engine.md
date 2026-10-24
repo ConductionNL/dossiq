@@ -37,22 +37,30 @@ oplopen. Deze module modelleert die volledige levenscyclus.
 
 | Verb   | URL                                                    | Doel                                |
 |--------|--------------------------------------------------------|-------------------------------------|
-| POST   | `/api/termijn/instances`                               | Nieuwe TermijnInstance aanmaken     |
-| GET    | `/api/termijn/instances/{id}`                          | TermijnInstance opvragen            |
-| POST   | `/api/termijn/instances/{id}/pauze`                    | Pauze registreren (AWB 4:5/4:15)    |
-| POST   | `/api/termijn/instances/{id}/hervat`                   | Hervatten na aanvulling             |
-| POST   | `/api/termijn/instances/{id}/verleng`                  | Verlenging aanvragen (AWB 4:14)     |
-| POST   | `/api/termijn/instances/{id}/voltooi`                  | Beschikking-stop registreren        |
-| POST   | `/api/termijn/ingebrekestellingen`                     | Ingebrekestelling indienen          |
-| GET    | `/api/termijn/ingebrekestellingen/{id}`                | Ingebrekestelling opvragen          |
-| GET    | `/api/termijn/dwangsom/{id}`                           | Dwangsom-staat opvragen             |
-| POST   | `/api/termijn/dwangsom/{id}/beschikking`               | Beschikking registreren             |
-| POST   | `/api/termijn/dwangsom/{id}/bezwaar`                   | Bezwaar registreren                 |
-| POST   | `/api/termijn/dwangsom/{id}/bezwaar/heroverweging`     | Heroverweging vastleggen            |
-| GET    | `/api/termijn/dashboard/kpi`                           | Dashboard KPI                       |
-| GET    | `/api/termijn/reports/kwartaal`                        | Kwartaalrapport                     |
-| GET    | `/api/termijn/reports/jaarrekening`                    | Jaarlijks dwangsom-rapport          |
-| POST   | `/api/dossiq/openconnector/dwangsom-payment-callback` | Webhook van openconnector (publiek) |
+| POST   | `/api/deadlines/instances`                             | Nieuwe TermijnInstance aanmaken     |
+| GET    | `/api/deadlines/instances/{id}`                        | TermijnInstance opvragen            |
+| POST   | `/api/deadlines/instances/{id}/pause`                  | Pauze registreren (AWB 4:5/4:15)    |
+| POST   | `/api/deadlines/instances/{id}/resume`                 | Hervatten na aanvulling             |
+| POST   | `/api/deadlines/instances/{id}/extend`                 | Verlenging aanvragen (AWB 4:14)     |
+| POST   | `/api/deadlines/instances/{id}/complete`               | Beschikking-stop registreren        |
+| POST   | `/api/notices-of-default`                              | Ingebrekestelling indienen          |
+| GET    | `/api/notices-of-default/{id}`                         | Ingebrekestelling opvragen          |
+| GET    | `/api/accruing-amounts/{id}`                           | Dwangsom-staat opvragen             |
+| POST   | `/api/accruing-amounts/{id}/settle`                    | Beschikking registreren             |
+| POST   | `/api/accruing-amounts/{id}/payout`                    | Uitbetaling voorbereiden            |
+| POST   | `/api/accruing-amounts/{id}/objection`                 | Bezwaar registreren                 |
+| POST   | `/api/accruing-amounts/{id}/objection/reconsider`      | Heroverweging vastleggen            |
+| GET    | `/api/deadlines/dashboard/kpi`                         | Dashboard KPI                       |
+| GET    | `/api/deadlines/reports/quarterly`                     | Kwartaalrapport                     |
+| GET    | `/api/deadlines/reports/annual`                        | Jaarlijks dwangsom-rapport          |
+| POST   | `/api/payments/callback`                               | Webhook van openconnector (publiek) |
+
+De oude adressen onder `/api/termijn/ingebrekestellingen` en `/api/termijn/dwangsom/` werken nog één release.
+
+De eerdere adressen (`/api/termijn/instances…` met `pauze`, `hervat`, `verleng` en `voltooi`,
+`/api/termijn/dashboard/kpi`, `/api/termijn/reports/kwartaal` en `/jaarrekening`) blijven tot de
+volgende major werken. `/api/dossiq/openconnector/dwangsom-payment-callback` blijft altijd werken,
+omdat het adres bij de betaalprovider is ingesteld.
 
 ## Configuratie
 
@@ -67,7 +75,7 @@ De volgende drie zijn standaard geseed via `lib/Settings/termijnbewaking_seed_da
 
 App-config-sleutels:
 
-- `dwangsom_callback_secret` — HMAC-signing secret voor openconnector callback.
+- `payout_callback_secret`: HMAC-signing secret voor de callback. Een installatie die nog `dwangsom_callback_secret` heeft, krijgt die waarde bij de upgrade over.
 - `termijn.block_on_missing_definition` — `true` om zaak-aanmaak hard te
   blokkeren wanneer geen passende definitie bestaat (default `false`).
 
@@ -80,5 +88,5 @@ App-config-sleutels:
   stoppen de batch niet. Zoek in `data/nextcloud.log` op `tag:dossiq-termijn`.
 - **Dwangsom blijft op €0**: de berekening start pas 14 dagen ná de
   ontvangstdatum van de geldige ingebrekestelling (AWB 4:17 grace).
-- **Webhook-callback geeft 401**: verifieer `dwangsom_callback_secret` matcht
-  het ondertekeningsgeheim van openconnector.
+- **Webhook-callback geeft 401**: verifieer dat `payout_callback_secret`
+  gelijk is aan het ondertekeningsgeheim van openconnector.

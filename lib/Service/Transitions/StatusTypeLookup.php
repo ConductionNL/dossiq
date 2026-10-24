@@ -97,7 +97,7 @@ class StatusTypeLookup {
 	public function announcedLabelOf(string $statusTypeId): string {
 		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
 
-		return trim((string)($statusType['publicLabel'] ?? ''));
+		return $this->text->textOf(value: ($statusType['publicLabel'] ?? ''));
 	}//end announcedLabelOf()
 
 	/**

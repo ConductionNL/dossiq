@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Controller;
 
 use DateTime;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Substitution\CoveredWork;
 use OCA\Dossiq\Service\WorkQueueService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -36,6 +37,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -53,6 +55,8 @@ class WorkQueueController extends Controller {
 	 * @param IGroupManager $groupManager The group manager (coordinator = NC admin guard).
 	 * @param WorkQueueService $workQueueService The work queue scoring/aggregation service.
 	 * @param LoggerInterface $logger Logger.
+	 * @param IUserManager $userManager Resolves a handler's display name.
+	 * @param CoveredWork $coveredWork The cases the caller covers for an absent colleague.
 	 *
 	 * @return void
 	 */
@@ -62,6 +66,8 @@ class WorkQueueController extends Controller {
 		private IGroupManager $groupManager,
 		private WorkQueueService $workQueueService,
 		private LoggerInterface $logger,
+		private IUserManager $userManager,
+		private CoveredWork $coveredWork,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -69,25 +75,39 @@ class WorkQueueController extends Controller {
 	/**
 	 * Return the authenticated user's urgency-scored open cases and tasks.
 	 *
+	 * With `covering=1` the queue also holds the open cases the caller covers
+	 * for an absent colleague (board DqAanMijToegewezen, "Inclusief werk
+	 * waarvoor u waarneemt"), each marked `coveredFor`, and `coveredCount`
+	 * says how many. Only cases the caller may already read are added.
+	 *
+	 * @param string $covering `1` to include the work the caller covers.
+	 *
 	 * @NoAdminRequired
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	#[NoAdminRequired]
-	public function index(): JSONResponse {
+	public function index(string $covering = ''): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
 		try {
-			$items = $this->workQueueService->computeQueue($user->getUID());
+			$covered = [];
+			if (in_array(strtolower(trim($covering)), ['1', 'true'], true) === true) {
+				$covered = $this->coveredWork->casesFor(user: $user);
+			}
+
+			$items = $this->workQueueService->computeQueue($user->getUID(), null, $covered);
 			return new JSONResponse(
 				[
 					'items' => $items,
 					'computedAt' => (new DateTime())->format(DateTime::ATOM),
+					'coveredCount' => count(array_filter($items, static fn (array $item): bool => ($item['coveredFor'] ?? null) !== null)),
 				]
 			);
 		} catch (\Throwable $e) {
@@ -117,13 +137,30 @@ class WorkQueueController extends Controller {
 		}
 
 		try {
-			$handlers = $this->workQueueService->computeWorkload();
+			$handlers = $this->withDisplayNames(handlers: $this->workQueueService->computeWorkload());
 			return new JSONResponse(['handlers' => $handlers]);
 		} catch (\Throwable $e) {
 			$this->logger->error('WorkQueue: workload failed', ['error' => $e->getMessage()]);
 			return new JSONResponse(['error' => 'Failed to compute workload'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end workload()
+
+	/**
+	 * Add each handler's display name, so a list can show a person rather than a user id.
+	 *
+	 * A handler that is no longer a user keeps the id as its name.
+	 *
+	 * @param array<int, array{handler: string, openCaseCount: int}> $handlers The per-handler counts.
+	 *
+	 * @return array<int, array{handler: string, openCaseCount: int, displayName: string}> The counts with names.
+	 */
+	private function withDisplayNames(array $handlers): array {
+		foreach ($handlers as $index => $row) {
+			$handlers[$index]['displayName'] = ($this->userManager->getDisplayName($row['handler']) ?? $row['handler']);
+		}
+
+		return $handlers;
+	}//end withDisplayNames()
 
 	/**
 	 * Whether a user holds the dossiq coordinator role (NC admin).

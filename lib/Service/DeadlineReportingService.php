@@ -35,14 +35,20 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
+use OCA\Dossiq\Service\Money\PayoutReader;
+use OCA\Dossiq\Service\Reporting\PerTypeRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Termijn\TermCaseTypeResolver;
+use OCA\Dossiq\Service\Termijn\TermDashboardFigures;
 use OCA\Dossiq\Service\Termijn\TermOutcome;
 use RuntimeException;
 
 /**
  * Quarterly KPI + annual dwangsom audit + dashboard KPI reports.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  *
  * @spec openspec/specs/termijn-reporting/spec.md
  */
@@ -56,6 +62,25 @@ class DeadlineReportingService {
 	 * @var string
 	 */
 	public const UNRESOLVED = TermCaseTypeResolver::UNRESOLVED;
+
+	/**
+	 * Old report key => its generic name. Both are sent for one release.
+	 *
+	 * @var array<string, string>
+	 */
+	public const GENERIC_KEYS = [
+		'totalZaken' => 'totalCases',
+		'withinTermijnPercent' => 'withinTermPercent',
+		'dwangsomTotalCents' => 'penaltyTotalCents',
+		'totaal' => 'total',
+		'binnenTermijnPct' => 'withinTermPct',
+		'gemiddeldeDoorlooptijdDagen' => 'averageProcessingDays',
+		'verlengingen' => 'extensions',
+		'overschrijdingen' => 'overruns',
+		'ingebrekestellingen' => 'noticesOfDefault',
+		'bedragCents' => 'amountCents',
+		'betalingsreferentie' => 'paymentReference',
+	];
 
 	/**
 	 * Resolves each term's case type for the quarterly report.
@@ -72,20 +97,53 @@ class DeadlineReportingService {
 	private readonly TermOutcome $outcomes;
 
 	/**
+	 * Lists per-type figures as table rows.
+	 *
+	 * @var PerTypeRows
+	 */
+	private readonly PerTypeRows $perTypeRows;
+
+	/**
+	 * The running figures and the share on time the deadline dashboard shows.
+	 *
+	 * @var TermDashboardFigures
+	 */
+	private readonly TermDashboardFigures $figures;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService           $settingsService Settings.
 	 * @param TermCaseTypeResolver|null $caseTypes       The case-type resolver; built from the settings when absent.
 	 * @param DayCount                  $days            Counts the days between two moments.
+	 * @param PayoutReader|null         $payouts         Reads the payouts from the finance app, beside the rows it does not hold.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		?TermCaseTypeResolver $caseTypes = null,
 		private readonly DayCount $days = new DayCount(),
+		private readonly ?PayoutReader $payouts = null,
 	) {
 		$this->caseTypes = ($caseTypes ?? new TermCaseTypeResolver(settingsService: $settingsService));
 		$this->outcomes = new TermOutcome();
+		$this->perTypeRows = new PerTypeRows();
+		$this->figures = new TermDashboardFigures(settingsService: $settingsService, caseTypes: $this->caseTypes);
 	}//end __construct()
+
+	/**
+	 * The per case type aggregates of the terms that started inside a window.
+	 *
+	 * @param array{from: string, until: string} $window First and last day (YYYY-MM-DD).
+	 *
+	 * @return array<string, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function perTypeBetween(array $window): array {
+		$rows = $this->listInstances(from: $window['from'], until: $window['until']);
+		$types = $this->caseTypes->resolve(rows: $rows);
+		return $this->reducePerType(byType: $this->aggregateByType(rows: $rows, department: null, types: $types['byRow']));
+	}//end perTypeBetween()
 
 	/**
 	 * Generate a quarterly KPI report.
@@ -100,23 +158,20 @@ class DeadlineReportingService {
 	public function generateQuarterlyReport(string $period, ?string $department = null): array {
 		$bounds = $this->resolveQuarter(period: $period);
 		$rows = $this->listInstances(from: $bounds['from'], until: $bounds['until']);
-
 		$types = $this->caseTypes->resolve(rows: $rows);
-		$byType = $this->aggregateByType(rows: $rows, department: $department, types: $types['byRow']);
-
-		// Reduce per-type aggregates.
-		$perType = $this->reducePerType(byType: $byType);
+		$perType = $this->reducePerType(byType: $this->aggregateByType(rows: $rows, department: $department, types: $types['byRow']));
 
 		return [
-			// 'periode' and 'department' are RESPONSE KEYS, not identifiers. They
-			// are the published shape of /api/termijn/reports/kwartaal and are
-			// read by the dashboard; they move only with a coordinated frontend
-			// change, not with this rename.
+			// `periode` is the old name of `period`, kept for one release for
+			// readers of the old report.
+			'period' => $period,
 			'periode' => $period,
 			'department' => $department,
 			'from' => $bounds['from'],
 			'until' => $bounds['until'],
 			'perType' => $perType,
+			'rows' => $this->perTypeRows->listOf(perType: $perType),
+			'summaryRows' => $this->quarterSummary(period: $period, perType: $perType),
 			'metadata' => [
 				'generatedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 				'rowsScanned' => count($rows),
@@ -126,6 +181,43 @@ class DeadlineReportingService {
 			],
 		];
 	}//end generateQuarterlyReport()
+
+	/**
+	 * The quarter's decided terms as one row a footnote reads: how many were
+	 * decided, how many within the statutory or extended term, and the share.
+	 * Empty when nothing was decided, so no line says "0 decided".
+	 *
+	 * @param string $period The quarter, YYYY-Qn.
+	 * @param array<string, array<string, mixed>> $perType The per-case-type figures.
+	 *
+	 * @return array<int, array<string, int|string>> The summary row, or none.
+	 *
+	 * @spec openspec/changes/termijnen-week-and-footnote/specs/termijnen-week-and-footnote/spec.md#requirement-the-quarterly-report-summarises-the-decided-terms
+	 */
+	private function quarterSummary(string $period, array $perType): array {
+		$met = 0;
+		$decided = 0;
+		foreach ($perType as $figures) {
+			$met += (int)($figures['met'] ?? 0);
+			$decided += ((int)($figures['met'] ?? 0) + (int)($figures['missed'] ?? 0));
+		}
+
+		if ($decided === 0) {
+			return [];
+		}
+
+		[$year, $quarter] = explode('-Q', $period);
+		return [
+			[
+				'period' => $period,
+				'quarter' => (int)$quarter,
+				'year' => (int)$year,
+				'decided' => $decided,
+				'withinTerm' => $met,
+				'share' => (int)round(($met / $decided) * 100),
+			],
+		];
+	}//end quarterSummary()
 
 	/**
 	 * Bucket instance rows per case type, skipping rows outside the department filter.
@@ -248,6 +340,7 @@ class DeadlineReportingService {
 				'suspended' => $b['suspended'],
 				'metShare' => $binnenPct,
 			];
+			$perType[$type] += self::genericKeys(row: $perType[$type]);
 		}//end foreach
 
 		return $perType;
@@ -265,16 +358,18 @@ class DeadlineReportingService {
 	public function generateDwangsomAuditReport(int $year): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
+		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
 		if ($objectService === null || $register === '' || $uSchema === '') {
-			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0]];
+			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
 		}
 
 		try {
 			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: []);
 		} catch (\Throwable $e) {
-			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0]];
+			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
 		}
+
+		$rows = ($this->payouts?->mergedRows(storedRows: $rows, paidInYear: $year) ?? $rows);
 
 		$yearPrefix = (string)$year;
 		$outRows = [];
@@ -294,7 +389,7 @@ class DeadlineReportingService {
 				$warnings[] = 'Missing betalingsreferentie for ' . ((string)($row['reference'] ?? ''));
 			}
 
-			$outRows[] = [
+			$outRow = [
 				'reference' => (string)($row['reference'] ?? ''),
 				'bedragCents' => $amount,
 				'actualPaymentDate' => $payment,
@@ -303,12 +398,19 @@ class DeadlineReportingService {
 				'legalBasis' => (string)($row['legalBasis'] ?? ''),
 				'iban' => (string)($row['iban'] ?? ''),
 			];
+			$outRows[] = $outRow + self::genericKeys(row: $outRow);
 		}//end foreach
 
 		return [
+			'year' => $year,
 			'jaar' => $year,
 			'rows' => $outRows,
-			'summary' => ['count' => count($outRows), 'totalCents' => $total],
+			'summary' => [
+				'count' => count($outRows),
+				'totalCents' => $total,
+				'totalEuros' => round($total / 100, 2),
+				'warningCount' => count($warnings),
+			],
 			'warnings' => $warnings,
 		];
 	}//end generateDwangsomAuditReport()
@@ -316,13 +418,16 @@ class DeadlineReportingService {
 	/**
 	 * Compute a snapshot KPI summary for the dashboard widget.
 	 *
-	 * @param array<string, mixed> $filters Optional filters (afdeling, zaaktype).
+	 * @param array<string, mixed>   $filters Optional filters (afdeling, zaaktype).
+	 * @param DateTimeImmutable|null $today   The day the running figures are read on; now when absent.
+	 * @param string|null            $from    First day (YYYY-MM-DD) of the window the share per case type covers; the current quarter when absent.
+	 * @param string|null            $until   Last day (YYYY-MM-DD) of that window.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
-	public function getTermijnKpi(array $filters = []): array {
+	public function getTermijnKpi(array $filters = [], ?DateTimeImmutable $today = null, ?string $from = null, ?string $until = null): array {
 		$rows = $this->listInstances(from: '1970-01-01', until: '2999-12-31');
 
 		$dwTotal = 0;
@@ -341,13 +446,21 @@ class DeadlineReportingService {
 			$avgDurationDays = round(array_sum($durations) / $aantalDuraties, 1);
 		}
 
-		return [
+		$kpi = [
 			'totalZaken' => $total,
 			'withinTermijnPercent' => $withinTermPercent,
 			'avgDurationDays' => $avgDurationDays,
 			'overrunCount' => $overrun,
 			'dwangsomTotalCents' => $dwTotal,
+		];
+
+		return $kpi + self::genericKeys(row: $kpi) + [
 			'lastUpdated' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+			...$this->figures->forDashboard(
+				rows: $rows,
+				today: $today,
+				perType: $this->perTypeBetween(window: $this->figures->window(today: $today, from: $from, until: $until))
+			),
 		];
 	}//end getTermijnKpi()
 
@@ -399,6 +512,29 @@ class DeadlineReportingService {
 			'durations' => $durations,
 		];
 	}//end collectKpiTotals()
+
+	/**
+	 * The generic names of a row's procedure-named keys, with their values.
+	 *
+	 * A report carries both names for one release, so a cached client or an
+	 * external report reader that still reads the old key keeps working.
+	 *
+	 * @param array<string, mixed> $row A report row or summary.
+	 *
+	 * @return array<string, mixed> The generic keys present in the row's old keys.
+	 *
+	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+	 */
+	public static function genericKeys(array $row): array {
+		$generic = [];
+		foreach (self::GENERIC_KEYS as $old => $new) {
+			if (array_key_exists($old, $row) === true) {
+				$generic[$new] = $row[$old];
+			}
+		}
+
+		return $generic;
+	}//end genericKeys()
 
 	/**
 	 * Generate a CSV for a quarterly report.

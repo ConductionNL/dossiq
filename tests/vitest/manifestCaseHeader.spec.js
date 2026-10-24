@@ -91,10 +91,22 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// 64 -> 62: `tenancy-onto-openregister-organisation` step 5 retires
 		// Tenants and TenantDetail; a tenant is an OpenRegister organisation.
 		// 62 -> 63: `woo-delivered-set-is-a-record` adds one page.
-		expect(manifest.pages).toHaveLength(63)
+		// 63 -> 62: the WorkflowBoard page retires; the board is the Cases list.
+		// 62 -> 63: the redaction page of a case (DqLakken).
+		// 63 -> 62: the CaseMap page retires; the map is the Cases list.
+		// 62 -> 60: `lists-are-views` retires Queue and MyWork; they are views of Cases.
+		// 60 -> 58: DeelzaakList and DeelzaakDetail retire; their addresses redirect to CaseDetail.
+		// 58 -> 57: SubstitutionAdmin retires; substitution admin lives in the admin settings.
+		// 57 -> 56: ReIntegratieTrajecten retires; re-integration trajectories are cases, their list a view of Cases.
+		expect(manifest.pages).toHaveLength(56)
+		// Two entries open Cases as a place: the list, and the Werkbord, which is the
+		// same list in its board view (`query: { _view: 'board' }`). The
+		// team queue opens a view of it (`savedView`), which is not a page.
 		expect(
-			manifest.menu.filter((entry) => entry.route === 'Cases'),
-		).toHaveLength(1)
+			manifest.menu
+				.filter((entry) => entry.route === 'Cases' && !entry.query?.savedView)
+				.map((entry) => entry.query?._view ?? ''),
+		).toEqual(['', 'board'])
 	})
 })
 
@@ -123,7 +135,7 @@ describe('CaseDetail — the identity row is three configured tiles and the hour
 	it('has retired the custom band and its slot', () => {
 		expect(widget('case-header')).toBeUndefined()
 		expect(cells('case-header')).toHaveLength(0)
-		expect(caseDetail().slots['widget-case-header']).toBeUndefined()
+		expect((caseDetail().slots || {})['widget-case-header']).toBeUndefined()
 		// The IMPORT and the ENTRY, not the name: the registry keeps a comment
 		// saying the three components went and why, and a bare name match would
 		// read that explanation as the thing it explains.

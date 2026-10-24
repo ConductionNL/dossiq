@@ -336,8 +336,8 @@
                     "schema": "portaalBericht",
                     "slug": "portaal-bericht-demo-1"
                 },
-                "caseId": "zaak-2026-vth-09128",
-                "caseReference": "Z/2026/09128",
+                "caseId": "@ref:case:case-bp-dormer-lindenlaan",
+                "caseReference": "2026-0155",
                 "senderType": "burger",
                 "senderRef": "demo-burger-123456789",
                 "senderName": "M.A. Janssen-de Vries",

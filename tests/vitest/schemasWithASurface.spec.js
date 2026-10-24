@@ -45,7 +45,10 @@ function declaredSchemas() {
 		for (const [key, schema] of Object.entries(
 			data?.components?.schemas ?? {},
 		)) {
-			out[schema?.slug || key] = schema
+			// A fragment may carry only part of a schema (92-admin-data-access
+			// adds just `authorization`), so later files merge into earlier ones.
+			const slug = schema?.slug || key
+			out[slug] = { ...(out[slug] ?? {}), ...schema }
 		}
 	}
 	return out
@@ -87,6 +90,13 @@ function iconRenders(name) {
 	)
 }
 
+/** The pages a role permission opens instead of admin. */
+const ROLE_PERMISSION = {
+	AvgIncidents: 'privacy',
+	Indicatiestellingen: 'sociaal-domein',
+	MdoOverleggen: 'sociaal-domein',
+}
+
 describe.each([
 	['SupplierUsers', 'SupplierUsersMenu', 'supplierUser'],
 	['AvgIncidents', 'AvgIncidentsMenu', 'avgIncident'],
@@ -95,7 +105,6 @@ describe.each([
 	['OfflineSyncConflicts', 'OfflineSyncConflictsMenu', 'conflictRecord'],
 	['Indicatiestellingen', 'IndicatiestellingenMenu', 'indicatiestelling'],
 	['MdoOverleggen', 'MdoOverleggenMenu', 'mdoOverleg'],
-	['ReIntegratieTrajecten', 'ReIntegratieTrajectenMenu', 'reIntegratieTraject'],
 ])('%s', (pageId, menuId, slug) => {
 	it('is a page over the schema the register declares', () => {
 		const p = page(pageId)
@@ -119,11 +128,14 @@ describe.each([
 		expect(iconRenders(menuEntry(menuId).icon)).toBe(true)
 	})
 
-	it('is admin-only on the page and in the menu, not one or the other', () => {
+	it('is gated on the same permission on the page and in the menu, not one or the other', () => {
 		// The menu entry hides the link; the page permission refuses the
 		// route. A page gated only in the menu is reachable by typing the URL.
-		expect(page(pageId).permission).toBe('admin')
-		expect(menuEntry(menuId).permission).toBe('admin')
+		// The data breaches and the social-domain records are their role
+		// group's (privacy-and-social-domain-groups); the rest is admin-only.
+		const expected = ROLE_PERMISSION[pageId] ?? 'admin'
+		expect(page(pageId).permission).toBe(expected)
+		expect(menuEntry(menuId).permission).toBe(expected)
 	})
 
 	it('shows only columns the schema actually has', () => {
@@ -230,10 +242,16 @@ describe('what the sociaal domein pages do not show', () => {
 		expect(columns).not.toContain('gedeeldeGegevens')
 	})
 
-	it('keeps the work exemption off the re-integration list', () => {
+	it('keeps the work exemption off the re-integration view', () => {
 		// Being excused from the work obligation is usually a health fact.
-		const columns = page('ReIntegratieTrajecten').config.columns
-		expect(columns).not.toContain('exemptionWorkObligation')
+		// Re-integration trajectories are cases now; their list is a view of
+		// the case list, and its columns name no exemption answer.
+		const view = page('Cases').config.defaultSavedViews.find((entry) => entry.slug === 're-integration-pathways')
+		const answered = view.overrides.columns
+			.filter((column) => column.formatter === 'caseAnswer')
+			.map((column) => column.formatterOptions.name)
+		expect(answered.some((name) => name.startsWith('vrijstelling') || name === 'herbeoordelingsdatum')).toBe(false)
+		// The stored trajectories keep their schema, so nothing they hold is lost.
 		expect(
 			schemas.reIntegratieTraject.properties.exemptionWorkObligation,
 		).toBeTruthy()

@@ -53,6 +53,7 @@ class TenantBillingService {
 		'api_burst',
 		'quota_exceeded',
 		'case_refund',
+		'subscription_fee',
 	];
 
 	/**

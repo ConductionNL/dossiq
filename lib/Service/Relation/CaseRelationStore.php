@@ -74,33 +74,54 @@ class CaseRelationStore {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function fetchCase(string $caseUuid): ?array {
-		if ($caseUuid === '') {
-			return null;
-		}
+		return $this->findObject(uuid: $caseUuid, schemaKey: 'case_schema', what: 'case');
+	}//end fetchCase()
 
+	/**
+	 * Fetch a case type object by UUID, for the title a related case shows.
+	 *
+	 * @param string $caseTypeUuid Case type UUID.
+	 *
+	 * @return array<string, mixed>|null The case type, or null when it does not resolve.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function fetchCaseType(string $caseTypeUuid): ?array {
+		return $this->findObject(uuid: $caseTypeUuid, schemaKey: 'case_type_schema', what: 'case type');
+	}//end fetchCaseType()
+
+	/**
+	 * One object of the configured register by UUID, as the current user may
+	 * read it; null when it is absent, unreadable or the read fails.
+	 *
+	 * @param string $uuid      The object UUID.
+	 * @param string $schemaKey The setting naming its schema.
+	 * @param string $what      What the object is, for the log line.
+	 *
+	 * @return array<string, mixed>|null The object, or null.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	private function findObject(string $uuid, string $schemaKey, string $what): ?array {
 		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($register === '' || $schema === '') {
+		$register      = $this->settingsService->getConfigValue('register');
+		$schema        = $this->settingsService->getConfigValue($schemaKey);
+		if ($uuid === '' || $objectService === null || $register === '' || $schema === '') {
 			return null;
 		}
 
 		try {
-			$obj = $objectService->find($caseUuid, register: $register, schema: $schema);
+			$obj = $objectService->find($uuid, register: $register, schema: $schema);
 		} catch (\Throwable $e) {
 			$this->logger->debug(
-				'CaseRelationService: case lookup failed',
-				['uuid' => $caseUuid, 'error' => $e->getMessage()]
+				'CaseRelationService: ' . $what . ' lookup failed',
+				['uuid' => $uuid, 'error' => $e->getMessage()]
 			);
 			return null;
 		}
 
 		return $this->normalizeCaseObject(object: $obj);
-	}//end fetchCase()
+	}//end findObject()
 
 	/**
 	 * Persist a relation list back onto a case, JSON-encoding the field

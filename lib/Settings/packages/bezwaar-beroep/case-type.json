@@ -16,7 +16,16 @@
       "internalOrExternal": "extern",
       "publicationRequired": false,
       "isDraft": false,
-      "confidentiality": "zaakvertrouwelijk"
+      "confidentiality": "zaakvertrouwelijk",
+      "sideCards": [
+        "case-tile-deadline",
+        "side-objection-appeal",
+        "case-banner-stack"
+      ],
+      "overviewCards": [
+        "case-objection-grounds",
+        "case-objection-advice-card"
+      ]
     },
     {
       "id": "b3c1a000-0000-4000-a000-00000000be30",
@@ -124,7 +133,8 @@
       "order": 1,
       "isFinal": false,
       "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
-      "role": "intake"
+      "role": "intake",
+      "colour": "blue"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a02",
@@ -132,7 +142,8 @@
       "description": "Toetsing op ontvankelijkheid (termijn, belanghebbendheid, besluit-karakter)",
       "order": 2,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "colour": "purple"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a03",
@@ -141,7 +152,8 @@
       "order": 3,
       "isFinal": false,
       "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
-      "role": "in-progress"
+      "role": "in-progress",
+      "colour": "purple"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a04",
@@ -149,7 +161,8 @@
       "description": "Hoorzitting is ingepland (Awb art. 7:2)",
       "order": 4,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "colour": "orange"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a05",
@@ -157,7 +170,8 @@
       "description": "Hoorzitting heeft plaatsgevonden",
       "order": 5,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "colour": "purple"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a06",
@@ -165,7 +179,9 @@
       "description": "Bezwaarschriftencommissie heeft advies uitgebracht (Awb art. 7:13)",
       "order": 6,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "role": "review",
+      "colour": "teal"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a07",
@@ -173,7 +189,8 @@
       "description": "Besluit op bezwaar is genomen (Awb art. 7:11, 7:12)",
       "order": 7,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "colour": "teal"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a08",
@@ -182,7 +199,8 @@
       "order": 8,
       "isFinal": true,
       "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
-      "role": "closed"
+      "role": "closed",
+      "colour": "green"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a09",
@@ -190,7 +208,8 @@
       "description": "Bezwaar is niet-ontvankelijk verklaard (Awb art. 6:6)",
       "order": 90,
       "isFinal": true,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "colour": "red"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a10",
@@ -198,7 +217,8 @@
       "description": "Bezwaar is ingetrokken door indiener (Awb art. 6:21)",
       "order": 91,
       "isFinal": true,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "colour": "grey"
     },
     {
       "id": "fbe0b51c-3931-5428-9386-5c2a4ce266e2",
@@ -207,7 +227,8 @@
       "order": 1,
       "isFinal": false,
       "caseType": "b3c1a000-0000-4000-a000-00000000be30",
-      "role": "intake"
+      "role": "intake",
+      "colour": "blue"
     },
     {
       "id": "650ef378-4aa7-53c5-8993-739c79903ca6",
@@ -216,7 +237,8 @@
       "order": 2,
       "isFinal": false,
       "caseType": "b3c1a000-0000-4000-a000-00000000be30",
-      "role": "in-progress"
+      "role": "in-progress",
+      "colour": "purple"
     },
     {
       "id": "faf41ada-73c9-5ae6-b0ad-f264696660ec",
@@ -224,7 +246,8 @@
       "description": "Verweer ingediend bij de rechtbank",
       "order": 3,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30",
+      "colour": "orange"
     },
     {
       "id": "dbe7c45e-6e02-57e7-a079-457cf16379f3",
@@ -232,7 +255,8 @@
       "description": "Zitting bij de rechtbank is gepland",
       "order": 4,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30",
+      "colour": "orange"
     },
     {
       "id": "02af49df-7838-5a57-9684-9a4d3088cf51",
@@ -240,7 +264,8 @@
       "description": "Zitting bij de rechtbank heeft plaatsgevonden",
       "order": 5,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30",
+      "colour": "purple"
     },
     {
       "id": "fb11fb9b-d2b4-5828-8725-d23655f9909d",
@@ -248,7 +273,8 @@
       "description": "Uitspraak van de rechtbank ontvangen",
       "order": 6,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30",
+      "colour": "teal"
     },
     {
       "id": "9e99fc8d-cc41-5e1c-8d3e-6589e574c5d1",
@@ -257,7 +283,8 @@
       "order": 7,
       "isFinal": true,
       "caseType": "b3c1a000-0000-4000-a000-00000000be30",
-      "role": "closed"
+      "role": "closed",
+      "colour": "green"
     },
     {
       "id": "ea2d92e4-b86f-5bd7-846a-071267dd0b7d",
@@ -265,7 +292,8 @@
       "description": "Beroep is ingetrokken",
       "order": 90,
       "isFinal": true,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30",
+      "colour": "grey"
     },
     {
       "id": "1e48257a-7a3b-5661-9971-c6e70a0b254c",
@@ -273,7 +301,8 @@
       "description": "Zaak geschikt buiten de rechtbank",
       "order": 91,
       "isFinal": true,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30",
+      "colour": "green"
     }
   ],
   "roleTypes": [

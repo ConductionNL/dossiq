@@ -58,7 +58,7 @@ class ManifestColumnBindingTest extends TestCase {
 	/**
 	 * Every computed column the last sweep met.
 	 *
-	 * @var array<int, array{where: string, op: string, register: string, schema: string}>
+	 * @var array<int, array{where: string, op: string, field: string, register: string, schema: string}>
 	 */
 	private array $aggregates = [];
 
@@ -247,13 +247,27 @@ class ManifestColumnBindingTest extends TestCase {
 	 * @return void
 	 */
 	private function collectAggregate(array &$bindings, string $where, string $rowSchema, array $aggregate): void {
+		// `endpoint` (nextcloud-vue aggregate-from-endpoint): the app's own route answers a value per row key,
+		// so no schema is counted; the row field that names the key must resolve.
+		if (is_string($aggregate['endpoint'] ?? null) === true) {
+			$this->aggregates[] = ['where' => $where, 'endpoint' => $aggregate['endpoint']];
+			$bindings[]         = ['where' => $where . '.key', 'schema' => $rowSchema, 'key' => (string)($aggregate['key'] ?? '')];
+			return;
+		}
+
 		$counted = (string)($aggregate['schema'] ?? '');
 		$this->aggregates[] = [
 			'where'    => $where,
 			'op'       => (string)($aggregate['op'] ?? ''),
+			'field'    => (string)($aggregate['field'] ?? ''),
 			'register' => (string)($aggregate['register'] ?? self::OWN_REGISTER),
 			'schema'   => $counted,
 		];
+
+		// `op: "max"` reads one field of the counted schema: that field must resolve too.
+		if (($aggregate['op'] ?? '') === 'max' && (string)($aggregate['field'] ?? '') !== '') {
+			$bindings[] = ['where' => $where . '.field', 'schema' => $counted, 'key' => (string)$aggregate['field']];
+		}
 
 		foreach ((array)($aggregate['where'] ?? []) as $field => $value) {
 			$bindings[] = ['where' => $where . '.where', 'schema' => $counted, 'key' => (string)$field];
@@ -269,9 +283,11 @@ class ManifestColumnBindingTest extends TestCase {
 	}
 
 	/**
-	 * Every computed column asks for a count the table runs, over a schema that ships.
+	 * Every computed column asks for an aggregate the table runs, over a schema that ships.
 	 *
-	 * CnDataTable resolves `op: "count"` and nothing else: any other `op` is
+	 * CnDataTable resolves `op: "count"` and, since nextcloud-vue 2.98.0,
+	 * `op: "max"` with a `field` (the newest value of that field among the
+	 * related rows). Any other `op`, or a `max` without its field, is
 	 * filtered out before a request is made and the cell stays a dash. A
 	 * count over a schema this register does not ship fails per row and
 	 * degrades to the same dash. Both are the silent blank column this file
@@ -291,9 +307,23 @@ class ManifestColumnBindingTest extends TestCase {
 		);
 
 		$offenders = [];
+		$routes = file_get_contents(filename: self::ROOT . '/appinfo/routes.php');
 		foreach ($this->aggregates as $aggregate) {
-			if ($aggregate['op'] !== 'count') {
-				$offenders[] = sprintf('%s has op "%s"; the table only runs "count"', $aggregate['where'], $aggregate['op']);
+			if (isset($aggregate['endpoint']) === true) {
+				$url = (string)preg_replace(pattern: '#^/apps/dossiq#', replacement: '', subject: $aggregate['endpoint']);
+				if (str_contains(haystack: $routes, needle: "'url' => '" . $url . "'") === false) {
+					$offenders[] = sprintf('%s asks endpoint "%s", which no route in appinfo/routes.php answers', $aggregate['where'], $aggregate['endpoint']);
+				}
+
+				continue;
+			}
+
+			if (in_array($aggregate['op'], ['count', 'max'], true) === false) {
+				$offenders[] = sprintf('%s has op "%s"; the table runs only "count" and "max"', $aggregate['where'], $aggregate['op']);
+			}
+
+			if ($aggregate['op'] === 'max' && $aggregate['field'] === '') {
+				$offenders[] = sprintf('%s has op "max" without a field; the table needs the field to read', $aggregate['where']);
 			}
 
 			if ($aggregate['register'] === self::OWN_REGISTER && isset($schemas[$aggregate['schema']]) === false) {

@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\Money\PayoutService;
 use OCA\Dossiq\Service\Money\SignedPayoutCallback;
 use OCP\AppFramework\Controller;
@@ -61,6 +62,7 @@ class PayoutCallbackController extends Controller {
 	 * @param SignedPayoutCallback $callback Checks the signature and reads the body.
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param LoggerInterface $logger Logger.
+	 * @param PayoutReader|null $reader Knows the payouts only finance holds, which have no row to update.
 	 */
 	public function __construct(
 		string $appName,
@@ -69,6 +71,7 @@ class PayoutCallbackController extends Controller {
 		private readonly SignedPayoutCallback $callback,
 		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
+		private readonly ?PayoutReader $reader = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -123,6 +126,12 @@ class PayoutCallbackController extends Controller {
 		try {
 			$updated = $this->service->handleCallback($fields['reference'], $fields['status'], $paymentDate, $fields['bankReference']);
 		} catch (RuntimeException $e) {
+			// A payout only finance holds has no row to update: finance is its record (REQ-DQM-004).
+			if ($this->reader?->holds(reference: $fields['reference']) === true) {
+				$held = ['reference' => $fields['reference'], 'status' => $fields['status']];
+				return new JSONResponse(['status' => 'ok', 'uitbetaling' => $held], Http::STATUS_OK);
+			}
+
 			$this->logger->info('Payout callback: unknown reference', ['reference' => $fields['reference']]);
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_NOT_FOUND);
 		} catch (\Throwable $e) {
@@ -146,4 +155,23 @@ class PayoutCallbackController extends Controller {
 	protected function rawBody(): string {
 		return (string)file_get_contents('php://input');
 	}//end rawBody()
+
+	/**
+	 * callback() on its old address.
+	 *
+	 * A permanent alias of /api/payments/callback: external systems are configured with
+	 * the old URL.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 *
+	 * @contract exclude Deprecated path alias for callback(); behaviour covered by the callback() tests.
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 300, period: 60)]
+	public function callbackLegacyPath(): JSONResponse {
+		return $this->callback();
+	}//end callbackLegacyPath()
 }//end class

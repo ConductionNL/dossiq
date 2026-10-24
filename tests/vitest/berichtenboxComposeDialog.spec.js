@@ -167,6 +167,57 @@ describe('BerichtenboxComposeDialog', () => {
 		expect(company.vm.form.bsn).toBe('')
 	})
 
+	it('shows the case\'s BSN masked, marks it optional, and still sends it', async () => {
+		mockGet.mockResolvedValue({
+			data: { initiatorType: 'person', initiatorSourceId: '999997609' },
+		})
+		const wrapper = mount(BerichtenboxComposeDialog, {
+			props: { open: true, caseId: 'case-1' },
+		})
+		await flushPromises()
+		const field = () => wrapper.findAllComponents({ name: 'NcTextField' })[0]
+		expect(field().props('modelValue')).toBe('*****7609')
+		expect(wrapper.find('[data-testid="compose-bsn-optional"]').text()).toBe('(optional)')
+		expect(wrapper.html()).not.toContain('999997609')
+		expect(wrapper.vm.form.bsn).toBe('999997609')
+
+		// Focus empties the field for another number; leaving it empty goes back.
+		wrapper.vm.onBsnFocus()
+		await flushPromises()
+		expect(field().props('modelValue')).toBe('')
+		wrapper.vm.onBsnBlur()
+		await flushPromises()
+		expect(wrapper.vm.form.bsn).toBe('999997609')
+		expect(field().props('modelValue')).toBe('*****7609')
+
+		// A typed number is shown as typed and drops the optional mark.
+		wrapper.vm.onBsnFocus()
+		field().vm.$emit('update:modelValue', '123456782')
+		wrapper.vm.onBsnBlur()
+		await flushPromises()
+		expect(wrapper.vm.form.bsn).toBe('123456782')
+		expect(field().props('modelValue')).toBe('123456782')
+		expect(wrapper.find('[data-testid="compose-bsn-optional"]').exists()).toBe(false)
+	})
+
+	it('lines the besluit note up with its checkbox label, through the board dialog inset', () => {
+		const source = fs.readFileSync(path.join(ROOT, 'src', 'dialogs', 'BerichtenboxComposeDialog.vue'), 'utf8')
+		expect(source).toMatch(/\.compose-dialog__check-note \{\s*padding-inline-start: var\(--cn-dialog-check-label-inset, 44px\);/)
+	})
+
+	it('opens on the kind Status update, as board DqBerichtVersturen does', () => {
+		const wrapper = open()
+		expect(wrapper.vm.form.berichtTypeCode?.code).toBe('status')
+		expect(wrapper.findComponent({ name: 'NcSelect' }).props('modelValue')).toEqual(wrapper.vm.typeCodes.find((type) => type.code === 'status'))
+	})
+
+	it('marks the delivery note with the outgoing-mail icon, as board DqBerichtVersturen does', () => {
+		const wrapper = open()
+		const note = wrapper.findAllComponents({ name: 'NcNoteCard' })[0]
+		const icon = note.vm.$slots.icon?.()
+		expect(icon?.[0]?.type?.name).toBe('EmailFastOutlineIcon')
+	})
+
 	it('shows the provider’s own sentence and stays open on a refusal', async () => {
 		mockPost.mockRejectedValue({
 			response: {

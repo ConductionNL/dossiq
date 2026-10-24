@@ -33,24 +33,24 @@ describe('termijnDashboard store routes', () => {
 		axios.get.mockResolvedValue({ data: {} })
 	})
 
-	it('loads the KPI block from the dossiq termijn route', async () => {
+	it('loads the KPI block from the dossiq deadlines route', async () => {
 		await useTermijnDashboardStore().loadKpi({ force: true })
 		expect(requestedPaths()).toEqual([
-			'/index.php/apps/dossiq/api/termijn/dashboard/kpi',
+			'/index.php/apps/dossiq/api/deadlines/dashboard/kpi',
 		])
 	})
 
-	it('loads the quarterly report from the dossiq termijn route', async () => {
+	it('loads the quarterly report from the dossiq deadlines route', async () => {
 		await useTermijnDashboardStore().loadQuarterly('2026-Q3')
 		expect(requestedPaths()).toEqual([
-			'/index.php/apps/dossiq/api/termijn/reports/kwartaal',
+			'/index.php/apps/dossiq/api/deadlines/reports/quarterly',
 		])
 	})
 
-	it('loads the annual audit from the dossiq termijn route', async () => {
+	it('loads the annual audit from the dossiq deadlines route', async () => {
 		await useTermijnDashboardStore().loadAnnual(2026)
 		expect(requestedPaths()).toEqual([
-			'/index.php/apps/dossiq/api/termijn/reports/jaarrekening',
+			'/index.php/apps/dossiq/api/deadlines/reports/annual',
 		])
 	})
 

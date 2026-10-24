@@ -227,7 +227,11 @@ describe('the registry answers every name the manifests use', () => {
 		// below pass over an empty list, which is the one way this file could
 		// go green while guarding nothing.
 		expect(REFERENCES.length).toBeGreaterThan(40)
-		expect(Object.keys(ENTRIES).length).toBeGreaterThan(80)
+		// 78 entries since the record widgets (DQ-ABSTRACT L4), the report
+		// dashboards (L6) and the Timeline tab (W2) moved onto library config
+		// and their app components left the registry; no manifest names any of
+		// them any more.
+		expect(Object.keys(ENTRIES).length).toBeGreaterThanOrEqual(78)
 	})
 
 	it('registers every name', () => {

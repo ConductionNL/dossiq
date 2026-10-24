@@ -24,18 +24,28 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\DeadlineReportingService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Money\PayoutReader;
+use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\DeadlineReportingService
  * @uses \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
  * @uses \OCA\Dossiq\Service\Termijn\TermOutcome
+ * @uses \OCA\Dossiq\Service\Termijn\TermDashboardFigures
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class DeadlineReportingServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
 	private DeadlineReportingService $service;
+
+	/**
+	 * The settings the service reads.
+	 *
+	 * @var SettingsService
+	 */
+	private SettingsService $settings;
 
 	protected function setUp(): void {
 		$this->objects = new FakeTermijnStore();
@@ -49,12 +59,13 @@ class DeadlineReportingServiceTest extends TestCase {
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'case_schema' => 'case',
 					'case_type_schema' => 'caseType',
-					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
+					'payout_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
 			},
 		);
 
+		$this->settings = $settings;
 		$this->service = new DeadlineReportingService($settings);
 
 		$this->objects->seed('caseType', ['id' => 'ct-omv', 'identifier' => 'omgevingsvergunning-regulier', 'title' => 'Omgevingsvergunning (regulier)']);
@@ -91,6 +102,30 @@ class DeadlineReportingServiceTest extends TestCase {
 		// Each seeded term runs from the Nth of May to the Nth of July: 61 days.
 		self::assertSame(61.0, $row['gemiddeldeDoorlooptijdDagen']);
 	}
+
+	/**
+	 * The quarter's decided terms in one line a footnote reads (DqTermijnen
+	 * "Kwartaal 2 van 2026: 4 zaken beslist, 3 binnen de termijn (75 %)").
+	 *
+	 * @return void
+	 */
+	public function testQuarterlyReportSummarisesTheDecidedTerms(): void {
+		$report = $this->service->generateQuarterlyReport('2026-Q2');
+
+		self::assertSame(
+			[['period' => '2026-Q2', 'quarter' => 2, 'year' => 2026, 'decided' => 4, 'withinTerm' => 3, 'share' => 75]],
+			$report['summaryRows']
+		);
+	}//end testQuarterlyReportSummarisesTheDecidedTerms()
+
+	/**
+	 * A quarter without a decided term has no summary line.
+	 *
+	 * @return void
+	 */
+	public function testQuarterWithoutDecidedTermsHasNoSummary(): void {
+		self::assertSame([], $this->service->generateQuarterlyReport('2027-Q1')['summaryRows']);
+	}//end testQuarterWithoutDecidedTermsHasNoSummary()
 
 	/**
 	 * Seed a term in 2026 Q4 on a new case of the given case type.
@@ -157,6 +192,29 @@ class DeadlineReportingServiceTest extends TestCase {
 	}//end testNoTermIsReportedUnderUnknown()
 
 	/**
+	 * The quarterly figures also come as a list a table draws: each row named
+	 * by the case type's title, or by its key without one, with the penalty
+	 * total in euros beside the cents.
+	 *
+	 * @return void
+	 */
+	public function testQuarterlyRowsNameEachCaseType(): void {
+		$this->q4Term('w1', 'ct-woo');
+		$this->q4Term('orphan', null);
+
+		$rows = array_column($this->service->generateQuarterlyReport('2026-Q4')['rows'], null, 'caseType');
+
+		self::assertSame('Woo-verzoek', $rows['woo-verzoek']['caseTypeTitle']);
+		self::assertSame(1, $rows['woo-verzoek']['totaal']);
+		self::assertSame('unresolved', $rows['unresolved']['caseTypeTitle']);
+		self::assertEqualsWithDelta(
+			$rows['woo-verzoek']['dwangsomTotalCents'] / 100,
+			$rows['woo-verzoek']['penaltyTotalEuros'],
+			0.001
+		);
+	}//end testQuarterlyRowsNameEachCaseType()
+
+	/**
 	 * REQ-WTR-005: one met, one two days late, one running, one suspended.
 	 *
 	 * @return void
@@ -198,6 +256,50 @@ class DeadlineReportingServiceTest extends TestCase {
 		self::assertSame(75.0, $k['withinTermijnPercent']);
 		self::assertSame(1, $k['overrunCount']);
 		self::assertSame(61.0, $k['avgDurationDays']);
+	}
+
+	/**
+	 * The running figures count only terms that still run, read against the
+	 * given day, and the share per case type comes from that day's quarter.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function testKpiCarriesTheRunningFiguresOfTheDay(): void {
+		$this->objects->seed('case', ['id' => 'case-due', 'caseType' => 'ct-woo']);
+		$this->objects->seed('deadlineInstance', [
+			'id' => 'ti-due',
+			'case' => 'case-due',
+			'startDate' => '2026-06-20T10:00:00+00:00',
+			'endDateCurrent' => '2026-06-30',
+			'status' => 'verlengd',
+		]);
+
+		$k = $this->service->getTermijnKpi([], new \DateTimeImmutable('2026-07-02'));
+
+		self::assertSame(2, $k['runningCount']);
+		self::assertSame(2, $k['runningCaseTypeCount']);
+		self::assertSame(1, $k['dueThisWeekCount']);
+		self::assertSame(1, $k['overdueCount']);
+		self::assertSame(0.0, $k['penaltyRunningEuros']);
+		self::assertSame([], $k['onTimeByCaseType']['labels']);
+	}
+
+	/**
+	 * A window given by the page decides which terms the share per case type covers.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function testShareOnTimeFollowsTheGivenWindow(): void {
+		$inWindow = $this->service->getTermijnKpi([], new \DateTimeImmutable('2026-10-16'), '2026-04-01', '2026-06-30');
+		self::assertSame(['Omgevingsvergunning (regulier)'], $inWindow['onTimeByCaseType']['labels']);
+		self::assertSame([75.0], $inWindow['onTimeByCaseType']['shares']);
+
+		$currentQuarter = $this->service->getTermijnKpi([], new \DateTimeImmutable('2026-10-16'));
+		self::assertSame([], $currentQuarter['onTimeByCaseType']['labels']);
 	}
 
 	/**
@@ -252,5 +354,96 @@ class DeadlineReportingServiceTest extends TestCase {
 		$report = $this->service->generateDwangsomAuditReport(2026);
 		self::assertSame(1, $report['summary']['count']);
 		self::assertSame(35700, $report['summary']['totalCents']);
+		self::assertSame(357.0, $report['summary']['totalEuros']);
+		self::assertSame(count($report['warnings']), $report['summary']['warningCount']);
+	}
+
+	/**
+	 * With a finance app the annual statement counts the payouts finance paid
+	 * in the year (REQ-DQM-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	public function testTheAnnualStatementReadsFinancesPayouts(): void {
+		$asked = null;
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (object $event) use (&$asked): void {
+				$asked = $event;
+				$event->answer([['payableId' => 'payable-1', 'reference' => 'DWS-1', 'correlationId' => 'calc-1', 'amount' => 357.0, 'state' => 'paid', 'paidOn' => '2026-04-20', 'bankReference' => 'ERP-1', 'payee' => ['name' => 'J', 'iban' => 'NL91ABNA0417164300']]]);
+			}
+		);
+		$service = new DeadlineReportingService(settingsService: $this->settings, payouts: new PayoutReader(dispatcher: $dispatcher));
+
+		$report = $service->generateDwangsomAuditReport(2026);
+
+		self::assertSame(2026, $asked->getPaidInYear());
+		self::assertSame(1, $report['summary']['count']);
+		self::assertSame(35700, $report['summary']['totalCents']);
+		self::assertSame('ERP-1', $report['rows'][0]['betalingsreferentie']);
+		self::assertSame('NL91ABNA0417164300', $report['rows'][0]['iban']);
+	}
+
+	/**
+	 * Every report carries the generic key beside the old one, with the same
+	 * value, so a reader of either name gets the figure for one release.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+	 */
+	public function testReportsCarryTheGenericKeysBesideTheOldOnes(): void {
+		$this->objects->seed('dwangsomUitbetaling', [
+			'id' => 'u-1',
+			'reference' => 'REF-1',
+			'amount' => 35700,
+			'actualPaymentDate' => '2026-04-20',
+			'betalingsreferentie' => 'ERP-1',
+			'status' => 'paid',
+		]);
+
+		$quarterly = $this->service->generateQuarterlyReport('2026-Q2');
+		self::assertSame('2026-Q2', $quarterly['period']);
+		self::assertSame($quarterly['periode'], $quarterly['period']);
+		$row = $quarterly['perType']['omgevingsvergunning-regulier'];
+		$pairs = [
+			'totaal' => 'total',
+			'binnenTermijnPct' => 'withinTermPct',
+			'gemiddeldeDoorlooptijdDagen' => 'averageProcessingDays',
+			'verlengingen' => 'extensions',
+			'overschrijdingen' => 'overruns',
+			'ingebrekestellingen' => 'noticesOfDefault',
+			'dwangsomTotalCents' => 'penaltyTotalCents',
+		];
+		foreach ($pairs as $old => $new) {
+			self::assertArrayHasKey($new, $row, $new . ' missing beside ' . $old);
+			self::assertSame($row[$old], $row[$new]);
+		}
+
+		$listed = array_column($quarterly['rows'], 'withinTermPct', 'caseType');
+		self::assertSame(75.0, $listed['omgevingsvergunning-regulier']);
+
+		$kpi = $this->service->getTermijnKpi();
+		self::assertSame($kpi['totalZaken'], $kpi['totalCases']);
+		self::assertSame($kpi['withinTermijnPercent'], $kpi['withinTermPercent']);
+		self::assertSame($kpi['dwangsomTotalCents'], $kpi['penaltyTotalCents']);
+
+		$annual = $this->service->generateDwangsomAuditReport(2026);
+		self::assertSame(2026, $annual['year']);
+		self::assertSame(35700, $annual['rows'][0]['amountCents']);
+		self::assertSame('ERP-1', $annual['rows'][0]['paymentReference']);
+		self::assertSame($annual['rows'][0]['bedragCents'], $annual['rows'][0]['amountCents']);
+	}
+
+	/**
+	 * A row without an old key gains no generic key.
+	 *
+	 * @return void
+	 */
+	public function testGenericKeysAddNothingARowDoesNotHave(): void {
+		self::assertSame([], DeadlineReportingService::genericKeys(row: ['received' => 3]));
+		self::assertSame(['total' => 3], DeadlineReportingService::genericKeys(row: ['totaal' => 3]));
 	}
 }

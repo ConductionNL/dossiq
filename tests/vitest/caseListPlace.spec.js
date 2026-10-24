@@ -30,7 +30,7 @@ const manifest = JSON.parse(
 const STUB = {}
 
 /** The pages a handler triages from, which are the only ones that split. */
-const TRIAGED_FROM = ['Cases', 'Queue']
+const TRIAGED_FROM = ['Cases']
 
 /**
  * One page of the shipped manifest.
@@ -78,6 +78,11 @@ describe('a case opens as its own page', () => {
 		expect(page('CaseDetail').referencePreview).toBe(true)
 	})
 
+	it('steps to the next and previous case of the list it was opened from', () => {
+		// nextcloud-vue lists navigation only for a detail page that opts in.
+		expect(page('CaseDetail').listNavigation).toBe(true)
+	})
+
 	it('is still a detail page reached at /cases/:id', () => {
 		// The split route is a SIBLING of the list, `/cases/split/:id`, and
 		// vue-router ranks its static segment above the `:id` of this one. If
@@ -120,5 +125,43 @@ describe('the personal layer', () => {
 		// a product where those terms are the point. A person may still choose
 		// relative for themselves; the app default does not choose it for them.
 		expect(manifest.personalisation.dateDisplay).toBe('absolute')
+	})
+})
+
+describe('the retired workflow board address', () => {
+	it('opens the Cases list in board view', async () => {
+		const { createMemoryHistory, createRouter } = await import('vue-router')
+		const router = createRouter({
+			history: createMemoryHistory(),
+			routes: routesFromManifest(manifest, STUB),
+		})
+		await router.push('/workflow-board')
+		expect(router.currentRoute.value.name).toBe('Cases')
+		expect(router.currentRoute.value.query).toEqual({ _view: 'board' })
+	})
+
+	it('is no page of its own any more', () => {
+		expect((manifest.pages || []).map((entry) => entry.id)).not.toContain(
+			'WorkflowBoard',
+		)
+	})
+})
+
+describe('the retired case map address', () => {
+	it('opens the Cases list in map view', async () => {
+		const { createMemoryHistory, createRouter } = await import('vue-router')
+		const router = createRouter({
+			history: createMemoryHistory(),
+			routes: routesFromManifest(manifest, STUB),
+		})
+		await router.push('/map')
+		expect(router.currentRoute.value.name).toBe('Cases')
+		expect(router.currentRoute.value.query).toEqual({ _view: 'map' })
+	})
+
+	it('is no page of its own any more', () => {
+		expect((manifest.pages || []).map((entry) => entry.id)).not.toContain(
+			'CaseMap',
+		)
 	})
 })

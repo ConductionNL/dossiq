@@ -49,6 +49,7 @@ class WooReportSwitchesTest extends TestCase {
 		$config->method('getValueString')->willReturnCallback(
 			static fn (string $app, string $key, string $default = ''): string => ($stored[$key] ?? $default)
 		);
+		$config->method('hasKey')->willReturnCallback(static fn (string $app, string $key): bool => array_key_exists($key, $stored));
 		$groupManager = $this->createMock(IGroupManager::class);
 		$groupManager->method('groupExists')->willReturnCallback(static fn (string $gid): bool => isset($groups[$gid]));
 		$groupManager->method('isInGroup')->willReturnCallback(
@@ -124,4 +125,40 @@ class WooReportSwitchesTest extends TestCase {
 			}
 		}
 	}//end testASaveWithoutAnExistingReaderGroupIsRefused()
+
+	/**
+	 * A setting stored under its earlier key is read while the current key was never written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+	 */
+	public function testTheEarlierKeyIsReadUntilTheCurrentOneIsWritten(): void {
+		$legacy = ['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'woo-leiding', 'wooCollectionPartiesReport' => 'true'];
+		$switches = $this->switches(stored: $legacy);
+		$this->assertTrue($switches->isOn(switch: WooReportSwitches::THROUGHPUT));
+		$this->assertTrue($switches->isOn(switch: WooReportSwitches::PARTIES));
+		$this->assertSame('woo-leiding', $switches->readerGroup());
+
+		// Written under the current key, even empty, the current key wins.
+		$switches = $this->switches(stored: $legacy + [WooReportSwitches::PARTIES => 'false', WooReportSwitches::READERS => '']);
+		$this->assertFalse($switches->isOn(switch: WooReportSwitches::PARTIES));
+		$this->assertSame('', $switches->readerGroup());
+	}//end testTheEarlierKeyIsReadUntilTheCurrentOneIsWritten()
+
+	/**
+	 * A save posted under the earlier keys is carried onto the current ones; the current key wins.
+	 *
+	 * @return void
+	 */
+	public function testASaveUnderTheEarlierKeysCarriesOntoTheCurrentOnes(): void {
+		$this->assertSame(
+			['wooCollectionPartiesReport' => 'true', WooReportSwitches::PARTIES => 'true'],
+			WooReportSwitches::withCurrentKeys(data: ['wooCollectionPartiesReport' => 'true'])
+		);
+		$this->assertSame(
+			[WooReportSwitches::PARTIES => 'false', 'wooCollectionPartiesReport' => 'true'],
+			WooReportSwitches::withCurrentKeys(data: [WooReportSwitches::PARTIES => 'false', 'wooCollectionPartiesReport' => 'true'])
+		);
+	}//end testASaveUnderTheEarlierKeysCarriesOntoTheCurrentOnes()
 }//end class

@@ -107,7 +107,7 @@ class InitializeSettings implements IRepairStep {
 			// returns an empty schema list, which previously left
 			// case_type_schema/status_type_schema/status_record_schema/
 			// workflow_template_schema unset and broke status-name resolution +
-			// the WorkflowBoard on a fresh deploy. Running the reconcile here
+			// the workflow board on a fresh deploy. Running the reconcile here
 			// guarantees the keys are provisioned even when the import is a
 			// no-op (or partially succeeds).
 			$reconciled = $this->settingsService->reconcileSchemaConfig();

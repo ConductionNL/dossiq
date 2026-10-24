@@ -101,29 +101,51 @@ test.describe('Case lifecycle — state machine', () => {
 	})
 
 	/**
-	 * Open the Workflow Board via the sidebar and wait for its columns to load.
+	 * Open the workflow board (the Cases list in board view) and wait for this
+	 * run's columns to load.
 	 *
 	 * @param page The page.
 	 */
 	async function openBoard(page: Page): Promise<void> {
-		// The "Workflow board" leaf was relocated UNDER the "Work queue" group in
-		// the nav-dedup pass (menu-layout.json relocations), so it is no longer a
-		// top-level sidebar link — navTo('Workflow Board') matches nothing and
-		// strands on the Dashboard. Reach it by a bare deep-link (bare paths
-		// resolve; /index.php-prefixed ones reset to the Dashboard).
-		await page.goto('/index.php/apps/dossiq/workflow-board', {
+		await page.goto('/index.php/apps/dossiq/cases?_view=board', {
 			waitUntil: 'domcontentloaded',
 			timeout: 60_000,
 		})
 		await dismissSupportDialog(page)
+		await expect(page.locator('[data-testid="cn-board-view"]')).toBeVisible({
+			timeout: 30000,
+		})
+		// The board loads every statusType, caseType and case in batches,
+		// which on a loaded rig takes well over 15s.
 		await expect(
-			page.getByRole('heading', { name: 'Workflow Board' }).first(),
+			page
+				.locator('.cn-board-view__column-title', { hasText: RUN_PREFIX })
+				.first(),
 		).toBeVisible({ timeout: 30000 })
-		// The board fetches every statusType, caseType and up to 500 cases on
-		// mount, which on a loaded rig takes well over 15s.
-		await expect(
-			page.getByText(`${RUN_PREFIX} Ontvangen`, { exact: false }).first(),
-		).toBeVisible({ timeout: 30000 })
+	}
+
+	/**
+	 * Wait until a card is drawn on the board, opening hidden cards behind
+	 * "Show N more" as they arrive.
+	 *
+	 * @param page The page.
+	 * @param title The card's title.
+	 */
+	async function expectCardOnBoard(page: Page, title: string): Promise<void> {
+		await expect
+			.poll(
+				async () => {
+					const more = page.locator('[data-testid="cn-board-show-more"]')
+					while ((await more.count()) > 0) {
+						await more.first().click()
+					}
+					return page
+						.locator('[data-testid="cn-board-card"]', { hasText: title })
+						.count()
+				},
+				{ message: `the board must draw "${title}"`, timeout: 30000 },
+			)
+			.toBe(1)
 	}
 
 	// @e2e exclude No scenario states that the available-transitions
@@ -150,11 +172,7 @@ test.describe('Case lifecycle — state machine', () => {
 		// On the board, the case card sits under its current-status column and
 		// the column header shows the status type name.
 		await openBoard(page)
-		await expect(
-			page
-				.getByText(`${RUN_PREFIX} Status render case`, { exact: false })
-				.first(),
-		).toBeVisible({ timeout: 15000 })
+		await expectCardOnBoard(page, `${RUN_PREFIX} Status render case`)
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#scenario-successful-transition-with-audit-trail
@@ -200,9 +218,7 @@ test.describe('Case lifecycle — state machine', () => {
 
 		// … and the board renders the card in the "In handling" column.
 		await openBoard(page)
-		await expect(
-			page.getByText(`${RUN_PREFIX} Advance case`, { exact: false }).first(),
-		).toBeVisible({ timeout: 15000 })
+		await expectCardOnBoard(page, `${RUN_PREFIX} Advance case`)
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006a-board-columns-reflect-status-types
@@ -263,14 +279,14 @@ test.describe('Case lifecycle — state machine', () => {
 		expect(decision).not.toBe('')
 
 		await openBoard(page)
-		const ours = page
-			.locator('.board-column')
-			.filter({ has: page.locator('.board-column__name', { hasText: board }) })
+		const ours = page.locator('[data-testid="cn-board-column"]').filter({
+			has: page.locator('.cn-board-view__column-title', { hasText: board }),
+		})
 		await expect(ours.first()).toBeVisible({ timeout: 15000 })
 
 		// THREE columns, IN ORDER, and the final status is not one of them.
 		await expect(
-			ours.locator('.board-column__name'),
+			ours.locator('.cn-board-view__column-title'),
 			'one column per non-final status type, in status order',
 		).toHaveText([
 			`${board} Ontvangen`,
@@ -280,7 +296,7 @@ test.describe('Case lifecycle — state machine', () => {
 
 		// Each header shows the count of cases in that status.
 		await expect(
-			ours.locator('.board-column__count'),
+			ours.locator('[data-testid="cn-board-count"]'),
 			'each column header counts the cases in that status',
 		).toHaveText(['2', '1', '0'])
 	})

@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\CaseType\RowOrigins;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use RuntimeException;
 
@@ -251,20 +252,22 @@ class CaseTypeResolver {
 	 *
 	 * @return array<string, mixed> The blueprint: `caseType` (the effective
 	 *                              row), `parents` (the ancestors it merged),
-	 *                              `statusTypes`, `resultTypes` and
-	 *                              `propertyDefinitions`.
+	 *                              `statusTypes`, `resultTypes`,
+	 *                              `propertyDefinitions` and `counts`.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function blueprintFor(string $caseTypeId): array {
-		$chain = $this->chainFor(caseTypeId: $caseTypeId);
+		$chain      = $this->chainFor(caseTypeId: $caseTypeId);
+		$properties = $this->propertyDefinitionsFor(caseTypeId: $caseTypeId);
 
 		return [
 			'caseType' => $this->effectiveCaseType(caseTypeId: $caseTypeId),
 			'parents' => array_slice($chain, 1),
 			'statusTypes' => $this->statusTypesFor(caseTypeId: $caseTypeId),
 			'resultTypes' => $this->resultTypesFor(caseTypeId: $caseTypeId),
-			'propertyDefinitions' => $this->propertyDefinitionsFor(caseTypeId: $caseTypeId),
+			'propertyDefinitions' => $properties,
+			'counts' => ['propertyDefinitions' => (new RowOrigins())->counts(rows: $properties, inheritedOrigin: self::ORIGIN_INHERITED)],
 		];
 	}//end blueprintFor()
 
@@ -396,20 +399,20 @@ class CaseTypeResolver {
 		}
 
 		// Furthest ancestor first, so a nearer declaration overwrites it.
-		$merged = [];
+		$merged  = [];
+		$origins = new RowOrigins();
 		foreach (array_reverse($chain) as $depth => $ancestor) {
-			$isOwn = ($depth === (count($chain) - 1));
-			$origin = self::ORIGIN_INHERITED;
-			if ($isOwn === true) {
-				$origin = self::ORIGIN_OWN;
-			}
+			$isOwn  = ($depth === (count($chain) - 1));
+			$origin = $origins->originFor(isOwn: $isOwn);
 
 			foreach ($this->store->rowsOfType(schemaKey: $schemaKey, caseTypeId: $this->store->rowId(row: $ancestor)) as $row) {
-				$merged[$this->mergeKey(row: $row)] = $this->tag(
+				$key    = $this->mergeKey(row: $row);
+				$tagged = $this->tag(
 					row: $row,
 					origin: $origin,
 					ancestor: $ancestor
 				);
+				$merged[$key] = $origins->markOverride(row: $tagged, isOwn: $isOwn, merged: $merged, key: $key);
 			}
 		}
 

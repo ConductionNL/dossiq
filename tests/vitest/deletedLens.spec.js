@@ -11,8 +11,8 @@
  * and render as a working lens over an empty trash.
  *
  * So the assertions here pin the two halves that make the lens real: the page
- * exists with a component behind it, and no chip on the case list pretends to
- * do the same job.
+ * exists over dossiq's own deleted-cases endpoint, and no chip on the case
+ * list pretends to do the same job.
  *
  * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
  */
@@ -40,22 +40,39 @@ function deletedPage() {
 }
 
 describe('the deleted lens', () => {
-	it('is a page of its own, with a component behind it', () => {
+	it('is a page of its own, over dossiq\'s deleted-cases endpoint rather than the objects endpoint', () => {
 		const page = deletedPage()
 
 		expect(page).toBeTruthy()
 		expect(page.route).toBe('/cases/deleted')
-		expect(page.type).toBe('custom')
-		expect(page.component).toBe('DeletedCasesView')
+		expect(page.type).toBe('index')
+		expect(page.config.entitySource).toBe('endpoint')
+		expect(page.config.sourceConfig).toEqual({ url: '/apps/dossiq/api/cases/deleted', rowsPath: 'results', searchParam: 'search' })
+		expect(page.config.register).toBeUndefined()
 	})
 
-	it('has its component registered, so the route renders something', () => {
-		expect(registrySource).toContain('DeletedCasesView')
-		expect(
-			fs.existsSync(
-				path.join(ROOT, 'src', 'views', 'cases', 'DeletedCasesView.vue'),
-			),
-		).toBe(true)
+	// deleted-cases-read-the-case-table: the All cases page's look over this lens.
+	it('searches through the endpoint, counts its rows and keeps its own saved views', () => {
+		const config = deletedPage().config
+
+		expect(config.sourceConfig.searchParam).toBe('search')
+		expect(config.searchPlaceholder).toBe('Search by case number, title or who deleted it')
+		expect(config.sidebar).toMatchObject({ enabled: true, subtitle: { singular: '{total} deleted case', plural: '{total} deleted cases' } })
+		expect(config.allowSavedViews).toBe(true)
+		expect(config.savedViewsScope).toBe('source:cases-deleted')
+		expect(config.viewModes).toEqual(['table'])
+		expect(config.viewSwitch).toEqual(['table'])
+	})
+
+	it('restores and destroys through a confirm that shows the server\'s refusal', () => {
+		const actions = Object.fromEntries(deletedPage().config.actions.map((action) => [action.id, action]))
+
+		for (const [id, verb] of [['restore', 'restore'], ['destroy', 'destroy']]) {
+			expect(actions[id]).toMatchObject({ type: 'open-modal', target: 'CnActionDialog' })
+			expect(actions[id].props.config.confirm.request).toMatchObject({ method: 'POST', url: `/apps/dossiq/api/case/@objectId/${verb}` })
+		}
+		expect(actions.destroy.props.config.confirm.request.body).toEqual({ waiveWindow: false })
+		expect(registrySource).not.toContain('DeletedCasesView')
 	})
 
 	it('is reachable from the menu, with an icon that exists', () => {
@@ -68,14 +85,11 @@ describe('the deleted lens', () => {
 		expect(iconsSource).toContain(`\n\t${entry.icon},`)
 	})
 
-	it('shows the date each window ends, not a duration the reader computes', () => {
-		const view = fs.readFileSync(
-			path.join(ROOT, 'src', 'views', 'cases', 'DeletedCasesView.vue'),
-			'utf8',
-		)
+	it('shows the date each window ends, with what is left of it under the date', () => {
+		const column = deletedPage().config.columns.find((col) => col.key === 'windowEndsOn')
 
-		expect(view).toContain('windowEndsOn')
-		expect(view).toContain('Recover until')
+		expect(column.label).toBe('Recover until')
+		expect(column.secondary).toBe('{windowNote}')
 	})
 
 	it('does not put a deleted chip on the case list, which would answer nothing', () => {

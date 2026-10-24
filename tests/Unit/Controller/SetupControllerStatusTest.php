@@ -36,6 +36,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\SetupController;
 use OCA\Dossiq\Service\DemoDataService;
 use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
+use OCA\Dossiq\Service\Setup\ActiveOrganisationProfile;
+use OCA\Dossiq\Service\Setup\CaseTypePackageChoice;
 use OCA\Dossiq\Service\Setup\FirstRunReadiness;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
@@ -71,6 +73,8 @@ class SetupControllerStatusTest extends TestCase {
 	 * @param array<string,mixed>|null $seedResult         What the package installer answers, when it is asked.
 	 * @param array<string,mixed>|\Throwable|null $demoResult What the demo import returns, or throws.
 	 * @param array<string,mixed>|null $requestParams      Request params, for the config-fields step.
+	 * @param ActiveOrganisationProfile|null $profile      The Organisation step's store; a named organisation by default.
+	 * @param array<int,array<string,mixed>> $catalogue    The case definition packages the installer lists.
 	 *
 	 * @return array{controller: SetupController, written: array<string,string>, settings: SettingsService, asked: list<string>} The
 	 *   controller, a live view of every app-config value it wrote, its settings collaborator, and the package ids the installer was asked for.
@@ -83,6 +87,8 @@ class SetupControllerStatusTest extends TestCase {
 		?array $seedResult = null,
 		array|\Throwable|null $demoResult = null,
 		?array $requestParams = null,
+		?ActiveOrganisationProfile $profile = null,
+		array $catalogue = [],
 	): array {
 		$written = [];
 		$asked = [];
@@ -90,8 +96,8 @@ class SetupControllerStatusTest extends TestCase {
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')
 			->willReturnCallback(
-				static function (string $app, string $key, string $default = '') use ($config): string {
-					return $config[$key] ?? $default;
+				static function (string $app, string $key, string $default = '') use ($config, &$written): string {
+					return $written[$key] ?? $config[$key] ?? $default;
 				}
 			);
 		$appConfig->method('setValueString')
@@ -106,6 +112,7 @@ class SetupControllerStatusTest extends TestCase {
 		$settings->method('isOpenRegisterAvailable')->willReturn($openRegisterOnline);
 
 		$packages = $this->createMock(PackageInstaller::class);
+		$packages->method('catalogue')->willReturn($catalogue);
 		// ADR-111 added the generated demo dataset as its own service and its
 		// own setup step. Since the bezwaar/beroep `seed` step was retired,
 		// the demo import IS the app's demo-data affordance, so it is driven
@@ -157,11 +164,27 @@ class SetupControllerStatusTest extends TestCase {
 			settingsService: $settings,
 			packages: $packages,
 			readiness: new FirstRunReadiness(settingsService: $settings, appConfig: $appConfig),
+			organisationProfile: ($profile ?? $this->namedOrganisation()),
+			caseTypes: new CaseTypePackageChoice(packages: $packages, appConfig: $appConfig),
 		);
 
 		return ['controller' => $controller, 'written' => &$written, 'settings' => $settings, 'asked' => &$asked];
 
 	}//end build()
+
+	/**
+	 * An organisation profile that reads a named organisation and accepts every write.
+	 *
+	 * @return ActiveOrganisationProfile The fake.
+	 */
+	private function namedOrganisation(): ActiveOrganisationProfile {
+		$profile = $this->createMock(ActiveOrganisationProfile::class);
+		$profile->method('isSettled')->willReturn(true);
+		$profile->method('write')->willReturn(true);
+
+		return $profile;
+
+	}//end namedOrganisation()
 
 	/**
 	 * A fully-provisioned register with the sample data not yet loaded.
@@ -275,124 +298,62 @@ class SetupControllerStatusTest extends TestCase {
 	}//end testTheRegisterIsNotReadyWhenOpenRegisterIsUnavailable()
 
 	/**
-	 * With the payout integration configured and no signing secret, the step
-	 * is outstanding.
-	 *
-	 * PayoutCallbackController cannot verify a callback's origin
-	 * without it, so this is the state the warning exists to catch.
+	 * The dwangsom secret is not a wizard step: it is a procedure-specific
+	 * setting, set under admin settings > Financial integration.
 	 *
 	 * @return void
 	 */
-	public function testDwangsomSecretIsOutstandingWhenThePayoutIntegrationIsConfigured(): void {
-		$config = $this->provisioned() + ['dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling'];
+	public function testTheDwangsomSecretIsNotAWizardStep(): void {
+		$config = $this->provisioned() + ['payout_schema' => 'dwangsomUitbetaling'];
 		$data   = $this->controller($config)->status()->getData();
 
-		$this->assertFalse($data['steps']['dwangsom-secret']['done']);
-		$this->assertFalse($data['dwangsom_callback_secret_configured']);
+		$this->assertArrayNotHasKey('dwangsom-secret', $data['steps']);
 
-	}//end testDwangsomSecretIsOutstandingWhenThePayoutIntegrationIsConfigured()
+	}//end testTheDwangsomSecretIsNotAWizardStep()
 
 	/**
-	 * A configured secret settles the step.
+	 * The go-live flag still reports a missing secret while the payout
+	 * integration is configured, and a configured one once it is set.
 	 *
 	 * @return void
 	 */
-	public function testDwangsomSecretIsDoneOnceSet(): void {
-		$config = $this->provisioned() + [
-			'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
-			'dwangsom_callback_secret'    => 's3cret',
-		];
-		$data = $this->controller($config)->status()->getData();
+	public function testTheGoLiveFlagReportsTheSecret(): void {
+		$config = $this->provisioned() + ['payout_schema' => 'dwangsomUitbetaling'];
+		$this->assertFalse($this->controller($config)->status()->getData()['dwangsom_callback_secret_configured']);
 
-		$this->assertTrue($data['steps']['dwangsom-secret']['done']);
-		$this->assertTrue($data['dwangsom_callback_secret_configured']);
+		$config['payout_callback_secret'] = 's3cret';
+		$this->assertTrue($this->controller($config)->status()->getData()['dwangsom_callback_secret_configured']);
 
-	}//end testDwangsomSecretIsDoneOnceSet()
+	}//end testTheGoLiveFlagReportsTheSecret()
 
 	/**
-	 * With no payout integration there is no callback to sign, so the step is
-	 * settled rather than nagging.
+	 * With no payout integration the go-live flag stays absent.
 	 *
 	 * @return void
 	 */
-	public function testDwangsomSecretIsSettledWhenThePayoutIntegrationIsNotConfigured(): void {
+	public function testTheGoLiveFlagIsAbsentWithoutThePayoutIntegration(): void {
 		$data = $this->controller($this->provisioned())->status()->getData();
 
-		$this->assertTrue($data['steps']['dwangsom-secret']['done']);
-		$this->assertArrayNotHasKey(
-			'dwangsom_callback_secret_configured',
-			$data,
-			'the legacy flag stays absent when the capability is off'
-		);
+		$this->assertArrayNotHasKey('dwangsom_callback_secret_configured', $data);
 
-	}//end testDwangsomSecretIsSettledWhenThePayoutIntegrationIsNotConfigured()
+	}//end testTheGoLiveFlagIsAbsentWithoutThePayoutIntegration()
 
 	/**
-	 * Until the wizard has completed once, the step and the legacy flag agree.
-	 *
-	 * They were two representations of one fact and drifted; deriving both
-	 * from the secret keeps them together for as long as the wizard is still
-	 * the surface asking for it.
-	 *
-	 * @return void
-	 */
-	public function testTheStepAndTheLegacyFlagAgreeBeforeTheWizardCompletes(): void {
-		foreach ([['secret' => ''], ['secret' => 's3cret']] as $case) {
-			$config = $this->provisioned() + [
-				'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
-				'dwangsom_callback_secret'    => $case['secret'],
-			];
-			$data = $this->controller($config)->status()->getData();
-
-			$this->assertSame(
-				$data['steps']['dwangsom-secret']['done'],
-				$data['dwangsom_callback_secret_configured']
-			);
-		}
-
-	}//end testTheStepAndTheLegacyFlagAgreeBeforeTheWizardCompletes()
-
-	/**
-	 * Once the wizard has completed, the optional secret step is settled.
-	 *
-	 * The step is optional and the secret lives under admin settings, but as
-	 * long as it reported "not done" CnAppRoot reopened the wizard at this
-	 * step on every fresh browser profile, because dismissal is only a
-	 * localStorage key. Completing the wizard is the answer to the question;
-	 * the go-live flag keeps saying, truthfully, that no secret is set.
-	 *
-	 * @return void
-	 */
-	public function testDwangsomSecretIsSettledOnceTheWizardHasCompleted(): void {
-		$config = $this->provisioned() + [
-			'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
-			'setup_completed_version'     => '1',
-		];
-		$data = $this->controller($config)->status()->getData();
-
-		$this->assertTrue($data['completed']);
-		$this->assertTrue($data['steps']['dwangsom-secret']['done'], 'a completed wizard has answered the optional step');
-		$this->assertFalse($data['dwangsom_callback_secret_configured'], 'the go-live warning still reports the missing secret');
-
-	}//end testDwangsomSecretIsSettledOnceTheWizardHasCompleted()
-
-	/**
-	 * The completion marker written by THIS call does not settle the step yet.
+	 * The completion marker written by THIS call does not settle the case
+	 * types step yet.
 	 *
 	 * status() records completion as a side effect. If the step read that
-	 * marker after it was written, the very visit that finishes the required
-	 * steps would skip the optional one without ever offering it; the step
-	 * must read the marker from before the call.
+	 * marker after it was written, the very visit that finishes the wizard
+	 * would skip the step without ever offering it.
 	 *
 	 * @return void
 	 */
 	public function testTheMarkerWrittenByThisCallDoesNotSettleTheStepYet(): void {
-		$config = $this->provisioned() + ['dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling'];
-		$built  = $this->build(config: $config);
-		$data   = $built['controller']->status()->getData();
+		$built = $this->build(config: $this->provisioned());
+		$data  = $built['controller']->status()->getData();
 
 		$this->assertSame('1', $built['written']['setup_completed_version'] ?? null, 'the call records completion');
-		$this->assertFalse($data['steps']['dwangsom-secret']['done'], 'and still offers the step this once');
+		$this->assertFalse($data['steps']['case-types']['done'], 'and still offers the step this once');
 
 	}//end testTheMarkerWrittenByThisCallDoesNotSettleTheStepYet()
 	/**
@@ -671,6 +632,7 @@ class SetupControllerStatusTest extends TestCase {
 	public function testAKnownDatasetIsStoredAlongsideTheOtherFields(): void {
 		$built = $this->build(
 			config: $this->provisioned(),
+			demoResult: ['objects' => 4, 'requested' => 4, 'refused' => 0, 'unchanged' => 0],
 			requestParams: ['demo_dataset' => 'demo', 'some_field' => 'kept']
 		);
 
@@ -679,6 +641,7 @@ class SetupControllerStatusTest extends TestCase {
 		$this->assertTrue($response->getData()['success']);
 		$this->assertSame('demo', $built['written']['demo_dataset'] ?? null);
 		$this->assertSame('kept', $built['written']['some_field'] ?? null);
+		$this->assertSame('installed', $built['written']['demo_data_decided'] ?? null, 'Next on the step loads the picked set');
 
 	}//end testAKnownDatasetIsStoredAlongsideTheOtherFields()
 
@@ -693,6 +656,7 @@ class SetupControllerStatusTest extends TestCase {
 	public function testAListIsAcceptedBecauseTheWizardContractAllowsOne(): void {
 		$built = $this->build(
 			config: $this->provisioned(),
+			demoResult: ['objects' => 4, 'requested' => 4, 'refused' => 0, 'unchanged' => 0],
 			requestParams: ['demo_dataset' => ['demo']]
 		);
 
@@ -773,7 +737,7 @@ class SetupControllerStatusTest extends TestCase {
 			config: [],
 			requestParams: [
 				'_route' => 'dossiq.setup.saveConfig',
-				'dwangsom_callback_secret' => 's3cret',
+				'payout_callback_secret' => 's3cret',
 				'retry_delays' => [1, 5, 15],
 			]
 		);
@@ -781,7 +745,7 @@ class SetupControllerStatusTest extends TestCase {
 		$response = $built['controller']->saveConfig();
 
 		$this->assertTrue($response->getData()['success']);
-		$this->assertSame('s3cret', $built['written']['dwangsom_callback_secret'] ?? null);
+		$this->assertSame(expected: 's3cret', actual: $built['written']['payout_callback_secret'] ?? null);
 		$this->assertSame('[1,5,15]', $built['written']['retry_delays'] ?? null);
 		$this->assertArrayNotHasKey('_route', $built['written']);
 
@@ -930,4 +894,219 @@ class SetupControllerStatusTest extends TestCase {
 		$this->assertArrayNotHasKey('dismissed', $data);
 
 	}//end testNoCloseNoDismissedKey()
+	/**
+	 * The board's three opening steps are reported, and the old welcome is gone.
+	 *
+	 * @return void
+	 */
+	public function testTheBoardStepsAreReported(): void {
+		$data = $this->controller($this->provisioned())->status()->getData();
+
+		$this->assertTrue($data['steps']['organisation-details']['done'], 'a named organisation settles the optional step');
+		$this->assertTrue($data['steps']['house-style']['done'], 'the house style is a hand-off, never outstanding');
+		$this->assertFalse($data['steps']['case-types']['done'], 'nothing chosen and nothing installed leaves the step open');
+		$this->assertArrayNotHasKey('welcome', $data['steps']);
+
+	}//end testTheBoardStepsAreReported()
+
+	/**
+	 * An unsettled organisation leaves the Organisation step open.
+	 *
+	 * @return void
+	 */
+	public function testAnUnnamedOrganisationLeavesTheStepOpen(): void {
+		$profile = $this->createMock(ActiveOrganisationProfile::class);
+		$profile->method('isSettled')->willReturn(false);
+
+		$data = $this->build(config: $this->provisioned(), profile: $profile)['controller']->status()->getData();
+
+		$this->assertFalse($data['steps']['organisation-details']['done']);
+
+	}//end testAnUnnamedOrganisationLeavesTheStepOpen()
+
+	/**
+	 * The Case types step's cards are the on-request packages, after a none card.
+	 *
+	 * @return void
+	 */
+	public function testStatusCarriesTheCaseTypeCards(): void {
+		$catalogue = [
+			['id' => 'bezwaar-beroep', 'title' => 'Bezwaar en beroep', 'version' => '1.0.0', 'install' => 'on-request', 'installed' => '', 'valid' => true],
+			['id' => 'vth', 'title' => 'VTH', 'version' => '1.0.0', 'install' => 'auto', 'installed' => '1.0.0', 'valid' => true],
+		];
+
+		$data = $this->build(config: $this->provisioned(), catalogue: $catalogue)['controller']->status()->getData();
+
+		$this->assertSame(['none', 'bezwaar-beroep'], array_column($data['caseTypePackages'], 'id'), 'an auto package is already there and is not offered');
+
+	}//end testStatusCarriesTheCaseTypeCards()
+
+	/**
+	 * The organisation fields go to the organisation, never into app config.
+	 *
+	 * @return void
+	 */
+	public function testOrganisationFieldsAreWrittenToTheOrganisation(): void {
+		$profile = $this->createMock(ActiveOrganisationProfile::class);
+		$profile->expects($this->once())
+			->method('write')
+			->with(['organisation_name' => 'Gemeente Waterland', 'organisation_logo' => ''])
+			->willReturn(true);
+
+		$built = $this->build(
+			config: $this->provisioned(),
+			requestParams: ['organisation_name' => 'Gemeente Waterland', 'organisation_logo' => '', '_route' => 'x'],
+			profile: $profile,
+		);
+
+		$this->assertTrue($built['controller']->saveConfig()->getData()['success']);
+		$this->assertSame([], $built['written'], 'the name and logo live on the OpenRegister organisation');
+
+	}//end testOrganisationFieldsAreWrittenToTheOrganisation()
+
+	/**
+	 * A failed organisation write is reported and stores nothing else.
+	 *
+	 * @return void
+	 */
+	public function testAFailedOrganisationWriteIsReported(): void {
+		$profile = $this->createMock(ActiveOrganisationProfile::class);
+		$profile->method('write')->willReturn(false);
+
+		$built = $this->build(
+			config: $this->provisioned(),
+			requestParams: ['organisation_name' => 'Gemeente Waterland', 'other_key' => 'x'],
+			profile: $profile,
+		);
+
+		$this->assertFalse($built['controller']->saveConfig()->getData()['success']);
+		$this->assertSame([], $built['written']);
+
+	}//end testAFailedOrganisationWriteIsReported()
+
+	/**
+	 * A case type card installs its package and records the choice.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeCardInstallsItsPackage(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			seedResult: ['status' => PackageInstaller::INSTALLED, 'message' => 'Installed.'],
+			requestParams: ['dataset' => 'subsidie'],
+			catalogue: [['id' => 'subsidie', 'title' => 'Subsidie', 'version' => '1.0.0', 'install' => 'on-request', 'installed' => '', 'valid' => true]],
+		);
+
+		$response = $built['controller']->runAction(actionId: 'install-case-types');
+
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame(['subsidie'], $built['asked']);
+		$this->assertSame('subsidie', $built['written']['case_type_package']);
+
+	}//end testACaseTypeCardInstallsItsPackage()
+
+	/**
+	 * A package the step does not offer is refused before the installer is asked.
+	 *
+	 * @return void
+	 */
+	public function testAnUnofferedCaseTypePackageIsRefused(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			seedResult: ['status' => PackageInstaller::INSTALLED, 'message' => 'Installed.'],
+			requestParams: ['dataset' => 'vth'],
+			catalogue: [['id' => 'vth', 'title' => 'VTH', 'version' => '1.0.0', 'install' => 'auto', 'installed' => '', 'valid' => true]],
+		);
+
+		$response = $built['controller']->runAction(actionId: 'install-case-types');
+
+		$this->assertSame(422, $response->getStatus());
+		$this->assertSame([], $built['asked']);
+		$this->assertArrayNotHasKey('case_type_package', $built['written']);
+
+	}//end testAnUnofferedCaseTypePackageIsRefused()
+	/**
+	 * Every setup endpoint is refused to anyone but an admin.
+	 *
+	 * saveConfig() writes the active OpenRegister organisation and app config,
+	 * runAction() installs case type packages. Neither has an in-method check:
+	 * the refusal is `#[AuthorizedAdminSetting]`, enforced by the framework
+	 * before the body runs, so a non-admin never reaches it. Dropping the
+	 * attribute, or adding one that opens the route, fails here.
+	 *
+	 * @return void
+	 */
+	public function testEverySetupEndpointRefusesEveryoneButAnAdmin(): void {
+		$opening = [
+			\OCP\AppFramework\Http\Attribute\NoAdminRequired::class,
+			\OCP\AppFramework\Http\Attribute\PublicPage::class,
+		];
+		foreach (['status', 'saveConfig', 'runAction'] as $endpoint) {
+			$method = new \ReflectionMethod(SetupController::class, $endpoint);
+			$names = array_map(static fn (\ReflectionAttribute $a): string => $a->getName(), $method->getAttributes());
+
+			$this->assertContains(\OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting::class, $names, $endpoint . '() must be admin-only');
+			$this->assertSame([], array_values(array_intersect($opening, $names)), $endpoint . '() must not be opened to non-admins');
+			$this->assertStringNotContainsString('@NoAdminRequired', (string)$method->getDocComment());
+			$this->assertStringNotContainsString('@PublicPage', (string)$method->getDocComment());
+		}
+
+	}//end testEverySetupEndpointRefusesEveryoneButAnAdmin()
+
+	/**
+	 * An organisation id in the request never reaches the organisation write.
+	 *
+	 * Only the name and logo fields are handed on; the profile writes the
+	 * active organisation, so a posted id cannot point the write elsewhere.
+	 *
+	 * @return void
+	 */
+	public function testAPostedOrganisationIdIsNotPassedOn(): void {
+		$profile = $this->createMock(ActiveOrganisationProfile::class);
+		$profile->expects($this->once())
+			->method('write')
+			->with(['organisation_name' => 'Gemeente Waterland'])
+			->willReturn(true);
+
+		$built = $this->build(
+			config: $this->provisioned(),
+			requestParams: ['organisation_name' => 'Gemeente Waterland', 'organisation' => 'another-uuid', 'uuid' => 'another-uuid'],
+			profile: $profile,
+		);
+
+		$this->assertTrue($built['controller']->saveConfig()->getData()['success']);
+
+	}//end testAPostedOrganisationIdIsNotPassedOn()
+	/**
+	 * Picking "Start empty" and pressing Next records the decline and imports nothing.
+	 *
+	 * @return void
+	 */
+	public function testNextOnStartEmptyRecordsTheDecline(): void {
+		$built = $this->build(config: $this->provisioned(), requestParams: ['demo_dataset' => 'none']);
+
+		$this->assertTrue($built['controller']->saveConfig()->getData()['success']);
+		$this->assertSame('skipped', $built['written']['demo_data_decided'] ?? null);
+
+	}//end testNextOnStartEmptyRecordsTheDecline()
+
+	/**
+	 * A failed load on Next answers 422, so the wizard stays on the step.
+	 *
+	 * @return void
+	 */
+	public function testAFailedLoadOnNextKeepsTheWizardOnTheStep(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			demoResult: new \RuntimeException('The register is not ready.'),
+			requestParams: ['demo_dataset' => 'demo']
+		);
+
+		$response = $built['controller']->saveConfig();
+
+		$this->assertSame(422, $response->getStatus());
+		$this->assertSame('The register is not ready.', $response->getData()['message']);
+		$this->assertArrayNotHasKey('demo_data_decided', $built['written']);
+
+	}//end testAFailedLoadOnNextKeepsTheWizardOnTheStep()
 }//end class

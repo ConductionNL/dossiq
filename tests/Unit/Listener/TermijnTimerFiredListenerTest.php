@@ -81,7 +81,7 @@ class TermijnTimerFiredListenerTest extends TestCase {
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
-					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
+					'accruing_amount_schema' => 'penaltyPaymentCalculation',
 					default => '',
 				};
 			},

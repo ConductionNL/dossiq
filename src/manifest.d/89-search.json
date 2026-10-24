@@ -1,0 +1,96 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"board": "DqZoekresultaten",
+		"note": "One result list over cases, case objects and documents for the term in the address (`?q=`), each read through the reader's own permissions, so it shows only what the reader may see. A chip per kind with its count. Built on the cross-schema search source (`entitySource: search`, nextcloud-vue #1755). The board's saved-search and exports cards are not part of this page yet: the source does not cover them."
+	},
+	"pages": [
+		{
+			"id": "SearchResults",
+			"route": "/search",
+			"type": "index",
+			"title": "Search",
+			"config": {
+				"entitySource": "search",
+				"sourceConfig": {
+					"termQuery": "q",
+					"kindAsText": true,
+					"kinds": [
+						{
+							"id": "cases",
+							"label": "Cases",
+							"rowLabel": "Case",
+							"register": "dossiq",
+							"schema": "case",
+							"subtitleField": "identifier",
+							"statusField": "status",
+							"href": "/apps/dossiq/cases/{id}",
+							"statusResolve": {
+								"register": "dossiq",
+								"schema": "statusType",
+								"labelField": "name"
+							},
+							"linkedField": "assignee"
+						},
+						{
+							"id": "objects",
+							"label": "Objects",
+							"rowLabel": "{objectType}",
+							"register": "dossiq",
+							"schema": "caseObject"
+						},
+						{
+							"id": "documents",
+							"label": "Documents",
+							"rowLabel": "Document",
+							"files": true
+						}
+					],
+					"linkedLabel": "Linked"
+				},
+				"showTitle": true,
+				"countText": "{total} results in cases, objects and documents, only what you may see",
+				"footerNote": "{shown} of {total} · 20 per page",
+				"searchPlaceholder": "Search cases, objects and documents",
+				"showAdd": false,
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "save-view",
+						"label": "Save search",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"title": "Search: {term}",
+				"allowSavedViews": true,
+				"savedViewChips": false,
+				"quickFilterPlacement": "toolbar",
+				"sidePanel": [
+					{
+						"id": "search-saved",
+						"type": "saved-view-alert",
+						"title": "Saved search",
+						"content": {
+							"noun": {
+								"one": "case",
+								"other": "cases"
+							}
+						}
+					},
+					{
+						"id": "search-exports",
+						"type": "exports",
+						"title": "Your exports"
+					}
+				]
+			}
+		}
+	]
+}

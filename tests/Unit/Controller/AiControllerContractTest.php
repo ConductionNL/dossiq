@@ -94,6 +94,13 @@ class AiControllerContractTest extends TestCase {
 	private AiController $controller;
 
 	/**
+	 * Per-case access, allowed unless a test says otherwise.
+	 *
+	 * @var CaseAccessGuard&MockObject
+	 */
+	private CaseAccessGuard $caseAccessGuard;
+
+	/**
 	 * Build the controller with all collaborators mocked.
 	 *
 	 * @return void
@@ -105,6 +112,7 @@ class AiControllerContractTest extends TestCase {
 		$this->aiService = $this->createMock(AiService::class);
 		$this->auditService = $this->createMock(AiAuditService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
+		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
 
 		$this->controller = new AiController(
 			appName: 'dossiq',
@@ -113,7 +121,7 @@ class AiControllerContractTest extends TestCase {
 			auditService: $this->auditService,
 			userSession: $this->userSession,
 			logger: $this->createMock(LoggerInterface::class),
-			caseAccessGuard: $this->createMock(CaseAccessGuard::class),
+			caseAccessGuard: $this->caseAccessGuard,
 		);
 	}//end setUp()
 
@@ -381,6 +389,7 @@ class AiControllerContractTest extends TestCase {
 		);
 
 		$written = ['id' => 'audit-1'];
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
 
 		$this->auditService->expects($this->once())
 			->method('recordUserAction')
@@ -411,6 +420,7 @@ class AiControllerContractTest extends TestCase {
 	public function testRecordActionForwardsAbsentOptionalsAsNull(): void {
 		$this->authenticate();
 		$this->withParams(['caseId' => 'case-1', 'type' => 'routing', 'userAction' => 'accepted']);
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
 
 		$this->auditService->expects($this->once())
 			->method('recordUserAction')
@@ -421,4 +431,96 @@ class AiControllerContractTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 	}//end testRecordActionForwardsAbsentOptionalsAsNull()
+
+	/**
+	 * A caller who may not read the case records nothing on it, and the check
+	 * runs before the write.
+	 *
+	 * @return void
+	 */
+	public function testRecordActionOnACaseTheCallerMayNotReadIsForbidden(): void {
+		$this->authenticate();
+		$this->withParams(['caseId' => 'case-1', 'type' => 'qa', 'userAction' => 'accepted']);
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(false);
+		$this->auditService->expects($this->never())->method('recordUserAction');
+
+		$response = $this->controller->recordAction();
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testRecordActionOnACaseTheCallerMayNotReadIsForbidden()
+
+	/**
+	 * An ignored suggestion carries why it went unused, and a text suggestion
+	 * is kept under `text`.
+	 *
+	 * @return void
+	 */
+	public function testRecordActionRecordsAnIgnoredSuggestionWithItsCause(): void {
+		$this->authenticate();
+		$this->withParams(
+			[
+				'caseId' => 'case-1',
+				'type' => 'qa',
+				'userAction' => 'ignored',
+				'unusedBecause' => 'superseded',
+				'suggestion' => 'Het besluit valt binnen de termijn.',
+				'prompt' => 'Valt het besluit binnen de termijn?',
+				'suggestionId' => 's-1',
+			]
+		);
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
+		$this->auditService->expects($this->once())
+			->method('recordUserAction')
+			->with(
+				'case-1',
+				'qa',
+				'ignored',
+				['text' => 'Het besluit valt binnen de termijn.'],
+				null,
+				null,
+				'alice',
+				$this->callback(
+					static fn (array $context): bool => $context['unusedBecause'] === 'superseded'
+						&& $context['prompt'] === 'Valt het besluit binnen de termijn?'
+						&& $context['suggestionId'] === 's-1'
+				)
+			)
+			->willReturn(['success' => true, 'delegated' => true]);
+
+		$response = $this->controller->recordAction();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}//end testRecordActionRecordsAnIgnoredSuggestionWithItsCause()
+
+	/**
+	 * An unknown action, or an ignored one without a known cause, is a 400.
+	 *
+	 * @param array<string, string> $extra The action and cause.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider refusedActionProvider
+	 */
+	public function testRecordActionRefusesAnUnknownActionOrCause(array $extra): void {
+		$this->authenticate();
+		$this->withParams(array_merge(['caseId' => 'case-1', 'type' => 'qa'], $extra));
+		$this->auditService->expects($this->never())->method('recordUserAction');
+
+		$response = $this->controller->recordAction();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+	}//end testRecordActionRefusesAnUnknownActionOrCause()
+
+	/**
+	 * Refused action bodies.
+	 *
+	 * @return array<string, array<int, array<string, string>>>
+	 */
+	public static function refusedActionProvider(): array {
+		return [
+			'unknown action' => [['userAction' => 'liked']],
+			'ignored without cause' => [['userAction' => 'ignored']],
+			'ignored with unknown cause' => [['userAction' => 'ignored', 'unusedBecause' => 'bored']],
+		];
+	}//end refusedActionProvider()
 }//end class

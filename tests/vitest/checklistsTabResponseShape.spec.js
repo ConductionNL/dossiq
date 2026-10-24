@@ -5,7 +5,7 @@
  *
  * Regression tests for procest#784 — the admin settings page's 41-50 MB DOM.
  *
- * MEASURED CAUSE, so the assertions below are not arbitrary. `ChecklistsTab`
+ * MEASURED CAUSE, so the assertions below are not arbitrary. `ChecklistTemplatesTab`
  * fetched `/apps/dossiq/api/objects/inspectionChecklist`, a route dossiq does
  * not serve (its auto-exposed `/api/objects/<register>/<schema>` routes were
  * deleted; OpenRegister serves them). Nextcloud answers an unmatched app URL
@@ -78,13 +78,20 @@ vi.mock('@nextcloud/vue', () => ({
 }))
 vi.mock('@conduction/nextcloud-vue', () => ({
 	CnConfirmDialog: stub('div'),
-}))
-vi.mock('../../src/components/InspectionChecklistEditor.vue', () => ({
-	default: stub('div'),
+	CnFormDialog: { name: 'CnFormDialog', props: ['schema', 'item', 'initialData', 'dialogTitle'], methods: { setResult: vi.fn() }, render: () => h('div', { class: 'form-dialog' }) },
+	// A row renders its title and its actions slot, like the library's.
+	CnObjectRow: {
+		name: 'CnObjectRow',
+		props: ['object', 'config'],
+		render() {
+			return h('div', {}, [this.object[this.config.titleField], this.$slots.actions ? this.$slots.actions() : null])
+		},
+	},
+	CnRowActions: stub('span'),
 }))
 
-const ChecklistsTab = (
-	await import('../../src/views/settings/tabs/ChecklistsTab.vue')
+const ChecklistTemplatesTab = (
+	await import('../../src/views/settings/tabs/ChecklistTemplatesTab.vue')
 ).default
 
 /** A realistic stand-in for what Nextcloud actually returned: an HTML page. */
@@ -102,12 +109,12 @@ const HTML_ERROR_PAGE =
  */
 async function mountWith(data) {
 	axios.get.mockResolvedValue({ data })
-	const wrapper = mount(ChecklistsTab)
+	const wrapper = mount(ChecklistTemplatesTab)
 	await flushPromises()
 	return wrapper
 }
 
-describe('ChecklistsTab — response-shape handling (procest#784)', () => {
+describe('ChecklistTemplatesTab — response-shape handling (procest#784)', () => {
 	beforeEach(() => {
 		axios.get.mockReset()
 	})
@@ -160,12 +167,12 @@ describe('ChecklistsTab — response-shape handling (procest#784)', () => {
 
 		expect(axios.get).toHaveBeenCalledTimes(1)
 		const url = axios.get.mock.calls[0][0]
-		// `/api/vth/checklists` is served by ChecklistTemplateController, whose
+		// `/api/checklists` is served by ChecklistTemplateController, whose
 		// every verb carries #[AuthorizedAdminSetting]. Going straight to
 		// OpenRegister's generic object route would work mechanically but would
 		// bypass that guard and add a second write path — see the note on
 		// COLLECTION_URL.
-		expect(url).toContain('/apps/dossiq/api/vth/checklists')
+		expect(url).toContain('/apps/dossiq/api/checklists')
 		// The dead route is what made Nextcloud serve HTML under HTTP 200.
 		expect(url).not.toContain('/api/objects/')
 	})

@@ -1,0 +1,71 @@
+{
+  "_note": "Schema level authorization for the records behind admin-only pages (access audit, 18 Oct 2026). Without a block of its own each of these schemas took the register block (91-register-access.json), so every member of dossiq-medewerkers could read and write data breaches, supplier accounts and the tenant records. A schema block replaces the register block for that schema (OpenRegister rbac-scopes, four-level cascade). Supplier accounts and billing events go to admin and beheerders. Tenant memberships and mandates stay readable by staff, because MandateValidationMiddleware reads them as the signed-in user on every request in a tenant, but only admin and beheerders change them. Any member of staff may still report a data breach; reading and handling one is for the privacy officers (dossiq-privacy), admin and beheerders. Indications, case meetings and re-integration trajectories are read and written by the social-domain staff (dossiq-sociaal-domein), admin and beheerders, instead of every member of staff (Ruben, 19 Oct 2026). The background service account keeps the access it had wherever a job may read or write these records.",
+  "components": {
+    "schemas": {
+      "avgIncident": {
+        "authorization": {
+          "read": ["admin", "beheerders", "dossiq-privacy", "dossiq-background-service"],
+          "create": ["admin", "beheerders", "dossiq-privacy", "dossiq-medewerkers", "dossiq-background-service"],
+          "update": ["admin", "beheerders", "dossiq-privacy", "dossiq-background-service"],
+          "delete": ["admin", "beheerders"]
+        }
+      },
+      "supplierUser": {
+        "authorization": {
+          "read": ["admin", "beheerders"],
+          "create": ["admin", "beheerders"],
+          "update": ["admin", "beheerders"],
+          "delete": ["admin", "beheerders"]
+        }
+      },
+      "tenantUser": {
+        "authorization": {
+          "read": ["admin", "beheerders", "dossiq-medewerkers", "dossiq-background-service"],
+          "create": ["admin", "beheerders"],
+          "update": ["admin", "beheerders"],
+          "delete": ["admin", "beheerders"]
+        }
+      },
+      "tenantMandate": {
+        "authorization": {
+          "read": ["admin", "beheerders", "dossiq-medewerkers", "dossiq-background-service"],
+          "create": ["admin", "beheerders"],
+          "update": ["admin", "beheerders"],
+          "delete": ["admin", "beheerders"]
+        }
+      },
+      "tenantBillingEvent": {
+        "authorization": {
+          "read": ["admin", "beheerders", "dossiq-background-service"],
+          "create": ["admin", "beheerders", "dossiq-background-service"],
+          "update": ["admin", "beheerders", "dossiq-background-service"],
+          "delete": ["admin", "beheerders"]
+        }
+      },
+      "indicatiestelling": {
+        "authorization": {
+          "read": ["admin", "beheerders", "dossiq-sociaal-domein", "dossiq-background-service"],
+          "create": ["admin", "beheerders", "dossiq-sociaal-domein", "dossiq-background-service"],
+          "update": ["admin", "beheerders", "dossiq-sociaal-domein", "dossiq-background-service"],
+          "delete": ["admin", "beheerders"]
+        }
+      },
+      "mdoOverleg": {
+        "authorization": {
+          "read": ["admin", "beheerders", "dossiq-sociaal-domein", "dossiq-background-service"],
+          "create": ["admin", "beheerders", "dossiq-sociaal-domein", "dossiq-background-service"],
+          "update": ["admin", "beheerders", "dossiq-sociaal-domein", "dossiq-background-service"],
+          "delete": ["admin", "beheerders"]
+        }
+      },
+      "reIntegratieTraject": {
+        "authorization": {
+          "read": ["admin", "beheerders", "dossiq-sociaal-domein", "dossiq-background-service"],
+          "create": ["admin", "beheerders", "dossiq-sociaal-domein", "dossiq-background-service"],
+          "update": ["admin", "beheerders", "dossiq-sociaal-domein", "dossiq-background-service"],
+          "delete": ["admin", "beheerders"]
+        }
+      }
+    }
+  }
+}

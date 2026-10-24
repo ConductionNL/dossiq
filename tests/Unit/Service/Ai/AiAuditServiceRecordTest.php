@@ -166,4 +166,55 @@ class AiAuditServiceRecordTest extends TestCase {
 
 		$this->service($audit)->recordAssistantAuditEntry($entry);
 	}//end testRecordAssistantAuditEntryForwardsEntryVerbatim()
+
+	/**
+	 * An ignored suggestion keeps its cause, prompt and the model the surface
+	 * named locally; the suggestion reference goes to hermiq only.
+	 *
+	 * @return void
+	 */
+	public function testIgnoredSuggestionCarriesContextAndDelegatesTheReference(): void {
+		$captured = null;
+		$audit = $this->createMock(AiAuditLog::class);
+		$audit->method('record')->willReturnCallback(
+			function (array $entry) use (&$captured): void {
+				$captured = $entry;
+			}
+		);
+
+		$delegated = null;
+		$oversight = $this->createMock(AiOversightDelegationService::class);
+		$oversight->expects($this->once())->method('delegate')->willReturnCallback(
+			function (array $entry) use (&$delegated): bool {
+				$delegated = $entry;
+				return true;
+			}
+		);
+
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnArgument(2);
+		$service = new AiAuditService(
+			audit: $audit,
+			modelIdentity: new AiModelIdentity($appConfig),
+			oversight: $oversight,
+		);
+
+		$result = $service->recordUserAction(
+			caseId: 'case-1',
+			type: 'qa',
+			userAction: 'ignored',
+			suggestion: ['text' => 'Binnen de termijn.'],
+			actualValue: null,
+			reason: null,
+			userId: 'alice',
+			context: ['unusedBecause' => 'closed', 'prompt' => 'Termijn?', 'model' => 'hermiq/qwen', 'suggestionId' => 's-9'],
+		);
+
+		$this->assertTrue($result['delegated']);
+		$this->assertSame('closed', $captured['unusedBecause']);
+		$this->assertSame('Termijn?', $captured['prompt']);
+		$this->assertSame('hermiq/qwen', $captured['model']);
+		$this->assertArrayNotHasKey('suggestionRef', $captured);
+		$this->assertSame('qa:case-1:s-9', $delegated['suggestionRef']);
+	}//end testIgnoredSuggestionCarriesContextAndDelegatesTheReference()
 }//end class

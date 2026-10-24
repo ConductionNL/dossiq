@@ -310,6 +310,11 @@ class WooPublicationService {
 
 		$delivery = $this->sources->delivery(objectService: $objectService, register: $register, caseId: $caseId);
 		$disclosable = $delivery['documents'];
+		$unreadable = $this->unreadable(documents: $disclosable);
+		if ($unreadable !== []) {
+			return ['available' => false, 'reason' => 'documents_unreadable', 'documents' => $unreadable];
+		}
+
 		if (count($disclosable) === 0
 			&& $this->nothingToDisclose?->recorded(case: $case, caseId: $caseId, assessments: $delivery['assessments']) !== true
 		) {
@@ -371,6 +376,29 @@ class WooPublicationService {
 
 
 
+
+	/**
+	 * The disclosable documents whose file could not be read.
+	 *
+	 * Each of them would go out as a publication entry without its file, so a
+	 * publication with one of them is refused instead.
+	 *
+	 * @param array<int, array<string, mixed>> $documents The disclosable documents.
+	 *
+	 * @return list<string> Their names.
+	 *
+	 * @spec openspec/changes/the-woo-publication-carries-its-documents/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	private function unreadable(array $documents): array {
+		$names = [];
+		foreach ($documents as $document) {
+			if (empty($document['content']) === true) {
+				$names[] = (string)($document['fileName'] ?? ($document['title'] ?? ($document['id'] ?? '')));
+			}
+		}
+
+		return $names;
+	}//end unreadable()
 
 	/**
 	 * The in-scope documents with required pages nobody has seen yet.

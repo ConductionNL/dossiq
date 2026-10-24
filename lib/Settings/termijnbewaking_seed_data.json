@@ -46,6 +46,54 @@
       "validFrom": "2026-01-01"
     },
     {
+      "id": "td-bijstandsaanvraag",
+      "caseType": "bijstandsaanvraag",
+      "kind": "statutory",
+      "legalBasis": "Awb 4:13 lid 2 (Participatiewet)",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 4:13 lid 1 en 2 (redelijke termijn, uiterlijk acht weken, als geen wettelijk voorschrift een termijn stelt); de Participatiewet stelt geen eigen beslistermijn",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:13"
+        },
+        {
+          "article": "Participatiewet art. 44 (ingangsdatum en betaling van de bijstand)",
+          "url": "https://wetten.overheid.nl/BWBR0015703/2026-01-01"
+        },
+        {
+          "article": "Awb art. 4:14 lid 3 (mededeling met een redelijke latere termijn)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:14"
+        }
+      ],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-melding-jeugdwet",
+      "caseType": "melding-jeugdwet",
+      "kind": "statutory",
+      "legalBasis": "Awb 4:13 lid 2 (Jeugdwet)",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 4:13 lid 1 en 2 (redelijke termijn, uiterlijk acht weken, als geen wettelijk voorschrift een termijn stelt); de Jeugdwet stelt geen eigen beslistermijn",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:13"
+        },
+        {
+          "article": "Awb art. 4:14 lid 3 (mededeling met een redelijke latere termijn)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:14"
+        }
+      ],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
       "id": "td-wmo-aanvraag",
       "caseType": "wmo-melding",
       "legalBasis": "Wmo 2015 art 2.3.5",

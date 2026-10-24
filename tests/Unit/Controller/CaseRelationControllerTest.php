@@ -28,9 +28,13 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\CaseRelationController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseRelationService;
+use OCA\Dossiq\Service\Flow\CaseFlowActions;
+use OCA\Dossiq\Service\Relation\CaseRelationDetails;
+use OCA\Dossiq\Service\Relation\CaseRelationStore;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
@@ -62,11 +66,30 @@ class CaseRelationControllerTest extends TestCase {
 	private CaseAccessGuard $caseAccessGuard;
 
 	/**
+	 * The case's planned follow-ups.
+	 *
+	 * @var CaseFlowActions|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private CaseFlowActions $flowActions;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var CaseRelationController
 	 */
 	private CaseRelationController $controller;
+
+	/**
+	 * Row details over a store that resolves no case, so rows pass unchanged.
+	 *
+	 * @return CaseRelationDetails
+	 */
+	private function details(): CaseRelationDetails {
+		return new CaseRelationDetails(
+			store: $this->createMock(originalClassName: CaseRelationStore::class),
+			userManager: $this->createMock(originalClassName: IUserManager::class),
+		);
+	}//end details()
 
 	/**
 	 * Set up fixtures.
@@ -78,6 +101,7 @@ class CaseRelationControllerTest extends TestCase {
 		$this->service = $this->createMock(CaseRelationService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
+		$this->flowActions = $this->createMock(originalClassName: CaseFlowActions::class);
 
 		// Default: the caller works on both cases. The authorization tests at
 		// the bottom of this class override it.
@@ -88,6 +112,8 @@ class CaseRelationControllerTest extends TestCase {
 			caseRelationService: $this->service,
 			userSession: $this->userSession,
 			caseAccessGuard: $this->caseAccessGuard,
+			caseRelationDetails: $this->details(),
+			flowActions: $this->flowActions,
 		);
 	}//end setUp()
 
@@ -111,6 +137,8 @@ class CaseRelationControllerTest extends TestCase {
 			caseRelationService: $this->service,
 			userSession: $this->userSession,
 			caseAccessGuard: $guard,
+			caseRelationDetails: $this->details(),
+			flowActions: $this->flowActions,
 		);
 	}//end controllerWithReadableCases()
 
@@ -278,7 +306,7 @@ class CaseRelationControllerTest extends TestCase {
 	public function testListReturnsResults(): void {
 		$this->authenticate();
 		$this->service->method('listRelations')->willReturn([
-			['caseId' => 'b', 'aardRelatie' => 'subject'],
+			['caseId' => 'b', 'aardRelatie' => 'subject', 'title' => 'Advies verlichting fietspad'],
 		]);
 
 		$response = $this->controller->list(caseId: 'a');
@@ -287,6 +315,45 @@ class CaseRelationControllerTest extends TestCase {
 		$this->assertArrayHasKey('results', $data);
 		$this->assertCount(1, $data['results']);
 	}//end testListReturnsResults()
+
+	/**
+	 * With `?planned=1` the planned follow-ups follow the relations, in the
+	 * `planned` group, and they open no case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function testListAddsThePlannedFollowUpsWhenAsked(): void {
+		$this->authenticate();
+		$this->request->method('getParam')->willReturnMap([['planned', '', '1']]);
+		$this->service->method('listRelations')->willReturn([
+			['caseId' => 'b', 'aardRelatie' => 'subject', 'title' => 'Aanleg fietspad Lindelaan'],
+		]);
+		$this->flowActions->method('planned')->willReturn([
+			'results' => [['id' => 'f1', 'title' => 'Kwartaaloverzicht Woo-verzoeken', 'date' => '2027-01-01', 'recurrence' => 'quarterly', 'occurrences' => [1, 2, 3]]],
+		]);
+
+		$rows = $this->controller->list(caseId: 'a')->getData()['results'];
+
+		$this->assertSame(expected: ['subject', 'planned'], actual: array_column($rows, 'group'));
+		$this->assertSame(expected: 'series', actual: $rows[1]['plannedKind']);
+		$this->assertSame(expected: 3, actual: $rows[1]['occurrences']);
+		$this->assertArrayNotHasKey(key: 'caseId', array: $rows[1]);
+	}//end testListAddsThePlannedFollowUpsWhenAsked()
+
+	/**
+	 * Without `?planned=1` the planned follow-ups are not read.
+	 *
+	 * @return void
+	 */
+	public function testListLeavesThePlannedFollowUpsOutByDefault(): void {
+		$this->authenticate();
+		$this->service->method('listRelations')->willReturn([]);
+		$this->flowActions->expects($this->never())->method('planned');
+
+		$this->controller->list(caseId: 'a');
+	}//end testListLeavesThePlannedFollowUpsOutByDefault()
 
 	/**
 	 * An authenticated user who does not work on the case cannot list its

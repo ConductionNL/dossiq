@@ -25,7 +25,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
+use OCA\Dossiq\Service\Transitions\SensitiveAnswerCheck;
+use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -38,7 +41,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsWhenFieldConfigMissing(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(guardConfig: [], case: ['id' => 'c'], userId: 'u');
 
 		self::assertFalse($result->passed);
@@ -49,7 +52,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsWhenFieldIsNull(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'result'],
 			case: ['id' => 'c'],
@@ -64,7 +67,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsWhenFieldIsEmptyString(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'result'],
 			case: ['result' => ''],
@@ -78,7 +81,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsWhenFieldIsEmptyArray(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'tags'],
 			case: ['tags' => []],
@@ -92,7 +95,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testPassesWhenFieldHasValue(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'result'],
 			case: ['result' => 'toegewezen'],
@@ -108,7 +111,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 */
 	public function testPassesForZeroNumericValue(): void {
 		// 0 is a legitimate value, not "empty".
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'amount'],
 			case: ['amount' => 0],
@@ -131,7 +134,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testPassesOnAnAnsweredCaseTypeProperty(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'stemuitslag'],
 			case: ['properties' => [['propertyDefinition' => 'pd-1', 'name' => 'stemuitslag', 'value' => 'Unaniem']]],
@@ -147,7 +150,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsOnAnUnansweredCaseTypeProperty(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'stemuitslag'],
 			case: ['properties' => [['propertyDefinition' => 'pd-1', 'name' => 'stemuitslag', 'value' => '']]],
@@ -155,7 +158,7 @@ class RequiredFieldGuardTest extends TestCase {
 		);
 
 		self::assertFalse($result->passed);
-		self::assertSame('Vereist veld ontbreekt: stemuitslag', $result->failureMessage);
+		self::assertSame('Required field missing: stemuitslag', $result->failureMessage);
 	}//end testFailsOnAnUnansweredCaseTypeProperty()
 
 	/**
@@ -164,7 +167,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testATopLevelValueStillWins(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'result'],
 			case: ['result' => 'toegewezen', 'properties' => [['name' => 'result', 'value' => '']]],
@@ -173,4 +176,42 @@ class RequiredFieldGuardTest extends TestCase {
 
 		self::assertTrue($result->passed);
 	}//end testATopLevelValueStillWins()
+	/**
+	 * A guard on a sensitive field reads the case's sensitive answers as the
+	 * system, for a mover who cannot read them, and says only whether the
+	 * field is answered.
+	 *
+	 * @return void
+	 */
+	public function testASensitiveAnswerIsCheckedAsTheSystemWithoutShowingIt(): void {
+		$objects = new InMemoryRegister();
+		$objects->seed(
+			schema: 'case',
+			uuid: 'case-1',
+			row: [
+				'id' => 'case-1',
+				'sensitiveProperties' => [
+					['propertyDefinition' => 'd-1', 'name' => 'inkomenstoets', 'value' => '{"income":480}'],
+					['propertyDefinition' => 'd-2', 'name' => 'vermogenstoets', 'value' => ''],
+				],
+			]
+		);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ['register' => 'dossiq', 'case_schema' => 'case'][$key] ?? $default
+		);
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n(), sensitive: new SensitiveAnswerCheck(settings: $settings));
+		// The mover's own read of the case: the server stripped the sensitive answers.
+		$asTheMoverReadsIt = ['id' => 'case-1', 'properties' => []];
+
+		$answered = $guard->evaluate(guardConfig: ['field' => 'inkomenstoets'], case: $asTheMoverReadsIt, userId: 'klantmanager');
+		$empty = $guard->evaluate(guardConfig: ['field' => 'vermogenstoets'], case: $asTheMoverReadsIt, userId: 'klantmanager');
+
+		self::assertTrue(condition: $answered->passed);
+		self::assertSame(expected: ['field' => 'inkomenstoets'], actual: $answered->details);
+		self::assertFalse(condition: $empty->passed);
+		self::assertStringNotContainsString(needle: '480', haystack: json_encode([$answered->details, $empty->details, $empty->failureMessage]));
+		self::assertNotSame(expected: [], actual: $objects->unscopedReads, message: 'read as the system');
+	}//end testASensitiveAnswerIsCheckedAsTheSystemWithoutShowingIt()
 }//end class

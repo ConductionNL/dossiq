@@ -27,8 +27,8 @@
   @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
 -->
 <template>
-	<NcDialog
-		:name="t('dossiq', 'Split this case in two')"
+	<CnDialog
+		:name="t('dossiq', 'Split in two')"
 		data-testid="case-split-dialog"
 		@closing="$emit('close')">
 		<div class="case-split-dialog">
@@ -36,7 +36,7 @@
 				{{
 					t(
 						'dossiq',
-						'What you tick moves to the new case. This case keeps a reference to it, so the file still reads as a whole.',
+						'What you tick moves to the new case.',
 					)
 				}}
 			</p>
@@ -134,17 +134,17 @@
 				{{ t('dossiq', 'Split') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 
@@ -156,7 +156,7 @@ export default {
 	components: {
 		NcButton,
 		NcCheckboxRadioSwitch,
-		NcDialog,
+		CnDialog,
 		NcLoadingIcon,
 		NcTextField,
 	},

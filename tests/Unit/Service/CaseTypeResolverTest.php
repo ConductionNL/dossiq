@@ -551,4 +551,54 @@ class CaseTypeResolverTest extends TestCase {
 		self::assertCount(4, $blueprint['statusTypes']);
 		self::assertSame('P12W', $blueprint['caseType']['processingDeadline']);
 	}//end testTheBlueprintNamesTheParentsItMerged()
+
+	/**
+	 * The blueprint counts the fields: all, the ones a parent gave, and the
+	 * ones the child overrides (DqZaaktypeVelden Moedertype "Geërfde velden
+	 * 6 van 14", "Overschreven"). A shared attribute is neither.
+	 *
+	 * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+	 *
+	 * @return void
+	 */
+	public function testTheBlueprintCountsInheritedAndOverriddenFields(): void {
+		$resolver = $this->resolver(
+			caseTypes: [
+				'parent' => ['id' => 'parent', 'title' => 'Omgevingsvergunning'],
+				'child' => ['id' => 'child', 'title' => 'Omgevingsvergunning regulier', 'parentCaseType' => 'parent'],
+			],
+			rows: [
+				'property_definition_schema' => [
+					['id' => 'p1', 'name' => 'locatie', 'order' => 1, 'caseType' => 'parent'],
+					['id' => 'p2', 'name' => 'aanvrager', 'order' => 2, 'caseType' => 'parent'],
+					['id' => 'p3', 'name' => 'bouwkosten', 'order' => 3, 'caseType' => 'parent'],
+					['id' => 'c3', 'name' => 'bouwkosten', 'order' => 3, 'caseType' => 'child'],
+					['id' => 'c4', 'name' => 'welstandsgebied', 'order' => 4, 'caseType' => 'child'],
+					['id' => 'x1', 'name' => 'kenmerk', 'order' => 5],
+				],
+			]
+		);
+
+		$counts = $resolver->blueprintFor(caseTypeId: 'child')['counts']['propertyDefinitions'];
+
+		self::assertSame(expected: ['total' => 5, 'inherited' => 2, 'overridden' => 1], actual: $counts);
+	}//end testTheBlueprintCountsInheritedAndOverriddenFields()
+
+	/**
+	 * A type without a parent inherits and overrides nothing.
+	 *
+	 * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+	 *
+	 * @return void
+	 */
+	public function testATypeWithoutAParentCountsNothingInherited(): void {
+		$resolver = $this->resolver(
+			caseTypes: ['solo' => ['id' => 'solo', 'title' => 'Melding']],
+			rows: ['property_definition_schema' => [['id' => 'p1', 'name' => 'locatie', 'order' => 1, 'caseType' => 'solo']]]
+		);
+
+		$counts = $resolver->blueprintFor(caseTypeId: 'solo')['counts']['propertyDefinitions'];
+
+		self::assertSame(expected: ['total' => 1, 'inherited' => 0, 'overridden' => 0], actual: $counts);
+	}//end testATypeWithoutAParentCountsNothingInherited()
 }//end class

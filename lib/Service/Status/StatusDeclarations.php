@@ -113,6 +113,19 @@ class StatusDeclarations {
 	}//end isDerivedStatus()
 
 	/**
+	 * The name of a status, as authored, in the reader's language.
+	 *
+	 * @param string $statusTypeId The status.
+	 *
+	 * @return string The name, or '' when the status cannot be read.
+	 *
+	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 */
+	public function nameOf(string $statusTypeId): string {
+		return $this->lookup->nameFor(statusTypeId: $statusTypeId);
+	}//end nameOf()
+
+	/**
 	 * Settle the dwell fields on a payload about to be saved.
 	 *
 	 * @param array<string, mixed>   $case     The case payload.

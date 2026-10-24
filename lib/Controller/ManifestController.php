@@ -5,12 +5,12 @@
  *
  * Serves the backend `/api/manifest` delta consumed by the frontend's
  * `useAppManifest('dossiq', bundled, { mergeStrategy: 'delta' })`. It returns
- * the caption "My case types" and one entry per case type the current user
- * CHOSE for their menu, in their order (board DqZijbalk, change
- * case-types-in-my-menu). This is the sanctioned imperative seam (ADR-031): the
- * choice is per user and a case type is a live OpenRegister object, so the
- * entries are resolved server-side at request time rather than baked into the
- * static bundled manifest.
+ * one default view of the Cases page per case type the current user pinned
+ * (case-type-pins-are-views), which the library's "My views" section links to.
+ * This is the sanctioned imperative seam (ADR-031): the choice is per user and
+ * a case type is a live OpenRegister object, so the views are resolved
+ * server-side at request time rather than baked into the static bundled
+ * manifest.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -28,12 +28,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\CaseTypeViews;
 use OCA\Dossiq\Service\MenuCaseTypesService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -45,51 +45,35 @@ use OCP\IUserSession;
 class ManifestController extends Controller {
 
 	/**
-	 * Menu order of the "My case types" caption; the entries follow from 31.
-	 *
-	 * @var int
-	 */
-	private const CAPTION_ORDER = 30;
-
-	/**
-	 * Where the caption's pencil goes: the hash App.vue answers by opening
-	 * the user settings dialog.
-	 *
-	 * @var string
-	 */
-	public const USER_SETTINGS_HREF = '#user-settings';
-
-	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
 	 * @param MenuCaseTypesService $menuCaseTypes The per-user menu choice
 	 * @param IUserSession $userSession User session
-	 * @param IL10N $l10n Translations (the caption label)
+	 * @param CaseTypeViews $caseTypeViews The view of the case list per case type
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly MenuCaseTypesService $menuCaseTypes,
 		private readonly IUserSession $userSession,
-		private readonly IL10N $l10n,
+		private readonly CaseTypeViews $caseTypeViews,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
 	/**
-	 * Return the case-type navigation delta.
+	 * Return the case-type views delta.
 	 *
-	 * The caption "My case types" (with `href` to the in-app user settings
-	 * dialog, where the choice is made) and one entry per chosen case type, each
-	 * opening the Cases list filtered on it. An unauthenticated caller is
-	 * refused with 401. Otherwise the response is a no-op delta
-	 * (`['menu' => []]`) whenever OpenRegister is unavailable, the
-	 * register/schema is unconfigured, or no case types exist; it must never
-	 * break the app shell.
+	 * One default view of the Cases page per case type the user pinned (the
+	 * Woo request case type has a view of its own on the page), added to the
+	 * page's default views. An unauthenticated caller is refused with 401.
+	 * Otherwise the response is a no-op delta (`['menu' => []]`) whenever
+	 * OpenRegister is unavailable, the register/schema is unconfigured, or no
+	 * case types exist; it must never break the app shell.
 	 *
-	 * @return JSONResponse A `mergeStrategy: 'delta'` menu payload.
+	 * @return JSONResponse A `mergeStrategy: 'delta'` payload.
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-001
 	 */
@@ -108,31 +92,25 @@ class ManifestController extends Controller {
 			return new JSONResponse(['menu' => []]);
 		}
 
-		$menu = [
-			[
-				'id' => 'MyCaseTypesCaption',
-				'type' => 'caption',
-				'label' => $this->l10n->t('My case types'),
-				'order' => self::CAPTION_ORDER,
-				// The pencil opens the in-app user settings dialog. Dossiq has
-				// no Nextcloud personal settings page: preferences live in that
-				// dialog (Ruben, 11 Oct 2026). App.vue opens it on this hash.
-				'href' => self::USER_SETTINGS_HREF,
-			],
-		];
-
+		// The case types a user pinned are views of the case list, which the
+		// library's "My views" section lists; no menu entry of dossiq's own.
 		$chosen = $this->menuCaseTypes->chosen(userId: $user->getUID(), visible: $offered);
-		foreach ($chosen as $index => $caseType) {
-			$menu[] = [
-				'id' => 'ct-' . $caseType['id'],
-				'label' => $caseType['title'],
-				'icon' => 'FolderOutline',
-				'route' => 'Cases',
-				'query' => ['caseType' => $caseType['id']],
-				'order' => (self::CAPTION_ORDER + 1 + $index),
-			];
+		$identifiers = array_column($this->caseTypeViews->declaredViews(), 'caseTypeIdentifier');
+		$views = array_merge(
+			$this->caseTypeViews->instanceViews(byIdentifier: $this->menuCaseTypes->byIdentifier(identifiers: $identifiers)),
+			$this->caseTypeViews->views(caseTypes: $chosen)
+		);
+		if ($views === []) {
+			return new JSONResponse(['menu' => []]);
 		}
 
-		return new JSONResponse(['menu' => $menu]);
+		return new JSONResponse(
+			[
+				'menu' => [],
+				'pages' => [
+					['id' => CaseTypeViews::PAGE, 'config' => [CaseTypeViews::DEFAULT_VIEWS_KEY => $views]],
+				],
+			]
+		);
 	}//end manifest()
 }//end class

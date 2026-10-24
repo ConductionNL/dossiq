@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Service\DeadlineReportingService;
 use OCA\Dossiq\Service\Reporting\ReportingAudience;
 use OCA\Dossiq\Service\Term\FirstResponseOutcome;
+use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -57,6 +58,7 @@ class DeadlineReportingController extends Controller {
 	 * @param LoggerInterface $logger Logger.
 	 * @param ReportingAudience $audience Who may read a figure about every case.
 	 * @param FirstResponseOutcome|null $firstResponse The first-response figures.
+	 * @param PenaltyPaymentRows|null   $penaltyPayments The forfeited penalty payments by case.
 	 *        Nullable so an instance that never wired it answers "not available"
 	 *        rather than failing to construct the three reports beside it.
 	 */
@@ -68,6 +70,7 @@ class DeadlineReportingController extends Controller {
 		private readonly LoggerInterface $logger,
 		private readonly ReportingAudience $audience,
 		private readonly ?FirstResponseOutcome $firstResponse = null,
+		private readonly ?PenaltyPaymentRows $penaltyPayments = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -170,13 +173,34 @@ class DeadlineReportingController extends Controller {
 		}
 
 		try {
-			$row = $this->service->getTermijnKpi();
+			$row = $this->service->getTermijnKpi(
+				filters: [],
+				today: null,
+				from: $this->stringParam(name: 'from'),
+				until: $this->stringParam(name: 'to')
+			);
 			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			$this->logger->error('Termijn dashboard failed', ['error' => $e->getMessage()]);
 			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end dashboard()
+
+	/**
+	 * A request parameter as a string, or null when it is absent or not a string.
+	 *
+	 * @param string $name The parameter.
+	 *
+	 * @return string|null
+	 */
+	private function stringParam(string $name): ?string {
+		$value = $this->request->getParam($name);
+		if (is_string($value) === false) {
+			return null;
+		}
+
+		return $value;
+	}//end stringParam()
 
 	/**
 	 * Quarterly KPI report.
@@ -244,4 +268,114 @@ class DeadlineReportingController extends Controller {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end annualStatement()
+
+	/**
+	 * The penalty payments forfeited in a year, each named by its case.
+	 *
+	 * @param int $year Year.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/penalty-payment-rows/specs/termijn-reporting/spec.md#requirement-the-annual-audit-lists-the-forfeited-payments-by-case
+	 */
+	public function penaltyPayments(int $year = 0): JSONResponse {
+		$denied = $this->ensureMayReadReports();
+		if ($denied !== null) {
+			return $denied;
+		}
+
+		if ($this->penaltyPayments === null) {
+			return new JSONResponse(['message' => 'Not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		if ($year < 2020 || $year > 2100) {
+			return new JSONResponse(['message' => 'year is required and must be between 2020 and 2100'], Http::STATUS_BAD_REQUEST);
+		}
+
+		try {
+			return new JSONResponse($this->penaltyPayments->forYear(year: $year));
+		} catch (Throwable $e) {
+			$this->logger->error('Penalty payment report failed', ['error' => $e->getMessage()]);
+
+			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}//end penaltyPayments()
+
+	/**
+	 * dashboard() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/dashboard/kpi; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for dashboard(); behaviour covered by the dashboard() tests.
+	 */
+	public function dashboardLegacyPath(): JSONResponse {
+		return $this->dashboard();
+	}//end dashboardLegacyPath()
+
+	/**
+	 * quarterlyReport() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/reports/quarterly; remove after the next major.
+	 *
+	 * @param string $period Period (YYYY-Qn).
+	 * @param string|null $department Optional department filter.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for quarterlyReport(); behaviour covered by the quarterlyReport() tests.
+	 */
+	public function quarterlyReportLegacyPath(string $period = '', ?string $department = null): JSONResponse {
+		return $this->quarterlyReport(period: $period, department: $department);
+	}//end quarterlyReportLegacyPath()
+
+	/**
+	 * annualStatement() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/reports/annual; remove after the next major.
+	 *
+	 * @param int $year Year.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for annualStatement(); behaviour covered by the annualStatement() tests.
+	 */
+	public function annualStatementLegacyPath(int $year = 0): JSONResponse {
+		return $this->annualStatement(year: $year);
+	}//end annualStatementLegacyPath()
+
+	/**
+	 * firstResponseReport() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/reports/first-response; remove after the next major.
+	 *
+	 * @param string $caseType     Optional case type filter.
+	 * @param string $organisation Optional organisation filter.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 *
+	 * @contract exclude Deprecated path alias for firstResponseReport(); behaviour covered by the firstResponseReport() tests.
+	 */
+	public function firstResponseReportLegacyPath(string $caseType = '', string $organisation = ''): JSONResponse {
+		return $this->firstResponseReport(caseType: $caseType, organisation: $organisation);
+	}//end firstResponseReportLegacyPath()
 }//end class

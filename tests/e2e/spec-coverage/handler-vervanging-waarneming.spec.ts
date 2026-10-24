@@ -813,87 +813,45 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	})
 
 	/**
-	 * The scenario this file could not cite until the call site existed.
-	 *
-	 * It used to click a `substituted-toggle` inside an `if` that stood down
-	 * when the toggle was absent, which it always was: `fetchSubstitutedWork()`
-	 * had no caller, every helper in `src/utils/substitutionHelpers.js` was
-	 * imported by nothing, and neither My work surface mentioned substitution.
-	 * So the `if` could only take its empty branch and the two assertions left
-	 * — a button and the absence of a 500 — were satisfied by a build that
-	 * routed no substituted work at all. The scenario carried an `@e2e exclude`
-	 * saying exactly that.
-	 *
-	 * What is asserted now is the requirement: the absentee's in-scope case is
-	 * ON this reader's My work, carrying a marker that names the absentee, and
-	 * hiding substituted work removes it. The signed-in account is the
-	 * waarnemer of the scope-limited substitution seeded in `beforeAll`
-	 * (`PLAIN_USER` covered by `ADMIN_USER`), so nothing here needs its own
-	 * fixture and nothing here writes one.
-	 *
-	 * MUTATION-CHECKED, because "a test that cannot fail" is what this file is
-	 * the rewrite of: dropping `this.loadSubstitutedWork()` from
-	 * `MyWorkCards.vue` reds the marker assertion below and the three vitest
-	 * cases in `tests/vitest/substitutedWorkOnMyWork.spec.js` that cover the
-	 * same three claims off a stubbed resolver.
+	 * Substituted work reaches the waarnemer through the personal work queue
+	 * (`/my-queue`), the one place it is listed (Ruben, 20 Oct): its covered-work
+	 * source puts the absentee's in-scope case there, marked "Covering for"
+	 * with whose it is. The SubstitutedWork card and the My work toggle are
+	 * gone. The signed-in account is the waarnemer of the scope-limited
+	 * substitution seeded in `beforeAll` (`PLAIN_USER` covered by
+	 * `ADMIN_USER`), so nothing here needs its own fixture.
 	 */
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#waarnemer-sees-substituted-work-in-my-work
-	test('the absentee in-scope case is on the waarnemer My work, marked and hideable', async ({
+	test('the absentee in-scope case is in the waarnemer queue, marked with whose it is', async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/dossiq/my-work')
+		await page.goto('/index.php/apps/dossiq/my-queue')
 		await dismissSupportDialog(page)
-		// The My Work route renders no page heading (measured on a CI runner
-		// 2026-08-04) — assert the view by a control it does render.
-		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
-			timeout: 15000,
-		})
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 
-		const group = page.getByTestId('substituted-work')
+		// The seeded case itself, by the title `beforeAll` gave it.
+		const row = page.locator('li', { hasText: IN_SCOPE_CASE }).first()
 		await expect(
-			group,
-			'an active substitution routes the absentee open work here, so the group must render',
+			row,
+			'an active substitution routes the absentee open work into the queue',
 		).toBeVisible({ timeout: 30_000 })
 
-		// The seeded case itself, by the title `beforeAll` gave it: a group
-		// that rendered empty would pass a bare visibility check.
+		// The marker NAMES the absentee, not just any colleague.
 		await expect(
-			group.getByText(IN_SCOPE_CASE, { exact: false }),
-			'the case assigned to the absentee must be listed',
-		).toBeVisible({ timeout: 30_000 })
-
-		// The marker NAMES the absentee. `not.toBe('')` would pass on any
-		// marker at all, including one naming the wrong colleague.
-		const marker = group.getByTestId('substituted-marker').first()
-		await expect(marker).toBeVisible()
-		await expect(
-			marker,
-			`the marker must name ${PLAIN_USER}, whose work this is`,
-		).toContainText(PLAIN_USER)
+			row,
+			`the row must say whose work it is (${PLAIN_USER})`,
+		).toContainText(`Covering for ${PLAIN_USER}`)
 
 		// And a case OUTSIDE the substitution scope must not have come with it.
-		await expect(
-			group.getByText(OUT_OF_SCOPE_CASE, { exact: false }),
-		).toHaveCount(0)
-
-		await page.getByTestId('substituted-toggle').click()
-		await expect(
-			group.getByTestId('substituted-marker'),
-			'hiding substituted work must remove it from the list',
-		).toHaveCount(0)
-		await expect(group.getByText(IN_SCOPE_CASE, { exact: false })).toHaveCount(0)
-		// The toggle survives being used, or hiding is a one-way door.
-		await expect(page.getByTestId('substituted-toggle')).toBeVisible()
+		await expect(page.getByText(OUT_OF_SCOPE_CASE, { exact: false })).toHaveCount(0)
 	})
 
 	/**
 	 * Both halves of the scope limit, against two seeded case types.
 	 *
-	 * This citation used to sit on the My Work page-load test above, whose
-	 * substituted-work toggle is only touched when it happens to be visible.
-	 * That test cannot fail on a build that routes EVERY case of the absentee
-	 * to the substitute, which is the half the requirement spells "MUST NOT".
+	 * The queue test above cannot fail on a build that routes EVERY case of
+	 * the absentee to the substitute, which is the half the requirement
+	 * spells "MUST NOT".
 	 *
 	 * Asserted on `/api/substitutions/work`, the resolver the view reads, so
 	 * the answer does not depend on a toggle having rendered.
@@ -1002,7 +960,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('coordinator admin exposes a bulk-reassign action with a mandatory preview', async ({
 		page,
 	}) => {
-		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
+		await page.goto(`/index.php${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
 		await expect(
 			page
@@ -1039,7 +997,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * down in precisely the case the test exists for.
 	 */
 	test('coordinator admin renders without a server error', async ({ page }) => {
-		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
+		await page.goto(`/index.php${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 		await expect(

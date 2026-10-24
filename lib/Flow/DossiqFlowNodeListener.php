@@ -79,6 +79,9 @@ class DossiqFlowNodeListener implements IEventListener {
         DossiqAskPersonNode::class,
         DossiqEnsureCommitteeNode::class,
         DossiqTxBesluitvormingPublishNode::class,
+        DossiqTxSuspendTermNode::class,
+        DossiqTxSendMessageNode::class,
+        DossiqTxSetCaseAnswerNode::class,
     ];
 
 

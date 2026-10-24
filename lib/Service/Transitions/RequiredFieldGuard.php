@@ -25,12 +25,26 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCP\IL10N;
+
 /**
  * Guard: verifies a named case field is non-empty.
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T05
  */
 class RequiredFieldGuard implements GuardEvaluatorInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param IL10N                     $l10n      Translates the refusal.
+	 * @param SensitiveAnswerCheck|null $sensitive Whether a sensitive field is answered, read as the system.
+	 */
+	public function __construct(
+		private readonly IL10N $l10n,
+		private readonly ?SensitiveAnswerCheck $sensitive = null,
+	) {
+	}//end __construct()
+
 	/**
 	 * Evaluate the required-field guard.
 	 *
@@ -49,10 +63,16 @@ class RequiredFieldGuard implements GuardEvaluatorInterface {
 		}
 
 		$value = ($case[$field] ?? $this->answeredProperty(case: $case, field: $field));
+		// A sensitive field's answer is not in the mover's read of the case;
+		// it is checked as the system, and only its presence comes back.
+		if ($value === null && $this->sensitive?->isAnswered(caseId: (string)($case['id'] ?? ''), name: $field) === true) {
+			$value = true;
+		}
+
 		if ($value === null || $value === '' || (is_array($value) === true && count($value) === 0)) {
 			return new GuardResult(
 				passed: false,
-				failureMessage: sprintf('Vereist veld ontbreekt: %s', $field),
+				failureMessage: $this->l10n->t('Required field missing: %s', [$field]),
 				details: ['field' => $field],
 			);
 		}

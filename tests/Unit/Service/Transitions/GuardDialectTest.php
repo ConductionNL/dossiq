@@ -195,12 +195,17 @@ class GuardDialectTest extends TestCase {
 			new ChecklistGuard(
 				$this->getMockBuilder(EngineTaskInbox::class)->disableOriginalConstructor()->getMock(),
 				$this->getMockBuilder(EngineTaskGateway::class)->disableOriginalConstructor()->getMock(),
-				new NullLogger()
+				new NullLogger(),
+				l10n: new SourceL10n()
 			),
-			new RequiredFieldGuard(),
-			new RequiredDocumentGuard(),
-			new RoleGuard($this->createMock(IGroupManager::class), $userManager, new NullLogger()),
-			new DelegatedAuthorityGuard($this->createMock(\Psr\Container\ContainerInterface::class), $this->createMock(\Psr\Log\LoggerInterface::class)),
+			new RequiredFieldGuard(l10n: new SourceL10n()),
+			new RequiredDocumentGuard(l10n: new SourceL10n()),
+			new RoleGuard($this->createMock(IGroupManager::class), $userManager, new NullLogger(), l10n: new SourceL10n()),
+			new DelegatedAuthorityGuard(
+				$this->createMock(\Psr\Container\ContainerInterface::class),
+				$this->createMock(\Psr\Log\LoggerInterface::class),
+				l10n: new SourceL10n()
+			),
 			$this->createMock(StatusChecklistGuard::class),
 			$this->createMock(CapacityGuard::class),
 			$logger,

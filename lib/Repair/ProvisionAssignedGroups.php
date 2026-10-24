@@ -160,6 +160,13 @@ class ProvisionAssignedGroups implements IRepairStep {
 		// everybody but administrators, so it is provisioned with the rest.
 		// Who else belongs in it is SeedStaffGroup's, once, on the upgrade.
 		'dossiq-medewerkers',
+		// The role groups of the admin data (register.d/92-admin-data-access.json):
+		// the privacy officers read and handle data breaches, the social-domain
+		// staff read and write indications and case meetings, and handle the
+		// re-integration case type's cases. Seeded with the administrators like the others; an
+		// administrator adds the officers and staff.
+		'dossiq-privacy',
+		'dossiq-sociaal-domein',
 	];
 
 	/**

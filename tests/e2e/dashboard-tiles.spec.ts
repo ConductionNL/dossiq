@@ -680,11 +680,11 @@ test.describe('Dashboard tiles', () => {
 			// the root alone renders for an id that resolves to nothing, and
 			// the title alone cannot say which page is printing it.
 			await expect(
-				page.locator('[data-testid="task-detail-page"]'),
+				page.locator('[data-testid="cn-detail-page"]'),
 				'the row must open the task detail view, not a route that merely matches',
 			).toBeVisible({ timeout: 30_000 })
 			await expect(
-				page.locator('[data-testid="task-detail-title"]'),
+				page.locator('.cn-detail-page__title'),
 				'the task detail page must show the task whose row was clicked',
 			).toHaveText(TASK_SOON, { timeout: 30_000 })
 		})

@@ -114,6 +114,49 @@ class SystemCaseStore {
 	}//end caseType()
 
 	/**
+	 * The version of a case type that new cases get: the row the id names,
+	 * followed along `supersededBy` to the version nothing has superseded.
+	 * The answer carries its own `id`, so a caller files on that version.
+	 *
+	 * A link that cannot be read ends the walk on the last readable version,
+	 * and a chain that loops back ends where it would repeat: a broken chain
+	 * files on a version that exists rather than on none.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register      The dossiq register.
+	 * @param string $caseTypeId    Any version of the case type.
+	 *
+	 * @return array<string, mixed>|null The current version, or null when the id names nothing.
+	 *
+	 * @spec openspec/changes/woo-five-steps/specs/woo-request-intake/spec.md#requirement-a-request-is-filed-on-the-current-version-of-the-case-type
+	 */
+	public function currentCaseType(object $objectService, string $register, string $caseTypeId): ?array {
+		$current = $this->caseType(objectService: $objectService, register: $register, caseTypeId: $caseTypeId);
+		if ($current === null) {
+			return null;
+		}
+
+		$currentId = $caseTypeId;
+		$seen      = [$caseTypeId => true];
+		$next      = trim((string)($current['supersededBy'] ?? ''));
+		while ($next !== '' && isset($seen[$next]) === false) {
+			$seen[$next] = true;
+			$row = $this->caseType(objectService: $objectService, register: $register, caseTypeId: $next);
+			if ($row === null) {
+				break;
+			}
+
+			$current   = $row;
+			$currentId = $next;
+			$next      = trim((string)($row['supersededBy'] ?? ''));
+		}
+
+		$current['id'] = $currentId;
+
+		return $current;
+	}//end currentCaseType()
+
+	/**
 	 * A case by id, or an empty array when it is absent or cannot be read.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.

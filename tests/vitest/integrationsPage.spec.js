@@ -170,7 +170,7 @@ describe('the connection declaration', () => {
 		expect(declaration.app).toBe('dossiq')
 	})
 
-	it('keeps the twelve keys the page used, in placement order', () => {
+	it('keeps the keys the page used, Kadaster added after BRP, in placement order', () => {
 		expect(connections.map((c) => c.key)).toEqual([
 			'zgw',
 			'stuf',
@@ -180,6 +180,7 @@ describe('the connection declaration', () => {
 			'store',
 			'financial',
 			'brp',
+			'kadaster',
 			'kvk',
 			'pdok',
 			'berichtenbox',
@@ -273,11 +274,11 @@ describe('the connection declaration', () => {
 
 	it('links only to an anchor AdminRoot.vue actually carries', () => {
 		const linked = connections.filter((c) => c.settingsUrl !== undefined)
-		expect(linked).toHaveLength(7)
+		expect(linked).toHaveLength(8)
 		for (const connection of linked) {
 			const anchor = connection.settingsUrl.split('#')[1]
 			expect(
-				connection.settingsUrl.startsWith('/settings/admin/dossiq#'),
+				connection.settingsUrl.startsWith('/settings/admin/dossiq?tab='),
 			).toBe(true)
 			expect(adminRoot).toContain(`id="${anchor}"`)
 		}

@@ -29,43 +29,50 @@
       "name": "Ontvangen",
       "description": "Het verzoek is binnen en geregistreerd. De termijn van een maand loopt.",
       "order": 1,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "blue"
     },
     {
       "name": "Identiteit vastgesteld",
       "description": "Wij weten wie het verzoek doet. Zonder deze stap beantwoorden wij niets.",
       "order": 2,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "purple"
     },
     {
       "name": "In behandeling",
       "description": "De behandelaar zoekt uit wat wij van deze persoon verwerken.",
       "order": 3,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "purple"
     },
     {
       "name": "Ter goedkeuring",
       "description": "De preview van het platform ligt klaar. Een tweede persoon keurt het wissen goed.",
       "order": 4,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "orange"
     },
     {
       "name": "Uitvoering",
       "description": "Het wissen is goedgekeurd en wordt door het platform uitgevoerd.",
       "order": 5,
-      "isFinal": false
+      "isFinal": false,
+      "colour": "purple"
     },
     {
       "name": "Afgerond",
       "description": "Het verzoek is beantwoord en de betrokkene heeft antwoord gekregen.",
       "order": 6,
-      "isFinal": true
+      "isFinal": true,
+      "colour": "green"
     },
     {
       "name": "Afgewezen",
       "description": "Het verzoek is afgewezen. De grond staat op de zaak.",
       "order": 7,
-      "isFinal": true
+      "isFinal": true,
+      "colour": "red"
     }
   ],
   "workflowTemplate": {

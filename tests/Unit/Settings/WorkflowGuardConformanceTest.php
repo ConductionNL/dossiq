@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
@@ -268,19 +269,25 @@ class WorkflowGuardConformanceTest extends TestCase {
 			new ChecklistGuard(
 				$engineTasks,
 				$this->getMockBuilder(EngineTaskGateway::class)->disableOriginalConstructor()->getMock(),
-				new NullLogger()
+				new NullLogger(),
+				l10n: new SourceL10n()
 			),
-			new RequiredFieldGuard(),
-			new RequiredDocumentGuard(),
-			new RoleGuard($groupManager, $userManager, new NullLogger()),
-			new DelegatedAuthorityGuard($this->createMock(\Psr\Container\ContainerInterface::class), $this->createMock(\Psr\Log\LoggerInterface::class)),
+			new RequiredFieldGuard(l10n: new SourceL10n()),
+			new RequiredDocumentGuard(l10n: new SourceL10n()),
+			new RoleGuard($groupManager, $userManager, new NullLogger(), l10n: new SourceL10n()),
+			new DelegatedAuthorityGuard(
+				$this->createMock(\Psr\Container\ContainerInterface::class),
+				$this->createMock(\Psr\Log\LoggerInterface::class),
+				l10n: new SourceL10n()
+			),
 			$this->createMock(StatusChecklistGuard::class),
 			$this->createMock(CapacityGuard::class),
 			new NullLogger(),
 			null,
 			new DocumentAssessmentGuard(
 				new WOODocumentAssessmentService($settings, $this->createMock(IUserSession::class), new NullLogger()),
-				new NullLogger()
+				new NullLogger(),
+				l10n: new SourceL10n()
 			),
 		);
 	}
@@ -375,7 +382,10 @@ class WorkflowGuardConformanceTest extends TestCase {
 		foreach ($guards as $entry) {
 			$result = $this->evaluateShipped(guard: $entry['guard'], case: ['id' => 'case-1']);
 			$message = (string)($result['failureMessage'] ?? '');
-			if (str_contains($message, 'missing') === true || str_contains($message, 'Onbekende') === true) {
+			if (str_contains($message, 'guard missing') === true
+				|| str_contains($message, 'unknown requirement') === true
+				|| str_contains($message, 'Onbekende') === true
+			) {
 				$unconfigured[] = $entry['path'] . ': ' . $message;
 			}
 		}

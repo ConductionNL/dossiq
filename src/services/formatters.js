@@ -13,13 +13,31 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
-import { translate as t } from '@nextcloud/l10n'
+import { loadState } from '@nextcloud/initial-state'
+import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
-import { formatDuration } from '../utils/durationHelpers.js'
+import { formatDuration, parseDuration } from '../utils/durationHelpers.js'
+import { fieldFill, fieldInCaseList, fieldKind, fieldOrigin } from '../utils/fieldDescription.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
+import { caseAddress } from './caseAddress.js'
+import { caseAnswerText } from './caseAnswer.js'
+import { coveredForLabel } from './coveredFor.js'
 import { scanVerdictLabel } from './scanVerdict.js'
+
+/**
+ * The resident portal's name portaliq holds, from the page's `config` state.
+ *
+ * @return {string} The name, or '' when none is set.
+ */
+function portalName() {
+	try {
+		return String(loadState('dossiq', 'config', {})?.portalName ?? '').trim()
+	} catch {
+		return ''
+	}
+}
 
 // Guard so each lookup collection is fetched at most once per page load.
 const lookupFetchStarted = {}
@@ -32,6 +50,49 @@ const lookupFetchStarted = {}
 const pendingCountIds = new Set()
 let countFlushScheduled = false
 
+
+/**
+ * An ISO duration's parts, with a number of days that is a whole number of
+ * weeks (and nothing else) counted in weeks.
+ *
+ * @param {string} iso The ISO duration.
+ * @return {{years: number, months: number, weeks: number, days: number}|null} The parts, or null when it is not one.
+ */
+function inWholeWeeks(iso) {
+	const parts = parseDuration(iso)
+	if (!parts) {
+		return null
+	}
+	if (!parts.years && !parts.months && !parts.weeks && parts.days > 0 && parts.days % 7 === 0) {
+		return { years: 0, months: 0, weeks: parts.days / 7, days: 0 }
+	}
+	return parts
+}
+
+/**
+ * The one unit a duration is counted in, or null when it uses several.
+ *
+ * @param {{years: number, months: number, weeks: number, days: number}} parts The parts.
+ * @return {{unit: string, count: number}|null} The unit and its count.
+ */
+function singleUnit(parts) {
+	const used = ['years', 'months', 'weeks', 'days'].filter((unit) => parts[unit] > 0)
+	return used.length === 1 ? { unit: used[0], count: parts[used[0]] } : null
+}
+
+/**
+ * Duration parts back as an ISO duration.
+ *
+ * @param {{years: number, months: number, weeks: number, days: number}} parts The parts.
+ * @return {string} The ISO duration.
+ */
+function toIsoDuration(parts) {
+	return 'P'
+		+ (parts.years ? `${parts.years}Y` : '')
+		+ (parts.months ? `${parts.months}M` : '')
+		+ (parts.weeks ? `${parts.weeks}W` : '')
+		+ (parts.days ? `${parts.days}D` : '')
+}
 /**
  * Queue a parent UUID for the next batch sub-case-count fetch and schedule
  * the flush. No-ops when the count is already cached in the store.
@@ -103,12 +164,113 @@ function lookupRelatedName(type, uuid) {
 
 export default {
 	/**
+	 * Whom a covered case is covered for, and until when ("For Anouk Bakker,
+	 * until 10 Oct"); '' on the reader's own case.
+	 *
+	 * @param {object|null} value The case's `coveredFor`.
+	 * @return {string}
+	 */
+	coveredFor: (value) => coveredForLabel(value),
+
+	/**
 	 * Human label for a case's `caseType` UUID reference.
 	 *
 	 * @param {string} value The caseType UUID.
 	 * @return {string}
 	 */
 	caseTypeName: (value) => lookupRelatedName('caseType', value),
+
+	/**
+	 * A case's address, from its first `case-location` ('' while it loads or
+	 * when the case has none), for a list line such as the map list's.
+	 *
+	 * @param {string} value The case id.
+	 * @return {string}
+	 * @spec openspec/changes/zakenkaart-map-list/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
+	 */
+	caseAddress: (value) => caseAddress(value),
+
+	/**
+	 * A number of cases as a phrase ("2 cases").
+	 *
+	 * @param {unknown} value The count.
+	 * @return {string} The phrase, or '' when the value is not a count.
+	 */
+	caseCount: (value) => {
+		const count = Number(value)
+		return Number.isInteger(count) && count >= 0 ? n('dossiq', '%n case', '%n cases', count) : ''
+	},
+
+	/**
+	 * The kind of answer a case type field holds ("Choice list, 6 options").
+	 *
+	 * @param {unknown} value The field's type.
+	 * @param {object} row The field.
+	 * @return {string} The kind.
+	 * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
+	 */
+	fieldKind: (value, row) => fieldKind(row),
+
+	/**
+	 * How a case type field is filled in (Required, Optional, Read only).
+	 *
+	 * @param {unknown} value Whether the field is required.
+	 * @param {object} row The field.
+	 * @return {string} The words.
+	 * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
+	 */
+	fieldFill: (value, row) => fieldFill(row),
+
+	/**
+	 * Where a case type field comes from ("Own field", "Inherited from …").
+	 *
+	 * @param {unknown} value The cell value (unused).
+	 * @param {object} row The field.
+	 * @return {string} The words.
+	 * @spec openspec/changes/case-type-fields-origin-and-list/specs/case-types/spec.md
+	 */
+	fieldOrigin: (value, row) => fieldOrigin(row),
+
+	/**
+	 * Whether the case type on the page shows the field as a case list column.
+	 *
+	 * @param {unknown} value The cell value (unused).
+	 * @param {object} row The field.
+	 * @param {object} property The column's property (unused).
+	 * @param {object} options The column's options (unused).
+	 * @param {{object: (object|null)}} context The page record (nextcloud-vue cell-formatter-page-record).
+	 * @return {string} Yes or No.
+	 * @spec openspec/changes/case-type-fields-origin-and-list/specs/case-types/spec.md
+	 */
+	fieldInCaseList: (value, row, property, options, context) => fieldInCaseList(row, context && context.object),
+
+	/**
+	 * A schema's number of properties as a phrase ("9 properties"), empty
+	 * when the object type names no schema.
+	 *
+	 * @param {unknown} value The count.
+	 * @return {string} The phrase, or ''.
+	 * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
+	 */
+	propertyCount: (value) => {
+		if (value === null || value === undefined || value === '') {
+			return ''
+		}
+		const count = Number(value)
+		return Number.isInteger(count) && count >= 0 ? n('dossiq', '%n property', '%n properties', count) : ''
+	},
+
+	/**
+	 * The views an object type supports, in words ("Map, Table").
+	 *
+	 * @param {unknown} value The view keys, `map` and `table`.
+	 * @return {string} The views, or '' for none.
+	 * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
+	 */
+	objectViews: (value) => {
+		const labels = { map: t('dossiq', 'Map'), table: t('dossiq', 'Table') }
+		return (Array.isArray(value) ? value : []).map((view) => labels[view]).filter(Boolean).join(', ')
+	},
 
 	/**
 	 * Human label for a case object's `case` UUID reference.
@@ -155,9 +317,10 @@ export default {
 
 	/**
 	 * A case type's processing time with the extension it allows, as
-	 * DqZaaktypen draws it ("8 weeks, +6 weeks"). The extension shows only
-	 * when the case type allows one and names its length; otherwise this is
-	 * `isoDuration`.
+	 * DqZaaktypen draws it ("8 weeks, +6"). A whole number of weeks in days
+	 * reads as weeks, and an extension in the same unit as the term is a bare
+	 * number. The extension shows only when the case type allows one and
+	 * names its length.
 	 *
 	 * @param {string} value The ISO processing deadline.
 	 * @param {object} [row] The case type row.
@@ -165,14 +328,22 @@ export default {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	processingTime: (value, row) => {
-		const base = formatDuration(value)
+		const base = inWholeWeeks(value)
+		const time = base ? formatDuration(toIsoDuration(base)) : formatDuration(value)
 		const extension = row?.extensionAllowed === false ? '' : row?.extensionPeriod
-		if (!base || !extension) {
-			return base
+		if (!time || !extension) {
+			return time
 		}
+		const more = inWholeWeeks(extension)
+		if (!more) {
+			return t('dossiq', '{time}, +{extension}', { time, extension: formatDuration(extension) })
+		}
+		const baseUnit = base ? singleUnit(base) : null
+		const moreUnit = singleUnit(more)
+		const sameUnit = baseUnit && moreUnit && baseUnit.unit === moreUnit.unit
 		return t('dossiq', '{time}, +{extension}', {
-			time: base,
-			extension: formatDuration(extension),
+			time,
+			extension: sameUnit ? String(moreUnit.count) : formatDuration(toIsoDuration(more)),
 		})
 	},
 
@@ -208,6 +379,36 @@ export default {
 	statusTypeName: (value) => lookupRelatedName('statusType', value),
 
 	/**
+	 * A case's priority as a phrase for a list line ("prioriteit hoog",
+	 * DqTeamwachtrij); '' for an empty or unknown value.
+	 *
+	 * @param {string} value The stored priority (low, normal, high, urgent).
+	 * @return {string}
+	 */
+	priorityPhrase: (value) => {
+		const phrases = {
+			low: t('dossiq', 'priority low'),
+			normal: t('dossiq', 'priority normal'),
+			high: t('dossiq', 'priority high'),
+			urgent: t('dossiq', 'priority urgent'),
+		}
+		return phrases[value] ?? ''
+	},
+
+	/**
+	 * One case-type field of a case, named by the column's
+	 * `formatterOptions.name`, read off the case's `properties`.
+	 *
+	 * @param {Array<object>|null} value The case's `properties`.
+	 * @param {object} row The case.
+	 * @param {object} property The column's property.
+	 * @param {{name: string}} options The column's `formatterOptions`.
+	 * @return {string} The answer as text.
+	 * @spec openspec/changes/re-integration-is-a-case-type/specs/dossiq-sociaal-domein-participatiewet/spec.md
+	 */
+	caseAnswer: (value, row, property, options) => caseAnswerText(value, options),
+
+	/**
 	 * What the virus scanner recorded about a document row.
 	 *
 	 * Read, never inferred: the value is whatever `ScanVerdictReader`
@@ -224,6 +425,92 @@ export default {
 	// document nobody routed, which renders NOTHING rather than a word: an
 	// empty marker and "Approved" are different rows.
 	approvalChain: (value) => approvalMarkerLabel(value),
+
+	/**
+	 * A document's direction, by its label, for the Files tab's Direction
+	 * column. A row without one renders nothing.
+	 *
+	 * @param {string} value The direction (`incoming`, `outgoing`, `internal`).
+	 * @return {string} The label.
+	 * @spec openspec/changes/documents-on-the-case/tasks.md
+	 */
+	documentDirection: (value) => {
+		const labels = {
+			incoming: t('dossiq', 'Incoming'),
+			outgoing: t('dossiq', 'Outgoing'),
+			internal: t('dossiq', 'Internal'),
+		}
+		return labels[String(value ?? '')] ?? ''
+	},
+
+	/**
+	 * A document's confidentiality, by its label, for the Files tab's
+	 * Visible to column. The value is the stored level; a row without one
+	 * renders nothing.
+	 *
+	 * @param {string} value The confidentiality level.
+	 * @return {string} The label.
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 */
+	confidentialityLabel: (value) => {
+		const labels = {
+			openbaar: t('dossiq', 'Public'),
+			beperkt_openbaar: t('dossiq', 'Restricted public'),
+			intern: t('dossiq', 'Internal'),
+			zaakvertrouwelijk: t('dossiq', 'Case confidential'),
+			vertrouwelijk: t('dossiq', 'Confidential'),
+			confidentieel: t('dossiq', 'Classified confidential'),
+			geheim: t('dossiq', 'Secret'),
+			zeer_geheim: t('dossiq', 'Top secret'),
+		}
+		return labels[String(value ?? '')] ?? ''
+	},
+
+	/**
+	 * The messages a case sent on its own, one line each: what it was, the
+	 * channel it went through and when ("Receipt confirmation via the portal,
+	 * 3 Oct 14:32"). The portal is named as portaliq names it ("Mijn
+	 * Zuiddrecht"), else "the portal". A message no channel took reads
+	 * "not sent".
+	 *
+	 * @param {Array<object>} value The case's outbound communications.
+	 * @return {string} The lines joined with "; ", or '' without messages.
+	 * @spec openspec/changes/receipt-confirmation-card-reads/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
+	 */
+	outboundMessages: (value) => {
+		if (!Array.isArray(value)) {
+			return ''
+		}
+		const moments = {
+			acknowledgement: t('dossiq', 'Receipt confirmation'),
+			'information-request': t('dossiq', 'Information request'),
+			stage: t('dossiq', 'Status update'),
+			extension: t('dossiq', 'Extension'),
+			decision: t('dossiq', 'Decision'),
+			transfer: t('dossiq', 'Transfer'),
+		}
+		const channels = {
+			'portal-inbox': portalName() || t('dossiq', 'the portal'),
+			'digital-post': t('dossiq', 'digital post'),
+			email: t('dossiq', 'email'),
+		}
+		const when = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+		return value
+			.filter((entry) => entry && typeof entry === 'object')
+			.map((entry) => {
+				const moment = moments[entry.moment] ?? String(entry.moment ?? '')
+				if (!entry.channel) {
+					return t('dossiq', '{moment}, not sent', { moment })
+				}
+				const sentAt = entry.sentAt ? new Date(entry.sentAt) : null
+				const time = sentAt && !Number.isNaN(sentAt.getTime()) ? when.format(sentAt) : ''
+				const channel = channels[entry.channel] ?? entry.channel
+				return time
+					? t('dossiq', '{moment} via {channel}, {time}', { moment, channel, time })
+					: t('dossiq', '{moment} via {channel}', { moment, channel })
+			})
+			.join('; ')
+	},
 
 	/**
 	 * Sub-case count badge for a case row in the case list. Returns "N

@@ -11,6 +11,7 @@
 
 - [x] 2.1 WorkflowBoard page config declares neither `register` nor `schema`.
     - test: `tests/vitest/customPageTypesConfig.spec.js`
+    - The WorkflowBoard page has since retired (the Cases board replaced it); the general check in that spec remains.
 
 ## 3. Verification
 

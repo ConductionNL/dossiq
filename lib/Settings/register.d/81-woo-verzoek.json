@@ -112,10 +112,16 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.9",
+          "version": "1.5.0",
           "slug": "woo-verzoek"
         },
+        "macros": [
+          "finish-woo-request",
+          "suspend-for-supplement"
+        ],
         "title": "Woo-verzoek",
+        "colour": "red",
+        "icon": "FileDocumentOutline",
         "description": "Behandeling van verzoeken op grond van de Wet open overheid",
         "purpose": "Transparante afhandeling van informatieverzoeken conform de WOO",
         "trigger": "Ontvangst van een WOO-verzoek van een burger, journalist of organisatie",
@@ -138,7 +144,8 @@
         "acknowledgement": {
           "addressFields": [
             "wooRequest.verzoekerEmail"
-          ]
+          ],
+          "emailCopy": true
         },
         "reviewerAccess": {
           "records": [
@@ -338,132 +345,6 @@
             ]
           }
         },
-        "recordImports": [
-          {
-            "key": "opencatalogi-woo-requests",
-            "sourceApp": "opencatalogi",
-            "sourceRegister": "publication",
-            "sourceSchema": "wooRequest",
-            "statusField": "status",
-            "statuses": {
-              "received": {
-                "status": "3c0f5a00-0000-4000-a000-00000000b001",
-                "term": "running"
-              },
-              "in_progress": {
-                "status": "3c0f5a00-0000-4000-a000-00000000b004",
-                "term": "running"
-              },
-              "awaiting_clarification": {
-                "status": "3c0f5a00-0000-4000-a000-00000000b002",
-                "term": "suspended"
-              },
-              "decided": {
-                "status": "3c0f5a00-0000-4000-a000-00000000b008",
-                "term": "closed"
-              },
-              "withdrawn": {
-                "status": "3c0f5a00-0000-4000-a000-00000000b008",
-                "term": "closed",
-                "result": "3c0f5a00-0000-4000-a000-00000000c004"
-              }
-            },
-            "fields": [
-              {
-                "to": "title",
-                "from": "requestedInformation",
-                "maxLength": 120,
-                "required": true
-              },
-              {
-                "to": "description",
-                "from": "requestedInformation"
-              },
-              {
-                "to": "startDate",
-                "from": "receivedAt",
-                "as": "date",
-                "required": true
-              },
-              {
-                "to": "receivedAt",
-                "from": "receivedAt",
-                "as": "dateTime"
-              },
-              {
-                "to": "intakeChannel",
-                "from": "channel",
-                "values": {
-                  "web": "website",
-                  "email": "email",
-                  "post": "post",
-                  "counter": "balie",
-                  "phone": "phone"
-                },
-                "default": "other"
-              },
-              {
-                "to": "extensionCount",
-                "from": "extensionCount",
-                "as": "integer"
-              },
-              {
-                "to": "endDate",
-                "from": "decidedAt",
-                "as": "date"
-              },
-              {
-                "to": "wooRequest.onderwerp",
-                "from": "requestedInformation",
-                "maxLength": 120
-              },
-              {
-                "to": "wooRequest.omschrijving",
-                "from": "requestedInformation"
-              },
-              {
-                "to": "wooRequest.origin",
-                "value": "opencatalogi"
-              },
-              {
-                "to": "wooRequest.originReference",
-                "from": "@id"
-              },
-              {
-                "to": "wooRequest.verzoekerNaam",
-                "from": "requesterName"
-              },
-              {
-                "to": "wooRequest.verzoekerEmail",
-                "from": "requesterEmail"
-              },
-              {
-                "to": "wooRequest.verzoekerTelefoon",
-                "from": "requesterPhone"
-              },
-              {
-                "to": "wooRequest.verzoekerAdres",
-                "from": "requesterAddress"
-              }
-            ],
-            "matchField": "wooRequest.originReference",
-            "formerReference": {
-              "application": "opencatalogi",
-              "from": "reference"
-            },
-            "term": {
-              "endDate": "dueAt",
-              "extensions": "extensionCount",
-              "extensionReason": "extensionReason",
-              "closedOn": "decidedAt"
-            },
-            "stamp": {
-              "caseId": "migratedTo",
-              "at": "migratedAt"
-            },
-            "sourceTimerField": "termTimer"
-          }
-        ],
         "publicationRequired": true,
         "internalOrExternal": "extern",
         "handlerAction": "Beoordelen en beslissen op WOO-verzoek",
@@ -507,7 +388,75 @@
         "documentReview": {
           "enabled": true
         },
-        "maxExtensions": 1
+        "maxExtensions": 1,
+        "x-index": {
+          "title": "Woo requests",
+          "countText": "{shown} of {total} Woo requests · sorted by legal term",
+          "addLabel": "New case",
+          "footerNote": "click a column heading to sort · 20 per page",
+          "searchFields": [
+            "title",
+            "identifier",
+            "initiatorDisplayName"
+          ],
+          "columns": [
+            "title",
+            "identifier",
+            "initiatorDisplayName",
+            "deadline",
+            "status",
+            "assignee"
+          ],
+          "defaultSort": [
+            {
+              "key": "deadline",
+              "order": "asc"
+            }
+          ],
+          "quickFilters": [
+            {
+              "label": "All",
+              "filter": {},
+              "default": true
+            },
+            {
+              "label": "Within term",
+              "filter": {
+                "deadline": {
+                  "gte": "@today"
+                },
+                "isFinalStatus": false
+              }
+            },
+            {
+              "label": "Due this week",
+              "filter": {
+                "deadline": {
+                  "gte": "@today",
+                  "lte": "@today+7d"
+                },
+                "isFinalStatus": false
+              }
+            },
+            {
+              "label": "Late",
+              "filter": {
+                "deadline": {
+                  "lt": "@today"
+                },
+                "isFinalStatus": false
+              }
+            },
+            {
+              "label": "Published",
+              "filter": {
+                "wooPublicationStatus": "published"
+              }
+            }
+          ]
+        },
+        "version": 1,
+        "supersededBy": "3c0f5a00-0000-4000-a000-00000000a002"
       },
       {
         "@self": {
@@ -554,7 +503,7 @@
         "order": 2,
         "isFinal": false,
         "role": "in-progress",
-        "colour": "blue",
+        "colour": "purple",
         "publicLabel": "In behandeling",
         "publicDescription": "Wij kijken of uw verzoek compleet is."
       },
@@ -572,7 +521,7 @@
         "order": 3,
         "isFinal": false,
         "role": "in-progress",
-        "colour": "orange",
+        "colour": "purple",
         "publicLabel": "In behandeling",
         "publicDescription": "Wij zoeken de documenten waar uw verzoek over gaat."
       },
@@ -590,7 +539,7 @@
         "order": 4,
         "isFinal": false,
         "role": "in-progress",
-        "colour": "orange",
+        "colour": "purple",
         "publicLabel": "In behandeling",
         "publicDescription": "Wij beoordelen per document of het openbaar kan."
       },
@@ -626,7 +575,7 @@
         "order": 6,
         "isFinal": false,
         "role": "review",
-        "colour": "purple",
+        "colour": "teal",
         "publicLabel": "Besluit",
         "publicDescription": "Wij nemen een besluit op uw verzoek."
       },
@@ -643,7 +592,7 @@
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "order": 7,
         "isFinal": false,
-        "role": "in-progress",
+        "role": "review",
         "colour": "green",
         "publicLabel": "Besluit genomen",
         "publicDescription": "Het besluit en de openbare documenten worden gepubliceerd."
@@ -662,7 +611,7 @@
         "order": 8,
         "isFinal": true,
         "role": "closed",
-        "colour": "grey",
+        "colour": "green",
         "publicLabel": "Afgehandeld",
         "publicDescription": "Uw verzoek is afgehandeld."
       },
@@ -670,7 +619,8 @@
         "@self": {
           "register": "dossiq",
           "schema": "resultType",
-          "slug": "woo-verzoek-openbaar-gemaakt"
+          "slug": "woo-verzoek-openbaar-gemaakt",
+          "version": "1.1.0"
         },
         "id": "3c0f5a00-0000-4000-a000-00000000c001",
         "uuid": "3c0f5a00-0000-4000-a000-00000000c001",
@@ -678,13 +628,15 @@
         "description": "De gevraagde documenten zijn openbaar gemaakt.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y"
+        "archivalPeriod": "P5Y",
+        "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/3fc7002b-31b6-4abe-82af-b6d46a9a1736"
       },
       {
         "@self": {
           "register": "dossiq",
           "schema": "resultType",
-          "slug": "woo-verzoek-deels-openbaar-gemaakt"
+          "slug": "woo-verzoek-deels-openbaar-gemaakt",
+          "version": "1.1.0"
         },
         "id": "3c0f5a00-0000-4000-a000-00000000c002",
         "uuid": "3c0f5a00-0000-4000-a000-00000000c002",
@@ -692,13 +644,15 @@
         "description": "Een deel van de gevraagde informatie is openbaar gemaakt. Wat niet openbaar is, staat met de reden in het besluit.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y"
+        "archivalPeriod": "P5Y",
+        "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/3fc7002b-31b6-4abe-82af-b6d46a9a1736"
       },
       {
         "@self": {
           "register": "dossiq",
           "schema": "resultType",
-          "slug": "woo-verzoek-niet-openbaar-gemaakt"
+          "slug": "woo-verzoek-niet-openbaar-gemaakt",
+          "version": "1.1.0"
         },
         "id": "3c0f5a00-0000-4000-a000-00000000c003",
         "uuid": "3c0f5a00-0000-4000-a000-00000000c003",
@@ -706,13 +660,15 @@
         "description": "De gevraagde documenten zijn niet openbaar gemaakt. De reden staat in het besluit.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y"
+        "archivalPeriod": "P1Y",
+        "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/9d6e6675-8764-4c55-9a47-626c2dc399f8"
       },
       {
         "@self": {
           "register": "dossiq",
           "schema": "resultType",
-          "slug": "woo-verzoek-ingetrokken"
+          "slug": "woo-verzoek-ingetrokken",
+          "version": "1.1.0"
         },
         "id": "3c0f5a00-0000-4000-a000-00000000c004",
         "uuid": "3c0f5a00-0000-4000-a000-00000000c004",
@@ -720,7 +676,8 @@
         "description": "Het verzoek is ingetrokken.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y"
+        "archivalPeriod": "P1Y",
+        "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/6f5d3859-78c5-467a-9e2f-43d71cf52a6c"
       },
       {
         "@self": {

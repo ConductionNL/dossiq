@@ -8,6 +8,22 @@
       "description": "Omgevingsvergunning voor bouwactiviteiten onder de Omgevingswet. Reguliere procedure (8 weken) of uitgebreide procedure (26 weken).",
       "processingDeadline": "P56D",
       "suspensionAllowed": true,
+      "pauseReasons": [
+        {
+          "key": "aanvulling-aanvrager",
+          "name": "Aanvulling gevraagd bij de aanvrager",
+          "category": "applicant",
+          "waitingOn": "applicant",
+          "legalBasis": "Awb 4:5, hersteltermijn"
+        },
+        {
+          "key": "uitstel-aanvrager",
+          "name": "Uitstel met instemming van de aanvrager",
+          "category": "applicant",
+          "waitingOn": "applicant",
+          "legalBasis": "Awb 4:15 lid 1 sub b"
+        }
+      ],
       "extensionAllowed": true,
       "extensionPeriod": "P42D",
       "confidentiality": "openbaar",
@@ -122,7 +138,8 @@
       "order": 1,
       "isFinal": false,
       "role": "intake",
-      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4",
+      "colour": "blue"
     },
     {
       "id": "3f1d1df0-5bb6-5f1e-8291-1b33faba41eb",
@@ -130,7 +147,8 @@
       "description": "Controle op volledigheid van de aanvraag",
       "order": 2,
       "isFinal": false,
-      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4",
+      "colour": "purple"
     },
     {
       "id": "49a76389-5119-5f0f-9292-8b3050d9b7ee",
@@ -139,7 +157,8 @@
       "order": 3,
       "isFinal": false,
       "role": "in-progress",
-      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4",
+      "colour": "purple"
     },
     {
       "id": "31b95147-5ddf-53a5-8e0f-cde7066c25a7",
@@ -147,7 +166,8 @@
       "description": "Advies wordt ingewonnen bij interne/externe partijen",
       "order": 4,
       "isFinal": false,
-      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4",
+      "colour": "purple"
     },
     {
       "id": "8f57f93c-d5ab-5d8c-bb87-4d5d3d2922e2",
@@ -156,7 +176,8 @@
       "order": 5,
       "isFinal": false,
       "role": "review",
-      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4",
+      "colour": "teal"
     },
     {
       "id": "cf2e1552-77a6-532f-8cd2-965317d25858",
@@ -164,7 +185,8 @@
       "description": "Besluit wordt bekendgemaakt",
       "order": 6,
       "isFinal": false,
-      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4",
+      "colour": "green"
     },
     {
       "id": "54897b1a-07bd-58a6-932e-f5e7b86509e1",
@@ -173,7 +195,8 @@
       "order": 7,
       "isFinal": true,
       "role": "closed",
-      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4",
+      "colour": "green"
     },
     {
       "id": "9073ad9c-9a40-5778-9ba8-2c77c2729a34",
@@ -182,7 +205,8 @@
       "order": 1,
       "isFinal": false,
       "role": "intake",
-      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038",
+      "colour": "blue"
     },
     {
       "id": "6ca89972-2c9d-5a4d-a982-a43d379ba77b",
@@ -191,7 +215,8 @@
       "order": 2,
       "isFinal": false,
       "role": "in-progress",
-      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038",
+      "colour": "purple"
     },
     {
       "id": "77f363f3-8823-526f-b429-50dd3cb89b0e",
@@ -199,7 +224,8 @@
       "description": "Melding akkoord bevonden",
       "order": 3,
       "isFinal": false,
-      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038",
+      "colour": "green"
     },
     {
       "id": "5d6023eb-fa48-51af-9a1d-d48e9070f862",
@@ -208,7 +234,8 @@
       "order": 4,
       "isFinal": true,
       "role": "closed",
-      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038",
+      "colour": "green"
     },
     {
       "id": "f20608d3-c6af-5a46-83fa-be67234eb9ea",
@@ -217,7 +244,8 @@
       "order": 1,
       "isFinal": false,
       "role": "intake",
-      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd",
+      "colour": "orange"
     },
     {
       "id": "fdc5fb65-ee0f-5555-b4ba-1d254318427e",
@@ -226,7 +254,8 @@
       "order": 2,
       "isFinal": false,
       "role": "in-progress",
-      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd",
+      "colour": "purple"
     },
     {
       "id": "43f31ad2-7ab5-5d32-9297-e9f7bc347d14",
@@ -234,7 +263,8 @@
       "description": "Ruwbouw-inspectie",
       "order": 3,
       "isFinal": false,
-      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd",
+      "colour": "purple"
     },
     {
       "id": "4f010be8-553c-599a-a18a-0e3da6abe584",
@@ -242,7 +272,8 @@
       "description": "Oplevering-inspectie",
       "order": 4,
       "isFinal": false,
-      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd",
+      "colour": "purple"
     },
     {
       "id": "6708b73f-76f8-548b-9d03-bfda94c82a06",
@@ -250,7 +281,8 @@
       "description": "Eindrapportage wordt opgesteld",
       "order": 5,
       "isFinal": false,
-      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd",
+      "colour": "purple"
     },
     {
       "id": "729d0eb2-8121-569b-ad93-7114618a16c0",
@@ -258,7 +290,8 @@
       "description": "Opvolging van geconstateerde afwijkingen",
       "order": 6,
       "isFinal": false,
-      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd",
+      "colour": "purple"
     },
     {
       "id": "0dafe7a0-cb02-561e-a5c9-d1983a45f2d6",
@@ -267,7 +300,8 @@
       "order": 7,
       "isFinal": true,
       "role": "closed",
-      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd",
+      "colour": "green"
     },
     {
       "id": "d6529b26-2e23-58bd-9862-3acc3e6d2915",
@@ -276,7 +310,8 @@
       "order": 1,
       "isFinal": false,
       "role": "intake",
-      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa",
+      "colour": "orange"
     },
     {
       "id": "73c02cf3-2bd6-593b-b5d2-c64128e6e784",
@@ -285,7 +320,8 @@
       "order": 2,
       "isFinal": false,
       "role": "in-progress",
-      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa",
+      "colour": "purple"
     },
     {
       "id": "99ec1774-2aac-5da5-91f0-158eb10f7153",
@@ -293,7 +329,8 @@
       "description": "Rapportage",
       "order": 3,
       "isFinal": false,
-      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa",
+      "colour": "purple"
     },
     {
       "id": "9687465a-3763-5b21-9cbd-72e4aee663bb",
@@ -301,7 +338,8 @@
       "description": "Opvolging",
       "order": 4,
       "isFinal": false,
-      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa",
+      "colour": "purple"
     },
     {
       "id": "3556fed1-057c-5154-ac70-e23e549a21ca",
@@ -310,7 +348,8 @@
       "order": 5,
       "isFinal": true,
       "role": "closed",
-      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa",
+      "colour": "green"
     },
     {
       "id": "77c260b4-aa92-5dd8-9091-4ef0f9242e20",
@@ -319,7 +358,8 @@
       "order": 1,
       "isFinal": false,
       "role": "intake",
-      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d",
+      "colour": "purple"
     },
     {
       "id": "f8b82073-0d78-5712-a98a-e7bb2d577276",
@@ -328,7 +368,8 @@
       "order": 2,
       "isFinal": false,
       "role": "in-progress",
-      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d",
+      "colour": "orange"
     },
     {
       "id": "b5d9837f-dbe5-5062-b145-d1f7275cb144",
@@ -336,7 +377,8 @@
       "description": "Zienswijzetermijn loopt",
       "order": 3,
       "isFinal": false,
-      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d",
+      "colour": "orange"
     },
     {
       "id": "3f733edd-9ea7-55e8-8950-dac293c48152",
@@ -345,7 +387,8 @@
       "order": 4,
       "isFinal": false,
       "role": "review",
-      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d",
+      "colour": "teal"
     },
     {
       "id": "9adc6835-dc6c-5752-8bef-951b4f6a622c",
@@ -353,7 +396,8 @@
       "description": "Begunstigingstermijn loopt",
       "order": 5,
       "isFinal": false,
-      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d",
+      "colour": "orange"
     },
     {
       "id": "730b3d39-9b6f-57c5-a660-1263b5b2a177",
@@ -361,7 +405,8 @@
       "description": "Hercontrole wordt uitgevoerd",
       "order": 6,
       "isFinal": false,
-      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d",
+      "colour": "purple"
     },
     {
       "id": "98695b5a-61a7-545f-8ee8-b8b94a67e059",
@@ -370,7 +415,8 @@
       "order": 7,
       "isFinal": true,
       "role": "closed",
-      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d",
+      "colour": "green"
     },
     {
       "id": "03658fcb-6e3e-5cc3-8625-3ad8691893f2",
@@ -379,7 +425,8 @@
       "order": 1,
       "isFinal": false,
       "role": "intake",
-      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
+      "colour": "red"
     },
     {
       "id": "086b4d8a-0b58-5e8c-b1b3-0deeb6b9240a",
@@ -388,7 +435,8 @@
       "order": 2,
       "isFinal": false,
       "role": "in-progress",
-      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
+      "colour": "red"
     },
     {
       "id": "9f64fdfd-e195-589b-ad34-8138ddf0f92d",
@@ -396,7 +444,8 @@
       "description": "Dwangsom is betaald",
       "order": 3,
       "isFinal": false,
-      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
+      "colour": "green"
     },
     {
       "id": "9d668ca1-222f-5595-aacd-9e05529faac1",
@@ -405,7 +454,8 @@
       "order": 4,
       "isFinal": true,
       "role": "closed",
-      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
+      "colour": "green"
     }
   ],
   "roleTypes": [

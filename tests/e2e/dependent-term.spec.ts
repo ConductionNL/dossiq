@@ -128,7 +128,7 @@ test.describe('A dependent term follows its predecessor', () => {
 		const token = await getRequestToken(api)
 
 		const extended = await api.post(
-			`/index.php/apps/${REGISTER}/api/termijn/instances/${terms.Bezwaar}/verleng`,
+			`/index.php/apps/${REGISTER}/api/deadlines/instances/${terms.Bezwaar}/extend`,
 			{
 				headers: { requesttoken: token },
 				data: {

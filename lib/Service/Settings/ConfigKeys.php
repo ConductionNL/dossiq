@@ -92,7 +92,6 @@ class ConfigKeys {
 		'hearing_session_schema',
 		'advisory_report_schema',
 		'appeal_decision_schema',
-		'default_case_type',
 		'portal_filing_case_types',
 		'inspectie_checklist_schema',
 		'inspectie_rapport_schema',
@@ -187,6 +186,14 @@ class ConfigKeys {
 		// Outage banner copy (nl + en).
 		'pdok_outage_banner_nl',
 		'pdok_outage_banner_en',
+		// Kadaster (BRK) and WOZ bindings, read by IntegrationMode: the mode
+		// (log, test, live), the service address and its key.
+		'integration.brk.mode',
+		'integration.brk.baseUrl',
+		'integration.brk.apiKey',
+		'integration.woz.mode',
+		'integration.woz.baseUrl',
+		'integration.woz.apiKey',
 		// KCC-werkplek bridge schema config keys (kcc-werkplek-zaaksysteem-bridge).
 		'contactmoment_schema',
 		'kcc_quick_action_schema',
@@ -218,14 +225,14 @@ class ConfigKeys {
 		'termijn_definitie_schema',
 		'termijn_instance_schema',
 		'termijn_gebeurtenis_schema',
-		'ingebrekestelling_schema',
-		'dwangsom_berekening_schema',
-		'dwangsom_uitbetaling_schema',
+		'notice_of_default_schema',
+		'accruing_amount_schema',
+		'payout_schema',
 		// Shared secret validating the X-Procest-Signature HMAC-SHA256 header
 		// on the public dwangsom payment-confirmation callback (ADR-005;
 		// enforce-dwangsom-callback-signature spec). Empty = callback fails
 		// closed (401) rather than treated as an implicit pass.
-		'dwangsom_callback_secret',
+		'payout_callback_secret',
 		// Mandaat-matrix authorization engine.
 		'mandaterings_besluit_schema',
 		'mandaat_schema',
@@ -382,9 +389,22 @@ class ConfigKeys {
 		// Which structure the app shows: `simple` (the default) or `full`
 		// (simple-structure-profile). Read through MenuStructure::normalise().
 		'menu_structure',
-		// The Woo review reports (woo-review-reports, decision D9): both off
-		// until an administrator says yes. WooReportSwitches reads them and
+		// The name staff know the app by (board DqInstellingenAlgemeen, Huisstijl).
+		'staff_app_name',
+		// The city of the municipality, the default lens of the contacts and
+		// organisations lists (boards DqContacten, DqOrganisaties); handed to
+		// the bundle as `@config.municipalityCity`.
+		'municipality_city',
+		// The organisation's text above Mijn zaken in the portal (CitizenManifest).
+		'portal_intro_text',
+		// The document review reports (woo-review-reports, decision D9): both
+		// off until an administrator says yes. WooReportSwitches reads them and
 		// refuses the throughput switch without an existing reader group.
+		'reviewerThroughputReport',
+		'reviewerThroughputReaders',
+		'collectionPartiesReport',
+		// Their earlier names, still read where the current key was never
+		// written (WooReportSwitches::LEGACY_KEYS).
 		'wooReviewerThroughputReport',
 		'wooReviewerThroughputReaders',
 		'wooCollectionPartiesReport',

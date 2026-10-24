@@ -39,6 +39,13 @@ This reverses the sentence in REQ-ACC-10 that said being the team grants
 nothing: the handling team of a case type now grants read and update on the
 cases of that type. `assignedGroup` on the case still grants nothing.
 
+## Amendment (Ruben, 2026-10-16): claim before acting
+
+The handling team reads; the handler edits after claiming. This keeps what
+#3966 shipped (a team member opens an unclaimed case, every act is refused
+until they claim it) and amends REQ-ACC-10 to say so, so the spec no longer
+reads as if a team member may act on any case of the type.
+
 ## What changes
 
 - `register.d/91-register-access.json`: a register level `authorization` block

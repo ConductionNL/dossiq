@@ -24,7 +24,6 @@ const manifest = JSON.parse(
 )
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const CASE_ID = '11111111-1111-4111-8111-111111111111'
-const WOO_CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a001'
 
 const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
 const action = caseDetail.config.headerActions.find(
@@ -226,6 +225,34 @@ describe('DocumentAssessDialog', () => {
 		)
 	})
 
+	it('drops a saved document at once, even when the next read still lists it', async () => {
+		// Rehearsal R3: the saved document stayed under "Nog geen oordeel" until
+		// the page was reloaded, because the list was read again before the
+		// search answered the new assessment.
+		const { wrapper, axios } = await mountDialog([THREE, THREE])
+		axios.post.mockResolvedValue({
+			data: {
+				saved: [{ documentRef: 'io-1', classification: 'openbaar' }],
+				errors: [],
+			},
+		})
+
+		await wrapper
+			.find('[data-testid="document-assess-select-io-1"]')
+			.setValue(true)
+		await classify(wrapper, 'openbaar')
+		await wrapper.find('[data-testid="document-assess-save"]').trigger('click')
+		await flushPromises()
+
+		expect(
+			wrapper.find('[data-testid="document-assess-row-io-1"]').exists(),
+		).toBe(false)
+		expect(
+			wrapper.find('[data-testid="document-assess-row-io-2"]').exists(),
+		).toBe(true)
+		expect(wrapper.vm.selected).toEqual([])
+	})
+
 	it('testARefusalKeepsTheDocumentsOutstanding', async () => {
 		const { wrapper, axios } = await mountDialog([THREE, THREE])
 		axios.post.mockRejectedValue({
@@ -341,9 +368,9 @@ describe('the document-assess header action', () => {
 	it('testTheActionIsScopedToItsCaseType', () => {
 		// REQ-WCS-001: not on any other case type, and not on an archived case.
 		expect(action.visibleWhen.all).toContainEqual({
-			field: 'caseType',
+			field: 'caseTypeIdentifier',
 			op: 'eq',
-			value: WOO_CASE_TYPE,
+			value: 'woo-verzoek',
 		})
 		expect(action.visibleWhen.all).toContainEqual({
 			field: '@self.archived',

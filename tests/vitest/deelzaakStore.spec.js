@@ -4,7 +4,7 @@
  *
  * Component-layer unit tests for the deelzaak (sub-case) Pinia store
  * (src/store/modules/deelzaak.js) — the data backbone the new
- * DeelzaakList / DeelzaakDetail / DeelzaakCreateModal components consume.
+ * sub-case count badge and DeelzaakCreateModal consume.
  *
  * The store is the cleanest real target for the new sub-case UI: every
  * deelzaak component reads `getSubCases` / `getParentCase` / `getSubCaseCount`

@@ -369,7 +369,7 @@ async function openTasksTab(page: Page, id: string) {
 	await strip.getByRole('tab', { name: 'Work', exact: true }).click()
 
 	const panel = strip.locator('[role="tabpanel"]:not([hidden])')
-	await expect(panel.locator('[data-testid="case-task-pane"]')).toBeVisible({
+	await expect(panel.locator('.cn-tasks-widget')).toBeVisible({
 		timeout: 20_000,
 	})
 	return panel

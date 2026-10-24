@@ -21,8 +21,8 @@
   @spec openspec/specs/workflow-definition-engine/spec.md
 -->
 <template>
-	<NcDialog
-		:name="t('dossiq', 'Start a sub-process')"
+	<CnDialog
+		:name="t('dossiq', 'Start a flow')"
 		data-testid="case-start-flow-dialog"
 		@closing="$emit('close')">
 		<div class="case-start-flow">
@@ -40,27 +40,32 @@
 				}}
 			</p>
 
-			<ul
-				v-else
-				class="case-start-flow__list"
-				data-testid="case-start-flow-list">
-				<li
-					v-for="flow in flows"
-					:key="flow.id"
-					class="case-start-flow__row">
-					<NcCheckboxRadioSwitch
-						type="radio"
-						name="case-start-flow"
-						:value="flow.id"
-						:modelValue="chosen"
-						@update:modelValue="chosen = $event">
-						{{ flow.title }}
-					</NcCheckboxRadioSwitch>
-					<span v-if="flow.description" class="case-start-flow__hint">
-						{{ flow.description }}
-					</span>
-				</li>
-			</ul>
+			<fieldset v-else class="case-start-flow__group">
+				<legend class="case-start-flow__legend">
+					{{ t('dossiq', 'Sub-process') }}
+				</legend>
+				<ul class="case-start-flow__list" data-testid="case-start-flow-list">
+					<li
+						v-for="flow in flows"
+						:key="flow.id"
+						class="case-start-flow__row">
+						<NcCheckboxRadioSwitch
+							type="radio"
+							name="case-start-flow"
+							:value="flow.id"
+							:modelValue="chosen"
+							@update:modelValue="chosen = $event">
+							{{ flow.title }}
+						</NcCheckboxRadioSwitch>
+						<span v-if="flow.description" class="case-start-flow__hint">
+							{{ flow.description }}
+						</span>
+					</li>
+				</ul>
+				<p class="case-start-flow__note" data-testid="case-start-flow-note">
+					{{ t('dossiq', 'Only flows the case type allows.') }}
+				</p>
+			</fieldset>
 
 			<p
 				v-if="error"
@@ -80,20 +85,20 @@
 				variant="primary"
 				:disabled="!canRun"
 				@click="run">
-				{{ t('dossiq', 'Run') }}
+				{{ t('dossiq', 'Start it') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { caseActionRefusal } from '../utils/caseActionsHelpers.js'
 
@@ -102,7 +107,7 @@ const PAGE_REFRESH = 'cn:page:refresh'
 export default {
 	name: 'CaseStartFlowDialog',
 
-	components: { NcButton, NcCheckboxRadioSwitch, NcDialog, NcLoadingIcon },
+	components: { NcButton, NcCheckboxRadioSwitch, CnDialog, NcLoadingIcon },
 
 	props: {
 		/**
@@ -237,6 +242,26 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 	padding: 8px 0;
+}
+
+.case-start-flow__group {
+	border: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+}
+
+.case-start-flow__legend {
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.case-start-flow__note {
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+	margin: 0;
 }
 
 .case-start-flow__list {

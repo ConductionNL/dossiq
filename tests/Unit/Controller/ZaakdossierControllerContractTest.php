@@ -48,6 +48,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
 use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 
 /**
  * Wire-contract tests for ZaakdossierController.
@@ -107,6 +109,27 @@ class ZaakdossierControllerContractTest extends TestCase {
 	private ZaakdossierController $controller;
 
 	/**
+	 * The cases each document belongs to, by document id.
+	 *
+	 * @var array<string, list<string>>
+	 */
+	private array $casesOf = [];
+
+	/**
+	 * The cases the caller may not change.
+	 *
+	 * @var list<string>
+	 */
+	private array $lockedCases = [];
+
+	/**
+	 * Whether the signed-in caller may add to the case the route names.
+	 *
+	 * @var bool
+	 */
+	private bool $mayAddToCase = true;
+
+	/**
 	 * Build the controller with all collaborators mocked.
 	 *
 	 * @return void
@@ -118,6 +141,11 @@ class ZaakdossierControllerContractTest extends TestCase {
 		$this->fileService = $this->createMock(ZaakdossierService::class);
 		$this->reader = $this->createMock(InformatieobjectReader::class);
 		$this->uploadHandler = $this->createMock(DossierUploadHandler::class);
+		$store = $this->createMock(originalClassName: DocumentRecordStore::class);
+		$store->method('caseIdsOf')->willReturnCallback(callback: fn (string $recordId): array => $this->casesOf[$recordId] ?? []);
+		$this->uploadHandler->method('hasCaseUploadAccess')->willReturnCallback(
+			callback: fn (IUser $user, string $caseId): bool => $this->mayAddToCase && in_array($caseId, $this->lockedCases, true) === false
+		);
 		$this->userSession = $this->createMock(IUserSession::class);
 
 		// The seventh collaborator arrived with the approval chain on a
@@ -141,6 +169,7 @@ class ZaakdossierControllerContractTest extends TestCase {
 				reader: $this->reader,
 				fileService: $this->fileService,
 			),
+			caseWrites: new DocumentCaseWriteGuard(store: $store, uploads: $this->uploadHandler),
 		);
 	}//end setUp()
 
@@ -543,4 +572,101 @@ class ZaakdossierControllerContractTest extends TestCase {
 		);
 	}//end testApprovalMarkersRefusesAnAnonymousCaller()
 
+	/**
+	 * SECURITY: linking a document into a case the caller may not add to is
+	 * refused before the document is read or anything is linked.
+	 *
+	 * @return void
+	 */
+	public function testLinkExistingRefusesACaseTheCallerMayNotAddToBeforeReadingOrLinking(): void {
+		$this->signIn();
+		$this->mayAddToCase = false;
+		$this->reader->expects($this->never())->method('guardReadable');
+		$this->fileService->expects($this->never())->method('linkExistingInformatieobject');
+
+		$response = $this->controller->linkExisting(caseId: 'someone-elses-case', infoObjectId: 'io-1');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+	}//end testLinkExistingRefusesACaseTheCallerMayNotAddToBeforeReadingOrLinking()
+
+	/**
+	 * SECURITY: unlinking a document from a case the caller may not change is
+	 * refused before the document is read or anything is unlinked.
+	 *
+	 * @return void
+	 */
+	public function testUnlinkDocumentRefusesACaseTheCallerMayNotChangeBeforeReadingOrUnlinking(): void {
+		$this->signIn();
+		$this->mayAddToCase = false;
+		$this->reader->expects($this->never())->method('guardReadable');
+		$this->fileService->expects($this->never())->method('unlinkInformatieobject');
+
+		$response = $this->controller->unlinkDocument(caseId: 'someone-elses-case', infoObjectId: 'io-1');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+	}//end testUnlinkDocumentRefusesACaseTheCallerMayNotChangeBeforeReadingOrUnlinking()
+
+	/**
+	 * SECURITY: a document on a case the caller may not change cannot have its
+	 * metadata or status written, and the refusal comes before it is read.
+	 *
+	 * @return void
+	 */
+	public function testASingleDocumentWriteNeedsTheChangeRightOnEveryCase(): void {
+		$this->signIn();
+		$this->casesOf = ['io-1' => ['case-mine', 'case-locked']];
+		$this->lockedCases = ['case-locked'];
+		$this->reader->expects($this->never())->method('guardReadable');
+		$this->fileService->expects($this->never())->method('updateMetadata');
+		$this->fileService->expects($this->never())->method('transitionStatus');
+
+		$metadata = $this->controller->updateMetadata(infoObjectId: 'io-1');
+		$status = $this->controller->transitionStatus(infoObjectId: 'io-1');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $metadata->getStatus());
+		$this->assertSame(expected: 'case-locked', actual: $metadata->getData()['caseId']);
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $status->getStatus());
+	}//end testASingleDocumentWriteNeedsTheChangeRightOnEveryCase()
+
+	/**
+	 * SECURITY: one document on a locked case refuses the whole bulk write,
+	 * naming that document, before anything is read or written.
+	 *
+	 * @return void
+	 */
+	public function testABulkWriteIsRefusedWholeAndNamesTheDocument(): void {
+		$this->signIn();
+		$this->casesOf = ['io-1' => ['case-mine'], 'io-2' => ['case-locked']];
+		$this->lockedCases = ['case-locked'];
+		$this->request->method('getParam')->willReturnMap(
+			valueMap: [['ids', [], ['io-1', 'io-2']], ['status', '', 'final'], ['metadata', [], ['title' => 'x']]]
+		);
+		$this->reader->expects($this->never())->method('guardReadable');
+		$this->fileService->expects($this->never())->method('bulkTransitionStatus');
+		$this->fileService->expects($this->never())->method('updateMetadata');
+
+		$status = $this->controller->bulkTransitionStatus();
+		$metadata = $this->controller->bulkUpdateMetadata();
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $status->getStatus());
+		$this->assertSame(expected: 'io-2', actual: $status->getData()['documentId']);
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $metadata->getStatus());
+		$this->assertSame(expected: 'io-2', actual: $metadata->getData()['documentId']);
+	}//end testABulkWriteIsRefusedWholeAndNamesTheDocument()
+
+	/**
+	 * A document on no case keeps today's rule: the read clearance decides.
+	 *
+	 * @return void
+	 */
+	public function testADocumentOnNoCaseKeepsTheReadClearanceRule(): void {
+		$this->signIn();
+		$this->casesOf = [];
+		$this->reader->expects($this->once())->method('guardReadable')->willReturn(null);
+		$this->fileService->expects($this->once())->method('transitionStatus')->willReturn(['id' => 'io-loose']);
+
+		$response = $this->controller->transitionStatus(infoObjectId: 'io-loose');
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+	}//end testADocumentOnNoCaseKeepsTheReadClearanceRule()
 }//end class

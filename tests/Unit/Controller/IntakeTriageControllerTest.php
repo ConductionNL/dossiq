@@ -46,11 +46,13 @@ use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Email\IntakePolicy;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
+use OCA\Dossiq\Service\Intake\CaseMatchSuggestion;
 use OCA\Dossiq\Service\Intake\CaseClassification;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
 use OCA\Dossiq\Service\Intake\DuplicatePolicy;
 use OCA\Dossiq\Service\Intake\IntakeFanOut;
 use OCA\Dossiq\Service\Intake\IntakeRequirements;
+use OCA\Dossiq\Service\Intake\TriageChannel;
 use OCA\Dossiq\Service\Intake\TriageSleep;
 use OCA\Dossiq\Service\Routing\RefusalOutcome;
 use OCP\AppFramework\Http;
@@ -136,6 +138,11 @@ final class IntakeTriageControllerTest extends TestCase {
 	private AdmissibilityJudgement $admissibility;
 
 	/**
+	 * @var CaseMatchSuggestion&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private CaseMatchSuggestion $suggestions;
+
+	/**
 	 * Build collaborators for a caller who holds the intake role.
 	 *
 	 * @return void
@@ -159,6 +166,11 @@ final class IntakeTriageControllerTest extends TestCase {
 		$this->fanOut = $this->createMock(IntakeFanOut::class);
 		$this->log = $this->createMock(IntakeLog::class);
 		$this->admissibility = $this->createMock(AdmissibilityJudgement::class);
+		$this->suggestions = $this->createMock(CaseMatchSuggestion::class);
+		$this->suggestions->method('annotate')->willReturnCallback(
+			static fn (array $items): array => array_map(static fn (array $item): array => $item + ['suggestion' => null], $items)
+		);
+		$this->suggestions->method('narrow')->willReturnArgument(0);
 	}//end setUp()
 
 	/**
@@ -221,6 +233,8 @@ final class IntakeTriageControllerTest extends TestCase {
 			caseAccessGuard: $guard,
 			userSession: $session,
 			logger: new NullLogger(),
+			suggestions: $this->suggestions,
+			channels: new TriageChannel(),
 		);
 	}//end controller()
 
@@ -398,9 +412,64 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$body = $this->controller()->queue()->getData();
 
-		$this->assertSame(expected: [['id' => 'e-quarantined']], actual: $body['results']);
+		$this->assertSame(expected: [['id' => 'e-quarantined', 'suggestion' => null, 'channel' => 'email']], actual: $body['results']);
 		$this->assertSame(expected: 1, actual: $body['sleeping']);
+		$this->assertSame(expected: 1, actual: $body['total']);
 	}//end testTheQueueLeavesOutTheSleepingItems()
+
+	/**
+	 * The queue narrows to one channel and counts every channel of the lens.
+	 *
+	 * The facet is counted before the channel narrows, so the menu still offers
+	 * the other channels while one is chosen.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	public function testTheQueueNarrowsToAChannelAndCountsEveryChannel(): void {
+		$this->log->method('search')->willReturnCallback(
+			static function (array $filters = []): array {
+				if (($filters['outcome'] ?? '') !== 'inbox') {
+					return [];
+				}
+
+				return [
+					['id' => 'm1', 'mailMessageId' => '<m1@x>'],
+					['id' => 'p1', 'channel' => 'portal'],
+					['id' => 'm2', 'mailMessageId' => '<m2@x>'],
+				];
+			}
+		);
+		$this->sleep->method('awake')->willReturnArgument(0);
+
+		$body = $this->controller()->queue(channel: 'portal')->getData();
+
+		$this->assertSame(expected: ['p1'], actual: array_column($body['results'], 'id'));
+		$this->assertSame(expected: 1, actual: $body['total']);
+		$this->assertSame(
+			expected: [['value' => 'email', 'count' => 2], ['value' => 'portal', 'count' => 1]],
+			actual: $body['channels']
+		);
+	}//end testTheQueueNarrowsToAChannelAndCountsEveryChannel()
+
+	/**
+	 * Every channel, the default lens, keeps the whole queue.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	public function testAllChannelsKeepsTheWholeQueue(): void {
+		$this->log->method('search')->willReturnCallback(
+			static fn (array $filters = []): array => (($filters['outcome'] ?? '') === 'inbox') ? [['id' => 'm1'], ['id' => 'p1', 'channel' => 'portal']] : []
+		);
+		$this->sleep->method('awake')->willReturnArgument(0);
+
+		$body = $this->controller()->queue(channel: 'all')->getData();
+
+		$this->assertSame(expected: ['m1', 'p1'], actual: array_column($body['results'], 'id'));
+	}//end testAllChannelsKeepsTheWholeQueue()
 
 	/**
 	 * Sleeping an item answers the record the sleep produced.

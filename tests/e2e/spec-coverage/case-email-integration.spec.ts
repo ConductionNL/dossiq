@@ -5,7 +5,7 @@
  * Gate-19 spec-coverage tests for the case-email-integration spec.
  *
  * Scope here is strictly the dossiq-authored UI surfaces this change ships:
- * the shared-mailbox admin settings panel (EmailSettings.vue, rendered inside
+ * the shared-mailbox admin settings panel (the section-mailbox fields, rendered inside
  * Nextcloud's admin settings at /settings/admin/dossiq) and the absence of
  * any per-user SMTP-send credential fields on it. Leaf display/linking,
  * IMAP ingest, Docudesk PDF archival and NC Mail draft-open are backend /
@@ -49,8 +49,8 @@ test.describe('case-email-integration spec coverage', () => {
 			.catch(() => {})
 		await expect(heading.first()).toBeVisible({ timeout: 15000 })
 
-		// Shared-mailbox IMAP host field is present.
-		await expect(page.locator('#email_imap_host')).toBeVisible({
+		// The shared-mailbox intake folder field is present.
+		await expect(page.getByLabel('Mailbox folder')).toBeVisible({
 			timeout: 10000,
 		})
 
