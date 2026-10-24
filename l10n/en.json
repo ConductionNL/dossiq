@@ -927,6 +927,7 @@
         "Are you sure you want to delete this decision?": "Are you sure you want to delete this decision?",
         "Are you sure you want to delete this task?": "Are you sure you want to delete this task?",
         "Are you sure you want to delete this transition?": "Are you sure you want to delete this transition?",
+        "Are you sure? The confirmation went outside dossiq, by letter for instance. The Awb 4:3a term then counts as met.": "Are you sure? The confirmation went outside dossiq, by letter for instance. The Awb 4:3a term then counts as met.",
         "Area": "Area",
         "Area address id": "Area address id",
         "Area fallback role type": "Area fallback role type",

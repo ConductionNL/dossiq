@@ -5824,6 +5824,9 @@
 						"url": "/apps/dossiq/api/case/@objectId/acknowledgement/met",
 						"method": "POST",
 						"confirm": true,
+						"confirmMessage": "Are you sure? The confirmation went outside dossiq, by letter for instance. The Awb 4:3a term then counts as met.",
+						"confirmLabel": "Record it",
+						"confirmIcon": "Check",
 						"payload": {
 							"how": "Confirmed outside the app, recorded by the handler"
 						},
