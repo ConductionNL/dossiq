@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\AppInfo\Registrar\ForfeitInvoiceListenerRegistrar;
+use OCA\Dossiq\Exception\ForfeitInvoiceNotRaisedException;
 use OCA\Dossiq\Listener\ForfeitInvoiceListener;
 use OCA\Dossiq\Service\Money\ForfeitInvoiceRaiser;
 use OCA\Dossiq\Service\SettingsService;
@@ -30,6 +31,8 @@ use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * The raise runs once, when an enforcement act becomes forfeited.
@@ -66,7 +69,7 @@ final class ForfeitInvoiceListenerTest extends TestCase {
 		$raiser->expects(self::exactly($raises))->method('raise')
 			->with(self::callback(static fn (array $action): bool => $action['status'] === 'verbeurd' && $action['case'] === 'case-7'));
 
-		return new ForfeitInvoiceListener(settingsService: $settings, raiser: $raiser);
+		return new ForfeitInvoiceListener(settingsService: $settings, raiser: $raiser, logger: $this->createMock(LoggerInterface::class));
 	}//end listener()
 
 	public function testBecomingForfeitedRaisesOnce(): void {
@@ -79,6 +82,21 @@ final class ForfeitInvoiceListenerTest extends TestCase {
 		$listener->handle(new ObjectUpdatedEvent(self::act('geeffectueerd'), self::act('opgelegd')));
 		$listener->handle(new ObjectUpdatedEvent(self::act('verbeurd', schema: '7'), self::act('opgelegd', schema: '7')));
 	}//end testAnythingElseRaisesNothing()
+
+	public function testAnInvoiceNotRaisedIsLoggedAndTheSaveStands(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ($key === 'handhavingsactie_schema') ? '42' : '');
+		$raiser = $this->createMock(ForfeitInvoiceRaiser::class);
+		$raiser->method('raise')->willThrowException(
+			new ForfeitInvoiceNotRaisedException(reasonCode: ForfeitInvoiceNotRaisedException::FINANCE_REFUSED, caseId: 'case-7', previous: new RuntimeException('403'))
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects(self::once())->method('warning')
+			->with(self::anything(), ['case' => 'case-7', 'reason' => 'finance-refused', 'error' => '403']);
+
+		(new ForfeitInvoiceListener(settingsService: $settings, raiser: $raiser, logger: $logger))
+			->handle(new ObjectUpdatedEvent(self::act('verbeurd'), self::act('opgelegd')));
+	}//end testAnInvoiceNotRaisedIsLoggedAndTheSaveStands()
 
 	public function testTheListenerIsRegisteredOnTheUpdate(): void {
 		$registered = [];

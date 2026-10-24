@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Money;
 
+use OCA\Dossiq\Exception\ForfeitInvoiceNotRaisedException;
 use OCA\Dossiq\Service\Money\CasePaymentReader;
 use OCA\Dossiq\Service\Money\ForfeitInvoiceRaiser;
 use OCA\Dossiq\Service\People\PersonLinkReader;
@@ -52,15 +53,31 @@ final class ForfeitInvoiceRaiserTest extends TestCase {
 	 * @param array<int, array<string, string>> $people The people on the case.
 	 * @param bool $leafPresent Whether shillinq's leaf can be had.
 	 * @param string|null $refusal What the leaf refuses with, or null.
+	 * @param bool $storeFails Whether every read of the store throws.
 	 *
 	 * @return ForfeitInvoiceRaiser
 	 */
-	private function raiser(array $caseType, array $people, bool $leafPresent = true, ?string $refusal = null): ForfeitInvoiceRaiser {
+	private function raiser(array $caseType, array $people, bool $leafPresent = true, ?string $refusal = null, bool $storeFails = false): ForfeitInvoiceRaiser {
 		$this->objects = new FakeTermijnStore();
 		$this->objects->seed('caseType', ['id' => 'ct-1'] + $caseType);
 		$this->objects->seed('case', ['id' => 'case-7', 'caseType' => 'ct-1', 'identifier' => 'HH-2026-0007']);
 		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($this->objects);
+		$store = $this->objects;
+		if ($storeFails === true) {
+			$store = new class {
+				/**
+				 * Every read fails.
+				 *
+				 * @param mixed ...$arguments Ignored.
+				 *
+				 * @return never
+				 */
+				public function find(mixed ...$arguments): never {
+					throw new RuntimeException('database is gone');
+				}
+			};
+		}
+		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => match ($key) {
 				'register' => 'dossiq',
@@ -167,13 +184,37 @@ final class ForfeitInvoiceRaiserTest extends TestCase {
 		}
 	}//end testNothingIsRaisedWhenTheCaseTypeDoesNotSaySoOrNobodyCanPay()
 
-	public function testARefusalIsLoggedAndTheActStaysForfeited(): void {
+	public function testARefusalThrowsForTheCallerToDecide(): void {
 		$raiser = $this->raiser(
 			caseType: ['forfeitRaisesInvoice' => true, 'forfeitPayerRoleType' => 'rt-offender', 'forfeitAdministration' => 'adm-1'],
 			people: [['role' => 'rt-offender', 'displayName' => 'X', 'email' => 'x@example.nl']],
 			refusal: '403 This app is not granted the payment.request action (paymentActionApps).',
 		);
 
-		self::assertNull($raiser->raise(action: self::act()));
-	}//end testARefusalIsLoggedAndTheActStaysForfeited()
+		try {
+			$raiser->raise(action: self::act());
+			self::fail('a refused invoice must throw');
+		} catch (ForfeitInvoiceNotRaisedException $e) {
+			self::assertSame(ForfeitInvoiceNotRaisedException::FINANCE_REFUSED, $e->getReasonCode());
+			self::assertSame('case-7', $e->getCaseId());
+			self::assertStringContainsString('paymentActionApps', (string)$e->getPrevious()?->getMessage());
+		}
+	}//end testARefusalThrowsForTheCallerToDecide()
+
+	public function testAStoreThatCannotBeReadThrowsInsteadOfReadingNoSetting(): void {
+		$raiser = $this->raiser(
+			caseType: ['forfeitRaisesInvoice' => true, 'forfeitPayerRoleType' => 'rt-offender', 'forfeitAdministration' => 'adm-1'],
+			people: [['role' => 'rt-offender', 'displayName' => 'X', 'email' => 'x@example.nl']],
+			storeFails: true,
+		);
+
+		try {
+			$raiser->raise(action: self::act());
+			self::fail('an unreadable store must throw');
+		} catch (ForfeitInvoiceNotRaisedException $e) {
+			self::assertSame(ForfeitInvoiceNotRaisedException::STORE_UNREADABLE, $e->getReasonCode());
+			self::assertSame('case-7', $e->getCaseId());
+		}
+		self::assertSame([], $this->leaf->calls);
+	}//end testAStoreThatCannotBeReadThrowsInsteadOfReadingNoSetting()
 }//end class

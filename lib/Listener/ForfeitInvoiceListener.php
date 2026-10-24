@@ -5,6 +5,8 @@
  *
  * Hands an enforcement act to ForfeitInvoiceRaiser at the moment it becomes
  * forfeited (`verbeurd`), once: a save that keeps it forfeited raises nothing.
+ * When no invoice could be raised the act stays forfeited and the failure is
+ * logged; the save that forfeited it is not undone.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener
@@ -27,11 +29,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Exception\ForfeitInvoiceNotRaisedException;
 use OCA\Dossiq\Service\Money\ForfeitInvoiceRaiser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
+use Psr\Log\LoggerInterface;
 
 /**
  * Raises the invoice when an enforcement act becomes forfeited.
@@ -53,10 +57,12 @@ class ForfeitInvoiceListener implements IEventListener {
 	 *
 	 * @param SettingsService $settingsService Names the enforcement act schema.
 	 * @param ForfeitInvoiceRaiser $raiser Raises the invoice.
+	 * @param LoggerInterface $logger Records an invoice that was not raised.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ForfeitInvoiceRaiser $raiser,
+		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
@@ -87,6 +93,13 @@ class ForfeitInvoiceListener implements IEventListener {
 			return;
 		}
 
-		$this->raiser->raise(action: $after);
+		try {
+			$this->raiser->raise(action: $after);
+		} catch (ForfeitInvoiceNotRaisedException $e) {
+			$this->logger->warning(
+				'Dossiq: a forfeited penalty raised no invoice',
+				['case' => $e->getCaseId(), 'reason' => $e->getReasonCode(), 'error' => $e->getPrevious()?->getMessage()]
+			);
+		}
 	}//end handle()
 }//end class

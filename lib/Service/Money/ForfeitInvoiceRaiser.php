@@ -11,7 +11,9 @@
  * configuration; nothing here names a procedure.
  *
  * Nothing is raised without the setting, without a payer with an email
- * address, or without the finance app. The act stays forfeited either way.
+ * address, or without the finance app. A case that cannot be read or a request
+ * the finance app refuses throws ForfeitInvoiceNotRaisedException; the caller
+ * decides what that means for the act.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Money
@@ -35,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Exception\ForfeitInvoiceNotRaisedException;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -73,14 +76,17 @@ class ForfeitInvoiceRaiser {
 	 *
 	 * @param array<string, mixed> $action The forfeited enforcement act.
 	 *
-	 * @return string|null The payment request id, or null when nothing was raised.
+	 * @return string|null The payment request id, or null when the case type does not ask
+	 *                     for an invoice, nobody can be billed or there is no finance app.
+	 *
+	 * @throws ForfeitInvoiceNotRaisedException When the case cannot be read or the finance app refuses.
 	 *
 	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-005)
 	 */
 	public function raise(array $action): ?string {
 		$caseId = (string)($action['case'] ?? '');
-		$case = $this->read(schemaKey: 'case_schema', id: $caseId);
-		$caseType = $this->read(schemaKey: 'case_type_schema', id: (string)($case['caseType'] ?? ''));
+		$case = $this->read(schemaKey: 'case_schema', id: $caseId, caseId: $caseId);
+		$caseType = $this->read(schemaKey: 'case_type_schema', id: (string)($case['caseType'] ?? ''), caseId: $caseId);
 		if (($caseType['forfeitRaisesInvoice'] ?? false) !== true) {
 			return null;
 		}
@@ -110,8 +116,7 @@ class ForfeitInvoiceRaiser {
 				]
 			);
 		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: the finance app refused the invoice for a forfeited penalty', ['case' => $caseId, 'error' => $e->getMessage()]);
-			return null;
+			throw new ForfeitInvoiceNotRaisedException(reasonCode: ForfeitInvoiceNotRaisedException::FINANCE_REFUSED, caseId: $caseId, previous: $e);
 		}
 
 		return (string)($created['id'] ?? '');
@@ -141,14 +146,17 @@ class ForfeitInvoiceRaiser {
 	}//end payerOn()
 
 	/**
-	 * One object by the schema a setting names, or [] when it cannot be read.
+	 * One object by the schema a setting names, or [] when it is not configured or not held.
 	 *
 	 * @param string $schemaKey The setting that names the schema.
 	 * @param string $id The object id.
+	 * @param string $caseId The case the read is for.
 	 *
 	 * @return array<string, mixed> The object.
+	 *
+	 * @throws ForfeitInvoiceNotRaisedException When the store cannot be read.
 	 */
-	private function read(string $schemaKey, string $id): array {
+	private function read(string $schemaKey, string $id, string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue($schemaKey);
@@ -159,7 +167,7 @@ class ForfeitInvoiceRaiser {
 		try {
 			return ($this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id) ?? []);
 		} catch (Throwable $e) {
-			return [];
+			throw new ForfeitInvoiceNotRaisedException(reasonCode: ForfeitInvoiceNotRaisedException::STORE_UNREADABLE, caseId: $caseId, previous: $e);
 		}
 	}//end read()
 }//end class
