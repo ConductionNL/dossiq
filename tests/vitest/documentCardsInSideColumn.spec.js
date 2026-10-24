@@ -33,3 +33,12 @@ describe('the cards about the selected document', () => {
 		expect(checked.formatterOptions).toEqual({ time: true })
 	})
 })
+
+describe('the checksum card says when the file was last checked (DqDocumentenBeheer "Laatst gecontroleerd")', () => {
+	it('shows the last check and its outcome, the outcome in the error tone when the file changed or is gone', () => {
+		const props = panels.caseWidget('case-files').props
+		const fields = props.sideCards.find((card) => card.id === 'checksum').fields
+		expect(fields.find((field) => field.key === 'integrity.checkedAt')).toMatchObject({ label: 'Last checked', formatter: 'relativeDate', formatterOptions: { time: true } })
+		expect(fields.find((field) => field.key === 'integrity.status')).toMatchObject({ formatter: 'integrityStatus', colorMap: { changed: 'error', missing: 'error' } })
+	})
+})

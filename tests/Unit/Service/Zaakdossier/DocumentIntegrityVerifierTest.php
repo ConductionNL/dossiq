@@ -75,7 +75,14 @@ class DocumentIntegrityVerifierTest extends TestCase {
 
 		$defaults = $this->createMock(originalClassName: DocumentDefaults::class);
 		$defaults->method('integrityOf')->willReturnCallback(
-			callback: static fn (File $node): array => ['algorithm' => 'sha256', 'value' => ($node->getId() === 11 ? 'aaa' : 'zzz'), 'date' => 'now']
+			callback: static function (File $node): array {
+				$value = 'zzz';
+				if ($node->getId() === 11) {
+					$value = 'aaa';
+				}
+
+				return ['algorithm' => 'sha256', 'value' => $value, 'date' => 'now'];
+			}
 		);
 
 		$config = $this->createMock(originalClassName: IAppConfig::class);
@@ -98,9 +105,21 @@ class DocumentIntegrityVerifierTest extends TestCase {
 	private function register(): InMemoryRegister {
 		$register = new InMemoryRegister();
 		$register->pages = true;
-		$register->seed(schema: 'informatieobject', uuid: 'd1', row: ['fileId' => 11, 'integrity' => ['algorithm' => 'sha256', 'value' => 'aaa', 'date' => '2026-09-13T16:57:49']]);
-		$register->seed(schema: 'informatieobject', uuid: 'd2', row: ['fileId' => 12, 'integrity' => ['algorithm' => 'sha256', 'value' => 'bbb', 'date' => '2026-09-13T16:57:49']]);
-		$register->seed(schema: 'informatieobject', uuid: 'd3', row: ['fileId' => 13, 'integrity' => ['algorithm' => 'sha256', 'value' => 'ccc', 'date' => '2026-09-13T16:57:49']]);
+		$register->seed(
+			schema: 'informatieobject',
+			uuid: 'd1',
+			row: ['fileId' => 11, 'integrity' => ['algorithm' => 'sha256', 'value' => 'aaa', 'date' => '2026-09-13T16:57:49']]
+		);
+		$register->seed(
+			schema: 'informatieobject',
+			uuid: 'd2',
+			row: ['fileId' => 12, 'integrity' => ['algorithm' => 'sha256', 'value' => 'bbb', 'date' => '2026-09-13T16:57:49']]
+		);
+		$register->seed(
+			schema: 'informatieobject',
+			uuid: 'd3',
+			row: ['fileId' => 13, 'integrity' => ['algorithm' => 'sha256', 'value' => 'ccc', 'date' => '2026-09-13T16:57:49']]
+		);
 		$register->seed(schema: 'informatieobject', uuid: 'd4', row: ['fileId' => 14]);
 
 		return $register;
