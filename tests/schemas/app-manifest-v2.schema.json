@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.154.0",
+	"version": "2.155.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -3609,7 +3609,9 @@
 			"else": {
 				"$ref": "#/$defs/actionFields",
 				"properties": {
-					"children": { "items": { "$ref": "#/$defs/headerAction" } }
+					"children": { "items": { "$ref": "#/$defs/headerAction" } },
+					"tabs": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "As a `primaryActionByStage` entry: the body tabs beside which its header button shows (2.155.0)." },
+					"notTabs": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "As a `primaryActionByStage` entry: the body tabs beside which its header button stands aside; it stays in the Actions menu (2.155.0)." }
 				},
 				"unevaluatedProperties": false
 			}
