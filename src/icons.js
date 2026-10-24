@@ -182,6 +182,7 @@ import PaperclipCheck from 'vue-material-design-icons/PaperclipCheck.vue'
 import PauseCircleOutline from 'vue-material-design-icons/PauseCircleOutline.vue'
 import Pencil from 'vue-material-design-icons/Pencil.vue'
 import PercentOutline from 'vue-material-design-icons/PercentOutline.vue'
+import Phone from 'vue-material-design-icons/Phone.vue'
 import PhoneForward from 'vue-material-design-icons/PhoneForward.vue'
 import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
 import PhoneLogOutline from 'vue-material-design-icons/PhoneLogOutline.vue'
@@ -412,6 +413,7 @@ export default {
 	PauseCircleOutline,
 	Pencil,
 	PercentOutline,
+	Phone,
 	PhoneForward,
 	PhoneInTalk,
 	PhoneLogOutline,
