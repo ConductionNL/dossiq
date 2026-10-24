@@ -7313,7 +7313,7 @@
 						"urgent": "error"
 					}
 				},
-				"headerMeta": "{dueLabel}",
+				"headerMeta": "at case {subject.identifier}, deadline {dueAt|relative}",
 				"verbEndpoints": {
 					"complete": "/apps/dossiq/api/case-tasks/{id}/complete"
 				},

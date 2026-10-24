@@ -960,6 +960,7 @@ OC.L10N.register(
         "Associations": "Associations",
         "Async collaboration on this shared case. Entries are append-only and visible to both organisations.": "Async collaboration on this shared case. Entries are append-only and visible to both organisations.",
         "At": "At",
+        "at case {subject.identifier}, deadline {dueAt|relative}": "at case {subject.identifier}, deadline {dueAt|relative}",
         "At least one clock on this case has run out.": "At least one clock on this case has run out.",
         "At least one status must be marked as final": "At least one status must be marked as final",
         "At least one status type must be defined": "At least one status type must be defined",
