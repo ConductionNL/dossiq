@@ -102,6 +102,7 @@ class ObjectListenerRegistrar {
 		(new CaseAccessListenerRegistrar())->register(context: $context);
 		(new WooListenerRegistrar())->register(context: $context);
 		(new CaseLinkListenerRegistrar())->register(context: $context);
+		(new ForfeitInvoiceListenerRegistrar())->register(context: $context);
 		(new OnboardingListenerRegistrar())->register(context: $context);
 	}//end register()
 
