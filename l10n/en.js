@@ -117,6 +117,7 @@ OC.L10N.register(
         "Identified by security questions": "Identified by security questions",
         "Last contact on": "Last contact on",
         "Logged in with DigiD": "Logged in with DigiD",
+        "Showing the BSN is logged.": "Showing the BSN is logged.",
         "_%n case_::_%n cases_": ["%n case","%n cases"],
         "_%n day late_::_%n days late_": ["%n day late","%n days late"],
         "_%n day left_::_%n days left_": ["%n day left","%n days left"],

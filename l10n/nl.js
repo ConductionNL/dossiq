@@ -117,6 +117,7 @@ OC.L10N.register(
         "Identified by security questions": "Geïdentificeerd met controlevragen",
         "Last contact on": "Laatst contact op",
         "Logged in with DigiD": "Ingelogd met DigiD",
+        "Showing the BSN is logged.": "Het tonen van het BSN wordt gelogd.",
         "_%n case_::_%n cases_": ["%n zaak","%n zaken"],
         "_%n day late_::_%n days late_": ["%n dag te laat","%n dagen te laat"],
         "_%n day left_::_%n days left_": ["nog %n dag","nog %n dagen"],
