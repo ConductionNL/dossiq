@@ -911,11 +911,20 @@
 								"id": "simple-recent-activity",
 								"type": "nc-widget",
 								"title": "Recent activity",
-								"_note": "DqMijnWerk's Recente activiteit under My tasks: what happened on the reader's work, newest first. Nextcloud's own Activity dashboard widget, read through its items API, so dossiq keeps no feed of its own.",
+								"_note": "DqMijnWerk's Recente activiteit under My tasks: what happened on the reader's work, newest first. Nextcloud's own Activity dashboard widget, read through its items API, so dossiq keeps no feed of its own. Tag changes are left out (they are fixture noise, not work), and every item takes the tone of its app: a reaction primary, a file or publication green, a change to a case grey (nextcloud-vue content.itemTones / excludeApps).",
 								"content": {
 									"widgetId": "activity",
 									"displayMode": "list",
-									"limit": 3
+									"limit": 3,
+									"excludeApps": [
+										"systemtags"
+									],
+									"itemTones": {
+										"comments": "info",
+										"files": "success",
+										"openregister": "neutral",
+										"dossiq": "neutral"
+									}
 								}
 							}
 						],
