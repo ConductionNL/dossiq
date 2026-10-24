@@ -46,6 +46,7 @@
         "Links",
         "Mail",
         "Manager",
+        "Menu",
         "Model",
         "Moment",
         "Nextcloud",
@@ -124,6 +125,8 @@
         "name",
         "{name}, {description}",
         "{filter.period}",
-        "{code}, {name}"
+        "{code}, {name}",
+        "{moment} via {channel}",
+        "{moment} via {channel}, {time}"
     ]
 }

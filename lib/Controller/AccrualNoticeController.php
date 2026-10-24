@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Money\AccrualNoticeService;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
@@ -132,6 +133,21 @@ class AccrualNoticeController extends Controller {
 	}//end register()
 
 	/**
+	 * Deprecated alias of /api/notices-of-default, kept for clients of the old URL.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 *
+	 * @contract exclude Deprecated path alias for register(); behaviour covered by the register() tests.
+	 */
+	public function registerLegacyPath(): JSONResponse {
+		return $this->register();
+	}//end registerLegacyPath()
+
+	/**
 	 * Get an ingebrekestelling by id.
 	 *
 	 * @param string $id Id.
@@ -150,7 +166,7 @@ class AccrualNoticeController extends Controller {
 
 		$objectService = $this->settings->getObjectService();
 		$register = (string)$this->settings->getConfigValue('register');
-		$schema = (string)$this->settings->getConfigValue('ingebrekestelling_schema');
+		$schema = (string)$this->settings->getConfigValue(MoneyConfigKeys::NOTICE_OF_DEFAULT_SCHEMA);
 		if ($objectService === null || $register === '' || $schema === '') {
 			return new JSONResponse(['message' => 'Service unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -167,4 +183,21 @@ class AccrualNoticeController extends Controller {
 
 		return new JSONResponse($row);
 	}//end show()
+
+	/**
+	 * Deprecated alias of /api/notices-of-default/{id}, kept for clients of the old URL.
+	 *
+	 * @param string $id Id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 *
+	 * @contract exclude Deprecated path alias for show(); behaviour covered by the show() tests.
+	 */
+	public function showLegacyPath(string $id): JSONResponse {
+		return $this->show(id: $id);
+	}//end showLegacyPath()
 }//end class

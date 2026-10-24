@@ -29,8 +29,8 @@ const defaults = byslug('Cases')
 describe('default views on Cases', () => {
 
 	// DqFilterBeheren leads with the board's three (default-views-board-first);
-	// the nine before them follow.
-	it('ships twelve, the board\'s three first, each with a Dutch name', () => {
+	// the ten before them follow, re-integration pathways among them.
+	it('ships thirteen, the board\'s three first, each with a Dutch name', () => {
 		expect(Object.keys(defaults)).toEqual([
 			'my-cases',
 			'all-open-cases',
@@ -40,6 +40,7 @@ describe('default views on Cases', () => {
 			'unclaimed-overdue',
 			'woo-requests',
 			'subsidies',
+			're-integration-pathways',
 			'my-work',
 			'team-queue',
 			'unclaimed-due-this-week',
@@ -82,5 +83,13 @@ describe('lists that were pages, as views of Cases', () => {
 
 	it('keeps the data subject requests on the request kind', () => {
 		expect(defaults['data-subject-requests']).toEqual({ dataSubjectRequestType: ['inzage', 'correctie', 'verwijdering'] })
+	})
+})
+
+describe('Re-integration pathways as a view of Cases', () => {
+	it('lists the cases of the re-integration case type, newest start first', () => {
+		const view = page('Cases').config.defaultSavedViews.find((d) => d.slug === 're-integration-pathways')
+		expect(view.filters).toEqual({ caseTypeIdentifier: 're-integratietraject', statusHiddenInLists: false, isDraft: false })
+		expect(view.overrides.defaultSort).toEqual([{ key: 'startDate', order: 'desc' }])
 	})
 })

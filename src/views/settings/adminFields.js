@@ -170,26 +170,21 @@ export function menuStructureFields(t) {
 	return [
 		{
 			key: 'menu_structure',
-			label: t('dossiq', 'Menu structure'),
-			hideLabel: true,
+			label: t('dossiq', 'Menu'),
 			type: 'radio',
 			default: 'simple',
 			options: [
 				{
 					value: 'simple',
 					label: t('dossiq', 'Simple'),
-					description: t(
-						'dossiq',
-						'Nine menu entries for daily work. Everything else is one step further, in settings or on a page.',
-					),
+					description: t('dossiq', 'Dashboard, My work, cases and relations'),
 				},
 				{
 					value: 'full',
 					label: t('dossiq', 'Full'),
-					description: t('dossiq', 'Every entry in the menu, as it was before.'),
+					description: t('dossiq', 'Also reports, administration and every module'),
 				},
 			],
-			hint: t('dossiq', 'No page is removed. Both menus open the same pages.'),
 		},
 	]
 }
@@ -297,6 +292,7 @@ export function consultationFields(t) {
 		{
 			key: 'consultation-delivery',
 			type: 'status',
+			advanced: true,
 			text: t(
 				'dossiq',
 				'Structured consultation (adviesaanvraag) is being delivered in consultation-management. This panel will host advisory body registry, mandatory-gate config and n8n webhook endpoints.',
@@ -304,39 +300,30 @@ export function consultationFields(t) {
 		},
 		{
 			key: 'consultation_default_deadline_days',
-			label: t('dossiq', 'Default deadline (days) for new consultations'),
+			label: t('dossiq', 'Standard term in days'),
 			type: 'number',
 			integer: true,
 			min: 0,
 			default: 28,
-			hint: t(
-				'dossiq',
-				'Used when an advisory body has no explicit defaultDeadlineDays configured.',
-			),
 		},
 		{
 			key: 'consultation_warning_offset_days',
-			label: t('dossiq', 'Warning offset (days before deadline)'),
+			label: t('dossiq', 'Warn, days ahead'),
 			type: 'number',
 			integer: true,
 			min: 0,
 			default: 5,
-			hint: t(
-				'dossiq',
-				'The deadline-monitor n8n workflow uses this offset to send T-X warnings.',
-			),
 		},
 		{
 			key: 'consultation_external_response_url',
-			label: t('dossiq', 'External response base URL'),
+			label: t('dossiq', 'Address for external responses'),
 			placeholder: 'https://dossiq.example.org/consultation/respond/',
-			hint: t(
-				'dossiq',
-				'Base URL used in secure response links sent to external advisory bodies. Must be HTTPS.',
-			),
+			pattern: '^https://',
+			patternMessage: t('dossiq', 'Starts with https://'),
 		},
 		{
 			key: 'consultation_bottleneck_threshold',
+			advanced: true,
 			label: t('dossiq', 'Bottleneck overdue-rate threshold (0-1)'),
 			type: 'number',
 			min: 0,
@@ -403,13 +390,13 @@ export function paymentCallbackFields(t) {
 			tone: 'warning',
 			text: t(
 				'dossiq',
-				'No callback secret is configured. Every dwangsom payment-confirmation callback is currently being rejected with HTTP 401.',
+				'No callback secret is configured. Every payout confirmation callback is currently being rejected with HTTP 401.',
 			),
-			visibleWhen: { key: 'dwangsom_callback_secret', empty: true },
+			visibleWhen: { key: 'payout_callback_secret', empty: true },
 		},
 		{
-			key: 'dwangsom_callback_secret',
-			label: t('dossiq', 'Dwangsom callback secret'),
+			key: 'payout_callback_secret',
+			label: t('dossiq', 'Payout callback secret'),
 			type: 'password',
 			hint: t(
 				'dossiq',
@@ -420,7 +407,7 @@ export function paymentCallbackFields(t) {
 			key: 'generate-callback-secret',
 			label: t('dossiq', 'Generate random secret'),
 			type: 'action',
-			fill: { key: 'dwangsom_callback_secret', bytes: 32 },
+			fill: { key: 'payout_callback_secret', bytes: 32 },
 		},
 	]
 }
@@ -618,6 +605,11 @@ export function backgroundAccountFields(t) {
 			key: 'userId',
 			label: t('dossiq', 'Nextcloud user name'),
 			required: true,
+			hint: t(
+				'dossiq',
+				'The account joins the group {group}. Pick an account nobody signs in with.',
+				{ group: BACKGROUND_SERVICE_GROUP },
+			),
 		},
 	]
 }
@@ -643,16 +635,15 @@ export function aiFields(t) {
 		['ai_feature_decision_support', t('dossiq', 'Decision support')],
 	]
 	return [
-		{ key: 'ai_enabled', label: t('dossiq', 'Enable AI-assisted processing'), type: 'switch' },
-		{ key: 'heading-model', label: t('dossiq', 'Model configuration'), type: 'heading', visibleWhen: on },
+		{ key: 'ai_enabled', label: t('dossiq', 'Switch on AI-assisted processing'), type: 'switch' },
 		{
 			key: 'ai_model_type',
-			label: t('dossiq', 'Model type'),
+			label: t('dossiq', 'Kind of model'),
 			type: 'radio',
 			default: 'local',
 			options: [
-				{ value: 'local', label: t('dossiq', 'Local (Ollama)') },
-				{ value: 'cloud', label: t('dossiq', 'Cloud') },
+				{ value: 'local', label: t('dossiq', 'Local (Ollama)'), description: t('dossiq', 'Data stays on your own servers') },
+				{ value: 'cloud', label: t('dossiq', 'Cloud'), description: t('dossiq', 'A provider outside your organisation') },
 			],
 			visibleWhen: on,
 		},
@@ -666,7 +657,7 @@ export function aiFields(t) {
 			),
 			visibleWhen: [on, cloud],
 		},
-		{ key: 'ai_model_url', label: t('dossiq', 'Model endpoint URL'), visibleWhen: on },
+		{ key: 'ai_model_url', label: t('dossiq', 'Address of the model'), visibleWhen: on },
 		{ key: 'ai_model_name', label: t('dossiq', 'Model name'), placeholder: 'llama3.1', visibleWhen: on },
 		{
 			key: 'ai_api_key',
@@ -675,19 +666,21 @@ export function aiFields(t) {
 			setKey: 'ai_api_key_set',
 			visibleWhen: [on, cloud],
 		},
-		{ key: 'heading-features', label: t('dossiq', 'Features'), type: 'heading', visibleWhen: on },
-		...features.map(([key, label]) => ({ key, label, type: 'switch', visibleWhen: on })),
-		{ key: 'heading-privacy', label: t('dossiq', 'Privacy and compliance'), type: 'heading', visibleWhen: on },
+		{ key: 'heading-features', label: t('dossiq', 'Features'), type: 'heading', advanced: true, visibleWhen: on },
+		...features.map(([key, label]) => ({ key, label, type: 'switch', advanced: true, visibleWhen: on })),
+		{ key: 'heading-privacy', label: t('dossiq', 'Privacy and compliance'), type: 'heading', advanced: true, visibleWhen: on },
 		{
 			key: 'ai_pii_stripping',
 			label: t('dossiq', 'Strip PII (BSN, financial data) from AI prompts'),
 			type: 'switch',
+			advanced: true,
 			visibleWhen: on,
 		},
 		{
 			key: 'ai_dpia_acknowledged',
 			label: t('dossiq', 'DPIA (Data Protection Impact Assessment) has been completed'),
 			type: 'switch',
+			advanced: true,
 			visibleWhen: on,
 		},
 		{
@@ -802,6 +795,7 @@ export function sharedMailboxFields(t) {
 		{
 			key: 'mailbox-explanation',
 			type: 'status',
+			advanced: true,
 			foldable: true,
 			text: t(
 				'dossiq',
@@ -839,7 +833,7 @@ export function sharedMailboxFields(t) {
 		},
 		{
 			key: 'email_imap_folder',
-			label: t('dossiq', 'Mailbox folder'),
+			label: t('dossiq', 'Folder'),
 			placeholder: 'INBOX',
 			default: 'INBOX',
 		},
@@ -855,7 +849,7 @@ export function sharedMailboxFields(t) {
 		},
 		{
 			key: 'email_poll_interval',
-			label: t('dossiq', 'Poll interval (seconds)'),
+			label: t('dossiq', 'Fetch every (seconds)'),
 			type: 'number',
 			integer: true,
 			min: 0,
@@ -863,7 +857,7 @@ export function sharedMailboxFields(t) {
 		},
 		{
 			key: 'email_poll_batch_size',
-			label: t('dossiq', 'Messages per run'),
+			label: t('dossiq', 'Messages per fetch'),
 			type: 'number',
 			integer: true,
 			min: 0,

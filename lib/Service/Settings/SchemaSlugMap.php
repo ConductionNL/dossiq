@@ -32,6 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Settings;
 
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
+
 /**
  * Schema slug to appconfig key mapping, plus the owned annotation block names.
  *
@@ -179,9 +181,9 @@ class SchemaSlugMap {
 		'deadlineDefinition' => 'termijn_definitie_schema',
 		'deadlineInstance' => 'termijn_instance_schema',
 		'termijnGebeurtenis' => 'termijn_gebeurtenis_schema',
-		'noticeOfDefault' => 'ingebrekestelling_schema',
-		'penaltyPaymentCalculation' => 'dwangsom_berekening_schema',
-		'dwangsomUitbetaling' => 'dwangsom_uitbetaling_schema',
+		'noticeOfDefault' => MoneyConfigKeys::NOTICE_OF_DEFAULT_SCHEMA,
+		'penaltyPaymentCalculation' => MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
+		'dwangsomUitbetaling' => MoneyConfigKeys::PAYOUT_SCHEMA,
 		// Mandaat-matrix authorization engine.
 		// KEY renamed with the schema slug; VALUE deliberately left as-is. The
 		// value is the app-config key under which this schema's numeric id is

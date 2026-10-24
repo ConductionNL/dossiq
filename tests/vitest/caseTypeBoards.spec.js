@@ -53,7 +53,7 @@ describe('the case type tab strip (REQ-CTB-1)', () => {
 describe('Phases and tasks (REQ-CTB-2)', () => {
 	it('holds the board\'s four cards, in order', () => {
 		expect(idsOf(tab('phases'))).toEqual([
-			'case-type-phase-board', 'case-type-variants', 'case-type-terms-written', 'case-type-messages-editor',
+			'case-type-phase-board', 'case-type-variants', 'case-type-terms-written', 'case-type-messages',
 		])
 	})
 
@@ -138,7 +138,7 @@ describe('card header actions (nextcloud-vue widget-header-actions)', () => {
 	it.each([
 		['case-type-statuses', 'Edit', 'statuses'],
 		['case-type-rules-summary', 'Add a rule', 'rules'],
-		['case-type-terms-written', 'Edit', 'fields'],
+		['case-type-terms-written', 'Edit', 'properties'],
 	])('%s carries %s, opening the %s tab', (id, label, tabId) => {
 		expect(widget(id).headerActions).toEqual([
 			expect.objectContaining({ label, action: { type: 'navigate', target: `/settings/case-types/@objectId#${tabId}` } }),
@@ -146,8 +146,8 @@ describe('card header actions (nextcloud-vue widget-header-actions)', () => {
 		expect(tab(tabId)).toBeTruthy()
 	})
 
-	it('keeps the raw terms editable on the Fields tab', () => {
-		expect(idsOf(tab('fields'))).toContain('case-type-terms')
+	it('keeps the raw terms editable on the Properties tab', () => {
+		expect(idsOf(tab('properties'))).toContain('case-type-terms')
 	})
 })
 

@@ -35,6 +35,7 @@ use OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar;
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -125,7 +126,7 @@ class IntegrationStatusService {
 		'zgw' => ['register', 'case_schema'],
 		'kcc' => ['identification_method'],
 		'dmn' => ['decision_table_schema'],
-		'financial' => ['dwangsom_callback_secret'],
+		'financial' => [MoneyConfigKeys::PAYOUT_CALLBACK_SECRET],
 		'kadaster' => ['integration.brk.mode'],
 		'berichtenbox' => ['digital_post_source', 'berichtenbox_adapter'],
 		'templates' => ['beschikking_template_adapter'],

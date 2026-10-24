@@ -460,12 +460,19 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow</step>
             <!--
+                After the package install and the flows: every case type's import
+                flagged runOnUpgrade moves its source records onto cases, before
+                the open cases get their case type's handling team. After the
+                term definitions, so a moved record's case binds its statutory term.
+            -->
+            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
+            <step>OCA\Dossiq\Repair\RunUpgradeRecordImports</step>
+            <!--
                 After the package install: an open case filed while its case type
                 had no handling block gets the case type's handling team.
             -->
             <step>OCA\Dossiq\Repair\AssignOpenCasesTheirCaseTypeTeam</step>
             <step>OCA\Dossiq\Repair\FoldCasePropertiesOntoCase</step>
-            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
                 Raises each local bezwaaradviescommissie as a GovernanceBody in
                 the decision app and notes the id back on the local row.
@@ -1062,11 +1069,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow</step>
             <!--
+                After the package install and the flows: every case type's import
+                flagged runOnUpgrade moves its source records onto cases, before
+                the open cases get their case type's handling team. After the
+                term definitions, so a moved record's case binds its statutory term.
+            -->
+            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
+            <step>OCA\Dossiq\Repair\RunUpgradeRecordImports</step>
+            <!--
                 After the package install: an open case filed while its case type
                 had no handling block gets the case type's handling team.
             -->
             <step>OCA\Dossiq\Repair\AssignOpenCasesTheirCaseTypeTeam</step>
-            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
             <!--

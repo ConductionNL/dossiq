@@ -1,0 +1,34 @@
+{
+  "_note": "record-import-moves-in-app-records: a case type's recordImports declaration may skip the term carry-over (carriesTerm false, for a case type without a statutory term) and may run on every upgrade (runOnUpgrade, RunUpgradeRecordImports), so records kept in dossiq's own register move onto cases on the upgrade that ships their case type. Declared, because OpenRegister stores only what a schema declares. caseType 1.35.0 per the caseType version register (R20/INT-DQ-b27.md).",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.35.0",
+        "properties": {
+          "recordImports": {
+            "items": {
+              "properties": {
+                "carriesTerm": {
+                  "title": "Carries the term",
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Whether the import carries the source's term onto the case's statutory term. Off for a case type without a statutory term: the record moves without asking the term engine."
+                },
+                "runOnUpgrade": {
+                  "title": "Run on upgrade",
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Whether every upgrade runs this import (repair step RunUpgradeRecordImports). For records that move onto this case type once and for all, such as a list that became a case type."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

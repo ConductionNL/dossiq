@@ -115,10 +115,10 @@ class PayoutService {
 
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$bSchema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
-		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
+		$bSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
+		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
 		if ($objectService === null || $register === '' || $bSchema === '' || $uSchema === '') {
-			throw new RuntimeException('Dwangsom services not configured');
+			throw new RuntimeException('The accruing amount and payout schemas are not configured');
 		}
 
 		$final = $this->resolvePayableAmount(
@@ -314,11 +314,11 @@ class PayoutService {
 		try {
 			$calculation = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $calculationId);
 		} catch (\Throwable $e) {
-			throw new RuntimeException('DwangsomBerekening lookup failed: ' . $e->getMessage());
+			throw new RuntimeException('Accruing amount lookup failed: ' . $e->getMessage());
 		}
 
 		if ($calculation === null) {
-			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
+			throw new RuntimeException('Accruing amount not found: ' . $calculationId);
 		}
 
 		$final = (int)($calculation['definitiveAmount'] ?? $calculation['cumulativeAmount'] ?? 0);
@@ -382,9 +382,9 @@ class PayoutService {
 	): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
+		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
 		if ($objectService === null || $register === '' || $uSchema === '') {
-			throw new RuntimeException('Dwangsom services not configured');
+			throw new RuntimeException('The accruing amount and payout schemas are not configured');
 		}
 
 		$row = $this->findDisbursementByReference(

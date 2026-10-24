@@ -205,6 +205,19 @@ describe('BerichtenboxComposeDialog', () => {
 		expect(source).toMatch(/\.compose-dialog__check-note \{\s*padding-inline-start: var\(--cn-dialog-check-label-inset, 44px\);/)
 	})
 
+	it('opens on the kind Status update, as board DqBerichtVersturen does', () => {
+		const wrapper = open()
+		expect(wrapper.vm.form.berichtTypeCode?.code).toBe('status')
+		expect(wrapper.findComponent({ name: 'NcSelect' }).props('modelValue')).toEqual(wrapper.vm.typeCodes.find((type) => type.code === 'status'))
+	})
+
+	it('marks the delivery note with the outgoing-mail icon, as board DqBerichtVersturen does', () => {
+		const wrapper = open()
+		const note = wrapper.findAllComponents({ name: 'NcNoteCard' })[0]
+		const icon = note.vm.$slots.icon?.()
+		expect(icon?.[0]?.type?.name).toBe('EmailFastOutlineIcon')
+	})
+
 	it('shows the provider’s own sentence and stays open on a refusal', async () => {
 		mockPost.mockRejectedValue({
 			response: {

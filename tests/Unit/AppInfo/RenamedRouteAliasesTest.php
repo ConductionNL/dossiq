@@ -67,6 +67,13 @@ class RenamedRouteAliasesTest extends TestCase {
 			'deadline extend'        => ['termijn#verleng', 'POST', '/api/deadlines/instances/{id}/extend', '/api/termijn/instances/{id}/verleng', $id],
 			'deadline complete'      => ['termijn#voltooi', 'POST', '/api/deadlines/instances/{id}/complete', '/api/termijn/instances/{id}/voltooi', $id],
 			'payment callback'       => ['payoutCallback#callback', 'POST', '/api/payments/callback', '/api/dossiq/openconnector/dwangsom-payment-callback', []],
+			'accruing amount show'   => ['accruingAmount#show', 'GET', '/api/accruing-amounts/{id}', '/api/termijn/dwangsom/{id}', $id],
+			'accruing amount settle' => ['accruingAmount#settle', 'POST', '/api/accruing-amounts/{id}/settle', '/api/termijn/dwangsom/{id}/beschikking', $id],
+			'accruing amount objection' => ['accruingAmount#objection', 'POST', '/api/accruing-amounts/{id}/objection', '/api/termijn/dwangsom/{id}/bezwaar', $id],
+			'accruing amount reconsider' => ['accruingAmount#reconsider', 'POST', '/api/accruing-amounts/{id}/objection/reconsider', '/api/termijn/dwangsom/{id}/bezwaar/heroverweging', $id],
+			'accruing amount payout' => ['payout#prepare', 'POST', '/api/accruing-amounts/{id}/payout', '/api/termijn/dwangsom/{id}/uitbetaling', $id],
+			'notice of default register' => ['accrualNotice#register', 'POST', '/api/notices-of-default', '/api/termijn/ingebrekestellingen', []],
+			'notice of default show' => ['accrualNotice#show', 'GET', '/api/notices-of-default/{id}', '/api/termijn/ingebrekestellingen/{id}', $id],
 			'document review throughput' => ['wooReport#throughput', 'GET', '/api/document-review/reports/throughput', '/api/woo/reports/throughput', []],
 		];
 	}//end renamedRoutes()

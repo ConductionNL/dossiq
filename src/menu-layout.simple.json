@@ -3137,26 +3137,34 @@
 							"columns": 3,
 							"include": [
 								"receivedAt",
-								"termStartsAt",
 								"receivedOutsideWorkingHours",
-								"acknowledgementDuty",
-								"outboundCommunications"
+								"termStartsAt",
+								"outboundCommunications",
+								"acknowledgementDuty"
 							],
 							"overrides": {
 								"receivedAt": {
-									"editable": false
+									"order": 1,
+									"editable": false,
+									"formatter": "datetime"
 								},
 								"termStartsAt": {
-									"editable": false
+									"order": 3,
+									"editable": false,
+									"formatter": "date"
 								},
 								"receivedOutsideWorkingHours": {
+									"order": 2,
 									"editable": false
 								},
 								"acknowledgementDuty": {
+									"order": 5,
 									"editable": false
 								},
 								"outboundCommunications": {
-									"editable": false
+									"order": 4,
+									"editable": false,
+									"formatter": "outboundMessages"
 								}
 							}
 						}
@@ -5462,7 +5470,12 @@
 						"pills": [
 							{
 								"path": "caseType",
-								"formatter": "caseTypeName"
+								"formatter": "caseTypeName",
+								"resolve": {
+									"register": "dossiq",
+									"schema": "caseType",
+									"colorField": "colour"
+								}
 							},
 							{
 								"path": "status",
@@ -5630,6 +5643,7 @@
 						"formEyebrow": "All cases",
 						"formTitle": "New case",
 						"formSubtitle": "Fields marked * are required. The case starts in the first status of its case type. The system fills in the receipt date and the start date itself, from the moment the request came in.",
+						"formConfirmLabel": "Create case",
 						"size": "large",
 						"columns": 2,
 						"includeFields": [
@@ -5646,15 +5660,18 @@
 						],
 						"fieldOverrides": {
 							"description": {
+								"description": "",
 								"widget": "textarea",
 								"order": 5
 							},
 							"requester": {
+								"description": "",
 								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester",
 								"order": 3
 							},
 							"confidentiality": {
+								"description": "",
 								"enumLabels": {
 									"openbaar": "Public",
 									"beperkt_openbaar": "Restricted public",
@@ -5668,24 +5685,31 @@
 								"order": 8
 							},
 							"caseType": {
+								"description": "Determines the statuses, the term and the documents",
 								"order": 1
 							},
 							"title": {
+								"description": "",
 								"order": 2
 							},
 							"intakeChannel": {
+								"description": "How the request came in",
 								"order": 4
 							},
 							"plannedEndDate": {
+								"description": "From the case type's term",
 								"order": 6
 							},
 							"assignee": {
+								"description": "",
 								"order": 7
 							},
 							"impact": {
+								"description": "How much it matters if it goes wrong",
 								"order": 9
 							},
 							"urgency": {
+								"description": "How fast the case matters",
 								"order": 10
 							}
 						},
@@ -5797,19 +5821,25 @@
 						"secondary": "{subject.identifier}"
 					},
 					{
-						"key": "stateLabel",
+						"key": "state",
 						"label": "Status",
+						"_note": "Board DqTaken: the state in the task page's words (\"In uitvoering\", the TaskDetail pill), not the library's \"In progress\". The tones are keyed on the state, so they hold in every language.",
+						"enum": ["available", "enabled", "active", "completed", "terminated", "disabled"],
+						"enumLabels": {
+							"available": "Available",
+							"enabled": "Ready to claim",
+							"active": "In execution",
+							"completed": "Completed",
+							"terminated": "Terminated",
+							"disabled": "Disabled"
+						},
 						"widget": "badge",
 						"widgetProps": {
 							"colorMap": {
-								"Ready to claim": "info",
-								"Klaar om op te pakken": "info",
-								"In progress": "purple",
-								"In behandeling": "purple",
-								"Completed": "success",
-								"Afgerond": "success",
-								"Terminated": "error",
-								"Beëindigd": "error"
+								"enabled": "info",
+								"active": "purple",
+								"completed": "success",
+								"terminated": "error"
 							}
 						}
 					},
@@ -6156,7 +6186,7 @@
 						"id": "side-case-type-versions",
 						"type": "record-list",
 						"title": "Versions",
-						"tabs": ["overview", "statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "history"],
+						"tabs": ["overview", "statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "properties", "history"],
 						"content": {
 							"register": "dossiq",
 							"schema": "caseType",
@@ -6224,7 +6254,7 @@
 						"type": "facts",
 						"title": "Data",
 						"titleTone": "side",
-						"tabs": ["overview", "statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "history"],
+						"tabs": ["overview", "statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "properties", "history"],
 						"content": {
 							"fields": [
 								{
@@ -6459,7 +6489,7 @@
 									"widgetIds": [
 										"case-type-statuses",
 										"case-type-rules-summary",
-										"case-type-rights",
+										"case-type-rights-summary",
 										"case-type-privacy-summary",
 										"case-type-translations-summary"
 									],
@@ -6473,7 +6503,7 @@
 											"gridWidth": 12
 										},
 										{
-											"widgetId": "case-type-rights",
+											"widgetId": "case-type-rights-summary",
 											"gridWidth": 12
 										},
 										{
@@ -6491,10 +6521,7 @@
 									"label": "Fields",
 									"widgetIds": [
 										"case-type-fields-editor",
-										"case-type-field-rules",
-										"case-type-core",
-										"case-type-terms",
-										"case-type-list-layout"
+										"case-type-field-rules"
 									],
 									"countFrom": {
 										"register": "dossiq",
@@ -6529,6 +6556,14 @@
 										"case-type-phase-board",
 										"case-type-variants",
 										"case-type-terms-written",
+										"case-type-messages"
+									]
+								},
+								{
+									"id": "messages",
+									"label": "Message templates",
+									"overflow": true,
+									"widgetIds": [
 										"case-type-messages-editor"
 									]
 								},
@@ -6579,6 +6614,16 @@
 									"widgetIds": [
 										"case-type-portal",
 										"case-type-party-kinds"
+									]
+								},
+								{
+									"id": "properties",
+									"label": "Properties",
+									"overflow": true,
+									"widgetIds": [
+										"case-type-core",
+										"case-type-terms",
+										"case-type-list-layout"
 									]
 								},
 								{
@@ -6681,6 +6726,53 @@
 							],
 							"footnote": "Colour and order apply in lists, on the workboard and in the portal.",
 							"emptyText": "This case type has no statuses yet"
+						}
+					},
+					{
+						"id": "case-type-rights-summary",
+						"type": "record-list",
+						"title": "Rights",
+						"subtitle": "Who may do what with cases of this type",
+						"_note": "DqZaaktypeOverzicht Rechten: the rights matrix read per role by GET /api/case-types/{id}/rights-by-role (CaseTypeRightsByRole). The full department x confidentiality matrix stays on the Rights tab (case-type-rights), which Edit opens.",
+						"headerActions": [
+							{
+								"label": "Edit",
+								"icon": "Pencil",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#rights"
+								}
+							}
+						],
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/rights-by-role",
+								"responsePath": "rows"
+							},
+							"presentation": "table",
+							"columns": [
+								{
+									"label": "Role",
+									"value": "{role}"
+								},
+								{
+									"label": "See cases",
+									"value": "{seeCases}"
+								},
+								{
+									"label": "Handle",
+									"value": "{handle}"
+								},
+								{
+									"label": "Decide",
+									"value": "{decide}"
+								},
+								{
+									"label": "Documents",
+									"value": "{documents}"
+								}
+							],
+							"emptyText": "No rights declared for this case type yet"
 						}
 					},
 					{
@@ -7100,6 +7192,65 @@
 						}
 					},
 					{
+						"id": "case-type-messages",
+						"type": "record-list",
+						"title": "Messages to the applicant",
+						"headerActions": [
+							{
+								"label": "Add a message",
+								"icon": "Plus",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#messages"
+								}
+							}
+						],
+						"_note": "DqZaaktype Berichten aan de aanvrager: the case type's active message templates as a table, when each goes out (moment, a case event) and how (channel). The templates are written on the Message templates tab under the Actions menu.",
+						"content": {
+							"register": "dossiq",
+							"schema": "emailTemplate",
+							"filter": {
+								"caseType": "@objectId",
+								"isActive": true
+							},
+							"limit": 50,
+							"presentation": "table",
+							"columns": [
+								{
+									"label": "Moment",
+									"value": "{moment}"
+								},
+								{
+									"label": "Channel",
+									"value": "{channel}"
+								},
+								{
+									"label": "Message",
+									"value": "{name}"
+								}
+							],
+							"valueLabels": {
+								"moment": {
+									"case-received": "Case received",
+									"status-changed": "Status changed",
+									"information-requested": "Additional information needed",
+									"term-extended": "Term extended",
+									"decision-made": "Decision made",
+									"case-closed": "Case closed"
+								},
+								"channel": {
+									"mailbox-then-email": "Message box, otherwise e-mail",
+									"mailbox": "Message box",
+									"email": "E-mail",
+									"portal": "Portal",
+									"post": "Post (mail)"
+								}
+							},
+							"footnote": "Anyone who opted out of messages only receives what the law requires. Every e-mail carries an unsubscribe link.",
+							"emptyText": "This case type sends no messages yet"
+						}
+					},
+					{
 						"id": "case-type-terms-written",
 						"type": "facts",
 						"title": "Terms",
@@ -7109,7 +7260,7 @@
 								"icon": "Pencil",
 								"action": {
 									"type": "navigate",
-									"target": "/settings/case-types/@objectId#fields"
+									"target": "/settings/case-types/@objectId#properties"
 								}
 							}
 						],
