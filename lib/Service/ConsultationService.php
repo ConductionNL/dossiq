@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph;
 use OCA\Dossiq\Service\Consultation\ConsultationRepository;
+use OCA\Dossiq\Service\Consultation\ConsultationTerms;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -82,6 +83,13 @@ class ConsultationService {
 	];
 
 	/**
+	 * The Adviseringsbeheer settings.
+	 *
+	 * @var ConsultationTerms
+	 */
+	private ConsultationTerms $terms;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service
@@ -91,6 +99,7 @@ class ConsultationService {
 	 * @param ConsultationDependencyGraph $dependencyGraph `dependsOn` cycle detection
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param ObligationService $obligations The one mechanism a case waits on.
+	 * @param ConsultationTerms|null $terms The Adviseringsbeheer settings; read from the settings when not given.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -100,8 +109,21 @@ class ConsultationService {
 		private readonly ConsultationDependencyGraph $dependencyGraph,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ObligationService $obligations,
+		?ConsultationTerms $terms = null,
 	) {
+		$this->terms = ($terms ?? new ConsultationTerms(settingsService: $settingsService));
 	}//end __construct()
+
+	/**
+	 * The Adviseringsbeheer settings, read and applied.
+	 *
+	 * @return ConsultationTerms
+	 *
+	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md
+	 */
+	public function terms(): ConsultationTerms {
+		return $this->terms;
+	}//end terms()
 
 	/**
 	 * Create a consultation linked to a parent case.
@@ -130,6 +152,9 @@ class ConsultationService {
 		if (empty($register) === true || empty($schema) === true) {
 			throw new RuntimeException('Consultation schema not configured');
 		}
+
+		// A request without a deadline gets the default term (Adviseringsbeheer).
+		$data['latestResponseDate'] = $this->terms->deadlineFor(given: (string)($data['latestResponseDate'] ?? ''));
 
 		// Validate required fields.
 		$this->assertRequiredConsultationFields(data: $data);
@@ -351,6 +376,31 @@ class ConsultationService {
 	public function getOverdueConsultations(): array {
 		return $this->repository->getOverdueConsultations();
 	}//end getOverdueConsultations()
+
+	/**
+	 * The waiting consultations whose deadline is within the warning offset.
+	 *
+	 * @return array{results: array<int, array<string, mixed>>, warningOffsetDays: int} The list and the offset used.
+	 *
+	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
+	 */
+	public function getDueSoonConsultations(): array {
+		return [
+			'results' => $this->terms->dueSoon(consultations: $this->repository->getWaitingConsultations()),
+			'warningOffsetDays' => $this->terms->warningOffsetDays(),
+		];
+	}//end getDueSoonConsultations()
+
+	/**
+	 * Per advisory body, the late share over the last 30 days against the bottleneck threshold.
+	 *
+	 * @return array{threshold: float, windowDays: int, bodies: array<int, array<string, mixed>>} The report.
+	 *
+	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
+	 */
+	public function getBottlenecks(): array {
+		return $this->terms->bottlenecks(consultations: $this->repository->getRecentConsultations(days: ConsultationTerms::BOTTLENECK_WINDOW_DAYS));
+	}//end getBottlenecks()
 
 	/**
 	 * Get mandatory consultations that are blocking case progression.

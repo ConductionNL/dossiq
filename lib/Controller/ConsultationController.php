@@ -241,6 +241,42 @@ class ConsultationController extends Controller {
 	}//end overdue()
 
 	/**
+	 * The waiting consultations due within the warning offset.
+	 *
+	 * @return JSONResponse `{results, warningOffsetDays}`
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
+	 */
+	public function dueSoon(): JSONResponse {
+		$authError = $this->accessGuard->requireUser();
+		if ($authError !== null) {
+			return $authError;
+		}
+
+		return new JSONResponse($this->consultationService->getDueSoonConsultations());
+	}//end dueSoon()
+
+	/**
+	 * Per advisory body, the late share over 30 days against the bottleneck threshold.
+	 *
+	 * @return JSONResponse `{threshold, windowDays, bodies}`
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
+	 */
+	public function bottlenecks(): JSONResponse {
+		$authError = $this->accessGuard->requireUser();
+		if ($authError !== null) {
+			return $authError;
+		}
+
+		return new JSONResponse($this->consultationService->getBottlenecks());
+	}//end bottlenecks()
+
+	/**
 	 * Request a deadline extension for a consultation.
 	 *
 	 * @param string $id The consultation UUID
