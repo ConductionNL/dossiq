@@ -17,7 +17,8 @@
  * - only a case whose status type DECLARES a role, and whose `statusRole`
  *   differs from it. A case type nobody annotated is skipped, and so is a case
  *   that is already right, which is what makes a second run a no-op;
- * - one field, `statusRole`, with the value OpenRegister computes itself. It
+ * - no value of its own: `statusRole` is readOnly, so the case is re-saved
+ *   unchanged and OpenRegister computes the field on that save. It
  *   changes no status, so it is no transition: `StatusTransitionService` is not
  *   involved, and the notifications the case schema declares (assigned on
  *   create, declared major on an `isMajor` change, moved on a transition) have

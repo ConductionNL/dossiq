@@ -1684,6 +1684,7 @@ OC.L10N.register(
         "SLA adherence and processing time analysis": "Aderenza mal-SLA u analiżi tal-ħin tal-ipproċessar",
         "SLA Compliance": "Konformità mal-SLA",
         "SLA Compliance %": "Konformità mal-SLA %",
+        "SLA Compliance %%": "Konformità mal-SLA %%",
         "SLA override (days)": "Override tal-SLA (jiem)",
         "SLA Target: {days}d": "Mira SLA: {days}g",
         "Sloopmelding": "Sloopmelding",

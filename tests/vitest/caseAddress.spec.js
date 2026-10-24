@@ -69,7 +69,10 @@ describe('the simple profile\'s map list', () => {
 		expect(lists(layout)[0].sub).toEqual(['{id|caseAddress} · {identifier}', '{identifier}'])
 	})
 
-	it('names the case type and the status in pills, the status in its type\'s colour', () => {
-		expect(lists(layout)[0].pills).toEqual([{ path: 'caseType', formatter: 'caseTypeName' }, { path: 'status', formatter: 'statusTypeName', resolve: { schema: 'statusType', colorField: 'colour' } }])
+	it('names the case type and the status in pills, each in its own colour', () => {
+		expect(lists(layout)[0].pills).toEqual([
+			{ path: 'caseType', formatter: 'caseTypeName', resolve: { register: 'dossiq', schema: 'caseType', colorField: 'colour' } },
+			{ path: 'status', formatter: 'statusTypeName', resolve: { schema: 'statusType', colorField: 'colour' } },
+		])
 	})
 })

@@ -35,6 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
+use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\Reporting\PerTypeRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -114,11 +116,13 @@ class DeadlineReportingService {
 	 * @param SettingsService           $settingsService Settings.
 	 * @param TermCaseTypeResolver|null $caseTypes       The case-type resolver; built from the settings when absent.
 	 * @param DayCount                  $days            Counts the days between two moments.
+	 * @param PayoutReader|null         $payouts         Reads the payouts from the finance app, beside the rows it does not hold.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		?TermCaseTypeResolver $caseTypes = null,
 		private readonly DayCount $days = new DayCount(),
+		private readonly ?PayoutReader $payouts = null,
 	) {
 		$this->caseTypes = ($caseTypes ?? new TermCaseTypeResolver(settingsService: $settingsService));
 		$this->outcomes = new TermOutcome();
@@ -167,6 +171,7 @@ class DeadlineReportingService {
 			'until' => $bounds['until'],
 			'perType' => $perType,
 			'rows' => $this->perTypeRows->listOf(perType: $perType),
+			'summaryRows' => $this->quarterSummary(period: $period, perType: $perType),
 			'metadata' => [
 				'generatedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 				'rowsScanned' => count($rows),
@@ -176,6 +181,43 @@ class DeadlineReportingService {
 			],
 		];
 	}//end generateQuarterlyReport()
+
+	/**
+	 * The quarter's decided terms as one row a footnote reads: how many were
+	 * decided, how many within the statutory or extended term, and the share.
+	 * Empty when nothing was decided, so no line says "0 decided".
+	 *
+	 * @param string $period The quarter, YYYY-Qn.
+	 * @param array<string, array<string, mixed>> $perType The per-case-type figures.
+	 *
+	 * @return array<int, array<string, int|string>> The summary row, or none.
+	 *
+	 * @spec openspec/changes/termijnen-week-and-footnote/specs/termijnen-week-and-footnote/spec.md#requirement-the-quarterly-report-summarises-the-decided-terms
+	 */
+	private function quarterSummary(string $period, array $perType): array {
+		$met = 0;
+		$decided = 0;
+		foreach ($perType as $figures) {
+			$met += (int)($figures['met'] ?? 0);
+			$decided += ((int)($figures['met'] ?? 0) + (int)($figures['missed'] ?? 0));
+		}
+
+		if ($decided === 0) {
+			return [];
+		}
+
+		[$year, $quarter] = explode('-Q', $period);
+		return [
+			[
+				'period' => $period,
+				'quarter' => (int)$quarter,
+				'year' => (int)$year,
+				'decided' => $decided,
+				'withinTerm' => $met,
+				'share' => (int)round(($met / $decided) * 100),
+			],
+		];
+	}//end quarterSummary()
 
 	/**
 	 * Bucket instance rows per case type, skipping rows outside the department filter.
@@ -316,7 +358,7 @@ class DeadlineReportingService {
 	public function generateDwangsomAuditReport(int $year): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
+		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
 		if ($objectService === null || $register === '' || $uSchema === '') {
 			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
 		}
@@ -326,6 +368,8 @@ class DeadlineReportingService {
 		} catch (\Throwable $e) {
 			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
 		}
+
+		$rows = ($this->payouts?->mergedRows(storedRows: $rows, paidInYear: $year) ?? $rows);
 
 		$yearPrefix = (string)$year;
 		$outRows = [];

@@ -40,6 +40,14 @@
 		{
 			"mechanism": "notification:tenderPublished",
 			"reason": "The award of a tender to a supplier is mailed to the supplier at supplierRef.contactEmail (portal-contribution T3, decision 128). The recipient is a supplier outside the organisation: they have no dossiq queue for anything to land on."
+		},
+		{
+			"mechanism": "flow:DossiqTxSendMessageNode",
+			"reason": "Sends one of the case type's message templates to a role on the case (a case type rule's sendMessage action). The message informs; it asks nobody for anything and puts nothing on a queue."
+		},
+		{
+			"mechanism": "flow:DossiqTxSetCaseAnswerNode",
+			"reason": "Writes a property definition's answer on the case (a case type rule's setField action). It changes data and addresses nobody."
 		}
 	]
 }

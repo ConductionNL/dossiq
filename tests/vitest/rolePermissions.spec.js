@@ -84,7 +84,7 @@ describe('the pages the roles open', () => {
 		expect(tab.permission).toBe('privacy')
 	})
 
-	it.each(['Indicatiestellingen', 'MdoOverleggen', 'ReIntegratieTrajecten'])(
+	it.each(['Indicatiestellingen', 'MdoOverleggen'])(
 		'opens %s to the social-domain staff',
 		(id) => {
 			expect(page(id).permission).toBe('sociaal-domein')

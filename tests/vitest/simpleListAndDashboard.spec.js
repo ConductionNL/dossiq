@@ -312,6 +312,8 @@ describe('the cases list', () => {
 			showTitle,
 			countSubtitle,
 			countText,
+			countTextByView,
+			_countTextByViewNote,
 			defaultOrder,
 			footerNote,
 			bulkHint,
@@ -427,12 +429,12 @@ describe('the landing page', () => {
 		expect(simple.config.defaultView).toBe('mine')
 	})
 
-	it('changes My team only where DqMijnTeam differs: the stalled cases as rows', () => {
+	it('changes My team only where DqMijnTeam differs: the stalled cases and the team queue as rows', () => {
 		const team = (built) => pageView(page(built, 'MyWorkHome'), 'team')
 		expect(team(builtFull)).toEqual(pageView(original('MyWorkHome'), 'team'))
-		// The stalled-cases rows are held in landingViews.spec.js; the rest of
-		// the view is the manifest's.
-		const rest = (view) => ({ ...view, widgets: withoutNotes(view.widgets.filter((w) => w.id !== 'stalled-cases')) })
+		// The stalled-cases and team-queue rows are held in landingViews.spec.js;
+		// the rest of the view is the manifest's.
+		const rest = (view) => ({ ...view, widgets: withoutNotes(view.widgets.filter((w) => !['stalled-cases', 'your-teams-queue'].includes(w.id))) })
 		expect(rest(team(builtSimple))).toEqual(rest(team(builtFull)))
 		expect(simple.config.views.map((view) => view.id)).toEqual(['mine', 'team'])
 	})
@@ -608,6 +610,13 @@ describe('the landing page', () => {
 			// Three rows in a card the board's height (376px: five grid rows).
 			expect(layout.gridHeight, id).toBe(5)
 		}
+		// Zaken die u volgt and Recent geopend also end with "Alles bekijken"
+		// under the rows, as the board draws them (record-list-footer-link).
+		for (const id of ['favourite-cases', 'recent-cases']) {
+			const { name, ...rest } = tile(before.config.widgets, id).content.viewAllRoute
+			expect(tile(dashboard.config.widgets, id).content.footerLink, id).toEqual({ label: 'View all', route: name, ...rest })
+		}
+		expect(tile(dashboard.config.widgets, 'stalled-cases').content.footerLink).toBeUndefined()
 		const stalled = tile(dashboard.config.widgets, 'stalled-cases').content
 		expect(stalled.extend).toEqual(['calculations'])
 		expect(stalled.sort).toEqual({ field: '@self.updated', dir: 'asc' })
@@ -616,6 +625,33 @@ describe('the landing page', () => {
 		expect(note).toMatchObject({ borderless: true, sizeToContent: true })
 		expect(tile(dashboard.config.widgets, 'recent-cases').content.lensReasonTexts)
 			.toEqual(tile(before.config.widgets, 'recent-cases').content.lensReasonTexts)
+	})
+
+	it('names the dashboard\'s month and who it covers in the description, as the board does', () => {
+		// DqDashboard: "Hoe het team ervoor staat · oktober 2026, alle teams
+		// waar u in zit". `{dateRange}` reads the dashboard's date range as a
+		// period (nextcloud-vue description-period-from-date-range), so the
+		// range must open on a calendar month preset.
+		const dashboard = page(builtSimple, 'Dashboard')
+		expect(dashboard.config.description).toBe('How the team is doing · {dateRange}, all teams you are in')
+		const range = dashboard.config.dateRange
+		expect(range.enabled).toBe(true)
+		const preset = range.presets.find((entry) => entry.id === range.default.preset)
+		expect(preset.period).toBe('month')
+		const nl = readJson('l10n', 'nl.json').translations
+		expect(nl[dashboard.config.description]).toBe('Hoe het team ervoor staat · {dateRange}, alle teams waar u in zit')
+	})
+
+	it('rules above the first case row as well, as the boards draw their case lists', () => {
+		// DqDashboard, DqMijnWerk and DqMijnTeam draw a hairline above every
+		// row of Vastgelopen zaken and Zaken die u volgt, the first included
+		// (nextcloud-vue record-list ruleAbove).
+		const dashboard = page(builtSimple, 'Dashboard').config.widgets
+		for (const id of ['stalled-cases', 'favourite-cases', 'recent-cases']) {
+			expect(dashboard.find((item) => item.id === id).content.ruleAbove, id).toBe(true)
+		}
+		expect(widget('followed-cases').content.ruleAbove).toBe(true)
+		expect(widget('stalled-cases').content.ruleAbove).toBe(true)
 	})
 
 	it('continues where the handler left off, over the recent lens the full dashboard already uses', () => {
@@ -646,8 +682,10 @@ describe('the landing page', () => {
 		})
 		expect(caseFields.has('identifier')).toBe(true)
 		expect(caseFields.has('caseType')).toBe(true)
-		// When the reader opened it, from the lens, not the case's own change.
-		expect(cont.content.trailing).toEqual(['{@self.viewedAt|relativetime}'])
+		// When the reader opened it, from the lens, not the case's own change,
+		// said as DqMijnWerk does: "10 min geleden", "vanochtend", "vrijdag"
+		// (nextcloud-vue relative-ago-formatter).
+		expect(cont.content.trailing).toEqual(['{@self.viewedAt|ago}'])
 		// An unavailable lens says why, in the same words as the full tile.
 		expect(cont.content.lensReasonTexts).toEqual(recent.content.lensReasonTexts)
 		expect(Object.keys(cont.content.lensReasonTexts).length).toBeGreaterThan(0)
@@ -743,6 +781,16 @@ describe('the landing page', () => {
 		for (const key of [...bar.order, ...Object.keys(bar.labels)]) {
 			expect(roles, key).toContain(key)
 		}
+	})
+
+	it('counts the cases in the steps title, as DqMijnWerk does', () => {
+		// "Mijn 14 zaken per stap": `{count}` is the total the bar reports
+		// under headerCount (nextcloud-vue widget-title-count).
+		const bar = widget('simple-per-step')
+		expect(bar.title).toBe('My {count} cases per step')
+		expect(bar.content.headerCount).toBe(true)
+		const nl = readJson('l10n', 'nl.json').translations
+		expect(nl[bar.title]).toBe('Mijn {count} zaken per stap')
 	})
 
 	it('marks only a passed deadline as late in the week strip, like the list and the board', () => {
@@ -898,6 +946,15 @@ describe('the case type list', () => {
 			shipped: { register: 'dossiq', schema: 'caseType', filter: { ...current, '@self': { owner: '__system__' } } },
 			own: { register: 'dossiq', schema: 'caseType', filter: { ...current, '@self[owner][ne]': '__system__' } },
 		})
+	})
+
+	it('names each case type shipped or own under its title, as DqZaaktypen does ("Meegeleverd · Woo")', () => {
+		const nl = JSON.parse(read('l10n', 'nl.json')).translations
+		const title = list.config.columns.find((column) => column.key === 'title')
+		expect(title.secondary).toBe('{@self.owner} · {subject}')
+		expect(title.secondaryLabels).toEqual({ '@self.owner': { __system__: 'Shipped', '*': 'Own case type' } })
+		expect(nl.Shipped).toBe('Meegeleverd')
+		expect(nl['Own case type']).toBe('Eigen zaaktype')
 	})
 
 	it('has an Actions menu with the import dialog the case type page already owns', () => {

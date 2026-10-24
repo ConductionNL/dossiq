@@ -35,9 +35,9 @@ describe('the covered-for line', () => {
 		expect(coveredForLabel({ absentee: 'anouk' }, 'nl')).toBe('')
 	})
 
-	it('is the formatter the card\'s meta line reads coveredFor through', () => {
+	it('is the formatter the card\'s note line reads coveredFor through', () => {
 		expect(typeof formatters.coveredFor).toBe('function')
-		expect(myWork.overrides.cardLayout.meta).toContainEqual({ field: 'coveredFor', formatter: 'coveredFor' })
+		expect(myWork.overrides.cardLayout.note).toMatchObject({ field: 'coveredFor', formatter: 'coveredFor' })
 		expect(nl['For {name}, until {date}']).toBe('Voor {name}, tot {date}')
 		expect(nl['For {name}']).toBe('Voor {name}')
 	})

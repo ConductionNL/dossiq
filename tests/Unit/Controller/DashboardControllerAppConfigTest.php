@@ -43,11 +43,12 @@ final class DashboardControllerAppConfigTest extends TestCase {
 	/**
 	 * Render the page against an app config holding a municipality city.
 	 *
-	 * @param string $city What the administrator typed.
+	 * @param string $city       What the administrator typed.
+	 * @param string $portalName The portal name portaliq holds.
 	 *
 	 * @return array<string, mixed> Every initial state the page provided.
 	 */
-	private function renderWith(string $city): array {
+	private function renderWith(string $city, string $portalName=''): array {
 		$provided = [];
 		$initialState = $this->createMock(originalClassName: IInitialState::class);
 		$initialState->method('provideInitialState')
@@ -59,9 +60,13 @@ final class DashboardControllerAppConfigTest extends TestCase {
 		$appConfig = $this->createMock(originalClassName: IAppConfig::class);
 		$appConfig->method('getValueString')
 			->willReturnCallback(
-				static function (string $app, string $key, string $default = '') use ($city): string {
+				static function (string $app, string $key, string $default = '') use ($city, $portalName): string {
 					if ($app === 'dossiq' && $key === 'municipality_city') {
 						return $city;
+					}
+
+					if ($app === 'portaliq' && $key === 'portalName') {
+						return $portalName;
 					}
 
 					return $default;
@@ -88,7 +93,7 @@ final class DashboardControllerAppConfigTest extends TestCase {
 		$provided = $this->renderWith(city: ' Zuiddrecht ');
 
 		$this->assertArrayHasKey(key: 'config', array: $provided);
-		$this->assertSame(expected: ['municipalityCity' => 'Zuiddrecht'], actual: $provided['config']);
+		$this->assertSame(expected: ['municipalityCity' => 'Zuiddrecht', 'portalName' => ''], actual: $provided['config']);
 	}//end testThePageProvidesTheMunicipalityCity()
 
 	/**
@@ -97,6 +102,18 @@ final class DashboardControllerAppConfigTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutACityTheKeyIsEmpty(): void {
-		$this->assertSame(expected: ['municipalityCity' => ''], actual: $this->renderWith(city: '')['config']);
+		$this->assertSame(expected: ['municipalityCity' => '', 'portalName' => ''], actual: $this->renderWith(city: '')['config']);
 	}//end testWithoutACityTheKeyIsEmpty()
+
+	/**
+	 * The page provides the resident portal's name portaliq holds, so a line
+	 * about a message sent there names it ("via Mijn Zuiddrecht", DqZaakContact).
+	 *
+	 * @return void
+	 */
+	public function testThePageProvidesThePortalName(): void {
+		$config = $this->renderWith(city: '', portalName: ' Mijn Zuiddrecht ')['config'];
+
+		$this->assertSame(expected: 'Mijn Zuiddrecht', actual: $config['portalName']);
+	}//end testThePageProvidesThePortalName()
 }//end class

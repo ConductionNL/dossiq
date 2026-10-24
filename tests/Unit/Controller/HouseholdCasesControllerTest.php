@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CitizenLookupGuard;
 use OCA\Dossiq\Service\SociaalDomein\HouseholdCases;
 use OCP\AppFramework\Http;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\ISession;
 use OCP\IUser;
@@ -55,10 +56,11 @@ class HouseholdCasesControllerTest extends TestCase {
 	 * @param boolean $sensitive Whether the reader may see sensitive fields.
 	 * @param boolean $readable  Whether the reader may read the case.
 	 * @param string  $ground    The ground the request carries.
+	 * @param ?CitizenLookupGuard $guard A real guard instead of one answering $sensitive.
 	 *
 	 * @return array{0: HouseholdCasesController, 1: HouseholdCases}
 	 */
-	private function controller(bool $sensitive = true, bool $readable = true, string $ground = ''): array {
+	private function controller(bool $sensitive = true, bool $readable = true, string $ground = '', ?CitizenLookupGuard $guard = null): array {
 		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getParam')->willReturnMap([['ground', '', $ground]]);
 		$user = $this->createMock(originalClassName: IUser::class);
@@ -72,8 +74,10 @@ class HouseholdCasesControllerTest extends TestCase {
 		});
 		$caseAccess = $this->createMock(originalClassName: CaseAccessGuard::class);
 		$caseAccess->method('hasCaseReadAccess')->willReturn($readable);
-		$guard = $this->createMock(originalClassName: CitizenLookupGuard::class);
-		$guard->method('maySeeSensitiveFields')->willReturn($sensitive);
+		if ($guard === null) {
+			$guard = $this->createMock(originalClassName: CitizenLookupGuard::class);
+			$guard->method('maySeeSensitiveFields')->willReturn($sensitive);
+		}
 		$household = $this->createMock(originalClassName: HouseholdCases::class);
 		$household->method('readCase')->willReturn(['id' => 'case-1', 'gezinsplanId' => 'plan-1']);
 		$household->method('householdBsns')->willReturn(['111222333']);
@@ -105,6 +109,29 @@ class HouseholdCasesControllerTest extends TestCase {
 		self::assertSame(expected: Http::STATUS_FORBIDDEN, actual: $controller->index(caseId: 'case-1')->getStatus());
 		self::assertSame(expected: Http::STATUS_FORBIDDEN, actual: $controller->lookUp(caseId: 'case-1')->getStatus());
 	}//end testAReaderWithoutSensitiveAccessIsRefused()
+
+	/**
+	 * An administrator outside dossiq-sensitive is refused: a household is not
+	 * opened by administering the instance. The real guard is used, over a
+	 * group manager that answers "admin" and "not in the group".
+	 *
+	 * @return void
+	 */
+	public function testAnAdministratorOutsideTheSensitiveGroupIsRefused(): void {
+		$groups = $this->createMock(originalClassName: IGroupManager::class);
+		$groups->method('isAdmin')->willReturn(true);
+		$groups->method('isInGroup')->willReturnCallback(
+			static fn (string $uid, string $group): bool => $group === 'admin'
+		);
+		[$controller, $household] = $this->controller(guard: new CitizenLookupGuard(groupManager: $groups));
+		$household->expects($this->never())->method('sameDomain');
+		$household->expects($this->never())->method('otherDomains');
+
+		$response = $controller->index(caseId: 'case-1');
+		self::assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+		self::assertSame(expected: 'household-not-allowed', actual: $response->getData()['error']);
+		self::assertSame(expected: Http::STATUS_FORBIDDEN, actual: $controller->lookUp(caseId: 'case-1')->getStatus());
+	}//end testAnAdministratorOutsideTheSensitiveGroupIsRefused()
 
 	/**
 	 * A reader who may not read the case is refused too.
