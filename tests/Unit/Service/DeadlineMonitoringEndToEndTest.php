@@ -36,7 +36,7 @@ use OCA\Dossiq\Service\CasePriorityRaiseService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
-use OCA\Dossiq\Service\DwangsomBezwaarService;
+use OCA\Dossiq\Service\Money\AmountObjectionService;
 use OCA\Dossiq\Service\Money\PayoutService;
 use OCA\Dossiq\Service\Money\AccruingAmountSettler;
 use OCA\Dossiq\Service\Money\AccrualNoticeService;
@@ -64,7 +64,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	private AccrualNoticeService $ingService;
 	private AccruingAmountSettler $settler;
 	private PayoutService $outService;
-	private DwangsomBezwaarService $bezService;
+	private AmountObjectionService $bezService;
 	private TermijnNotificationService $notifService;
 	private TermijnTimerFiredListener $firedListener;
 
@@ -79,9 +79,9 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
-					'ingebrekestelling_schema' => 'noticeOfDefault',
-					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
-					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
+					'notice_of_default_schema' => 'noticeOfDefault',
+					'accruing_amount_schema' => 'penaltyPaymentCalculation',
+					'payout_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
 			},
@@ -95,7 +95,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$this->ingService = new AccrualNoticeService($settings, $this->termService, $logger);
 		$this->settler = new AccruingAmountSettler(settingsService: $settings, dates: $this->caseDates());
 		$this->outService = new PayoutService(settingsService: $settings, dates: $this->caseDates());
-		$this->bezService = new DwangsomBezwaarService($settings, $this->termService, $logger);
+		$this->bezService = new AmountObjectionService($settings, $this->termService, $logger);
 		$this->notifService = new TermijnNotificationService(
 			$this->termService,
 			$this->createMock(TermNoticeSender::class),
@@ -269,7 +269,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 
 		// Beschikking arrives: the settler stops the clock and locks the amount.
 		$stopped = $this->settler->settle(
-			schemaConfigKey: 'dwangsom_berekening_schema',
+			schemaConfigKey: 'accruing_amount_schema',
 			id: $calculationId,
 			status: 'gestopt-wegens-decision',
 			stopAt: new DateTimeImmutable('2026-04-03 10:00'),
@@ -318,13 +318,13 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 			'status' => 'voorbereid',
 		]);
 
-		$frozen = $this->bezService->registerBezwaar('b-s5', 'AWB 7:1', 'Bedrag te hoog');
+		$frozen = $this->bezService->registerObjection('b-s5', 'AWB 7:1', 'Bedrag te hoog');
 		self::assertSame('objection-bevroren', $frozen['status']);
 		$outFrozen = $this->objects->store['dwangsomUitbetaling']['u-s5'];
 		self::assertSame('on-hold-objection', $outFrozen['status']);
 
 		// Heroverweging halves the amount.
-		$resolved = $this->bezService->resolveBezwaar('b-s5', 25000, 'AWB 7:11');
+		$resolved = $this->bezService->resolveObjection('b-s5', 25000, 'AWB 7:11');
 		self::assertSame(25000, $resolved['definitiveAmount']);
 		self::assertSame('completed', $resolved['status']);
 		$outResumed = $this->objects->store['dwangsomUitbetaling']['u-s5'];

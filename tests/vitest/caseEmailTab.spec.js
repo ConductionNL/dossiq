@@ -25,4 +25,8 @@ describe('the Email tab', () => {
 		expect(mail.linkedMail).toBe(true)
 		expect(mail.headerActions).toEqual(['link', 'compose'])
 	})
+
+	it('keeps "Leeg concept" in the template row beside "Mail opstellen"', () => {
+		expect(mail.draft.blankButton).toBe(true)
+	})
 })

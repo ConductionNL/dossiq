@@ -2,9 +2,9 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * DqCatalogus draws a line under the Objecttypen and Uit de Store titles. A
- * dashboard card draws its definition's `subtitle`; a `description` drew
- * nothing.
+ * DqCatalogus draws a line under the Objecttypen title, on what is now the
+ * Object types page. A dashboard card draws its definition's `subtitle`; a
+ * `description` drew nothing.
  */
 
 import fs from 'fs'
@@ -20,7 +20,6 @@ const widget = (id) => widgets.find((entry) => entry.id === id)
 describe('the catalogue card subtitles (DqCatalogus)', () => {
 	it.each([
 		['catalogue-object-types', 'Objecten die u aan zaken koppelt; eigenschappen beheert u hier'],
-		['catalogue-store', 'Zaaktypen en inrichting als bestand in en uit'],
 	])('%s draws its line as a subtitle', (id, text) => {
 		expect(nl[widget(id).subtitle]).toBe(text)
 		expect(widget(id).description).toBeUndefined()

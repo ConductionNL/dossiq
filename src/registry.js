@@ -317,6 +317,8 @@ const registry = {
 	CaseTypeRulesWidget: {
 		// @custom-widget-ratchet exclude the rules are read from OpenRegister's rules vocabulary and evaluated against a pasted case; no declared widget evaluates a rule
 		kind: 'widget',
+		// A titled card in the Rules tab, as board DqZaaktypeRegels draws it.
+		chrome: 'card',
 		component: CaseTypeRulesWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail Fields: the OpenRegister rules of the case schema with a try-it. They belong to the case schema rather than to one case type, so this is a candidate to move to OpenRegister\'s schema page.',

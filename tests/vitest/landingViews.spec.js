@@ -134,6 +134,17 @@ describe('the landing page in the full structure', () => {
 		expect(team[0].content.columns[0].secondary).toContain('{deadline|date}')
 	})
 
+	it('fits the team cards to their content, as DqMijnTeam draws them', () => {
+		// A grid that floats keeps every card on its row, so a card that
+		// shrinks would leave a band under it; this one packs upward.
+		expect(home.config.gridFloat).toBe(false)
+		expect(page(builtSimple.pages, 'MyWorkHome').config.gridFloat).toBe(false)
+		const layout = pageView(home, 'team').layout
+		for (const id of ['t4', 't5', 't6', 't7']) {
+			expect(layout.find((item) => item.id === id).sizeToContent, id).toBe(true)
+		}
+	})
+
 	it('gives My team a sentence for when it has nothing to draw', () => {
 		expect(pageView(home, 'team').emptyText).toBeTruthy()
 	})
@@ -165,9 +176,30 @@ describe('My team in the simple structure', () => {
 		expect(stalled.headerLink).toEqual({ label: 'View all', route: name, ...rest })
 	})
 
+	it('draws the team queue as DqMijnTeam\'s rows: number, case type and deadline, Pick up at the end', () => {
+		const queue = team.widgets.find((widget) => widget.id === 'your-teams-queue')
+		const full = fullTeam.widgets.find((widget) => widget.id === 'your-teams-queue')
+		expect(queue.type).toBe('record-list')
+		expect(queue.content).toMatchObject({
+			register: full.content.register,
+			schema: full.content.schema,
+			filter: full.content.filter,
+			extend: ['caseType'],
+			limit: 3,
+			presentation: 'rows',
+			title: '{title}',
+			meta: { parts: ['{identifier}', '{caseType.title}', 'deadline {deadline|date}'] },
+			rowAction: { id: 'claim', label: 'Pick up', type: 'handler', handler: 'claimCase' },
+			chevron: false,
+			rowRoute: 'CaseDetail',
+			emptyText: full.content.emptyText,
+		})
+		expect(queue.headerLink).toEqual({ label: 'To the queue', route: 'Cases', query: { savedView: 'default:team-queue' } })
+	})
+
 	it('keeps every other team widget as the full structure declares it', () => {
 		expect(team.widgets.map((widget) => widget.id)).toEqual(fullTeam.widgets.map((widget) => widget.id))
-		for (const widget of team.widgets.filter((item) => item.id !== 'stalled-cases')) {
+		for (const widget of team.widgets.filter((item) => !['stalled-cases', 'your-teams-queue'].includes(item.id))) {
 			expect(withoutNotes(widget), widget.id).toEqual(withoutNotes(fullTeam.widgets.find((item) => item.id === widget.id)))
 		}
 		expect(team.layout).toEqual(fullTeam.layout)
@@ -200,6 +232,16 @@ describe('My work in the simple structure keeps the board\'s side column', () =>
 		}
 		expect(tracks['simple-my-open']).toBeUndefined()
 		expect(tracks['archival-reviews']).toBeUndefined()
+	})
+
+	it('fits every card under First today to its content, as DqMijnWerk draws them', () => {
+		// The board's counts are 110px, not two grid rows (136), and each card
+		// below ends where its content ends, so the next one closes up.
+		expect(page(builtSimple.pages, 'MyWorkHome').config.gridFloat).toBe(false)
+		const mine = pageView(page(builtSimple.pages, 'MyWorkHome'), 'mine')
+		for (const cell of mine.layout) {
+			expect(cell.sizeToContent, cell.widgetId).toBe(true)
+		}
 	})
 })
 

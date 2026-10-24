@@ -63,7 +63,15 @@ class QueueFigures {
 	public function fold(array $openCases, DateTimeImmutable $today, array $typeTitles): array {
 		$todayText = $today->format('Y-m-d');
 		$weekEnd = $today->modify('+7 days')->format('Y-m-d');
-		$figures = ['queueCount' => 0, 'queueNewToday' => 0, 'queueDueSoon' => 0, 'queueOldestDays' => 0];
+		$figures = [
+			'queueCount' => 0,
+			'queueNewToday' => 0,
+			'queueDueSoon' => 0,
+			'queueOldestDays' => 0,
+			'queueOldestType' => '',
+			'queueOldestDueDays' => null,
+		];
+		$oldestStart = null;
 		$byType = [];
 
 		foreach ($openCases as $case) {
@@ -71,6 +79,11 @@ class QueueFigures {
 			$byType = $this->tallyType(byType: $byType, type: (string)($case['caseType'] ?? ''), unassigned: $unassigned);
 			if ($unassigned === true) {
 				$figures = $this->addWaiting(figures: $figures, case: $case, today: $todayText, weekEnd: $weekEnd);
+				$start = substr((string)($case['startDate'] ?? ''), 0, 10);
+				if ($start !== '' && $start <= $todayText && ($oldestStart === null || $start < $oldestStart)) {
+					$oldestStart = $start;
+					$figures = $this->noteOldest(figures: $figures, case: $case, today: $today, typeTitles: $typeTitles);
+				}
 			}
 		}
 
@@ -133,6 +146,37 @@ class QueueFigures {
 
 		return $figures;
 	}//end addWaiting()
+
+	/**
+	 * Name the oldest waiting case: its type's title and the days to its
+	 * deadline (negative once passed, null without a readable deadline), for
+	 * the "Waiting longest" tile's line (DqTeamwachtrij).
+	 *
+	 * @param array<string, mixed> $figures The figures so far.
+	 * @param array $case The oldest case so far.
+	 * @param DateTimeImmutable $today Today, at midnight.
+	 * @param array<string, string> $typeTitles Case type titles by id.
+	 *
+	 * @return array<string, mixed> The figures.
+	 *
+	 * @spec openspec/changes/queue-oldest-case-note/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	private function noteOldest(array $figures, array $case, DateTimeImmutable $today, array $typeTitles): array {
+		$type = (string)($case['caseType'] ?? '');
+		$figures['queueOldestType'] = ($typeTitles[$type] ?? $type);
+		$figures['queueOldestDueDays'] = null;
+
+		$deadline = substr((string)($case['deadline'] ?? ''), 0, 10);
+		if ($deadline !== '') {
+			try {
+				$figures['queueOldestDueDays'] = $this->dayCount->signed(from: $today, to: new DateTimeImmutable($deadline));
+			} catch (\Exception $e) {
+				$figures['queueOldestDueDays'] = null;
+			}
+		}
+
+		return $figures;
+	}//end noteOldest()
 
 	/**
 	 * Whole days from a date to today; 0 for an empty, unreadable or future date.

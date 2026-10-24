@@ -47,6 +47,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Queue\QueueFigures;
+use OCA\Dossiq\Service\Queue\QueueOldestNote;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
@@ -164,7 +165,14 @@ class KpiAggregationService {
 			filters: self::OPEN_WORK
 		);
 
-		return ($this->queueFigures->fold(openCases: $openCases, today: $now, typeTitles: $this->caseTypeTitles(ids: $ids)) + [
+		$queue = $this->queueFigures->fold(openCases: $openCases, today: $now, typeTitles: $this->caseTypeTitles(ids: $ids));
+		$oldestNote = (new QueueOldestNote(l10n: $this->l10n))->line(
+			type: (string)$queue['queueOldestType'],
+			dueDays: $queue['queueOldestDueDays']
+		);
+
+		return ($queue + [
+			'queueOldestNote' => $oldestNote,
 			'openCount' => $this->countCases(ids: $ids, filters: self::OPEN_WORK),
 			'newToday' => $this->countCases(ids: $ids, filters: (self::OPEN_WORK + ['startDate' => $today])),
 			'overdueCount' => $this->countCases(
@@ -253,6 +261,9 @@ class KpiAggregationService {
 			'queueNewToday' => 0,
 			'queueDueSoon' => 0,
 			'queueOldestDays' => 0,
+			'queueOldestType' => '',
+			'queueOldestDueDays' => null,
+			'queueOldestNote' => (new QueueOldestNote(l10n: $this->l10n))->line(type: '', dueDays: null),
 			'queueByType' => [],
 		];
 	}//end emptyKpis()

@@ -62,28 +62,44 @@ describe('per-card buttons on the record boards', () => {
 		expect(all.visibleWhen).toEqual({ field: 'objectUrl', op: 'notEmpty' })
 		expect(nl[all.label]).toBe('Alle zaken op dit object')
 	})
-	it('recomputes the archive nomination from the Archiving card, with a reason, through OpenRegister', () => {
-		const [recompute] = simple.configPatch.widgets['case-archival-panel'].headerActions
-		expect(nl[recompute.label]).toBe('Nominatie herberekenen')
-		expect(recompute.action).toMatchObject({ type: 'open-modal', target: 'CnActionDialog', props: { objectId: '@objectId' } })
-		const { config } = recompute.action.props
-		expect(config.reason.label).toBe('Reason')
-		expect(config.confirm.request).toEqual({
-			method: 'POST',
-			url: '/apps/openregister/api/archival/objects/@objectId/nomination/recompute',
-			body: { reason: '{reason}' },
+	it('recomputes the archive nomination once, from the Archiving card\'s own title row', () => {
+		const archival = simple.configPatch.widgets['case-archival-panel']
+		// The retention widget draws "Recompute nomination" in its own title row and asks the reason;
+		// a host header action would draw it a second time (DqZaakArchivering).
+		expect(archival.headerActions).toBeUndefined()
+		expect(archival.content.recompute).not.toBe(false)
+		expect(archival.content).toMatchObject({
+			statusField: 'archiveStatus',
+			archivedValues: ['archived', 'archived_retention_period_unknown'],
+			archivistGroups: ['archivaris'],
 		})
+		expect(nl[archival.content.subtitle]).toBe('Wat er met deze zaak gebeurt als hij gesloten is')
+	})
+
+	it('shows an open case the archival outcome its type expects, the procedure hold and the e-Depot transfer', () => {
+		const { content } = simple.configPatch.widgets['case-archival-panel']
+		expect(content.expected.source).toEqual({ register: 'dossiq', schema: 'resultType', filter: { caseType: '@object.caseType' } })
+		expect(content.expected.fields).toEqual({ appraisal: 'archivalAction', period: 'archivalPeriod', selectionListRow: 'selectionListClass' })
+		expect(Object.keys(content.expected.appraisalLabels)).toEqual(['vernietigen', 'bewaren', 'blijvend_bewaren'])
+		expect(nl[content.expected.appraisalLabels.vernietigen]).toBe('Vernietigen')
+		expect(nl[content.expected.periodText]).toBe('{period} na het besluit')
+		expect(nl[content.expected.decidedBy]).toBe('Het zaaktype, bij het sluiten')
+		expect(nl[content.pendingNote]).toBe('Deze zaak is nog niet gesloten. Zijn archieftoekomst wordt vastgelegd zodra hij sluit. Herberekenen vraagt de rol archivaris en een reden.')
+		expect(content.expected.selectionListLookup).toEqual({ url: '/apps/openregister/api/archival/selectielijst/resolve', param: 'url', label: '{code}, {name}' })
+		expect(content.legalHold).toBe(true)
+		expect(content.transfer).toEqual({ keepValues: ['bewaren', 'blijvend_bewaren'] })
 	})
 	it('links an existing meeting or makes one from the Afspraken card, through the calendar leaf', () => {
 		const calendar = appended('case-calendar-card')
 		expect(calendar.integrationId).toBe('calendar')
 		expect(calendar.props.headerActions).toEqual(['link', 'create'])
 	})
-	it('links an existing meeting or makes one from a task\'s Afspraken card, on the task itself', () => {
+	it('links an existing meeting or makes one from a task\'s Afspraken card, on the task itself: make in the title row, link in the card\'s Actions menu', () => {
 		const task = manifest.pages.find((page) => page.id === 'TaskDetail')
 		const appointments = task.config.widgets.find((widget) => widget.id === 'task-appointments')
 		expect(appointments.type).toBe('events')
 		expect(appointments.content.source).toEqual({ kind: 'flow-task' })
-		expect(appointments.content.headerActions).toEqual(['link', 'create'])
+		expect(appointments.content.headerActions).toEqual(['create'])
+		expect(appointments.content.menuActions).toEqual(['link'])
 	})
 })

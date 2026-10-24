@@ -290,7 +290,7 @@ class IntegrationStatusServiceTest extends TestCase {
 	 */
 	public function testASaveTouchingTwoSectionsRefreshesBoth(): void {
 		$refreshed = $this->service()->recordFromSave(
-			saved: ['case_schema' => 'case', 'dwangsom_callback_secret' => 's3cret']
+			saved: ['case_schema' => 'case', 'payout_callback_secret' => 's3cret']
 		);
 
 		$this->assertSame(expected: ['zgw', 'financial'], actual: $refreshed);

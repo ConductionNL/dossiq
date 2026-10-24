@@ -1360,6 +1360,7 @@ OC.L10N.register(
         "SLA": "SLA",
         "SLA Compliance": "Comhlíonadh SLA",
         "SLA Compliance %": "Comhlíonadh SLA %",
+        "SLA Compliance %%": "Comhlíonadh SLA %%",
         "SLA Target: {days}d": "Sprioc SLA: {days}l",
         "SLA adherence and processing time analysis": "Anailís ar chloí le SLA agus ar am próiseála",
         "SLA breaches": "Sáruithe SLA",

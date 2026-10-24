@@ -26,6 +26,8 @@
 				v-model="mode"
 				:options="modes"
 				:label="t('dossiq', 'What you do')"
+				:hideLabel="true"
+				layout="rows"
 				:columns="2"
 				data-testid="case-share-modes" />
 

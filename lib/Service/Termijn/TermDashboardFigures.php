@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
@@ -148,7 +149,7 @@ class TermDashboardFigures {
 	private function penalties(): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
+		$schema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
 		if ($objectService === null || $register === '' || $schema === '') {
 			return ['penaltyRunningEuros' => 0.0, 'penaltyRunningCount' => 0];
 		}

@@ -1374,6 +1374,7 @@ OC.L10N.register(
         "SLA": "SLA",
         "SLA Compliance": "Compliment de l'SLA",
         "SLA Compliance %": "% de compliment de l'SLA",
+        "SLA Compliance %%": "%% de compliment de l'SLA",
         "SLA Target: {days}d": "Objectiu d'SLA: {days}d",
         "SLA adherence and processing time analysis": "Adhesió a l'SLA i anàlisi del temps de tramitació",
         "SLA breaches": "Incompliments de l'SLA",
