@@ -162,3 +162,27 @@ export function parentTitleOf(blueprint) {
 
 	return String(parents[0]?.title ?? '')
 }
+
+/**
+ * What a case type offers, in numbers: its statuses and how many end a case,
+ * its results, and its attributes with how many it inherits and from whom.
+ *
+ * @param {object|null} blueprint The /blueprint answer.
+ * @return {{statuses: number, finalStatuses: number, results: number, attributes: number, inheritedAttributes: number, parent: string}}
+ *
+ * @spec openspec/changes/case-type-blueprint-summary/specs/case-types/spec.md#requirement-the-blueprint-reads-as-a-summary-card
+ */
+export function blueprintSummary(blueprint) {
+	const list = (key) => (Array.isArray(blueprint?.[key]) ? blueprint[key] : [])
+	const statuses = list('statusTypes')
+	const counted = blueprint?.counts?.propertyDefinitions || {}
+	const total = Number(counted.total)
+	return {
+		statuses: statuses.length,
+		finalStatuses: statuses.filter((row) => row?.isFinal === true).length,
+		results: list('resultTypes').length,
+		attributes: Number.isFinite(total) && total > 0 ? total : list('propertyDefinitions').length,
+		inheritedAttributes: Number(counted.inherited) || 0,
+		parent: parentTitleOf(blueprint),
+	}
+}

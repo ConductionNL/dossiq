@@ -273,6 +273,8 @@ const registry = {
 	CaseTypeBlueprintWidget: {
 		// @custom-widget-ratchet exclude the merged statuses/results/attributes of a type and its parent exist only in CaseTypeResolver; an object-list can ask OpenRegister for `caseType = @objectId` and nothing else, so a child type would render three empty tables
 		kind: 'widget',
+		// A titled card in the Statuses tab stack, as the lists above it.
+		chrome: 'card',
 		component: CaseTypeBlueprintWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail: what the type actually offers, over /api/case-types/{id}/blueprint, with an Inherited badge on every row that came from the parent and a Shared badge on every attribute that belongs to no type. In the LAYOUT rather than inside a tab strip on purpose: a type:"custom" widget named as a tab CHILD resolves by registry type, finds nothing and renders an empty panel without logging anything.',
