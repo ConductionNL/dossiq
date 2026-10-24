@@ -14,7 +14,7 @@ Depends on OpenRegister `rbac-matrix-app-rows-and-file-verbs`.
 
 ## 3. What people see
 
-- [ ] 3.1 `CaseTypeRightsByRole`: Eigen team, statuses, documents, Besluiten from the mandate register; PHPUnit
-- [ ] 3.2 Rights tab: department "Eigen team", status multi-select, documents choice; vitest
+- [x] 3.1 `CaseTypeRightsByRole`: Eigen team, statuses, documents, Besluiten from the mandate register; PHPUnit
+- [x] 3.2 Rights tab: department "Eigen team", status multi-select, documents choice; vitest caseTypeRightsEditor (needs nc-vue feat/field-list-multiselect-and-endpoint-options)
 - [ ] 3.3 Tenant setup checklist "Mandaten ingesteld": not built; the row on board DqTenant is a Mandaten card history row filled by the example set (tenantMandate), not a checklist step
-- [ ] 3.4 l10n
+- [x] 3.4 l10n
