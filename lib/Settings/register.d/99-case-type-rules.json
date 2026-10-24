@@ -1,5 +1,5 @@
 {
-  "_note": "case-type-conditional-rules (openspec/changes/case-type-conditional-rules). A case type says, as configuration, what happens when a case meets a condition: 'Als Bouwkosten groter is dan 100.000, dan taak Toets door constructeur toevoegen'. Dossiq evaluates none of it: CaseTypeRuleProjector projects each rule at publish onto the engine that owns the action. A fragment per ADR-037. caseType 1.38.0: RENUMBER at merge if 1.35-1.37 are taken by then. case 1.50.0 `variant`: written by a chooseVariant rule; RENUMBER at merge (1.49.0 is DQ-REINT's).",
+  "_note": "case-type-conditional-rules (openspec/changes/case-type-conditional-rules). A case type says, as configuration, what happens when a case meets a condition: 'Als Bouwkosten groter is dan 100.000, dan taak Toets door constructeur toevoegen'. Dossiq evaluates none of it: CaseTypeRuleProjector projects each rule at publish onto the engine that owns the action. A fragment per ADR-037. caseType 1.38.0: RENUMBER at merge if 1.35-1.37 are taken by then. case 1.51.0 `variant`: written by a chooseVariant rule (renumbered in b35b: 1.49.0 is DQ-REINT's, 1.50.0 case-type-rights-enforced's).",
   "components": {
     "schemas": {
       "caseType": {
@@ -150,7 +150,7 @@
         }
       },
       "case": {
-        "version": "1.50.0",
+        "version": "1.51.0",
         "properties": {
           "variant": {
             "type": "string",
