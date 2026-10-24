@@ -1,19 +1,23 @@
 # Tasks: case-type-conditional-rules
 
-**PROPOSAL ONLY.** Not to be built before the coordinator and Ruben agree on the design and on the open questions in the
-proposal (engine scoping per case type, the add-task route, idempotence).
+Approved by Ruben (24 Oct) and being built. The add-task route uses dossiq's existing `dossiq.createTask` flow step
+(OpenRegister tasks are engine tasks, not register objects, so `ObjectWriteNode` cannot create one), with a once-key
+the engine task carries as its `key`.
 
 ### Task 1: The rule model on caseType
 - **spec_ref**: `openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-case-type-carries-conditional-rules`
 - **files**: `lib/Settings/register.d/99-case-type-rules.json`, schema digests
-- [ ] Implement
-- [ ] Test
+- [x] Implement (caseType 1.38.0 `rules`)
+- [x] Test (schema digest recorded)
 
 ### Task 2: The projection onto the engines
 - **spec_ref**: `openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions`
-- **files**: `lib/Service/CaseType/CaseTypeRuleProjector.php`, publish hook
-- [ ] Implement
-- [ ] Test (unit + integration)
+- **files**: `lib/Service/CaseType/CaseTypeRuleProjector.php`, `CaseTypeRuleFlowDocument.php`, `RuleConditionLogic.php`, publish hook
+- [x] Implement addTask: a guarded flow per action (object trigger scoped to the case type, filter with the case type
+      guard and the conditions, `dossiq.createTask`), replaced on every publish
+- [ ] Implement setField, requireDocument, sendMessage, chooseVariant (named as publication warnings until then)
+- [x] Test (unit: plan, flow shape, the filter evaluated with OpenRegister's JSONLogic, replace-on-publish)
+- [ ] Test (integration on a live instance)
 
 ### Task 3: The Rules tab reads and writes rules
 - **spec_ref**: `openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules`
@@ -29,6 +33,8 @@ proposal (engine scoping per case type, the add-task route, idempotence).
 
 ### Task 4: Idempotent effects
 - **spec_ref**: `openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version`
-- **files**: the projector's flow template (ObjectWriteNode identifier + onConflict fail)
-- [ ] Implement
+- **files**: `CreateTaskHandler` `onceKey`, `EngineTaskGateway::keyTaken`; OpenRegister `TaskService::findByKey`
+- [x] Implement (a task added by a rule carries `dossiq:once:rule:<case type>:<rule>:<case>` as its engine key; a taken
+      key adds nothing, an unanswerable lookup fails the step rather than risk a second task)
+- [x] Test (unit)
 - [ ] Test (integration: saved twice, one task)

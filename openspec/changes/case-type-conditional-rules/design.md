@@ -1,6 +1,6 @@
 # Design: case-type-conditional-rules
 
-> **PROPOSAL ONLY.** Not to be built before Ruben agrees.
+> Approved by Ruben (24 Oct); being built.
 
 ## Stored shape (caseType 1.x, register.d fragment `99-case-type-rules.json`)
 

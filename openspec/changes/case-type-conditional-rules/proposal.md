@@ -1,6 +1,6 @@
 # Proposal: case-type-conditional-rules
 
-> **PROPOSAL ONLY.** Not to be built before Ruben agrees. The open questions below are answered (coordinator, 23 Oct)
+> Approved by Ruben (24 Oct); being built. The open questions below are answered (coordinator, 23 Oct)
 > from a read of OpenRegister development afdd4f2af3.
 
 ## Why
