@@ -34,6 +34,7 @@ use OCA\Shillinq\Event\PayableRaisedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 use RuntimeException;
 use ReflectionMethod;
+use ReflectionParameter;
 
 /**
  * Raises and withdraws payouts in the finance app.
@@ -46,6 +47,13 @@ use ReflectionMethod;
  * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
  */
 class PayoutRequester {
+	/**
+	 * The fields of a payout settled before finance kept it.
+	 *
+	 * @var array<int, string>
+	 */
+	private const HISTORY = ['historicalState', 'paidOn', 'bankReference'];
+
 
 	/**
 	 * Constructor.
@@ -61,7 +69,8 @@ class PayoutRequester {
 	 * Raise a payout in the finance app.
 	 *
 	 * @param array<string, mixed> $payout The payout: amountCents, payeeName, iban, reference, and
-	 *        optionally description, category, correlationId, dueOn, callbackUrl and linkedObjects.
+	 *        optionally description, category, correlationId, dueOn, callbackUrl, linkedObjects, and for a
+	 *        payout settled before finance kept it historicalState, paidOn and bankReference.
 	 *
 	 * @return array{payableId: string, state: string}|null The payable, or null when no finance app answers.
 	 *
@@ -86,10 +95,17 @@ class PayoutRequester {
 			'correlationId' => (string)($payout['correlationId'] ?? ''),
 			'dueOn' => (string)($payout['dueOn'] ?? ''),
 		];
-		// A shillinq older than financial-documents-on-any-object has no linkedObjects
-		// parameter, and an unknown named argument is a fatal error.
-		if ($this->eventTakesLinkedObjects() === true) {
+		// An older shillinq lacks the newer parameters, and an unknown named
+		// argument is a fatal error, so each one goes only where it is declared.
+		$accepted = $this->acceptedParameters();
+		if (in_array('linkedObjects', $accepted, true) === true) {
 			$arguments['linkedObjects'] = array_values((array)($payout['linkedObjects'] ?? []));
+		}
+
+		foreach (self::HISTORY as $key) {
+			if ((string)($payout[$key] ?? '') !== '' && in_array($key, $accepted, true) === true) {
+				$arguments[$key] = (string)$payout[$key];
+			}
 		}
 
 		$event = new PayableRaisedEvent(...$arguments);
@@ -99,19 +115,16 @@ class PayoutRequester {
 	}//end request()
 
 	/**
-	 * Whether the installed finance app's payout command takes linked objects.
+	 * The parameter names the installed finance app's payout command declares.
 	 *
-	 * @return bool True when PayableRaisedEvent declares `linkedObjects`.
+	 * @return array<int, string> The names.
 	 */
-	private function eventTakesLinkedObjects(): bool {
-		foreach ((new ReflectionMethod(PayableRaisedEvent::class, '__construct'))->getParameters() as $parameter) {
-			if ($parameter->getName() === 'linkedObjects') {
-				return true;
-			}
-		}
-
-		return false;
-	}//end eventTakesLinkedObjects()
+	private function acceptedParameters(): array {
+		return array_map(
+			static fn (ReflectionParameter $parameter): string => $parameter->getName(),
+			(new ReflectionMethod(PayableRaisedEvent::class, '__construct'))->getParameters()
+		);
+	}//end acceptedParameters()
 
 	/**
 	 * Withdraw a payout the finance app has not acted on.

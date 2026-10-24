@@ -905,6 +905,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\CarryRenamedSettingKeys</step>
             <step>OCA\Dossiq\Repair\RewriteRenamedLayoutIds</step>
+            <!--
+                The penalty payouts dossiq kept move to the finance app, linked
+                to their case (case-money-is-configuration, REQ-DQM-004). Rows
+                stay readable; a second run raises nothing new.
+            -->
+            <step>OCA\Dossiq\Repair\MigratePayoutRowsToFinance</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -957,6 +963,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made
+              MigratePayoutRowsToFinance        hands payout rows dossiq kept to the finance app; a fresh install has none
 
             THE LIST ABOVE IS NOT PROSE. RepairStepRegistrationTest parses this file,
             sweeps every post-migration step, and fails on any step that is neither
