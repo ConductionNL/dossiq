@@ -103,11 +103,11 @@ class SocialDomainCaseTypesTest extends TestCase {
 	/**
 	 * The package installs everywhere, confidential, handled by the social domain, in the Participatiewet domain.
 	 *
-	 * @param string               $package   The package id.
-	 * @param string               $source    The schema the old records live in.
-	 * @param string               $domain    The social domain the case type maps to.
-	 * @param array<int, string>   $sensitive The fields only dossiq-sensitive reads.
-	 * @param string               $bsnKey    The old record's BSN field.
+	 * @param string             $package   The package id.
+	 * @param string             $source    The schema the old records live in.
+	 * @param string             $domain    The social domain the case type maps to.
+	 * @param array<int, string> $sensitive The fields only dossiq-sensitive reads.
+	 * @param string             $bsnKey    The old record's BSN field.
 	 *
 	 * @return void
 	 */
@@ -129,11 +129,11 @@ class SocialDomainCaseTypesTest extends TestCase {
 	/**
 	 * Every status the old lifecycle knows lands on a status of the type.
 	 *
-	 * @param string               $package   The package id.
-	 * @param string               $source    The schema the old records live in.
-	 * @param string               $domain    The social domain the case type maps to.
-	 * @param array<int, string>   $sensitive The fields only dossiq-sensitive reads.
-	 * @param string               $bsnKey    The old record's BSN field.
+	 * @param string             $package   The package id.
+	 * @param string             $source    The schema the old records live in.
+	 * @param string             $domain    The social domain the case type maps to.
+	 * @param array<int, string> $sensitive The fields only dossiq-sensitive reads.
+	 * @param string             $bsnKey    The old record's BSN field.
 	 *
 	 * @return void
 	 */
@@ -157,11 +157,11 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 * each restricted source field maps onto subjectBsn or sensitiveProperties,
 	 * and those carry the same group.
 	 *
-	 * @param string               $package   The package id.
-	 * @param string               $source    The schema the old records live in.
-	 * @param string               $domain    The social domain the case type maps to.
-	 * @param array<int, string>   $sensitive The fields only dossiq-sensitive reads.
-	 * @param string               $bsnKey    The old record's BSN field.
+	 * @param string             $package   The package id.
+	 * @param string             $source    The schema the old records live in.
+	 * @param string             $domain    The social domain the case type maps to.
+	 * @param array<int, string> $sensitive The fields only dossiq-sensitive reads.
+	 * @param string             $bsnKey    The old record's BSN field.
 	 *
 	 * @return void
 	 */
@@ -199,11 +199,11 @@ class SocialDomainCaseTypesTest extends TestCase {
 	/**
 	 * Every shipped application maps onto a case, nothing restricted in the ordinary answers.
 	 *
-	 * @param string               $package   The package id.
-	 * @param string               $source    The schema the old records live in.
-	 * @param string               $domain    The social domain the case type maps to.
-	 * @param array<int, string>   $sensitive The fields only dossiq-sensitive reads.
-	 * @param string               $bsnKey    The old record's BSN field.
+	 * @param string             $package   The package id.
+	 * @param string             $source    The schema the old records live in.
+	 * @param string             $domain    The social domain the case type maps to.
+	 * @param array<int, string> $sensitive The fields only dossiq-sensitive reads.
+	 * @param string             $bsnKey    The old record's BSN field.
 	 *
 	 * @return void
 	 */
@@ -239,11 +239,11 @@ class SocialDomainCaseTypesTest extends TestCase {
 	/**
 	 * The import joins duplicates by case number, moves consents and trajectories, and stamps the record.
 	 *
-	 * @param string               $package   The package id.
-	 * @param string               $source    The schema the old records live in.
-	 * @param string               $domain    The social domain the case type maps to.
-	 * @param array<int, string>   $sensitive The fields only dossiq-sensitive reads.
-	 * @param string               $bsnKey    The old record's BSN field.
+	 * @param string             $package   The package id.
+	 * @param string             $source    The schema the old records live in.
+	 * @param string             $domain    The social domain the case type maps to.
+	 * @param array<int, string> $sensitive The fields only dossiq-sensitive reads.
+	 * @param string             $bsnKey    The old record's BSN field.
 	 *
 	 * @return void
 	 */
@@ -291,12 +291,6 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 * @param string             $domain    The domain.
 	 * @param array<int, string> $sensitive The sensitive answers.
 	 * @param string             $bsnKey    The source's BSN field.
-	 *
-	 * @param string               $package   The package id.
-	 * @param string               $source    The schema the old records live in.
-	 * @param string               $domain    The social domain the case type maps to.
-	 * @param array<int, string>   $sensitive The fields only dossiq-sensitive reads.
-	 * @param string               $bsnKey    The old record's BSN field.
 	 *
 	 * @return void
 	 */
