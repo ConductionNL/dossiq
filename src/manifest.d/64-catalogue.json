@@ -98,9 +98,10 @@
 									"sortable": false
 								},
 								{
-									"key": "cases",
+									"key": "caseTypes",
 									"label": "Used in",
-									"formatter": "caseCount"
+									"formatter": "caseTypeCount",
+									"sortable": false
 								}
 							],
 							"emptyText": "Object types appear here once cases link objects.",

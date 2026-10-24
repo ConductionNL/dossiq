@@ -56,9 +56,9 @@ final class ObjectTypeCatalogueTest extends TestCase {
 
 		$this->assertSame(
 			[
-				['id' => 'building', 'title' => 'building', 'cases' => 2, 'schema' => '', 'properties' => null, 'views' => []],
-				['id' => 'Boom', 'title' => 'Boom', 'cases' => 1, 'schema' => '', 'properties' => null, 'views' => []],
-				['id' => 'vehicle', 'title' => 'vehicle', 'cases' => 1, 'schema' => '', 'properties' => null, 'views' => []],
+				['id' => 'building', 'title' => 'building', 'cases' => 2, 'schema' => '', 'properties' => null, 'views' => [], 'caseTypes' => null],
+				['id' => 'Boom', 'title' => 'Boom', 'cases' => 1, 'schema' => '', 'properties' => null, 'views' => [], 'caseTypes' => null],
+				['id' => 'vehicle', 'title' => 'vehicle', 'cases' => 1, 'schema' => '', 'properties' => null, 'views' => [], 'caseTypes' => null],
 			],
 			$rows
 		);
@@ -83,11 +83,44 @@ final class ObjectTypeCatalogueTest extends TestCase {
 		$rows = $this->catalogue(register: '23', schema: '41', objectService: $service, schemas: $schemas)->list();
 
 		$this->assertSame(
-			['id' => 'Boom', 'title' => 'Boom', 'cases' => 2, 'schema' => 'Bomenregister', 'properties' => 9, 'views' => ['map', 'table']],
+			['id' => 'Boom', 'title' => 'Boom', 'cases' => 2, 'schema' => 'Bomenregister', 'properties' => 9, 'views' => ['map', 'table'], 'caseTypes' => null],
 			$rows[0]
 		);
 		$this->assertSame(['', null, []], [$rows[1]['schema'], $rows[1]['properties'], $rows[1]['views']]);
 	}//end testShowsTheSchemaAnObjectUrlNames()
+
+	/**
+	 * With the case schema configured, each type says in how many distinct
+	 * case types it is used: the case types of the cases that link it (board
+	 * DqCatalogus "Gebruikt in 3 zaaktypen").
+	 *
+	 * @return void
+	 */
+	public function testCountsTheCaseTypesOfTheLinkingCases(): void {
+		$service = $this->objectService(
+			links: [
+				['case' => 'c1', 'objectType' => 'Boom'],
+				['case' => 'c2', 'objectType' => 'Boom'],
+				['case' => 'c3', 'objectType' => 'Boom'],
+				['case' => 'c4', 'objectType' => 'building'],
+				['case' => 'gone', 'objectType' => 'building'],
+			],
+			cases: [
+				['id' => 'c1', 'caseType' => 'woo'],
+				['id' => 'c2', 'caseType' => ['id' => 'woo']],
+				['id' => 'c3', 'caseType' => 'permit'],
+				['id' => 'c4', 'caseType' => ''],
+			]
+		);
+
+		$rows = $this->catalogue(register: '23', schema: '41', objectService: $service, caseSchema: '42')->list();
+
+		$this->assertSame([3, 2], [$rows[0]['cases'], $rows[0]['caseTypes']]);
+		$this->assertSame(['building', 2, 0], [$rows[1]['id'], $rows[1]['cases'], $rows[1]['caseTypes']]);
+		$caseQueries = array_values(array_filter($service->queries, static fn (array $query): bool => $query['@self']['schema'] === 42));
+		$this->assertCount(1, $caseQueries);
+		$this->assertEqualsCanonicalizing(['c1', 'c2', 'c3', 'c4', 'gone'], $caseQueries[0]['_ids']);
+	}//end testCountsTheCaseTypesOfTheLinkingCases()
 
 	/**
 	 * Links are read page by page until a page comes back short.
@@ -143,12 +176,13 @@ final class ObjectTypeCatalogueTest extends TestCase {
 	 *
 	 * @param string      $register      The register id.
 	 * @param string      $schema        The case-object schema id.
+	 * @param string      $caseSchema    The case schema id, '' when not configured.
 	 * @param object|null $objectService The fake ObjectService, null when absent.
 	 * @param array<string, array{title: string, properties: int, views: array<int, string>}> $schemas What the resolver answers, by URL.
 	 *
 	 * @return ObjectTypeCatalogue The catalogue under test.
 	 */
-	private function catalogue(string $register, string $schema, ?object $objectService, array $schemas = []): ObjectTypeCatalogue {
+	private function catalogue(string $register, string $schema, ?object $objectService, array $schemas = [], string $caseSchema = ''): ObjectTypeCatalogue {
 		$settings = $this->getMockBuilder(SettingsService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['getConfigValue', 'getObjectService'])
@@ -157,6 +191,7 @@ final class ObjectTypeCatalogueTest extends TestCase {
 			static fn (string $key, string $default = ''): string => match ($key) {
 				'register' => $register,
 				'case_object_schema' => $schema,
+				'case_schema' => $caseSchema,
 				default => $default,
 			}
 		);
@@ -173,11 +208,12 @@ final class ObjectTypeCatalogueTest extends TestCase {
 	 * A fake ObjectService that pages through the given links.
 	 *
 	 * @param array<int, array<string, string>> $links The case-object links.
+	 * @param array<int, array<string, mixed>>  $cases The cases, answered to an `_ids` read.
 	 *
 	 * @return object The fake, with the queries it was asked in `queries`.
 	 */
-	private function objectService(array $links): object {
-		return new class($links) {
+	private function objectService(array $links, array $cases = []): object {
+		return new class($links, $cases) {
 			/**
 			 * The queries asked, in order.
 			 *
@@ -187,8 +223,9 @@ final class ObjectTypeCatalogueTest extends TestCase {
 
 			/**
 			 * @param array<int, array<string, string>> $links The links.
+			 * @param array<int, array<string, mixed>>  $cases The cases.
 			 */
-			public function __construct(private array $links) {
+			public function __construct(private array $links, private array $cases) {
 			}
 
 			/**
@@ -200,6 +237,9 @@ final class ObjectTypeCatalogueTest extends TestCase {
 			 */
 			public function searchObjects(array $query): array {
 				$this->queries[] = $query;
+				if (isset($query['_ids']) === true) {
+					return array_values(array_filter($this->cases, static fn (array $case): bool => in_array($case['id'], $query['_ids'], true)));
+				}
 
 				return array_slice($this->links, (int)$query['_offset'], (int)$query['_limit']);
 			}

@@ -191,6 +191,22 @@ export default {
 	caseAddress: (value) => caseAddress(value),
 
 	/**
+	 * A number of case types as a phrase ("3 case types"); '' when the count
+	 * is unknown (null) or not a count.
+	 *
+	 * @param {unknown} value The count.
+	 * @return {string} The phrase, or ''.
+	 * @spec openspec/changes/object-types-used-in-case-types/specs/catalogue/spec.md
+	 */
+	caseTypeCount: (value) => {
+		if (value === null || value === undefined || value === '') {
+			return ''
+		}
+		const count = Number(value)
+		return Number.isInteger(count) && count >= 0 ? n('dossiq', '%n case type', '%n case types', count) : ''
+	},
+
+	/**
 	 * A number of cases as a phrase ("2 cases").
 	 *
 	 * @param {unknown} value The count.
