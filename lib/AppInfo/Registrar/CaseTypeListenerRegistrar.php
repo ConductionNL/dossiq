@@ -34,6 +34,7 @@ use OCA\Dossiq\Listener\ApplicantTermNoteListener;
 use OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener;
 use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
 use OCA\Dossiq\Listener\CaseTeamAccessListener;
+use OCA\Dossiq\Listener\CaseTypeRightsRowsListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
 use OCA\Dossiq\Listener\MilestoneDependencyCycleListener;
@@ -125,6 +126,14 @@ class CaseTypeListenerRegistrar {
 				listener: CaseTeamAccessListener::class
 			);
 		}
+
+		// The case type rights rows reach OpenRegister's case matrix when it
+		// asks for them (case-type-rights-enforced). Registered by name: an
+		// OpenRegister without the event never fires it.
+		$context->registerEventListener(
+			event: CaseTypeRightsRowsListener::EVENT,
+			listener: CaseTypeRightsRowsListener::class
+		);
 
 		// UPDATE ONLY. No term exists before the case does; the bind that
 		// follows the create writes the date back through the mirror.
