@@ -225,6 +225,7 @@ export default {
 				{ value: 'phone', label: t('dossiq', 'Phone') },
 				{ value: 'email', label: t('dossiq', 'Email') },
 				{ value: 'balie', label: t('dossiq', 'Desk') },
+				{ value: 'brief', label: t('dossiq', 'Letter') },
 				{ value: 'webformulier', label: t('dossiq', 'Web form') },
 				{ value: 'chat', label: t('dossiq', 'Chat') },
 				{ value: 'social_media', label: t('dossiq', 'Social media') },
