@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseType;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Container\ContainerInterface;
@@ -62,6 +63,7 @@ class CaseTypeRuleProjector {
 	 * @param CaseTypeRuleFlowDocument $documents Builds the flow of one action.
 	 * @param ContainerInterface $container OpenRegister's flow services.
 	 * @param LoggerInterface $logger The logger.
+	 * @param CaseTypeResolver|null $resolver The case type's blueprint, for its property definition names.
 	 *
 	 * @return void
 	 */
@@ -71,6 +73,7 @@ class CaseTypeRuleProjector {
 		private readonly CaseTypeRuleFlowDocument $documents,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?CaseTypeResolver $resolver = null,
 	) {
 	}//end __construct()
 
@@ -91,6 +94,7 @@ class CaseTypeRuleProjector {
 		$register = $this->settings->getConfigValue(key: 'register');
 		$schema = $this->settings->getConfigValue(key: 'case_schema');
 
+		$definitionNames = $this->definitionNames(caseTypeId: $caseTypeId);
 		$flows = [];
 		$unprojected = [];
 		foreach ((array)($caseType['rules'] ?? []) as $rule) {
@@ -105,7 +109,8 @@ class CaseTypeRuleProjector {
 					caseTypeId: $caseTypeId,
 					caseTypeTitle: $title,
 					register: $register,
-					schema: $schema
+					schema: $schema,
+					definitionNames: $definitionNames
 				);
 				if ($document === null) {
 					$unprojected[] = (string)($rule['id'] ?? '?') . ': ' . (string)(((array)$action)['action'] ?? '?');
@@ -118,6 +123,19 @@ class CaseTypeRuleProjector {
 
 		return ['flows' => $flows, 'unprojected' => $unprojected];
 	}//end plan()
+
+	/**
+	 * The names of the case type's property definitions, inherited ones included.
+	 *
+	 * @param string $caseTypeId The case type uuid.
+	 *
+	 * @return array<int, string> The names.
+	 */
+	private function definitionNames(string $caseTypeId): array {
+		$rows = (array)($this->resolver?->blueprintFor(caseTypeId: $caseTypeId)['propertyDefinitions'] ?? []);
+
+		return array_values(array_filter(array_map(static fn ($row): string => (string)(((array)$row)['name'] ?? ''), $rows)));
+	}//end definitionNames()
 
 	/**
 	 * Replace the case type's rule flows with the ones its rules declare now.
@@ -135,7 +153,8 @@ class CaseTypeRuleProjector {
 		$plan = $this->plan(caseTypeId: $caseTypeId);
 		$warnings = [];
 		foreach ($plan['unprojected'] as $action) {
-			$warnings[] = 'Rule action ' . $action . ' is not carried out yet; only adding a task is.';
+			$warnings[] = 'Rule action ' . $action . ' is not carried out: adding a task, choosing a variant and setting a '
+				. 'field of the case are; setting a property definition, requiring a document and sending a message are not yet.';
 		}
 
 		$flowService = $this->service(name: 'OCA\OpenRegister\Service\Flow\FlowService');
