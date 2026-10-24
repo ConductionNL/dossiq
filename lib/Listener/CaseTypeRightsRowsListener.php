@@ -38,9 +38,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\Access\CaseTypeRightsMatrixRows;
+use OCA\Dossiq\Service\Access\OrganisationRoles;
 use OCA\Dossiq\Service\CaseTypeStore;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -54,8 +53,6 @@ use Throwable;
  * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
  */
 class CaseTypeRightsRowsListener implements IEventListener {
-	use SearchesObjects;
-
 	/**
 	 * The provider id the case schema's matrix names.
 	 */
@@ -67,21 +64,16 @@ class CaseTypeRightsRowsListener implements IEventListener {
 	public const EVENT = 'OCA\\OpenRegister\\Event\\MatrixRowsRequestedEvent';
 
 	/**
-	 * At most this many organisation roles are read.
-	 */
-	private const ROLE_LIMIT = 500;
-
-	/**
 	 * Constructor.
 	 *
-	 * @param CaseTypeStore            $store           Reads every case type.
-	 * @param SettingsService          $settingsService Knows the register and the role schema.
-	 * @param CaseTypeRightsMatrixRows $translate       Turns rights rows into matrix rows.
-	 * @param LoggerInterface          $logger          The logger.
+	 * @param CaseTypeStore            $store     Reads every case type.
+	 * @param OrganisationRoles        $roles     Reads the organisation roles.
+	 * @param CaseTypeRightsMatrixRows $translate Turns rights rows into matrix rows.
+	 * @param LoggerInterface          $logger    The logger.
 	 */
 	public function __construct(
 		private readonly CaseTypeStore $store,
-		private readonly SettingsService $settingsService,
+		private readonly OrganisationRoles $roles,
 		private readonly CaseTypeRightsMatrixRows $translate,
 		private readonly LoggerInterface $logger,
 	) {
@@ -105,7 +97,7 @@ class CaseTypeRightsRowsListener implements IEventListener {
 		}
 
 		try {
-			$event->addRows($this->translate->rows(caseTypes: $this->currentCaseTypes(), roles: $this->roles()));
+			$event->addRows($this->translate->rows(caseTypes: $this->currentCaseTypes(), roles: $this->roles->allUnscoped()));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the case type rights could not be read; they grant nothing this request',
@@ -132,24 +124,4 @@ class CaseTypeRightsRowsListener implements IEventListener {
 		return $current;
 	}//end currentCaseTypes()
 
-	/**
-	 * The organisation roles, read without RBAC.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function roles(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'organisatie_rol_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		return $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['_limit' => self::ROLE_LIMIT],
-		);
-	}//end roles()
 }//end class

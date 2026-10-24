@@ -166,7 +166,12 @@ class CaseTypeRightsMatrixRows {
 		[$readFiles, $changeFiles] = $this->fileVerbs(right: $right, verbs: $verbs);
 
 		$rows = [];
-		$rows[] = $base + ['actions' => (array_intersect($verbs, self::READ_VERBS) !== [] ? ['read'] : [])];
+		$readVerbs = [];
+		if (array_intersect($verbs, self::READ_VERBS) !== []) {
+			$readVerbs = ['read'];
+		}
+
+		$rows[] = $base + ['actions' => $readVerbs];
 		$rows[] = $inStatuses + ['actions' => array_values(array_intersect(self::EDIT_VERBS, $verbs))];
 		$rows[] = $base + ['actions' => $readFiles];
 		$rows[] = $inStatuses + ['actions' => $changeFiles];
@@ -187,16 +192,7 @@ class CaseTypeRightsMatrixRows {
 	 * @return array{0: array<int, string>, 1: array<int, string>} Read verbs, change verbs.
 	 */
 	private function fileVerbs(array $right, array $verbs): array {
-		if (array_key_exists('documentActions', $right) === true) {
-			$documents = $this->strings(value: $right['documentActions']);
-		} elseif (in_array('delete', $verbs, true) === true) {
-			$documents = ['read', 'add', 'delete'];
-		} elseif (in_array('create', $verbs, true) === true) {
-			$documents = ['read', 'add'];
-		} else {
-			$documents = array_intersect(['read'], $verbs);
-		}
-
+		$documents = $this->documentRights(right: $right, verbs: $verbs);
 		$granted = array_values(array_intersect_key(self::DOCUMENT_VERBS, array_flip($documents)));
 
 		return [
@@ -204,6 +200,30 @@ class CaseTypeRightsMatrixRows {
 			array_values(array_diff($granted, ['readFiles'])),
 		];
 	}//end fileVerbs()
+
+	/**
+	 * What a rights row lets the role do with documents: of read, add, delete.
+	 *
+	 * @param array<string, mixed> $right The rights row.
+	 * @param array<int, string>   $verbs Its case verbs.
+	 *
+	 * @return array<int, string>
+	 */
+	private function documentRights(array $right, array $verbs): array {
+		if (array_key_exists('documentActions', $right) === true) {
+			return $this->strings(value: $right['documentActions']);
+		}
+
+		if (in_array('delete', $verbs, true) === true) {
+			return ['read', 'add', 'delete'];
+		}
+
+		if (in_array('create', $verbs, true) === true) {
+			return ['read', 'add'];
+		}
+
+		return array_values(array_intersect(['read'], $verbs));
+	}//end documentRights()
 
 	/**
 	 * The Nextcloud group of a role named by id or role name, or null.
