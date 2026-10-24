@@ -7587,25 +7587,40 @@
 					},
 					{
 						"id": "side-waiting",
-						"type": "notice",
+						"type": "facts",
 						"title": "What this task holds up",
 						"visibleWhen": {
 							"field": "runUuid",
 							"op": "notEmpty"
 						},
+						"_note": "Board DqTaak Wat deze taak tegenhoudt: the status the case moves to once this task is done (GET /api/cases/{id}/next-status, the case type's next status, read under the user's rights) and since when the flow has waited on it (the task's created date).",
 						"content": {
-							"variant": "info",
-							"icon": "CheckboxMarkedCircleOutline",
-							"title": "A case is waiting on this task",
-							"text": "Complete the task and the case moves on.",
-							"link": {
-								"route": "CaseDetail",
-								"params": {
-									"id": "@object.objectUuid"
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@object.objectUuid/next-status"
+							},
+							"fields": [
+								{
+									"key": "next",
+									"as": "text",
+									"template": "The case only moves to {name} once this task is done."
 								},
-								"label": "@object.subjectLabel",
-								"fallbackLabel": "Open the case"
-							}
+								{
+									"key": "since",
+									"as": "text",
+									"from": "object",
+									"parts": [
+										{
+											"text": "The flow has been waiting on it since"
+										},
+										{
+											"path": "created",
+											"format": "longdate"
+										}
+									],
+									"separator": " ",
+									"suffix": "."
+								}
+							]
 						}
 					},
 					{

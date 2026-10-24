@@ -114,6 +114,8 @@
         "8 weeks": "8 weken",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> van de oudere checklist waaruit dit sjabloon is overgenomen, zodat de overname één keer per bron loopt",
         "> 90 dagen": "> 90 dagen",
+        "The case only moves to {name} once this task is done.": "De zaak gaat pas naar {name} als deze taak klaar is.",
+        "The flow has been waiting on it since": "De flow wacht hierop sinds",
         "_%n case_::_%n cases_": [
             "%n zaak",
             "%n zaken"
