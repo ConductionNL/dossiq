@@ -57,7 +57,7 @@ class ZuiddrechtTenantWaterlandTest extends TestCase {
 			expected: [
 				['plafond' => 5000, 'decisionTypes' => ['vergunning'], 'enforcement' => 'none'],
 				['plafond' => 50000, 'decisionTypes' => ['vergunning', 'bezwaar'], 'enforcement' => 'warning'],
-				['plafond' => null, 'decisionTypes' => ['vergunning', 'bezwaar'], 'enforcement' => 'full'],
+				['decisionTypes' => ['vergunning', 'bezwaar'], 'enforcement' => 'full'],
 			],
 			actual: array_column($records['tenantMandate'], 'terms')
 		);

@@ -33,7 +33,15 @@
 			"group": "dossiq-sensitive",
 			"displayName": "Dossiq gevoelige gegevens",
 			"members": [
-				"thomas"
+				"thomas",
+				"pieter"
+			]
+		},
+		{
+			"group": "dossiq-sociaal-domein",
+			"displayName": "Dossiq sociaal domein",
+			"members": [
+				"fatma"
 			]
 		},
 		{
@@ -268,7 +276,41 @@
 					"city": "{{cast:marja.address.city}}"
 				},
 				"displayName": "{{cast:marja.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"contactAddresses": [
+					{
+						"kind": "correspondence",
+						"type": "email",
+						"value": "{{cast:marja.email}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "persoon-kees-dewit",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"name": {
+					"givenNames": "{{cast:keesdewit.givenName}}",
+					"namePrefix": "{{cast:keesdewit.prefix}}",
+					"surname": "{{cast:keesdewit.familyName}}"
+				},
+				"residence": {
+					"street": "{{cast:keesdewit.address.street}}",
+					"houseNumber": "{{cast:keesdewit.address.number}}",
+					"postcode": "{{cast:keesdewit.address.postcode}}",
+					"city": "{{cast:keesdewit.address.city}}"
+				},
+				"displayName": "{{cast:keesdewit.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht, contactpersoon zonder BSN. Geen echte persoon.",
+				"contactAddresses": [
+					{
+						"kind": "correspondence",
+						"type": "email",
+						"value": "{{cast:keesdewit.email}}"
+					}
+				]
 			}
 		},
 		{
@@ -837,90 +879,6 @@
 			}
 		},
 		{
-			"key": "buurtoost-subsidie-vraag",
-			"register": "dossiq",
-			"schema": "contactmoment",
-			"data": {
-				"notificationChannel": "phone",
-				"direction": "inbound",
-				"startTime": "{{datetime:-41 09:10}}",
-				"endTime": "{{datetime:-41 09:22}}",
-				"durationSeconds": 720,
-				"identificationMethod": "identificatievragen",
-				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
-				"kccEmployeeId": "{{cast:daan.uid}}",
-				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
-				"contact": "{{object:bedrijf-buurtoost.id}}",
-				"nature": "informatieverzoek",
-				"summary": "Mevrouw Verbeek vroeg welke kosten de subsidie dekt. Uitgelegd dat huur van de tent en de geluidsinstallatie meetellen.",
-				"firstTimeFix": false,
-				"visibleToApplicant": true
-			}
-		},
-		{
-			"key": "buurtoost-subsidie-aanvulling",
-			"register": "dossiq",
-			"schema": "contactmoment",
-			"data": {
-				"notificationChannel": "email",
-				"direction": "inbound",
-				"startTime": "{{datetime:-25 13:00}}",
-				"endTime": "{{datetime:-25 13:05}}",
-				"durationSeconds": 300,
-				"identificationMethod": "identificatievragen",
-				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
-				"kccEmployeeId": "{{cast:lars.uid}}",
-				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
-				"contact": "{{object:bedrijf-buurtoost.id}}",
-				"nature": "new_request",
-				"summary": "De begroting is nagestuurd, met de offerte van de tentverhuurder.",
-				"firstTimeFix": false,
-				"visibleToApplicant": true
-			}
-		},
-		{
-			"key": "buurtoost-evenement-uitleg",
-			"register": "dossiq",
-			"schema": "contactmoment",
-			"data": {
-				"notificationChannel": "phone",
-				"direction": "outbound",
-				"startTime": "{{datetime:-110 15:30}}",
-				"endTime": "{{datetime:-110 15:40}}",
-				"durationSeconds": 600,
-				"identificationMethod": "identificatievragen",
-				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
-				"kccEmployeeId": "{{cast:esra.uid}}",
-				"case": "{{object:evenement-buurtfeest-2026.id}}",
-				"contact": "{{object:bedrijf-buurtoost.id}}",
-				"nature": "informatieverzoek",
-				"summary": "Teruggebeld over de eindtijd van de muziek: tot 23.00 uur mag, met een bericht aan de buren.",
-				"firstTimeFix": false,
-				"visibleToApplicant": true
-			}
-		},
-		{
-			"key": "buurtoost-speeltoestel-melding",
-			"register": "dossiq",
-			"schema": "contactmoment",
-			"data": {
-				"notificationChannel": "balie",
-				"direction": "inbound",
-				"startTime": "{{datetime:-300 08:30}}",
-				"endTime": "{{datetime:-300 08:40}}",
-				"durationSeconds": 600,
-				"identificationMethod": "identificatievragen",
-				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
-				"kccEmployeeId": "{{cast:daan.uid}}",
-				"case": "{{object:melding-speeltoestel-oosthavenplein.id}}",
-				"contact": "{{object:bedrijf-buurtoost.id}}",
-				"nature": "report",
-				"summary": "Mevrouw Verbeek meldde aan de balie dat de wipkip los zit. Het speeltoestel is dezelfde dag afgezet.",
-				"firstTimeFix": false,
-				"visibleToApplicant": true
-			}
-		},
-		{
 			"key": "melding-fatima-afspraak",
 			"register": "dossiq",
 			"schema": "plannedAction",
@@ -1018,7 +976,31 @@
 				"parentCaseType": "{{lookup:parent}}",
 				"version": 5,
 				"isDraft": true,
-				"versionDate": "{{date:-2}}"
+				"versionDate": "{{date:-2}}",
+				"rules": [
+					{
+						"id": "welstandsadvies-bij-grote-bouwkosten",
+						"name": "Welstandsadvies bij grote bouwkosten",
+						"enabled": true,
+						"when": {
+							"event": "saved"
+						},
+						"conditions": [
+							{
+								"kind": "fieldCompare",
+								"field": "bouwkosten",
+								"op": "gt",
+								"value": 100000
+							}
+						],
+						"actions": [
+							{
+								"action": "addTask",
+								"title": "Welstandsadvies vragen"
+							}
+						]
+					}
+				]
 			}
 		},
 		{
@@ -1301,6 +1283,90 @@
 					"oosthaven",
 					"speelplaats"
 				]
+			}
+		},
+		{
+			"key": "buurtoost-subsidie-vraag",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "inbound",
+				"startTime": "{{datetime:-41 09:10}}",
+				"endTime": "{{datetime:-41 09:22}}",
+				"durationSeconds": 720,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:daan.uid}}",
+				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Mevrouw Verbeek vroeg welke kosten de subsidie dekt. Uitgelegd dat huur van de tent en de geluidsinstallatie meetellen.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "buurtoost-subsidie-aanvulling",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "email",
+				"direction": "inbound",
+				"startTime": "{{datetime:-25 13:00}}",
+				"endTime": "{{datetime:-25 13:05}}",
+				"durationSeconds": 300,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:lars.uid}}",
+				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "new_request",
+				"summary": "De begroting is nagestuurd, met de offerte van de tentverhuurder.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "buurtoost-evenement-uitleg",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "outbound",
+				"startTime": "{{datetime:-110 15:30}}",
+				"endTime": "{{datetime:-110 15:40}}",
+				"durationSeconds": 600,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:esra.uid}}",
+				"case": "{{object:evenement-buurtfeest-2026.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Teruggebeld over de eindtijd van de muziek: tot 23.00 uur mag, met een bericht aan de buren.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "buurtoost-speeltoestel-melding",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "balie",
+				"direction": "inbound",
+				"startTime": "{{datetime:-300 08:30}}",
+				"endTime": "{{datetime:-300 08:40}}",
+				"durationSeconds": 600,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
+				"kccEmployeeId": "{{cast:daan.uid}}",
+				"case": "{{object:melding-speeltoestel-oosthavenplein.id}}",
+				"contact": "{{object:bedrijf-buurtoost.id}}",
+				"nature": "report",
+				"summary": "Mevrouw Verbeek meldde aan de balie dat de wipkip los zit. Het speeltoestel is dezelfde dag afgezet.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
 			}
 		},
 		{
@@ -2358,12 +2424,607 @@
 			}
 		},
 		{
+			"key": "outbox-molenweg-checklist",
+			"register": "dossiq",
+			"schema": "syncQueue",
+			"data": {
+				"deviceId": "toestel-pieter",
+				"operationType": "submit",
+				"targetEntity": "inspectionChecklistRun",
+				"label": "Molenweg 4, checklist",
+				"queuedAt": "{{datetime:0 10:12}}",
+				"attemptCount": 0,
+				"status": "pending"
+			}
+		},
+		{
+			"key": "outbox-kerkplein-foto",
+			"register": "dossiq",
+			"schema": "syncQueue",
+			"data": {
+				"deviceId": "toestel-pieter",
+				"operationType": "upload",
+				"targetEntity": "inspectionChecklistRun",
+				"label": "Kerkplein 7, foto",
+				"queuedAt": "{{datetime:0 10:52}}",
+				"attemptCount": 0,
+				"status": "pending"
+			}
+		},
+		{
+			"key": "outbox-molenweg-bevinding",
+			"register": "dossiq",
+			"schema": "syncQueue",
+			"data": {
+				"deviceId": "toestel-pieter",
+				"operationType": "update",
+				"targetEntity": "inspectionChecklistRun",
+				"label": "Molenweg 4, bevinding",
+				"queuedAt": "{{datetime:0 10:14}}",
+				"attemptCount": 1,
+				"lastAttemptAt": "{{datetime:0 10:15}}",
+				"lastError": "Tekst gewijzigd, ook op kantoor gewijzigd",
+				"status": "conflict"
+			}
+		},
+		{
+			"key": "inspectie-checklist-brandveiligheid",
+			"register": "dossiq",
+			"schema": "inspectionChecklistTemplate",
+			"data": {
+				"name": "Brandveiligheid",
+				"version": 3,
+				"status": "active",
+				"active": true,
+				"sections": [
+					{
+						"order": 1,
+						"name": "Gebouw en gebruik",
+						"items": [
+							{
+								"order": 1,
+								"label": "Komt het gebruik overeen met de gebruiksmelding?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Vergelijk het gebruik ter plaatse met de melding brandveilig gebruik",
+								"id": "brandveiligheid-1"
+							},
+							{
+								"order": 2,
+								"label": "Is het maximale aantal personen aangegeven?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Bij de hoofdingang, leesbaar",
+								"id": "brandveiligheid-2"
+							},
+							{
+								"order": 3,
+								"label": "Zijn de brandcompartimenten intact?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Let op nieuwe sparingen en openstaande luiken",
+								"id": "brandveiligheid-3"
+							},
+							{
+								"order": 4,
+								"label": "Sluiten de brandwerende deuren zelfstandig?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "if_no",
+								"helpText": "Open de deur helemaal en laat los",
+								"id": "brandveiligheid-4"
+							},
+							{
+								"order": 5,
+								"label": "Zijn doorvoeringen in brandscheidingen afgedicht?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "if_no",
+								"helpText": "Kabels en leidingen door wanden en vloeren",
+								"id": "brandveiligheid-5"
+							},
+							{
+								"order": 6,
+								"label": "Is de brandmeldinstallatie in bedrijf?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Brandmeldcentrale zonder storing of uitschakeling",
+								"id": "brandveiligheid-6"
+							}
+						]
+					},
+					{
+						"order": 2,
+						"name": "Vluchtwegen",
+						"items": [
+							{
+								"order": 7,
+								"label": "Zijn de vluchtwegen vrij?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "if_no",
+								"helpText": "Geen opslag, fietsen of meubilair in gangen en trappenhuizen",
+								"id": "brandveiligheid-7"
+							},
+							{
+								"order": 8,
+								"label": "Werken de noodverlichting en de bordjes?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "if_no",
+								"helpText": "Test met de testschakelaar, kijk of alle bordjes branden",
+								"id": "brandveiligheid-8"
+							},
+							{
+								"order": 9,
+								"label": "Openen de nooduitgangen zonder sleutel?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Van binnenuit, in de vluchtrichting",
+								"id": "brandveiligheid-9"
+							},
+							{
+								"order": 10,
+								"label": "Is de vluchtrouteaanduiding overal zichtbaar?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Vanaf elke verblijfsplek een bordje in zicht",
+								"id": "brandveiligheid-10"
+							},
+							{
+								"order": 11,
+								"label": "Zijn trappen en gangen vrij van brandbare opslag?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-11"
+							},
+							{
+								"order": 12,
+								"label": "Hoeveel nooduitgangen zijn er?",
+								"responseType": "getal",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Tel de uitgangen die uitkomen op de openbare weg",
+								"id": "brandveiligheid-12"
+							}
+						]
+					},
+					{
+						"order": 3,
+						"name": "Blusmiddelen",
+						"items": [
+							{
+								"order": 13,
+								"label": "Hangen de blustoestellen op de aangegeven plek?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-13"
+							},
+							{
+								"order": 14,
+								"label": "Zijn de blustoestellen in het afgelopen jaar gekeurd?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "if_no",
+								"helpText": "Kijk naar het keuringslabel",
+								"id": "brandveiligheid-14"
+							},
+							{
+								"order": 15,
+								"label": "Werkt de brandslanghaspel?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Rol een stuk uit en open de kraan kort",
+								"id": "brandveiligheid-15"
+							},
+							{
+								"order": 16,
+								"label": "Zijn de blusmiddelen bereikbaar en aangeduid?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-16"
+							},
+							{
+								"order": 17,
+								"label": "Hoeveel blustoestellen zijn er?",
+								"responseType": "getal",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-17"
+							},
+							{
+								"order": 18,
+								"label": "Is er een blusdeken in de keuken?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-18"
+							}
+						]
+					},
+					{
+						"order": 4,
+						"name": "Organisatie",
+						"items": [
+							{
+								"order": 19,
+								"label": "Is er een ontruimingsplan aanwezig?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-19"
+							},
+							{
+								"order": 20,
+								"label": "Is er in het afgelopen jaar een ontruimingsoefening gehouden?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-20"
+							},
+							{
+								"order": 21,
+								"label": "Zijn er genoeg bhv'ers aanwezig?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Volgens het bhv-plan, voor de openingstijden",
+								"id": "brandveiligheid-21"
+							},
+							{
+								"order": 22,
+								"label": "Is het logboek brandveiligheid bijgewerkt?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-22"
+							},
+							{
+								"order": 23,
+								"label": "Bijzonderheden",
+								"responseType": "text",
+								"required": false,
+								"photoRequired": "nooit",
+								"helpText": "Wat verder opviel, voor het rapport",
+								"id": "brandveiligheid-23"
+							},
+							{
+								"order": 24,
+								"label": "Foto van de brandmeldcentrale",
+								"responseType": "photo",
+								"required": true,
+								"photoRequired": "altijd",
+								"id": "brandveiligheid-24"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"key": "inspectie-brandveiligheid-pieter",
+			"register": "dossiq",
+			"schema": "inspectionChecklistRun",
+			"data": {
+				"case": "{{object:parkeren-henk.id}}",
+				"template": "{{object:inspectie-checklist-brandveiligheid.id}}",
+				"templateVersion": 3,
+				"templateSnapshot": {
+					"name": "Brandveiligheid",
+					"version": 3,
+					"sections": [
+						{
+							"order": 1,
+							"name": "Gebouw en gebruik",
+							"items": [
+								{
+									"order": 1,
+									"label": "Komt het gebruik overeen met de gebruiksmelding?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Vergelijk het gebruik ter plaatse met de melding brandveilig gebruik",
+									"id": "brandveiligheid-1"
+								},
+								{
+									"order": 2,
+									"label": "Is het maximale aantal personen aangegeven?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Bij de hoofdingang, leesbaar",
+									"id": "brandveiligheid-2"
+								},
+								{
+									"order": 3,
+									"label": "Zijn de brandcompartimenten intact?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Let op nieuwe sparingen en openstaande luiken",
+									"id": "brandveiligheid-3"
+								},
+								{
+									"order": 4,
+									"label": "Sluiten de brandwerende deuren zelfstandig?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "if_no",
+									"helpText": "Open de deur helemaal en laat los",
+									"id": "brandveiligheid-4"
+								},
+								{
+									"order": 5,
+									"label": "Zijn doorvoeringen in brandscheidingen afgedicht?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "if_no",
+									"helpText": "Kabels en leidingen door wanden en vloeren",
+									"id": "brandveiligheid-5"
+								},
+								{
+									"order": 6,
+									"label": "Is de brandmeldinstallatie in bedrijf?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Brandmeldcentrale zonder storing of uitschakeling",
+									"id": "brandveiligheid-6"
+								}
+							]
+						},
+						{
+							"order": 2,
+							"name": "Vluchtwegen",
+							"items": [
+								{
+									"order": 7,
+									"label": "Zijn de vluchtwegen vrij?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "if_no",
+									"helpText": "Geen opslag, fietsen of meubilair in gangen en trappenhuizen",
+									"id": "brandveiligheid-7"
+								},
+								{
+									"order": 8,
+									"label": "Werken de noodverlichting en de bordjes?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "if_no",
+									"helpText": "Test met de testschakelaar, kijk of alle bordjes branden",
+									"id": "brandveiligheid-8"
+								},
+								{
+									"order": 9,
+									"label": "Openen de nooduitgangen zonder sleutel?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Van binnenuit, in de vluchtrichting",
+									"id": "brandveiligheid-9"
+								},
+								{
+									"order": 10,
+									"label": "Is de vluchtrouteaanduiding overal zichtbaar?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Vanaf elke verblijfsplek een bordje in zicht",
+									"id": "brandveiligheid-10"
+								},
+								{
+									"order": 11,
+									"label": "Zijn trappen en gangen vrij van brandbare opslag?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-11"
+								},
+								{
+									"order": 12,
+									"label": "Hoeveel nooduitgangen zijn er?",
+									"responseType": "getal",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Tel de uitgangen die uitkomen op de openbare weg",
+									"id": "brandveiligheid-12"
+								}
+							]
+						},
+						{
+							"order": 3,
+							"name": "Blusmiddelen",
+							"items": [
+								{
+									"order": 13,
+									"label": "Hangen de blustoestellen op de aangegeven plek?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-13"
+								},
+								{
+									"order": 14,
+									"label": "Zijn de blustoestellen in het afgelopen jaar gekeurd?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "if_no",
+									"helpText": "Kijk naar het keuringslabel",
+									"id": "brandveiligheid-14"
+								},
+								{
+									"order": 15,
+									"label": "Werkt de brandslanghaspel?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Rol een stuk uit en open de kraan kort",
+									"id": "brandveiligheid-15"
+								},
+								{
+									"order": 16,
+									"label": "Zijn de blusmiddelen bereikbaar en aangeduid?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-16"
+								},
+								{
+									"order": 17,
+									"label": "Hoeveel blustoestellen zijn er?",
+									"responseType": "getal",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-17"
+								},
+								{
+									"order": 18,
+									"label": "Is er een blusdeken in de keuken?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-18"
+								}
+							]
+						},
+						{
+							"order": 4,
+							"name": "Organisatie",
+							"items": [
+								{
+									"order": 19,
+									"label": "Is er een ontruimingsplan aanwezig?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-19"
+								},
+								{
+									"order": 20,
+									"label": "Is er in het afgelopen jaar een ontruimingsoefening gehouden?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-20"
+								},
+								{
+									"order": 21,
+									"label": "Zijn er genoeg bhv'ers aanwezig?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Volgens het bhv-plan, voor de openingstijden",
+									"id": "brandveiligheid-21"
+								},
+								{
+									"order": 22,
+									"label": "Is het logboek brandveiligheid bijgewerkt?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-22"
+								},
+								{
+									"order": 23,
+									"label": "Bijzonderheden",
+									"responseType": "text",
+									"required": false,
+									"photoRequired": "nooit",
+									"helpText": "Wat verder opviel, voor het rapport",
+									"id": "brandveiligheid-23"
+								},
+								{
+									"order": 24,
+									"label": "Foto van de brandmeldcentrale",
+									"responseType": "photo",
+									"required": true,
+									"photoRequired": "altijd",
+									"id": "brandveiligheid-24"
+								}
+							]
+						}
+					]
+				},
+				"inspector": "{{cast:pieter.uid}}",
+				"assignedInspectorRef": "{{cast:pieter.uid}}",
+				"startedAt": "{{datetime:0 10:47}}",
+				"status": "in_execution",
+				"syncState": "queued",
+				"responses": [
+					{
+						"itemId": "brandveiligheid-1",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 10:49}}",
+						"syncState": "queued"
+					},
+					{
+						"itemId": "brandveiligheid-2",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 10:52}}",
+						"syncState": "queued"
+					},
+					{
+						"itemId": "brandveiligheid-3",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 10:55}}",
+						"syncState": "queued"
+					},
+					{
+						"itemId": "brandveiligheid-4",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 10:58}}",
+						"syncState": "queued"
+					},
+					{
+						"itemId": "brandveiligheid-5",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 11:01}}",
+						"syncState": "queued"
+					},
+					{
+						"itemId": "brandveiligheid-6",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 11:03}}",
+						"syncState": "queued"
+					},
+					{
+						"itemId": "brandveiligheid-7",
+						"value": "nee",
+						"respondedAt": "{{datetime:0 11:06}}",
+						"syncState": "queued",
+						"comment": "Fietsen en kratten in de gang naar de achteruitgang"
+					}
+				],
+				"photos": []
+			}
+		},
+		{
 			"key": "inspectie-vandaag-molenweg",
 			"register": "dossiq",
 			"schema": "fieldInspection",
+			"lookups": {
+				"template": {
+					"schema": "inspectionChecklistTemplate",
+					"where": {
+						"seedKey": "bouwtoezicht-fase-3-oplevering"
+					}
+				}
+			},
 			"data": {
 				"caseRef": "{{object:kapvergunning-molenweg.id}}",
 				"inspectorRef": "{{cast:pieter.uid}}",
+				"checklistTemplateRef": "{{lookup:template}}",
 				"scheduledAt": "{{datetime:0 09:30}}",
 				"status": "synced",
 				"startedAt": "{{datetime:0 09:31}}",
@@ -2378,6 +3039,7 @@
 			"data": {
 				"caseRef": "{{object:parkeren-henk.id}}",
 				"inspectorRef": "{{cast:pieter.uid}}",
+				"checklistTemplateRef": "{{object:inspectie-checklist-brandveiligheid.id}}",
 				"scheduledAt": "{{datetime:0 10:45}}",
 				"status": "in_progress",
 				"startedAt": "{{datetime:0 10:47}}"
@@ -2390,6 +3052,7 @@
 			"data": {
 				"caseRef": "{{object:terras-slagerij.id}}",
 				"inspectorRef": "{{cast:pieter.uid}}",
+				"checklistTemplateRef": "{{object:inspectie-checklist-brandveiligheid.id}}",
 				"scheduledAt": "{{datetime:0 13:15}}",
 				"status": "planned"
 			}
@@ -2466,7 +3129,6 @@
 				"effectiveFrom": "{{datetime:-22 09:00}}",
 				"signedBy": "{{cast:marieke.uid}}",
 				"terms": {
-					"plafond": null,
 					"decisionTypes": [
 						"vergunning",
 						"bezwaar"
@@ -2521,8 +3183,7 @@
 			"data": {
 				"kvkNumber": "00002001",
 				"legalName": "Stichting Kindzorg Drechtsteden",
-				"status": "active",
-				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2532,8 +3193,7 @@
 			"data": {
 				"kvkNumber": "00002002",
 				"legalName": "Groen & Co",
-				"status": "active",
-				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2543,8 +3203,7 @@
 			"data": {
 				"kvkNumber": "00002003",
 				"legalName": "Taxi Drechtstad",
-				"status": "active",
-				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2554,8 +3213,7 @@
 			"data": {
 				"kvkNumber": "00002004",
 				"legalName": "Lumen Infra BV",
-				"status": "active",
-				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2565,8 +3223,7 @@
 			"data": {
 				"kvkNumber": "00002005",
 				"legalName": "Schoon Zuid",
-				"status": "active",
-				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2576,8 +3233,7 @@
 			"data": {
 				"kvkNumber": "00002006",
 				"legalName": "Conduction",
-				"status": "active",
-				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2677,8 +3333,7 @@
 			"data": {
 				"kvkNumber": "00002007",
 				"legalName": "Rivierland Installatietechniek",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2688,8 +3343,7 @@
 			"data": {
 				"kvkNumber": "00002008",
 				"legalName": "Zuidwaard Catering",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2699,8 +3353,7 @@
 			"data": {
 				"kvkNumber": "00002009",
 				"legalName": "Kade & Co Advies",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2710,8 +3363,7 @@
 			"data": {
 				"kvkNumber": "00002010",
 				"legalName": "Polderlicht Elektra",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2721,8 +3373,7 @@
 			"data": {
 				"kvkNumber": "00002011",
 				"legalName": "Oosthaven Drukwerk",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2732,8 +3383,7 @@
 			"data": {
 				"kvkNumber": "00002012",
 				"legalName": "Waalmond ICT",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2743,8 +3393,7 @@
 			"data": {
 				"kvkNumber": "00002013",
 				"legalName": "Linde Facilitair",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2754,8 +3403,7 @@
 			"data": {
 				"kvkNumber": "00002014",
 				"legalName": "Molenwerf Bouw",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2765,8 +3413,7 @@
 			"data": {
 				"kvkNumber": "00002015",
 				"legalName": "Grachtzicht Juridisch Advies",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2776,8 +3423,7 @@
 			"data": {
 				"kvkNumber": "00002016",
 				"legalName": "Dijkveld Beveiliging",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2787,8 +3433,7 @@
 			"data": {
 				"kvkNumber": "00002017",
 				"legalName": "Haventoren Archiefdiensten",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -2798,8 +3443,7 @@
 			"data": {
 				"kvkNumber": "00002018",
 				"legalName": "Zandpad Verhuizingen",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -4105,6 +4749,25 @@
 			}
 		}
 	],
+	"parties": [
+		{
+			"key": "buurtoost-voorzitter-marja",
+			"data": {
+				"objectUuid": "{{object:bedrijf-buurtoost.id}}",
+				"partyUuid": "{{object:persoon-marja.id}}",
+				"role": "chair",
+				"primary": true
+			}
+		},
+		{
+			"key": "buurtoost-secretaris-kees",
+			"data": {
+				"objectUuid": "{{object:bedrijf-buurtoost.id}}",
+				"partyUuid": "{{object:persoon-kees-dewit.id}}",
+				"role": "secretary"
+			}
+		}
+	],
 	"views": [
 		{
 			"key": "zoek-lindelaan",
@@ -4165,8 +4828,17 @@
 			"key": "pieter-wacht-op-inwoner",
 			"data": {
 				"name": "Wacht op inwoner",
-				"description": "Zaken die wachten op de aanvrager",
-				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}, {"user": "{{cast:anouk.uid}}", "mode": "write"}],
+				"description": "Status wacht op inwoner, gedeeld met team Woo",
+				"sharedWith": [
+					{
+						"group": "{{cast:woo-en-informatie.gid}}",
+						"mode": "read"
+					},
+					{
+						"user": "{{cast:anouk.uid}}",
+						"mode": "write"
+					}
+				],
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": false,
 				"query": {
@@ -4178,6 +4850,75 @@
 							"statusHiddenInLists": false,
 							"isDraft": false,
 							"isFinalStatus": false
+						}
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
+		},
+		{
+			"key": "pieter-opgeschort",
+			"data": {
+				"name": "Opgeschort",
+				"description": "Status opgeschort, alle teams",
+				"owner": "{{cast:pieter.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"_related[deadlineInstance][case][status]": "paused"
+					},
+					"overrides": {
+						"lockedFilters": {
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
+		},
+		{
+			"key": "anouk-woo-verzoeken-team",
+			"data": {
+				"name": "Woo-verzoeken team",
+				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}],
+				"owner": "{{cast:anouk.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"caseTypeIdentifier": "woo-verzoek"
+					},
+					"overrides": {
+						"lockedFilters": {
+							"statusHiddenInLists": false,
+							"isDraft": false
 						}
 					},
 					"search": "",

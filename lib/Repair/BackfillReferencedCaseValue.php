@@ -13,9 +13,12 @@
  * What a step writes, and what it leaves alone:
  * - only a case whose referenced row carries a value, and whose stored value
  *   differs from it, which is what makes a second run a no-op;
- * - one field, with the value OpenRegister computes itself. It changes no
- *   status, so it is no transition, and the notifications the case schema
- *   declares have nothing to fire on.
+ * - nothing it supplies itself: the case schema declares a materialised field
+ *   readOnly, and OpenRegister refuses a write that changes one. The step
+ *   re-saves the case unchanged and OpenRegister's save-time calculation
+ *   fills the field, as its rematerialise command does. It changes no status,
+ *   so it is no transition, and the notifications the case schema declares
+ *   have nothing to fire on.
  *
  * It never throws. One row that refuses is logged and counted, and the
  * upgrade goes on. A subclass names the field, the reference and the
@@ -270,8 +273,9 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 	}//end backfill()
 
 	/**
-	 * Write one case's value and report how it went.
+	 * Re-save one case so OpenRegister materialises its value, and report how it went.
 	 *
+	 * The patch is empty: supplying a readOnly value is refused.
 	 * `filled` when the stored case answers the value back. `unconfirmed` when
 	 * the write went through and the answer does not carry it, which is a
 	 * store that dropped the field and worth a line in the output.
@@ -280,7 +284,7 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 	 * @param string $register      The dossiq register.
 	 * @param string $schema        The case schema.
 	 * @param string $uuid          The case.
-	 * @param string $value         The value to write.
+	 * @param string $value         The value the save should materialise.
 	 *
 	 * @return string `filled`, `unconfirmed` or `failed`.
 	 */
@@ -292,7 +296,7 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 				register: $register,
 				schema: $schema,
 				id: $uuid,
-				changes: [$field => $value]
+				changes: []
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

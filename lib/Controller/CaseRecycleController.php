@@ -134,6 +134,7 @@ class CaseRecycleController extends Controller {
 
 		$limit = (int)$this->request->getParam('limit', CaseRecycleService::PAGE_SIZE);
 		$offset = (int)$this->request->getParam('offset', 0);
+		$search = (string)$this->request->getParam('search', '');
 
 		try {
 			// `=== true` and not a cast: IGroupManager::isAdmin() carries no
@@ -145,7 +146,8 @@ class CaseRecycleController extends Controller {
 				limit: $limit,
 				offset: $offset,
 				forUser: $user->getUID(),
-				isAdmin: $isAdmin
+				isAdmin: $isAdmin,
+				search: $search
 			);
 			$page['results'] = array_map(
 				fn (array $row): array => ($row + ['windowNote' => $this->windowNote(row: $row)]),

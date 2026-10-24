@@ -21,7 +21,7 @@
 			id="section-house-style"
 			appId="dossiq"
 			:name="t('dossiq', 'House style')"
-			:columns="3"
+			:columns="4"
 			:wide="true"
 			valuesPath="config"
 			:fields="houseStyleFields" />
@@ -38,13 +38,7 @@
 		<CnSettingsSection
 			id="section-working-days"
 			:actionsInTitle="true"
-			:name="t('dossiq', 'Working days and holidays')"
-			:description="
-				t(
-					'dossiq',
-					'Red: a holiday or closing day. Terms do not count these days. These days apply to every app that uses the national calendar.',
-				)
-			">
+			:name="t('dossiq', 'Working days and holidays')">
 			<template #actions>
 				<NcButton variant="secondary" data-testid="dossiq-working-days-add" @click="$refs.workingCalendar.openAdd()">
 					<template #icon>
@@ -81,7 +75,7 @@
 				:description="
 					t(
 						'dossiq',
-						'Choose how much the menu shows. Simple is the default.',
+						'How much the menu shows. Simple is the default.',
 					)
 				"
 				valuesPath="config"
@@ -100,14 +94,7 @@
 				:description="
 					t(
 						'dossiq',
-						'The account background jobs save as, with the access checks of OpenRegister on.',
-					)
-				"
-				:detailedDescription="
-					t(
-						'dossiq',
-						'Background jobs, such as the reminders on suspended terms, have no signed-in user. They save as this account, which joins the group {group}. Pick an account that nobody signs in with.',
-						{ group: backgroundServiceGroup },
+						'The account Dossiq works as while nobody is signed in, such as for term monitoring and fetching mail.',
 					)
 				"
 				url="/apps/dossiq/api/settings/background-service-account"
@@ -123,14 +110,14 @@
 				:description="
 					t(
 						'dossiq',
-						'Shared functional mailbox ingest (IMAP) and transport for case correspondence. Outbound mail and per-user accounts are owned by Nextcloud Mail.',
+						'Mail to the shared mailbox comes in as a case or on an existing case.',
 					)
 				"
 				url="/apps/dossiq/api/settings/email"
 				:columns="2"
 				:saveAll="true"
 				:hintsToggle="true"
-				:saveLabel="t('dossiq', 'Save mailbox settings')"
+				:saveLabel="t('dossiq', 'Save')"
 				:savedMessage="t('dossiq', 'Mailbox settings saved.')"
 				:fields="sharedMailboxFields" />
 
@@ -140,7 +127,7 @@
 				:description="
 					t(
 						'dossiq',
-						'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support',
+						'Summarise, classify and anonymise with a language model you choose.',
 					)
 				"
 				url="/apps/dossiq/api/ai/settings"
@@ -156,12 +143,12 @@
 				:description="
 					t(
 						'dossiq',
-						'Adviesaanvragen: advisory body registry, mandatory-gate config, n8n webhook contracts and external response settings.',
+						'Standards for advice requests to other departments and organisations.',
 					)
 				"
 				docUrl="https://dossiq.conduction.nl/docs/n8n-consultation-workflows"
 				valuesPath="config"
-				:saveLabel="t('dossiq', 'Save consultation settings')"
+				:saveLabel="t('dossiq', 'Save')"
 				:fields="consultationFields" />
 
 			<CnSettingsSection
@@ -170,7 +157,7 @@
 				:description="
 					t(
 						'dossiq',
-						'The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.',
+						'Cases, documents and contacts in the Dossiq search bar.',
 					)
 				"
 				:loading="!storesReady">
@@ -366,7 +353,8 @@
 			<CnSettingsFieldsSection
 				id="section-kadaster"
 				appId="dossiq"
-				:name="t('dossiq', 'Kadaster (BRK) and WOZ')"
+				:name="t('dossiq', 'Set up Kadaster (BRK) and WOZ')"
+				:openedFrom="t('dossiq', 'Kadaster (BRK) and WOZ')"
 				:description="
 					t(
 						'dossiq',
@@ -661,7 +649,6 @@ import { initializeStores } from '../../store/store.js'
 import {
 	aiFields,
 	archivalFields,
-	BACKGROUND_SERVICE_GROUP,
 	backgroundAccountFields,
 	CONNECTION_STATUS_TONES,
 	consultationFields,
@@ -876,6 +863,9 @@ export default {
 					label: this.t('dossiq', 'Link'),
 					cellClass: 'cn-cell--strong',
 					formatter: 'translated',
+					// A row opens its settings card on this page.
+					widget: 'link',
+					widgetProps: { href: '{settingsUrl}', target: '_self' },
 					secondary: (row) =>
 						row.description ? this.t('dossiq', row.description) : '',
 				},
@@ -894,6 +884,7 @@ export default {
 						'unconfigured',
 						'unavailable',
 						'simulated',
+						'disabled',
 						'error',
 					],
 
@@ -902,6 +893,7 @@ export default {
 						unconfigured: 'Off',
 						unavailable: 'Not available',
 						simulated: 'Simulated',
+						disabled: 'Off',
 						error: 'Error',
 					},
 				},
@@ -1152,16 +1144,6 @@ export default {
 		},
 
 		/**
-		 * The group the background service account joins.
-		 *
-		 * @return {string} The group id.
-		 * @spec openspec/specs/admin-settings/spec.md
-		 */
-		backgroundServiceGroup() {
-			return BACKGROUND_SERVICE_GROUP
-		},
-
-		/**
 		 * The organisation's working calendar in OpenRegister: the default
 		 * calendar dossiq's terms count on (`nl-national`).
 		 *
@@ -1178,6 +1160,13 @@ export default {
 
 				// The section's title row draws Add day.
 				addButton: false,
+
+				// DqInstellingenAlgemeen says what the red days mean under
+				// the calendar, not under the card title.
+				footnote: this.t(
+					'dossiq',
+					'Red: a holiday or closing day. Terms do not count these days. One calendar for the whole organisation.',
+				),
 			}
 		},
 

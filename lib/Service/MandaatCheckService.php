@@ -187,7 +187,33 @@ class MandaatCheckService {
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function getApplicableMandaten(string $decisionType, string $caseType, ?DateTimeImmutable $date = null): array {
-		$date = ($date ?? new DateTimeImmutable());
+		$out = [];
+		foreach ($this->activeRows(date: ($date ?? new DateTimeImmutable()), context: ['decisionType' => $decisionType, 'caseType' => $caseType]) as $row) {
+			if ($this->matchesTypeTerms(row: $row, decisionType: $decisionType, caseType: $caseType) === false) {
+				continue;
+			}
+
+			$out[] = $row;
+		}
+
+		return $out;
+	}//end getApplicableMandaten()
+
+	/**
+	 * The active mandates whose window covers the date, whatever they apply to.
+	 *
+	 * Read with the caller's own rights.
+	 *
+	 * @param DateTimeImmutable    $date    The date.
+	 * @param array<string, mixed> $context What the caller asked about, for the log.
+	 *
+	 * @return array<int, array<string, mixed>> The mandates.
+	 *
+	 * @throws RefusedException When the mandate register could not be read at all.
+	 *
+	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
+	 */
+	public function activeRows(DateTimeImmutable $date, array $context): array {
 		$dateStr = $date->format('Y-m-d');
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
@@ -206,7 +232,7 @@ class MandaatCheckService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq MandaatCheckService: mandate register could not be read',
-				['decisionType' => $decisionType, 'caseType' => $caseType, 'exception' => $e->getMessage()]
+				$context + ['exception' => $e->getMessage()]
 			);
 			// An empty list here made isAuthorized() answer "niet bevoegd",
 			// which is a statement about the user. An unreadable register is
@@ -219,21 +245,13 @@ class MandaatCheckService {
 			);
 		}//end try
 
-		$out = [];
-		foreach ($rows as $row) {
-			if ($this->isRowTemporallyValid(row: $row, dateStr: $dateStr) === false) {
-				continue;
-			}
-
-			if ($this->matchesTypeTerms(row: $row, decisionType: $decisionType, caseType: $caseType) === false) {
-				continue;
-			}
-
-			$out[] = $row;
-		}
-
-		return $out;
-	}//end getApplicableMandaten()
+		return array_values(
+			array_filter(
+				$rows,
+				fn (array $row): bool => $this->isRowTemporallyValid(row: $row, dateStr: $dateStr)
+			)
+		);
+	}//end activeRows()
 
 	/**
 	 * Check whether a row's validFrom/validUntil window covers the given date.

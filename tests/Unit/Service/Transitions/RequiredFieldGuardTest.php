@@ -25,7 +25,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
+use OCA\Dossiq\Service\Transitions\SensitiveAnswerCheck;
+use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -173,4 +176,42 @@ class RequiredFieldGuardTest extends TestCase {
 
 		self::assertTrue($result->passed);
 	}//end testATopLevelValueStillWins()
+	/**
+	 * A guard on a sensitive field reads the case's sensitive answers as the
+	 * system, for a mover who cannot read them, and says only whether the
+	 * field is answered.
+	 *
+	 * @return void
+	 */
+	public function testASensitiveAnswerIsCheckedAsTheSystemWithoutShowingIt(): void {
+		$objects = new InMemoryRegister();
+		$objects->seed(
+			schema: 'case',
+			uuid: 'case-1',
+			row: [
+				'id' => 'case-1',
+				'sensitiveProperties' => [
+					['propertyDefinition' => 'd-1', 'name' => 'inkomenstoets', 'value' => '{"income":480}'],
+					['propertyDefinition' => 'd-2', 'name' => 'vermogenstoets', 'value' => ''],
+				],
+			]
+		);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ['register' => 'dossiq', 'case_schema' => 'case'][$key] ?? $default
+		);
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n(), sensitive: new SensitiveAnswerCheck(settings: $settings));
+		// The mover's own read of the case: the server stripped the sensitive answers.
+		$asTheMoverReadsIt = ['id' => 'case-1', 'properties' => []];
+
+		$answered = $guard->evaluate(guardConfig: ['field' => 'inkomenstoets'], case: $asTheMoverReadsIt, userId: 'klantmanager');
+		$empty = $guard->evaluate(guardConfig: ['field' => 'vermogenstoets'], case: $asTheMoverReadsIt, userId: 'klantmanager');
+
+		self::assertTrue(condition: $answered->passed);
+		self::assertSame(expected: ['field' => 'inkomenstoets'], actual: $answered->details);
+		self::assertFalse(condition: $empty->passed);
+		self::assertStringNotContainsString(needle: '480', haystack: json_encode([$answered->details, $empty->details, $empty->failureMessage]));
+		self::assertNotSame(expected: [], actual: $objects->unscopedReads, message: 'read as the system');
+	}//end testASensitiveAnswerIsCheckedAsTheSystemWithoutShowingIt()
 }//end class

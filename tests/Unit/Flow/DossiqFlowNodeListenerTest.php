@@ -26,6 +26,8 @@ use OCA\Dossiq\Flow\DossiqAskPersonNode;
 use OCA\Dossiq\Flow\DossiqEnsureCommitteeNode;
 use OCA\Dossiq\Flow\DossiqTxSetStatusNode;
 use OCA\Dossiq\Flow\DossiqTxBesluitvormingPublishNode;
+use OCA\Dossiq\Flow\DossiqTxSendMessageNode;
+use OCA\Dossiq\Flow\DossiqTxSetCaseAnswerNode;
 use OCA\Dossiq\Flow\DossiqTxSuspendTermNode;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -58,6 +60,8 @@ class DossiqFlowNodeListenerTest extends TestCase {
         DossiqEnsureCommitteeNode::class => 'dossiq.ensureCommittee',
         DossiqTxBesluitvormingPublishNode::class => 'dossiq.besluitvormingPublish',
         DossiqTxSuspendTermNode::class => 'dossiq.suspendTerm',
+        DossiqTxSendMessageNode::class => 'dossiq.sendMessage',
+        DossiqTxSetCaseAnswerNode::class => 'dossiq.setCaseAnswer',
     ];
 
 

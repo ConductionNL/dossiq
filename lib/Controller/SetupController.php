@@ -168,10 +168,10 @@ class SetupController extends Controller {
 		// OpenRegister is the manifest's dependency gate, not a wizard step.
 		$completed = true;
 
-		// The dwangsom secret is no wizard step: it is set under admin settings
-		// > Financial integration. Its go-live flag is reported below.
-		$dwangsomActive = $this->config(key: 'dwangsom_uitbetaling_schema') !== '';
-		$secretConfigured = $this->config(key: 'dwangsom_callback_secret') !== '';
+		// The payout callback secret is no wizard step: it is set under admin
+		// settings > Financial integration. Its go-live flag is reported below.
+		$payoutActive = $this->config(key: 'payout_schema') !== '';
+		$secretConfigured = $this->config(key: 'payout_callback_secret') !== '';
 		// Read BEFORE the completion marker is written below, so the visit that
 		// finishes the wizard still offers the case types step once.
 		$wizardDoneBefore = $this->config(key: 'setup_completed_version') === (string)self::SETUP_VERSION;
@@ -210,7 +210,7 @@ class SetupController extends Controller {
 			$response['dismissed'] = (int)$dismissedAt;
 		}
 
-		// Financial-integration (dwangsom uitbetaling) capability: surface a
+		// Financial-integration (payout) capability: surface a
 		// missing callback secret before go-live rather than after an
 		// incident (enforce-dwangsom-callback-signature spec).
 		//
@@ -218,10 +218,10 @@ class SetupController extends Controller {
 		// anywhere in the frontend — it was computed, serialised and dropped on
 		// the floor on every request, so the incident it exists to prevent was
 		// never actually being prevented. It is kept for any API consumer that
-		// reads it. It answers a different question from the step: the step
+		// reads it, under its original name. It answers a different question from the step: the step
 		// says whether the wizard still has to ASK, this says whether a secret
 		// IS configured, and only the second one is the go-live warning.
-		if ($dwangsomActive === true) {
+		if ($payoutActive === true) {
 			$response['dwangsom_callback_secret_configured'] = $secretConfigured;
 		}
 

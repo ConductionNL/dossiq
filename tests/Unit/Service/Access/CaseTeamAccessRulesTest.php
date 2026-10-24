@@ -66,6 +66,10 @@ class CaseTeamAccessRulesTest extends TestCase {
 		$rule = ['group' => 'vergunningen', 'match' => ['caseType' => ['$in' => ['ct-permit']]]];
 		$this->assertContains($rule, $block['read']);
 		$this->assertContains($rule, $block['update']);
+		foreach (['readFiles', 'addFiles', 'deleteFiles'] as $fileVerb) {
+			$this->assertContains($rule, $block[$fileVerb], 'a team keeps what it could do with the files: ' . $fileVerb);
+		}
+
 		$this->assertSame(['admin'], $block['delete']);
 		$this->assertSame(self::SHIPPED['create'], $block['create']);
 		$this->assertSame(self::SHIPPED['roles'], $block['roles']);

@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Service\Doorlooptijd\CaseEnricher;
 use OCA\Dossiq\Service\Doorlooptijd\CaseTypeThroughputCalculator;
 use OCA\Dossiq\Service\Doorlooptijd\DeadlineComplianceCalculator;
+use OCA\Dossiq\Service\Doorlooptijd\NormAverage;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -56,6 +57,7 @@ class DoorlooptijdService {
 	 * @param CaseEnricher $caseEnricher Derives the `_`-prefixed working fields.
 	 * @param DeadlineComplianceCalculator $complianceCalculator KPI bands, on-time %, monthly compliance, RAG list.
 	 * @param CaseTypeThroughputCalculator $throughputCalculator Average closed-case throughput per case-type.
+	 * @param NormAverage                  $norms                The average term of the recently closed cases.
 	 *
 	 * @return void
 	 */
@@ -64,6 +66,7 @@ class DoorlooptijdService {
 		private readonly CaseEnricher $caseEnricher,
 		private readonly DeadlineComplianceCalculator $complianceCalculator,
 		private readonly CaseTypeThroughputCalculator $throughputCalculator,
+		private readonly NormAverage $norms = new NormAverage(),
 	) {
 	}//end __construct()
 
@@ -114,6 +117,8 @@ class DoorlooptijdService {
 			'summary' => [
 				...$this->complianceCalculator->computeSummary(cases: $enriched, period: $period, granularity: $granularity),
 				'withinNormByCaseType' => $this->throughputCalculator->computeWithinNormByCaseType(cases: $enriched, caseTypes: $caseTypes),
+				// The norm line of the processing-time chart.
+				'normDays' => $this->norms->averageOf(cases: $enriched),
 			],
 		];
 	}//end getMetrics()

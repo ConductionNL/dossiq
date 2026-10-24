@@ -134,7 +134,7 @@ describe('where the organisations index sits', () => {
 
 	it('names an icon src/icons.js registers (gate-60)', () => {
 		const entry = manifest.menu.find((m) => m.id === 'OrganisationsMenu')
-		expect(entry.icon).toBe('OfficeBuildingOutline')
+		expect(entry.icon).toBe('Domain')
 		expect(iconsSource).toContain(`\n\t${entry.icon},`)
 	})
 

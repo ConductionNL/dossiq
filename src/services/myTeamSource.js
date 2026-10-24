@@ -34,6 +34,40 @@ export async function fetchMyTeam() {
 }
 
 /**
+ * Read the current user's team name, for `{myTeam}` in the team queue's line
+ * ("· team Woo en informatie", DqTeamwachtrij).
+ *
+ * @return {Promise<string|null>} The team's name, or null for no team or an unreadable team.
+ *
+ * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
+ */
+export async function fetchMyTeamName() {
+	let data
+	try {
+		({ data } = await axios.get(generateUrl('/apps/dossiq/api/me/team')))
+	} catch {
+		return null
+	}
+	return data && typeof data.name === 'string' && data.name !== '' ? data.name : null
+}
+
+/**
+ * Hand the name loader to the library, when it offers the hook.
+ *
+ * @param {Function|undefined} register The library's `registerMyTeamNameSource`.
+ * @return {boolean} Whether it was registered.
+ *
+ * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
+ */
+export function installMyTeamNameSource(register) {
+	if (typeof register !== 'function') {
+		return false
+	}
+	register(fetchMyTeamName)
+	return true
+}
+
+/**
  * Hand the loader to the library, when it offers the hook.
  *
  * @param {Function|undefined} register The library's `registerMyTeamSource`.

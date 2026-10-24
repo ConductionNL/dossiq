@@ -46,7 +46,7 @@ class SignedPayoutCallback {
 	 *
 	 * @var string
 	 */
-	public const SECRET_KEY = 'dwangsom_callback_secret';
+	public const SECRET_KEY = MoneyConfigKeys::PAYOUT_CALLBACK_SECRET;
 
 	/**
 	 * The header the finance app signs with.
@@ -175,11 +175,16 @@ class SignedPayoutCallback {
 	}//end read()
 
 	/**
-	 * The configured secret.
+	 * The configured secret, from the legacy key while the current one is missing.
 	 *
 	 * @return string The secret, or empty.
 	 */
 	private function secret(): string {
-		return trim($this->appConfig->getValueString(Application::APP_ID, self::SECRET_KEY, ''));
+		$secret = trim($this->appConfig->getValueString(Application::APP_ID, self::SECRET_KEY, ''));
+		if ($secret === '' && $this->appConfig->hasKey(Application::APP_ID, self::SECRET_KEY) === false) {
+			$secret = trim($this->appConfig->getValueString(Application::APP_ID, MoneyConfigKeys::LEGACY_KEYS[self::SECRET_KEY], ''));
+		}
+
+		return $secret;
 	}//end secret()
 }//end class

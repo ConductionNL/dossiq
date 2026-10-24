@@ -144,7 +144,7 @@ class ProcessingTimeSeriesPublisher {
 				'title'     => $this->l10n->t('Monthly SLA Trend'),
 				'chartType' => 'line',
 				'labels'    => array_column($trend, 'month'),
-				'datasets'  => [['name' => $this->l10n->t('SLA Compliance %'), 'data' => array_column($trend, 'rate')]],
+				'datasets'  => [['name' => $this->l10n->t('SLA Compliance %%'), 'data' => array_column($trend, 'rate')]],
 			];
 		}
 

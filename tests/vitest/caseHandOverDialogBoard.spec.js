@@ -44,4 +44,11 @@ describe('the Hand to another team dialog against board DqOverdragen', () => {
 		expect(found[0].props.config.eyebrow).toBe('Hand over · {identifier}')
 		expect(nl['Hand over · {identifier}']).toBe('Overdragen · {identifier}')
 	})
+
+	it('names the applicant in the doorzending note, with the plain note when the case has none', () => {
+		const [toggle] = actionsWithId(manifest, 'case-hand-over')[0].props.config.toggles
+		expect(toggle.note).toBe('{initiatorDisplayName} then gets a message that the case moves to another team, and to which. Leave it off for a move inside the organisation.')
+		expect(nl[toggle.note]).toBe('{initiatorDisplayName} krijgt dan een bericht dat de zaak naar een ander team gaat en naar welk. Bij een interne verschuiving laat u dit uit.')
+		expect(nl[toggle.noteFallback]).toBe('De verzoeker krijgt dan een bericht dat de zaak naar een ander team gaat en naar welk. Bij een interne verschuiving laat u dit uit.')
+	})
 })

@@ -56,6 +56,24 @@
 				</div>
 
 				<div class="setting-row">
+					<NcSelect
+						v-model="draft.moment"
+						:inputLabel="t('dossiq', 'Moment')"
+						:options="momentOptions"
+						:reduce="(option) => option.value"
+						label="label" />
+				</div>
+
+				<div class="setting-row">
+					<NcSelect
+						v-model="draft.channel"
+						:inputLabel="t('dossiq', 'Channel')"
+						:options="channelOptions"
+						:reduce="(option) => option.value"
+						label="label" />
+				</div>
+
+				<div class="setting-row">
 					<label for="etpl-subject">{{ t('dossiq', 'Subject') }}</label>
 					<NcInputField
 						id="etpl-subject"
@@ -139,6 +157,7 @@ import {
 	NcInputField,
 	NcLoadingIcon,
 	NcNoteCard,
+	NcSelect,
 	NcTextArea,
 } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
@@ -146,6 +165,7 @@ import {
 	collectUnresolved,
 	renderPreview,
 } from '../../../utils/emailTemplatePreview.js'
+import { MESSAGE_CHANNELS, MESSAGE_MOMENTS } from '../../../utils/messageDelivery.js'
 
 /**
  * Per-case-type email template CRUD with click-to-insert variables and a
@@ -162,6 +182,7 @@ export default {
 		NcInputField,
 		NcLoadingIcon,
 		NcNoteCard,
+		NcSelect,
 		NcTextArea,
 		Plus,
 	},
@@ -181,7 +202,7 @@ export default {
 			activeField: 'body',
 			templates: [],
 			variables: {},
-			draft: { id: null, name: '', subject: '', body: '' },
+			draft: { id: null, name: '', subject: '', body: '', moment: null, channel: null },
 		}
 	},
 
@@ -192,6 +213,26 @@ export default {
 				'dossiq',
 				'Per-case-type email templates with placeholder variables. Editing a template creates a new version. Old versions are retained. Templates prefill a Nextcloud Mail draft; Dossiq never sends mail itself.',
 			)
+		},
+
+		/**
+		 * The case events a message can go out on, translated.
+		 *
+		 * @return {Array<{value: string, label: string}>} The options.
+		 * @spec openspec/changes/case-type-messages-moment-channel/specs/case-types/spec.md
+		 */
+		momentOptions() {
+			return MESSAGE_MOMENTS.map((option) => ({ value: option.value, label: t('dossiq', option.label) }))
+		},
+
+		/**
+		 * The ways a message reaches the applicant, translated.
+		 *
+		 * @return {Array<{value: string, label: string}>} The options.
+		 * @spec openspec/changes/case-type-messages-moment-channel/specs/case-types/spec.md
+		 */
+		channelOptions() {
+			return MESSAGE_CHANNELS.map((option) => ({ value: option.value, label: t('dossiq', option.label) }))
 		},
 
 		/** @spec openspec/specs/case-email-integration/spec.md */
@@ -298,7 +339,7 @@ export default {
 
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		startCreate() {
-			this.draft = { id: null, name: '', subject: '', body: '' }
+			this.draft = { id: null, name: '', subject: '', body: '', moment: null, channel: null }
 			this.editing = true
 			this.activeField = 'body'
 		},
@@ -313,6 +354,8 @@ export default {
 				name: tpl.name || '',
 				subject: tpl.subject || '',
 				body: tpl.body || '',
+				moment: tpl.moment || null,
+				channel: tpl.channel || null,
 			}
 			this.editing = true
 			this.activeField = 'body'
@@ -357,6 +400,8 @@ export default {
 						name: this.draft.name,
 						subject: this.draft.subject,
 						body: this.draft.body,
+						moment: this.draft.moment || null,
+						channel: this.draft.channel || null,
 					}),
 				})
 				this.editing = false

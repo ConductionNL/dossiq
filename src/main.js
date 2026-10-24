@@ -37,7 +37,7 @@ import registry from './registry.js'
 import { installCaseLiveUpdates } from './services/caseLiveUpdates.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
-import { installMyTeamSource } from './services/myTeamSource.js'
+import { installMyTeamNameSource, installMyTeamSource } from './services/myTeamSource.js'
 import { useObjectStore } from './store/modules/object.js'
 import { withConfiguredLenses } from './utils/configLenses.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
@@ -336,6 +336,7 @@ installCaseLiveUpdates(router, () => useObjectStore())
 // The team the team queue opens on (@myTeam). Read through the namespace so
 // a library without the hook does not stop the app from starting.
 installMyTeamSource(ncVue.registerMyTeamSource)
+installMyTeamNameSource(ncVue.registerMyTeamNameSource)
 
 tryLoadTranslations()
 

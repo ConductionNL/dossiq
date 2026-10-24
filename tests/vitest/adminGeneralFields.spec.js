@@ -38,7 +38,7 @@ describe('the general admin sections', () => {
 
 	it.each(
 		fields
-			.filter((field) => !field.url && !field.readOnly)
+			.filter((field) => !field.url && !field.readOnly && field.type !== 'note')
 			.map((field) => [field.key]),
 	)(
 		'%s, saved through dossiq settings, is a setting the endpoint saves',
@@ -71,10 +71,30 @@ describe('the general admin sections', () => {
 		expect(configKeys).toContain("'municipality_city',")
 	})
 
-	it('only points at the CORS setting, which the portal owns', () => {
+	it('only points at the CORS setting, which the portal owns, as a line of text', () => {
 		const cors = fields.find((field) => field.key === 'allowedWebsites')
-		expect(cors.readOnly).toBe(true)
+		expect(cors.type).toBe('note')
+		expect(cors.text).toBe('Set in the portal app (portaliq) and in Nextcloud, not here.')
 		expect(configKeys).not.toContain("'allowedWebsites',")
+	})
+})
+
+/**
+ * DqInstellingenAlgemeen draws Huisstijl as one row of four (organisation,
+ * city, app name, theme) with the logo under it, unlabelled beside its
+ * "Ander logo" button.
+ */
+describe('Huisstijl as the board', () => {
+	it('orders the fields as the board and keeps the logo label for screen readers only', () => {
+		const style = houseStyleFields(t)
+		expect(style.map((field) => field.key)).toEqual(['organisationName', 'municipality_city', 'staff_app_name', 'theme', 'logo'])
+		expect(style.find((field) => field.key === 'logo').hideLabel).toBe(true)
+	})
+
+	it('lays the card out in four columns', () => {
+		const admin = fs.readFileSync(path.join(ROOT, 'src', 'views', 'settings', 'AdminRoot.vue'), 'utf8')
+		const card = admin.slice(admin.indexOf('id="section-house-style"'), admin.indexOf(':fields="houseStyleFields"'))
+		expect(card).toContain(':columns="4"')
 	})
 })
 
