@@ -77,13 +77,15 @@ describe('the retired re-integration addresses', () => {
 	})
 })
 
-describe('the re-integration menu entry', () => {
-	it('stays where it was and opens the view', () => {
-		// Ungated like the view it opens: who reads a re-integration case is
-		// the case's own access (handling group, confidential), not the menu.
-		const entry = manifest.menu.find((item) => item.id === 'ReIntegratieTrajectenMenu')
-		expect(entry).toMatchObject({ route: 'Cases', query: { savedView: VIEW }, section: 'settings' })
-		expect(entry.permission).toBeUndefined()
+describe('re-integration as a view like Woo', () => {
+	it('has no page and no menu entry of its own (Ruben, 23 Oct)', () => {
 		expect(manifest.pages.find((page) => page.id === 'ReIntegratieTrajecten')).toBeUndefined()
+		expect(manifest.menu.find((item) => item.id === 'ReIntegratieTrajectenMenu')).toBeUndefined()
+	})
+
+	it('is a secondary default view with an icon and a description, as the Woo requests view', () => {
+		const views = manifest.pages.find((page) => page.id === 'Cases').config.defaultSavedViews
+		const view = views.find((entry) => entry.slug === 're-integration-pathways')
+		expect(view).toMatchObject({ icon: 'BriefcaseAccountOutline', description: 'Case type re-integration pathway', secondary: true })
 	})
 })

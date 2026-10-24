@@ -1420,6 +1420,7 @@ OC.L10N.register(
         "Case type mappings": "Zaaktypekoppelingen",
         "Case type not found": "Zaaktype niet gevonden",
         "Case type parts": "Onderdelen van het zaaktype",
+        "Case type re-integration pathway": "Zaaktype re-integratietraject",
         "Case type reference": "Zaaktypereferentie",
         "Case type schema": "Zaaktypeschema",
         "Case type slug (e.g. wmo-melding, omgevingsvergunning)": "Slug van het zaaktype (bijvoorbeeld wmo-melding, omgevingsvergunning)",
