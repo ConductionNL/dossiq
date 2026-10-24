@@ -10741,6 +10741,7 @@ OC.L10N.register(
         "Who chairs the hearing (voorzitter)": "Who chairs the hearing (voorzitter)",
         "Who completed it.": "Who completed it.",
         "Who declared the rule.": "Who declared the rule.",
+        "Who does the work and who answers for it": "Who does the work and who answers for it",
         "Who drew the sample.": "Who drew the sample.",
         "Who else is here": "Who else is here",
         "Who has had this case in hand": "Who has had this case in hand",
