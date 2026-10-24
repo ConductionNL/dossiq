@@ -652,6 +652,8 @@ describe('the landing page', () => {
 		}
 		expect(widget('followed-cases').content.ruleAbove).toBe(true)
 		expect(widget('stalled-cases').content.ruleAbove).toBe(true)
+		// DqMijnWerk Verder werken too (design-system #393).
+		expect(widget('simple-continue').content.ruleAbove).toBe(true)
 	})
 
 	it('continues where the handler left off, over the recent lens the full dashboard already uses', () => {

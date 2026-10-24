@@ -812,6 +812,7 @@
 										"caseType"
 									],
 									"presentation": "rows",
+									"ruleAbove": true,
 									"title": "{title}",
 									"meta": {
 										"parts": [
