@@ -25,12 +25,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Order and types of the Zuiddrecht fragment's objects.
  *
  * @spec openspec/changes/example-set-installs-as-written/specs/example-set-installs-as-written/spec.md#requirement-the-zuiddrecht-fragment-passes-the-install-check
+ *
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class ZuiddrechtFragmentInstallsTest extends TestCase {
 
@@ -87,6 +90,36 @@ class ZuiddrechtFragmentInstallsTest extends TestCase {
 
 		$this->assertSame(expected: [], actual: $wrong);
 	}//end testEveryValueHasTheTypeItsSchemaDeclares()
+
+	/**
+	 * Every field a dossiq object writes is a property its schema declares, with register.d merged: OpenRegister
+	 * drops an undeclared key on save, and the install reports it as written but not kept (:8080, 24 Oct: 18
+	 * supplier descriptions).
+	 *
+	 * @return void
+	 */
+	public function testEveryFieldIsAPropertyItsSchemaDeclares(): void {
+		$settings = __DIR__.'/../../../lib/Settings';
+		[$merged] = (new RegisterFragmentMerger())->merge(
+			base: json_decode((string)file_get_contents($settings.'/dossiq_register.json'), true),
+			fragmentDir: $settings.'/register.d'
+		);
+		$schemas    = $merged['components']['schemas'];
+		$undeclared = [];
+		foreach ($this->fragment()['objects'] as $object) {
+			if (($object['register'] ?? '') !== 'dossiq' || isset($schemas[$object['schema']]) === false) {
+				continue;
+			}
+
+			foreach (array_keys($object['data'] ?? []) as $field) {
+				if (isset($schemas[$object['schema']]['properties'][$field]) === false) {
+					$undeclared[] = $object['key'].'.'.$field;
+				}
+			}
+		}
+
+		$this->assertSame(expected: [], actual: $undeclared);
+	}//end testEveryFieldIsAPropertyItsSchemaDeclares()
 
 	/**
 	 * The social-domain group has a member who is not in the sensitive-data group, so a walkthrough can show what a
