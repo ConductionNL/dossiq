@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.153.0",
+	"version": "2.154.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -543,6 +543,20 @@
 		}
 	},
 	"$defs": {
+		"recordListFooterAction": {
+			"type": "object",
+			"additionalProperties": true,
+			"required": ["label"],
+			"properties": {
+				"label": { "type": "string", "minLength": 1 },
+				"icon": { "type": "string", "minLength": 1 },
+				"note": { "type": "string" },
+				"wide": { "type": "boolean" },
+				"visibleWhen": { "$ref": "#/$defs/visibleWhen" },
+				"disabledWhen": { "$ref": "#/$defs/visibleWhen" },
+				"disabledReason": { "type": "string" }
+			}
+		},
 		"fieldOverride": {
 			"type": "object",
 			"additionalProperties": true,
@@ -2361,16 +2375,11 @@
 										"type": "object",
 										"properties": {
 											"footerAction": {
-												"type": "object",
-												"additionalProperties": true,
-												"required": ["label"],
-												"description": "One action under the list, also under the empty text (DqBezwaar \"Beroep registreren\"). Its other keys are an action's (`type`, `route`, `form`, ...). While `disabledWhen` holds it is disabled and says `disabledReason` (\"Kan zodra de beslissing is verzonden\"). Label and reason go through the host's translate.",
-												"properties": {
-													"label": { "type": "string", "minLength": 1 },
-													"icon": { "type": "string", "minLength": 1 },
-													"disabledWhen": { "$ref": "#/$defs/visibleWhen" },
-													"disabledReason": { "type": "string" }
-												}
+												"description": "One action under the list, also under the empty text (DqBezwaar \"Beroep registreren\"). Its other keys are an action's (`type`, `route`, `form`, ...). While `disabledWhen` holds it is disabled and says `disabledReason` (\"Kan zodra de beslissing is verzonden\"). `note` is a line above it, `wide: true` stretches it across the card. A list of actions draws the first whose `visibleWhen` (a local condition over the page's record) holds (DqZaaktype Versies). Label, reason and note go through the host's translate.",
+												"anyOf": [
+													{ "$ref": "#/$defs/recordListFooterAction" },
+													{ "type": "array", "items": { "$ref": "#/$defs/recordListFooterAction" } }
+												]
 											},
 											"dot": { "description": "A colour dot before the title: a field name, or `{ field, colorMap? }` (2.129.0).", "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "required": ["field"], "additionalProperties": false, "properties": { "field": { "type": "string", "minLength": 1 }, "colorMap": { "type": "object", "additionalProperties": { "type": "string" } } } }] },
 											"flags": { "type": "array", "description": "The labels of the flags a row has, at its end (\"Start\", \"End\"): `[{ field, label, value? }]` (DqZaaktypeOverzicht, 2.129.0).", "items": { "type": "object", "required": ["field", "label"], "additionalProperties": false, "properties": { "field": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 }, "value": {} } } }
@@ -4257,7 +4266,7 @@
 							"description": "Name a registered NON-OBJECT entity collection for a type='index' page, instead of register+schema. Deliberately NOT called `source`: that key is already taken on page config and is polymorphic (a URL string in some manifests, an object with `params` in others), so reusing it would give one key two meanings and break six deployed shillinq pages. A flow definition is deliberately not an OpenRegister object, so an index had nothing to bind to and such lists became bespoke type='custom' pages. With a source the index loads the list itself. Takes precedence over register/schema; non-empty `objects` still wins over both. Registered sources live in src/composables/indexSources.js. `tasks` lists the viewer's task inbox from OpenRegister's flow-tasks read (cn-tasks-entity-source). `organisations` lists the OpenRegister organisations the viewer belongs to. On a type='detail' page a source that reads one record (today `organisations`) loads the record whose id is the route's objectId, instead of register+schema, and feeds the header, pills, widgets and @objectId / @object.* tokens like a fetched object (organisations-entity-source)."
 						},
 						"bulkBandAlways": { "type": "boolean", "default": false, "description": "type='index', board look: draw the bulk band (its actions and hint) before a selection too, its buttons disabled until rows are selected (DqZaken, DqWerkbord). Maps to CnIndexPage `bulkBandAlways`." },
-						"quickFilterPlacement": { "type": "string", "enum": ["", "toolbar", "row"], "default": "", "description": "type='index': where the quick-filter chips sit. `toolbar` keeps them on one row with the Filter button and the view switch beside a side panel, the chips that do not fit behind the overflow chip (DqTeamwachtrij). `row` puts them on a row of their own above the toolbar, wrapping onto more lines. Maps to CnIndexPage `quickFilterPlacement`." },
+						"quickFilterPlacement": { "type": "string", "enum": ["", "toolbar", "row", "active"], "default": "", "description": "type='index': where the quick-filter chips sit. `toolbar` keeps them on one row with the Filter button and the view switch beside a side panel, the chips that do not fit behind the overflow chip (DqTeamwachtrij). `row` puts them on a row of their own above the toolbar, wrapping onto more lines. `active` draws no tabs: a chosen tab with an `activeLabel` shows only on the Active line, where it can be removed (DqAanMijToegewezen). Maps to CnIndexPage `quickFilterPlacement`." },
 						"live": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "type='index' (pl4-index-live): object types whose live changes the list follows; it reads itself again shortly after a change." },
 						"rowClass": {
 							"type": "array",
