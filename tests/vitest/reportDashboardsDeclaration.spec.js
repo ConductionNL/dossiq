@@ -339,6 +339,12 @@ describe('no dashboard reads a dossiq component any more', () => {
 })
 
 describe('process mining figures', () => {
+	it('draws the dwell time per status with the value at each bar\'s end, as DqProcesanalyse does', () => {
+		const dwell = widget('ProcessMiningDashboard', 'pm-dwell').content
+		expect(dwell.chartKind).toBe('bar-list')
+		expect(dwell.barValueAtEnd).toBe(true)
+	})
+
 	it('aligns the figures to the end and rules above the first stuck phase, as DqProcesanalyse draws them', () => {
 		const cols = (id) => Object.fromEntries(widget('ProcessMiningDashboard', id).content.columns.map((c) => [c.key, c]))
 		const ranking = cols('pm-bottlenecks')

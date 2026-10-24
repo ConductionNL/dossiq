@@ -8676,6 +8676,7 @@
 						"title": "Dwell time by status",
 						"content": {
 							"chartKind": "bar-list",
+							"barValueAtEnd": true,
 							"valueFormat": {
 								"name": "number",
 								"decimals": 0,
