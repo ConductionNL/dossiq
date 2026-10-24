@@ -33,7 +33,8 @@
 			"group": "dossiq-sensitive",
 			"displayName": "Dossiq gevoelige gegevens",
 			"members": [
-				"thomas"
+				"thomas",
+				"pieter"
 			]
 		},
 		{
@@ -2365,12 +2366,563 @@
 			}
 		},
 		{
+			"key": "inspectie-checklist-brandveiligheid",
+			"register": "dossiq",
+			"schema": "inspectionChecklistTemplate",
+			"data": {
+				"name": "Brandveiligheid",
+				"version": 3,
+				"status": "active",
+				"active": true,
+				"sections": [
+					{
+						"order": 1,
+						"name": "Gebouw en gebruik",
+						"items": [
+							{
+								"order": 1,
+								"label": "Komt het gebruik overeen met de gebruiksmelding?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Vergelijk het gebruik ter plaatse met de melding brandveilig gebruik",
+								"id": "brandveiligheid-1"
+							},
+							{
+								"order": 2,
+								"label": "Is het maximale aantal personen aangegeven?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Bij de hoofdingang, leesbaar",
+								"id": "brandveiligheid-2"
+							},
+							{
+								"order": 3,
+								"label": "Zijn de brandcompartimenten intact?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Let op nieuwe sparingen en openstaande luiken",
+								"id": "brandveiligheid-3"
+							},
+							{
+								"order": 4,
+								"label": "Sluiten de brandwerende deuren zelfstandig?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "if_no",
+								"helpText": "Open de deur helemaal en laat los",
+								"id": "brandveiligheid-4"
+							},
+							{
+								"order": 5,
+								"label": "Zijn doorvoeringen in brandscheidingen afgedicht?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "if_no",
+								"helpText": "Kabels en leidingen door wanden en vloeren",
+								"id": "brandveiligheid-5"
+							},
+							{
+								"order": 6,
+								"label": "Is de brandmeldinstallatie in bedrijf?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Brandmeldcentrale zonder storing of uitschakeling",
+								"id": "brandveiligheid-6"
+							}
+						]
+					},
+					{
+						"order": 2,
+						"name": "Vluchtwegen",
+						"items": [
+							{
+								"order": 7,
+								"label": "Zijn de vluchtwegen vrij?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "if_no",
+								"helpText": "Geen opslag, fietsen of meubilair in gangen en trappenhuizen",
+								"id": "brandveiligheid-7"
+							},
+							{
+								"order": 8,
+								"label": "Werken de noodverlichting en de bordjes?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "if_no",
+								"helpText": "Test met de testschakelaar, kijk of alle bordjes branden",
+								"id": "brandveiligheid-8"
+							},
+							{
+								"order": 9,
+								"label": "Openen de nooduitgangen zonder sleutel?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Van binnenuit, in de vluchtrichting",
+								"id": "brandveiligheid-9"
+							},
+							{
+								"order": 10,
+								"label": "Is de vluchtrouteaanduiding overal zichtbaar?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Vanaf elke verblijfsplek een bordje in zicht",
+								"id": "brandveiligheid-10"
+							},
+							{
+								"order": 11,
+								"label": "Zijn trappen en gangen vrij van brandbare opslag?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-11"
+							},
+							{
+								"order": 12,
+								"label": "Hoeveel nooduitgangen zijn er?",
+								"responseType": "getal",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Tel de uitgangen die uitkomen op de openbare weg",
+								"id": "brandveiligheid-12"
+							}
+						]
+					},
+					{
+						"order": 3,
+						"name": "Blusmiddelen",
+						"items": [
+							{
+								"order": 13,
+								"label": "Hangen de blustoestellen op de aangegeven plek?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-13"
+							},
+							{
+								"order": 14,
+								"label": "Zijn de blustoestellen in het afgelopen jaar gekeurd?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "if_no",
+								"helpText": "Kijk naar het keuringslabel",
+								"id": "brandveiligheid-14"
+							},
+							{
+								"order": 15,
+								"label": "Werkt de brandslanghaspel?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Rol een stuk uit en open de kraan kort",
+								"id": "brandveiligheid-15"
+							},
+							{
+								"order": 16,
+								"label": "Zijn de blusmiddelen bereikbaar en aangeduid?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-16"
+							},
+							{
+								"order": 17,
+								"label": "Hoeveel blustoestellen zijn er?",
+								"responseType": "getal",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-17"
+							},
+							{
+								"order": 18,
+								"label": "Is er een blusdeken in de keuken?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-18"
+							}
+						]
+					},
+					{
+						"order": 4,
+						"name": "Organisatie",
+						"items": [
+							{
+								"order": 19,
+								"label": "Is er een ontruimingsplan aanwezig?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-19"
+							},
+							{
+								"order": 20,
+								"label": "Is er in het afgelopen jaar een ontruimingsoefening gehouden?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-20"
+							},
+							{
+								"order": 21,
+								"label": "Zijn er genoeg bhv'ers aanwezig?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Volgens het bhv-plan, voor de openingstijden",
+								"id": "brandveiligheid-21"
+							},
+							{
+								"order": 22,
+								"label": "Is het logboek brandveiligheid bijgewerkt?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"id": "brandveiligheid-22"
+							},
+							{
+								"order": 23,
+								"label": "Bijzonderheden",
+								"responseType": "text",
+								"required": false,
+								"photoRequired": "nooit",
+								"helpText": "Wat verder opviel, voor het rapport",
+								"id": "brandveiligheid-23"
+							},
+							{
+								"order": 24,
+								"label": "Foto van de brandmeldcentrale",
+								"responseType": "photo",
+								"required": true,
+								"photoRequired": "altijd",
+								"id": "brandveiligheid-24"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"key": "inspectie-brandveiligheid-pieter",
+			"register": "dossiq",
+			"schema": "inspectionChecklistRun",
+			"data": {
+				"case": "{{object:parkeren-henk.id}}",
+				"template": "{{object:inspectie-checklist-brandveiligheid.id}}",
+				"templateVersion": 3,
+				"templateSnapshot": {
+					"name": "Brandveiligheid",
+					"version": 3,
+					"sections": [
+						{
+							"order": 1,
+							"name": "Gebouw en gebruik",
+							"items": [
+								{
+									"order": 1,
+									"label": "Komt het gebruik overeen met de gebruiksmelding?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Vergelijk het gebruik ter plaatse met de melding brandveilig gebruik",
+									"id": "brandveiligheid-1"
+								},
+								{
+									"order": 2,
+									"label": "Is het maximale aantal personen aangegeven?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Bij de hoofdingang, leesbaar",
+									"id": "brandveiligheid-2"
+								},
+								{
+									"order": 3,
+									"label": "Zijn de brandcompartimenten intact?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Let op nieuwe sparingen en openstaande luiken",
+									"id": "brandveiligheid-3"
+								},
+								{
+									"order": 4,
+									"label": "Sluiten de brandwerende deuren zelfstandig?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "if_no",
+									"helpText": "Open de deur helemaal en laat los",
+									"id": "brandveiligheid-4"
+								},
+								{
+									"order": 5,
+									"label": "Zijn doorvoeringen in brandscheidingen afgedicht?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "if_no",
+									"helpText": "Kabels en leidingen door wanden en vloeren",
+									"id": "brandveiligheid-5"
+								},
+								{
+									"order": 6,
+									"label": "Is de brandmeldinstallatie in bedrijf?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Brandmeldcentrale zonder storing of uitschakeling",
+									"id": "brandveiligheid-6"
+								}
+							]
+						},
+						{
+							"order": 2,
+							"name": "Vluchtwegen",
+							"items": [
+								{
+									"order": 7,
+									"label": "Zijn de vluchtwegen vrij?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "if_no",
+									"helpText": "Geen opslag, fietsen of meubilair in gangen en trappenhuizen",
+									"id": "brandveiligheid-7"
+								},
+								{
+									"order": 8,
+									"label": "Werken de noodverlichting en de bordjes?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "if_no",
+									"helpText": "Test met de testschakelaar, kijk of alle bordjes branden",
+									"id": "brandveiligheid-8"
+								},
+								{
+									"order": 9,
+									"label": "Openen de nooduitgangen zonder sleutel?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Van binnenuit, in de vluchtrichting",
+									"id": "brandveiligheid-9"
+								},
+								{
+									"order": 10,
+									"label": "Is de vluchtrouteaanduiding overal zichtbaar?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Vanaf elke verblijfsplek een bordje in zicht",
+									"id": "brandveiligheid-10"
+								},
+								{
+									"order": 11,
+									"label": "Zijn trappen en gangen vrij van brandbare opslag?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-11"
+								},
+								{
+									"order": 12,
+									"label": "Hoeveel nooduitgangen zijn er?",
+									"responseType": "getal",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Tel de uitgangen die uitkomen op de openbare weg",
+									"id": "brandveiligheid-12"
+								}
+							]
+						},
+						{
+							"order": 3,
+							"name": "Blusmiddelen",
+							"items": [
+								{
+									"order": 13,
+									"label": "Hangen de blustoestellen op de aangegeven plek?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-13"
+								},
+								{
+									"order": 14,
+									"label": "Zijn de blustoestellen in het afgelopen jaar gekeurd?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "if_no",
+									"helpText": "Kijk naar het keuringslabel",
+									"id": "brandveiligheid-14"
+								},
+								{
+									"order": 15,
+									"label": "Werkt de brandslanghaspel?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Rol een stuk uit en open de kraan kort",
+									"id": "brandveiligheid-15"
+								},
+								{
+									"order": 16,
+									"label": "Zijn de blusmiddelen bereikbaar en aangeduid?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-16"
+								},
+								{
+									"order": 17,
+									"label": "Hoeveel blustoestellen zijn er?",
+									"responseType": "getal",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-17"
+								},
+								{
+									"order": 18,
+									"label": "Is er een blusdeken in de keuken?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-18"
+								}
+							]
+						},
+						{
+							"order": 4,
+							"name": "Organisatie",
+							"items": [
+								{
+									"order": 19,
+									"label": "Is er een ontruimingsplan aanwezig?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-19"
+								},
+								{
+									"order": 20,
+									"label": "Is er in het afgelopen jaar een ontruimingsoefening gehouden?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-20"
+								},
+								{
+									"order": 21,
+									"label": "Zijn er genoeg bhv'ers aanwezig?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"helpText": "Volgens het bhv-plan, voor de openingstijden",
+									"id": "brandveiligheid-21"
+								},
+								{
+									"order": 22,
+									"label": "Is het logboek brandveiligheid bijgewerkt?",
+									"responseType": "yes_no_na",
+									"required": true,
+									"photoRequired": "nooit",
+									"id": "brandveiligheid-22"
+								},
+								{
+									"order": 23,
+									"label": "Bijzonderheden",
+									"responseType": "text",
+									"required": false,
+									"photoRequired": "nooit",
+									"helpText": "Wat verder opviel, voor het rapport",
+									"id": "brandveiligheid-23"
+								},
+								{
+									"order": 24,
+									"label": "Foto van de brandmeldcentrale",
+									"responseType": "photo",
+									"required": true,
+									"photoRequired": "altijd",
+									"id": "brandveiligheid-24"
+								}
+							]
+						}
+					]
+				},
+				"inspector": "{{cast:pieter.uid}}",
+				"assignedInspectorRef": "{{cast:pieter.uid}}",
+				"startedAt": "{{datetime:0 10:47}}",
+				"status": "in_execution",
+				"syncState": "queued",
+				"responses": [
+					{
+						"itemId": "brandveiligheid-1",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 10:49}}",
+						"syncState": "queued"
+					},
+					{
+						"itemId": "brandveiligheid-2",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 10:52}}",
+						"syncState": "queued"
+					},
+					{
+						"itemId": "brandveiligheid-3",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 10:55}}",
+						"syncState": "queued"
+					},
+					{
+						"itemId": "brandveiligheid-4",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 10:58}}",
+						"syncState": "queued"
+					},
+					{
+						"itemId": "brandveiligheid-5",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 11:01}}",
+						"syncState": "queued"
+					},
+					{
+						"itemId": "brandveiligheid-6",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 11:03}}",
+						"syncState": "queued"
+					},
+					{
+						"itemId": "brandveiligheid-7",
+						"value": "nee",
+						"respondedAt": "{{datetime:0 11:06}}",
+						"syncState": "queued",
+						"comment": "Fietsen en kratten in de gang naar de achteruitgang"
+					}
+				],
+				"photos": []
+			}
+		},
+		{
 			"key": "inspectie-vandaag-molenweg",
 			"register": "dossiq",
 			"schema": "fieldInspection",
+			"lookups": {
+				"template": {
+					"schema": "inspectionChecklistTemplate",
+					"where": {
+						"seedKey": "bouwtoezicht-fase-3-oplevering"
+					}
+				}
+			},
 			"data": {
 				"caseRef": "{{object:kapvergunning-molenweg.id}}",
 				"inspectorRef": "{{cast:pieter.uid}}",
+				"checklistTemplateRef": "{{lookup:template}}",
 				"scheduledAt": "{{datetime:0 09:30}}",
 				"status": "synced",
 				"startedAt": "{{datetime:0 09:31}}",
@@ -2385,6 +2937,7 @@
 			"data": {
 				"caseRef": "{{object:parkeren-henk.id}}",
 				"inspectorRef": "{{cast:pieter.uid}}",
+				"checklistTemplateRef": "{{object:inspectie-checklist-brandveiligheid.id}}",
 				"scheduledAt": "{{datetime:0 10:45}}",
 				"status": "in_progress",
 				"startedAt": "{{datetime:0 10:47}}"
@@ -2397,6 +2950,7 @@
 			"data": {
 				"caseRef": "{{object:terras-slagerij.id}}",
 				"inspectorRef": "{{cast:pieter.uid}}",
+				"checklistTemplateRef": "{{object:inspectie-checklist-brandveiligheid.id}}",
 				"scheduledAt": "{{datetime:0 13:15}}",
 				"status": "planned"
 			}
@@ -4171,7 +4725,7 @@
 			"key": "pieter-wacht-op-inwoner",
 			"data": {
 				"name": "Wacht op inwoner",
-				"description": "Zaken die wachten op de aanvrager",
+				"description": "Status wacht op inwoner, gedeeld met team Woo",
 				"sharedWith": [
 					{
 						"group": "{{cast:woo-en-informatie.gid}}",
@@ -4193,6 +4747,75 @@
 							"statusHiddenInLists": false,
 							"isDraft": false,
 							"isFinalStatus": false
+						}
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
+		},
+		{
+			"key": "pieter-opgeschort",
+			"data": {
+				"name": "Opgeschort",
+				"description": "Status opgeschort, alle teams",
+				"owner": "{{cast:pieter.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"_related[deadlineInstance][case][status]": "paused"
+					},
+					"overrides": {
+						"lockedFilters": {
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
+		},
+		{
+			"key": "anouk-woo-verzoeken-team",
+			"data": {
+				"name": "Woo-verzoeken team",
+				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}],
+				"owner": "{{cast:anouk.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"caseTypeIdentifier": "woo-verzoek"
+					},
+					"overrides": {
+						"lockedFilters": {
+							"statusHiddenInLists": false,
+							"isDraft": false
 						}
 					},
 					"search": "",

@@ -60,7 +60,7 @@ describe('the Contacts menu entry', () => {
 	})
 
 	it('names an icon src/icons.js registers (gate-60)', () => {
-		expect(menuEntry.icon).toBe('AccountGroupOutline')
+		expect(menuEntry.icon).toBe('AccountMultipleOutline')
 		expect(iconsSource).toContain(`\n\t${menuEntry.icon},`)
 	})
 

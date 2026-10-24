@@ -82,8 +82,8 @@ class AccrualNoticeServiceTest extends TestCase {
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
-					'ingebrekestelling_schema' => 'noticeOfDefault',
-					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
+					'notice_of_default_schema' => 'noticeOfDefault',
+					'accruing_amount_schema' => 'penaltyPaymentCalculation',
 					default => '',
 				};
 			},

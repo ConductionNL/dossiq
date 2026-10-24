@@ -29,10 +29,8 @@ const indexPages = files.flatMap((file) => {
 
 /**
  * Index pages with no filter sidebar: a left-hand list or a plain inbox, so there is nothing to save but a search term.
- * CasesDeleted reads /api/cases/deleted, which takes only a page (limit, offset) and no filter, search or sort, so a
- * view saved there would hold nothing.
  */
-const NO_FILTER_SIDEBAR = ['Flows', 'EnvironmentOrganisations', 'Departments', 'CasesDeleted']
+const NO_FILTER_SIDEBAR = ['Flows', 'EnvironmentOrganisations', 'Departments']
 // The mailbox has a filter panel (DqPostvak's Filter button) but no saved views: its board draws no Save view.
 const NO_SAVED_VIEWS = [...NO_FILTER_SIDEBAR, 'Postvak']
 

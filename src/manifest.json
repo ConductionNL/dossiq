@@ -229,7 +229,7 @@
 		{
 			"id": "Queue",
 			"label": "Queue",
-			"icon": "TrayFull",
+			"icon": "FormatListBulleted",
 			"route": "Cases",
 			"query": { "savedView": "default:team-queue" },
 			"order": 15
@@ -245,14 +245,14 @@
 		{
 			"id": "WorkGroup",
 			"label": "My work",
-			"icon": "ClipboardAccountOutline",
+			"icon": "InboxOutline",
 			"route": "MyWorkHome",
 			"order": 20
 		},
 		{
 			"id": "Contacts",
 			"label": "Contacts",
-			"icon": "AccountGroupOutline",
+			"icon": "AccountMultipleOutline",
 			"route": "Contacts",
 			"order": 25,
 			"open": true
@@ -260,14 +260,14 @@
 		{
 			"id": "OrganisationsMenu",
 			"label": "Organisations",
-			"icon": "OfficeBuildingOutline",
+			"icon": "Domain",
 			"route": "Organisations",
 			"order": 26
 		},
 		{
 			"id": "Cases",
 			"label": "All cases",
-			"icon": "FolderAccountOutline",
+			"icon": "BriefcaseOutline",
 			"route": "Cases",
 			"order": 30
 		},
@@ -288,7 +288,7 @@
 		{
 			"id": "Tasks",
 			"label": "Tasks",
-			"icon": "FormatListChecks",
+			"icon": "CheckboxMarkedOutline",
 			"route": "Tasks",
 			"order": 32
 		},
@@ -345,7 +345,7 @@
 		},
 		{
 			"id": "StoreMenu",
-			"label": "Store",
+			"label": "Marketplace",
 			"icon": "StoreOutline",
 			"route": "Store",
 			"section": "footer",
@@ -375,15 +375,15 @@
 			"icon": "FormatListBulletedType",
 			"route": "CaseTypes",
 			"section": "settings",
-			"order": 90
+			"order": 21
 		},
 		{
 			"id": "PropertyDefinitionsMenu",
-			"label": "Attributes",
+			"label": "Attributes (catalogue)",
 			"icon": "TagMultiple",
 			"route": "PropertyDefinitions",
 			"section": "settings",
-			"order": 91
+			"order": 22
 		},
 		{
 			"id": "FlowsMenu",
@@ -457,10 +457,10 @@
 			"id": "ReIntegratieTrajectenMenu",
 			"label": "Re-integration pathways",
 			"icon": "BriefcaseAccountOutline",
-			"route": "ReIntegratieTrajecten",
+			"route": "Cases",
+			"query": { "savedView": "default:re-integration-pathways" },
 			"section": "settings",
-			"order": 108,
-			"permission": "sociaal-domein"
+			"order": 108
 		},
 		{
 			"id": "SupplierUsersMenu",
@@ -1807,6 +1807,12 @@
 								"title": "Plan an item",
 								"eyebrow": "Your queue · own task",
 								"subtitle": "This goes on your own calendar and on your queue. It is not a case.",
+								"_summaryNote": "DqUwWachtrij (Ruben, 23 Oct): When opens at the next working day at 10:00 from the organisation's working-day calendar, read as the dialog's record (no title, so no summary row) and started through the field's valuePath; the reader can change it.",
+								"summary": {
+									"source": {
+										"url": "/apps/dossiq/api/personal-queue/planned-items/defaults"
+									}
+								},
 								"fields": [
 									{
 										"field": "template",
@@ -1852,7 +1858,8 @@
 									{
 										"field": "startsAt",
 										"type": "datetime",
-										"label": "When"
+										"label": "When",
+										"valuePath": "startsAt"
 									}
 								],
 								"confirm": {
@@ -2026,6 +2033,7 @@
 					{ "slug": "unclaimed-overdue", "name": "Unclaimed, overdue", "filters": { "assignee": "IS NULL", "isTemplate": false, "isFinalStatus": false, "statusHiddenInLists": false, "isDraft": false, "deadline[lt]": "@today" } },
 					{ "slug": "woo-requests", "name": "Woo requests", "icon": "FileDocumentOutline", "filters": { "caseTypeIdentifier": "woo-verzoek", "statusHiddenInLists": false, "isDraft": false } },
 					{ "slug": "subsidies", "name": "Subsidies", "filters": { "caseType": "b3c1a000-0000-4000-a000-0000000005ab", "statusHiddenInLists": false, "isDraft": false }, "overrides": { "title": "Subsidies", "columns": ["identifier", "title", { "key": "status", "label": "Status", "formatter": "statusTypeName" }, "assignee", "deadline"] } },
+					{ "slug": "re-integration-pathways", "name": "Re-integration pathways", "icon": "BriefcaseAccountOutline", "filters": { "caseTypeIdentifier": "re-integratietraject", "statusHiddenInLists": false, "isDraft": false }, "overrides": { "title": "Re-integration pathways", "columns": ["identifier", "title", { "key": "properties", "label": "Benefit case", "formatter": "caseAnswer", "formatterOptions": { "name": "bijstandszaak" } }, "assignee", { "key": "status", "label": "Status", "formatter": "statusTypeName" }, "startDate", { "key": "properties", "label": "Distance to Labour Market", "formatter": "caseAnswer", "formatterOptions": { "name": "afstandTotArbeidsmarkt" } }], "defaultSort": [{ "key": "startDate", "order": "desc" }] } },
 					{
 						"slug": "my-work",
 						"name": "Assigned to me",
@@ -2204,7 +2212,9 @@
 									"title": "Waiting longest",
 									"content": {
 										"label": "Waiting longest",
-										"caption": "the oldest case in the queue",
+										"_captionNote": "DqTeamwachtrij: the line names the oldest waiting case's type and the days to its deadline, in red (\"Woo-verzoek, termijn over 4 dagen\"); GET /api/dashboard/kpis answers it as queueOldestNote, \"the oldest case in the queue\" when that case has no type or deadline.",
+										"caption": "{queueOldestNote}",
+										"captionVariant": "error",
 										"format": {
 											"style": "decimal",
 											"decimals": 0,
@@ -2320,7 +2330,11 @@
 									"formatter": "caseTypeName",
 									"widget": "badge",
 									"widgetProps": {
-										"variant": "info"
+										"resolve": {
+											"register": "dossiq",
+											"schema": "caseType",
+											"colorField": "colour"
+										}
 									}
 								},
 								{
@@ -2381,7 +2395,11 @@
 										"formatter": "caseTypeName",
 										"widget": "badge",
 										"widgetProps": {
-											"variant": "info"
+											"resolve": {
+												"register": "dossiq",
+												"schema": "caseType",
+												"colorField": "colour"
+											}
 										},
 										"width": "200px"
 									},
@@ -3121,7 +3139,20 @@
 				"entitySource": "endpoint",
 				"sourceConfig": {
 					"url": "/apps/dossiq/api/cases/deleted",
-					"rowsPath": "results"
+					"rowsPath": "results",
+					"searchParam": "search"
+				},
+				"_lookNote": "deleted-cases-read-the-case-table: the All cases page's look over the deleted lens. The search box goes to the endpoint as `search` (case number, title, who deleted it), the sidebar counts the rows and holds the saved views, scoped to this source by name. A table only: a deleted case has no board column or place on a map to show it by.",
+				"searchPlaceholder": "Search by case number, title or who deleted it",
+				"viewModes": ["table"],
+				"viewSwitch": ["table"],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": false,
+					"subtitle": {
+						"singular": "{total} deleted case",
+						"plural": "{total} deleted cases"
+					}
 				},
 				"showTitle": true,
 				"description": "A deleted case can be recovered until the date below. After that it can be destroyed, which cannot be undone.",
@@ -3131,7 +3162,8 @@
 				"showEditAction": false,
 				"showCopyAction": false,
 				"showDeleteAction": false,
-				"allowSavedViews": false,
+				"allowSavedViews": true,
+				"savedViewsScope": "source:cases-deleted",
 				"columns": [
 					{
 						"key": "identifier",
@@ -4341,19 +4373,27 @@
 											],
 											"overrides": {
 												"receivedAt": {
-													"editable": false
+													"order": 1,
+													"editable": false,
+													"formatter": "datetime"
 												},
 												"termStartsAt": {
-													"editable": false
+													"order": 3,
+													"editable": false,
+													"formatter": "date"
 												},
 												"receivedOutsideWorkingHours": {
+													"order": 2,
 													"editable": false
 												},
 												"acknowledgementDuty": {
+													"order": 5,
 													"editable": false
 												},
 												"outboundCommunications": {
-													"editable": false
+													"order": 4,
+													"editable": false,
+													"formatter": "outboundMessages"
 												}
 											}
 										}
@@ -6772,6 +6812,12 @@
 				"register": "dossiq",
 				"schema": "caseObject",
 				"allowSavedViews": true,
+				"_lookNote": "objects-index-like-cases: the All cases page's look over the case objects. A fixed add label, so the button never falls back to the library's generic one while the schema loads or when it cannot be read; the search placeholder names what the search box reaches; the sidebar counts the rows the way the Cases sidebar does; export as on Cases. A table only: an object has no status column to make a board of and no place on a map.",
+				"addLabel": "Add case object",
+				"searchPlaceholder": "Search by object type, identification or description",
+				"allowExport": true,
+				"viewModes": ["table"],
+				"viewSwitch": ["table"],
 				"showViewAction": false,
 				"_caseColumnNote": "The `case` column reads the raw $ref through the `caseTitle` FORMATTER and NOT through `extend`, which is how the Tasks index renders the same reference. `extend` replaces `row.case` with the expanded case object, and the View case action below resolves its `{case}` token with a FLAT row lookup: it would hand vue-router an object instead of a uuid and open nothing, silently. The formatter leaves the uuid in place for the action and resolves the title for the reader, out of the case collection the object store already holds.",
 				"_viewCaseNote": "The row action opens the ROW'S CASE, not the row. `params` is merged OVER the default `{ id: row[rowKey] }`, and `{case}` runs the `{field}` row-token grammar against the flat row, so the case uuid wins over the case object's own uuid. A case object has no detail page of its own, which is why `showViewAction` is false and this is the only action.",
@@ -6816,7 +6862,11 @@
 				},
 				"sidebar": {
 					"enabled": true,
-					"showMetadata": true
+					"showMetadata": true,
+					"subtitle": {
+						"singular": "{total} object, {shown} on this page",
+						"plural": "{total} objects, {shown} on this page"
+					}
 				},
 				"documentationUrl": "https://dossiq.conduction.nl"
 			}
@@ -7449,7 +7499,22 @@
 								"kind": "flow-task"
 							},
 							"maxDisplay": 50,
-							"emptyText": "Nothing has happened to this task yet"
+							"emptyText": "Nothing has happened to this task yet",
+							"actionLabels": {
+								"create": "Task created",
+								"enable": "Task ready to start",
+								"offer": "Task offered to the team",
+								"assign": "Task assigned to {actor}",
+								"reassign": "Task reassigned by {actor}",
+								"claim": "Task picked up by {actor}",
+								"unclaim": "Task handed back by {actor}",
+								"delegate": "Task passed on by {actor}",
+								"checklist": "Checklist updated by {actor}",
+								"edit": "Task edited by {actor}",
+								"complete": "Task finished by {actor}",
+								"cancel": "Task cancelled by {actor}",
+								"terminate": "Task stopped"
+							}
 						}
 					}
 				]
@@ -7542,6 +7607,7 @@
 				"appId": "dossiq",
 				"pageId": "Doorlooptijd",
 				"showWidgetActions": false,
+				"gridFloat": false,
 				"_granularityNote": "Board DqDoorlooptijd: Maand, Kwartaal and Jaar group the averages per month, quarter or year over a one-year window; they do not shorten the window (Ruben, 21 Oct). The window is the endpoint default, twelve months. The monthly chart sends the grouping as `granularity`.",
 				"_pageFiltersNote": "The case type choice sits on the description line, before the period group, as the DqDoorlooptijd board draws it (\"alle zaaktypen\"). Only case types that declare a processing deadline are offered: a type without one gives a dashboard that can say nothing. Clearing it reads every case type.",
 				"pageFilters": [
@@ -8054,6 +8120,7 @@
 							"columns": [
 								{
 									"key": "title",
+									"cellClass": "cn-cell--wrap",
 									"label": "Title"
 								},
 								{
@@ -8128,6 +8195,7 @@
 							"columns": [
 								{
 									"key": "name",
+									"cellClass": "cn-cell--wrap",
 									"label": "Case Type",
 									"sortable": true
 								},
@@ -8197,7 +8265,8 @@
 						"gridX": 0,
 						"gridY": 4,
 						"gridWidth": 12,
-						"gridHeight": 3
+						"gridHeight": 3,
+						"sizeToContent": true
 					},
 					{
 						"id": 3,
@@ -8205,7 +8274,8 @@
 						"gridX": 0,
 						"gridY": 7,
 						"gridWidth": 12,
-						"gridHeight": 6
+						"gridHeight": 6,
+						"sizeToContent": true
 					},
 					{
 						"id": 4,
@@ -8213,7 +8283,8 @@
 						"gridX": 0,
 						"gridY": 13,
 						"gridWidth": 12,
-						"gridHeight": 5
+						"gridHeight": 5,
+						"sizeToContent": true
 					},
 					{
 						"id": 5,
@@ -8221,7 +8292,8 @@
 						"gridX": 0,
 						"gridY": 18,
 						"gridWidth": 6,
-						"gridHeight": 6
+						"gridHeight": 6,
+						"sizeToContent": true
 					},
 					{
 						"id": 6,
@@ -8229,7 +8301,8 @@
 						"gridX": 6,
 						"gridY": 18,
 						"gridWidth": 6,
-						"gridHeight": 6
+						"gridHeight": 6,
+						"sizeToContent": true
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
@@ -10085,32 +10158,6 @@
 			}
 		},
 		{
-			"id": "ReIntegratieTrajecten",
-			"route": "/settings/re-integratietrajecten",
-			"type": "index",
-			"title": "Re-integration pathways",
-			"permission": "sociaal-domein",
-			"_note": "The Participatiewet pathway a klantmanager runs with somebody. `distanceToLabourMarket` is an assessment OF a person and `exemptionWorkObligation` records that somebody was excused from working, often on health grounds; the first is a column because it is what the caseload is steered on, the second is not, because it is the most sensitive field on the record and it opens with the record. `instrumenten` and `collaboratingParties` are lists that would print as arrays in a cell.",
-			"config": {
-				"register": "dossiq",
-				"schema": "reIntegratieTraject",
-				"columns": [
-					"caseId",
-					"caseManagerId",
-					"trajectKind",
-					"startDate",
-					"distanceToLabourMarket"
-				],
-				"showViewAction": true,
-				"defaultSort": "-startDate",
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://dossiq.conduction.nl"
-			}
-		},
-		{
 			"id": "BezwaarCommittees",
 			"route": "/settings/bezwaar-committees",
 			"type": "index",
@@ -10923,10 +10970,12 @@
 								},
 								{
 									"key": "total",
+									"class": "cn-table-col--end",
 									"label": "Total"
 								},
 								{
 									"key": "withinTermPct",
+									"class": "cn-table-col--end",
 									"label": "Within deadline",
 									"format": {
 										"style": "decimal",
@@ -10936,22 +10985,31 @@
 								},
 								{
 									"key": "overruns",
+									"class": "cn-table-col--end",
 									"label": "Overruns"
 								},
 								{
 									"key": "averageProcessingDays",
-									"label": "Avg. duration"
+									"class": "cn-table-col--end",
+									"label": "Avg. duration",
+									"format": {
+										"style": "decimal",
+										"decimals": 1
+									}
 								},
 								{
 									"key": "extensions",
+									"class": "cn-table-col--end",
 									"label": "Extensions"
 								},
 								{
 									"key": "noticesOfDefault",
+									"class": "cn-table-col--end",
 									"label": "Notices of default"
 								},
 								{
 									"key": "penaltyTotalEuros",
+									"class": "cn-table-col--end",
 									"label": "Total penalty payment",
 									"format": {
 										"style": "currency",
@@ -11085,7 +11143,7 @@
 								{ "key": "caseTypeTitle", "label": "Case type" },
 								{ "key": "requester", "label": "Requester" },
 								{ "key": "forfeitDate", "label": "Forfeited on", "format": "date" },
-								{ "key": "amountEuros", "label": "Amount", "format": { "style": "currency", "currency": "EUR" } },
+								{ "key": "amountEuros", "label": "Amount", "class": "cn-table-col--end", "format": { "style": "currency", "currency": "EUR" } },
 								{
 									"key": "paymentStatus",
 									"label": "Payment",
@@ -12463,10 +12521,10 @@
 			"id": "Store",
 			"route": "/store",
 			"type": "store",
-			"title": "Store",
+			"title": "Marketplace",
 			"config": {
 				"app": "dossiq",
-				"title": "Store",
+				"title": "Marketplace",
 				"description": "Install case types, workflows and enforcement tables that other organisations have published.",
 				"kinds": [
 					"case-type",
@@ -14028,6 +14086,47 @@
 							"trailing": "Term {deadline|date}",
 							"rowRoute": "CaseDetail",
 							"emptyText": "No open cases"
+						}
+					},
+					{
+						"id": "side-open-ticket",
+						"type": "record-list",
+						"title": "Open tickets",
+						"visibleWhen": {
+							"appInstalled": "pipelinq"
+						},
+						"content": {
+							"requiresApp": "pipelinq",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/parties/open-tickets/list",
+								"params": {
+									"key": "@object.masterEntityRef"
+								},
+								"responsePath": "results"
+							},
+							"limit": 1,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{ticketType}",
+							"pill": {
+								"field": "status",
+								"variant": "purple",
+								"labels": {
+									"new": "New",
+									"in_progress": "In progress",
+									"awaiting_customer": "Awaiting customer"
+								}
+							},
+							"trailing": [
+								"Term {slaDeadline|date}"
+							],
+							"valueLabels": {
+								"ticketType": {
+									"request": "Request",
+									"complaint": "Complaint"
+								}
+							},
+							"emptyText": "No open tickets"
 						}
 					},
 					{

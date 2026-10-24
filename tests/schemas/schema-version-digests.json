@@ -1140,7 +1140,7 @@
         "digest": "950f517937bf6d7c715da967366935f04ca0a16838864093302a1942ed0ed00f"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::jeugdwetZaak": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "94a9d3ea607649eee74f71e3063a20a8fb7d6acdf818fa8f30c43ec11979ad37"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::mdoOverleg": {
@@ -1148,11 +1148,11 @@
         "digest": "564570c26f8253afa0bf2c9947d7cba4043091feba941288be89f1afb86b1ac9"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::participatiewetZaak": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "263e846261b0ad0aa8666a43d43b74c32c95eb7b55521eb26800e13c76f29b74"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::reIntegratieTraject": {
-        "version": "1.1.1",
+        "version": "1.2.0",
         "digest": "de8cb58bdbd44cd9a6aeb6a3ce4947b1cbae9c5e6bfe8479c66e4c1da927de62"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::sociaalDomeinAuditLog": {
@@ -1164,7 +1164,7 @@
         "digest": "37cd1b7cdd47ed091c7dd73753256a6581f55179d1895afb3582e829307b635a"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::wmoZaak": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "1c2faf24586a36176484e80b7fa3ae9a9b7aed508db21d9199850367adc2d808"
     },
     "lib/Settings/register.d/50-subsidie.json::bewijsstuk": {
@@ -1707,6 +1707,14 @@
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-case-subject-and-sensitive-answers.json::case": {
+        "version": "1.49.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-subject-and-sensitive-answers.json::propertyDefinition": {
+        "version": "1.7.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-case-type-next-step.json::caseType": {
         "version": "1.31.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1731,6 +1739,14 @@
         "version": "1.30.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-case-type-record-import-case-fields.json::caseType": {
+        "version": "1.35.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-type-record-import-references.json::caseType": {
+        "version": "1.37.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-case-type-special-data.json::caseType": {
         "version": "1.27.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1742,6 +1758,10 @@
     "lib/Settings/register.d/99-case-type-whole-list-export.json::caseType": {
         "version": "1.34.0",
         "digest": "28eec69afa9b55bf5cc426042868782ef4120c9615a46848fb65fd411cf2c6aa"
+    },
+    "lib/Settings/register.d/99-email-template-moment-and-channel.json::emailTemplate": {
+        "version": "1.3.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/dso-omgevingsloket.json::case": {
         "version": "",

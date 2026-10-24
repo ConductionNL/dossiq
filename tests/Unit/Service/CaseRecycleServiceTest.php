@@ -109,10 +109,34 @@ class CaseRecycleServiceTest extends TestCase {
 	/**
 	 * Build the service under test.
 	 *
+	 * @param bool $lens Whether OpenRegister offers the `_deleted` lens.
+	 *
 	 * @return CaseRecycleService
 	 */
-	private function service(): CaseRecycleService {
+	private function service(bool $lens = false): CaseRecycleService {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+
+		if ($lens === true) {
+			return new class(
+				settingsService: $this->settingsService,
+				windowReader: new DeletionWindowReader(
+					settingsService: $this->settingsService,
+					logger: $logger
+				),
+				userSession: $this->userSession,
+				logger: $logger
+			) extends CaseRecycleService {
+
+				/**
+				 * An OpenRegister that offers the deleted lens.
+				 *
+				 * @return bool Always true.
+				 */
+				protected function deletedLensAvailable(): bool {
+					return true;
+				}
+			};
+		}
 
 		return new CaseRecycleService(
 			settingsService: $this->settingsService,
@@ -124,6 +148,70 @@ class CaseRecycleServiceTest extends TestCase {
 			logger: $logger
 		);
 	}//end service()
+
+	/**
+	 * Hand the service register and schema mappers that resolve anything.
+	 *
+	 * @return void
+	 */
+	private function withTableMappers(): void {
+		$finder = new class {
+
+			/**
+			 * Resolve an id or slug to a stand-in entity.
+			 *
+			 * @param mixed $id The id or slug.
+			 *
+			 * @return object The entity.
+			 */
+			public function find(mixed $id): object {
+				return (object)['id' => $id];
+			}
+		};
+
+		$this->settingsService = $this->createMock(originalClassName: SettingsService::class);
+		$this->settingsService->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				default => $default,
+			}
+		);
+		$this->settingsService->method('getOpenRegisterClass')->willReturnCallback(
+			fn (string $class): ?object => match ($class) {
+				CaseRecycleService::MAGIC_MAPPER => $this->mapper,
+				CaseRecycleService::AUDIT_MAPPER => $this->auditMapper,
+				CaseRecycleService::REGISTER_MAPPER, CaseRecycleService::SCHEMA_MAPPER => $finder,
+				default => null,
+			}
+		);
+	}//end withTableMappers()
+
+	/**
+	 * A trash with many deleted rows of other schemas ahead of one case, read
+	 * a page at a time the way OpenRegister's scan over every table pages it.
+	 *
+	 * @return object The mapper.
+	 */
+	private function crowdedTrash(): object {
+		return new class {
+
+			/**
+			 * Every soft-deleted row on the instance, newest first.
+			 *
+			 * @param int|null $limit Row cap.
+			 * @param int|null $offset Rows to skip.
+			 *
+			 * @return array<int, object> The rows.
+			 */
+			public function findDeletedAcrossAllMagicTables(?int $limit = null, ?int $offset = null): array {
+				$rows = array_fill(0, 60, CaseRecycleServiceTestEntity::aDocument());
+				$rows[] = CaseRecycleServiceTestEntity::aCase();
+
+				return array_slice($rows, ($offset ?? 0), $limit);
+			}
+		};
+	}//end crowdedTrash()
 
 	/**
 	 * A soft-deleted case, and a soft-deleted row of another schema beside it.
@@ -251,6 +339,101 @@ class CaseRecycleServiceTest extends TestCase {
 		$this->assertSame('2034-01-31', $rows['results'][0]['windowEndsOn']);
 		$this->assertSame('behandelaar', $rows['results'][0]['deletedBy']);
 	}//end testTheLensListsDeletedCasesWithTheirWindow()
+
+	/**
+	 * A deleted case is listed however many other objects were deleted
+	 * before it: the lens keeps the cases first and pages after.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/deleted-cases-read-the-case-table/specs/case-management/spec.md
+	 */
+	public function testTheLensPagesAfterKeepingTheCases(): void {
+		$this->mapper = $this->crowdedTrash();
+
+		$rows = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true);
+
+		$this->assertSame(expected: 1, actual: $rows['total']);
+		$this->assertSame(expected: 'case-9', actual: $rows['results'][0]['id']);
+	}//end testTheLensPagesAfterKeepingTheCases()
+
+	/**
+	 * With OpenRegister's `_deleted` lens and the case table at hand, the lens
+	 * asks for that table's deleted rows alone, and never scans every table.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/deleted-cases-read-the-case-table/specs/case-management/spec.md
+	 */
+	public function testTheLensReadsTheCaseTableOnly(): void {
+		$this->mapper = new class {
+
+			/**
+			 * The query the case table was asked with.
+			 *
+			 * @var array<string, mixed>
+			 */
+			public array $query = [];
+
+			/**
+			 * Whether the scan over every table ran.
+			 *
+			 * @var bool
+			 */
+			public bool $scanned = false;
+
+			/**
+			 * The deleted rows of one table.
+			 *
+			 * @param array<string, mixed> $query The query.
+			 * @param mixed $register The register.
+			 * @param mixed $schema The schema.
+			 *
+			 * @return array<int, object> The rows.
+			 */
+			public function searchObjectsInRegisterSchemaTable(array $query, mixed $register, mixed $schema): array {
+				$this->query = $query;
+
+				return [CaseRecycleServiceTestEntity::aCase(), CaseRecycleServiceTestEntity::anOlderCase()];
+			}
+
+			/**
+			 * The scan over every table.
+			 *
+			 * @return array<int, object> Nothing.
+			 */
+			public function findDeletedAcrossAllMagicTables(): array {
+				$this->scanned = true;
+
+				return [];
+			}
+		};
+		$this->withTableMappers();
+
+		$rows = $this->service(lens: true)->deletedCases(limit: 1, forUser: 'archivaris', isAdmin: true);
+
+		$this->assertFalse(condition: $this->mapper->scanned);
+		$this->assertSame(expected: 'true', actual: $this->mapper->query['_deleted']);
+		$this->assertSame(expected: 2, actual: $rows['total']);
+		$this->assertCount(expectedCount: 1, haystack: $rows['results']);
+	}//end testTheLensReadsTheCaseTableOnly()
+
+	/**
+	 * The page's search box narrows the lens on the number and the title.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/deleted-cases-read-the-case-table/specs/case-management/spec.md
+	 */
+	public function testTheLensNarrowsBySearch(): void {
+		$hit = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true, search: '0009');
+		$title = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true, search: 'AANSLAG');
+		$miss = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true, search: '0010');
+
+		$this->assertSame(expected: 1, actual: $hit['total']);
+		$this->assertSame(expected: 1, actual: $title['total']);
+		$this->assertSame(expected: 0, actual: $miss['total']);
+	}//end testTheLensNarrowsBySearch()
 
 	/**
 	 * The lens is scoped to the caller. The trash holds every deleted case on

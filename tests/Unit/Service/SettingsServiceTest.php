@@ -296,6 +296,29 @@ class SettingsServiceTest extends TestCase {
 	}//end testUpdateSettingsOnlyUpdatesRecognizedKeys()
 
 	/**
+	 * A renamed money key reads its legacy key until the repair carried it, and only then (REQ-DQM-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 */
+	public function testARenamedMoneyKeyFallsBackToItsLegacyKey(): void {
+		$stored = ['dwangsom_uitbetaling_schema' => '42'];
+		$this->appConfig->method('hasKey')->willReturnCallback(static function (string $app, string $key) use (&$stored): bool {
+			return array_key_exists($key, $stored);
+		});
+		$this->appConfig->method('getValueString')->willReturnCallback(static function (string $app, string $key, string $default = '') use (&$stored): string {
+			return ($stored[$key] ?? $default);
+		});
+
+		$this->assertSame(expected: '42', actual: $this->service->getConfigValue('payout_schema'));
+
+		$stored['payout_schema'] = '';
+		$this->assertSame(expected: '', actual: $this->service->getConfigValue('payout_schema'), message: 'A current key an admin cleared is not overridden by the legacy one.');
+		$this->assertSame(expected: '', actual: $this->service->getConfigValue('case_schema'), message: 'A key with no legacy name reads only itself.');
+	}//end testARenamedMoneyKeyFallsBackToItsLegacyKey()
+
+	/**
 	 * Test that getConfigValue delegates to appConfig correctly.
 	 *
 	 * @return void

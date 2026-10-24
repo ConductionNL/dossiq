@@ -119,7 +119,7 @@ class AccrualNoticeService {
 			$row['validityStatus'] = 'valid';
 		}
 
-		$saved = $this->saveSchema(schemaConfigKey: 'ingebrekestelling_schema', object: $row);
+		$saved = $this->saveSchema(schemaConfigKey: MoneyConfigKeys::NOTICE_OF_DEFAULT_SCHEMA, object: $row);
 		$row['id'] = (string)($saved['id'] ?? '');
 
 		if ($isValid === false) {
@@ -194,7 +194,7 @@ class AccrualNoticeService {
 		}
 
 		$calculation = $this->saveSchema(
-			schemaConfigKey: 'dwangsom_berekening_schema',
+			schemaConfigKey: MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
 			object: [
 				'noticeOfDefault' => $ingebrekestellingId,
 				'deadlineInstance' => $termInstanceId,

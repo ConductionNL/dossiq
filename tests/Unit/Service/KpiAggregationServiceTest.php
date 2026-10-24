@@ -212,6 +212,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		$this->assertSame(0, $kpis['openCount']);
 		$this->assertNull($kpis['avgProcessingDays']);
 		$this->assertSame([], $kpis['statusBreakdown']);
+		$this->assertSame(expected: 'the oldest case in the queue', actual: $kpis['queueOldestNote']);
 	}
 
 	/**
@@ -249,6 +250,11 @@ final class KpiAggregationServiceTest extends TestCase {
 		$this->assertSame(1, $kpis['queueNewToday']);
 		$this->assertSame(2, $kpis['queueDueSoon'], 'due today and due in four days fall in the coming week.');
 		$this->assertSame(6, $kpis['queueOldestDays'], 'the oldest case IN the queue, not the oldest open case.');
+		$this->assertSame(
+			expected: 'Woo-verzoek, deadline in 4 days',
+			actual: $kpis['queueOldestNote'],
+			message: 'DqTeamwachtrij: the oldest case\'s type and the days to its deadline.'
+		);
 		$this->assertSame(
 			[
 				['caseType' => 'woo', 'title' => 'Woo-verzoek', 'open' => 3, 'waiting' => 2],
@@ -501,7 +507,19 @@ final class KpiAggregationServiceTest extends TestCase {
 		// The app catalogue: the month names are keys, so an identity
 		// translator is the English reader's view.
 		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnArgument(0);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters)
+		);
+		$l10n->method('n')->willReturnCallback(
+			static function (string $one, string $many, int $count, array $parameters = []): string {
+				$text = $many;
+				if ($count === 1) {
+					$text = $one;
+				}
+
+				return vsprintf(str_replace('%n', (string)$count, $text), $parameters);
+			}
+		);
 
 		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, new QueueFigures(new DayCount()), $l10n, new NullLogger());
 	}

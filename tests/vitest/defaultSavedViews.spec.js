@@ -28,13 +28,14 @@ const defaults = byslug('Cases')
 
 describe('default views on Cases', () => {
 
-	it('ships nine, each with a Dutch name', () => {
+	it('ships ten, each with a Dutch name', () => {
 		expect(Object.keys(defaults)).toEqual([
 			'mine-overdue',
 			'mine-due-this-week',
 			'unclaimed-overdue',
 			'woo-requests',
 			'subsidies',
+			're-integration-pathways',
 			'my-work',
 			'team-queue',
 			'unclaimed-due-this-week',
@@ -77,5 +78,13 @@ describe('lists that were pages, as views of Cases', () => {
 
 	it('keeps the data subject requests on the request kind', () => {
 		expect(defaults['data-subject-requests']).toEqual({ dataSubjectRequestType: ['inzage', 'correctie', 'verwijdering'] })
+	})
+})
+
+describe('Re-integration pathways as a view of Cases', () => {
+	it('lists the cases of the re-integration case type, newest start first', () => {
+		const view = page('Cases').config.defaultSavedViews.find((d) => d.slug === 're-integration-pathways')
+		expect(view.filters).toEqual({ caseTypeIdentifier: 're-integratietraject', statusHiddenInLists: false, isDraft: false })
+		expect(view.overrides.defaultSort).toEqual([{ key: 'startDate', order: 'desc' }])
 	})
 })
