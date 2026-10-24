@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Money;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\Money\PayoutRequester;
 use OCA\Dossiq\Service\Money\PayoutService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
@@ -239,11 +240,8 @@ class PayoutServiceTest extends TestCase {
 		self::assertSame('2026-04-29', $command['dueOn']);
 		self::assertStringEndsWith('/api/payments/callback', $command['callbackUrl']);
 		self::assertSame('payable-1', $row['payableId']);
-		self::assertSame('payable-1', $this->objects->get('dwangsomUitbetaling', (string)$row['id'])['payableId'] ?? null, 'the stored row keeps the payable');
 		self::assertSame('voorbereid', $row['status']);
-		$stored = $this->objects->get('dwangsomUitbetaling', (string)$row['id']);
-		unset($stored['id']);
-		self::assertSame([], (new RealSchemaValidator())->errors(slug: 'dwangsomUitbetaling', payload: $stored));
+		self::assertSame([], array_values($this->objects->store['dwangsomUitbetaling'] ?? []), 'finance holds the payout; dossiq writes no row (REQ-DQM-004)');
 	}//end testPreparePayoutRaisesItInFinance()
 
 	/**

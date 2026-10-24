@@ -48,7 +48,10 @@ be read when the new key is empty.
 
 ### Requirement: Payouts are read from shillinq (REQ-DQM-004)
 
-dossiq SHALL NOT write a payout row of its own. A payout SHALL be read from shillinq through its case. A repair step
+dossiq SHALL NOT write a payout row for a payout the finance app holds. A payout SHALL be read from shillinq, by
+its calculation and its case. Without a finance app dossiq SHALL keep the row as before, so the external provider's
+callback still has a row to update. An objection SHALL withdraw and raise again a payout only finance holds, as it does
+for a stored row. A repair step
 SHALL raise every existing `dwangsomUitbetaling` row in shillinq as a payout linked to its case, with its amount,
 reference and state, and SHALL leave the stored row readable. The annual penalty audit SHALL list the payouts shillinq
 holds for the year.

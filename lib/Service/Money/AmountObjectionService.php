@@ -54,12 +54,14 @@ class AmountObjectionService {
 	 * @param TermijnService $termService Termijn service for events.
 	 * @param LoggerInterface $logger Logger.
 	 * @param PayoutService|null $payouts Withdraws a payout from finance while the objection runs, and raises it again after.
+	 * @param PayoutReader|null $reader Reads the payouts only finance holds, so an objection reaches them too.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly TermijnService $termService,
 		private readonly LoggerInterface $logger,
 		private readonly ?PayoutService $payouts = null,
+		private readonly ?PayoutReader $reader = null,
 	) {
 	}//end __construct()
 
@@ -142,6 +144,8 @@ class AmountObjectionService {
 				$this->logger->warning('Bezwaar freeze on uitbetaling failed', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
 			}
 		}
+
+		$this->withdrawFinanceOnlyPayouts(calculationId: $calculationId, stored: $uitbetalingen, reason: trim($basis . ' ' . $rationale));
 
 		// Record event on termijn.
 		$instanceId = (string)($calculation['deadlineInstance'] ?? '');
@@ -239,6 +243,8 @@ class AmountObjectionService {
 			}
 		}
 
+		$this->raiseFinanceOnlyPayoutAgain(calculationId: $calculationId, newAmountCents: $newAmountCents, stored: $uitbetalingen);
+
 		$instanceId = (string)($calculation['deadlineInstance'] ?? '');
 		if ($instanceId !== '') {
 			$this->termService->recordEvent(
@@ -253,6 +259,64 @@ class AmountObjectionService {
 		$this->logger->info('Objection against an accruing amount resolved', ['berekening' => $calculationId, 'newBedrag' => $newAmountCents]);
 		return $calculation;
 	}//end resolveObjection()
+
+	/**
+	 * Withdraw the live payouts only finance holds for this calculation.
+	 *
+	 * A payout finance already approved stays with finance; the refusal is logged.
+	 *
+	 * @param string $calculationId The calculation.
+	 * @param array<int, array<string, mixed>> $stored The payout rows dossiq kept, handled already.
+	 * @param string $reason Why it is withdrawn.
+	 *
+	 * @return void
+	 */
+	private function withdrawFinanceOnlyPayouts(string $calculationId, array $stored, string $reason): void {
+		$kept = array_column($stored, 'payableId');
+		foreach (($this->reader?->rowsForCalculation(calculationId: $calculationId) ?? []) as $row) {
+			if ($row['status'] === 'withdrawn' || in_array($row['payableId'], $kept, true) === true) {
+				continue;
+			}
+
+			try {
+				$this->payouts?->withdrawFromFinance(row: $row, reason: $reason);
+			} catch (\Throwable $e) {
+				$this->logger->warning('Bezwaar freeze on a payout finance holds failed', ['reference' => $row['reference'], 'error' => $e->getMessage()]);
+			}
+		}
+	}//end withdrawFinanceOnlyPayouts()
+
+	/**
+	 * Raise the payout finance holds for this calculation again with the decided
+	 * amount, once: only when dossiq kept no row for it and no live payout is
+	 * left, from the last one withdrawn.
+	 *
+	 * @param string $calculationId The calculation.
+	 * @param int $newAmountCents The decided amount.
+	 * @param array<int, array<string, mixed>> $stored The payout rows dossiq kept; when any, they were raised again already.
+	 *
+	 * @return void
+	 */
+	private function raiseFinanceOnlyPayoutAgain(string $calculationId, int $newAmountCents, array $stored): void {
+		$rows = [];
+		if ($stored === []) {
+			$rows = ($this->reader?->rowsForCalculation(calculationId: $calculationId) ?? []);
+		}
+
+		$withdrawn = array_values(array_filter($rows, static fn (array $row): bool => $row['status'] === 'withdrawn'));
+		if ($withdrawn === [] || count($withdrawn) !== count($rows)) {
+			return;
+		}
+
+		$row = end($withdrawn);
+		$row['amount'] = $newAmountCents;
+		$row['payableId'] = '';
+		try {
+			$this->payouts?->raiseAgain(row: $row);
+		} catch (\Throwable $e) {
+			$this->logger->warning('Bezwaar resolve: finance refused the payout again', ['reference' => $row['reference'], 'error' => $e->getMessage()]);
+		}
+	}//end raiseFinanceOnlyPayoutAgain()
 
 	/**
 	 * Assert the register and the money schemas are configured and OpenRegister is

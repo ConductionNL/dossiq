@@ -8,5 +8,5 @@
 - [x] 4. Config keys renamed, carried by `CarryRenamedSettingKeys`, legacy key read while the new one is missing (REQ-DQM-003). Verify: CarryRenamedSettingKeysTest, SettingsServiceTest, PayoutCallbackControllerTest, MoneyCodeNamesNoProcedureTest.
 - [ ] 5. Schema titles and descriptions without the procedure name; digests regenerated (REQ-DQM-003). Verify: schema digest test.
 - [ ] 6. Playwright: the penalty payout shows on its case (REQ-DQM-002). Verify: passes locally.
-- [ ] 7. Payouts read from shillinq; repair migrates `dwangsomUitbetaling` rows; the audit reads shillinq (REQ-DQM-004). Part 1 done: PayoutReader, MigratePayoutRowsToFinance, history on the raise. Part 2 done: the audit rows and the annual statement read finance. Verify: PHPUnit on the repair and the audit rows, red first.
+- [x] 7. Payouts read from shillinq; repair migrates `dwangsomUitbetaling` rows; the audit reads shillinq; no row is written for a payout finance holds; the callback and the objection reach a payout only finance holds (REQ-DQM-004). Verify: MigratePayoutRowsToFinanceTest, PayoutRequesterTest, PenaltyPaymentRowsTest, DeadlineReportingServiceTest, AmountObjectionServiceTest, PayoutCallbackControllerTest.
 - [ ] 8. `forfeitRaisesInvoice` on the case type; a forfeited act raises the invoice (REQ-DQM-005). Verify: PHPUnit red first; Playwright.
