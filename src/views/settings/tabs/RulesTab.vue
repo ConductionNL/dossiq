@@ -206,7 +206,7 @@ export default {
 			trying: '',
 			trace: null,
 			caseType: null,
-			catalogue: { propertyDefinitions: [], statusTypes: [], documentTypes: [], emailTemplates: [] },
+			catalogue: { propertyDefinitions: [], statusTypes: [], documentTypes: [], emailTemplates: [], roleTypes: [] },
 			dialog: null,
 		}
 	},
@@ -250,6 +250,7 @@ export default {
 				statuses: options(this.catalogue.statusTypes),
 				documentTypes: options(this.catalogue.documentTypes),
 				templates: options(this.catalogue.emailTemplates),
+				roles: options(this.catalogue.roleTypes || []),
 				variants: (this.caseType?.variants || []).map((v) => ({ id: v.name, label: v.name })),
 			}
 		},
@@ -386,6 +387,7 @@ export default {
 				statusTypes: blueprint ? blueprint.statusTypes : await list('statusType'),
 				documentTypes: await list('documentType'),
 				emailTemplates: await list('emailTemplate'),
+				roleTypes: await list('roleType'),
 			}
 		},
 
