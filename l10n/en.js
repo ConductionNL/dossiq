@@ -2666,6 +2666,7 @@ OC.L10N.register(
         "Dossiq ships case types, statuses, results and roles. This is what arrived, and what you changed since.": "Dossiq ships case types, statuses, results and roles. This is what arrived, and what you changed since.",
         "Dossiq's own kinds: pipelinq is not installed on this instance": "Dossiq's own kinds: pipelinq is not installed on this instance",
         "Dot-path into the case-file data snapshot that this condition evaluates, e.g. a caseFileItem id or nested field.": "Dot-path into the case-file data snapshot that this condition evaluates, e.g. a caseFileItem id or nested field.",
+        "Only those with the AI oversight role may download.": "Only those with the AI oversight role may download.",
         "Download": "Download",
         "Download CSV": "Download CSV",
         "Download evaluatierapport": "Download evaluatierapport",

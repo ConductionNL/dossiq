@@ -5748,6 +5748,7 @@
         "Only the subject and the start of each message are read. A case number further down is missed.": "Only the subject and the start of each message are read. A case number further down is missed.",
         "Only the subject and the start of each message are read. Only cases you work on are linked.": "Only the subject and the start of each message are read. Only cases you work on are linked.",
         "Only this group and administrators read the intake log. Only they release a held message. The log keeps the original of every message the mailbox received. Leave it empty and only administrators can read it.": "Only this group and administrators read the intake log. Only they release a held message. The log keeps the original of every message the mailbox received. Leave it empty and only administrators can read it.",
+        "Only those with the AI oversight role may download.": "Only those with the AI oversight role may download.",
         "Only used when responseType is getal or meting": "Only used when responseType is getal or meting",
         "Only what I can do unilaterally": "Only what I can do unilaterally",
         "Only what this case allows now is active. The rest is greyed out, with the reason.": "Only what this case allows now is active. The rest is greyed out, with the reason.",

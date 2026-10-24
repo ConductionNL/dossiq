@@ -4854,7 +4854,18 @@
 									"label": "Model"
 								}
 							],
-							"emptyText": "The assistant has made no suggestions on this case yet"
+							"emptyText": "The assistant has made no suggestions on this case yet",
+							"allowCreate": false,
+							"export": {
+								"label": "Download",
+								"url": "/apps/hermiq/api/ai-oversight/subject/export",
+								"params": {
+									"originApp": "dossiq",
+									"subjectId": "@objectId"
+								},
+								"group": "ai-oversight"
+							},
+							"footnote": "Only those with the AI oversight role may download."
 						}
 					},
 					{
