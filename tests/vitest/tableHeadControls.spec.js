@@ -25,7 +25,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.jso
  * @return {string} The tag.
  */
 function tableTag(source) {
-	const at = admin.indexOf(`:source="${source}"`)
+	const at = Math.max(admin.indexOf(`:source="${source}"`), admin.indexOf(`:endpointSource="${source}"`))
 	const start = admin.lastIndexOf('<CnWidgetObjectTable', at)
 	return admin.slice(start, admin.indexOf('/>', at))
 }

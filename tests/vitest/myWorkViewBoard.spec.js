@@ -21,7 +21,12 @@ const overrides = manifest.pages.find((page) => page.id === 'Cases').config.defa
 describe('DqAanMijToegewezen', () => {
 	it('draws no lenses of the case list, only the covering chip the board puts on the Active line', () => {
 		expect(overrides.quickFilters.map((chip) => chip.label)).toEqual(['Including work you cover'])
-		expect(overrides.slots['below-header']).toEqual(['WorkloadSummaryBar'])
+		expect(overrides.quickFilterPlacement).toBe('active')
+	})
+
+	it('draws the workload heading under the header and the team\'s name chips at the start of the toolbar row', () => {
+		expect(overrides.slots['below-header']).toEqual(['WorkloadTeamHeading'])
+		expect(overrides.slots['toolbar-start']).toEqual(['WorkloadTeamChips'])
 	})
 
 	it('draws the bulk band only once cards are selected', () => {

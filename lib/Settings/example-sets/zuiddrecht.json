@@ -5160,6 +5160,15 @@
 			}
 		},
 		{
+			"key": "pieter-noteert-hoorzitting",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{task:hoorzitting-inplannen.uuid}}",
+				"message": "Zaal en commissie vastgelegd voor 21 oktober.",
+				"createdAt": "{{datetime:0 11:15}}"
+			}
+		},
+		{
 			"key": "pieter-noteert-parkeervergunningen",
 			"data": {
 				"user": "{{cast:pieter.uid}}",

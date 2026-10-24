@@ -3098,10 +3098,11 @@
 						"id": "case-contact-moments-card",
 						"type": "object-list",
 						"title": "Contact moments on this case",
-						"_note": "DqZaakContact: the contact moments as a card with no Add of its own, as the board draws it; a contact is logged with Contact vastleggen in the header and on the conversation card.",
+						"_note": "DqZaakContact: the contact moments as a card with no Add of its own, as the board draws it; a contact is logged with Contact vastleggen in the header and on the conversation card. A plain log: the date with its time as regular text (rowTitle text), the channel as an icon and its name.",
 						"content": {
 							"tableBleed": true,
-							"headerSubtitle": "{total} recorded",
+							"rowTitle": "text",
+							"headerNote": "{total} recorded",
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
@@ -3116,11 +3117,15 @@
 								{
 									"key": "startTime",
 									"label": "Date",
-									"format": "date-time"
+									"format": "date-time",
+									"widget": "date",
+									"widgetProps": { "short": true, "showTime": true }
 								},
 								{
 									"key": "notificationChannel",
 									"label": "Channel",
+									"widget": "iconLabel",
+									"widgetProps": { "icons": { "phone": "Phone", "email": "EmailOutline", "webformulier": "Earth", "chat": "MessageTextOutline", "social_media": "ShareVariant", "balie": "OfficeBuildingOutline" } },
 									"enum": ["phone", "email", "webformulier", "chat", "social_media", "balie"],
 									"enumLabels": { "phone": "Phone", "email": "Email", "webformulier": "Web form", "chat": "Chat", "social_media": "Social media", "balie": "Desk" }
 								},
@@ -4910,7 +4915,18 @@
 									"label": "Model"
 								}
 							],
-							"emptyText": "The assistant has made no suggestions on this case yet"
+							"emptyText": "The assistant has made no suggestions on this case yet",
+							"allowCreate": false,
+							"export": {
+								"label": "Download",
+								"url": "/apps/hermiq/api/ai-oversight/subject/export",
+								"params": {
+									"originApp": "dossiq",
+									"subjectId": "@objectId"
+								},
+								"group": "ai-oversight"
+							},
+							"footnote": "Only those with the AI oversight role may download."
 						}
 					},
 					{
@@ -4934,7 +4950,11 @@
 						"requiredApp": "hermiq",
 						"_note": "The AI Chat Companion embedded in the Assistant tab (DqZaakAssistent). The library widget renders the companion the launcher hex opens, always open and without the hex; it reads the page context CnDetailPage provides, so the agents offered are the ones relevant to a case. Without hermiq the widget says it is not installed rather than leaving an empty tab. Needs the nextcloud-vue release with the `ai-chat` widget (ai-chat-widget).",
 						"content": {
-							"chatAppId": "hermiq"
+							"chatAppId": "hermiq",
+							"pill": "Hermiq",
+							"note": "The assistant sees only what you see on this case. Without Hermiq this panel is off.",
+							"placeholder": "Ask something about this case",
+							"sendLabel": "Ask"
 						}
 					},
 					{
@@ -5861,6 +5881,7 @@
 					{
 						"key": "subjectLabel",
 						"width": "170px",
+						"filterField": "objectUuid",
 						"label": "Subject",
 						"cellClass": "cn-cell--wrap",
 						"_note": "Board DqTaken: the subject links to its case with the case number under it. Only a dossiq task's subject is a dossiq case (`appId`); another app's task shows its subject as text. `subject.identifier` comes from openregister's task subject context (task-subject-identifier).",
@@ -5902,6 +5923,7 @@
 					{
 						"key": "priorityLabel",
 						"label": "Priority",
+						"filterField": "priority",
 						"sortable": true,
 						"widget": "badge",
 						"widgetProps": {
@@ -6279,6 +6301,27 @@
 								}
 							},
 							"pill": {
+								"cases": [
+									{
+										"when": {
+											"field": "isDraft",
+											"op": "eq",
+											"value": true
+										},
+										"label": "Draft",
+										"variant": "warning"
+									},
+									{
+										"when": {
+											"field": "validUntil",
+											"op": "notEmpty"
+										},
+										"label": "Frozen",
+										"variant": "default"
+									}
+								],
+								"label": "Active",
+								"variant": "success",
 								"field": "isDraft",
 								"labels": {
 									"false": "Published",
@@ -6291,18 +6334,26 @@
 							},
 							"rowRoute": "CaseTypeDetail",
 							"emptyText": "This case type has only this version",
-							"footerAction": {
-								"label": "Publish",
-								"icon": "Publish",
-								"type": "open-modal",
-								"target": "CaseTypePublishDialog",
-								"disabledWhen": {
-									"field": "isDraft",
-									"op": "neq",
-									"value": true
+							"footerAction": [
+								{
+									"label": "Publish",
+									"type": "open-modal",
+									"target": "CaseTypePublishDialog",
+									"visibleWhen": {
+										"field": "isDraft",
+										"op": "eq",
+										"value": true
+									}
 								},
-								"disabledReason": "This version is already published"
-							}
+								{
+									"label": "Make a new version",
+									"icon": "Plus",
+									"type": "open-modal",
+									"target": "CaseTypeNewVersionDialog",
+									"note": "A published version no longer changes. Changing it makes a new version.",
+									"wide": true
+								}
+							]
 						}
 					},
 					{
