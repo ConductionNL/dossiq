@@ -196,6 +196,7 @@ class CaseTypeRuleFlowDocument {
 				value: ($action['value'] ?? null),
 				definitionNames: $definitionNames
 			),
+			'sendMessage' => $this->sendMessage(rule: $rule, action: $action, caseTypeId: $caseTypeId),
 			'chooseVariant' => $this->writeField(field: 'variant', value: trim((string)($action['variant'] ?? '')), definitionNames: []),
 			default => null,
 		};
@@ -227,6 +228,37 @@ class CaseTypeRuleFlowDocument {
 
 		return ['type' => 'dossiq.createTask', 'config' => $config];
 	}//end addTask()
+
+	/**
+	 * The send-message step: once per case, or once per status entry for a status rule.
+	 *
+	 * @param array<string, mixed> $rule The rule.
+	 * @param array<string, mixed> $action The action.
+	 * @param string $caseTypeId The case type uuid.
+	 *
+	 * @return array{type: string, config: array<string, mixed>}|null The step.
+	 */
+	private function sendMessage(array $rule, array $action, string $caseTypeId): ?array {
+		$template = trim((string)($action['emailTemplate'] ?? ''));
+		if ($template === '') {
+			return null;
+		}
+
+		$config = [
+			'emailTemplate' => $template,
+			'onceKey' => 'rule:' . $caseTypeId . ':' . (string)($rule['id'] ?? ''),
+		];
+		$role = trim((string)($action['recipientRole'] ?? ''));
+		if ($role !== '') {
+			$config['recipientRole'] = $role;
+		}
+
+		if (($rule['when']['event'] ?? null) === 'statusEntered') {
+			$config['oncePer'] = 'currentStatusEnteredAt';
+		}
+
+		return ['type' => 'dossiq.sendMessage', 'config' => $config];
+	}//end sendMessage()
 
 	/**
 	 * An update of one case field, guarded on the field not holding the value yet.

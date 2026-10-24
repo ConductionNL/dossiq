@@ -239,12 +239,16 @@ class CaseTypeRuleProjectorTest extends TestCase {
 
 		$plan = $this->projector(rules: [$status, $off])->plan(caseTypeId: 'type-1');
 
-		$this->assertCount(1, $plan['flows']);
+		$this->assertCount(2, $plan['flows']);
 		$this->assertSame(
 			['==' => [['var' => 'json.status'], 'status-geweigerd']],
 			$plan['flows'][0]['nodes'][1]['config']['condition']['and'][1]
 		);
-		$this->assertSame(['bij-weigering: sendMessage'], $plan['unprojected']);
+		$this->assertSame(
+			['emailTemplate' => 'weigering', 'onceKey' => 'rule:type-1:bij-weigering', 'oncePer' => 'currentStatusEnteredAt'],
+			$plan['flows'][1]['nodes'][2]['config']
+		);
+		$this->assertSame([], $plan['unprojected']);
 	}//end testStatusRulesOffRulesAndUnprojectedActions()
 
 	/**
@@ -319,14 +323,13 @@ class CaseTypeRuleProjectorTest extends TestCase {
 		$rule['actions'] = [
 			['action' => 'setField', 'field' => 'bouwkosten', 'value' => 1],
 			['action' => 'requireDocument', 'documentType' => 'welstandsadvies'],
-			['action' => 'sendMessage', 'emailTemplate' => 'tpl'],
 		];
 
 		$plan = $this->projector(rules: [$rule])->plan(caseTypeId: 'type-1');
 
 		$this->assertSame([], $plan['flows']);
 		$this->assertSame(
-			['welstandsadvies: setField', 'welstandsadvies: requireDocument', 'welstandsadvies: sendMessage'],
+			['welstandsadvies: setField', 'welstandsadvies: requireDocument'],
 			$plan['unprojected']
 		);
 	}//end testActionsWithoutAnEngineAreNamed()
