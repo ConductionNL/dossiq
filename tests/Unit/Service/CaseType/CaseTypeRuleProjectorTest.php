@@ -318,20 +318,30 @@ class CaseTypeRuleProjectorTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testActionsWithoutAnEngineAreNamed(): void {
+	public function testAnAnswerIsAGuardedSetCaseAnswerAndAConditionalDocumentIsNamed(): void {
 		$rule = self::WELSTAND;
 		$rule['actions'] = [
-			['action' => 'setField', 'field' => 'bouwkosten', 'value' => 1],
+			['action' => 'setField', 'field' => 'welstandsgebied', 'value' => true],
 			['action' => 'requireDocument', 'documentType' => 'welstandsadvies'],
 		];
 
 		$plan = $this->projector(rules: [$rule])->plan(caseTypeId: 'type-1');
 
-		$this->assertSame([], $plan['flows']);
-		$this->assertSame(
-			['welstandsadvies: setField', 'welstandsadvies: requireDocument'],
-			$plan['unprojected']
-		);
+		$this->assertSame(['welstandsadvies: requireDocument'], $plan['unprojected']);
+		$this->assertCount(1, $plan['flows']);
+		$this->assertSame(['type' => 'dossiq.setCaseAnswer', 'config' => ['name' => 'welstandsgebied', 'value' => true]], array_intersect_key($plan['flows'][0]['nodes'][2], ['type' => 1, 'config' => 1]));
+
+		$library = dirname(__DIR__, 5) . '/openregister/vendor/jwadhams/json-logic-php/src/JWadhams/JsonLogic.php';
+		if (is_file($library) === false) {
+			$this->markTestSkipped('needs a sibling openregister checkout with its vendor, for JSONLogic');
+		}
+
+		require_once $library;
+		$condition = $plan['flows'][0]['nodes'][1]['config']['condition'];
+		$case = ['caseType' => 'type-1', 'properties' => [['name' => 'bouwkosten', 'value' => 150000], ['name' => 'welstandsgebied', 'value' => false]]];
+		$this->assertTrue((bool)\JWadhams\JsonLogic::apply($condition, ['json' => $case]));
+		$case['properties'][1]['value'] = true;
+		$this->assertFalse((bool)\JWadhams\JsonLogic::apply($condition, ['json' => $case]));
 	}//end testActionsWithoutAnEngineAreNamed()
 	/**
 	 * A required document on entering a status becomes an entry requirement

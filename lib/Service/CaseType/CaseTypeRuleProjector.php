@@ -209,8 +209,8 @@ class CaseTypeRuleProjector {
 		$plan = $this->plan(caseTypeId: $caseTypeId);
 		$warnings = [];
 		foreach ($plan['unprojected'] as $action) {
-			$warnings[] = 'Rule action ' . $action . ' is not carried out: adding a task, choosing a variant and setting a '
-				. 'field of the case are; setting a property definition, requiring a document and sending a message are not yet.';
+			$warnings[] = 'Rule action ' . $action . ' is not carried out: a required document is only carried out '
+				. 'on entering a status without further conditions.';
 		}
 
 		$flowService = $this->service(name: 'OCA\OpenRegister\Service\Flow\FlowService');

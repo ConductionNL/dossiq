@@ -130,6 +130,9 @@ class CaseTypeRuleFlowDocument {
 
 		if (isset($step['guard']) === true) {
 			$conditions[] = $step['guard'];
+		}
+
+		if ($step['type'] === 'openregister.object-write') {
 			$step['config'] = array_merge(['register' => $register, 'schema' => $schema], $step['config']);
 		}
 
@@ -261,21 +264,26 @@ class CaseTypeRuleFlowDocument {
 	}//end sendMessage()
 
 	/**
-	 * An update of one case field, guarded on the field not holding the value yet.
+	 * A write of one field, guarded on the field not holding the value yet.
 	 *
-	 * Only a field of the case itself: a property definition's answer lives
-	 * in the case's `properties` list, which a field patch cannot address, so
-	 * such an action is not projected rather than written where nothing reads it.
+	 * A field of the case itself is an `openregister.object-write` update. A
+	 * property definition's answer lives in the case's `properties` list, which
+	 * a field patch cannot address, so it is a `dossiq.setCaseAnswer` step.
 	 *
-	 * @param string $field The case field.
+	 * @param string $field The case field or property definition name.
 	 * @param mixed $value The value to write.
 	 * @param array<int, string> $definitionNames The case type's property definition names.
 	 *
 	 * @return array{type: string, config: array<string, mixed>, guard: array<string, mixed>}|null The step.
 	 */
 	private function writeField(string $field, mixed $value, array $definitionNames): ?array {
-		if ($field === '' || $value === '' || in_array($field, $definitionNames, true) === true) {
+		if ($field === '' || $value === '') {
 			return null;
+		}
+
+		$guard = ['kind' => 'fieldDiffers', 'field' => $field, 'value' => $value];
+		if (in_array($field, $definitionNames, true) === true) {
+			return ['type' => 'dossiq.setCaseAnswer', 'config' => ['name' => $field, 'value' => $value], 'guard' => $guard];
 		}
 
 		return [
@@ -285,7 +293,7 @@ class CaseTypeRuleFlowDocument {
 				'match' => [['property' => 'id', 'value' => '{{ id }}']],
 				'fields' => [$field => $value],
 			],
-			'guard' => ['kind' => 'fieldCompare', 'field' => $field, 'op' => 'neq', 'value' => $value],
+			'guard' => $guard,
 		];
 	}//end writeField()
 }//end class
