@@ -32,6 +32,12 @@ describe('the Statuses tab against DqZaaktypeStatussen', () => {
 		expect(labels).toEqual(['Status toevoegen', 'Resultaat toevoegen', 'Documenttype toevoegen', 'Besluittype toevoegen'])
 	})
 
+	it('writes the list colour as a word, as the board does, not as a pill', () => {
+		const colour = widget('case-type-statuses-editor').content.columns.find((c) => c.key === 'colour')
+		expect(colour.widget).toBe('label')
+		expect(['blue', 'orange', 'purple', 'teal', 'green', 'red'].map((v) => dutch(colour.enumLabels[v]))).toEqual(['Blauw', 'Oranje', 'Paars', 'Groenblauw', 'Groen', 'Rood'])
+	})
+
 	it('lists a status by name, list colour, whether it ends the case and what the applicant sees', () => {
 		const columns = widget('case-type-statuses-editor').content.columns
 		expect(columns.map((c) => c.key)).toEqual(['name', 'colour', 'isFinal', 'publicLabel'])

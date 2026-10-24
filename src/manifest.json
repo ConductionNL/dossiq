@@ -11910,7 +11910,24 @@
 								},
 								{
 									"key": "colour",
-									"label": "Colour in lists"
+									"label": "Colour in lists",
+									"widget": "label",
+									"enumLabels": {
+										"blue": "Blue",
+										"blue-light": "Light blue",
+										"green": "Green",
+										"green-light": "Light green",
+										"orange": "Orange",
+										"orange-light": "Light orange",
+										"red": "Red",
+										"red-light": "Light red",
+										"purple": "Purple",
+										"purple-light": "Light purple",
+										"teal": "Teal",
+										"teal-light": "Light teal",
+										"grey": "Grey",
+										"grey-light": "Light grey"
+									}
 								},
 								{
 									"key": "isFinal",
