@@ -3337,6 +3337,7 @@ OC.L10N.register(
         "for {name}, until {date}": "voor {name}, tot {date}",
         "Forfeited": "Verbeurd",
         "Forfeited on": "Verbeurd op",
+        "Forfeited penalty %s": "Verbeurde dwangsom %s",
         "Form": "Formulier",
         "Formal advice conclusion": "Formele conclusie van het advies",
         "Format": "Formaat",
@@ -11187,7 +11188,15 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "A forfeited penalty raises an invoice": "Een verbeurde dwangsom maakt een factuur",
+        "When an enforcement act on a case of this type is forfeited, the finance app raises an invoice for the forfeited amount, linked to the case and payable online.": "Als een handhavingsbesluit op een zaak van dit type verbeurd is, maakt de financiële administratie een factuur voor het verbeurde bedrag, gekoppeld aan de zaak en online te betalen.",
+        "Who pays a forfeited penalty": "Wie betaalt een verbeurde dwangsom",
+        "The role type of the person on the case who receives the invoice, for example the offender. Without one, or when that person has no email address, no invoice is raised.": "Het roltype van de persoon op de zaak die de factuur krijgt, bijvoorbeeld de overtreder. Zonder roltype, of als die persoon geen e-mailadres heeft, komt er geen factuur.",
+        "Finance administration": "Financiële administratie",
+        "The administration in the finance app that sends the invoice.": "De administratie in de financiële app die de factuur verstuurt.",
+        "Kind of payment": "Soort betaling",
+        "The kind of payment the finance app books the invoice under, which decides its revenue account.": "De soort betaling waaronder de financiële app de factuur boekt; die bepaalt de opbrengstrekening."
     },
     "nplurals=2; plural=(n != 1);"
 )

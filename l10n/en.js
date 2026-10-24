@@ -3337,6 +3337,7 @@ OC.L10N.register(
         "for {name}, until {date}": "for {name}, until {date}",
         "Forfeited": "Forfeited",
         "Forfeited on": "Forfeited on",
+        "Forfeited penalty %s": "Forfeited penalty %s",
         "Form": "Form",
         "Formal advice conclusion": "Formal advice conclusion",
         "Format": "Format",
@@ -11187,7 +11188,15 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "{value} of your cases are past their deadline or end today.",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "A forfeited penalty raises an invoice": "A forfeited penalty raises an invoice",
+        "When an enforcement act on a case of this type is forfeited, the finance app raises an invoice for the forfeited amount, linked to the case and payable online.": "When an enforcement act on a case of this type is forfeited, the finance app raises an invoice for the forfeited amount, linked to the case and payable online.",
+        "Who pays a forfeited penalty": "Who pays a forfeited penalty",
+        "The role type of the person on the case who receives the invoice, for example the offender. Without one, or when that person has no email address, no invoice is raised.": "The role type of the person on the case who receives the invoice, for example the offender. Without one, or when that person has no email address, no invoice is raised.",
+        "Finance administration": "Finance administration",
+        "The administration in the finance app that sends the invoice.": "The administration in the finance app that sends the invoice.",
+        "Kind of payment": "Kind of payment",
+        "The kind of payment the finance app books the invoice under, which decides its revenue account.": "The kind of payment the finance app books the invoice under, which decides its revenue account."
     },
     "nplurals=2; plural=(n != 1);"
 )

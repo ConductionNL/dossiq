@@ -62,9 +62,13 @@ holds for the year.
 
 ### Requirement: A forfeited penalty raises an invoice, by configuration (REQ-DQM-005)
 
-A case type MAY say that a forfeited penalty raises an invoice (`forfeitRaisesInvoice`). When an enforcement act on a
-case of that type is forfeited, dossiq SHALL raise a shillinq invoice for the forfeited amount, linked to the case.
-Without the setting, or without shillinq, nothing SHALL be raised and the act SHALL still read forfeited.
+A case type MAY say that a forfeited penalty raises an invoice (`forfeitRaisesInvoice`), name the role type of the
+person on the case who pays (`forfeitPayerRoleType`), the finance administration that bills (`forfeitAdministration`)
+and the kind of payment (`forfeitRequestType`, default `dwangsom`). When an enforcement act on a case of that type
+becomes forfeited, dossiq SHALL ask the finance app, once, for a payment request with an invoice behind it for the
+forfeited amount, billed to that person and linked to the case. Without the setting, without a payer with an email
+address, or without the finance app, nothing SHALL be raised and the act SHALL still read forfeited. A refusal by the
+finance app SHALL be logged and SHALL NOT undo the forfeit.
 
 #### Scenario: A forfeited penalty becomes an invoice on the enforcement case
 

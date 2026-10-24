@@ -9,4 +9,4 @@
 - [ ] 5. Schema titles and descriptions without the procedure name; digests regenerated (REQ-DQM-003). Verify: schema digest test.
 - [ ] 6. Playwright: the penalty payout shows on its case (REQ-DQM-002). Verify: passes locally.
 - [ ] 7. Payouts read from shillinq; repair migrates `dwangsomUitbetaling` rows; the audit reads shillinq (REQ-DQM-004). Verify: PHPUnit on the repair and the audit rows, red first.
-- [ ] 8. `forfeitRaisesInvoice` on the case type; a forfeited act raises the invoice (REQ-DQM-005). Verify: PHPUnit red first; Playwright.
+- [x] 8. `forfeitRaisesInvoice`, `forfeitPayerRoleType`, `forfeitAdministration`, `forfeitRequestType` on the case type (1.40.0); ForfeitInvoiceListener raises once through shillinq's leaf `createAsApp` with an invoice (REQ-DQM-005). Verify: ForfeitInvoiceRaiserTest, ForfeitInvoiceListenerTest.
