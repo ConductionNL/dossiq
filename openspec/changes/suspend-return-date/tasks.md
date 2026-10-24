@@ -1,0 +1,2 @@
+- [x] 1.1 days input dateField (tests/vitest/suspendComesBackOn.spec.js)
+- [ ] 1.2 Live check on DqVolgendeStap after the library lands
