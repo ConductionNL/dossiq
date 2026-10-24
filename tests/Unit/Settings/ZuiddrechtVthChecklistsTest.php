@@ -43,7 +43,10 @@ class ZuiddrechtVthChecklistsTest extends TestCase {
 		$this->assertSame(expected: [3, 'active'], actual: [$fire['version'], $fire['status']]);
 
 		$asbestos = $objects['inspectie-checklist-asbest']['data'];
-		$this->assertSame(expected: ['Asbest', 1, 'draft', false], actual: [$asbestos['name'], $asbestos['version'], $asbestos['status'], $asbestos['active']]);
+		$this->assertSame(
+			expected: ['Asbest', 1, 'draft', false],
+			actual: [$asbestos['name'], $asbestos['version'], $asbestos['status'], $asbestos['active']]
+		);
 
 		$change = array_column($set['changes'], null, 'key')['checklist-oplevering-versie-2'];
 		$this->assertSame(expected: ['seedKey' => 'bouwtoezicht-fase-3-oplevering'], actual: $change['where']);
