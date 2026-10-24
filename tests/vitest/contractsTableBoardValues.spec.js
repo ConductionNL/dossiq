@@ -6,7 +6,7 @@
  * contract as a grey pill. "neutral" is no badge variant, so the pill drew no
  * background at all.
  *
- * @spec openspec/specs/procurement/spec.md
+ * @spec openspec/specs/dossiq-procurement-contract-lifecycle/spec.md
  */
 
 import { BADGE_VARIANTS } from '@conduction/nextcloud-vue/src/utils/badgeVariants.js'
