@@ -11,6 +11,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import nl from '../../l10n/nl.json'
 import manifest from '../../src/manifest.json'
 
 const page = manifest.pages.find((p) => p.id === 'LhsRecommendationDetail')
@@ -37,11 +38,18 @@ describe('the LHS matrix on the enforcement advice', () => {
 		// "last_under_penaltypayment" (DqHandhaving: "Last onder dwangsom").
 		const source = matrix.content.cellSource
 		expect(source.valueLabels.last_under_penaltypayment).toBe('Order subject to a penalty')
-		expect(source.rowLabels.goedwillend).toBe('Behaviour: well-meaning')
-		expect(source.columnLabels.ernstig).toBe('Consequence: serious')
+		expect(source.rowLabels.goedwillend).toBe('Behaviour 1: well-meaning')
+		expect(source.columnLabels.ernstig).toBe('Consequence C: serious')
 		for (const key of ['rowLabels', 'columnLabels', 'valueLabels']) {
 			expect(matrix.content[key], key).toBeUndefined()
 		}
+	})
+
+	it('numbers behaviour and consequence as DqHandhaving does', () => {
+		const source = matrix.content.cellSource
+		const dutch = (key) => nl.translations[key] || key
+		expect(Object.values(source.rowLabels).map(dutch)).toEqual(['Gedrag 1: welwillend', 'Gedrag 2: onwetend', 'Gedrag 3: calculerend', 'Gedrag 4: crimineel'])
+		expect(Object.values(source.columnLabels).map(dutch)).toEqual(['Gevolg A: gering', 'Gevolg B: aanzienlijk', 'Gevolg C: ernstig'])
 	})
 
 	it('outlines the cell of the advice and comes first on the page', () => {

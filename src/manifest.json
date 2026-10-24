@@ -9940,15 +9940,15 @@
 								"rowOrderPath": "behaviourAxis",
 								"columnOrderPath": "severityAxis",
 								"rowLabels": {
-									"goedwillend": "Behaviour: well-meaning",
-									"onverschillig": "Behaviour: indifferent",
-									"calculerend": "Behaviour: calculating",
-									"crimineel": "Behaviour: criminal"
+									"goedwillend": "Behaviour 1: well-meaning",
+									"onverschillig": "Behaviour 2: indifferent",
+									"calculerend": "Behaviour 3: calculating",
+									"crimineel": "Behaviour 4: criminal"
 								},
 								"columnLabels": {
-									"gering": "Consequence: minor",
-									"aanzienlijk": "Consequence: considerable",
-									"ernstig": "Consequence: serious"
+									"gering": "Consequence A: minor",
+									"aanzienlijk": "Consequence B: considerable",
+									"ernstig": "Consequence C: serious"
 								},
 								"valueLabels": {
 									"warning": "Warning",
