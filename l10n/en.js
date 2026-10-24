@@ -3169,6 +3169,7 @@ OC.L10N.register(
         "Fee calculations": "Fee calculations",
         "Fee regulations": "Fee regulations",
         "Fee rules": "Fee rules",
+        "Financial documents": "Financial documents",
         "Fees and payments": "Fees and payments",
         "Fetch every (seconds)": "Fetch every (seconds)",
         "Field": "Field",

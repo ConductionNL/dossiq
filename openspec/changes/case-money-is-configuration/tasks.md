@@ -2,7 +2,7 @@
 
 <!-- HYDRA CAP: max 20 unindented `- [ ]` lines. This file uses 8. -->
 
-- [ ] 1. Case detail places `shillinq-financial-documents-panel`; the linked card lists it (REQ-DQM-001). Verify: `npm run check:manifest`, vitest on the placement.
+- [x] 1. Case detail places `shillinq-financial-documents-panel`; the linked card lists it (REQ-DQM-001). Verify: `npm run check:manifest`, vitest on the placement.
 - [ ] 2. `PayoutRequester` sends the case in `linkedObjects` (REQ-DQM-002). Verify: PayoutRequesterTest red first.
 - [x] 3. `AccruingAmountController` and `Money\AmountObjectionService`; new routes, old URLs as aliases (REQ-DQM-003). Verify: RenamedRouteAliasesTest, DwangsomControllerAuthzTest moved, route gates.
 - [x] 4. Config keys renamed, carried by `CarryRenamedSettingKeys`, legacy key read while the new one is missing (REQ-DQM-003). Verify: CarryRenamedSettingKeysTest, SettingsServiceTest, PayoutCallbackControllerTest, MoneyCodeNamesNoProcedureTest.

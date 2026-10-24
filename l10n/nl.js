@@ -3169,6 +3169,7 @@ OC.L10N.register(
         "Fee calculations": "Legesberekeningen",
         "Fee regulations": "Legesverordeningen",
         "Fee rules": "Legesregels",
+        "Financial documents": "Financiële documenten",
         "Fees and payments": "Leges en betalingen",
         "Fetch every (seconds)": "Ophalen elke (seconden)",
         "Field": "Veld",
