@@ -38,12 +38,12 @@ function widgets(node, id) {
 }
 
 describe('the count subtitles', () => {
-	it('the latest contact moments say their total under the title, on contacts and organisations', () => {
+	it('the latest contact moments say their total at the right of the title, on contacts and organisations', () => {
 		const lists = widgets(full, 'contact-latest-moments')
 		expect(lists).toHaveLength(2)
 		for (const list of lists) {
-			expect(nl[list.content.headerSubtitle]).toBe('{total} in totaal')
-			expect(list.content.headerNote).toBeUndefined()
+			expect(nl[list.content.headerNote]).toBe('{total} in totaal')
+			expect(list.content.headerSubtitle).toBeUndefined()
 		}
 	})
 

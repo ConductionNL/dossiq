@@ -13231,6 +13231,9 @@
 								"field": "startTime",
 								"dir": "desc"
 							},
+							"extend": [
+								"case"
+							],
 							"limit": 3,
 							"presentation": "feed",
 							"icon": {
@@ -13244,9 +13247,30 @@
 								},
 								"default": "EmailOutline"
 							},
-							"meta": "{startTime|datetime}",
+							"meta": {
+								"parts": [
+									"{startTime|datetime}",
+									"{notificationChannel}",
+									"{direction}",
+									"case {case.identifier}"
+								]
+							},
+							"valueLabels": {
+								"notificationChannel": {
+									"phone": "phone",
+									"email": "email",
+									"webformulier": "web form",
+									"chat": "chat",
+									"social_media": "social media",
+									"balie": "desk"
+								},
+								"direction": {
+									"inbound": "inbound",
+									"outbound": "outbound"
+								}
+							},
 							"text": "{summary}",
-							"headerSubtitle": "{total} in total",
+							"headerNote": "{total} in total",
 							"emptyText": "No contact moments yet"
 						}
 					},
@@ -13865,6 +13889,9 @@
 								"field": "startTime",
 								"dir": "desc"
 							},
+							"extend": [
+								"case"
+							],
 							"limit": 3,
 							"presentation": "feed",
 							"icon": {
@@ -13878,9 +13905,30 @@
 								},
 								"default": "EmailOutline"
 							},
-							"meta": "{startTime|datetime}",
+							"meta": {
+								"parts": [
+									"{startTime|datetime}",
+									"{notificationChannel}",
+									"{direction}",
+									"case {case.identifier}"
+								]
+							},
+							"valueLabels": {
+								"notificationChannel": {
+									"phone": "phone",
+									"email": "email",
+									"webformulier": "web form",
+									"chat": "chat",
+									"social_media": "social media",
+									"balie": "desk"
+								},
+								"direction": {
+									"inbound": "inbound",
+									"outbound": "outbound"
+								}
+							},
 							"text": "{summary}",
-							"headerSubtitle": "{total} in total",
+							"headerNote": "{total} in total",
 							"emptyText": "No contact moments yet"
 						}
 					},
