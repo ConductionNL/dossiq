@@ -355,6 +355,20 @@ describe('process mining figures', () => {
 	})
 })
 
+describe('the small compliance charts', () => {
+	it('draw flat labels and no y labels in their narrow cards, the SLA trend by month with the red target line, as DqDoorlooptijd does', () => {
+		const distribution = widget('Doorlooptijd', 'processing-time-charts-distribution').content
+		expect(distribution.options.xaxis.labels.rotate).toBe(0)
+		expect(distribution.options.yaxis.show).toBe(false)
+		const trend = widget('Doorlooptijd', 'processing-time-charts-trend').content
+		expect(trend.categoryFormat).toBe('month')
+		expect(trend.options.xaxis.labels.rotate).toBe(0)
+		expect(trend.options.yaxis.labels.show).toBe(false)
+		expect(trend.options.markers.size).toBe(4)
+		expect(trend.referenceLines[0].color).toContain('--color-error')
+	})
+})
+
 describe('throughput per week', () => {
 	it('names the weeks "w40", as DqProcesanalyse and DqDoorlooptijd draw them', () => {
 		// The endpoints key a week as ISO 2026-W40; nextcloud-vue
