@@ -196,16 +196,22 @@ class DashboardController extends Controller {
 	 *
 	 * The contacts and organisations lists open on the municipality's own city
 	 * (`@config.municipalityCity`). An empty value tells the bundle to leave
-	 * that lens out rather than filter on nothing.
+	 * that lens out rather than filter on nothing. `portalName` is the resident
+	 * portal's name as portaliq holds it ("Mijn Zuiddrecht"); empty when
+	 * portaliq names none, and the bundle then says "the portal".
 	 *
-	 * @return array{municipalityCity: string} The config.
+	 * @return array{municipalityCity: string, portalName: string} The config.
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/changes/receipt-confirmation-card-reads/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
 	 */
 	private function listConfig(): array {
 		return [
 			'municipalityCity' => trim(
 				$this->appConfig->getValueString(app: Application::APP_ID, key: 'municipality_city', default: '')
+			),
+			'portalName'       => trim(
+				$this->appConfig->getValueString(app: 'portaliq', key: 'portalName', default: '')
 			),
 		];
 	}//end listConfig()

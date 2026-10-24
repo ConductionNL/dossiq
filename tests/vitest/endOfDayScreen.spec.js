@@ -85,6 +85,16 @@ describe('the end-of-day page', () => {
 		})
 	})
 
+	it('packs its fitted cards upward, so a short list leaves no band under it', () => {
+		// DqDagAfsluiten: Vandaag vastgelegd starts under Nog open van vandaag,
+		// and Morgen eerst under Uw dag, whatever their length. Every card
+		// sizes to its content; a floating grid would keep each on its row.
+		expect(page.config.gridFloat).toBe(false)
+		for (const cell of page.config.layout) {
+			expect(cell.sizeToContent, cell.widgetId).toBe(true)
+		}
+	})
+
 	it('opens a case and a task on their own pages', () => {
 		for (const id of ['eod-open', 'eod-recorded', 'eod-tomorrow']) {
 			expect(widget(id).content.rowRouteField, id).toBe('routeName')
@@ -102,6 +112,13 @@ describe('the end-of-day page', () => {
 		expect(widget('eod-how').titleTone).toBe('side')
 		// "Morgen eerst" is the same side heading on the board (15px, 600).
 		expect(widget('eod-tomorrow').titleTone).toBe('side')
+		// "Naar Mijn werk" ends the card under the items, not in its header
+		// (nextcloud-vue record-list-footer-link).
+		expect(widget('eod-tomorrow').content.footerLink).toEqual({ label: 'To My work', route: 'MyWorkHome' })
+		expect(widget('eod-tomorrow').content.headerLink).toBeUndefined()
+		// "3 dagen te laat" under the item, as DqDagAfsluiten draws it
+		// (nextcloud-vue record-list-due-below).
+		expect(widget('eod-tomorrow').content.duePlacement).toBe('below')
 	})
 
 	it('draws Your day as the board\'s grid of figures, Hours from humaniq among them and gone without it', () => {

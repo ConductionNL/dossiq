@@ -46,6 +46,7 @@
         "Links",
         "Mail",
         "Manager",
+        "Menu",
         "Model",
         "Moment",
         "Nextcloud",
@@ -122,6 +123,13 @@
         "{subject.title}",
         "initiatorDisplayName",
         "name",
+        "{name}, {description}",
+        "{filter.period}",
+        "{code}, {name}",
+        "{moment} via {channel}",
+        "{moment} via {channel}, {time}",
+        "Document {name}",
+        "Variant",
         "{summary}"
     ]
 }

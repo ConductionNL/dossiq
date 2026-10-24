@@ -1684,6 +1684,7 @@ OC.L10N.register(
         "SLA adherence and processing time analysis": "Respectarea SLA și analiza timpului de procesare",
         "SLA Compliance": "Conformitate SLA",
         "SLA Compliance %": "Conformitate SLA %",
+        "SLA Compliance %%": "Conformitate SLA %%",
         "SLA override (days)": "Suprascriere SLA (zile)",
         "SLA Target: {days}d": "Obiectiv SLA: {days}z",
         "Sloopmelding": "Notificare de demolare",

@@ -48,7 +48,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 * @return array<string, mixed>
 	 */
 	private function json(string $path): array {
-		self::assertFileExists($path);
+		self::assertFileExists(filename: $path);
 		return (array)json_decode((string)file_get_contents($path), true);
 	}//end json()
 
@@ -59,7 +59,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 */
 	private function register(): array {
 		[$merged] = (new RegisterFragmentMerger())->merge(
-			base: $this->json(self::SETTINGS . '/dossiq_register.json'),
+			base: $this->json(path: self::SETTINGS . '/dossiq_register.json'),
 			fragmentDir: self::SETTINGS . '/register.d'
 		);
 		return $merged;
@@ -73,7 +73,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 * @return array<string, mixed>
 	 */
 	private function caseTypeFile(string $package): array {
-		return $this->json(self::PACKAGES . $package . '/case-type.json');
+		return $this->json(path: self::PACKAGES . $package . '/case-type.json');
 	}//end caseTypeFile()
 
 	/**
@@ -84,7 +84,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 * @return array<string, mixed>
 	 */
 	private function import(string $package): array {
-		return $this->caseTypeFile($package)['caseType']['recordImports'][0];
+		return $this->caseTypeFile(package: $package)['caseType']['recordImports'][0];
 	}//end import()
 
 	/**
@@ -103,28 +103,52 @@ class SocialDomainCaseTypesTest extends TestCase {
 	/**
 	 * The package installs everywhere, confidential, handled by the social domain, in the Participatiewet domain.
 	 *
+	 * @param string             $package   The package id.
+	 * @param string             $source    The schema the old records live in.
+	 * @param string             $domain    The social domain the case type maps to.
+	 * @param array<int, string> $sensitive The fields only dossiq-sensitive reads.
+	 * @param string             $bsnKey    The old record's BSN field.
+	 *
 	 * @return void
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
-	public function testThePackageShipsTheCaseTypeInItsDomain(string $package, string $source, string $domain, array $sensitive, string $bsnKey): void {
-		self::assertSame('auto', $this->json(self::PACKAGES . $package . '/package.json')['install']);
-		$type = $this->caseTypeFile($package)['caseType'];
-		self::assertSame('vertrouwelijk', $type['confidentiality']);
-		self::assertSame('dossiq-sociaal-domein', $type['handling']['defaultGroup']);
-		self::assertSame($domain, (new \ReflectionClass(SociaalDomeinStore::class))->newInstanceWithoutConstructor()->domainOfCategory(category: $type['category']));
+	public function testThePackageShipsTheCaseTypeInItsDomain(
+		string $package,
+		string $source,
+		string $domain,
+		array $sensitive,
+		string $bsnKey
+	): void {
+		self::assertSame(expected: 'auto', actual: $this->json(path: self::PACKAGES . $package . '/package.json')['install']);
+		$type = $this->caseTypeFile(package: $package)['caseType'];
+		self::assertSame(expected: 'vertrouwelijk', actual: $type['confidentiality']);
+		self::assertSame(expected: 'dossiq-sociaal-domein', actual: $type['handling']['defaultGroup']);
+		self::assertSame(expected: $domain, actual: (new \ReflectionClass(SociaalDomeinStore::class))->newInstanceWithoutConstructor()->domainOfCategory(category: $type['category']));
 	}//end testThePackageShipsTheCaseTypeInItsDomain()
 
 	/**
 	 * Every status the old lifecycle knows lands on a status of the type.
 	 *
+	 * @param string             $package   The package id.
+	 * @param string             $source    The schema the old records live in.
+	 * @param string             $domain    The social domain the case type maps to.
+	 * @param array<int, string> $sensitive The fields only dossiq-sensitive reads.
+	 * @param string             $bsnKey    The old record's BSN field.
+	 *
 	 * @return void
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
-	public function testEveryOldStatusHasAStatus(string $package, string $source, string $domain, array $sensitive, string $bsnKey): void {
+	public function testEveryOldStatusHasAStatus(
+		string $package,
+		string $source,
+		string $domain,
+		array $sensitive,
+		string $bsnKey
+	): void {
 		$schema = $this->register()['components']['schemas'][$source];
-		$statusIds = array_column($this->caseTypeFile($package)['statusTypes'], 'id');
+		$statusIds = array_column($this->caseTypeFile(package: $package)['statusTypes'], 'id');
 		foreach ($schema['properties']['status']['enum'] as $old) {
-			self::assertContains($this->import($package)['statuses'][$old]['status'] ?? null, $statusIds, $old);
+			self::assertContains(needle: $this->import(package: $package)['statuses'][$old]['status'] ?? null, haystack: $statusIds, message: $old);
 		}
 	}//end testEveryOldStatusHasAStatus()
 
@@ -133,29 +157,41 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 * each restricted source field maps onto subjectBsn or sensitiveProperties,
 	 * and those carry the same group.
 	 *
+	 * @param string             $package   The package id.
+	 * @param string             $source    The schema the old records live in.
+	 * @param string             $domain    The social domain the case type maps to.
+	 * @param array<int, string> $sensitive The fields only dossiq-sensitive reads.
+	 * @param string             $bsnKey    The old record's BSN field.
+	 *
 	 * @return void
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
-	public function testARestrictedFieldStaysRestricted(string $package, string $source, string $domain, array $sensitive, string $bsnKey): void {
+	public function testARestrictedFieldStaysRestricted(
+		string $package,
+		string $source,
+		string $domain,
+		array $sensitive,
+		string $bsnKey
+	): void {
 		$register = $this->register()['components']['schemas'];
 		$restricted = array_keys(array_filter($register[$source]['properties'], static fn (array $prop): bool => isset($prop['authorization']) === true));
-		self::assertNotSame([], $restricted);
+		self::assertNotSame(expected: [], actual: $restricted);
 		$targets = [];
-		foreach ($this->import($package)['fields'] as $field) {
+		foreach ($this->import(package: $package)['fields'] as $field) {
 			$targets[(string)($field['from'] ?? '')] = (string)$field['to'];
 		}
 
 		foreach ($restricted as $name) {
 			$to = $targets[$name] ?? null;
-			self::assertContains($to, ['subjectBsn', 'sensitiveProperties'], $name . ' is not moved where only dossiq-sensitive reads it');
-			self::assertSame([['group' => 'dossiq-sensitive']], $register['case']['properties'][$to]['authorization']['read']);
+			self::assertContains(needle: $to, haystack: ['subjectBsn', 'sensitiveProperties'], message: $name . ' is not moved where only dossiq-sensitive reads it');
+			self::assertSame(expected: [['group' => 'dossiq-sensitive']], actual: $register['case']['properties'][$to]['authorization']['read']);
 		}
 
-		$definitions = array_column($this->caseTypeFile($package)['propertyDefinitions'], null, 'id');
-		foreach ($this->import($package)['fields'] as $field) {
+		$definitions = array_column($this->caseTypeFile(package: $package)['propertyDefinitions'], null, 'id');
+		foreach ($this->import(package: $package)['fields'] as $field) {
 			if (isset($field['property']) === true) {
 				$flagged = ($definitions[$field['property']['definition']]['sensitive'] ?? false) === true;
-				self::assertSame($flagged, $field['to'] === 'sensitiveProperties', $field['property']['name']);
+				self::assertSame(expected: $flagged, actual: $field['to'] === 'sensitiveProperties', message: $field['property']['name']);
 			}
 		}
 	}//end testARestrictedFieldStaysRestricted()
@@ -163,46 +199,70 @@ class SocialDomainCaseTypesTest extends TestCase {
 	/**
 	 * Every shipped application maps onto a case, nothing restricted in the ordinary answers.
 	 *
+	 * @param string             $package   The package id.
+	 * @param string             $source    The schema the old records live in.
+	 * @param string             $domain    The social domain the case type maps to.
+	 * @param array<int, string> $sensitive The fields only dossiq-sensitive reads.
+	 * @param string             $bsnKey    The old record's BSN field.
+	 *
 	 * @return void
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
-	public function testEveryShippedApplicationMapsOntoACase(string $package, string $source, string $domain, array $sensitive, string $bsnKey): void {
-		$type = $this->caseTypeFile($package)['caseType'];
+	public function testEveryShippedApplicationMapsOntoACase(
+		string $package,
+		string $source,
+		string $domain,
+		array $sensitive,
+		string $bsnKey
+	): void {
+		$type = $this->caseTypeFile(package: $package)['caseType'];
 		$rows = array_values(array_filter(
-			$this->json(self::SETTINGS . '/register.d/50-sociaal-domein.json')['components']['objects'],
+			$this->json(path: self::SETTINGS . '/register.d/50-sociaal-domein.json')['components']['objects'],
 			static fn (array $object): bool => $object['@self']['schema'] === $source
 		));
-		self::assertCount(3, $rows);
+		self::assertCount(expectedCount: 3, haystack: $rows);
 		$mapping = new RecordCaseMapping(dates: $this->caseDates());
 		foreach ($rows as $row) {
-			$case = $mapping->map(import: $this->import($package), record: $row, recordId: 'id-' . $row['caseNumber'], caseTypeId: $type['id'])['case'];
-			self::assertSame($row[$bsnKey], $case['subjectBsn']);
-			self::assertSame($row['handlerId'], $case['assignee']);
-			self::assertSame([['application' => 'dossiq', 'reference' => $row['caseNumber']]], $case['formerReferences']);
+			$case = $mapping->map(import: $this->import(package: $package), record: $row, recordId: 'id-' . $row['caseNumber'], caseTypeId: $type['id'])['case'];
+			self::assertSame(expected: $row[$bsnKey], actual: $case['subjectBsn']);
+			self::assertSame(expected: $row['handlerId'], actual: $case['assignee']);
+			self::assertSame(expected: [['application' => 'dossiq', 'reference' => $row['caseNumber']]], actual: $case['formerReferences']);
 			$hidden = array_column($case['sensitiveProperties'] ?? [], 'name');
-			self::assertNotSame([], $hidden, $source);
-			self::assertSame([], array_diff($hidden, $sensitive), $source);
+			self::assertNotSame(expected: [], actual: $hidden, message: $source);
+			self::assertSame(expected: [], actual: array_diff($hidden, $sensitive), message: $source);
 			$plain = array_column($case['properties'], 'name');
-			self::assertContains('avgClassificatie', $plain);
-			self::assertSame([], array_intersect($plain, $sensitive));
+			self::assertContains(needle: 'avgClassificatie', haystack: $plain);
+			self::assertSame(expected: [], actual: array_intersect($plain, $sensitive));
 		}
 	}//end testEveryShippedApplicationMapsOntoACase()
 
 	/**
 	 * The import joins duplicates by case number, moves consents and trajectories, and stamps the record.
 	 *
+	 * @param string             $package   The package id.
+	 * @param string             $source    The schema the old records live in.
+	 * @param string             $domain    The social domain the case type maps to.
+	 * @param array<int, string> $sensitive The fields only dossiq-sensitive reads.
+	 * @param string             $bsnKey    The old record's BSN field.
+	 *
 	 * @return void
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
-	public function testTheImportIsIdempotentAndMovesReferences(string $package, string $source, string $domain, array $sensitive, string $bsnKey): void {
-		$import = $this->import($package);
-		self::assertSame('caseNumber', $import['dedupeBy']);
-		self::assertSame('caseNumber', $import['formerReference']['from']);
-		self::assertContains(['schema' => 'toestemming', 'field' => 'caseId'], $import['references']);
-		self::assertTrue($import['runOnUpgrade']);
+	public function testTheImportIsIdempotentAndMovesReferences(
+		string $package,
+		string $source,
+		string $domain,
+		array $sensitive,
+		string $bsnKey
+	): void {
+		$import = $this->import(package: $package);
+		self::assertSame(expected: 'caseNumber', actual: $import['dedupeBy']);
+		self::assertSame(expected: 'caseNumber', actual: $import['formerReference']['from']);
+		self::assertContains(needle: ['schema' => 'toestemming', 'field' => 'caseId'], haystack: $import['references']);
+		self::assertTrue(condition: $import['runOnUpgrade']);
 		$schema = $this->register()['components']['schemas'][$source];
-		self::assertArrayHasKey('migratedTo', $schema['properties']);
-		self::assertArrayHasKey('migratedAt', $schema['properties']);
+		self::assertArrayHasKey(key: 'migratedTo', array: $schema['properties']);
+		self::assertArrayHasKey(key: 'migratedAt', array: $schema['properties']);
 	}//end testTheImportIsIdempotentAndMovesReferences()
 
 	/**
@@ -213,12 +273,65 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 * @return void
 	 */
 	public function testABenefitApplicationRunsOnItsDecisionTerm(): void {
-		$type = $this->caseTypeFile('bijstandsaanvraag')['caseType'];
-		self::assertSame('P8W', $type['processingDeadline']);
-		self::assertTrue($this->import('bijstandsaanvraag')['carriesTerm']);
-		$definitions = array_column($this->json(self::SETTINGS . '/termijnbewaking_seed_data.json')['termijnDefinities'], null, 'caseType');
-		self::assertSame(56, $definitions['bijstandsaanvraag']['standardDurationDays']);
-		self::assertSame('running', $this->import('bijstandsaanvraag')['statuses']['decision-voorbereiding']['term']);
-		self::assertSame('closed', $this->import('bijstandsaanvraag')['statuses']['social-assistance-active']['term']);
+		$type = $this->caseTypeFile(package: 'bijstandsaanvraag')['caseType'];
+		self::assertSame(expected: 'P8W', actual: $type['processingDeadline']);
+		self::assertTrue(condition: $this->import(package: 'bijstandsaanvraag')['carriesTerm']);
+		$definitions = array_column($this->json(path: self::SETTINGS . '/termijnbewaking_seed_data.json')['termijnDefinities'], null, 'caseType');
+		self::assertSame(expected: 56, actual: $definitions['bijstandsaanvraag']['standardDurationDays']);
+		self::assertSame(expected: 'running', actual: $this->import(package: 'bijstandsaanvraag')['statuses']['decision-voorbereiding']['term']);
+		self::assertSame(expected: 'closed', actual: $this->import(package: 'bijstandsaanvraag')['statuses']['social-assistance-active']['term']);
+		self::assertTrue(condition: $this->import(package: 'jeugdwet')['carriesTerm'], message: 'a Jeugdwet report runs on its eight weeks too (Ruben, 23 Oct)');
+		self::assertSame(expected: 56, actual: $definitions['melding-jeugdwet']['standardDurationDays']);
 	}//end testABenefitApplicationRunsOnItsDecisionTerm()
+
+	/**
+	 * Each procedure's flow walks from the first status to every other one, and
+	 * guards only fields its case type declares (or the result).
+	 *
+	 * @param string             $package   The package id.
+	 * @param string             $source    The old record's schema.
+	 * @param string             $domain    The domain.
+	 * @param array<int, string> $sensitive The sensitive answers.
+	 * @param string             $bsnKey    The source's BSN field.
+	 *
+	 * @return void
+	 */
+	#[\PHPUnit\Framework\Attributes\DataProvider('procedures')]
+	public function testTheFlowReachesEveryStatusAndGuardsDeclaredFields(
+		string $package,
+		string $source,
+		string $domain,
+		array $sensitive,
+		string $bsnKey
+	): void {
+		$file = $this->caseTypeFile(package: $package);
+		$flowFile = self::PACKAGES . $package . '/flows/' . $file['caseType']['identifier'] . '.json';
+		$flow = $this->json(path: $flowFile);
+		self::assertSame(expected: $file['caseType']['workflowDefinition'], actual: $flow['id']);
+		$transitions = json_decode($flow['transitions'], true);
+		$names = array_column($file['propertyDefinitions'], 'name');
+		$reached = [$file['caseType']['initialStatus'] => true];
+		$grew = true;
+		while ($grew === true) {
+			$grew = false;
+			foreach ($transitions as $transition) {
+				if (isset($reached[$transition['fromStatus']]) === true && isset($reached[$transition['toStatus']]) === false) {
+					$reached[$transition['toStatus']] = true;
+					$grew = true;
+				}
+			}
+		}
+
+		foreach ($file['statusTypes'] as $status) {
+			self::assertArrayHasKey(key: $status['id'], array: $reached, message: $package . ': ' . $status['name'] . ' cannot be reached');
+		}
+
+		foreach ($transitions as $transition) {
+			foreach ($transition['guards'] as $guard) {
+				if (($guard['type'] ?? '') === 'requiredField' && $guard['field'] !== 'result') {
+					self::assertContains(needle: $guard['field'], haystack: $names, message: $package . ': ' . $transition['label']);
+				}
+			}
+		}
+	}//end testTheFlowReachesEveryStatusAndGuardsDeclaredFields()
 }//end class

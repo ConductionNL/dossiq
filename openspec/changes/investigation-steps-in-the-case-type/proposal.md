@@ -11,9 +11,8 @@ investigation steps live in the case type, not in a schema of their own.
   date, by, withWhom, summary, consentRef, followUp), sensitive and hidden on
   create, so its answer is stored in `case.sensitiveProperties` and only
   dossiq-sensitive readers receive it. Edited in the case form's list editor.
-  Package 1.8.0, stacked on DQ-REINT r25/jeugdwet-case-type (the integrator
-  merges the Jeugdwet package with DQ-L2's 1.5.0-1.7.0 branches by hand and
-  keeps the highest version).
+  Package 1.9.0, one above the 1.8.0 that development ships, so an
+  installed Jeugdwet package picks the field up on upgrade.
 - The "Investigation" tab (nl "Onderzoek") lists the steps from the case the
   page read and counts them (nextcloud-vue `objectRows` / `countObjectRows`).
 - The Oosthaven example case carries two steps.

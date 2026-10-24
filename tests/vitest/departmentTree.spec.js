@@ -34,4 +34,11 @@ describe('the departments tree', () => {
 		expect(role.properties).toHaveProperty('ncGroupId')
 		expect(role.properties).toHaveProperty('parentRoleId')
 	})
+
+	it('names the team lead in the heading of a selected team, from the role', () => {
+		expect(page.config.folderSidebar.headingParts).toEqual([{ field: 'teamLead', text: 'team lead {value}', format: 'user' }])
+		expect(role.properties.teamLead).toMatchObject({ type: 'string', referenceType: 'nextcloud-user' })
+		const nl = read('l10n/nl.json').translations
+		expect(nl['team lead {value}']).toBe('teamleider {value}')
+	})
 })

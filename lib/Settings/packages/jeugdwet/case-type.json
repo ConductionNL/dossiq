@@ -9,25 +9,29 @@
     "trigger": "Melding van een verwijzer, zoals de huisarts, of een hulpvraag van ouders of jeugdige.",
     "subject": "Jeugdhulp",
     "processingDeadline": "P8W",
-    "extensionAllowed": true,
-    "extensionPeriod": "P4W",
+    "extensionAllowed": false,
     "suspensionAllowed": true,
     "internalOrExternal": "extern",
     "publicationRequired": false,
     "isDraft": false,
     "confidentiality": "vertrouwelijk",
     "initialStatus": "6ea508cb-3395-5603-98bc-38d4fd34b511",
+    "workflowDefinition": "8e7765d9-b8cc-56bd-b95e-3a01f46be282",
     "specialDataCategories": [
       "health"
     ],
     "sideCards": [
       "side-special-data-health",
-      "case-banner-stack",
       "side-social-consent",
-      "side-social-people"
+      "side-social-people",
+      "side-social-history",
+      "case-banner-stack"
     ],
     "overviewCards": [
       "case-summary"
+    ],
+    "quickActions": [
+      "plan-case-meeting"
     ],
     "handling": {
       "defaultGroup": "dossiq-sociaal-domein"
@@ -238,7 +242,7 @@
           "caseId": "migratedTo",
           "at": "migratedAt"
         },
-        "carriesTerm": false,
+        "carriesTerm": true,
         "runOnUpgrade": true
       }
     ]

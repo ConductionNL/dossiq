@@ -63,7 +63,7 @@ describe('the parts of a case type', () => {
 		expect(holds('Fields')).toEqual(expect.arrayContaining(['case-type-fields-editor']))
 		expect(holds('Rules')).toEqual(['case-type-rules'])
 		// The workflow canvas has a page of its own, CaseTypeFlow (case-type-page-follows-its-boards).
-		expect(holds('Phases and tasks')).toEqual(expect.arrayContaining(['case-type-messages-editor']))
+		expect(holds('Message templates')).toEqual(['case-type-messages-editor'])
 		const types = overlay.configPatch.widgets
 		expect(types['case-type-statuses-editor']).toBeUndefined()
 		expect(types['case-type-fields-editor']?.type).toBeUndefined()

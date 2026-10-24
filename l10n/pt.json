@@ -1683,6 +1683,7 @@
         "SLA adherence and processing time analysis": "Cumprimento do SLA e análise do tempo de tratamento",
         "SLA Compliance": "Conformidade com o SLA",
         "SLA Compliance %": "% de conformidade com o SLA",
+        "SLA Compliance %%": "%% de conformidade com o SLA",
         "SLA override (days)": "Substituição de SLA (dias)",
         "SLA Target: {days}d": "Meta de SLA: {days}d",
         "Sloopmelding": "Sloopmelding",

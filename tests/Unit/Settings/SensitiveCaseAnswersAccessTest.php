@@ -49,7 +49,7 @@ class SensitiveCaseAnswersAccessTest extends TestCase {
 	protected function setUp(): void {
 		$lib = realpath(self::OPENREGISTER_LIB);
 		if ($lib === false || is_dir($lib) === false) {
-			self::markTestSkipped('No sibling openregister checkout at ' . self::OPENREGISTER_LIB . '. CI clones it, so this runs there.');
+			self::markTestSkipped(message: 'No sibling openregister checkout at ' . self::OPENREGISTER_LIB . '. CI clones it, so this runs there.');
 		}
 
 		spl_autoload_register(
@@ -90,7 +90,7 @@ class SensitiveCaseAnswersAccessTest extends TestCase {
 	 * @return object The resolver.
 	 */
 	private function noStateRules(): object {
-		$resolver = $this->createMock('OCA\\OpenRegister\\Service\\Lifecycle\\StateFieldRuleResolver');
+		$resolver = $this->createMock(originalClassName: 'OCA\\OpenRegister\\Service\\Lifecycle\\StateFieldRuleResolver');
 		$rules = 'OCA\\OpenRegister\\Service\\Lifecycle\\StateFieldRules';
 		$resolver->method('resolve')->willReturn(new $rules());
 		return $resolver;
@@ -104,11 +104,11 @@ class SensitiveCaseAnswersAccessTest extends TestCase {
 	 * @return array<string, mixed> The readable case.
 	 */
 	private function readAs(array $groups): array {
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('reader');
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
-		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager = $this->createMock(originalClassName: IGroupManager::class);
 		$groupManager->method('isAdmin')->willReturn(false);
 		$groupManager->method('getUserGroupIds')->willReturn($groups);
 		$groupManager->method('isInGroup')->willReturnCallback(static fn (string $uid, string $group): bool => in_array($group, $groups, true));
@@ -117,7 +117,7 @@ class SensitiveCaseAnswersAccessTest extends TestCase {
 		$rbac = new $handler(
 			$session,
 			$groupManager,
-			$this->createMock('OCA\\OpenRegister\\Service\\ConditionMatcher'),
+			$this->createMock(originalClassName: 'OCA\\OpenRegister\\Service\\ConditionMatcher'),
 			new NullLogger(),
 			$this->noStateRules(),
 		);
@@ -140,11 +140,11 @@ class SensitiveCaseAnswersAccessTest extends TestCase {
 	 * @return void
 	 */
 	public function testASocialDomainReaderOutsideSensitiveGetsNeither(): void {
-		$case = $this->readAs(['dossiq-sociaal-domein', 'dossiq-medewerkers']);
+		$case = $this->readAs(groups: ['dossiq-sociaal-domein', 'dossiq-medewerkers']);
 
-		self::assertArrayNotHasKey('subjectBsn', $case);
-		self::assertArrayNotHasKey('sensitiveProperties', $case);
-		self::assertSame('requestKind', $case['properties'][0]['name'], 'the ordinary answers stay readable');
+		self::assertArrayNotHasKey(key: 'subjectBsn', array: $case);
+		self::assertArrayNotHasKey(key: 'sensitiveProperties', array: $case);
+		self::assertSame(expected: 'requestKind', actual: $case['properties'][0]['name'], message: 'the ordinary answers stay readable');
 	}//end testASocialDomainReaderOutsideSensitiveGetsNeither()
 
 	/**
@@ -153,9 +153,9 @@ class SensitiveCaseAnswersAccessTest extends TestCase {
 	 * @return void
 	 */
 	public function testASensitiveReaderGetsBoth(): void {
-		$case = $this->readAs(['dossiq-sociaal-domein', 'dossiq-sensitive']);
+		$case = $this->readAs(groups: ['dossiq-sociaal-domein', 'dossiq-sensitive']);
 
-		self::assertSame('999990019', $case['subjectBsn']);
-		self::assertSame('incomeAssessment', $case['sensitiveProperties'][0]['name']);
+		self::assertSame(expected: '999990019', actual: $case['subjectBsn']);
+		self::assertSame(expected: 'incomeAssessment', actual: $case['sensitiveProperties'][0]['name']);
 	}//end testASensitiveReaderGetsBoth()
 }//end class

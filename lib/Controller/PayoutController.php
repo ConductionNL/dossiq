@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Money\PayoutService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\AppFramework\Controller;
@@ -85,7 +86,7 @@ class PayoutController extends Controller {
 		if ($user !== null) {
 			$caseId = $this->owningCase->resolveVia(
 				objectId: $id,
-				schemaKey: 'dwangsom_berekening_schema',
+				schemaKey: MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
 				linkField: 'deadlineInstance',
 				viaSchemaKey: 'termijn_instance_schema',
 				caseField: 'case'
@@ -107,6 +108,23 @@ class PayoutController extends Controller {
 
 		return new JSONResponse($row, Http::STATUS_CREATED);
 	}//end prepare()
+
+	/**
+	 * Deprecated alias of /api/accruing-amounts/{id}/payout, kept for clients of the old URL.
+	 *
+	 * @param string $id Id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 *
+	 * @contract exclude Deprecated path alias for prepare(); behaviour covered by the prepare() tests.
+	 */
+	public function prepareLegacyPath(string $id): JSONResponse {
+		return $this->prepare(id: $id);
+	}//end prepareLegacyPath()
 
 	/**
 	 * Decode the JSON request body.

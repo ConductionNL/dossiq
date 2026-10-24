@@ -42,6 +42,17 @@ function dutchChip(labels, key, value) {
 	return `${nl[entry.label]}: ${nl[entry.values[value]]}`
 }
 
+describe('a saved view\'s line leaves the working-list rules out', () => {
+	const labels = page('Cases').config.filterLabels
+
+	// Every view of the cases list carries them, so they tell one view from
+	// another in nothing; "Weergaven in mijn menu" read "statusHiddenInLists
+	// nee, isDraft nee" under Woo-verzoeken (DqPersoonlijkeInstellingen).
+	it.each([['statusHiddenInLists'], ['isDraft'], ['isTemplate']])('hides %s from the view summary', (key) => {
+		expect(labels[key]).toEqual({ hidden: true })
+	})
+})
+
 describe('the cases list names the open-or-closed filter', () => {
 	const labels = page('Cases').config.filterLabels
 

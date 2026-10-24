@@ -817,7 +817,7 @@ describe('what this change does NOT move', () => {
 			// in map view, and `/map` redirects there.
 			'Settings',
 			'Documentation',
-			'Store',
+			'Marketplace',
 			'Map layers',
 			'Woo refusal grounds',
 			'Case types',
@@ -825,7 +825,7 @@ describe('what this change does NOT move', () => {
 			// attribute catalogue, beside the case types it files for. It
 			// spends no top-level slot either, because it carries
 			// `section: "settings"` like `Case types` and `Flows` do.
-			'Attributes',
+			'Attributes (catalogue)',
 			'Flows',
 			'Objection advisory committees',
 			'Deadline monitoring',
@@ -840,7 +840,6 @@ describe('what this change does NOT move', () => {
 			'Offline sync conflicts',
 			'Needs assessments',
 			'Multidisciplinary consultations',
-			'Re-integration pathways',
 			'Supplier portal accounts',
 			'Data breach register',
 			'Integrations',

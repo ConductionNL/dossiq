@@ -38,7 +38,7 @@ describe('the Onderzoek tab', () => {
 		const field = caseType.propertyDefinitions.find((definition) => definition.name === 'onderzoeksstappen')
 		expect(field).toMatchObject({ propertyType: 'array', sensitive: true, hideOnCreate: true, caseType: caseType.caseType.id })
 		expect(Object.keys(field.items.properties)).toEqual(['kind', 'date', 'by', 'withWhom', 'summary', 'consentRef', 'followUp'])
-		expect(readJson(...packageDir, 'package.json').version).toBe('1.8.0')
+		expect(readJson(...packageDir, 'package.json').version).toBe('1.9.0')
 	})
 
 	it('lists and counts the steps from the case, as Onderzoek', () => {

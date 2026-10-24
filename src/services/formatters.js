@@ -13,16 +13,31 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
+import { loadState } from '@nextcloud/initial-state'
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
 import { formatDuration, parseDuration } from '../utils/durationHelpers.js'
+import { fieldFill, fieldInCaseList, fieldKind, fieldOrigin } from '../utils/fieldDescription.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
 import { caseAddress } from './caseAddress.js'
 import { caseAnswerText } from './caseAnswer.js'
 import { coveredForLabel } from './coveredFor.js'
 import { scanVerdictLabel } from './scanVerdict.js'
+
+/**
+ * The resident portal's name portaliq holds, from the page's `config` state.
+ *
+ * @return {string} The name, or '' when none is set.
+ */
+function portalName() {
+	try {
+		return String(loadState('dossiq', 'config', {})?.portalName ?? '').trim()
+	} catch {
+		return ''
+	}
+}
 
 // Guard so each lookup collection is fetched at most once per page load.
 const lookupFetchStarted = {}
@@ -187,6 +202,49 @@ export default {
 	},
 
 	/**
+	 * The kind of answer a case type field holds ("Choice list, 6 options").
+	 *
+	 * @param {unknown} value The field's type.
+	 * @param {object} row The field.
+	 * @return {string} The kind.
+	 * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
+	 */
+	fieldKind: (value, row) => fieldKind(row),
+
+	/**
+	 * How a case type field is filled in (Required, Optional, Read only).
+	 *
+	 * @param {unknown} value Whether the field is required.
+	 * @param {object} row The field.
+	 * @return {string} The words.
+	 * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
+	 */
+	fieldFill: (value, row) => fieldFill(row),
+
+	/**
+	 * Where a case type field comes from ("Own field", "Inherited from …").
+	 *
+	 * @param {unknown} value The cell value (unused).
+	 * @param {object} row The field.
+	 * @return {string} The words.
+	 * @spec openspec/changes/case-type-fields-origin-and-list/specs/case-types/spec.md
+	 */
+	fieldOrigin: (value, row) => fieldOrigin(row),
+
+	/**
+	 * Whether the case type on the page shows the field as a case list column.
+	 *
+	 * @param {unknown} value The cell value (unused).
+	 * @param {object} row The field.
+	 * @param {object} property The column's property (unused).
+	 * @param {object} options The column's options (unused).
+	 * @param {{object: (object|null)}} context The page record (nextcloud-vue cell-formatter-page-record).
+	 * @return {string} Yes or No.
+	 * @spec openspec/changes/case-type-fields-origin-and-list/specs/case-types/spec.md
+	 */
+	fieldInCaseList: (value, row, property, options, context) => fieldInCaseList(row, context && context.object),
+
+	/**
 	 * A schema's number of properties as a phrase ("9 properties"), empty
 	 * when the object type names no schema.
 	 *
@@ -321,6 +379,23 @@ export default {
 	statusTypeName: (value) => lookupRelatedName('statusType', value),
 
 	/**
+	 * A case's priority as a phrase for a list line ("prioriteit hoog",
+	 * DqTeamwachtrij); '' for an empty or unknown value.
+	 *
+	 * @param {string} value The stored priority (low, normal, high, urgent).
+	 * @return {string}
+	 */
+	priorityPhrase: (value) => {
+		const phrases = {
+			low: t('dossiq', 'priority low'),
+			normal: t('dossiq', 'priority normal'),
+			high: t('dossiq', 'priority high'),
+			urgent: t('dossiq', 'priority urgent'),
+		}
+		return phrases[value] ?? ''
+	},
+
+	/**
 	 * One case-type field of a case, named by the column's
 	 * `formatterOptions.name`, read off the case's `properties`.
 	 *
@@ -389,6 +464,52 @@ export default {
 			zeer_geheim: t('dossiq', 'Top secret'),
 		}
 		return labels[String(value ?? '')] ?? ''
+	},
+
+	/**
+	 * The messages a case sent on its own, one line each: what it was, the
+	 * channel it went through and when ("Receipt confirmation via the portal,
+	 * 3 Oct 14:32"). The portal is named as portaliq names it ("Mijn
+	 * Zuiddrecht"), else "the portal". A message no channel took reads
+	 * "not sent".
+	 *
+	 * @param {Array<object>} value The case's outbound communications.
+	 * @return {string} The lines joined with "; ", or '' without messages.
+	 * @spec openspec/changes/receipt-confirmation-card-reads/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
+	 */
+	outboundMessages: (value) => {
+		if (!Array.isArray(value)) {
+			return ''
+		}
+		const moments = {
+			acknowledgement: t('dossiq', 'Receipt confirmation'),
+			'information-request': t('dossiq', 'Information request'),
+			stage: t('dossiq', 'Status update'),
+			extension: t('dossiq', 'Extension'),
+			decision: t('dossiq', 'Decision'),
+			transfer: t('dossiq', 'Transfer'),
+		}
+		const channels = {
+			'portal-inbox': portalName() || t('dossiq', 'the portal'),
+			'digital-post': t('dossiq', 'digital post'),
+			email: t('dossiq', 'email'),
+		}
+		const when = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+		return value
+			.filter((entry) => entry && typeof entry === 'object')
+			.map((entry) => {
+				const moment = moments[entry.moment] ?? String(entry.moment ?? '')
+				if (!entry.channel) {
+					return t('dossiq', '{moment}, not sent', { moment })
+				}
+				const sentAt = entry.sentAt ? new Date(entry.sentAt) : null
+				const time = sentAt && !Number.isNaN(sentAt.getTime()) ? when.format(sentAt) : ''
+				const channel = channels[entry.channel] ?? entry.channel
+				return time
+					? t('dossiq', '{moment} via {channel}, {time}', { moment, channel, time })
+					: t('dossiq', '{moment} via {channel}', { moment, channel })
+			})
+			.join('; ')
 	},
 
 	/**

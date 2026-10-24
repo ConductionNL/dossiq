@@ -54,10 +54,12 @@ describe('the location dialog as the board draws it', () => {
 })
 
 describe('the Locaties card as DqZaakMeer draws it', () => {
-	it('is a preview map without buttons', () => {
+	// DqZaak and DqZaakMeer draw the card's map 120px high with zoom (+, -) and
+	// fit-all buttons, and no locate or fullscreen button.
+	it('is a short map with zoom and fit, without locate or fullscreen', () => {
 		const layout = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../src/menu-layout.simple.json'), 'utf8'))
 		const page = layout.pages.find((entry) => entry.id === 'CaseDetail')
 		const card = page.configAppend.widgets.find((widget) => widget.id === 'case-locations-card')
-		expect(card.content).toMatchObject({ zoomControl: false, fitControl: false, locateControl: false, fullscreenControl: false })
+		expect(card.content).toMatchObject({ height: '120px', zoomControl: true, fitControl: true, locateControl: false, fullscreenControl: false })
 	})
 })

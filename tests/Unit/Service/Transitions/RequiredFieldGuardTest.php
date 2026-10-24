@@ -196,7 +196,7 @@ class RequiredFieldGuardTest extends TestCase {
 				],
 			]
 		);
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objects);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => ['register' => 'dossiq', 'case_schema' => 'case'][$key] ?? $default
@@ -208,10 +208,10 @@ class RequiredFieldGuardTest extends TestCase {
 		$answered = $guard->evaluate(guardConfig: ['field' => 'inkomenstoets'], case: $asTheMoverReadsIt, userId: 'klantmanager');
 		$empty = $guard->evaluate(guardConfig: ['field' => 'vermogenstoets'], case: $asTheMoverReadsIt, userId: 'klantmanager');
 
-		self::assertTrue($answered->passed);
-		self::assertSame(['field' => 'inkomenstoets'], $answered->details);
-		self::assertFalse($empty->passed);
-		self::assertStringNotContainsString('480', json_encode([$answered->details, $empty->details, $empty->failureMessage]));
-		self::assertNotSame([], $objects->unscopedReads, 'read as the system');
+		self::assertTrue(condition: $answered->passed);
+		self::assertSame(expected: ['field' => 'inkomenstoets'], actual: $answered->details);
+		self::assertFalse(condition: $empty->passed);
+		self::assertStringNotContainsString(needle: '480', haystack: json_encode([$answered->details, $empty->details, $empty->failureMessage]));
+		self::assertNotSame(expected: [], actual: $objects->unscopedReads, message: 'read as the system');
 	}//end testASensitiveAnswerIsCheckedAsTheSystemWithoutShowingIt()
 }//end class

@@ -32,6 +32,9 @@
 					"filterField": "group",
 					"heading": true,
 					"countText": "{count} staff",
+					"headingParts": [
+						{ "field": "teamLead", "text": "team lead {value}", "format": "user" }
+					],
 					"parentsFrom": { "register": "dossiq", "schema": "organisatieRol", "groupField": "ncGroupId", "parentField": "parentRoleId" }
 				},
 				"breadcrumb": {
@@ -41,6 +44,7 @@
 				"headerMeta": "from Nextcloud groups, with function and absence",
 				"_headerButtonsNote": "Board DqAfdelingen: Downloaden in the header downloads the staff the list shows as CSV (the users source's columns).",
 				"searchPlaceholder": "Search…",
+				"showActionsMenu": true,
 				"headerButtons": [
 					{
 						"action": "export",

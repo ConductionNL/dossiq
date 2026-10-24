@@ -29,14 +29,14 @@ class RunUpgradeRecordImportsTest extends TestCase {
 	 * @return RunUpgradeRecordImports
 	 */
 	private function step(array|RuntimeException $answers, bool $openRegister = true): RunUpgradeRecordImports {
-		$import = $this->createMock(CaseRecordImport::class);
+		$import = $this->createMock(originalClassName: CaseRecordImport::class);
 		if ($answers instanceof RuntimeException) {
 			$import->method('runOnUpgrade')->willThrowException($answers);
 		} else {
 			$import->method('runOnUpgrade')->willReturn($answers);
 		}
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('isOpenRegisterAvailable')->willReturn($openRegister);
 
 		return new RunUpgradeRecordImports(import: $import, settings: $settings);
@@ -48,14 +48,14 @@ class RunUpgradeRecordImportsTest extends TestCase {
 	 * @return void
 	 */
 	public function testItReportsTheCountsAndWarnsPerFailure(): void {
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->expects(self::once())->method('info')->with(
 			'Record import trajectories (case type type-1): 2 imported, 1 already imported, 1 not moved.'
 		);
 		$output->expects(self::once())->method('warning')->with('Record r-3 was not moved: The case could not be written.');
 
 		$this->step(
-			[[
+			answers: [[
 				'caseType' => 'type-1',
 				'key' => 'trajectories',
 				'imported' => 2,
@@ -73,9 +73,9 @@ class RunUpgradeRecordImportsTest extends TestCase {
 	 */
 	public function testItNeverAbortsTheUpgrade(): void {
 		foreach ([[[], false], [new RuntimeException('boom'), true]] as [$answers, $openRegister]) {
-			$output = $this->createMock(IOutput::class);
+			$output = $this->createMock(originalClassName: IOutput::class);
 			$output->expects(self::once())->method('warning');
-			$this->step($answers, $openRegister)->run($output);
+			$this->step(answers: $answers, openRegister: $openRegister)->run($output);
 		}
 	}//end testItNeverAbortsTheUpgrade()
 }//end class

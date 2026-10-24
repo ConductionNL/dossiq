@@ -683,13 +683,18 @@ class CaseRecordImportTest extends TestCase {
 	 * @return void
 	 */
 	private function seedTrajectoryType(bool $onUpgrade, bool $superseded = false): void {
+		$supersededBy = '';
+		if ($superseded === true) {
+			$supersededBy = 'type-trajectory-2';
+		}
+
 		$this->store->seed(
 			schema: 'caseType',
 			uuid: 'type-trajectory',
 			row: [
 				'id' => 'type-trajectory',
 				'identifier' => 'trajectory',
-				'supersededBy' => ($superseded === true) ? 'type-trajectory-2' : '',
+				'supersededBy' => $supersededBy,
 				'recordImports' => [[
 					'key' => 'trajectories',
 					'sourceApp' => 'dossiq',
@@ -723,14 +728,14 @@ class CaseRecordImportTest extends TestCase {
 
 		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
 
-		self::assertSame(1, $answer['imported']);
-		self::assertSame([], $answer['failed']);
-		self::assertSame([], $this->instances, 'the term engine is not asked');
-		self::assertSame([], $this->armed);
+		self::assertSame(expected: 1, actual: $answer['imported']);
+		self::assertSame(expected: [], actual: $answer['failed']);
+		self::assertSame(expected: [], actual: $this->instances, message: 'the term engine is not asked');
+		self::assertSame(expected: [], actual: $this->armed);
 		$case = $this->store->row('case', $answer['migrated'][0]['caseId']);
-		self::assertSame('status-running', $case['status']);
-		self::assertSame([['propertyDefinition' => 'def-kind', 'name' => 'kind', 'value' => 'werkfit']], $case['properties']);
-		self::assertSame($case['id'], $this->store->row('trajectory', 'traj-1')['migratedTo']);
+		self::assertSame(expected: 'status-running', actual: $case['status']);
+		self::assertSame(expected: [['propertyDefinition' => 'def-kind', 'name' => 'kind', 'value' => 'werkfit']], actual: $case['properties']);
+		self::assertSame(expected: $case['id'], actual: $this->store->row('trajectory', 'traj-1')['migratedTo']);
 	}//end testACaseTypeWithoutATermImportsWithoutOne()
 
 	/**
@@ -745,13 +750,13 @@ class CaseRecordImportTest extends TestCase {
 		$first = $this->import()->runOnUpgrade();
 		$second = $this->import()->runOnUpgrade();
 
-		self::assertCount(1, $first);
-		self::assertSame('type-trajectory', $first[0]['caseType']);
-		self::assertSame('trajectories', $first[0]['key']);
-		self::assertSame(1, $first[0]['imported']);
-		self::assertCount(1, $this->store->all('case'), 'the Woo import is not flagged, so no Woo request moved');
-		self::assertSame(0, $second[0]['imported']);
-		self::assertSame(1, $second[0]['alreadyImported']);
+		self::assertCount(expectedCount: 1, haystack: $first);
+		self::assertSame(expected: 'type-trajectory', actual: $first[0]['caseType']);
+		self::assertSame(expected: 'trajectories', actual: $first[0]['key']);
+		self::assertSame(expected: 1, actual: $first[0]['imported']);
+		self::assertCount(expectedCount: 1, haystack: $this->store->all('case'), message: 'the Woo import is not flagged, so no Woo request moved');
+		self::assertSame(expected: 0, actual: $second[0]['imported']);
+		self::assertSame(expected: 1, actual: $second[0]['alreadyImported']);
 	}//end testAnUpgradeRunsOnlyTheFlaggedImportsOnce()
 
 	/**
@@ -762,8 +767,8 @@ class CaseRecordImportTest extends TestCase {
 	public function testAnUpgradeSkipsASupersededVersion(): void {
 		$this->seedTrajectoryType(onUpgrade: true, superseded: true);
 
-		self::assertSame([], $this->import()->runOnUpgrade());
-		self::assertSame([], $this->store->all('case'));
+		self::assertSame(expected: [], actual: $this->import()->runOnUpgrade());
+		self::assertSame(expected: [], actual: $this->store->all('case'));
 	}//end testAnUpgradeSkipsASupersededVersion()
 
 	/**
@@ -784,14 +789,14 @@ class CaseRecordImportTest extends TestCase {
 		$first = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
 		$second = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
 
-		self::assertSame(1, $first['imported']);
-		self::assertCount(1, $first['duplicates']);
-		self::assertCount(1, $this->store->all('case'));
+		self::assertSame(expected: 1, actual: $first['imported']);
+		self::assertCount(expectedCount: 1, haystack: $first['duplicates']);
+		self::assertCount(expectedCount: 1, haystack: $this->store->all('case'));
 		$caseId = $first['migrated'][0]['caseId'];
-		self::assertSame($caseId, $first['duplicates'][0]['caseId']);
-		self::assertSame($caseId, $this->store->row('trajectory', 'traj-2')['migratedTo']);
-		self::assertSame(0, $second['imported']);
-		self::assertSame(2, $second['alreadyImported']);
+		self::assertSame(expected: $caseId, actual: $first['duplicates'][0]['caseId']);
+		self::assertSame(expected: $caseId, actual: $this->store->row('trajectory', 'traj-2')['migratedTo']);
+		self::assertSame(expected: 0, actual: $second['imported']);
+		self::assertSame(expected: 2, actual: $second['alreadyImported']);
 	}//end testADuplicateNumberBecomesOneCaseAndIsReported()
 
 	/**
@@ -813,10 +818,10 @@ class CaseRecordImportTest extends TestCase {
 		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
 
 		$caseId = $answer['migrated'][0]['caseId'];
-		self::assertSame(2, $answer['repointed']);
-		self::assertSame($caseId, $this->store->row('consent', 'c-1')['caseId']);
-		self::assertSame($caseId, $this->store->row('consent', 'c-2')['caseId']);
-		self::assertSame('another-case', $this->store->row('consent', 'c-3')['caseId']);
+		self::assertSame(expected: 2, actual: $answer['repointed']);
+		self::assertSame(expected: $caseId, actual: $this->store->row('consent', 'c-1')['caseId']);
+		self::assertSame(expected: $caseId, actual: $this->store->row('consent', 'c-2')['caseId']);
+		self::assertSame(expected: 'another-case', actual: $this->store->row('consent', 'c-3')['caseId']);
 	}//end testReferencesToAMovedRecordPointAtItsCase()
 
 	/**
@@ -836,9 +841,9 @@ class CaseRecordImportTest extends TestCase {
 		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
 
 		$caseId = $answer['migrated'][0]['caseId'];
-		self::assertSame(1, $answer['repointed']);
-		self::assertSame(['other-1', $caseId, 'other-2'], $this->store->row('meeting', 'm-1')['caseIds']);
-		self::assertSame(['other-3'], $this->store->row('meeting', 'm-2')['caseIds']);
+		self::assertSame(expected: 1, actual: $answer['repointed']);
+		self::assertSame(expected: ['other-1', $caseId, 'other-2'], actual: $this->store->row('meeting', 'm-1')['caseIds']);
+		self::assertSame(expected: ['other-3'], actual: $this->store->row('meeting', 'm-2')['caseIds']);
 	}//end testAListOfReferencesPointsAtTheCase()
 
 	/**

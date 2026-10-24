@@ -49,10 +49,10 @@
         {
             "key": "financial",
             "title": "Financial system",
-            "description": "The payout signal for a dwangsom, and the callback that confirms it.",
+            "description": "The payout signal for a settled amount, and the callback that confirms it.",
             "order": 70,
             "settingsUrl": "/settings/admin/dossiq?tab=integrations#section-financial",
-            "requiredConfig": ["dwangsom_callback_secret"]
+            "requiredConfig": ["payout_callback_secret"]
         },
         {
             "key": "brp",
@@ -61,6 +61,17 @@
             "order": 80,
             "unconfiguredMessage": "The conflict-of-interest check reads a case worker's family relations from Integriq's BRP source. That read stays off until an administrator sets relationFields on the source in Integriq.",
             "sourceTemplate": "brp-haalcentraal"
+        },
+        {
+            "key": "kadaster",
+            "title": "Kadaster (BRK) and WOZ",
+            "description": "Parcel, owners as a reference, and the WOZ value.",
+            "order": 85,
+            "settingsUrl": "/settings/admin/dossiq?tab=integrations#section-kadaster",
+            "switch": {
+                "configKey": "integration.brk.mode",
+                "offValues": ["", "log"]
+            }
         },
         {
             "key": "kvk",
