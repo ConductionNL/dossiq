@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.152.0",
+	"version": "2.153.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -942,6 +942,11 @@
 			"pattern": "^@context\\.[A-Za-z][A-Za-z0-9_.]*$",
 			"description": "Detail context: a record a detail page reads beside the loaded one (`config.visibilityContext`), read by a grid widget's or a tab's `visibleWhen` field as @context.<name>.<field> (dot path allowed). Mirrors SENTINEL_TOKEN_PATTERNS.context."
 		},
+		"sentinelSourceToken": {
+			"type": "string",
+			"pattern": "^@source\\.[A-Za-z][A-Za-z0-9_.@]*$",
+			"description": "Facts source: a field of the object a facts widget shows (@source.<field>, dot path allowed), read by a fact row's `route` params. Mirrors SENTINEL_TOKEN_PATTERNS.source."
+		},
 		"sentinelSubjectToken": {
 			"type": "string",
 			"pattern": "^@subject\\.[A-Za-z][A-Za-z0-9_.]*$",
@@ -962,6 +967,7 @@
 				{ "$ref": "#/$defs/sentinelRowToken" },
 				{ "$ref": "#/$defs/sentinelSubjectToken" },
 				{ "$ref": "#/$defs/sentinelContextToken" },
+				{ "$ref": "#/$defs/sentinelSourceToken" },
 				{ "$ref": "#/$defs/sentinelDeprecatedToken" }
 			]
 		},
@@ -3242,6 +3248,22 @@
 					"type": "boolean",
 					"default": false,
 					"description": "Confirm-gating (object-op + #91 Wave 3 api-call / open-form + agent): when true, the action presents a CnConfirmDialog before running (the dispatcher / CnActionButtons runs AFTER confirmation). object-op delete ALWAYS confirms regardless of this flag."
+				},
+				"confirmTitle": {
+					"type": "string",
+					"description": "confirm: true: the confirm dialog's title, through the host translate. Absent: the action's label."
+				},
+				"confirmMessage": {
+					"type": "string",
+					"description": "confirm: true: the question the confirm dialog asks, through the host translate. Absent: 'Are you sure you want to continue?'."
+				},
+				"confirmLabel": {
+					"type": "string",
+					"description": "confirm: true: the confirm button's label, through the host translate, e.g. 'Record it'. Absent: 'Confirm'."
+				},
+				"confirmIcon": {
+					"type": "string",
+					"description": "confirm: true: a CnIcon name drawn on the confirm button, e.g. 'Check'. Absent: no icon."
 				},
 				"target": {
 					"type": "string",
