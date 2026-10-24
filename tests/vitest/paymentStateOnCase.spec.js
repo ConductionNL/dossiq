@@ -53,7 +53,7 @@ describe("the money is shillinq's, and the case page places its leaves", () => {
 	it.each([
 		// The RENDER leaves shillinq registers; `shillinq-payment-requests` and
 		// `shillinq-contracts` are its data leaves, which no host can mount.
-		['case-payment-requests', 'shillinq-payment-requests-panel'],
+		['case-payment-requests', 'shillinq-financial-documents-panel'],
 		['case-contract', 'shillinq-contracts-panel'],
 	])('%s is a placement of the %s leaf', (widgetId, integrationId) => {
 		const widget = widgetById(widgetId)

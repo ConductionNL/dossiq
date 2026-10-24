@@ -3316,6 +3316,7 @@ OC.L10N.register(
         "Financial Assessment Outcome": "Financial Assessment Outcome",
         "Financial assessment outcome": "Financial assessment outcome",
         "Financial check": "Financial check",
+        "Financial documents": "Financial documents",
         "Financial Integration: Dwangsom Callback": "Financial Integration: Dwangsom Callback",
         "Financial integration: dwangsom callback": "Financial integration: dwangsom callback",
         "Financial system": "Financial system",

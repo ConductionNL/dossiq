@@ -46,7 +46,7 @@ describe('the Linked side card on the case page', () => {
 	it('lists the render leaves in the board order: documents, fees, contract, projects', () => {
 		expect(linked.content.leaves).toEqual([
 			'filinq-documents',
-			'shillinq-payment-requests-panel',
+			'shillinq-financial-documents-panel',
 			'shillinq-contracts-panel',
 			'planninq-projects',
 		])
@@ -90,8 +90,17 @@ describe('the Linked card in the full profile, which has no side column', () => 
 })
 
 describe('the money placements mount the leaves shillinq registers', () => {
+	it('tells the financial documents panel what a case shows and offers', () => {
+		const widget = fullCase.widgets.find((w) => w.id === 'case-payment-requests')
+		expect(widget.props).toEqual({
+			kinds: ['quote', 'invoice', 'credit-note', 'payment-request', 'payout'],
+			actions: ['issue-invoice', 'request-payment', 'send-link', 'record-payment'],
+			objectType: 'case',
+		})
+	})
+
 	it.each([
-		['case-payment-requests', 'shillinq-payment-requests-panel'],
+		['case-payment-requests', 'shillinq-financial-documents-panel'],
 		['case-contract', 'shillinq-contracts-panel'],
 	])('%s places %s', (id, integrationId) => {
 		expect(fullCase.widgets.find((w) => w.id === id).integrationId).toBe(

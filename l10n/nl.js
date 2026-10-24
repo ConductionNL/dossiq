@@ -3316,6 +3316,7 @@ OC.L10N.register(
         "Financial Assessment Outcome": "Uitkomst van de financiële beoordeling",
         "Financial assessment outcome": "Uitkomst van de financiële beoordeling",
         "Financial check": "Financiële toets",
+        "Financial documents": "Financiële documenten",
         "Financial Integration: Dwangsom Callback": "Financiële integratie: dwangsom-callback",
         "Financial integration: dwangsom callback": "Financiële integratie: dwangsom-callback",
         "Financial system": "Financieel systeem",
