@@ -39,6 +39,7 @@ const CATALOGUE = {
 	statusType: [{ id: 'st-geweigerd', name: 'Geweigerd' }],
 	documentType: [],
 	emailTemplate: [{ id: 'tpl-weigering', name: 'Weigering met bezwaarclausule' }],
+	roleType: [{ id: 'role-architect', name: 'Architect' }],
 }
 // The parent's bouwkosten comes in through the blueprint; the type's own rows hold only welstandsgebied.
 const BLUEPRINT = {
@@ -161,6 +162,24 @@ describe('the Rules tab with the case type\'s own rules', () => {
 			conditions: [{ kind: 'fieldCompare', field: 'bouwkosten', op: 'gt', value: 100000 }],
 			actions: [{ action: 'addTask', title: 'Welstandsadvies vragen' }],
 		})
+	})
+
+	it('sends a message to a role the case type declares', async () => {
+		mockSave.mockClear()
+		const w = await mountTab()
+		await w.find('[data-testid="rules-add"]').trigger('click')
+		const dialog = w.findComponent({ name: 'CaseTypeRuleDialog' })
+		dialog.find('[data-testid="rule-action"]').getComponent({ name: 'NcSelect' }).vm.$emit('update:modelValue', { id: 'sendMessage' })
+		await flushPromises()
+		dialog.find('[data-testid="rule-target"]').getComponent({ name: 'NcSelect' }).vm.$emit('update:modelValue', { id: 'tpl-weigering' })
+		const role = dialog.find('[data-testid="rule-recipient-role"]').getComponent({ name: 'NcSelect' })
+		expect(role.props('options').map((o) => o.label)).toEqual(['The applicant', 'Architect'])
+		role.vm.$emit('update:modelValue', { id: 'role-architect' })
+		await flushPromises()
+		await dialog.find('[data-testid="rule-save"]').trigger('click')
+		await flushPromises()
+
+		expect(mockSave.mock.calls.at(-1)[1].rules.at(-1).actions).toEqual([{ action: 'sendMessage', emailTemplate: 'tpl-weigering', recipientRole: 'role-architect' }])
 	})
 
 	it('freezes a published version: no add, no row menu', async () => {

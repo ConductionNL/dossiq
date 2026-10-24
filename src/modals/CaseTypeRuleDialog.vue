@@ -68,6 +68,15 @@
 				:inputLabel="targetLabel"
 				data-testid="rule-target"
 				@update:modelValue="(o) => (form.target = o ? o.id : '')" />
+			<NcSelect
+				v-if="form.action === 'sendMessage'"
+				:modelValue="roleOption"
+				:options="roleOptions"
+				label="label"
+				:clearable="false"
+				:inputLabel="t('dossiq', 'To')"
+				data-testid="rule-recipient-role"
+				@update:modelValue="(o) => (form.recipientRole = o ? o.id : '')" />
 			<NcTextField
 				v-if="form.action === 'setField'"
 				:modelValue="form.value"
@@ -123,6 +132,7 @@ export default {
 				title: action.title || '',
 				target: action[TARGET_KEYS[action.action]] || '',
 				value: action.value ?? '',
+				recipientRole: action.recipientRole || '',
 			},
 		}
 	},
@@ -172,6 +182,14 @@ export default {
 			return lists[this.form.action] || []
 		},
 
+		roleOptions() {
+			return [{ id: '', label: t('dossiq', 'The applicant') }, ...(this.choices.roles || [])]
+		},
+
+		roleOption() {
+			return this.roleOptions.find((o) => o.id === this.form.recipientRole) || this.roleOptions[0]
+		},
+
 		targetOption() {
 			return this.targetOptions.find((o) => o.id === this.form.target) || null
 		},
@@ -207,6 +225,9 @@ export default {
 				action[TARGET_KEYS[this.form.action]] = this.form.target
 				if (this.form.action === 'setField') {
 					action.value = this.form.value
+				}
+				if (this.form.action === 'sendMessage' && this.form.recipientRole !== '') {
+					action.recipientRole = this.form.recipientRole
 				}
 			}
 			const when = { event: this.form.event }
