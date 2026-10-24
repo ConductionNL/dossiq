@@ -6223,6 +6223,27 @@
 								}
 							},
 							"pill": {
+								"cases": [
+									{
+										"when": {
+											"field": "isDraft",
+											"op": "eq",
+											"value": true
+										},
+										"label": "Draft",
+										"variant": "warning"
+									},
+									{
+										"when": {
+											"field": "validUntil",
+											"op": "notEmpty"
+										},
+										"label": "Frozen",
+										"variant": "default"
+									}
+								],
+								"label": "Active",
+								"variant": "success",
 								"field": "isDraft",
 								"labels": {
 									"false": "Published",
@@ -6235,18 +6256,26 @@
 							},
 							"rowRoute": "CaseTypeDetail",
 							"emptyText": "This case type has only this version",
-							"footerAction": {
-								"label": "Publish",
-								"icon": "Publish",
-								"type": "open-modal",
-								"target": "CaseTypePublishDialog",
-								"disabledWhen": {
-									"field": "isDraft",
-									"op": "neq",
-									"value": true
+							"footerAction": [
+								{
+									"label": "Publish",
+									"type": "open-modal",
+									"target": "CaseTypePublishDialog",
+									"visibleWhen": {
+										"field": "isDraft",
+										"op": "eq",
+										"value": true
+									}
 								},
-								"disabledReason": "This version is already published"
-							}
+								{
+									"label": "Make a new version",
+									"icon": "Plus",
+									"type": "open-modal",
+									"target": "CaseTypeNewVersionDialog",
+									"note": "A published version no longer changes. Changing it makes a new version.",
+									"wide": true
+								}
+							]
 						}
 					},
 					{
