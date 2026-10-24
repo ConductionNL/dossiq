@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ZaakdossierController;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -142,6 +143,7 @@ class ZaakdossierListContractTest extends TestCase {
 				reader: $this->reader,
 				fileService: $this->fileService,
 			),
+			caseWrites: $this->createMock(DocumentCaseWriteGuard::class),
 		);
 	}//end setUp()
 
