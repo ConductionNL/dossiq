@@ -92,11 +92,16 @@ function caseDetail(manifest) {
 
 describe('N-3: field labels and the term tile read Dutch', () => {
 	for (const layout of ['menu-layout.simple.json', 'menu-layout.json']) {
-		it(`the requester field is Aanvrager on every form and panel (${layout})`, () => {
-			const labels = requesterLabels(translated(layout))
+		it(`the requester field is Aanvrager on every form and panel, Verzoeker on the case edit form (${layout})`, () => {
+			const manifest = translated(layout)
+			const edit = caseDetail(manifest).config.fieldOverrides
+			const labels = requesterLabels(manifest)
 			// Create forms on four pages, the nav's new-case action, the case
 			// edit form and the Overview panel.
 			expect(labels.length).toBeGreaterThanOrEqual(6)
+			// The case edit form draws the requester as Verzoeker (DqZaakDialogen).
+			expect(edit.requester.label).toBe('Verzoeker')
+			labels.splice(labels.indexOf('Verzoeker'), 1)
 			expect(new Set(labels)).toEqual(new Set(['Aanvrager']))
 		})
 	}
