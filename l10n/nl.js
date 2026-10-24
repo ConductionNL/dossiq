@@ -1685,6 +1685,7 @@ OC.L10N.register(
         "Collaboration requests": "Samenwerkverzoeken",
         "Collapse": "Inklappen",
         "Collected mail by sender, recipient and domain": "Verzamelde mail per afzender, ontvanger en domein",
+        "Collection": "Invorderen",
         "College van B&W": "College van B&W",
         "Collegeadvies": "Collegeadvies",
         "Colour": "Kleur",

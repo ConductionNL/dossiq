@@ -6623,6 +6623,7 @@
 									"widgetIds": [
 										"case-type-core",
 										"case-type-terms",
+										"case-type-collection",
 										"case-type-list-layout"
 									]
 								},
