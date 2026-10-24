@@ -201,6 +201,12 @@ class ZaakdossierController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		// The CASE first, before the document is read: the document guard below
+		// says nothing about whether this caller may change the case it links into.
+		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
 		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
 		if ($authError !== null) {
 			return $authError;
@@ -231,6 +237,12 @@ class ZaakdossierController extends Controller {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		// The CASE first, before the document is read: the document guard below
+		// says nothing about whether this caller may change the case it links into.
+		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
 		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
