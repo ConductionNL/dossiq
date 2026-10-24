@@ -99,6 +99,7 @@ class CaseTypeRuleFlowDocument {
 	 * @param string $caseTypeTitle The case type's title, for the flow's name.
 	 * @param string $register The register slug cases live in.
 	 * @param string $schema The case schema slug.
+	 * @param array<int, string> $definitionNames The case type's property definition names, inherited ones included.
 	 *
 	 * @return array<string, mixed>|null The flow document.
 	 *
@@ -111,9 +112,10 @@ class CaseTypeRuleFlowDocument {
 		string $caseTypeId,
 		string $caseTypeTitle,
 		string $register,
-		string $schema
+		string $schema,
+		array $definitionNames = []
 	): ?array {
-		$step = $this->step(rule: $rule, action: $action, caseTypeId: $caseTypeId);
+		$step = $this->step(rule: $rule, action: $action, caseTypeId: $caseTypeId, definitionNames: $definitionNames);
 		$ruleId = (string)($rule['id'] ?? '');
 		if ($step === null || $ruleId === '') {
 			return null;
@@ -124,6 +126,11 @@ class CaseTypeRuleFlowDocument {
 		$conditions = (array)($rule['conditions'] ?? []);
 		if (($when['event'] ?? null) === 'statusEntered') {
 			$conditions[] = ['kind' => 'statusIs', 'status' => (string)($when['status'] ?? '')];
+		}
+
+		if (isset($step['guard']) === true) {
+			$conditions[] = $step['guard'];
+			$step['config'] = array_merge(['register' => $register, 'schema' => $schema], $step['config']);
 		}
 
 		$name = trim((string)($rule['name'] ?? ''));
@@ -171,6 +178,31 @@ class CaseTypeRuleFlowDocument {
 	 *
 	 * An added task carries a once-key of the rule, so the task is added once
 	 * per case however often the case is saved with the condition still true.
+	 * A written field carries a guard that it does not hold the value yet, so
+	 * the write it causes does not fire the rule again.
+	 *
+	 * @param array<string, mixed> $rule The rule.
+	 * @param array<string, mixed> $action The action.
+	 * @param string $caseTypeId The case type uuid.
+	 * @param array<int, string> $definitionNames The case type's property definition names.
+	 *
+	 * @return array{type: string, config: array<string, mixed>, guard?: array<string, mixed>}|null The step.
+	 */
+	private function step(array $rule, array $action, string $caseTypeId, array $definitionNames): ?array {
+		return match ($action['action'] ?? null) {
+			'addTask' => $this->addTask(rule: $rule, action: $action, caseTypeId: $caseTypeId),
+			'setField' => $this->writeField(
+				field: trim((string)($action['field'] ?? '')),
+				value: ($action['value'] ?? null),
+				definitionNames: $definitionNames
+			),
+			'chooseVariant' => $this->writeField(field: 'variant', value: trim((string)($action['variant'] ?? '')), definitionNames: []),
+			default => null,
+		};
+	}//end step()
+
+	/**
+	 * The create-task step, keyed once per rule and case.
 	 *
 	 * @param array<string, mixed> $rule The rule.
 	 * @param array<string, mixed> $action The action.
@@ -178,11 +210,7 @@ class CaseTypeRuleFlowDocument {
 	 *
 	 * @return array{type: string, config: array<string, mixed>}|null The step.
 	 */
-	private function step(array $rule, array $action, string $caseTypeId): ?array {
-		if (($action['action'] ?? null) !== 'addTask') {
-			return null;
-		}
-
+	private function addTask(array $rule, array $action, string $caseTypeId): ?array {
 		$title = trim((string)($action['title'] ?? ''));
 		if ($title === '') {
 			return null;
@@ -198,5 +226,34 @@ class CaseTypeRuleFlowDocument {
 		}
 
 		return ['type' => 'dossiq.createTask', 'config' => $config];
-	}//end step()
+	}//end addTask()
+
+	/**
+	 * An update of one case field, guarded on the field not holding the value yet.
+	 *
+	 * Only a field of the case itself: a property definition's answer lives
+	 * in the case's `properties` list, which a field patch cannot address, so
+	 * such an action is not projected rather than written where nothing reads it.
+	 *
+	 * @param string $field The case field.
+	 * @param mixed $value The value to write.
+	 * @param array<int, string> $definitionNames The case type's property definition names.
+	 *
+	 * @return array{type: string, config: array<string, mixed>, guard: array<string, mixed>}|null The step.
+	 */
+	private function writeField(string $field, mixed $value, array $definitionNames): ?array {
+		if ($field === '' || $value === '' || in_array($field, $definitionNames, true) === true) {
+			return null;
+		}
+
+		return [
+			'type' => 'openregister.object-write',
+			'config' => [
+				'operation' => 'update',
+				'match' => [['property' => 'id', 'value' => '{{ id }}']],
+				'fields' => [$field => $value],
+			],
+			'guard' => ['kind' => 'fieldCompare', 'field' => $field, 'op' => 'neq', 'value' => $value],
+		];
+	}//end writeField()
 }//end class

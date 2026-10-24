@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\CaseType;
 use OCA\Dossiq\Service\CaseType\CaseTypeRuleFlowDocument;
 use OCA\Dossiq\Service\CaseType\CaseTypeRuleProjector;
 use OCA\Dossiq\Service\CaseType\RuleConditionLogic;
+use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -114,6 +115,9 @@ class CaseTypeRuleProjectorTest extends TestCase {
 			}
 		};
 
+		$resolver = $this->createMock(CaseTypeResolver::class);
+		$resolver->method('blueprintFor')->willReturn(['propertyDefinitions' => [['name' => 'bouwkosten'], ['name' => 'welstandsgebied']]]);
+
 		$flows = $this->flows;
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
@@ -138,7 +142,8 @@ class CaseTypeRuleProjectorTest extends TestCase {
 			settings: $settings,
 			documents: new CaseTypeRuleFlowDocument(logic: new RuleConditionLogic()),
 			container: $container,
-			logger: new NullLogger()
+			logger: new NullLogger(),
+			resolver: $resolver
 		);
 	}//end projector()
 
@@ -265,4 +270,64 @@ class CaseTypeRuleProjectorTest extends TestCase {
 		$this->assertSame(['old-1'], $this->flows->deleted);
 		$this->assertSame(['dossiq:case-type-rule:type-1:welstandsadvies'], array_column($this->flows->saved, 'notes'));
 	}//end testPublishReplacesOnlyThisCaseTypesFlows()
+	/**
+	 * Setting a case field and choosing a variant are guarded updates of the
+	 * case: the guard says the field does not hold the value yet, so the write
+	 * does not fire the rule again.
+	 *
+	 * @return void
+	 */
+	public function testSetFieldAndChooseVariantAreGuardedUpdates(): void {
+		$rule = self::WELSTAND;
+		$rule['actions'] = [
+			['action' => 'setField', 'field' => 'confidentiality', 'value' => 'vertrouwelijk'],
+			['action' => 'chooseVariant', 'variant' => 'Met welstand'],
+		];
+
+		$plan = $this->projector(rules: [$rule])->plan(caseTypeId: 'type-1');
+
+		$this->assertSame([], $plan['unprojected']);
+		$this->assertCount(2, $plan['flows']);
+		$write = $plan['flows'][0]['nodes'][2];
+		$this->assertSame('openregister.object-write', $write['type']);
+		$this->assertSame(
+			['register' => 'dossiq', 'schema' => 'case', 'operation' => 'update', 'match' => [['property' => 'id', 'value' => '{{ id }}']], 'fields' => ['confidentiality' => 'vertrouwelijk']],
+			$write['config']
+		);
+		$this->assertSame(['variant' => 'Met welstand'], $plan['flows'][1]['nodes'][2]['config']['fields']);
+
+		$library = dirname(__DIR__, 5) . '/openregister/vendor/jwadhams/json-logic-php/src/JWadhams/JsonLogic.php';
+		if (is_file($library) === false) {
+			$this->markTestSkipped('needs a sibling openregister checkout with its vendor, for JSONLogic');
+		}
+
+		require_once $library;
+		$condition = $plan['flows'][1]['nodes'][1]['config']['condition'];
+		$case = ['caseType' => 'type-1', 'bouwkosten' => 150000];
+		$this->assertTrue((bool)\JWadhams\JsonLogic::apply($condition, ['json' => $case]));
+		$this->assertFalse((bool)\JWadhams\JsonLogic::apply($condition, ['json' => $case + ['variant' => 'Met welstand']]));
+	}//end testSetFieldAndChooseVariantAreGuardedUpdates()
+
+	/**
+	 * A property definition's answer, a required document and a message are
+	 * not projected yet, and each is named.
+	 *
+	 * @return void
+	 */
+	public function testActionsWithoutAnEngineAreNamed(): void {
+		$rule = self::WELSTAND;
+		$rule['actions'] = [
+			['action' => 'setField', 'field' => 'bouwkosten', 'value' => 1],
+			['action' => 'requireDocument', 'documentType' => 'welstandsadvies'],
+			['action' => 'sendMessage', 'emailTemplate' => 'tpl'],
+		];
+
+		$plan = $this->projector(rules: [$rule])->plan(caseTypeId: 'type-1');
+
+		$this->assertSame([], $plan['flows']);
+		$this->assertSame(
+			['welstandsadvies: setField', 'welstandsadvies: requireDocument', 'welstandsadvies: sendMessage'],
+			$plan['unprojected']
+		);
+	}//end testActionsWithoutAnEngineAreNamed()
 }//end class
