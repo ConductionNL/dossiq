@@ -942,7 +942,31 @@
 				"parentCaseType": "{{lookup:parent}}",
 				"version": 5,
 				"isDraft": true,
-				"versionDate": "{{date:-2}}"
+				"versionDate": "{{date:-2}}",
+				"rules": [
+					{
+						"id": "welstandsadvies-bij-grote-bouwkosten",
+						"name": "Welstandsadvies bij grote bouwkosten",
+						"enabled": true,
+						"when": {
+							"event": "saved"
+						},
+						"conditions": [
+							{
+								"kind": "fieldCompare",
+								"field": "bouwkosten",
+								"op": "gt",
+								"value": 100000
+							}
+						],
+						"actions": [
+							{
+								"action": "addTask",
+								"title": "Welstandsadvies vragen"
+							}
+						]
+					}
+				]
 			}
 		},
 		{
