@@ -8548,6 +8548,7 @@ OC.L10N.register(
         "The contact moment could not be saved: %s": "The contact moment could not be saved: %s",
         "The contact moment could not be taken off this case.": "The contact moment could not be taken off this case.",
         "The contact moment is on this case.": "The contact moment is on this case.",
+        "The coordinator is under Parties, with their role. Not here, so there is one place to look.": "The coordinator is under Parties, with their role. Not here, so there is one place to look.",
         "The copy could not be created.": "The copy could not be created.",
         "The copy keeps the case type, the requester and the filled properties, and starts in the first status of its type. It gets its own case number.": "The copy keeps the case type, the requester and the filled properties, and starts in the first status of its type. It gets its own case number.",
         "The copy was made but could not be opened.": "The copy was made but could not be opened.",

@@ -34,4 +34,8 @@ describe('the seats card', () => {
 		expect(nl[handoverTo.label]).toBe('Doorgegeven aan')
 		expect(nl[handoverTo.emptyValue]).toBe('Niemand')
 	})
+
+	it('ends with the board footnote', () => {
+		expect(nl[seats.content.footnote]).toBe('De coördinator staat bij Partijen, met zijn rol. Niet hier, zodat er één plek is om te kijken.')
+	})
 })

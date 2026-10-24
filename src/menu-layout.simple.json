@@ -4299,6 +4299,7 @@
 						"content": {
 							"title": "Seats",
 							"columns": 1,
+							"footnote": "The coordinator is under Parties, with their role. Not here, so there is one place to look.",
 							"include": [
 								"assignee",
 								"assignedGroup",

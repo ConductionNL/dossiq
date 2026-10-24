@@ -8613,6 +8613,7 @@
         "The contact moment could not be saved: %s": "Het contactmoment kon niet worden opgeslagen: %s",
         "The contact moment could not be taken off this case.": "Het contactmoment kon niet uit deze zaak worden gehaald.",
         "The contact moment is on this case.": "Het contactmoment staat op deze zaak.",
+        "The coordinator is under Parties, with their role. Not here, so there is one place to look.": "De coördinator staat bij Partijen, met zijn rol. Niet hier, zodat er één plek is om te kijken.",
         "The copy could not be created.": "De kopie kon niet worden aangemaakt.",
         "The copy keeps the case type, the requester and the filled properties, and starts in the first status of its type. It gets its own case number.": "De kopie behoudt het zaaktype, de aanvrager en de ingevulde kenmerken, en start in de eerste status van dat zaaktype. De kopie krijgt een eigen zaaknummer.",
         "The copy was made but could not be opened.": "De kopie is gemaakt maar kon niet worden geopend.",

@@ -8,4 +8,4 @@ columns, "Wacht op acceptatie" / "Overgedragen aan" and dashes.
 ## What changes
 Config and Dutch words only: subtitle, `columns: 1`, `emptyValue` No / Nobody on the two hand-over fields, and the nl
 words of the two labels. Needs nextcloud-vue feat/r25b-data-widget-empty-value-one-column; an older library ignores
-`emptyValue` and keeps 200px columns. Not done: the board's footnote under the card (the data widget has no footnote).
+`emptyValue` and keeps 200px columns. The board's footnote is `content.footnote`, which needs nextcloud-vue feat/data-widget-footnote.
