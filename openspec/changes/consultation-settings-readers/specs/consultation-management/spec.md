@@ -34,3 +34,20 @@ When `consultation_external_response_url` is an https address, inviting an exter
 #### Scenario: Three of ten late
 - GIVEN an advisory body with 10 requests in 30 days, 3 late, threshold 0.2
 - THEN it is flagged with share 0.3
+
+### Requirement: A consultation list shows only requests on cases the caller may read
+
+`GET /api/consultations/due-soon` and `GET /api/consultations/overdue` SHALL keep only the advice requests whose parent case the caller may read, by the case pages' own check (`CaseAccessGuard::hasCaseReadAccess`), asked of each request before the list is built. The configured background service account, in its group `dossiq-background-service`, SHALL see every request: it is the account the scheduled consultation workflows call as. A request without a case SHALL never be listed.
+
+#### Scenario: A reader without access
+- GIVEN a user who may read neither case of two advice requests
+- WHEN they ask for the due-soon list
+- THEN the list is empty
+
+### Requirement: The bottleneck report is for coordinators
+
+`GET /api/consultations/bottlenecks` aggregates across every case and SHALL answer only administrators, members of `dossiq-coordinators` and the background service account; any other signed-in user SHALL get 403 before the report is computed, an anonymous caller 401.
+
+#### Scenario: A plain user
+- GIVEN a signed-in user outside those groups
+- THEN the report answers 403

@@ -369,24 +369,38 @@ class ConsultationService {
 	/**
 	 * Get overdue consultations (past deadline with open/in_behandeling status).
 	 *
+	 * @param callable|null $mayRead Keeps a request the caller may see; asked of each before the list is built.
+	 *
 	 * @return array<int, array<string, mixed>> List of overdue consultations
 	 *
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
 	 */
-	public function getOverdueConsultations(): array {
-		return $this->repository->getOverdueConsultations();
+	public function getOverdueConsultations(?callable $mayRead = null): array {
+		$overdue = $this->repository->getOverdueConsultations();
+		if ($mayRead === null) {
+			return $overdue;
+		}
+
+		return array_values(array_filter($overdue, $mayRead));
 	}//end getOverdueConsultations()
 
 	/**
 	 * The waiting consultations whose deadline is within the warning offset.
 	 *
+	 * @param callable|null $mayRead Keeps a request the caller may see; asked of each before the list is built.
+	 *
 	 * @return array{results: array<int, array<string, mixed>>, warningOffsetDays: int} The list and the offset used.
 	 *
 	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
 	 */
-	public function getDueSoonConsultations(): array {
+	public function getDueSoonConsultations(?callable $mayRead = null): array {
+		$waiting = $this->repository->getWaitingConsultations();
+		if ($mayRead !== null) {
+			$waiting = array_values(array_filter($waiting, $mayRead));
+		}
+
 		return [
-			'results' => $this->terms->dueSoon(consultations: $this->repository->getWaitingConsultations()),
+			'results' => $this->terms->dueSoon(consultations: $waiting),
 			'warningOffsetDays' => $this->terms->warningOffsetDays(),
 		];
 	}//end getDueSoonConsultations()

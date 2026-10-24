@@ -236,7 +236,7 @@ class ConsultationController extends Controller {
 			return $authError;
 		}
 
-		$overdue = $this->consultationService->getOverdueConsultations();
+		$overdue = $this->consultationService->getOverdueConsultations(mayRead: $this->accessGuard->readableFilter());
 		return new JSONResponse(['results' => $overdue]);
 	}//end overdue()
 
@@ -255,7 +255,7 @@ class ConsultationController extends Controller {
 			return $authError;
 		}
 
-		return new JSONResponse($this->consultationService->getDueSoonConsultations());
+		return new JSONResponse($this->consultationService->getDueSoonConsultations(mayRead: $this->accessGuard->readableFilter()));
 	}//end dueSoon()
 
 	/**
@@ -268,7 +268,7 @@ class ConsultationController extends Controller {
 	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
 	 */
 	public function bottlenecks(): JSONResponse {
-		$authError = $this->accessGuard->requireUser();
+		$authError = $this->accessGuard->requireCoordinator();
 		if ($authError !== null) {
 			return $authError;
 		}

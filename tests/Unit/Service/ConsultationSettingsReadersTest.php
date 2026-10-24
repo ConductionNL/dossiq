@@ -175,6 +175,9 @@ class ConsultationSettingsReadersTest extends TestCase {
 		self::assertSame(['a'], array_column($due['results'], 'id'));
 		self::assertSame(5, $due['warningOffsetDays']);
 		self::assertSame(2, $service->getBottlenecks()['bodies'][0]['total']);
+
+		$none = $service->getDueSoonConsultations(mayRead: static fn (array $consultation): bool => false);
+		self::assertSame([], $none['results'], 'A filter that keeps nothing lists nothing');
 	}//end testDueSoonAndBottlenecksReadTheStoredRequests()
 
 	/**

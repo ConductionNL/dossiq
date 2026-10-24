@@ -11,6 +11,11 @@ Adviseringsbeheer (admin, Systeem tab, board DqBeheerinstellingen) saves four se
 
 What reads advice requests today: dossiq only (ConsultationService, ConsultationRepository, the external link service, the n8n consultation workflows). decidiq receives an advice Decision per request (AdviceDelegationService) and reads none of these settings.
 
+## Access (coordinator, 24 Oct)
+
+- The due-soon and overdue lists keep only requests on cases the caller may read (CaseAccessGuard, the case pages' check), before the list is built. The background service account sees them all: it is the documented system path the n8n workflows call as (docs/n8n-consultation-workflows.md), checked as the configured account in its group, not widened to users.
+- The bottleneck report answers administrators, the existing `dossiq-coordinators` group (CaseRebindGate::COORDINATOR_GROUP) and the service account.
+
 ## Scope
 
 - New `lib/Service/Consultation/ConsultationTerms.php`; ConsultationService, ConsultationRepository, ExternalConsultationLinkService, ConsultationController, routes; the two n8n workflows; ConfigKeys comment; tests. No schema change.
