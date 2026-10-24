@@ -31,7 +31,7 @@
 				{{
 					t(
 						'dossiq',
-						'The parties, documents and objects move to the case you pick. This case keeps its number and points at the one it became part of, so a reply quoting the old number still arrives.',
+						'Parties, documents and objects move to the case you pick.',
 					)
 				}}
 			</p>
