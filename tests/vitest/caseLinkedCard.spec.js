@@ -94,7 +94,7 @@ describe('the money placements mount the leaves shillinq registers', () => {
 		const widget = fullCase.widgets.find((w) => w.id === 'case-payment-requests')
 		expect(widget.props).toEqual({
 			kinds: ['quote', 'invoice', 'credit-note', 'payment-request', 'payout'],
-			actions: ['issue-invoice', 'request-payment', 'send-link', 'record-payment'],
+			actions: ['issue-invoice', 'new-quote', 'raise-payout', 'request-payment', 'credit-invoice', 'send-link', 'record-payment'],
 			objectType: 'case',
 		})
 	})
