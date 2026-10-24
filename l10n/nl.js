@@ -897,6 +897,7 @@ OC.L10N.register(
         "Asked by": "Gevraagd door",
         "Asked for advice from {body}": "Advies gevraagd aan {body}",
         "Asleep until": "Slaapt tot",
+        "Assess": "Beoordelen",
         "Assess documents": "Documenten beoordelen",
         "Assess each document for disclosure under the WOO (Art. 5.1/5.2).": "Beoordeel elk document op openbaarmaking onder de WOO (Art. 5.1/5.2).",
         "Assess each document for disclosure under the WOO.": "Beoordeel elk document op openbaarmaking onder de WOO.",

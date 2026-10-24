@@ -164,6 +164,23 @@ function lookupRelatedName(type, uuid) {
 
 export default {
 	/**
+	 * A stored code by its label (`formatterOptions.labels`), translated; the
+	 * code itself when it has no label (DqZaakDocumenten verdict pill).
+	 *
+	 * @param {unknown} value The stored code.
+	 * @param {object} row The row.
+	 * @param {object} property The property.
+	 * @param {{labels?: object}} options The column's formatter options.
+	 * @return {string}
+	 * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
+	 */
+	optionLabel: (value, row, property, options) => {
+		const code = value === null || value === undefined ? '' : String(value)
+		const label = options && options.labels && typeof options.labels[code] === 'string' ? options.labels[code] : ''
+		return label === '' ? code : t('dossiq', label)
+	},
+
+	/**
 	 * Whom a covered case is covered for, and until when ("For Anouk Bakker,
 	 * until 10 Oct"); '' on the reader's own case.
 	 *

@@ -897,6 +897,7 @@ OC.L10N.register(
         "Asked by": "Asked by",
         "Asked for advice from {body}": "Asked for advice from {body}",
         "Asleep until": "Asleep until",
+        "Assess": "Assess",
         "Assess documents": "Assess documents",
         "Assess each document for disclosure under the WOO (Art. 5.1/5.2).": "Assess each document for disclosure under the WOO (Art. 5.1/5.2).",
         "Assess each document for disclosure under the WOO.": "Assess each document for disclosure under the WOO.",
