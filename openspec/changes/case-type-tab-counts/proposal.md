@@ -10,8 +10,7 @@ Vertalingen (2). Live shows a number after Velden, Statussen and Versies only.
 Three tabs of `case-type-panels` count with nextcloud-vue's tab `countFrom { endpoint, field }`:
 
 - Phases and tasks: `taskCount` from `GET /api/case-types/{id}/phases` (the tasks the phases card shows).
-- Rules: the `rules` the case schema holds for this case type (`GET /apps/openregister/api/schemas/case/rules`
-  scoped to the case type, as the Rules tab reads them).
+- Rules: the case type's own `rules` (`countField`), the "Als ... dan ..." rows the Rules tab lists first.
 - Translations: the register's `languages` (the languages the Translations tab lists, source language included).
 
 ## Reach

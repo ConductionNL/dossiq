@@ -22,8 +22,9 @@ describe('the case type tab counts', () => {
 		expect(tab('phases').countFrom).toEqual({ endpoint: '/apps/dossiq/api/case-types/@objectId/phases', field: 'taskCount' })
 	})
 
-	it('counts the rules of this case type, as the Rules tab reads them', () => {
-		expect(tab('rules').countFrom).toEqual({ endpoint: '/apps/openregister/api/schemas/case/rules?scope[caseType]=@objectId', field: 'rules' })
+	it('counts the case type\'s own rules, the "Als ... dan ..." rows of the Rules tab', () => {
+		expect(tab('rules').countField).toBe('rules')
+		expect(tab('rules').countFrom).toBeUndefined()
 	})
 
 	it('counts the languages the register keeps', () => {

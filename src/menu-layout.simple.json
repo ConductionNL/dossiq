@@ -6577,10 +6577,7 @@
 									"widgetIds": [
 										"case-type-rules"
 									],
-									"countFrom": {
-										"endpoint": "/apps/openregister/api/schemas/case/rules?scope[caseType]=@objectId",
-										"field": "rules"
-									}
+									"countField": "rules"
 								},
 								{
 									"id": "rights",
