@@ -32,8 +32,10 @@ Why A:
 - `register.d` fragment: `kvkCompany` `partyKinds` / `linkRoles`; `brpPerson` `contactAddresses` and
   `addressesProperty` (schema bumps, register version bump).
 - OrganisationDetail: the side card `side-main-contact` and the tab "Contactpersonen" (`parties` widget, tab id
-  `org-contact-persons`, counted from the listing's `total`). There is no add flow in the parties widget yet, so
-  "Contactpersoon toevoegen" is a later library change (tasks 4.1); OpenRegister's API already takes the writes.
+  `org-contact-persons`, counted from the listing's `total`). The tab's widget declares `manage`: "Contactpersoon toevoegen" picks a
+  known person or describes a new one without a BSN (name, e-mail, phone, address), a role, and optionally makes them
+  the main contact (through the primary route, which is audited); each contact person can be removed from a role.
+  The buttons hide when OpenRegister's scopes deny update, and every write goes through the party API.
 - Example set: the two contact persons on Buurtvereniging Oost.
 - l10n: role labels and the card words.
 

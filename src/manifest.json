@@ -13961,6 +13961,49 @@
 								"primary": "Main contact",
 								"empty": "No contact persons yet",
 								"emptyDetail": "Nobody is named yet as speaking for this organisation."
+							},
+							"manage": {
+								"add": {
+									"label": "Add contact person",
+									"dialogTitle": "Add contact person",
+									"confirmLabel": "Add",
+									"kind": "person",
+									"primary": true,
+									"sources": [
+										{
+											"id": "person",
+											"register": "dossiq",
+											"schema": "brpPerson",
+											"label": "Person",
+											"title": "{displayName}",
+											"secondary": "{residence.street} {residence.houseNumber}"
+										}
+									],
+									"create": {
+										"register": "dossiq",
+										"schema": "brpPerson",
+										"label": "Someone new, without a BSN",
+										"fields": [
+											{ "key": "givenNames", "label": "First names", "path": "name.givenNames", "required": true },
+											{ "key": "namePrefix", "label": "Name prefix", "path": "name.namePrefix" },
+											{ "key": "surname", "label": "Last name", "path": "name.surname", "required": true },
+											{ "key": "email", "label": "Email", "type": "email", "address": { "path": "contactAddresses", "kind": "correspondence", "type": "email" } },
+											{ "key": "phone", "label": "Phone", "address": { "path": "contactAddresses", "kind": "correspondence", "type": "phone" } },
+											{ "key": "street", "label": "Street", "path": "residence.street" },
+											{ "key": "houseNumber", "label": "House number", "path": "residence.houseNumber", "type": "integer" },
+											{ "key": "postcode", "label": "Postal code", "path": "residence.postcode" },
+											{ "key": "city", "label": "City", "path": "residence.city" }
+										],
+										"compose": {
+											"displayName": ["name.givenNames", "name.namePrefix", "name.surname"]
+										}
+									}
+								},
+								"remove": {
+									"title": "Remove contact person",
+									"message": "Remove {name} as {role}?",
+									"confirmLabel": "Remove"
+								}
 							}
 						}
 					}
