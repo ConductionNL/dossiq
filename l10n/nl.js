@@ -4563,6 +4563,7 @@ OC.L10N.register(
         "Look up in other domains": "Opzoeken in andere domeinen",
         "Looking a company up in the chamber-of-commerce register.": "Een bedrijf opzoeken in het Handelsregister.",
         "Looks like a case": "Lijkt op een zaak",
+        "Looks like {value}": "Lijkt op {value}",
         "Low": "Laag",
         "low": "laag",
         "Lowest value": "Laagste waarde",
