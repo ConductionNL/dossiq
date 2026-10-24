@@ -3879,17 +3879,6 @@
 									"icon": "EmailOutline",
 									"type": "open-modal",
 									"target": "FileRequestDialog"
-								},
-								{
-									"id": "generate-document",
-									"label": "Generate document",
-									"icon": "FileDocumentPlusOutline",
-									"type": "open-modal",
-									"target": "BeschikkingComposerDialog",
-									"props": {
-										"caseId": "@objectId",
-										"open": true
-									}
 								}
 							],
 							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
