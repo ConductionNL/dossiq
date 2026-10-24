@@ -13529,7 +13529,7 @@
 									"parts": [
 										{
 											"path": "startTime",
-											"format": "date",
+											"format": "longdate",
 											"label": "Last contact on"
 										},
 										{
@@ -13600,7 +13600,7 @@
 									"subtitle": [
 										{
 											"path": "startTime",
-											"format": "date",
+											"format": "longdate",
 											"label": "at the contact moment of"
 										}
 									]
@@ -13683,7 +13683,7 @@
 										},
 										{
 											"path": "@self.updated",
-											"format": "date-long"
+											"format": "longdate"
 										},
 										{
 											"path": "_lastChange.userName",
@@ -14448,7 +14448,7 @@
 										},
 										{
 											"path": "@self.updated",
-											"format": "date-long"
+											"format": "longdate"
 										},
 										{
 											"path": "_lastChange.userName",
