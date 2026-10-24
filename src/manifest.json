@@ -7252,7 +7252,6 @@
 								{
 									"label": "Overview",
 									"widgetIds": [
-										"task-description",
 										"task-checklist",
 										"task-appointments",
 										"task-notes"
@@ -7261,23 +7260,6 @@
 								{
 									"label": "Task history",
 									"widgetId": "task-history"
-								}
-							]
-						}
-					},
-					{
-						"id": "task-description",
-						"type": "facts",
-						"title": "Description",
-						"visibleWhen": {
-							"field": "description",
-							"op": "notEmpty"
-						},
-						"content": {
-							"fields": [
-								{
-									"as": "text",
-									"path": "description"
 								}
 							]
 						}
@@ -7371,6 +7353,11 @@
 						"title": "Task",
 						"content": {
 							"fields": [
+								{
+									"key": "description",
+									"as": "text",
+									"path": "description"
+								},
 								{
 									"key": "assignee",
 									"label": "Handler",

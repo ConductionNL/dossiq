@@ -61,10 +61,12 @@ describe('the TaskDetail manifest page', () => {
 		expect(config.layout.map((item) => item.widgetId)).toEqual(['task-panels'])
 		expect(panels.type).toBe('tabs')
 		expect(panels.content.tabs).toEqual([
-			{ label: 'Overview', widgetIds: ['task-description', 'task-checklist', 'task-appointments', 'task-notes'] },
+			{ label: 'Overview', widgetIds: ['task-checklist', 'task-appointments', 'task-notes'] },
 			{ label: 'Task history', widgetId: 'task-history' },
 		])
-		expect(widget('task-description')).toMatchObject({ type: 'facts', visibleWhen: { field: 'description', op: 'notEmpty' } })
+		// Board DqTaak draws no description card: the description is the first line of the side Task card.
+		expect(widget('task-description')).toBeUndefined()
+		expect(config.sideColumn.find((entry) => entry.id === 'side-task').content.fields[0]).toEqual({ key: 'description', as: 'text', path: 'description' })
 		expect(widget('task-checklist')).toMatchObject({ type: 'checklist', content: { path: 'checklist' } })
 		// The leaves are the library cards on the task's engine endpoints
 		// (`source: flow-task`), with dossiq's empty lines kept.
@@ -77,7 +79,7 @@ describe('the TaskDetail manifest page', () => {
 	it('has the task facts, the case card, the waiting-case card and the history beside the body', () => {
 		expect(config.sideColumn.map((entry) => entry.id)).toEqual(['side-task', 'side-case', 'side-waiting', 'side-history'])
 		expect(widget('side-task').content.fields.map((field) => field.path)).toEqual([
-			'assignee', 'candidateGroups', 'dueAt', 'expiresAt', 'priority', 'requester', 'created',
+			'description', 'assignee', 'candidateGroups', 'dueAt', 'expiresAt', 'priority', 'requester', 'created',
 		])
 		expect(widget('side-case')).toMatchObject({ type: 'facts', visibleWhen: { field: 'objectUuid', op: 'notEmpty' } })
 		expect(widget('side-case').content.link.route).toEqual({ name: 'CaseDetail', params: { id: '@object.objectUuid' } })
