@@ -3954,6 +3954,17 @@
 							"sideCardsPlacement": "page-side",
 							"bulkActions": [
 								{
+									"id": "bulk-copy-to-case",
+									"label": "Copy to another case",
+									"icon": "ContentCopy",
+									"type": "open-modal",
+									"target": "BulkDocumentActionDialog",
+									"props": {
+										"mode": "copy-to-case",
+										"caseId": "@objectId"
+									}
+								},
+								{
 									"id": "bulk-confidentiality",
 									"label": "Who can see this",
 									"icon": "ShieldLockOutline",
