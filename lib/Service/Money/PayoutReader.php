@@ -41,6 +41,18 @@ use OCP\EventDispatcher\IEventDispatcher;
  */
 class PayoutReader {
 	/**
+	 * Finance's payout state => the status dossiq's payout rows use.
+	 *
+	 * @var array<string, string>
+	 */
+	private const STATUSES = [
+		'requested' => 'voorbereid',
+		'approved' => 'in-handling',
+		'paid' => 'paid',
+		'rejected' => 'rejected',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IEventDispatcher $dispatcher Carries the question to the finance app.
@@ -78,4 +90,55 @@ class PayoutReader {
 
 		return $event->getPayables();
 	}//end payouts()
+
+	/**
+	 * The payouts as rows of the shape dossiq kept, beside the stored rows
+	 * finance does not hold (a row under objection, a row not moved yet). A
+	 * payout finance withdrew is no payment and is left out. Without a finance
+	 * app the stored rows are the answer.
+	 *
+	 * @param array<int, array<string, mixed>> $storedRows The payout rows dossiq kept.
+	 * @param int $paidInYear Only finance's payouts paid in this year, when above zero.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	public function mergedRows(array $storedRows, int $paidInYear = 0): array {
+		$payouts = $this->payouts(paidInYear: $paidInYear);
+		if ($payouts === null) {
+			return $storedRows;
+		}
+
+		$rows = [];
+		foreach ($payouts as $payout) {
+			$state = (string)($payout['state'] ?? '');
+			if (isset(self::STATUSES[$state]) === false) {
+				continue;
+			}
+
+			$payee = (array)($payout['payee'] ?? []);
+			$rows[] = [
+				'id' => (string)($payout['payableId'] ?? ''),
+				'payableId' => (string)($payout['payableId'] ?? ''),
+				'penaltyPaymentCalculation' => (string)($payout['correlationId'] ?? ''),
+				'reference' => (string)($payout['reference'] ?? ''),
+				'amount' => (int)round(((float)($payout['amount'] ?? 0)) * 100),
+				'status' => self::STATUSES[$state],
+				'actualPaymentDate' => (string)($payout['paidOn'] ?? ''),
+				'betalingsreferentie' => (string)($payout['bankReference'] ?? ''),
+				'accountHolderName' => (string)($payee['name'] ?? ''),
+				'iban' => (string)($payee['iban'] ?? ''),
+				'legalBasis' => 'AWB 4:17',
+			];
+		}
+
+		foreach ($storedRows as $row) {
+			if ((string)($row['payableId'] ?? '') === '') {
+				$rows[] = $row;
+			}
+		}
+
+		return $rows;
+	}//end mergedRows()
 }//end class

@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
+use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Throwable;
@@ -57,9 +58,11 @@ class PenaltyPaymentRows {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The app settings, for the object service and the schema ids.
+	 * @param PayoutReader|null $payouts Reads the payouts from the finance app, beside the rows it does not hold.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly ?PayoutReader $payouts = null,
 	) {
 	}//end __construct()
 
@@ -88,6 +91,8 @@ class PenaltyPaymentRows {
 		} catch (Throwable $e) {
 			return $empty;
 		}
+
+		$payments = ($this->payouts?->mergedRows(storedRows: $payments) ?? $payments);
 
 		$this->found = [];
 		$rows = [];
