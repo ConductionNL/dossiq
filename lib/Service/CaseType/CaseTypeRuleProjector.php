@@ -248,11 +248,11 @@ class CaseTypeRuleProjector {
 	 * @return object|null The service.
 	 */
 	private function service(string $name): ?object {
-		try {
-			$service = $this->container->get($name);
-		} catch (Throwable $e) {
+		if ($this->container->has($name) === false) {
 			return null;
 		}
+
+		$service = $this->container->get($name);
 
 		if (is_object($service) === false) {
 			return null;

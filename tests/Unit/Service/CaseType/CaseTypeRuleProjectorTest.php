@@ -120,6 +120,9 @@ class CaseTypeRuleProjectorTest extends TestCase {
 
 		$flows = $this->flows;
 		$container = $this->createMock(ContainerInterface::class);
+		$container->method('has')->willReturnCallback(
+			static fn (string $name): bool => in_array($name, ['OCA\OpenRegister\Service\Flow\FlowService', 'OCA\OpenRegister\Service\Flow\FlowVersionService'], true)
+		);
 		$container->method('get')->willReturnCallback(
 			static function (string $name) use ($flows): object {
 				if ($name === 'OCA\OpenRegister\Service\Flow\FlowService') {

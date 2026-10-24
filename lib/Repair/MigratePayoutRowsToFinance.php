@@ -167,12 +167,12 @@ class MigratePayoutRowsToFinance implements IRepairStep {
 				return false;
 			}
 
-			$this->saveObjectAsArray(
+			$this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				object: ['payableId' => $raised['payableId']] + $row,
-				uuid: (string)($row['id'] ?? ''),
+				id: (string)($row['id'] ?? ''),
+				changes: ['payableId' => $raised['payableId']],
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(

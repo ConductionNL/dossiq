@@ -139,7 +139,9 @@ class EngineTaskGateway {
      *
      * @param string $key The engine task key.
      *
-     * @return bool|null True when taken, false when free, null when unknown.
+     * @return bool|null True when taken, false when free, null when the engine has no key lookup.
+     *
+     * @throws Throwable When the engine cannot read the key.
      *
      * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
      */
@@ -151,13 +153,9 @@ class EngineTaskGateway {
             return null;
         }
 
-        try {
-            return $service->findByKey($key) !== [];
-        } catch (Throwable $e) {
-            $this->lastError = $e->getMessage();
-
-            return null;
-        }
+        // A failing lookup is not "free": it reaches the caller as an
+        // exception, which refuses to add the task.
+        return $service->findByKey($key) !== [];
     }//end keyTaken()
 
     /**

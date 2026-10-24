@@ -57,6 +57,7 @@ use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Built-in handler for `createTask` automatic actions.
@@ -255,7 +256,17 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			return null;
 		}
 
-		$taken = $this->engineTasks->keyTaken(key: $onceKey);
+		try {
+			$taken = $this->engineTasks->keyTaken(key: $onceKey);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'CreateTaskHandler: could not tell whether the task was added before',
+				['reason' => $e->getMessage(), 'key' => $onceKey]
+			);
+
+			return new ActionResult(succeeded: false, error: 'once_key_unverifiable');
+		}
+
 		if ($taken === false) {
 			return null;
 		}
