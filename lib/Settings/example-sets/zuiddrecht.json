@@ -1944,6 +1944,79 @@
 			}
 		},
 		{
+			"key": "melding-geluidsoverlast-terras-markt",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-marja.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:marja.displayName}}",
+				"intakeChannel": "website",
+				"confidentiality": "openbaar",
+				"title": "Melding geluidsoverlast terras Markt",
+				"description": "Bewoners aan de Markt melden muziek en stemmen op het terras van het café tot na middernacht, drie weekenden achter elkaar.",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-16}}",
+				"receivedAt": "{{datetime:-16 11:20}}",
+				"currentStatusEnteredAt": "{{datetime:-15 09:10}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-16 11:20}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-15 09:10}}"
+					}
+				],
+				"tags": [
+					"markt",
+					"geluid"
+				]
+			}
+		},
+		{
+			"key": "termijn-geluidsoverlast-terras-markt",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:melding-geluidsoverlast-terras-markt.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-16 11:20}}",
+				"endDateCalculated": "{{date:-2}}",
+				"endDateCurrent": "{{date:-2}}",
+				"status": "lopend"
+			}
+		},
+		{
 			"key": "woo-zaaksysteem-resultaat",
 			"register": "dossiq",
 			"schema": "result",
@@ -5078,6 +5151,15 @@
 	],
 	"notes": [
 		{
+			"key": "pieter-noteert-fietspad-lindelaan",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:woo-fietspad-besluitklaar.id}}",
+				"message": "Drie documenten beoordeeld, offerte lantaarnpalen deels openbaar.",
+				"createdAt": "{{datetime:0 15:40}}"
+			}
+		},
+		{
 			"key": "pieter-noteert-parkeervergunningen",
 			"data": {
 				"user": "{{cast:pieter.uid}}",
@@ -5088,6 +5170,16 @@
 		}
 	],
 	"readStates": [
+		{
+			"key": "pieter-opende-geluidsoverlast-markt",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:melding-geluidsoverlast-terras-markt.id}}",
+				"register": "dossiq",
+				"schema": "case",
+				"seenAt": "{{datetime:0 13:05}}"
+			}
+		},
 		{
 			"key": "pieter-opende-bezwaar-parkeerboete",
 			"data": {
