@@ -8044,8 +8044,38 @@
 						"type": "chart",
 						"title": "Throughput (cases closed per week)",
 						"content": {
-							"chartKind": "line",
+							"chartKind": "bar",
 							"categoryFormat": "week",
+							"colors": ["var(--nl-color-teal-text, var(--color-primary-element))"],
+							"options": {
+								"plotOptions": {
+									"bar": {
+										"columnWidth": "62%",
+										"borderRadius": 2,
+										"dataLabels": {
+											"position": "top"
+										}
+									}
+								},
+								"dataLabels": {
+									"enabled": true,
+									"offsetY": -16,
+									"style": {
+										"fontSize": "10px",
+										"fontWeight": 600,
+										"colors": ["var(--color-main-text, #1b1c1d)"]
+									}
+								},
+								"yaxis": {
+									"show": false
+								},
+								"grid": {
+									"show": false
+								},
+								"legend": {
+									"show": false
+								}
+							},
 							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",

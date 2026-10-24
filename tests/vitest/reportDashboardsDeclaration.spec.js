@@ -37,7 +37,7 @@ describe('processing time', () => {
 			'processing-time-charts': ['bar-list', 'sla'],
 			'processing-time-charts-distribution': ['bar', 'distribution'],
 			'processing-time-charts-trend': ['line', 'trend'],
-			'processing-time-charts-throughput': ['line', 'throughput'],
+			'processing-time-charts-throughput': ['bar', 'throughput'],
 		}
 		for (const [id, [kind, view]] of Object.entries(views)) {
 			const w = widget('Doorlooptijd', id)
@@ -365,5 +365,16 @@ describe('throughput per week', () => {
 		const processing = widget('Doorlooptijd', 'processing-time-charts-throughput').content
 		expect(processing.categoryFormat).toBe('week')
 		expect(processing.endpointSource.labelsPath).toBe('week')
+	})
+
+	it('draws each page as its board does: a line on DqProcesanalyse, teal bars with their values on DqDoorlooptijd', () => {
+		// Coordinator 24 Oct: each page follows its own board.
+		expect(widget('ProcessMiningDashboard', 'pm-throughput').content.chartKind).toBe('line')
+		const processing = widget('Doorlooptijd', 'processing-time-charts-throughput').content
+		expect(processing.chartKind).toBe('bar')
+		expect(processing.colors[0]).toContain('--nl-color-teal-text')
+		expect(processing.options.dataLabels.enabled).toBe(true)
+		expect(processing.options.plotOptions.bar.dataLabels.position).toBe('top')
+		expect(processing.options.yaxis.show).toBe(false)
 	})
 })
