@@ -7527,12 +7527,12 @@
 									"path": "decisionTerm"
 								},
 								{
-									"label": "Suspension",
-									"path": "suspension"
-								},
-								{
 									"label": "Penalty for a late decision",
 									"path": "penalty"
+								},
+								{
+									"label": "Suspension",
+									"path": "suspension"
 								},
 								{
 									"label": "Service target",
