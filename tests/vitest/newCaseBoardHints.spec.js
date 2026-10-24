@@ -56,4 +56,13 @@ describe('New case in the simple structure, against DqNieuweZaak', () => {
 			}
 		}
 	})
+
+	it('opens with the board subtitle, word for word', () => {
+		const forms = newCaseForms()
+		expect(forms.length).toBeGreaterThan(0)
+		for (const form of forms) {
+			expect(nl.translations[form.formSubtitle]).toBe('Velden met * zijn verplicht. De zaak start in de eerste status van het zaaktype. De ontvangstdatum en de startdatum vult het systeem zelf in, vanaf het moment dat het verzoek binnenkwam.')
+		}
+	})
 })
+

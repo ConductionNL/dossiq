@@ -3250,7 +3250,7 @@ OC.L10N.register(
         "Fields": "Velden",
         "Fields a sender fills before this template can go out.": "Velden die een verzender invult voordat dit sjabloon verstuurd kan worden.",
         "Fields in this status": "Velden in deze status",
-        "Fields marked * are required. The case starts in the first status of its case type. The system fills in the receipt date and the start date itself, from the moment the request came in.": "Velden met een * zijn verplicht. De zaak start in de eerste status van het zaaktype. De ontvangstdatum en de startdatum vult het systeem zelf in, vanaf het moment dat het verzoek binnenkwam.",
+        "Fields marked * are required. The case starts in the first status of its case type. The system fills in the receipt date and the start date itself, from the moment the request came in.": "Velden met * zijn verplicht. De zaak start in de eerste status van het zaaktype. De ontvangstdatum en de startdatum vult het systeem zelf in, vanaf het moment dat het verzoek binnenkwam.",
         "Fields of other records that hold a moved record's id or slug, moved onto the case id before the record is stamped.": "Velden van andere records die het id of de slug van een verplaatst record bevatten, overgezet naar het zaak-id voordat het record wordt gestempeld.",
         "Fields that must be filled before the decision can be approved.": "Velden die ingevuld moeten zijn voordat het besluit kan worden goedgekeurd.",
         "Fields they see": "Velden die zij zien",
