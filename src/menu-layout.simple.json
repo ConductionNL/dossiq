@@ -2560,6 +2560,12 @@
 							]
 						}
 					},
+					"case-notes-panel": {
+						"_note": "DqZaakEmail: the notes under the mail card are a card of their own, \"Notities\" with its subtitle; `view: tab` keeps the notes leaf's full tab (composer behind its button, note actions) inside that card.",
+						"content": {
+							"view": "tab"
+						}
+					},
 					"case-email-panel": {
 						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the mail linked to the case is listed in the same card, as the board draws it, and the notes stand under it. Mail koppelen and Mail opstellen are the library mail tab's own header buttons (content.headerActions).",
 						"content": {
