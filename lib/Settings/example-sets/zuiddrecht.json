@@ -5159,6 +5159,164 @@
 			}
 		}
 	],
+	"flows": [
+		{
+			"key": "flow-zienswijze-derde",
+			"data": {
+				"name": "Zienswijze derde vragen",
+				"description": "Een derde wiens belang de openbaarmaking raakt krijgt de kans een zienswijze te geven (Woo artikel 4.4).",
+				"trigger": "manual",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-manual",
+						"name": "Gestart vanaf de zaak",
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "vraag",
+						"type": "dossiq.askPerson",
+						"name": "Zienswijze derde belanghebbende vragen",
+						"config": {
+							"question": "Zienswijze derde belanghebbende vragen",
+							"details": "Stuur de derde de stukken die hem raken en vraag binnen twee weken om een zienswijze.",
+							"assignee": "{{cast:woo-en-informatie.gid}}",
+							"dueInDays": "10"
+						},
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "vraag"
+					},
+					{
+						"from": "vraag",
+						"to": "end"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-documenten-opvragen",
+			"data": {
+				"name": "Documenten opvragen bij een afdeling",
+				"description": "Een afdeling levert de documenten aan die onder het verzoek vallen.",
+				"trigger": "manual",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-manual",
+						"name": "Gestart vanaf de zaak",
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "vraag",
+						"type": "dossiq.askPerson",
+						"name": "Documenten aanleveren voor het Woo-verzoek",
+						"config": {
+							"question": "Documenten aanleveren voor het Woo-verzoek",
+							"details": "Zoek de documenten over het onderwerp van het verzoek en lever ze aan in het dossier van de zaak.",
+							"assignee": "{{cast:woo-en-informatie.gid}}",
+							"dueInDays": "10"
+						},
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "vraag"
+					},
+					{
+						"from": "vraag",
+						"to": "end"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-verdaging-aankondigen",
+			"data": {
+				"name": "Verdaging aankondigen",
+				"description": "De beslistermijn wordt met ten hoogste twee weken verdaagd en de verzoeker hoort dat voor het einde van de termijn (Woo artikel 4.4).",
+				"trigger": "manual",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-manual",
+						"name": "Gestart vanaf de zaak",
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "vraag",
+						"type": "dossiq.askPerson",
+						"name": "Verdagingsbrief versturen",
+						"config": {
+							"question": "Verdagingsbrief versturen",
+							"details": "Stuur de verzoeker de verdagingsbrief met de reden en de nieuwe uiterste datum.",
+							"assignee": "{{cast:woo-en-informatie.gid}}",
+							"dueInDays": "10"
+						},
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "vraag"
+					},
+					{
+						"from": "vraag",
+						"to": "end"
+					}
+				]
+			}
+		}
+	],
 	"changes": [
 		{
 			"key": "parkeren-henk-uitkomst",
@@ -5203,6 +5361,22 @@
 			"set": {
 				"ncGroupId": "zuiddrecht-toezicht-en-handhaving",
 				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+			}
+		},
+		{
+			"key": "woo-verzoek-startbare-flows",
+			"register": "dossiq",
+			"schema": "caseType",
+			"where": {
+				"identifier": "woo-verzoek",
+				"version": 2
+			},
+			"set": {
+				"startableFlows": [
+					"{{flow:flow-zienswijze-derde.uuid}}",
+					"{{flow:flow-documenten-opvragen.uuid}}",
+					"{{flow:flow-verdaging-aankondigen.uuid}}"
+				]
 			}
 		}
 	]
