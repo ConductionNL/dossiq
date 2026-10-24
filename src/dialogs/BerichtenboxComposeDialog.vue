@@ -93,6 +93,9 @@ class="compose-dialog__field"
 			</div>
 
 			<NcNoteCard type="info">
+				<template #icon>
+					<EmailFastOutline :size="20" />
+				</template>
 				{{ t('dossiq', 'The message goes through integriq to the Berichtenbox of MijnOverheid. Delivered and read come back on the case, under Contact and History.') }}
 			</NcNoteCard>
 
@@ -129,6 +132,7 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import EmailFastOutline from 'vue-material-design-icons/EmailFastOutline.vue'
 import SendIcon from 'vue-material-design-icons/Send.vue'
 import { sendMessage } from '../services/berichtenboxApi.js'
 import { caseEyebrow } from '../services/caseSummary.js'
@@ -155,6 +159,7 @@ export default {
 	name: 'BerichtenboxComposeDialog',
 	components: {
 		CnDialog,
+		EmailFastOutline,
 		SendIcon,
 		NcButton,
 		NcCheckboxRadioSwitch,
@@ -189,20 +194,22 @@ export default {
 
 	emits: ['close', 'sent'],
 	data() {
+		const typeCodes = [
+			{ code: 'decision', label: t('dossiq', 'Decision (Besluit)') },
+			{ code: 'status', label: t('dossiq', 'Status update') },
+			{ code: 'informatie', label: t('dossiq', 'Information') },
+		]
 		return {
 			form: {
 				bsn: this.bsn,
 				subject: '',
 				body: '',
-				berichtTypeCode: null,
+				// A letter from a running case is most often a status update.
+				berichtTypeCode: typeCodes.find((type) => type.code === 'status'),
 				isBesluit: false,
 			},
 
-			typeCodes: [
-				{ code: 'decision', label: t('dossiq', 'Decision (Besluit)') },
-				{ code: 'status', label: t('dossiq', 'Status update') },
-				{ code: 'informatie', label: t('dossiq', 'Information') },
-			],
+			typeCodes,
 
 			kase: null,
 			// The requester's BSN as the case holds it, and whether the field is
@@ -505,7 +512,7 @@ export default {
 }
 
 .compose-dialog__check-note {
-	padding-inline-start: 44px;
+	padding-inline-start: var(--cn-dialog-check-label-inset, 44px);
 }
 
 .compose-dialog__body {

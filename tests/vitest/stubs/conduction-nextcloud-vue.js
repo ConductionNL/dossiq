@@ -136,6 +136,8 @@ export const CnTransitionInputFields = recordingStub('CnTransitionInputFields', 
 // act may be confirmed is decided there, and a copy here could only agree
 // with itself.
 export { readTransitionInputs } from '@conduction/nextcloud-vue/src/utils/transitionInputs.js'
+export const CnConditionListEditor = recordingStub('CnConditionListEditor', 'cn-condition-list-editor', ['modelValue', 'fields', 'label', 'emptyText'], ['update:modelValue'])
+export { conditionSentence, operatorsForType } from '@conduction/nextcloud-vue/src/components/CnConditionListEditor/conditionOperators.js'
 
 /**
  * Stand-in for `CnRelatedObjectsWidget`.

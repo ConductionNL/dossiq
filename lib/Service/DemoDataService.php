@@ -213,7 +213,7 @@ class DemoDataService {
 				// untranslatable and leave a Dutch operator reading English. The
 				// count travels as `objectCount` and the card renders it as a
 				// stat, with a label the library translates.
-				'description' => 'Sample records for every list in the app, all fictional. You can delete them afterwards.',
+				'description' => 'Cases, contacts and organisations, all fictional',
 				'objectCount' => $objects,
 				'icon'        => 'DatabaseOutline',
 			]);

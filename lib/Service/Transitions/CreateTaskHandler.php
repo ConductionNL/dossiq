@@ -57,6 +57,7 @@ use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Built-in handler for `createTask` automatic actions.
@@ -108,6 +109,12 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			}
 
 			$caseId = $this->assignees->caseId(case: $case);
+
+			$onceKey = $this->onceKeyFor(actionConfig: $actionConfig, caseId: $caseId);
+			$added = $this->addedBefore(onceKey: $onceKey);
+			if ($added !== null) {
+				return $added;
+			}
 			$title = (string)($actionConfig['title'] ?? sprintf('Taak na transitie %s', $transitionContext['transitionLabel'] ?? ''));
 			$task = [
 				'title' => $title,
@@ -119,27 +126,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 				'assignee' => $this->resolveAssignee(actionConfig: $actionConfig, case: $case, title: $title),
 			];
 
-			// The team is not a second guess at the person: a case can carry a
-			// team, a personal assignee, or both, and the task schema has a
-			// field for each. Carrying the case's team over is what keeps a
-			// checklist task on somebody's queue when no person resolves.
-			//
-			// Read through the resolver, never a (string) cast: an expanded
-			// read of the old $ref casts to the literal "Array" and writes a
-			// team that resolves to nothing (one-team-model: a group id now).
-			$team = $this->assignees->resolveTeam(case: $case);
-			if ($team !== '') {
-				$task['assigneeGroup'] = $team;
-			}
-
-			// Which status asked for this task. Written only when the action
-			// names one, because an empty string is a value the task lists and
-			// the checklist reader would both have to special-case: a task
-			// tagged with "no status" is not the same as an untagged task.
-			$workflowStepId = trim((string)($actionConfig['workflowStepId'] ?? ''));
-			if ($workflowStepId !== '') {
-				$task['workflowStepId'] = $workflowStepId;
-			}
+			$task = $this->withTeamAndStep(task: $task, actionConfig: $actionConfig, case: $case);
 
 			// What the case type declared about THIS task: its own due date,
 			// the team it is offered to, the form it asks for, and what
@@ -148,6 +135,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			// no dossiq task number and no dossiq lock, which is what
 			// `remove-casetask` settled.
 			$task = $this->declared(task: $task, actionConfig: $actionConfig);
+			$task['onceKey'] = $onceKey;
 
 			// THE ENGINE IS THE RECORD NOW, and the register write is gone.
 			// The dual-run has served its purpose: every read surface moved
@@ -194,6 +182,106 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			return new ActionResult(succeeded: false, error: 'create_task_failed');
 		}//end try
 	}//end handle()
+
+	/**
+	 * The case's team and the status that asked for the task, when there are any.
+	 *
+	 * @param array<string, mixed> $task         The task being built.
+	 * @param array<string, mixed> $actionConfig The action.
+	 * @param array<string, mixed> $case         The case.
+	 *
+	 * @return array<string, mixed> The task.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function withTeamAndStep(array $task, array $actionConfig, array $case): array {
+		// The team is not a second guess at the person: a case can carry a
+		// team, a personal assignee, or both, and the task schema has a
+		// field for each. Carrying the case's team over is what keeps a
+		// checklist task on somebody's queue when no person resolves.
+		//
+		// Read through the resolver, never a (string) cast: an expanded
+		// read of the old $ref casts to the literal "Array" and writes a
+		// team that resolves to nothing (one-team-model: a group id now).
+		$team = $this->assignees->resolveTeam(case: $case);
+		if ($team !== '') {
+			$task['assigneeGroup'] = $team;
+		}
+
+		// Which status asked for this task. Written only when the action
+		// names one, because an empty string is a value the task lists and
+		// the checklist reader would both have to special-case: a task
+		// tagged with "no status" is not the same as an untagged task.
+		$workflowStepId = trim((string)($actionConfig['workflowStepId'] ?? ''));
+		if ($workflowStepId !== '') {
+			$task['workflowStepId'] = $workflowStepId;
+		}
+
+		return $task;
+	}//end withTeamAndStep()
+
+	/**
+	 * The engine key of a task the action adds once per case, or '' when it may repeat.
+	 *
+	 * @param array<string, mixed> $actionConfig The action, optionally carrying `onceKey`.
+	 * @param string $caseId The case.
+	 *
+	 * @return string The key.
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	private function onceKeyFor(array $actionConfig, string $caseId): string {
+		$once = trim((string)($actionConfig['onceKey'] ?? ''));
+		if ($once === '' || $caseId === '') {
+			return '';
+		}
+
+		return 'dossiq:once:' . $once . ':' . $caseId;
+	}//end onceKeyFor()
+
+	/**
+	 * The result when a once-keyed task must not be added now, or null to go on.
+	 *
+	 * Added before: done, nothing to do. Unknown: fail rather than risk a
+	 * second task, with the reason in the log.
+	 *
+	 * @param string $onceKey The task's once-key, or '' when it may repeat.
+	 *
+	 * @return ActionResult|null The result, or null when the task is to be added.
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	private function addedBefore(string $onceKey): ?ActionResult {
+		if ($onceKey === '') {
+			return null;
+		}
+
+		try {
+			$taken = $this->engineTasks->keyTaken(key: $onceKey);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'CreateTaskHandler: could not tell whether the task was added before',
+				['reason' => $e->getMessage(), 'key' => $onceKey]
+			);
+
+			return new ActionResult(succeeded: false, error: 'once_key_unverifiable');
+		}
+
+		if ($taken === false) {
+			return null;
+		}
+
+		if ($taken === true) {
+			return new ActionResult(succeeded: true, data: ['skipped' => 'already added', 'key' => $onceKey]);
+		}
+
+		$this->logger->error(
+			'CreateTaskHandler: could not tell whether the task was added before',
+			['reason' => $this->engineTasks->lastError(), 'key' => $onceKey]
+		);
+
+		return new ActionResult(succeeded: false, error: 'once_key_unverifiable');
+	}//end addedBefore()
 
 	/**
 	 * Apply the case type's per-task declaration to the task being created.

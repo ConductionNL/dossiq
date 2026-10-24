@@ -1684,6 +1684,7 @@ OC.L10N.register(
         "SLA adherence and processing time analysis": "SLA ievērošanas un apstrādes laika analīze",
         "SLA Compliance": "SLA atbilstība",
         "SLA Compliance %": "SLA atbilstība %",
+        "SLA Compliance %%": "SLA atbilstība %%",
         "SLA override (days)": "SLA aizstāšana (dienas)",
         "SLA Target: {days}d": "SLA mērķis: {days}d",
         "Sloopmelding": "Sloopmelding",

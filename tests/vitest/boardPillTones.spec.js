@@ -47,12 +47,24 @@ describe('board pill tones', () => {
 		expect(source).toContain('widgetProps: { colorMap: CONNECTION_STATUS_TONES }')
 	})
 
-	it('draws a task in progress purple', () => {
-		const columns = columnsWithKey(simple, 'stateLabel')
+	it('draws a task in progress purple, keyed on the state itself', () => {
+		const columns = columnsWithKey(simple, 'state')
 		expect(columns.length).toBeGreaterThan(0)
 		for (const column of columns) {
-			expect(column.widgetProps.colorMap['In progress']).toBe('purple')
-			expect(column.widgetProps.colorMap['In behandeling']).toBe('purple')
+			expect(column.widgetProps.colorMap).toEqual({ enabled: 'info', active: 'purple', completed: 'success', terminated: 'error' })
 		}
+	})
+
+	it('names a task state in the words of the task page (DqTaken "In uitvoering")', () => {
+		const taskPage = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
+			.pages.find((page) => page.id === 'TaskDetail')
+		const columns = columnsWithKey(simple, 'state')
+		for (const column of columns) {
+			expect(column.enum).toEqual(['available', 'enabled', 'active', 'completed', 'terminated', 'disabled'])
+			expect(column.enumLabels.active).toBe(taskPage.config.typePill.labels.active)
+			expect(column.enumLabels.enabled).toBe('Ready to claim')
+			expect(column.enumLabels.completed).toBe('Completed')
+		}
+		expect(columnsWithKey(simple, 'stateLabel')).toEqual([])
 	})
 })

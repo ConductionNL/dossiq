@@ -94,6 +94,11 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 		// P28D and P13W (ASV art. 3), numbers no generic rule gives.
 		'subsidieaanvraag' => ['statutory', 56, 0, 0, 'Awb 4:13'],
 		'zaaktype-innovatiefonds-2026' => ['statutory', 56, 0, 0, 'Awb 4:13'],
+		// Ruben, 23 Oct: eight weeks for a benefit application; the
+		// Participatiewet sets no decision term of its own, so Awb 4:13 lid 2.
+		'bijstandsaanvraag' => ['statutory', 56, 0, 0, 'Awb 4:13'],
+		// Ruben, 23 Oct: a Jeugdwet report on the same fallback.
+		'melding-jeugdwet' => ['statutory', 56, 0, 0, 'Awb 4:13'],
 		'melding-openbare-ruimte' => ['planned', 14, 0, 0, 'Servicenorm'],
 		'parkeervergunning-bewoners' => ['statutory', 56, 0, 0, 'Awb 4:13'],
 		'kenteken-wijzigen-parkeervergunning' => ['planned', 14, 0, 0, 'Servicenorm'],

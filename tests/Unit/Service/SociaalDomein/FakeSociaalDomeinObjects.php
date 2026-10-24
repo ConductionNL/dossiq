@@ -45,6 +45,20 @@ class FakeSociaalDomeinObjects {
 	public bool $broken = false;
 
 	/**
+	 * Schemas whose reads throw, while the others answer.
+	 *
+	 * @var array<int, string>
+	 */
+	public array $brokenSchemas = [];
+
+	/**
+	 * Every search, by schema and whether it asked for the caller's access check.
+	 *
+	 * @var array<int, array{schema: string, rbac: bool}>
+	 */
+	public array $scopes = [];
+
+	/**
 	 * The id sequence.
 	 *
 	 * @var integer
@@ -90,8 +104,9 @@ class FakeSociaalDomeinObjects {
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
-		if ($this->broken === true) {
+	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+		$this->scopes[] = ['schema' => $schemaSlug, 'rbac' => $_rbac];
+		if ($this->broken === true || in_array($schemaSlug, $this->brokenSchemas, true) === true) {
 			throw new \RuntimeException('the store is unreachable');
 		}
 

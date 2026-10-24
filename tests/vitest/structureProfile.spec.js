@@ -105,7 +105,7 @@ describe('the full profile', () => {
 		expect(overrides.sidePanel).toHaveLength(2)
 	})
 
-	it('counts 39 entries: 12 main, 5 footer, 19 settings, 3 integrations (Case objects is settings-only)', () => {
+	it('counts 39 entries: 12 main, 5 footer, 19 settings, 3 integrations (Case objects is settings-only; re-integration pathways is a Cases view, not a menu entry)', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
@@ -490,10 +490,11 @@ describe('the simple profile', () => {
 	// 78 -> 77: Subsidies became a view of Cases.
 	// 77 -> 75: DeelzaakList and DeelzaakDetail retire; their addresses redirect to CaseDetail.
 	// 75 -> 74: SubstitutionAdmin retires; `/substitution-admin` goes to the admin settings.
-	it('builds the same 75 pages as the full profile, so every route stays', () => {
+	// 75 -> 74: ReIntegratieTrajecten retires; re-integration pathways are cases of their own case type.
+	it('builds the same 74 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(75)
+		expect(built.pages).toHaveLength(74)
 	})
 })
 

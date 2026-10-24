@@ -5,7 +5,8 @@
  *
  * Copies each setting stored under an earlier, procedure-named key onto its
  * current key, so the document review reports an organisation switched on stay
- * on after the upgrade.
+ * on after the upgrade, and the money schemas and the payout callback secret
+ * keep their values.
  *
  * SAFE TO RUN TWICE. A current key that already exists is never written: once it
  * is there, by this step or by an administrator, the step leaves it alone. The
@@ -37,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -85,7 +87,7 @@ class CarryRenamedSettingKeys implements IRepairStep {
 	 */
 	public function run(IOutput $output): void {
 		$carried = 0;
-		foreach (WooReportSwitches::LEGACY_KEYS as $current => $legacy) {
+		foreach (array_merge(WooReportSwitches::LEGACY_KEYS, MoneyConfigKeys::LEGACY_KEYS) as $current => $legacy) {
 			try {
 				if ($this->appConfig->hasKey(Application::APP_ID, $current) === true
 					|| $this->appConfig->hasKey(Application::APP_ID, $legacy) === false

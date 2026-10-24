@@ -586,7 +586,7 @@
       "reason": "`findZaak()` answers `return null` when the read fails; the catch logs at warning (\"Dossiq DsoObjectRepository: could not load zaak\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/DwangsomBezwaarService.php",
+      "file": "lib/Service/Money/AmountObjectionService.php",
       "method": "findUitbetalingen",
       "occurrence": 1,
       "class": "read-miss",

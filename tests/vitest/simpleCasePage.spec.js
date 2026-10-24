@@ -261,15 +261,16 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 35 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 36 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
 		}
 		// Every action is still there; the simple page orders them as DqZaakMeer lists them.
-		// The simple page adds two acts: Add location (DqZaakLocatie) and
-		// Share with another organisation (DqZaakSamenwerken).
-		expect([...simple.headerActions.map((action) => action.id)].sort()).toEqual([...ids, 'add-location', 'share-with-organisation'].sort())
+		// The simple page adds three acts: Add location (DqZaakLocatie),
+		// Share with another organisation (DqZaakSamenwerken) and Plan a case
+		// meeting (DqSociaalDomein).
+		expect([...simple.headerActions.map((action) => action.id)].sort()).toEqual([...ids, 'add-location', 'share-with-organisation', 'plan-case-meeting'].sort())
 		expect(simple.headerActions.map((action) => action.id).slice(0, overlay.configOrder.headerActions.length)).toEqual(overlay.configOrder.headerActions)
 
 		const placed = simple.headerActions.map((action) => {
@@ -279,10 +280,10 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(35)
+		expect(placed).toHaveLength(36)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(20)
+		expect(count('Case')).toBe(21)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)
@@ -542,8 +543,8 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		// The banner stack is titled Status, as the side card DqZaak draws.
-		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-status-declaration', 'case-banner-stack', 'case-attention', 'case-archival-panel', 'case-files']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card', 'case-document-verdicts-card', 'case-refusal-grounds-card']
+		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-status-declaration', 'case-banner-stack', 'case-attention', 'case-archival-panel', 'case-files', 'case-timeline-panel']
+		const added = ['case-note-card', 'case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card', 'case-document-verdicts-card', 'case-refusal-grounds-card']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
@@ -741,8 +742,9 @@ describe('the header and the side column', () => {
 		// card lists records that name this case, so no card states a fact
 		// the register does not hold.
 		// The special-category warnings are gated on the case type itself
-		// (caseSpecialDataNotice.spec.js), not on records linked to the case.
-		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen && card.type !== 'banner')
+		// (caseSpecialDataNotice.spec.js), not on records linked to the case,
+		// and so is the case history card those case types show.
+		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen && card.type !== 'banner' && card.type !== 'audit-trail')
 		expect(gated.map((card) => card.id)).toEqual([
 			'side-objection-appeal',
 			'side-grant-application',
@@ -751,8 +753,10 @@ describe('the header and the side column', () => {
 			'side-tender-bids',
 		])
 		for (const card of gated) {
-			expect(card.type).toBe('record-list')
-			expect(Object.values(card.content.filter)).toEqual(['@objectId'])
+			// A list of those records, or (Consent) the facts of the newest one.
+			expect(['record-list', 'facts']).toContain(card.type)
+			const filter = card.type === 'facts' ? card.content.source.filter : card.content.filter
+			expect(Object.values(filter)).toEqual(['@objectId'])
 			expect(JSON.stringify(card.visibleWhen)).toContain('@context.caseType.category')
 		}
 	})
@@ -896,5 +900,10 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 	it('places the case schema\'s macros through the library macros widget', () => {
 		expect(byId('case-macros')).toMatchObject({ type: 'macros', title: 'Macros' })
 		expect(byId('case-macros').content.macrosFrom).toBe('@context.caseType.macros')
+	})
+
+	it('draws the Macro\'s line as the card subtitle, as DqZaakAssistent', () => {
+		expect(byId('case-macros').subtitle).toBe('Several steps at once; then you see what changed')
+		expect(byId('case-macros').content.description).toBeUndefined()
 	})
 })

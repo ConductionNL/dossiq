@@ -434,4 +434,41 @@ class EngineTaskGatewayTest extends TestCase {
 		$this->assertSame('available', $service->seen['state']);
 		$this->assertSame('dossiq', $service->seen['appId']);
 	}//end testReturnsTheEngineUuidOnSuccess()
+	/**
+	 * A once-key is looked up in the engine: taken, free, or unknown when the
+	 * engine cannot look a task up by its key.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	public function testAOnceKeyIsTakenFreeOrUnknown(): void {
+		$service = new class {
+			public function findByKey(string $key): array {
+				return $key === 'dossiq:once:rule:t:r:case-1' ? [new \stdClass()] : [];
+			}
+		};
+		$gateway = $this->gatewayWith($service);
+
+		$this->assertTrue($gateway->keyTaken(key: 'dossiq:once:rule:t:r:case-1'));
+		$this->assertFalse($gateway->keyTaken(key: 'dossiq:once:rule:t:r:case-2'));
+		$this->assertNull($this->gatewayWith(new class {
+		})->keyTaken(key: 'dossiq:once:rule:t:r:case-1'));
+	}//end testAOnceKeyIsTakenFreeOrUnknown()
+
+	/**
+	 * A once-keyed task is written with its once-key as the engine key.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	public function testAOnceKeyedTaskCarriesItAsItsEngineKey(): void {
+		$payload = $this->gatewayWith(null)->toEnginePayload(
+			task: ['title' => 'Welstandsadvies vragen', 'onceKey' => 'dossiq:once:rule:t:r:case-1'],
+			caseId: 'case-1'
+		);
+
+		$this->assertSame('dossiq:once:rule:t:r:case-1', $payload['key']);
+	}//end testAOnceKeyedTaskCarriesItAsItsEngineKey()
 }//end class

@@ -434,6 +434,7 @@
 									},
 									"limit": 3,
 									"presentation": "rows",
+									"ruleAbove": true,
 									"title": "{title}",
 									"meta": {
 										"parts": [
@@ -765,7 +766,7 @@
 							{
 								"id": "simple-per-step",
 								"type": "stacked-bar",
-								"title": "My cases per step",
+								"title": "My {count} cases per step",
 								"content": {
 									"source": {
 										"register": "dossiq",
@@ -790,6 +791,7 @@
 										"in-progress": "In handling",
 										"review": "Decision"
 									},
+									"headerCount": true,
 									"emptyText": "You have no open cases"
 								}
 							},
@@ -797,7 +799,7 @@
 								"id": "simple-continue",
 								"type": "record-list",
 								"title": "Continue working",
-								"_note": "DqMijnWerk's Verder werken: a row per case the reader opened last. The title, under it the case number and the case type, then the status pill and when the reader opened it. The library's record-list over OpenRegister's `_recent` lens, which carries its own order (last view first), so no `sort` here. Status and case type are read through _extend, so the pill and the meta line say names and never ids. The meta line is a list of parts (nextcloud-vue 2.82.0), so a case without a case type still shows its number. The time is `@self.viewedAt`, the moment the lens adds per object, not the case's own last change. When the lens reports itself unavailable, `lensReasonTexts` says why instead of `emptyText` (nextcloud-vue 2.82.0, #1555); the texts are the ones the full profile's Recently opened tile uses. The board draws no link to all of them, so there is none.",
+								"_note": "DqMijnWerk's Verder werken: a row per case the reader opened last. The title, under it the case number and the case type, then the status pill and when the reader opened it. The library's record-list over OpenRegister's `_recent` lens, which carries its own order (last view first), so no `sort` here. Status and case type are read through _extend, so the pill and the meta line say names and never ids. The meta line is a list of parts (nextcloud-vue 2.82.0), so a case without a case type still shows its number. The time is `@self.viewedAt`, the moment the lens adds per object, not the case's own last change, said as the board does (\"10 min geleden\", \"vanochtend\", \"vrijdag\") through the `ago` format (nextcloud-vue relative-ago-formatter). When the lens reports itself unavailable, `lensReasonTexts` says why instead of `emptyText` (nextcloud-vue 2.82.0, #1555); the texts are the ones the full profile's Recently opened tile uses. The board draws no link to all of them, so there is none.",
 								"content": {
 									"register": "dossiq",
 									"schema": "case",
@@ -821,7 +823,7 @@
 										"field": "status.name"
 									},
 									"trailing": [
-										"{@self.viewedAt|relativetime}"
+										"{@self.viewedAt|ago}"
 									],
 									"rowRoute": "CaseDetail",
 									"emptyText": "Cases you open show up here",
@@ -848,6 +850,7 @@
 									],
 									"limit": 5,
 									"presentation": "rows",
+									"ruleAbove": true,
 									"title": "{title}",
 									"meta": "{identifier}",
 									"pill": {
@@ -1425,7 +1428,7 @@
 						"title": "Linked",
 						"_note": "DqZaak Gekoppeld: what other apps hold for this case, in one card (nextcloud-vue linked-integrations-card). Each app's leaf is mounted out of sight and reports a summary: the linked ones list their rows, the rest share one line \"Documents, fees and payments, contract and projects: nothing linked\" with their actions (planninq's New project and Open in Planninq). It replaces the standalone Projects widget in the grid. The ids are the RENDER leaves the apps register (shillinq's `-panel` ids, not its `shillinq-payment-requests` data leaf). An app that is absent registers no leaf and is left out of the line.",
 						"content": {
-							"leaves": ["filinq-documents", "shillinq-payment-requests-panel", "shillinq-contracts-panel", "planninq-projects"]
+							"leaves": ["filinq-documents", "shillinq-financial-documents-panel", "shillinq-contracts-panel", "planninq-projects"]
 						}
 					},
 					{
@@ -1513,7 +1516,7 @@
 					},
 					{
 						"id": "side-social-consent",
-						"type": "record-list",
+						"type": "facts",
 						"title": "Consent",
 						"visibleWhen": {
 							"any": [
@@ -1532,21 +1535,58 @@
 								}
 							]
 						},
-						"_note": "DqSociaalDomein Toestemming: the consents recorded on this case (toestemming.caseId): who gave it, for what purpose, until when.",
+						"_note": "DqSociaalDomein Toestemming: the newest consent recorded on this case (toestemming.caseId) as label-left facts: its purpose, who gave it, when and how it was recorded, and until when it holds. A consent without an end date holds until it is withdrawn.",
 						"content": {
-							"register": "dossiq",
-							"schema": "toestemming",
-							"filter": {
-								"caseId": "@objectId"
+							"source": {
+								"register": "dossiq",
+								"schema": "toestemming",
+								"filter": {
+									"caseId": "@objectId"
+								},
+								"sort": {
+									"field": "grantedDate",
+									"dir": "desc"
+								}
 							},
-							"sort": {
-								"field": "grantedDate",
-								"dir": "desc"
-							},
-							"limit": 3,
-							"presentation": "rows",
-							"title": "{tedoel}",
-							"meta": "{grantedByName} · {grantedDate|date}",
+							"fields": [
+								{ "path": "tedoel", "label": "Purpose" },
+								{ "path": "grantedByName", "label": "Given by" },
+								{
+									"key": "recorded",
+									"label": "Recorded",
+									"parts": [
+										{ "path": "grantedDate", "format": "date-long" },
+										{ "path": "recordedViaChannel", "map": { "schriftelijk": "in writing", "mondeling": "spoken", "digitaal": "digitally" } }
+									],
+									"separator": ", "
+								},
+								{ "path": "validTo", "label": "Valid until", "format": "date-long", "emptyValue": "Until it is withdrawn" }
+							],
+							"actions": [
+								{
+									"id": "consent-withdraw",
+									"type": "api-call",
+									"label": "Withdraw consent",
+									"variant": "secondary",
+									"method": "PATCH",
+									"url": "/apps/openregister/api/objects/dossiq/toestemming/@source.id",
+									"payload": {
+										"withdrawn": true,
+										"validTo": "@today"
+									},
+									"confirm": true,
+									"confirmTitle": "Withdraw consent",
+									"confirmMessage": "The consent ends today. Data shared on it may no longer be used for its purpose.",
+									"visibleWhen": {
+										"all": [
+											{ "field": "withdrawalPossible", "op": "eq", "value": true },
+											{ "field": "withdrawn", "op": "neq", "value": true }
+										]
+									},
+									"successMessage": "The consent is withdrawn.",
+									"errorMessage": "The consent was not withdrawn."
+								}
+							],
 							"emptyText": "No consent recorded"
 						}
 					},
@@ -1571,7 +1611,7 @@
 								}
 							]
 						},
-						"_note": "DqSociaalDomein Wie: the people on this case and what they do on it (role.name and role.description), so a need-to-know case shows who may look.",
+						"_note": "DqSociaalDomein Wie: the people on this case and what they do on it (role.name and role.description), each behind their initials, so a need-to-know case shows who may look.",
 						"content": {
 							"register": "dossiq",
 							"schema": "role",
@@ -1580,9 +1620,53 @@
 							},
 							"limit": 5,
 							"presentation": "rows",
-							"title": "{name}",
-							"meta": "{description}",
+							"avatar": "{name}",
+							"title": "{name}, {description}",
 							"emptyText": "Nobody is involved yet"
+						}
+					},
+					{
+						"id": "side-social-history",
+						"type": "audit-trail",
+						"title": "Case history",
+						"visibleWhen": {
+							"field": "@context.caseType.specialDataCategories",
+							"op": "notEmpty"
+						},
+						"_note": "DqSociaalDomein Historie: the case's latest events from its audit trail, reads left out, with who opened the case for which purpose (the access purpose dossiq records on the trail, dossiq.case.access-purpose, its purpose in the entry's changed). Only on a case type that holds special categories of personal data, where every opening asks a purpose.",
+						"content": {
+							"maxDisplay": 3,
+							"excludeActions": ["read"],
+							"actionLabels": {
+								"dossiq.case.access-purpose": "Case opened, purpose {changed.purpose}",
+								"create": "Case created",
+								"update": "Case changed",
+								"consent.create": "Consent recorded",
+								"consent.update": "Consent changed"
+							},
+							"relatedSources": [
+								{
+									"as": "consent",
+									"register": "dossiq",
+									"schema": "toestemming",
+									"filter": {
+										"caseId": "@objectId"
+									},
+									"limit": 3
+								}
+							],
+							"valueLabels": {
+								"purpose": {
+									"handling": "handling",
+									"advice": "advice",
+									"quality-check": "quality check",
+									"legal-obligation": "legal obligation",
+									"data-subject-request": "request of the person concerned",
+									"other": "other"
+								}
+							},
+							"emptyText": "Nothing has happened on this case yet",
+							"footnote": "Reference {identifier}"
 						}
 					},
 					{
@@ -2093,7 +2177,6 @@
 								},
 								{
 									"widgetIds": [
-										"case-document-verdicts-card",
 										"case-files",
 										"case-refusal-grounds-card"
 									],
@@ -2139,8 +2222,12 @@
 									"_note": "DqZaakTaken: the work panel's sections as the board's cards, the tasks first, then what comes next, incidents, appointments and cards."
 								},
 								{
-									"widgetId": "case-timeline-panel",
 									"label": "Case history",
+									"widgetIds": [
+										"case-timeline-panel",
+										"case-note-card"
+									],
+									"_note": "DqZaakHistorie: the history card, then \"Notitie toevoegen\" as a card of its own under it. The list keeps its Add note button, which brings the note card into view; a note saved there reloads the list.",
 									"countFrom": {
 										"endpoint": "/apps/openregister/api/objects/dossiq/case/@objectId/timeline",
 										"field": "total"
@@ -2164,11 +2251,13 @@
 								{
 									"widgetId": "case-notes-panel",
 									"label": "Notes",
+									"icon": "NoteTextOutline",
 									"overflow": true,
 									"unreadKey": "notes"
 								},
 								{
 									"label": "People",
+									"icon": "AccountMultipleOutline",
 									"overflow": true,
 									"widgetIds": [
 										"case-parties-card",
@@ -2179,6 +2268,7 @@
 								},
 								{
 									"label": "Email",
+									"icon": "EmailOutline",
 									"overflow": true,
 									"widgetIds": [
 										"case-email-panel",
@@ -2187,6 +2277,7 @@
 								},
 								{
 									"label": "Decisions",
+									"icon": "Gavel",
 									"overflow": true,
 									"widgetIds": [
 										"case-decisions-panel",
@@ -2197,6 +2288,7 @@
 								},
 								{
 									"label": "Related",
+									"icon": "LinkVariant",
 									"overflow": true,
 									"widgetIds": [
 										"case-related-cases-card",
@@ -2209,6 +2301,7 @@
 								},
 								{
 									"label": "Fees and payments",
+									"icon": "CashMultiple",
 									"overflow": true,
 									"widgetIds": [
 										"case-payment-requests",
@@ -2219,6 +2312,7 @@
 								{
 									"widgetId": "case-merge-to-pdf",
 									"label": "Merge into one PDF",
+									"icon": "FileDocumentMultipleOutline",
 									"overflow": true
 								},
 								{
@@ -2227,22 +2321,26 @@
 										"case-custody-panel"
 									],
 									"label": "Archiving",
+									"icon": "ArchiveOutline",
 									"overflow": true,
 									"_note": "DqZaakArchivering: the archiving card and, under it, Bewaring (who has held the case and who asks for it), as one tab."
 								},
 								{
 									"widgetId": "case-knowledge-panel",
 									"label": "Knowledge",
+									"icon": "BookOpenVariantOutline",
 									"overflow": true
 								},
 								{
 									"widgetId": "case-publication",
 									"label": "Publication",
+									"icon": "Publish",
 									"overflow": true
 								},
 								{
 									"widgetId": "case-document-review",
 									"label": "Review",
+									"icon": "ClipboardCheckOutline",
 									"overflow": true
 								},
 								{
@@ -2252,6 +2350,7 @@
 										"case-macros"
 									],
 									"label": "AI oversight",
+									"icon": "RobotOutline",
 									"overflow": true,
 									"_note": "DqZaakAssistent: the AI-toezicht tab. Its panel stacks what the assistant did on this case and the macros; the assistant chat itself stands in the side column while this tab is open (`tabs` on case-assistant-chat, the side cards per tab of nextcloud-vue). It waits under Acties like the other panels the five-tab strip has no room for, and takes its place in the strip while it is open. The launcher hex keeps working on every page, and the Assistant sidebar tab keeps the AI features of the case type, so the two do not share a name."
 								}
@@ -2366,27 +2465,24 @@
 					},
 					"case-archival-panel": {
 						"subtitle": "What happens to this case once it is closed",
-						"_headerActionsNote": "DqZaakArchivering: \"Nominatie herberekenen\" in the Archiving card's title row. It recomputes the case's archival nomination through OpenRegister (POST /api/archival/objects/{id}/nomination/recompute), which an archivist may do, asks for a reason, and records the actor, the reason and the previous nomination. The library action dialog asks the reason; OpenRegister refuses anyone who is not an archivist, with its own sentence.",
-						"headerActions": [
-							{
-								"label": "Recompute nomination",
-								"icon": "Refresh",
-								"action": {
-									"type": "open-modal",
-									"target": "CnActionDialog",
-									"props": {
-										"objectId": "@objectId",
-										"config": {
-											"title": "Recompute the archive nomination",
-											"subtitle": "The nomination is derived again from the current selection list and the case's result. The previous one stays in its history.",
-											"reason": { "label": "Reason", "hint": "Goes into the nomination history of the case." },
-											"confirm": { "label": "Recompute", "icon": "Refresh", "request": { "method": "POST", "url": "/apps/openregister/api/archival/objects/@objectId/nomination/recompute", "body": { "reason": "{reason}" } } },
-											"doneText": "The archive nomination was recomputed."
-										}
-									}
-								}
-							}
-						]
+						"_note": "DqZaakArchivering: the retention widget draws its own title row, with the subtitle and \"Nominatie herberekenen\" (archivists only, asks the reason, POST /api/archival/objects/{id}/nomination/recompute), so no host header action sits beside it. Before the case closes it shows the outcome the case type's result types agree on (expected), the procedure hold and the e-Depot transfer. The content repeats the base widget's, because a patch replaces content whole.",
+						"content": {
+							"subtitle": "What happens to this case once it is closed",
+							"statusField": "archiveStatus",
+							"archivedValues": ["archived", "archived_retention_period_unknown"],
+							"archivistGroups": ["archivaris"],
+							"expected": {
+								"source": { "register": "dossiq", "schema": "resultType", "filter": { "caseType": "@object.caseType" } },
+								"fields": { "appraisal": "archivalAction", "period": "archivalPeriod", "selectionListRow": "selectionListClass" },
+								"appraisalLabels": { "vernietigen": "Destroy", "bewaren": "Retain", "blijvend_bewaren": "Retain permanently" },
+								"periodText": "{period} after the decision",
+								"decidedBy": "The case type, when it closes",
+								"selectionListLookup": { "url": "/apps/openregister/api/archival/selectielijst/resolve", "param": "url", "label": "{code}, {name}" }
+							},
+							"pendingNote": "This case is not closed yet. Its archival future is recorded once it closes. Recomputing needs the archivist role and a reason.",
+							"legalHold": true,
+							"transfer": { "keepValues": ["bewaren", "blijvend_bewaren"] }
+						}
 					},
 					"case-status-declaration": {
 						"_note": "The case Status card (DqZaak): where the case stands in one line and the time in the status under it. The withheld moves stay off the card, as the board draws it; the content is the base widget's, repeated because a patch replaces content whole.",
@@ -2402,6 +2498,20 @@
 						}
 					},
 					"case-files": {
+						"titleWhen": [
+							{
+								"when": {
+									"field": "@context.caseType.documentReview.enabled",
+									"op": "eq",
+									"value": true
+								},
+								"text": "Documents for this request"
+							},
+							{
+								"text": ""
+							}
+						],
+						"_titleNote": "DqZaakDocumenten titles the Files card \"Documenten bij dit verzoek\" on a case type that reviews its documents; DqDocumentenBeheer draws it with no title row. Needs nextcloud-vue widget-title-when; before it the card keeps \"Files\".",
 						"subtitle": [
 							{
 								"when": {
@@ -2414,7 +2524,40 @@
 						],
 						"_viewNote": "DqZaakDocumenten: the Files tab holds the verdicts card, the folder and the grounds card, so the folder is a card too; `view: tab` keeps it the full files browser (CnFilesTab) inside that card rather than the compact files card.",
 						"content": {
-							"view": "tab"
+							"view": "tab",
+							"leadWidgetIds": [
+								"case-document-verdicts-card"
+							]
+						}
+					},
+					"case-timeline-panel": {
+						"_note": "DqZaakHistorie: the history card draws no note form; its Add note brings the case-note-card under it into view. The content is the manifest's with `composer: separate`, and the audit trail link of r24/history-audit-trail-link, because a patch replaces the whole content key.",
+						"content": {
+							"manage": true,
+							"title": "History of the case",
+							"exportName": "case-history",
+							"auditTrailLink": true,
+							"auditTrailTab": "audit",
+							"composer": "separate",
+							"visibilityLabel": false,
+							"readsToggle": "Also who read the case",
+							"entryActions": [
+								{
+									"id": "reply",
+									"label": "Reply",
+									"kinds": [
+										"portaalbericht-inkomend"
+									],
+									"modal": "PortalMessageDialog",
+									"props": {
+										"open": true,
+										"caseId": "@objectId",
+										"subject": "@row.fields.subject"
+									},
+									"doneEvent": "sent",
+									"closesFollowUp": true
+								}
+							]
 						}
 					},
 					"case-email-panel": {
@@ -2433,7 +2576,8 @@
 							"noTemplatesText": "No templates for this case type yet",
 							"draft": {
 								"url": "/apps/dossiq/api/cases/@objectId/email-templates/{templateId}/draft",
-								"blankTemplateId": "blank"
+								"blankTemplateId": "blank",
+								"blankButton": true
 							},
 							"closedWhen": {
 								"field": "endDate",
@@ -2475,6 +2619,17 @@
 			},
 			"configAppend": {
 				"widgets": [
+					{
+						"id": "case-note-card",
+						"type": "timeline",
+						"title": "Add note",
+						"subtitle": "Goes on the timeline above, internal unless you make it visible",
+						"_note": "DqZaakHistorie Notitie toevoegen: the case timeline's note form as a card of its own under the history (CnTimelineManage composer only). A saved note reloads the history card above it.",
+						"content": {
+							"manage": true,
+							"composer": "only"
+						}
+					},
 					{
 						"id": "case-request",
 						"type": "facts",
@@ -2639,7 +2794,7 @@
 					},
 					{
 						"id": "case-priority-card",
-						"type": "data",
+						"type": "facts",
 						"visibleWhen": {
 							"any": [
 								{
@@ -2654,44 +2809,86 @@
 							]
 						},
 						"title": "Priority",
+						"_note": "Board DqZaak Prioriteit: the priority the case has as a pill in the title row, then where it came from as label-left rows (derived from impact and urgency, the override, the floor a rule raised it to) and the line on how it is set. Overriding stays here, under the facts: the case's Edit form leaves the priority fields out on purpose (it is the create form), so this PATCH of the override and its reason is the one place a handler sets it; the derivation listener stamps who and when.",
 						"content": {
-							"title": "Priority",
-							"columns": 1,
-							"include": [
-								"priorityDerived",
-								"priorityOverride",
-								"priorityOverrideReason",
-								"priorityOverrideBy",
-								"priorityOverrideAt",
-								"priorityFloor",
-								"priorityRaisedBy"
-							],
-							"hideEmpty": true,
-							"overrides": {
-								"priorityDerived": {
-									"readOnly": false,
-									"editable": false
+							"headerPill": {
+								"path": "priority",
+								"map": { "low": "Low", "normal": "Normal", "high": "High", "urgent": "Urgent" },
+								"variantMap": { "low": "default", "normal": "info", "high": "warning", "urgent": "error" }
+							},
+							"fields": [
+								{
+									"key": "priorityDerived",
+									"label": "Derived",
+									"parts": [
+										{ "path": "priorityDerived", "map": { "low": "Low", "normal": "Normal", "high": "High", "urgent": "Urgent" } },
+										{
+											"separator": " ",
+											"parts": [
+												{ "path": "impact", "label": "from impact", "map": { "low": "low", "medium": "medium", "high": "high" } },
+												{ "path": "urgency", "label": "and urgency", "map": { "low": "low", "medium": "medium", "high": "high" } }
+											]
+										}
+									],
+									"separator": ", "
 								},
-								"priorityOverrideReason": {
-									"widget": "textarea"
+								{
+									"key": "priorityOverride",
+									"label": "Overridden",
+									"emptyValue": "No",
+									"parts": [
+										{ "path": "priorityOverride", "map": { "low": "Low", "normal": "Normal", "high": "High", "urgent": "Urgent" } },
+										{ "path": "priorityOverrideReason" }
+									],
+									"separator": ", "
 								},
-								"priorityOverrideBy": {
-									"readOnly": false,
-									"editable": false
+								{
+									"key": "priorityFloor",
+									"label": "Floor",
+									"parts": [
+										{ "path": "priorityFloor", "map": { "low": "Low", "normal": "Normal", "high": "High", "urgent": "Urgent" } },
+										{ "path": "priorityRaisedBy", "label": "by" }
+									],
+									"separator": ", "
 								},
-								"priorityOverrideAt": {
-									"readOnly": false,
-									"editable": false
-								},
-								"priorityFloor": {
-									"readOnly": false,
-									"editable": false
-								},
-								"priorityRaisedBy": {
-									"readOnly": false,
-									"editable": false
+								{
+									"as": "text",
+									"key": "priority-how",
+									"text": "The priority follows from the matrix. Override it with a reason."
 								}
-							}
+							],
+							"actions": [
+								{
+									"id": "priority-override",
+									"type": "open-form",
+									"label": "Override priority",
+									"variant": "tertiary",
+									"formTitle": "Override priority",
+									"visibleWhen": {
+										"field": "@self.archived",
+										"op": "empty"
+									},
+									"endpoint": {
+										"url": "/apps/openregister/api/objects/dossiq/case/@source.id",
+										"method": "PATCH"
+									},
+									"formProperties": {
+										"priorityOverride": {
+											"type": "string",
+											"title": "Priority override",
+											"enum": ["low", "normal", "high", "urgent"],
+											"x-enum-labels": { "low": "Low", "normal": "Normal", "high": "High", "urgent": "Urgent" }
+										},
+										"priorityOverrideReason": {
+											"type": "string",
+											"title": "Override reason",
+											"format": "textarea"
+										}
+									},
+									"successMessage": "The priority is saved.",
+									"errorMessage": "The priority was not saved."
+								}
+							]
 						}
 					},
 					{
@@ -2714,10 +2911,10 @@
 						"_note": "The case on a map: the case-location objects that point at this case (`filter: case = @objectId`), drawn by the library map. An empty answer and a failed read say so in words, a point at (0, 0) is not plotted, and saving a location (CaseLocationDialog emits dossiq:case-location:saved with the caseId) reads the markers again.",
 						"content": {
 							"headerSubtitle": { "one": "{total} location", "other": "{total} locations" },
-							"height": "260px",
+							"height": "120px",
 							"autoFit": true,
-							"zoomControl": false,
-							"fitControl": false,
+							"zoomControl": true,
+							"fitControl": true,
 							"locateControl": false,
 							"fullscreenControl": false,
 							"ariaLabel": "Locations on this case",
@@ -2940,26 +3137,34 @@
 							"columns": 3,
 							"include": [
 								"receivedAt",
-								"termStartsAt",
 								"receivedOutsideWorkingHours",
-								"acknowledgementDuty",
-								"outboundCommunications"
+								"termStartsAt",
+								"outboundCommunications",
+								"acknowledgementDuty"
 							],
 							"overrides": {
 								"receivedAt": {
-									"editable": false
+									"order": 1,
+									"editable": false,
+									"formatter": "datetime"
 								},
 								"termStartsAt": {
-									"editable": false
+									"order": 3,
+									"editable": false,
+									"formatter": "date"
 								},
 								"receivedOutsideWorkingHours": {
+									"order": 2,
 									"editable": false
 								},
 								"acknowledgementDuty": {
+									"order": 5,
 									"editable": false
 								},
 								"outboundCommunications": {
-									"editable": false
+									"order": 4,
+									"editable": false,
+									"formatter": "outboundMessages"
 								}
 							}
 						}
@@ -3291,49 +3496,31 @@
 								"url": "/apps/dossiq/api/cases/@objectId/household-cases",
 								"responsePath": "results"
 							},
-							"presentation": "rows",
-							"title": [
-								"{identifier} {title}",
-								"{domain}"
-							],
-							"meta": [
-								"{caseTypeTitle}",
-								"Contact: {contact}"
-							],
-							"pill": {
-								"field": "statusRole",
-								"labels": {
-									"intake": "Received",
-									"pending-info": "Waiting for information",
-									"in-progress": "In progress",
-									"review": "In review",
-									"closed": "Closed",
-									"stranded": "Stranded"
-								},
-								"colorMap": {
-									"intake": "default",
-									"pending-info": "warning",
-									"in-progress": "purple",
-									"review": "purple",
-									"closed": "success",
-									"stranded": "error"
+							"presentation": "table",
+							"valueLabels": {
+								"access": {
+									"full": "Yes"
 								}
 							},
-							"badges": [
+							"columns": [
+								{ "label": "Case", "value": ["{identifier} {title}", "{domain}"] },
+								{ "label": "Case type", "value": ["{caseTypeTitle}", "Contact: {contact}"] },
 								{
-									"field": "access",
-									"labels": {
-										"full": "Visible to you: yes"
-									},
-									"variant": "success"
+									"label": "Status",
+									"value": "{statusLabel}",
+									"tone": {
+										"field": "statusRole",
+										"map": {
+											"intake": "default",
+											"pending-info": "warning",
+											"in-progress": "purple",
+											"review": "purple",
+											"closed": "success",
+											"stranded": "error"
+										}
+									}
 								},
-								{
-									"field": "exists",
-									"labels": {
-										"true": "Visible to you: only that it exists"
-									},
-									"variant": "default"
-								}
+								{ "label": "Visible to you", "value": ["{access}", "Only that it exists"] }
 							],
 							"rowRoute": "CaseDetail",
 							"rowIdField": "caseId",
@@ -3923,7 +4110,10 @@
 							"pill": {
 								"field": "code"
 							},
-							"headerSubtitle": "Go into the decision",
+							"pillAt": "start",
+							"ruleAbove": true,
+							"footnote": "A document that is not or only partly public always needs at least one ground.",
+							"headerNote": "Go into the decision",
 							"emptyText": "No ground cited yet"
 						}
 					},
@@ -4671,9 +4861,9 @@
 						"id": "case-macros",
 						"type": "macros",
 						"title": "Macros",
+						"subtitle": "Several steps at once; then you see what changed",
 						"_note": "DqZaakAssistent \"Macro's\": the macros the case schema declares (OpenRegister declared actions with macro: true and a bound manual flow), narrowed to the ones the case type lists in `macros` (macrosFrom), each run as the handler through the declared-action endpoint. A case type that lists none offers none, so a macro written for Woo requests is not offered on an objection.",
 						"content": {
-							"description": "Several steps at once; then you see what changed",
 							"macrosFrom": "@context.caseType.macros",
 							"emptyText": "No macros are set up for this case type"
 						}
@@ -4786,6 +4976,29 @@
 				],
 				"headerActions": [
 					{
+						"id": "plan-case-meeting",
+						"type": "open-form",
+						"label": "Plan a case meeting",
+						"icon": "AccountGroupOutline",
+						"group": "Case",
+						"register": "dossiq",
+						"schema": "mdoOverleg",
+						"includeFields": ["consultationDate", "agenda"],
+						"fieldOverrides": {
+							"agenda": { "widget": "textarea" }
+						},
+						"props": {
+							"caseIds": ["@objectId"]
+						},
+						"successMessage": "The case meeting is planned.",
+						"visibleWhen": {
+							"all": [
+								{ "field": "@self.archived", "op": "empty" },
+								{ "field": "@context.caseType.category", "op": "in", "value": ["Sociaal domein", "Jeugd", "Jeugdhulp"] }
+							]
+						}
+					},
+					{
 						"id": "add-location",
 						"type": "open-modal",
 						"target": "CaseLocationDialog",
@@ -4857,7 +5070,8 @@
 			"id": "Dashboard",
 			"_note": "The dashboard in the simple structure. Since openspec/changes/landing-views it is the dashboard of the full structure: the greeting, First today and the counts of MY cases moved to the landing page (MyWorkHome), whose My work / My team switch now changes views on that page instead of opening this one. The one thing this overlay still adds is the link to Close out your day, because this profile takes that entry out of the menu.",
 			"config": {
-				"description": "How the team is doing",
+				"description": "How the team is doing · {dateRange}, all teams you are in",
+				"_descriptionNote": "Board DqDashboard: \"Hoe het team ervoor staat · oktober 2026, alle teams waar u in zit\". `{dateRange}` is the dashboard's date range read as a period (nextcloud-vue description-period-from-date-range): the range opens on Current month, so it reads the month. The figures are the cases this reader may see, which are the cases of their teams.",
 				"_actionsMenuNote": "Board DqDashboard draws no Actions menu in the header: the row is Close out your day, the buildiq square and New case. The board's Edit layout button is gone too; layout editing is buildiq's (Ruben, 18 Oct).",
 				"showActionsMenu": false,
 				"kpiRow": [
@@ -4979,6 +5193,7 @@
 							},
 							"limit": 3,
 							"presentation": "rows",
+							"ruleAbove": true,
 							"title": "{title}",
 							"meta": "{identifier}",
 							"text": "{daysSinceActivity} days idle",
@@ -4998,8 +5213,16 @@
 							},
 							"limit": 3,
 							"presentation": "rows",
+							"ruleAbove": true,
 							"title": "{title}",
 							"meta": "{identifier}",
+							"footerLink": {
+								"label": "View all",
+								"route": "Cases",
+								"query": {
+									"_watching": "true"
+								}
+							},
 							"chevron": false,
 							"rowRoute": "CaseDetail",
 							"emptyText": "Follow a case to find it here"
@@ -5016,9 +5239,17 @@
 							},
 							"limit": 3,
 							"presentation": "rows",
+							"ruleAbove": true,
 							"title": "{title}",
 							"meta": "{identifier}",
 							"text": "{@self.viewedAt|relative}",
+							"footerLink": {
+								"label": "View all",
+								"route": "Cases",
+								"query": {
+									"_recent": "true"
+								}
+							},
 							"chevron": false,
 							"rowRoute": "CaseDetail",
 							"emptyText": "Cases you open show up here",
@@ -5239,7 +5470,12 @@
 						"pills": [
 							{
 								"path": "caseType",
-								"formatter": "caseTypeName"
+								"formatter": "caseTypeName",
+								"resolve": {
+									"register": "dossiq",
+									"schema": "caseType",
+									"colorField": "colour"
+								}
 							},
 							{
 								"path": "status",
@@ -5315,6 +5551,11 @@
 				"countSubtitle": "{total} cases",
 				"defaultOrder": "deadline",
 				"countText": "{shown} of {total} open cases in your teams, sorted by deadline",
+				"_countTextByViewNote": "DqWerkbord, DqZakenKaart: the line under the title says what the open view shows. The board view is not sorted by deadline but grouped by status; the map gives only the count, and nextcloud-vue adds how many of them have an address on the map. Other views keep countText (nextcloud-vue countTextByView).",
+				"countTextByView": {
+					"board": "{shown} of {total} open cases in your teams, board view by status",
+					"map": "{shown} of {total} open cases in your teams"
+				},
 				"footerNote": "click a column header to sort",
 				"bulkHint": "See what changes first, then carry it out.",
 				"bulkNoun": "cases",
@@ -5402,6 +5643,7 @@
 						"formEyebrow": "All cases",
 						"formTitle": "New case",
 						"formSubtitle": "Fields marked * are required. The case starts in the first status of its case type. The system fills in the receipt date and the start date itself, from the moment the request came in.",
+						"formConfirmLabel": "Create case",
 						"size": "large",
 						"columns": 2,
 						"includeFields": [
@@ -5418,15 +5660,18 @@
 						],
 						"fieldOverrides": {
 							"description": {
+								"description": "",
 								"widget": "textarea",
 								"order": 5
 							},
 							"requester": {
+								"description": "",
 								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester",
 								"order": 3
 							},
 							"confidentiality": {
+								"description": "",
 								"enumLabels": {
 									"openbaar": "Public",
 									"beperkt_openbaar": "Restricted public",
@@ -5440,24 +5685,31 @@
 								"order": 8
 							},
 							"caseType": {
+								"description": "Determines the statuses, the term and the documents",
 								"order": 1
 							},
 							"title": {
+								"description": "",
 								"order": 2
 							},
 							"intakeChannel": {
+								"description": "How the request came in",
 								"order": 4
 							},
 							"plannedEndDate": {
+								"description": "From the case type's term",
 								"order": 6
 							},
 							"assignee": {
+								"description": "",
 								"order": 7
 							},
 							"impact": {
+								"description": "How much it matters if it goes wrong",
 								"order": 9
 							},
 							"urgency": {
+								"description": "How fast the case matters",
 								"order": 10
 							}
 						},
@@ -5503,6 +5755,24 @@
 				"searchPlaceholder": "Search by task or case number",
 				"countText": "{shown} of {total} tasks, your tasks from every app in one place, sorted by deadline",
 				"footerNote": "a task you finish leaves the task page, with an outcome",
+				"_rowClassNote": "Board DqTaken: an open task due today or earlier carries a red edge on its row.",
+				"rowClass": [
+					{
+						"when": [
+							{
+								"field": "dueAt",
+								"op": "lt",
+								"value": "@today+1d"
+							},
+							{
+								"field": "isTerminal",
+								"op": "eq",
+								"value": false
+							}
+						],
+						"class": "cn-row--overdue"
+					}
+				],
 				"headerButtons": [
 					{
 						"action": "export",
@@ -5523,38 +5793,60 @@
 					}
 				],
 				"showViewToggle": true,
+				"sortKey": "dueAt",
+				"sortOrder": "asc",
 				"columns": [
 					{
 						"key": "title",
 						"width": "150px",
 						"label": "Task",
-						"cellClass": "cn-cell--strong"
+						"cellClass": "cn-cell--strong cn-cell--wrap"
 					},
 					{
 						"key": "subjectLabel",
 						"width": "170px",
-						"label": "Subject"
+						"label": "Subject",
+						"cellClass": "cn-cell--wrap",
+						"_note": "Board DqTaken: the subject links to its case with the case number under it. Only a dossiq task's subject is a dossiq case (`appId`); another app's task shows its subject as text. `subject.identifier` comes from openregister's task subject context (task-subject-identifier).",
+						"widget": "link",
+						"widgetProps": {
+							"routeField": "appId",
+							"routeMap": {
+								"dossiq": "CaseDetail"
+							},
+							"params": {
+								"id": "objectUuid"
+							}
+						},
+						"secondary": "{subject.identifier}"
 					},
 					{
-						"key": "stateLabel",
+						"key": "state",
 						"label": "Status",
+						"_note": "Board DqTaken: the state in the task page's words (\"In uitvoering\", the TaskDetail pill), not the library's \"In progress\". The tones are keyed on the state, so they hold in every language.",
+						"enum": ["available", "enabled", "active", "completed", "terminated", "disabled"],
+						"enumLabels": {
+							"available": "Available",
+							"enabled": "Ready to claim",
+							"active": "In execution",
+							"completed": "Completed",
+							"terminated": "Terminated",
+							"disabled": "Disabled"
+						},
 						"widget": "badge",
 						"widgetProps": {
 							"colorMap": {
-								"Ready to claim": "info",
-								"Klaar om op te pakken": "info",
-								"In progress": "purple",
-								"In behandeling": "purple",
-								"Completed": "success",
-								"Afgerond": "success",
-								"Terminated": "error",
-								"Beëindigd": "error"
+								"enabled": "info",
+								"active": "purple",
+								"completed": "success",
+								"terminated": "error"
 							}
 						}
 					},
 					{
 						"key": "priorityLabel",
 						"label": "Priority",
+						"sortable": true,
 						"widget": "badge",
 						"widgetProps": {
 							"colorMap": {
@@ -5567,11 +5859,20 @@
 					{
 						"key": "dueAt",
 						"label": "Task deadline",
+						"sortable": true,
 						"widget": "date",
 						"widgetProps": {
 							"due": {
 								"todayLabel": "Today",
-								"emptyText": "No deadline"
+								"emptyText": "No deadline",
+								"todayTone": "danger",
+								"soonWithin": 2,
+								"nearWithin": 6,
+								"activeWhen": {
+									"field": "isTerminal",
+									"equals": false
+								},
+								"inactiveLabel": "Done on {date}"
 							}
 						}
 					},
@@ -5580,7 +5881,9 @@
 						"label": "Handler",
 						"widget": "avatar",
 						"widgetProps": {
-							"user": true
+							"user": true,
+							"groupField": "candidateGroups",
+							"groupLabel": "{group}, unclaimed"
 						}
 					}
 				]
@@ -5859,8 +6162,8 @@
 				"statusPill": {
 					"field": "isDraft",
 					"labels": {
-						"false": "Published",
-						"true": "Draft"
+						"false": "Version {version} published",
+						"true": "Version {version} draft"
 					},
 					"colorMap": {
 						"false": "success",
@@ -5883,7 +6186,7 @@
 						"id": "side-case-type-versions",
 						"type": "record-list",
 						"title": "Versions",
-						"tabs": ["overview", "statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "history"],
+						"tabs": ["overview", "statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "properties", "history"],
 						"content": {
 							"register": "dossiq",
 							"schema": "caseType",
@@ -5951,7 +6254,7 @@
 						"type": "facts",
 						"title": "Data",
 						"titleTone": "side",
-						"tabs": ["overview", "statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "history"],
+						"tabs": ["overview", "statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "properties", "history"],
 						"content": {
 							"fields": [
 								{
@@ -6011,6 +6314,17 @@
 										}
 									],
 									"separator": ", "
+								},
+								{
+									"label": "Running cases",
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"caseType": "@objectId",
+											"isFinalStatus": false
+										}
+									}
 								}
 							]
 						}
@@ -6142,7 +6456,8 @@
 							"tab": "history"
 						},
 						"content": {
-							"excludeActions": ["read"]
+							"excludeActions": ["read"],
+							"footnote": "Reference {identifier}"
 						}
 					}
 				],
@@ -6174,7 +6489,7 @@
 									"widgetIds": [
 										"case-type-statuses",
 										"case-type-rules-summary",
-										"case-type-rights",
+										"case-type-rights-summary",
 										"case-type-privacy-summary",
 										"case-type-translations-summary"
 									],
@@ -6188,7 +6503,7 @@
 											"gridWidth": 12
 										},
 										{
-											"widgetId": "case-type-rights",
+											"widgetId": "case-type-rights-summary",
 											"gridWidth": 12
 										},
 										{
@@ -6206,10 +6521,7 @@
 									"label": "Fields",
 									"widgetIds": [
 										"case-type-fields-editor",
-										"case-type-field-rules",
-										"case-type-core",
-										"case-type-terms",
-										"case-type-list-layout"
+										"case-type-field-rules"
 									],
 									"countFrom": {
 										"register": "dossiq",
@@ -6244,6 +6556,14 @@
 										"case-type-phase-board",
 										"case-type-variants",
 										"case-type-terms-written",
+										"case-type-messages"
+									]
+								},
+								{
+									"id": "messages",
+									"label": "Message templates",
+									"overflow": true,
+									"widgetIds": [
 										"case-type-messages-editor"
 									]
 								},
@@ -6294,6 +6614,16 @@
 									"widgetIds": [
 										"case-type-portal",
 										"case-type-party-kinds"
+									]
+								},
+								{
+									"id": "properties",
+									"label": "Properties",
+									"overflow": true,
+									"widgetIds": [
+										"case-type-core",
+										"case-type-terms",
+										"case-type-list-layout"
 									]
 								},
 								{
@@ -6367,19 +6697,82 @@
 								"dir": "asc"
 							},
 							"limit": 20,
-							"presentation": "cards",
+							"presentation": "rows",
+							"tiles": true,
 							"title": "{name}",
-							"pill": {
-								"field": "isFinal",
-								"labels": {
-									"true": "End"
-								},
-								"hideValues": [
-									"false"
-								],
-								"variant": "neutral"
+							"dot": {
+								"field": "colour",
+								"colorMap": {
+									"blue": "var(--nl-color-blue, #0b71ab)",
+									"blue-light": "var(--nl-color-blue-light, #e5f1f8)",
+									"green": "var(--nl-color-green, #39870c)",
+									"green-light": "var(--nl-color-green-light, #eaf5e4)",
+									"orange": "var(--nl-color-orange, #e17000)",
+									"orange-light": "var(--nl-color-orange-light, #fdf2e5)",
+									"red": "var(--nl-color-red, #d52b1e)",
+									"red-light": "var(--nl-color-red-light, #fbe9e8)",
+									"purple": "var(--nl-color-purple, #762f8e)",
+									"purple-light": "var(--nl-color-purple-light, #f2eaf5)",
+									"teal": "var(--nl-color-teal, #1d5e66)",
+									"teal-light": "var(--nl-color-teal-light, #e3f1f3)",
+									"grey": "var(--nl-color-grey, #696969)",
+									"grey-light": "var(--nl-color-grey-light, #f0f0f0)"
+								}
 							},
+							"flags": [
+								{ "field": "role", "value": "intake", "label": "Start" },
+								{ "field": "waitingOn", "value": "applicant", "label": "Term suspended" },
+								{ "field": "isFinal", "label": "End" }
+							],
+							"footnote": "Colour and order apply in lists, on the workboard and in the portal.",
 							"emptyText": "This case type has no statuses yet"
+						}
+					},
+					{
+						"id": "case-type-rights-summary",
+						"type": "record-list",
+						"title": "Rights",
+						"subtitle": "Who may do what with cases of this type",
+						"_note": "DqZaaktypeOverzicht Rechten: the rights matrix read per role by GET /api/case-types/{id}/rights-by-role (CaseTypeRightsByRole). The full department x confidentiality matrix stays on the Rights tab (case-type-rights), which Edit opens.",
+						"headerActions": [
+							{
+								"label": "Edit",
+								"icon": "Pencil",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#rights"
+								}
+							}
+						],
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/rights-by-role",
+								"responsePath": "rows"
+							},
+							"presentation": "table",
+							"columns": [
+								{
+									"label": "Role",
+									"value": "{role}"
+								},
+								{
+									"label": "See cases",
+									"value": "{seeCases}"
+								},
+								{
+									"label": "Handle",
+									"value": "{handle}"
+								},
+								{
+									"label": "Decide",
+									"value": "{decide}"
+								},
+								{
+									"label": "Documents",
+									"value": "{documents}"
+								}
+							],
+							"emptyText": "No rights declared for this case type yet"
 						}
 					},
 					{
@@ -6389,7 +6782,6 @@
 						"description": "Who may do what with cases of this type",
 						"content": {
 							"field": "rightsMatrix",
-							"readOnly": true,
 							"variant": "table",
 							"columns": [
 								{
@@ -6399,15 +6791,50 @@
 								},
 								{
 									"header": "Department",
-									"path": "department"
+									"path": "department",
+									"map": {
+										"$ownTeam": "Own team",
+										"*": "All departments"
+									}
 								},
 								{
-									"header": "Confidentiality",
-									"path": "confidentiality"
+									"header": "Up to",
+									"path": "confidentiality",
+									"map": {
+										"openbaar": "Public",
+										"beperkt_openbaar": "Restricted public",
+										"intern": "Internal",
+										"zaakvertrouwelijk": "Case confidential",
+										"vertrouwelijk": "Confidential",
+										"confidentieel": "Classified confidential",
+										"geheim": "Secret",
+										"zeer_geheim": "Top secret"
+									}
 								},
 								{
 									"header": "Actions",
-									"path": "actions"
+									"path": "actions",
+									"map": {
+										"read": "Read",
+										"update": "Change",
+										"create": "Create",
+										"handle": "Handle",
+										"delete": "Delete"
+									}
+								},
+								{
+									"header": "In statuses",
+									"path": "statuses",
+									"labelsFrom": "statuses"
+								},
+								{
+									"header": "Documents",
+									"path": "documentActions",
+									"map": {
+										"read": "Read",
+										"add": "Add",
+										"delete": "Delete"
+									}
 								},
 								{
 									"header": "Until",
@@ -6415,8 +6842,160 @@
 									"format": "date"
 								}
 							],
-							"emptyText": "No rights declared for this case type yet"
-						}
+							"emptyText": "No rights declared for this case type yet",
+							"add": {
+								"label": "Add right",
+								"trigger": "button",
+								"placement": "header",
+								"fields": [
+									{
+										"key": "role",
+										"label": "Role",
+										"type": "select",
+										"required": true,
+										"optionsSource": {
+											"url": "/apps/openregister/api/objects/dossiq/organisatieRol?_limit=500",
+											"path": "results",
+											"valuePath": "roleName",
+											"labelPath": "roleName"
+										}
+									},
+									{
+										"key": "department",
+										"label": "Department",
+										"type": "select",
+										"required": true,
+										"options": [
+											{
+												"value": "$ownTeam",
+												"label": "Own team"
+											},
+											{
+												"value": "*",
+												"label": "All departments"
+											}
+										],
+										"optionsSource": {
+											"url": "/apps/openregister/api/objects/dossiq/organisatieRol?_limit=500",
+											"path": "results",
+											"valuePath": "department",
+											"labelPath": "department"
+										}
+									},
+									{
+										"key": "confidentiality",
+										"label": "Up to confidentiality",
+										"type": "select",
+										"required": true,
+										"options": [
+											{
+												"value": "openbaar",
+												"label": "Public"
+											},
+											{
+												"value": "beperkt_openbaar",
+												"label": "Restricted public"
+											},
+											{
+												"value": "intern",
+												"label": "Internal"
+											},
+											{
+												"value": "zaakvertrouwelijk",
+												"label": "Case confidential"
+											},
+											{
+												"value": "vertrouwelijk",
+												"label": "Confidential"
+											},
+											{
+												"value": "confidentieel",
+												"label": "Classified confidential"
+											},
+											{
+												"value": "geheim",
+												"label": "Secret"
+											},
+											{
+												"value": "zeer_geheim",
+												"label": "Top secret"
+											}
+										]
+									},
+									{
+										"key": "actions",
+										"label": "Actions",
+										"type": "multiselect",
+										"required": true,
+										"options": [
+											{
+												"value": "read",
+												"label": "Read"
+											},
+											{
+												"value": "update",
+												"label": "Change"
+											},
+											{
+												"value": "create",
+												"label": "Create"
+											},
+											{
+												"value": "handle",
+												"label": "Handle"
+											},
+											{
+												"value": "delete",
+												"label": "Delete"
+											}
+										]
+									},
+									{
+										"key": "statuses",
+										"label": "Edit only in these statuses",
+										"type": "multiselect",
+										"optionsSource": {
+											"url": "/apps/dossiq/api/case-types/@objectId/blueprint",
+											"path": "statusTypes",
+											"valuePath": "id",
+											"labelPath": "name"
+										}
+									},
+									{
+										"key": "documentActions",
+										"label": "Documents",
+										"type": "multiselect",
+										"options": [
+											{
+												"value": "read",
+												"label": "Read"
+											},
+											{
+												"value": "add",
+												"label": "Add"
+											},
+											{
+												"value": "delete",
+												"label": "Delete"
+											}
+										]
+									},
+									{
+										"key": "until",
+										"label": "Until (YYYY-MM-DD)",
+										"pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+										"patternMessage": "Use a date as YYYY-MM-DD."
+									}
+								]
+							},
+							"edit": {
+								"label": "Edit"
+							},
+							"remove": {
+								"label": "Remove"
+							}
+						},
+						"_note": "case-type-rights-enforced: the case type's rights rows, edited here and enforced by OpenRegister (the case matrix asks CaseTypeRightsRowsListener for them). A row grants its role the cases of a department, of every department (*) or of the person's own teams ($ownTeam), up to a confidentiality level and every level below it; its edit rights and document changes hold only in the chosen statuses (none chosen: every status). Roles and departments come from the organisation roles, statuses from the case type's blueprint."
 					},
 					{
 						"id": "case-type-field-rules",
@@ -6544,6 +7123,16 @@
 								"path": "alwaysAvailable",
 								"itemText": "{label}"
 							},
+							"itemActions": [
+								{
+									"id": "case-type-task-edit-in-flow",
+									"type": "navigate",
+									"label": "Edit in the flow",
+									"icon": "Pencil",
+									"target": "/settings/case-types/@objectId/flow"
+								}
+							],
+							"itemActionsMenu": true,
 							"actions": [
 								{
 									"id": "case-type-phases-view-as-flow",
@@ -6568,7 +7157,9 @@
 						"id": "case-type-results",
 						"type": "object-list",
 						"title": "Results",
+						"subtitle": "How a case ends, and what happens to the file afterwards",
 						"content": {
+							"addLabel": "Add result",
 							"register": "dossiq",
 							"schema": "resultType",
 							"filter": {
@@ -6586,11 +7177,13 @@
 								},
 								{
 									"key": "archivalAction",
-									"label": "Archival action"
+									"label": "Archival action",
+									"widget": "label"
 								},
 								{
 									"key": "archivalPeriod",
-									"label": "Archival period"
+									"label": "Archival period",
+									"formatter": "isoDuration"
 								}
 							],
 							"emptyText": "This case type has no results yet",
@@ -6651,6 +7244,7 @@
 						"type": "object-list",
 						"title": "Document types",
 						"content": {
+							"addLabel": "Add document type",
 							"register": "dossiq",
 							"schema": "documentType",
 							"filter": {
@@ -6698,6 +7292,7 @@
 						"type": "object-list",
 						"title": "Decision types",
 						"content": {
+							"addLabel": "Add decision type",
 							"register": "dossiq",
 							"schema": "decisionType",
 							"filter": {
@@ -6759,7 +7354,7 @@
 							"add": {
 								"label": "Add a variant",
 								"trigger": "button",
-								"placement": "header",
+								"placement": "title",
 								"unique": true,
 								"fields": [
 									{
@@ -6783,6 +7378,65 @@
 						}
 					},
 					{
+						"id": "case-type-messages",
+						"type": "record-list",
+						"title": "Messages to the applicant",
+						"headerActions": [
+							{
+								"label": "Add a message",
+								"icon": "Plus",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#messages"
+								}
+							}
+						],
+						"_note": "DqZaaktype Berichten aan de aanvrager: the case type's active message templates as a table, when each goes out (moment, a case event) and how (channel). The templates are written on the Message templates tab under the Actions menu.",
+						"content": {
+							"register": "dossiq",
+							"schema": "emailTemplate",
+							"filter": {
+								"caseType": "@objectId",
+								"isActive": true
+							},
+							"limit": 50,
+							"presentation": "table",
+							"columns": [
+								{
+									"label": "Moment",
+									"value": "{moment}"
+								},
+								{
+									"label": "Channel",
+									"value": "{channel}"
+								},
+								{
+									"label": "Message",
+									"value": "{name}"
+								}
+							],
+							"valueLabels": {
+								"moment": {
+									"case-received": "Case received",
+									"status-changed": "Status changed",
+									"information-requested": "Additional information needed",
+									"term-extended": "Term extended",
+									"decision-made": "Decision made",
+									"case-closed": "Case closed"
+								},
+								"channel": {
+									"mailbox-then-email": "Message box, otherwise e-mail",
+									"mailbox": "Message box",
+									"email": "E-mail",
+									"portal": "Portal",
+									"post": "Post (mail)"
+								}
+							},
+							"footnote": "Anyone who opted out of messages only receives what the law requires. Every e-mail carries an unsubscribe link.",
+							"emptyText": "This case type sends no messages yet"
+						}
+					},
+					{
 						"id": "case-type-terms-written",
 						"type": "facts",
 						"title": "Terms",
@@ -6792,7 +7446,7 @@
 								"icon": "Pencil",
 								"action": {
 									"type": "navigate",
-									"target": "/settings/case-types/@objectId#fields"
+									"target": "/settings/case-types/@objectId#properties"
 								}
 							}
 						],

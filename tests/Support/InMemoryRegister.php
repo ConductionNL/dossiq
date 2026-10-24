@@ -35,6 +35,13 @@ namespace OCA\Dossiq\Tests\Support;
  * An in-memory stand-in for OpenRegister's ObjectService.
  */
 class InMemoryRegister {
+	/**
+	 * Every find made as the system, without the caller's access check, as schema/id.
+	 *
+	 * @var array<int, string>
+	 */
+	public array $unscopedReads = [];
+
 
 	/**
 	 * Every stored row, keyed by schema and then by uuid.
@@ -133,6 +140,10 @@ class InMemoryRegister {
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): ?array {
+		if ($_rbac === false) {
+			$this->unscopedReads[] = (string)$schema . '/' . (string)$id;
+		}
+
 		return ($this->rows[(string)$schema][(string)$id] ?? null);
 	}//end find()
 

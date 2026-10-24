@@ -95,7 +95,6 @@ const ROLE_PERMISSION = {
 	AvgIncidents: 'privacy',
 	Indicatiestellingen: 'sociaal-domein',
 	MdoOverleggen: 'sociaal-domein',
-	ReIntegratieTrajecten: 'sociaal-domein',
 }
 
 describe.each([
@@ -106,7 +105,6 @@ describe.each([
 	['OfflineSyncConflicts', 'OfflineSyncConflictsMenu', 'conflictRecord'],
 	['Indicatiestellingen', 'IndicatiestellingenMenu', 'indicatiestelling'],
 	['MdoOverleggen', 'MdoOverleggenMenu', 'mdoOverleg'],
-	['ReIntegratieTrajecten', 'ReIntegratieTrajectenMenu', 'reIntegratieTraject'],
 ])('%s', (pageId, menuId, slug) => {
 	it('is a page over the schema the register declares', () => {
 		const p = page(pageId)
@@ -244,10 +242,16 @@ describe('what the sociaal domein pages do not show', () => {
 		expect(columns).not.toContain('gedeeldeGegevens')
 	})
 
-	it('keeps the work exemption off the re-integration list', () => {
+	it('keeps the work exemption off the re-integration view', () => {
 		// Being excused from the work obligation is usually a health fact.
-		const columns = page('ReIntegratieTrajecten').config.columns
-		expect(columns).not.toContain('exemptionWorkObligation')
+		// Re-integration trajectories are cases now; their list is a view of
+		// the case list, and its columns name no exemption answer.
+		const view = page('Cases').config.defaultSavedViews.find((entry) => entry.slug === 're-integration-pathways')
+		const answered = view.overrides.columns
+			.filter((column) => column.formatter === 'caseAnswer')
+			.map((column) => column.formatterOptions.name)
+		expect(answered.some((name) => name.startsWith('vrijstelling') || name === 'herbeoordelingsdatum')).toBe(false)
+		// The stored trajectories keep their schema, so nothing they hold is lost.
 		expect(
 			schemas.reIntegratieTraject.properties.exemptionWorkObligation,
 		).toBeTruthy()

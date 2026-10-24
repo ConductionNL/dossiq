@@ -85,8 +85,14 @@ class WooPartiesConfigurationTest extends TestCase {
 	public function testTheContactSchemasArePartiesWithIndicators(): void {
 		$schemas = $this->settings(path: 'register.d/25-brp-kvk.json')['components']['schemas'];
 
-		$this->assertSame(expected: ['kind' => 'person', 'nameProperty' => 'displayName'], actual: $schemas['brpPerson']['configuration']['x-openregister-party']);
-		$this->assertSame(expected: ['kind' => 'organisation', 'nameProperty' => 'tradeName'], actual: $schemas['kvkCompany']['configuration']['x-openregister-party']);
+		$this->assertSame(
+			expected: ['kind' => 'person', 'nameProperty' => 'displayName', 'addressesProperty' => 'contactAddresses'],
+			actual: $schemas['brpPerson']['configuration']['x-openregister-party']
+		);
+		$this->assertSame(
+			expected: ['kind' => 'organisation', 'nameProperty' => 'tradeName'],
+			actual: $schemas['kvkCompany']['configuration']['x-openregister-party']
+		);
 		foreach (['brpPerson', 'kvkCompany'] as $schema) {
 			$this->assertSame(expected: 'array', actual: $schemas[$schema]['properties']['indicators']['type']);
 		}

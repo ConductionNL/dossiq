@@ -5,8 +5,8 @@
  *
  * Which of dossiq's role permissions the signed-in user holds, from their
  * Nextcloud groups: `privacy` for the privacy officers (data breaches) and
- * `sociaal-domein` for the social-domain staff (indications, case meetings,
- * re-integration trajectories). Admins and beheerders hold both, as they hold
+ * `sociaal-domein` for the social-domain staff (indications, case meetings).
+ * Admins and beheerders hold both, as they hold
  * the records in OpenRegister. The menu and the routes read these to hide what
  * the user cannot read; OpenRegister's schema authorization is what refuses.
  *
@@ -49,8 +49,8 @@ class RolePermissions {
 	public const PRIVACY_GROUP = 'dossiq-privacy';
 
 	/**
-	 * The social-domain staff's group: reads and writes indications, case
-	 * meetings and re-integration trajectories.
+	 * The social-domain staff's group: reads and writes indications and case
+	 * meetings, and handles the re-integration case type's cases.
 	 *
 	 * @var string
 	 */

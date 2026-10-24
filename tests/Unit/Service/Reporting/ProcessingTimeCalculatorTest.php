@@ -246,9 +246,9 @@ class ProcessingTimeCalculatorTest extends TestCase {
 
 		self::assertSame(
 			[
-				['weekLabel' => 'W22 2026', 'count' => 0],
-				['weekLabel' => 'W23 2026', 'count' => 1],
-				['weekLabel' => 'W24 2026', 'count' => 2],
+				['weekLabel' => 'W22 2026', 'week' => '2026-W22', 'count' => 0],
+				['weekLabel' => 'W23 2026', 'week' => '2026-W23', 'count' => 1],
+				['weekLabel' => 'W24 2026', 'week' => '2026-W24', 'count' => 2],
 			],
 			$weeks
 		);
@@ -264,6 +264,6 @@ class ProcessingTimeCalculatorTest extends TestCase {
 	public function testWeeklyThroughputUsesIsoWeekYear(): void {
 		$weeks = $this->calculator->weeklyThroughput(completed: [$this->record('a', null, '2027-01-01')], weeks: 1);
 
-		self::assertSame([['weekLabel' => 'W53 2026', 'count' => 1]], $weeks);
+		self::assertSame([['weekLabel' => 'W53 2026', 'week' => '2026-W53', 'count' => 1]], $weeks);
 	}//end testWeeklyThroughputUsesIsoWeekYear()
 }//end class
