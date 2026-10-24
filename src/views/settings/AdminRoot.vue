@@ -568,21 +568,6 @@
 			</CnSettingsSection>
 
 			<CnSettingsFieldsSection
-				id="section-mandate-settings"
-				appId="dossiq"
-				:name="t('dossiq', 'Mandate matrix: system settings')"
-				:description="
-					t(
-						'dossiq',
-						'Awb art. 10:3 mandate administration: Decidiq import, role hierarchy, waarnemer assignments.',
-					)
-				"
-				docUrl="https://dossiq.conduction.nl/docs/user/mandate-matrix-admin"
-				valuesPath="config"
-				:saveLabel="t('dossiq', 'Save mandate matrix settings')"
-				:fields="mandateSettingsFields" />
-
-			<CnSettingsFieldsSection
 				id="section-archival"
 				:name="t('dossiq', 'Archiving')"
 				:description="
@@ -657,7 +642,6 @@ import {
 	contactCentreFields,
 	houseStyleFields,
 	kadasterFields,
-	mandateSettingsFields,
 	menuStructureFields,
 	paymentCallbackFields,
 	queueUrgencyFields,
@@ -1038,15 +1022,6 @@ export default {
 			return queueUrgencyFields(this.t.bind(this))
 		},
 
-		/**
-		 * The mandate matrix behaviour.
-		 *
-		 * @return {Array<object>} The fields.
-		 * @spec openspec/specs/admin-settings/spec.md
-		 */
-		mandateSettingsFields() {
-			return mandateSettingsFields(this.t.bind(this))
-		},
 
 		/**
 		 * The consultation behaviour.

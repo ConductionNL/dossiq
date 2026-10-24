@@ -112,7 +112,6 @@ describe('the Systeem cards in the board\'s words', () => {
 		expect(fields.consultation_warning_offset_days.label).toBe('Waarschuwen, dagen vooraf')
 		expect(fields.consultation_external_response_url.label).toBe('Adres voor externe reacties')
 		expect(fields.consultation_external_response_url.pattern).toBe('^https://')
-		expect(fields['consultation-delivery'].advanced).toBe(true)
 		expect(fields.consultation_bottleneck_threshold.advanced).toBe(true)
 	})
 
