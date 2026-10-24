@@ -1094,7 +1094,10 @@
 						"target": "CaseLifecycleMenuDialog",
 						"label": "Next step",
 						"icon": "PlayCircleOutline",
-						"id": "stage-next-step"
+						"id": "stage-next-step",
+						"notTabs": [
+							"ai-oversight"
+						]
 					},
 					"pending-info": "case-remind",
 					"in-progress": {
@@ -1102,14 +1105,20 @@
 						"target": "CaseLifecycleMenuDialog",
 						"label": "Next step",
 						"icon": "PlayCircleOutline",
-						"id": "stage-next-step"
+						"id": "stage-next-step",
+						"notTabs": [
+							"ai-oversight"
+						]
 					},
 					"review": {
 						"type": "open-modal",
 						"target": "CaseLifecycleMenuDialog",
 						"label": "Next step",
 						"icon": "PlayCircleOutline",
-						"id": "stage-next-step"
+						"id": "stage-next-step",
+						"notTabs": [
+							"ai-oversight"
+						]
 					},
 					"closed": {
 						"type": "open-modal",
