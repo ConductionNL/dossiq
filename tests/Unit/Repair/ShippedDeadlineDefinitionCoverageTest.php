@@ -71,12 +71,7 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	 *
 	 * @var array<string, string>
 	 */
-	private const OPEN_QUESTIONS = [
-		// 23 Oct: the Jeugdwet package installs on every instance now (its
-		// reports moved onto it), and declares P8W. Which term binds a Jeugdwet
-		// report is Ruben's to decide; until then no clock is invented.
-		'melding-jeugdwet' => 'Jeugdwet: no decided decision term yet',
-	];
+	private const OPEN_QUESTIONS = [];
 
 	/**
 	 * The terms decided for the register's case types (Ruben, 10 and 11 Oct).
@@ -102,6 +97,8 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 		// Ruben, 23 Oct: eight weeks for a benefit application; the
 		// Participatiewet sets no decision term of its own, so Awb 4:13 lid 2.
 		'bijstandsaanvraag' => ['statutory', 56, 0, 0, 'Awb 4:13'],
+		// Ruben, 23 Oct: a Jeugdwet report on the same fallback.
+		'melding-jeugdwet' => ['statutory', 56, 0, 0, 'Awb 4:13'],
 		'melding-openbare-ruimte' => ['planned', 14, 0, 0, 'Servicenorm'],
 		'parkeervergunning-bewoners' => ['statutory', 56, 0, 0, 'Awb 4:13'],
 		'kenteken-wijzigen-parkeervergunning' => ['planned', 14, 0, 0, 'Servicenorm'],
