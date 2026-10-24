@@ -2852,7 +2852,7 @@
 									"separator": ", "
 								},
 								{
-									"as": "text",
+									"as": "line",
 									"key": "priority-how",
 									"text": "The priority follows from the matrix. Override it with a reason."
 								}
