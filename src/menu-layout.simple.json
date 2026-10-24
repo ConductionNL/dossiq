@@ -6557,7 +6557,11 @@
 										"case-type-variants",
 										"case-type-terms-written",
 										"case-type-messages"
-									]
+									],
+									"countFrom": {
+										"endpoint": "/apps/dossiq/api/case-types/@objectId/phases",
+										"field": "taskCount"
+									}
 								},
 								{
 									"id": "messages",
@@ -6572,7 +6576,11 @@
 									"label": "Rules",
 									"widgetIds": [
 										"case-type-rules"
-									]
+									],
+									"countFrom": {
+										"endpoint": "/apps/openregister/api/schemas/case/rules?scope[caseType]=@objectId",
+										"field": "rules"
+									}
 								},
 								{
 									"id": "rights",
@@ -6590,7 +6598,11 @@
 								{
 									"id": "translations",
 									"label": "Translations",
-									"widgetId": "case-type-translations"
+									"widgetId": "case-type-translations",
+									"countFrom": {
+										"endpoint": "/apps/openregister/api/registers/dossiq",
+										"field": "languages"
+									}
 								},
 								{
 									"id": "versions",
