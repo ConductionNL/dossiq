@@ -1926,12 +1926,15 @@
 			"data": {
 				"case": "{{object:kapvergunning-molenweg.id}}",
 				"severity": "ernstig",
-				"behaviour": "goedwillend",
+				"behaviour": "onverschillig",
 				"actorType": "burger",
 				"matrixVersion": 1,
 				"recommendedIntervention": "last_under_penaltypayment",
-				"finalIntervention": "last_under_penaltypayment",
-				"override": false,
+				"finalIntervention": "warning",
+				"override": true,
+				"overrideJustification": "Eerste overtreding, eigenaar werkt mee en herstelt binnen twee weken",
+				"overrideBy": "{{cast:anouk.uid}}",
+				"overrideAuthority": "manager",
 				"recommendedBy": "{{cast:lars.uid}}"
 			}
 		},
