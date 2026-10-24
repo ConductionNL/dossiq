@@ -45,5 +45,10 @@ class ZuiddrechtWooEmailTemplateTest extends TestCase {
 		$this->assertSame(expected: ['Ontvangstbevestiging Woo', 2, true], actual: [$v2['data']['name'], $v2['data']['version'], $v2['data']['isActive']]);
 		$this->assertSame(expected: [1, false], actual: [$v1['data']['version'], $v1['data']['isActive']]);
 		$this->assertSame(expected: '{{object:mailsjabloon-ontvangst-woo-v1.id}}', actual: $v2['data']['previousVersion']);
+
+		// Only names the mail resolver answers, so no placeholder is left in the sent text.
+		preg_match_all('/{{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*}}/', $v2['data']['subject'].$v2['data']['body'], $names);
+		$this->assertSame(expected: [], actual: array_values(array_diff($names[1], ['zaakNummer', 'contactNaam', 'startDate', 'deadline'])));
+		$this->assertStringNotContainsString(needle: '{{case.', haystack: $v1['data']['body'].$v2['data']['body']);
 	}//end testVersionTwoIsActive()
 }//end class

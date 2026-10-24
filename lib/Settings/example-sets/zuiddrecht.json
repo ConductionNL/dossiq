@@ -1788,8 +1788,8 @@
 			"data": {
 				"caseType": "{{lookup:caseType}}",
 				"name": "Ontvangstbevestiging Woo",
-				"subject": "Uw Woo-verzoek {{case.identifier}} is ontvangen",
-				"body": "Geachte {{case.initiatorDisplayName}},\n\nWij hebben uw Woo-verzoek ontvangen. Het zaaknummer is {{case.identifier}}.\n\nMet vriendelijke groet,\n\nTeam Woo en informatie",
+				"subject": "Uw Woo-verzoek {{zaakNummer}} is ontvangen",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben uw Woo-verzoek ontvangen. Het zaaknummer is {{zaakNummer}}.\n\nMet vriendelijke groet,\n\nTeam Woo en informatie",
 				"messageCategory": "case-update",
 				"version": 1,
 				"isActive": false,
@@ -1813,8 +1813,8 @@
 			"data": {
 				"caseType": "{{lookup:caseType}}",
 				"name": "Ontvangstbevestiging Woo",
-				"subject": "Uw Woo-verzoek {{case.identifier}} is ontvangen",
-				"body": "Geachte {{case.initiatorDisplayName}},\n\nWij hebben uw Woo-verzoek op {{case.receivedAt|date}} ontvangen. Het zaaknummer is {{case.identifier}}; noem dat nummer als u ons schrijft.\n\nWij beslissen uiterlijk op {{case.deadline|date}}. Hebben wij meer tijd nodig, dan hoort u dat voor die datum.\n\nMet vriendelijke groet,\n\nTeam Woo en informatie\nGemeente Zuiddrecht",
+				"subject": "Uw Woo-verzoek {{zaakNummer}} is ontvangen",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben uw Woo-verzoek op {{startDate}} ontvangen. Het zaaknummer is {{zaakNummer}}; noem dat nummer als u ons schrijft.\n\nWij beslissen uiterlijk op {{deadline}}. Hebben wij meer tijd nodig, dan hoort u dat voor die datum.\n\nMet vriendelijke groet,\n\nTeam Woo en informatie\nGemeente Zuiddrecht",
 				"messageCategory": "case-update",
 				"version": 2,
 				"isActive": true,
