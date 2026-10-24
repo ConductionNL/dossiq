@@ -132,6 +132,35 @@ class EngineTaskGateway {
 
 
     /**
+     * Whether a task with this key exists, or null when the engine cannot say.
+     *
+     * Null is not "no": a caller that adds a task once per case must not add
+     * it when the engine cannot answer whether it is there already.
+     *
+     * @param string $key The engine task key.
+     *
+     * @return bool|null True when taken, false when free, null when unknown.
+     *
+     * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+     */
+    public function keyTaken(string $key): ?bool {
+        $service = $this->resolveService();
+        if ($service === null || method_exists($service, 'findByKey') === false) {
+            $this->lastError = 'the task engine cannot look a task up by its key';
+
+            return null;
+        }
+
+        try {
+            return $service->findByKey($key) !== [];
+        } catch (Throwable $e) {
+            $this->lastError = $e->getMessage();
+
+            return null;
+        }
+    }//end keyTaken()
+
+    /**
      * The most recent engine failure, for callers that report rather than log.
      *
      * @var string
@@ -423,6 +452,12 @@ class EngineTaskGateway {
         $sourceId = trim((string)($task['id'] ?? $task['uuid'] ?? ''));
         if ($sourceId !== '') {
             $payload['key'] = self::sourceKey(registerTaskId: $sourceId);
+        }
+
+        // A task that may exist once per case carries its once-key instead.
+        $onceKey = trim((string)($task['onceKey'] ?? ''));
+        if ($onceKey !== '') {
+            $payload['key'] = $onceKey;
         }
 
         // The case IS the object. No typed case reference exists engine-side.
