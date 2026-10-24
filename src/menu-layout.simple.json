@@ -6636,7 +6636,7 @@
 					},
 					{
 						"id": "case-type-rules-summary",
-						"type": "record-list",
+						"type": "CaseTypeRulesWidget",
 						"title": "Rules",
 						"headerActions": [
 							{
@@ -6648,28 +6648,9 @@
 								}
 							}
 						],
-						"_note": "DqZaaktypeOverzicht Regels: the rules OpenRegister holds for the case schema (GET /apps/openregister/api/schemas/case/rules, the inventory the Fields tab's rules widget reads), one row each with whether it is on. The rules belong to the case schema, not to one case type, which is why every case type lists the same ones. Adding a rule happens on OpenRegister's schema page, so there is no Add here.",
+						"_note": "DqZaaktypeOverzicht Regels: the case type's own rules as the Rules tab lists them (\"Als ... / dan ...\" with an On or Off pill), read off the case type; the tab's menus, Add button, schema inventory and trial stay on the Rules tab, which Add a rule opens.",
 						"content": {
-							"endpointSource": {
-								"url": "/apps/openregister/api/schemas/case/rules",
-								"responsePath": "rules"
-							},
-							"presentation": "rows",
-							"title": "{label}",
-							"meta": "{kind}",
-							"pill": {
-								"field": "enabled",
-								"labels": {
-									"true": "On",
-									"false": "Off"
-								},
-								"colorMap": {
-									"true": "success",
-									"false": "default"
-								}
-							},
-							"limit": 5,
-							"emptyText": "No rules for cases yet"
+							"mode": "summary"
 						}
 					},
 					{

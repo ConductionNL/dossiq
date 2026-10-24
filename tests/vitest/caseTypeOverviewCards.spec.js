@@ -27,10 +27,9 @@ describe('case type Overview cards', () => {
 		overview.widgetIds.forEach((id) => expect(widget(id)).toBeTruthy())
 	})
 
-	it('lists the case schema rules with an On or Off pill', () => {
-		const rules = widget('case-type-rules-summary').content
-		expect(rules.endpointSource).toEqual({ url: '/apps/openregister/api/schemas/case/rules', responsePath: 'rules' })
-		expect(rules.pill.field).toBe('enabled')
+	it('lists the case type\'s own rules, as the Rules tab does (case-type-rules-summary-sentences)', () => {
+		expect(widget('case-type-rules-summary').type).toBe('CaseTypeRulesWidget')
+		expect(widget('case-type-rules-summary').content).toEqual({ mode: 'summary' })
 	})
 })
 
