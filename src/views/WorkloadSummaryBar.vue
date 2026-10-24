@@ -203,8 +203,18 @@ export default {
 	color: var(--color-text-maxcontrast);
 }
 
+/* Board DqAanMijToegewezen: an 18px title over a 14px hint, 2px apart. */
 .workload-summary--heading {
-	margin-bottom: 0;
+	gap: 2px;
+
+	.workload-summary__title {
+		font-size: 18px;
+	}
+
+	.workload-summary__hint {
+		margin: 0;
+		font-size: 14px;
+	}
 }
 
 .workload-summary--chips {
