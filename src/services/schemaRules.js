@@ -132,12 +132,17 @@ export async function fetchRuleVocabulary() {
  * opened the case-type page, not a fault, and it comes back as the empty list.
  *
  * @param {string} schema The schema slug.
+ * @param {object} [scope] Property => value: only that scope's rules and the unscoped ones (`scope[caseType]=`).
  * @return {Promise<Array<object>>} The rules.
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-export async function fetchSchemaRules(schema) {
-	const { data } = await axios.get(ruleInventoryUrl(schema))
+export async function fetchSchemaRules(schema, scope = {}) {
+	const params = {}
+	for (const [property, value] of Object.entries(scope || {})) {
+		params[`scope[${property}]`] = value
+	}
+	const { data } = await axios.get(ruleInventoryUrl(schema), Object.keys(params).length > 0 ? { params } : undefined)
 
 	return Array.isArray(data?.rules) ? data.rules : []
 }

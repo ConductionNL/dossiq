@@ -28,7 +28,7 @@ function stub (name) {
 	return h('div', { class: name }, this.$slots.default?.() ?? [])
 } })
 }
-vi.mock('@nextcloud/vue', () => ({ NcButton: stub('NcButton'), NcLoadingIcon: stub('NcLoadingIcon'), NcSelect: stub('NcSelect'), NcTextField: stub('NcTextField') }))
+vi.mock('@nextcloud/vue', () => ({ NcActionButton: stub('NcActionButton'), NcActions: stub('NcActions'), NcButton: stub('NcButton'), NcDialog: stub('NcDialog'), NcLoadingIcon: stub('NcLoadingIcon'), NcSelect: stub('NcSelect'), NcTextField: stub('NcTextField') }))
 
 const KINDS = { calculation: { description: 'Derives a value from the object and writes it before the object is stored.' }, flow: { description: 'Runs a flow after the object is stored.' } }
 const PROPERTIES = {

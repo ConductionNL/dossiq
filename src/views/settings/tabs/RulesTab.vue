@@ -25,7 +25,43 @@
 			{{ error }}
 		</p>
 
-		<p v-else-if="rules.length === 0" class="rules-tab__empty">
+		<div v-if="!loading && caseTypeId" class="rules-tab__head">
+			<NcButton
+				:disabled="!editable"
+				:title="editable ? '' : t('dossiq', 'A published version does not change. Make a new version to change its rules.')"
+				data-testid="rules-add"
+				@click="dialog = { rule: null }">
+				{{ t('dossiq', 'Add rule') }}
+			</NcButton>
+		</div>
+
+		<ul v-if="!loading && caseRuleRows.length > 0" class="rules-tab__rows" data-testid="case-rules-list">
+			<li v-for="(row, i) in caseRuleRows" :key="row.id" class="rules-tab__row" data-testid="case-rule-row">
+				<span class="rules-tab__text">
+					<span class="rules-tab__title">{{ row.title }}</span>
+					<span class="rules-tab__line">{{ row.line }}</span>
+				</span>
+				<span class="rules-tab__end">
+					<span
+						class="rules-tab__pill cn-status-badge"
+						:class="row.pill === 'on' ? 'cn-status-badge--success' : 'cn-status-badge--default'"
+						data-testid="case-rule-pill">{{ pillLabel(row.pill) }}</span>
+					<NcActions v-if="editable" :aria-label="t('dossiq', 'Actions for {rule}', { rule: row.title })">
+						<NcActionButton data-testid="case-rule-edit" @click="dialog = { rule: caseRules[i] }">
+							{{ t('dossiq', 'Edit') }}
+						</NcActionButton>
+						<NcActionButton data-testid="case-rule-toggle" @click="toggleRule(i)">
+							{{ row.pill === 'on' ? t('dossiq', 'Turn off') : t('dossiq', 'Turn on') }}
+						</NcActionButton>
+						<NcActionButton data-testid="case-rule-delete" @click="deleteRule(i)">
+							{{ t('dossiq', 'Delete') }}
+						</NcActionButton>
+					</NcActions>
+				</span>
+			</li>
+		</ul>
+
+		<p v-if="!loading && !error && rules.length === 0 && caseRuleRows.length === 0" class="rules-tab__empty">
 			{{
 				t(
 					'dossiq',
@@ -34,7 +70,7 @@
 			}}
 		</p>
 
-		<ul v-else class="rules-tab__rows" data-testid="rules-list">
+		<ul v-if="!loading && !error && rows.length > 0" class="rules-tab__rows" data-testid="rules-list">
 			<li v-for="row in rows" :key="row.id" class="rules-tab__row" data-testid="rules-row">
 				<span class="rules-tab__text">
 					<span class="rules-tab__title">{{ row.title }}</span>
@@ -46,6 +82,15 @@
 					data-testid="rules-pill">{{ pillLabel(row.pill) }}</span>
 			</li>
 		</ul>
+
+		<CaseTypeRuleDialog
+			v-if="dialog"
+			:rule="dialog.rule"
+			:newId="newId"
+			:fields="fields"
+			:choices="choices"
+			@close="dialog = null"
+			@save="saveRule" />
 
 		<details v-if="rules.length > 0" class="rules-tab__trial">
 			<summary>{{ t('dossiq', 'Try a rule against a case') }}</summary>
@@ -95,7 +140,9 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
+import { NcActionButton, NcActions, NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
+import CaseTypeRuleDialog from '../../../modals/CaseTypeRuleDialog.vue'
+import { caseTypeRuleRow, newRuleId, ruleFields } from '../../../services/caseTypeRules.js'
 import {
 	evaluateRule,
 	fetchRuleVocabulary,
@@ -105,12 +152,16 @@ import {
 	ruleRows,
 	traceOf,
 } from '../../../services/schemaRules.js'
+import { useObjectStore } from '../../../store/modules/object.js'
 import { useSettingsStore } from '../../../store/modules/settings.js'
 
 export default {
 	name: 'RulesTab',
 
 	components: {
+		CaseTypeRuleDialog,
+		NcActionButton,
+		NcActions,
 		NcButton,
 		NcLoadingIcon,
 		NcSelect,
@@ -132,6 +183,15 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
+		/**
+		 * The case type whose own conditional rules lead the tab, and whose
+		 * scope the inventory is asked for. Empty shows the schema inventory only.
+		 */
+		caseTypeId: {
+			type: String,
+			default: '',
+		},
 	},
 
 	data() {
@@ -145,6 +205,9 @@ export default {
 			caseId: '',
 			trying: '',
 			trace: null,
+			caseType: null,
+			catalogue: { propertyDefinitions: [], statusTypes: [], documentTypes: [], emailTemplates: [] },
+			dialog: null,
 		}
 	},
 
@@ -156,11 +219,70 @@ export default {
 		 * @spec openspec/changes/case-type-rules-as-rows/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
 		 */
 		rows() {
-			return ruleRows(this.rules, this.properties, this.kinds).map((row) => ({
+			// A flow scoped to this case type is one of its own rules, projected; the rule row stands for it.
+			const inventory = this.rules.filter((r) => !(r?.kind === 'flow' && r?.scope?.property === 'caseType'))
+			return ruleRows(inventory, this.properties, this.kinds).map((row) => ({
 				...row,
 				title: row.title ? t('dossiq', row.title) : row.id,
 				line: row.line ? t('dossiq', row.line) : '',
 			}))
+		},
+
+		/**
+		 * The case type's own rules, in their order.
+		 *
+		 * @return {Array<object>}
+		 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+		 */
+		caseRules() {
+			return Array.isArray(this.caseType?.rules) ? this.caseType.rules : []
+		},
+
+		/** @return {Array<object>} The fields a condition can name. */
+		fields() {
+			return ruleFields(this.catalogue)
+		},
+
+		/** @return {object} The choices the rule dialog offers, as `[{ id, label }]` lists. */
+		choices() {
+			const options = (list, name = 'name') => list.map((o) => ({ id: o.id, label: o[name] || o.title || o.id }))
+			return {
+				statuses: options(this.catalogue.statusTypes),
+				documentTypes: options(this.catalogue.documentTypes),
+				templates: options(this.catalogue.emailTemplates),
+				variants: (this.caseType?.variants || []).map((v) => ({ id: v.name, label: v.name })),
+			}
+		},
+
+		/**
+		 * The case type's rules as "If … / then …" rows.
+		 *
+		 * @return {Array<object>}
+		 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+		 */
+		caseRuleRows() {
+			const byId = (list) => Object.fromEntries(list.map((o) => [o.id, o.label]))
+			const names = {
+				statuses: byId(this.choices.statuses),
+				documentTypes: byId(this.choices.documentTypes),
+				templates: byId(this.choices.templates),
+				fields: byId(this.fields),
+			}
+			return this.caseRules.map((rule) => caseTypeRuleRow(rule, this.fields, names))
+		},
+
+		/** @return {string} The id a new rule gets. */
+		newId() {
+			return newRuleId(this.caseRules)
+		},
+
+		/**
+		 * Whether this version's rules may change: a published version is frozen.
+		 *
+		 * @return {boolean}
+		 */
+		editable() {
+			return this.caseType !== null && this.caseType.isDraft !== false
 		},
 
 		/**
@@ -224,9 +346,10 @@ export default {
 			this.error = ''
 			this.kinds = kindsByName(await fetchRuleVocabulary())
 			this.properties = await fetchSchemaProperties(this.schemaSlug())
+			await this.loadCaseType()
 
 			try {
-				this.rules = await fetchSchemaRules(this.schemaSlug())
+				this.rules = await fetchSchemaRules(this.schemaSlug(), this.caseTypeId ? { caseType: this.caseTypeId } : {})
 			} catch (e) {
 				this.rules = []
 				this.error =
@@ -242,6 +365,83 @@ export default {
 			}
 
 			this.loading = false
+		},
+
+		/**
+		 * Read the case type and what its rules can point at.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+		 */
+		async loadCaseType() {
+			if (!this.caseTypeId) {
+				return
+			}
+			const store = useObjectStore()
+			const list = async (type) => (await store.fetchCollection(type, { caseType: this.caseTypeId, _limit: 200 }).catch(() => [])) || []
+			this.caseType = (await store.fetchObject('caseType', this.caseTypeId).catch(() => null)) || null
+			this.catalogue = {
+				propertyDefinitions: await list('propertyDefinition'),
+				statusTypes: await list('statusType'),
+				documentTypes: await list('documentType'),
+				emailTemplates: await list('emailTemplate'),
+			}
+		},
+
+		/**
+		 * Store the case type with these rules.
+		 *
+		 * @param {Array<object>} rules The rules.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+		 */
+		async storeRules(rules) {
+			const next = { ...this.caseType, rules }
+			try {
+				const saved = await useObjectStore().saveObject('caseType', next)
+				this.caseType = saved && typeof saved === 'object' ? { ...next, ...saved } : next
+			} catch {
+				this.error = t('dossiq', 'The rule could not be saved.')
+			}
+		},
+
+		/**
+		 * Add or replace a rule from the dialog.
+		 *
+		 * @param {object} rule The rule.
+		 * @return {Promise<void>}
+		 */
+		async saveRule(rule) {
+			const rules = [...this.caseRules]
+			const at = rules.findIndex((r) => r.id === rule.id)
+			if (at === -1) {
+				rules.push(rule)
+			} else {
+				rules.splice(at, 1, rule)
+			}
+			this.dialog = null
+			await this.storeRules(rules)
+		},
+
+		/**
+		 * Turn a rule off or on.
+		 *
+		 * @param {number} i The rule's position.
+		 * @return {Promise<void>}
+		 */
+		async toggleRule(i) {
+			const rules = this.caseRules.map((r, j) => (j === i ? { ...r, enabled: r.enabled === false } : r))
+			await this.storeRules(rules)
+		},
+
+		/**
+		 * Delete a rule.
+		 *
+		 * @param {number} i The rule's position.
+		 * @return {Promise<void>}
+		 */
+		async deleteRule(i) {
+			await this.storeRules(this.caseRules.filter((r, j) => j !== i))
 		},
 
 		/**
@@ -357,6 +557,19 @@ export default {
 }
 
 .rules-tab__pill {
+	flex: none;
+}
+
+.rules-tab__head {
+	display: flex;
+	justify-content: flex-end;
+	margin-bottom: 8px;
+}
+
+.rules-tab__end {
+	display: flex;
+	align-items: center;
+	gap: 4px;
 	flex: none;
 }
 
