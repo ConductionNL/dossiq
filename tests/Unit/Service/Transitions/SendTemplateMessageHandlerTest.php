@@ -23,8 +23,11 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
+use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Termijn\TermNoticeLedger;
 use OCA\Dossiq\Service\Transitions\SendTemplateMessageHandler;
+use OCP\IUser;
+use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -41,7 +44,6 @@ class SendTemplateMessageHandlerTest extends TestCase {
 	private const CASE = [
 		'id' => 'case-1',
 		'email' => 'aanvrager@example.nl',
-		'betrokkenen' => [['role' => 'Architect', 'email' => 'ARCHITECT@example.nl'], ['role' => 'buurman', 'email' => 'buur@example.nl']],
 	];
 
 	/**
@@ -73,17 +75,29 @@ class SendTemplateMessageHandlerTest extends TestCase {
 			}
 		);
 
+		// The case's role objects: an architect held by a Nextcloud user and by a contact address.
+		$roles = $this->createMock(RoleResolverService::class);
+		$roles->method('resolve')->willReturnCallback(
+			static fn (array $rule): array => ($rule['roleType'] === 'role-architect' ? ['esra', 'Bureau@Example.nl'] : [])
+		);
+		$user = $this->createMock(IUser::class);
+		$user->method('getEMailAddress')->willReturn('Esra@zuiddrecht.nl');
+		$users = $this->createMock(IUserManager::class);
+		$users->method('get')->willReturnCallback(static fn (string $uid): ?IUser => ($uid === 'esra' ? $user : null));
+
 		return new SendTemplateMessageHandler(
 			assignees: new AssigneeResolver(new NullLogger()),
 			contacts: $contacts,
 			mail: $mail,
 			logger: new NullLogger(),
-			ledger: $ledger
+			ledger: $ledger,
+			roles: $roles,
+			users: $users
 		);
 	}//end handler()
 
 	/**
-	 * Without a role the applicant gets it; with one, the contacts holding it.
+	 * Without a role the applicant gets it; with one, the participants of the case's role objects.
 	 *
 	 * @return void
 	 */
@@ -92,10 +106,14 @@ class SendTemplateMessageHandlerTest extends TestCase {
 		$handler = $this->handler($sent);
 
 		$this->assertTrue($handler->handle(['emailTemplate' => 'tpl-weigering'], self::CASE, [])->succeeded);
-		$this->assertTrue($handler->handle(['emailTemplate' => 'tpl-weigering', 'recipientRole' => 'architect'], self::CASE, [])->succeeded);
+		$this->assertTrue($handler->handle(['emailTemplate' => 'tpl-weigering', 'recipientRole' => 'role-architect'], self::CASE, [])->succeeded);
 
 		$this->assertSame(
-			[['case-1', 'tpl-weigering', 'aanvrager@example.nl'], ['case-1', 'tpl-weigering', 'architect@example.nl']],
+			[
+				['case-1', 'tpl-weigering', 'aanvrager@example.nl'],
+				['case-1', 'tpl-weigering', 'esra@zuiddrecht.nl'],
+				['case-1', 'tpl-weigering', 'bureau@example.nl'],
+			],
 			$sent
 		);
 	}//end testTheMessageGoesToTheRole()
@@ -107,7 +125,7 @@ class SendTemplateMessageHandlerTest extends TestCase {
 	 */
 	public function testNoRecipientSendsNothing(): void {
 		$sent = [];
-		$result = $this->handler($sent)->handle(['emailTemplate' => 'tpl', 'recipientRole' => 'notaris'], self::CASE, []);
+		$result = $this->handler($sent)->handle(['emailTemplate' => 'tpl', 'recipientRole' => 'role-notaris'], self::CASE, []);
 
 		$this->assertFalse($result->succeeded);
 		$this->assertSame('no_recipient', $result->error);
