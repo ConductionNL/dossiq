@@ -958,6 +958,132 @@
 			}
 		},
 		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v1",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 1,
+				"isDraft": false,
+				"versionDate": "{{date:-460}}",
+				"validFrom": "{{date:-460}}",
+				"validUntil": "{{date:-280}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v2",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 2,
+				"isDraft": false,
+				"versionDate": "{{date:-279}}",
+				"validFrom": "{{date:-279}}",
+				"validUntil": "{{date:-149}}",
+				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v1.id}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v3",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 3,
+				"isDraft": false,
+				"versionDate": "{{date:-148}}",
+				"validFrom": "{{date:-148}}",
+				"validUntil": "{{date:-8}}",
+				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v2.id}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v4",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 4,
+				"isDraft": false,
+				"versionDate": "{{date:-7}}",
+				"validFrom": "{{date:-7}}",
+				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v3.id}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28
+			}
+		},
+		{
 			"key": "zaaktype-omgevingsvergunning-regulier",
 			"register": "dossiq",
 			"schema": "caseType",
@@ -977,6 +1103,14 @@
 				"version": 5,
 				"isDraft": true,
 				"versionDate": "{{date:-2}}",
+				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28,
 				"rules": [
 					{
 						"id": "welstandsadvies-bij-grote-bouwkosten",
@@ -5203,6 +5337,33 @@
 			"set": {
 				"ncGroupId": "zuiddrecht-toezicht-en-handhaving",
 				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v1-opgevolgd",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v1",
+			"set": {
+				"supersededBy": "{{object:zaaktype-omgevingsvergunning-regulier-v2.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v2-opgevolgd",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v2",
+			"set": {
+				"supersededBy": "{{object:zaaktype-omgevingsvergunning-regulier-v3.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v3-opgevolgd",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v3",
+			"set": {
+				"supersededBy": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}"
 			}
 		}
 	]
