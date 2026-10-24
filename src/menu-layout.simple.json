@@ -3479,7 +3479,8 @@
 								{
 									"from": "object",
 									"label": "Handler",
-									"path": "assignee"
+									"path": "assignee",
+									"format": "user"
 								},
 								{
 									"label": "Family plan",
