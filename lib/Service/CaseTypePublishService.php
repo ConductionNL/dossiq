@@ -153,6 +153,9 @@ class CaseTypePublishService {
 		}
 
 		$caseType = $this->window->open(caseType: $caseType);
+		if ($this->rules !== null) {
+			$caseType['entryRequirements'] = $this->rules->entryRequirements(caseType: $caseType);
+		}
 
 		if ($this->save(schemaKey: 'case_type_schema', object: $caseType) === false) {
 			return [

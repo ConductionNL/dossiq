@@ -130,6 +130,9 @@ class CaseTypeRuleFlowDocument {
 
 		if (isset($step['guard']) === true) {
 			$conditions[] = $step['guard'];
+		}
+
+		if ($step['type'] === 'openregister.object-write') {
 			$step['config'] = array_merge(['register' => $register, 'schema' => $schema], $step['config']);
 		}
 
@@ -196,6 +199,7 @@ class CaseTypeRuleFlowDocument {
 				value: ($action['value'] ?? null),
 				definitionNames: $definitionNames
 			),
+			'sendMessage' => $this->sendMessage(rule: $rule, action: $action, caseTypeId: $caseTypeId),
 			'chooseVariant' => $this->writeField(field: 'variant', value: trim((string)($action['variant'] ?? '')), definitionNames: []),
 			default => null,
 		};
@@ -229,21 +233,57 @@ class CaseTypeRuleFlowDocument {
 	}//end addTask()
 
 	/**
-	 * An update of one case field, guarded on the field not holding the value yet.
+	 * The send-message step: once per case, or once per status entry for a status rule.
 	 *
-	 * Only a field of the case itself: a property definition's answer lives
-	 * in the case's `properties` list, which a field patch cannot address, so
-	 * such an action is not projected rather than written where nothing reads it.
+	 * @param array<string, mixed> $rule The rule.
+	 * @param array<string, mixed> $action The action.
+	 * @param string $caseTypeId The case type uuid.
 	 *
-	 * @param string $field The case field.
+	 * @return array{type: string, config: array<string, mixed>}|null The step.
+	 */
+	private function sendMessage(array $rule, array $action, string $caseTypeId): ?array {
+		$template = trim((string)($action['emailTemplate'] ?? ''));
+		if ($template === '') {
+			return null;
+		}
+
+		$config = [
+			'emailTemplate' => $template,
+			'onceKey' => 'rule:' . $caseTypeId . ':' . (string)($rule['id'] ?? ''),
+		];
+		$role = trim((string)($action['recipientRole'] ?? ''));
+		if ($role !== '') {
+			$config['recipientRole'] = $role;
+		}
+
+		if (($rule['when']['event'] ?? null) === 'statusEntered') {
+			$config['oncePer'] = 'currentStatusEnteredAt';
+		}
+
+		return ['type' => 'dossiq.sendMessage', 'config' => $config];
+	}//end sendMessage()
+
+	/**
+	 * A write of one field, guarded on the field not holding the value yet.
+	 *
+	 * A field of the case itself is an `openregister.object-write` update. A
+	 * property definition's answer lives in the case's `properties` list, which
+	 * a field patch cannot address, so it is a `dossiq.setCaseAnswer` step.
+	 *
+	 * @param string $field The case field or property definition name.
 	 * @param mixed $value The value to write.
 	 * @param array<int, string> $definitionNames The case type's property definition names.
 	 *
 	 * @return array{type: string, config: array<string, mixed>, guard: array<string, mixed>}|null The step.
 	 */
 	private function writeField(string $field, mixed $value, array $definitionNames): ?array {
-		if ($field === '' || $value === '' || in_array($field, $definitionNames, true) === true) {
+		if ($field === '' || $value === '') {
 			return null;
+		}
+
+		$guard = ['kind' => 'fieldDiffers', 'field' => $field, 'value' => $value];
+		if (in_array($field, $definitionNames, true) === true) {
+			return ['type' => 'dossiq.setCaseAnswer', 'config' => ['name' => $field, 'value' => $value], 'guard' => $guard];
 		}
 
 		return [
@@ -253,7 +293,7 @@ class CaseTypeRuleFlowDocument {
 				'match' => [['property' => 'id', 'value' => '{{ id }}']],
 				'fields' => [$field => $value],
 			],
-			'guard' => ['kind' => 'fieldCompare', 'field' => $field, 'op' => 'neq', 'value' => $value],
+			'guard' => $guard,
 		];
 	}//end writeField()
 }//end class

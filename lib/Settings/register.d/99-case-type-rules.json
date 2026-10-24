@@ -146,6 +146,25 @@
                 }
               }
             }
+          },
+          "entryRequirements": {
+            "type": "object",
+            "title": "Entry requirements",
+            "description": "Projected at publish from the rules, never edited by hand: per statusType uuid, the documents a case must carry before it enters that status ([{documentType, rule}]). Read by the statusEntryRequirements transition guard.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "documentType": {
+                    "type": "string"
+                  },
+                  "rule": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
           }
         }
       },

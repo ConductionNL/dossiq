@@ -105,6 +105,7 @@ class RuleConditionLogic {
 			'fieldCompare' => $this->compare(field: $field, operator: (string)($condition['op'] ?? 'eq'), value: ($condition['value'] ?? null)),
 			'fieldEquals' => $this->compare(field: $field, operator: 'eq', value: ($condition['value'] ?? null)),
 			'fieldPresent' => $this->present(field: $field),
+			'fieldDiffers' => $this->differs(field: $field, value: ($condition['value'] ?? null)),
 			'statusIs' => ['==' => [['var' => 'json.status'], (string)($condition['status'] ?? '')]],
 			'documentPresent' => $this->documentPresent(documentType: (string)($condition['documentType'] ?? '')),
 			default => false,
@@ -145,6 +146,42 @@ class RuleConditionLogic {
 			],
 		];
 	}//end compare()
+
+	/**
+	 * Neither the case property nor a definition's answer holds the value.
+	 *
+	 * The guard a write carries so the write it causes does not fire it again.
+	 * `!=` alone is not enough for an answer: an absent case property differs
+	 * from every value, so the answer is checked to hold it nowhere.
+	 *
+	 * @param string $field The field.
+	 * @param mixed $value The value.
+	 *
+	 * @return array<string, mixed>|bool The expression.
+	 */
+	private function differs(string $field, mixed $value): array|bool {
+		if ($field === '') {
+			return false;
+		}
+
+		$value = $this->typed(value: $value);
+
+		return [
+			'and' => [
+				['!=' => [['var' => 'json.' . $field], $value]],
+				[
+					'!' => [
+						[
+							'some' => [
+								['var' => 'json.properties'],
+								['and' => [['==' => [['var' => 'name'], $field]], ['==' => [['var' => 'value'], $value]]]],
+							],
+						],
+					],
+				],
+			],
+		];
+	}//end differs()
 
 	/**
 	 * A field that is filled in, as a case property or a definition's answer.
