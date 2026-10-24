@@ -153,6 +153,8 @@
         "version": "1.51.0",
         "properties": {
           "variant": {
+            "matchType": "exact",
+            "inputControl": "text",
             "type": "string",
             "title": "Variant",
             "description": "The route this case takes through its case type, by the variant's name (caseType.variants). Written by a chooseVariant rule of the case type; empty means the default variant.",
