@@ -15,6 +15,15 @@ describe('the case documents rows', () => {
 	})
 })
 
+describe('the second line per case', () => {
+	it('is type, size and date on a case that reviews its documents, sender and date otherwise', () => {
+		expect(panels.caseWidget('case-files').props.secondLine).toEqual([
+			{ when: '@context.caseType.documentReview.enabled', fields: ['type', 'size', 'modified|date'] },
+			{ fields: ['senderName', 'modified|date'] },
+		])
+	})
+})
+
 describe('the case documents toolbar', () => {
 	const props = panels.caseWidget('case-files').props
 
