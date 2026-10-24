@@ -121,6 +121,7 @@
         "{identifier}",
         "{subject.title}",
         "initiatorDisplayName",
-        "name"
+        "name",
+        "{summary}"
     ]
 }
