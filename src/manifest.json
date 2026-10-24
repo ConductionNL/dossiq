@@ -11136,7 +11136,8 @@
 								},
 								"responsePath": "summaryRows"
 							},
-							"meta": "Quarter {quarter} of {year}: {decided} cases decided, {withinTerm} within the statutory or extended term ({share} %)."
+							"meta": "Quarter {quarter} of {year}: {decided} cases decided, {withinTerm} within the statutory or extended term ({share} %).",
+							"emptyText": ""
 						}
 					},
 					{

@@ -297,6 +297,9 @@ describe('deadline reports', () => {
 			expect(summary.content.meta).toContain(token)
 		}
 		expect(summary.roles).toEqual(widget('TermijnDashboard', 'deadline-report-quarterly').roles)
+		// A quarter without decided terms has no line: no "Nothing here yet"
+		// under the table (nextcloud-vue record-list emptyText "").
+		expect(summary.content.emptyText).toBe('')
 	})
 
 	it('downloads the quarterly report from its card header, as the board does', () => {
