@@ -1047,6 +1047,7 @@
 				"statusHistory"
 			],
 			"data": {
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6702,51.8183]}",
 				"title": "Kapvergunning Molenweg 4",
 				"description": "Een bewoner wil twee essen in de achtertuin aan de Molenweg laten kappen. De bomen staan te dicht bij de schuur.",
 				"caseType": "{{lookup:caseType}}",
@@ -1464,6 +1465,7 @@
 				"statusHistory"
 			],
 			"data": {
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6624,51.8139]}",
 				"title": "Parkeervergunningen binnenstad",
 				"description": "Mevrouw Bakker vraagt alle stukken over het aantal parkeervergunningen in de binnenstad en de wachtlijst, uit 2025 en 2026.",
 				"caseType": "{{lookup:caseType}}",
@@ -1605,6 +1607,7 @@
 				"statusHistory"
 			],
 			"data": {
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6688,51.8092]}",
 				"title": "Kapvergunning essen Parkweg",
 				"description": "Meneer Bakker wil drie essen aan de Parkweg laten kappen. Ze hebben essentaksterfte. De boomdeskundige heeft ernaar gekeken.",
 				"caseType": "{{lookup:caseType}}",
@@ -1777,6 +1780,7 @@
 				"statusHistory"
 			],
 			"data": {
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6571,51.8102]}",
 				"caseType": "{{lookup:caseType}}",
 				"status": "{{lookup:status}}",
 				"requester": "{{object:persoon-sanne.id}}",
