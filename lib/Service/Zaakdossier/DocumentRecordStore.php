@@ -122,42 +122,6 @@ class DocumentRecordStore {
 	}//end deleteRecord()
 
 	/**
-	 * The ids of every case a document is joined to, read regardless of the
-	 * caller: an authorization check must also see a case the caller cannot.
-	 * Only the ids leave this method.
-	 *
-	 * @param string $recordId The document uuid.
-	 *
-	 * @return list<string> The case ids.
-	 *
-	 * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md#requirement-a-document-write-needs-the-change-right-on-every-case-of-the-document
-	 */
-	public function caseIdsOf(string $recordId): array {
-		[$objectService, $register] = $this->requireRegister();
-		$rows = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $this->schema(key: 'dossier_zaakinformatieobject_schema'),
-			filters: ['informatieobject' => $recordId, '_limit' => 500],
-		);
-
-		$ids = [];
-		foreach ($rows as $row) {
-			$caseId = $row['case'] ?? '';
-			if (is_array($caseId) === true) {
-				$caseId = $caseId['id'] ?? '';
-			}
-
-			$caseId = (string)$caseId;
-			if ($caseId !== '') {
-				$ids[$caseId] = true;
-			}
-		}
-
-		return array_keys($ids);
-	}//end caseIdsOf()
-
-	/**
 	 * The joins of a record, all of them or those of one case.
 	 *
 	 * @param string $recordId The record uuid.

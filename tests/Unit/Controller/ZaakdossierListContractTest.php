@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ZaakdossierController;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentWriteGate;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -55,6 +56,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
  *
  * @covers \OCA\Dossiq\Controller\ZaakdossierController
  * @uses \OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentWriteGate
  */
 class ZaakdossierListContractTest extends TestCase {
 
@@ -139,11 +141,13 @@ class ZaakdossierListContractTest extends TestCase {
 			// A REAL bulk actions object over the SAME reader and dossier
 			// service the assertions read through. Only the wiring line moved
 			// when one act over many documents was split out.
-			bulk: new BulkDocumentActions(
-				reader: $this->reader,
-				fileService: $this->fileService,
+			writes: new DocumentWriteGate(
+				caseWrites: $this->createMock(DocumentCaseWriteGuard::class),
+				bulk: new BulkDocumentActions(
+					reader: $this->reader,
+					fileService: $this->fileService,
+				),
 			),
-			caseWrites: $this->createMock(DocumentCaseWriteGuard::class),
 		);
 	}//end setUp()
 
