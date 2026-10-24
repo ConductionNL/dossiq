@@ -4878,7 +4878,11 @@
 						"requiredApp": "hermiq",
 						"_note": "The AI Chat Companion embedded in the Assistant tab (DqZaakAssistent). The library widget renders the companion the launcher hex opens, always open and without the hex; it reads the page context CnDetailPage provides, so the agents offered are the ones relevant to a case. Without hermiq the widget says it is not installed rather than leaving an empty tab. Needs the nextcloud-vue release with the `ai-chat` widget (ai-chat-widget).",
 						"content": {
-							"chatAppId": "hermiq"
+							"chatAppId": "hermiq",
+							"pill": "Hermiq",
+							"note": "The assistant sees only what you see on this case. Without Hermiq this panel is off.",
+							"placeholder": "Ask something about this case",
+							"sendLabel": "Ask"
 						}
 					},
 					{
