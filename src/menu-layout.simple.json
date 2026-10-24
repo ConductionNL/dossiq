@@ -3347,10 +3347,42 @@
 					},
 					{
 						"id": "case-incidents-card",
-						"type": "object-list",
+						"type": "record-list",
 						"title": "Incidents",
 						"subtitle": "Reports within this case, such as a complaint about how it is handled",
-						"_note": "splitting-a-case-and-its-incidents REQ-CM-53. Several dated reports inside one case, which is how repeat reports on one address are handled: the case holds the address and the history, and each report is a record with its own reporter, its own owner and its own outcome. SORTED BY `eventDate` AND NOT BY THE RECORDING MOMENT (D-6): a report written up three weeks late belongs where it happened, and `createdAt` order would quietly rewrite the sequence the case is about. It sits in the Work tab rather than in a tab of its own, because the strip is already eleven entries and an incident is work on the case; `recordedAt` is a column beside the event date so the delay between the two is visible rather than hidden. NOT a deelzaak: an incident has no number, no term and no decision, and making one would give every report a beslistermijn it does not have (D-4).",
+						"_note": "splitting-a-case-and-its-incidents REQ-CM-53. Several dated reports inside one case, which is how repeat reports on one address are handled: the case holds the address and the history, and each report is a record with its own reporter, its own owner and its own outcome. SORTED BY `eventDate` AND NOT BY THE RECORDING MOMENT (D-6): a report written up three weeks late belongs where it happened, and `createdAt` order would quietly rewrite the sequence the case is about. It sits in the Work tab rather than in a tab of its own, because the strip is already eleven entries and an incident is work on the case; `recordedAt` is on each row beside the event date so the delay between the two is visible rather than hidden. NOT a deelzaak: an incident has no number, no term and no decision, and making one would give every report a beslistermijn it does not have (D-4).",
+						"_rowsNote": "DqZaakTaken Incidenten: the incidents as the board's rows (description, then when it happened, who reported it and who owns it, the state pill), not a table. The recording moment stays on the row (REQ-CM-53 D-6: the delay between event and recording stays visible); the order stays eventDate ascending. Add opens the incident form, as the table's Add did.",
+						"headerActions": [
+							{
+								"label": "Add",
+								"icon": "Plus",
+								"action": {
+									"type": "open-form",
+									"register": "dossiq",
+									"schema": "caseIncident",
+									"includeFields": [
+										"eventDate",
+										"reporter",
+										"description",
+										"assignee",
+										"state"
+									],
+									"fieldOverrides": {
+										"description": {
+											"widget": "textarea"
+										}
+									},
+									"successMessage": "Incident recorded.",
+									"props": {
+										"case": "@objectId"
+									}
+								},
+								"visibleWhen": {
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							}
+						],
 						"content": {
 							"register": "dossiq",
 							"schema": "caseIncident",
@@ -3362,33 +3394,30 @@
 								"dir": "asc"
 							},
 							"limit": 25,
-							"columns": [
-								{
-									"key": "eventDate",
-									"label": "Happened"
-								},
-								{
-									"key": "recordedAt",
-									"label": "Recorded"
-								},
-								{
-									"key": "reporter",
-									"label": "Reporter"
-								},
-								{
-									"key": "state",
-									"label": "State",
-									"colorMap": {
-										"open": "warning",
-										"in-behandeling": "purple",
-										"afgehandeld": "success"
-									}
-								},
-								{
-									"key": "assignee",
-									"label": "Owner"
-								}
+							"presentation": "rows",
+							"title": [
+								"{description}",
+								"Incident of {eventDate|date}"
 							],
+							"meta": [
+								"{eventDate|date} · reported by {reporter} · {assignee|user} · recorded {recordedAt|date}",
+								"{eventDate|date} · reported by {reporter} · recorded {recordedAt|date}",
+								"{eventDate|date} · recorded {recordedAt|date}",
+								"{eventDate|date}"
+							],
+							"pill": {
+								"field": "state",
+								"labels": {
+									"open": "Open incident",
+									"in-behandeling": "In progress",
+									"afgehandeld": "Handled"
+								},
+								"colorMap": {
+									"open": "warning",
+									"in-behandeling": "purple",
+									"afgehandeld": "success"
+								}
+							},
 							"emptyText": "No incidents recorded on this case yet"
 						}
 					},
