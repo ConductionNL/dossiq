@@ -24,7 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Money;
 
+use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\Money\PayoutRequester;
+use OCA\Dossiq\Service\Money\PayoutService;
 use OCA\Shillinq\Event\PayableCancelRequestedEvent;
 use OCA\Shillinq\Event\PayableRaisedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -104,6 +106,59 @@ class PayoutRequesterTest extends TestCase {
 
 		self::assertSame([$case], $seen->toArray()['linkedObjects']);
 	}//end testTheLinkedObjectsReachFinance()
+
+	/**
+	 * A payout paid before finance kept it goes over with its history (REQ-DQM-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	public function testAHistoricalPayoutCarriesItsHistory(): void {
+		$seen = null;
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (object $event) use (&$seen): void {
+				$seen = $event;
+				$event->accept('payable-1', 'paid');
+			}
+		);
+
+		(new PayoutRequester(dispatcher: $dispatcher))->request(payout: self::PAYOUT + ['historicalState' => 'paid', 'paidOn' => '2026-03-03', 'bankReference' => 'ERP-9']);
+
+		self::assertSame('paid', $seen->toArray()['historicalState']);
+		self::assertSame('2026-03-03', $seen->toArray()['paidOn']);
+		self::assertSame('ERP-9', $seen->toArray()['bankReference']);
+	}//end testAHistoricalPayoutCarriesItsHistory()
+
+	/**
+	 * The finance app answers with the payouts dossiq raised; no answer is null (REQ-DQM-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	public function testTheReaderAsksFinanceForDossiqsPayouts(): void {
+		$asked = null;
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (object $event) use (&$asked): void {
+				$asked = $event;
+				$event->answer([['payableId' => 'payable-1', 'reference' => 'DWS-1', 'state' => 'paid']]);
+			}
+		);
+
+		$payouts = (new PayoutReader(dispatcher: $dispatcher))->payouts(correlationIds: ['calc-1'], paidInYear: 2026);
+
+		self::assertSame([['payableId' => 'payable-1', 'reference' => 'DWS-1', 'state' => 'paid']], $payouts);
+		self::assertSame('dossiq', $asked->getSourceApp());
+		self::assertSame(['calc-1'], $asked->getCorrelationIds());
+		self::assertSame(2026, $asked->getPaidInYear());
+		self::assertSame(PayoutService::CATEGORY, $asked->getCategory());
+
+		$silent = $this->createMock(IEventDispatcher::class);
+		self::assertNull((new PayoutReader(dispatcher: $silent))->payouts());
+	}//end testTheReaderAsksFinanceForDossiqsPayouts()
 
 	/**
 	 * A refusal is an error naming finance's reason.

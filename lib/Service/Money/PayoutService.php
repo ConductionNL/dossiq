@@ -227,6 +227,24 @@ class PayoutService {
 	}//end withdrawFromFinance()
 
 	/**
+	 * Hand a payout row dossiq kept to the finance app under its own reference,
+	 * with the history it already has (REQ-DQM-004). The caller passes only a
+	 * row finance does not hold yet.
+	 *
+	 * @param array<string, mixed> $row The stored payout row.
+	 * @param array<string, string> $history historicalState, paidOn and bankReference, or nothing for a live payout.
+	 *
+	 * @return array<string, mixed> The row, with payableId when finance took it; not yet saved.
+	 *
+	 * @throws RuntimeException When finance refuses the payout.
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	public function raiseRowInFinance(array $row, array $history = []): array {
+		return $this->raiseInFinance(row: $row, history: $history);
+	}//end raiseRowInFinance()
+
+	/**
 	 * Raise a prepared payout in the finance app again under a new reference,
 	 * for example with the amount an objection decided.
 	 *
@@ -259,12 +277,13 @@ class PayoutService {
 	 * Hand a payout row to the finance app and note the payable it answers with.
 	 *
 	 * @param array<string, mixed> $row The payout row.
+	 * @param array<string, string> $history For a payout settled before finance kept it: historicalState, paidOn, bankReference.
 	 *
 	 * @return array<string, mixed> The row, with payableId when finance took it.
 	 *
 	 * @throws RuntimeException When finance refuses the payout.
 	 */
-	private function raiseInFinance(array $row): array {
+	private function raiseInFinance(array $row, array $history = []): array {
 		if ($this->payouts === null) {
 			return $row;
 		}
@@ -281,7 +300,7 @@ class PayoutService {
 				'dueOn' => (string)($row['paymentDateLatest'] ?? ''),
 				'callbackUrl' => (string)($this->urls?->linkToRouteAbsolute(self::CALLBACK_ROUTE) ?? ''),
 				'linkedObjects' => $this->caseLinkOf(calculationId: (string)($row['penaltyPaymentCalculation'] ?? '')),
-			]
+			] + $history
 		);
 		if ($answer !== null && $answer['payableId'] !== '') {
 			$row['payableId'] = $answer['payableId'];
