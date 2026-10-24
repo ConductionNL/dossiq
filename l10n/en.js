@@ -7302,6 +7302,7 @@ OC.L10N.register(
         "Search by sender": "Search by sender",
         "Search by subject, department...": "Search by subject, department...",
         "Search by task or case number": "Search by task or case number",
+        "Search cases, documents or contacts": "Search cases, documents or contacts",
         "Search cases, objects and documents": "Search cases, objects and documents",
         "Search complaints": "Search complaints",
         "Search complaints…": "Search complaints…",
