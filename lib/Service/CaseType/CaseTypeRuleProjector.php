@@ -103,6 +103,10 @@ class CaseTypeRuleProjector {
 			}
 
 			foreach ((array)($rule['actions'] ?? []) as $action) {
+				if ($this->entryRequirementOf(rule: $rule, action: (array)$action) !== null) {
+					continue;
+				}
+
 				$document = $this->documents->build(
 					rule: $rule,
 					action: (array)$action,
@@ -123,6 +127,58 @@ class CaseTypeRuleProjector {
 
 		return ['flows' => $flows, 'unprojected' => $unprojected];
 	}//end plan()
+
+	/**
+	 * What each status requires before a case enters it, from the case type's rules.
+	 *
+	 * Written onto the case type at publish as `entryRequirements`, keyed by
+	 * statusType uuid, and read by dossiq's StatusEntryRequirementsGuard. Only a
+	 * rule on entering a status, without further conditions, becomes a
+	 * requirement; any other requireDocument is named in the warnings.
+	 *
+	 * @param array<string, mixed> $caseType The case type, with its rules.
+	 *
+	 * @return array<string, array<int, array{documentType: string, rule: string}>> The requirements.
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 */
+	public function entryRequirements(array $caseType): array {
+		$requirements = [];
+		foreach ((array)($caseType['rules'] ?? []) as $rule) {
+			if (is_array($rule) === false || ($rule['enabled'] ?? true) === false) {
+				continue;
+			}
+
+			foreach ((array)($rule['actions'] ?? []) as $action) {
+				$requirement = $this->entryRequirementOf(rule: $rule, action: (array)$action);
+				if ($requirement !== null) {
+					$requirements[(string)$rule['when']['status']][] = $requirement;
+				}
+			}
+		}
+
+		return $requirements;
+	}//end entryRequirements()
+
+	/**
+	 * The entry requirement one action is, or null when it is not one.
+	 *
+	 * @param array<string, mixed> $rule The rule.
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return array{documentType: string, rule: string}|null The requirement.
+	 */
+	private function entryRequirementOf(array $rule, array $action): ?array {
+		$documentType = trim((string)($action['documentType'] ?? ''));
+		$status = trim((string)($rule['when']['status'] ?? ''));
+		if (($action['action'] ?? null) !== 'requireDocument' || $documentType === '' || $status === ''
+			|| ($rule['when']['event'] ?? null) !== 'statusEntered' || (array)($rule['conditions'] ?? []) !== []
+		) {
+			return null;
+		}
+
+		return ['documentType' => $documentType, 'rule' => (string)($rule['id'] ?? '')];
+	}//end entryRequirementOf()
 
 	/**
 	 * The names of the case type's property definitions, inherited ones included.

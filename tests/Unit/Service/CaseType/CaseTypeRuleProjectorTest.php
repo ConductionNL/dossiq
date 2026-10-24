@@ -330,4 +330,25 @@ class CaseTypeRuleProjectorTest extends TestCase {
 			$plan['unprojected']
 		);
 	}//end testActionsWithoutAnEngineAreNamed()
+	/**
+	 * A required document on entering a status becomes an entry requirement
+	 * of that status; with further conditions it does not, and is named.
+	 *
+	 * @return void
+	 */
+	public function testRequireDocumentOnAStatusIsAnEntryRequirement(): void {
+		$onStatus = ['id' => 'advies-voor-besluit', 'when' => ['event' => 'statusEntered', 'status' => 'status-besluit'], 'conditions' => [], 'actions' => [['action' => 'requireDocument', 'documentType' => 'welstandsadvies']]];
+		$conditional = $onStatus;
+		$conditional['id'] = 'alleen-groot';
+		$conditional['conditions'] = self::WELSTAND['conditions'];
+		$projector = $this->projector(rules: [$onStatus, $conditional]);
+
+		$this->assertSame(
+			['status-besluit' => [['documentType' => 'welstandsadvies', 'rule' => 'advies-voor-besluit']]],
+			$projector->entryRequirements(caseType: ['rules' => [$onStatus, $conditional]])
+		);
+		$plan = $projector->plan(caseTypeId: 'type-1');
+		$this->assertSame([], $plan['flows']);
+		$this->assertSame(['alleen-groot: requireDocument'], $plan['unprojected']);
+	}//end testRequireDocumentOnAStatusIsAnEntryRequirement()
 }//end class
