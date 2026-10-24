@@ -5789,6 +5789,7 @@
         "Only the subject and the start of each message are read. A case number further down is missed.": "Alleen het onderwerp en het begin van elk bericht worden gelezen. Een zaaknummer verderop wordt gemist.",
         "Only the subject and the start of each message are read. Only cases you work on are linked.": "Alleen het onderwerp en het begin van elk bericht worden gelezen. Alleen zaken waaraan u werkt worden gekoppeld.",
         "Only this group and administrators read the intake log. Only they release a held message. The log keeps the original of every message the mailbox received. Leave it empty and only administrators can read it.": "Alleen deze groep en beheerders lezen het intakelogboek. Alleen zij geven een vastgehouden bericht vrij. Het logboek bewaart het origineel van elk bericht dat de mailbox ontving. Laat het leeg en alleen beheerders kunnen het lezen.",
+        "Only those with the AI oversight role may download.": "Downloaden mag alleen wie de rol AI-toezicht heeft.",
         "Only used when responseType is getal or meting": "Alleen gebruikt wanneer responseType getal of meting is",
         "Only what I can do unilaterally": "Alleen wat ik eenzijdig kan doen",
         "Only what this case allows now is active. The rest is greyed out, with the reason.": "Alleen wat deze zaak nu toelaat staat aan. De rest staat grijs, met de reden.",
