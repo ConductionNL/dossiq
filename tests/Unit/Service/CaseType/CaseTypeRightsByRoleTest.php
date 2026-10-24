@@ -26,8 +26,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\CaseType;
 
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Access\OrganisationRoles;
 use OCA\Dossiq\Service\CaseType\CaseTypeRightsByRole;
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\MandaatCheckService;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
@@ -47,13 +50,26 @@ class CaseTypeRightsByRoleTest extends TestCase {
 	 *
 	 * @return CaseTypeRightsByRole
 	 */
-	private function service(?array $matrix): CaseTypeRightsByRole {
+	private function service(?array $matrix, array $mandates = [], bool $registerUnreadable = false): CaseTypeRightsByRole {
 		$resolver = $this->createMock(CaseTypeResolver::class);
-		$resolver->method('effectiveCaseType')->willReturn($matrix === null ? [] : ['id' => 'ct-1', 'rightsMatrix' => $matrix]);
+		$resolver->method('effectiveCaseType')->willReturn($matrix === null ? [] : ['id' => 'ct-1', 'slug' => 'omgevingsvergunning', 'rightsMatrix' => $matrix]);
+		$resolver->method('statusTypesFor')->willReturn([['id' => 'st-1', 'name' => 'Fase 1'], ['id' => 'st-2', 'name' => 'Fase 2']]);
 		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnArgument(0);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
 
-		return new CaseTypeRightsByRole(resolver: $resolver, l10n: $l10n);
+		$mandateService = $this->createMock(MandaatCheckService::class);
+		if ($registerUnreadable === true) {
+			$mandateService->method('activeRows')->willThrowException(
+				new RefusedException(rule: 'mandaat-register-unreadable', sentence: 'unreadable', status: RefusedException::STATUS_INDETERMINATE)
+			);
+		} else {
+			$mandateService->method('activeRows')->willReturn($mandates);
+		}
+
+		$roles = $this->getMockBuilder(OrganisationRoles::class)->disableOriginalConstructor()->onlyMethods(['all'])->getMock();
+		$roles->method('all')->willReturn([['id' => 'r-vv', 'roleName' => 'Vergunningverlener'], ['id' => 'r-intake', 'roleName' => 'Intaker']]);
+
+		return new CaseTypeRightsByRole(resolver: $resolver, l10n: $l10n, mandates: $mandateService, roles: $roles);
 	}//end service()
 
 	/**
@@ -91,11 +107,11 @@ class CaseTypeRightsByRoleTest extends TestCase {
 		)->rowsFor(caseTypeId: 'ct-1');
 
 		$this->assertSame(
-			['role' => 'Vergunningverlener', 'seeCases' => 'Vergunningen, Toezicht', 'handle' => 'Yes', 'decide' => 'Yes', 'documents' => 'All'],
+			['role' => 'Vergunningverlener', 'seeCases' => 'Vergunningen, Toezicht', 'handle' => 'All phases', 'decide' => 'No', 'documents' => 'All'],
 			$rows[0]
 		);
 		$this->assertSame(
-			['role' => 'Intaker', 'seeCases' => 'Vergunningen', 'handle' => 'No', 'decide' => 'No', 'documents' => 'Add'],
+			['role' => 'Intaker', 'seeCases' => 'Vergunningen', 'handle' => 'All phases', 'decide' => 'No', 'documents' => 'Add'],
 			$rows[1]
 		);
 		$this->assertSame(
@@ -132,4 +148,61 @@ class CaseTypeRightsByRoleTest extends TestCase {
 		$this->assertNull($this->service(null)->rowsFor(caseTypeId: 'ct-x'));
 		$this->assertSame([], $this->service([])->rowsFor(caseTypeId: 'ct-1'));
 	}//end testNoCaseTypeAndNoMatrix()
+
+	/**
+	 * The board's Rights card: own team, a phase, a mandate ceiling, document rights.
+	 *
+	 * @return void
+	 */
+	public function testTheBoardsRightsCard(): void {
+		$rows = $this->service(
+			[
+				['department' => '$ownTeam', 'role' => 'Intaker', 'confidentiality' => 'intern', 'actions' => ['read', 'update'], 'statuses' => ['st-1'], 'documentActions' => ['read', 'add']],
+				['department' => '*', 'role' => 'r-vv', 'confidentiality' => 'geheim', 'actions' => ['read', 'update'], 'documentActions' => ['read', 'add', 'delete']],
+				['department' => '*', 'role' => 'Toezichthouder', 'confidentiality' => 'intern', 'actions' => ['read'], 'documentActions' => ['read']],
+			],
+			[
+				['mandateeRole' => 'r-vv', 'terms' => ['plafondCents' => 5000000]],
+				['mandateeRole' => 'r-vv', 'terms' => ['plafondCents' => 1000000]],
+			]
+		)->rowsFor(caseTypeId: 'ct-1');
+
+		$this->assertSame(
+			[
+				['role' => 'Intaker', 'seeCases' => 'Own team', 'handle' => 'Fase 1', 'decide' => 'No', 'documents' => 'Add'],
+				['role' => 'r-vv', 'seeCases' => 'All (cases)', 'handle' => 'All phases', 'decide' => 'Up to € 50.000', 'documents' => 'All'],
+				['role' => 'Toezichthouder', 'seeCases' => 'All (cases)', 'handle' => 'No', 'decide' => 'No', 'documents' => 'Read'],
+			],
+			$rows
+		);
+	}//end testTheBoardsRightsCard()
+
+	/**
+	 * A mandate without a ceiling is Unlimited; a role named by name finds a mandate on its id.
+	 *
+	 * @return void
+	 */
+	public function testAMandateWithoutACeilingIsUnlimited(): void {
+		$rows = $this->service(
+			[['department' => '*', 'role' => 'Vergunningverlener', 'confidentiality' => 'intern', 'actions' => ['read']]],
+			[['mandateeRole' => 'r-vv', 'terms' => []]]
+		)->rowsFor(caseTypeId: 'ct-1');
+
+		$this->assertSame('Unlimited', $rows[0]['decide']);
+	}//end testAMandateWithoutACeilingIsUnlimited()
+
+	/**
+	 * An unreadable mandate register says Unknown, not No.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableRegisterIsUnknown(): void {
+		$rows = $this->service(
+			[['department' => '*', 'role' => 'Intaker', 'confidentiality' => 'intern', 'actions' => ['read']]],
+			[],
+			true
+		)->rowsFor(caseTypeId: 'ct-1');
+
+		$this->assertSame('Unknown', $rows[0]['decide']);
+	}//end testAnUnreadableRegisterIsUnknown()
 }//end class
