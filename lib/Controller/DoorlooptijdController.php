@@ -209,7 +209,7 @@ class DoorlooptijdController extends Controller {
 			$this->l10n->t('Month'),
 			$this->l10n->t('Closed cases'),
 			$this->l10n->t('Average processing time (days)'),
-			$this->l10n->t('Within the norm (%)'),
+			$this->l10n->t('Within the norm (%%)'),
 		];
 
 		return new DataDownloadResponse(

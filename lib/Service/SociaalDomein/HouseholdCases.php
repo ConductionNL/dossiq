@@ -47,11 +47,7 @@ class HouseholdCases {
 	 *
 	 * @var array<string, array<int, string>>
 	 */
-	public const DOMAIN_CATEGORIES = [
-		'Jeugdwet' => ['Jeugd', 'Jeugdhulp'],
-		'Wmo' => ['Wmo'],
-		'Participatiewet' => ['Participatiewet', 'Werk en inkomen'],
-	];
+	public const DOMAIN_CATEGORIES = SociaalDomeinStore::DOMAIN_CATEGORIES;
 
 	/**
 	 * Constructor.
@@ -106,13 +102,7 @@ class HouseholdCases {
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function domainOf(string $category): string {
-		foreach (self::DOMAIN_CATEGORIES as $domain => $categories) {
-			if (in_array($category, $categories, true) === true) {
-				return $domain;
-			}
-		}
-
-		return '';
+		return $this->store->domainOfCategory(category: $category);
 	}//end domainOf()
 
 	/**

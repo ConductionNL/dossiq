@@ -18,7 +18,6 @@ const advice = caseDetail.configAppend.widgets.find((widget) => widget.id === 'c
 
 describe('the advice request status pills', () => {
 	it('draw each status in its tone', () => {
-		const status = advice.content.columns.find((column) => column.key === 'status')
-		expect(status.colorMap).toEqual({ requested: 'warning', received: 'success', expired: 'error' })
+		expect(advice.content.pill.colorMap).toEqual({ requested: 'warning', received: 'success', expired: 'error' })
 	})
 })

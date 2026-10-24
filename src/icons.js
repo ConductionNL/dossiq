@@ -140,6 +140,7 @@ import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FolderPlusOutline from 'vue-material-design-icons/FolderPlusOutline.vue'
 import FolderTextOutline from 'vue-material-design-icons/FolderTextOutline.vue'
 import FolderZipOutline from 'vue-material-design-icons/FolderZipOutline.vue'
+import FormatListBulleted from 'vue-material-design-icons/FormatListBulleted.vue'
 import FormatListBulletedType from 'vue-material-design-icons/FormatListBulletedType.vue'
 import FormatListChecks from 'vue-material-design-icons/FormatListChecks.vue'
 import Forum from 'vue-material-design-icons/Forum.vue'
@@ -155,6 +156,7 @@ import HelpCircleOutline from 'vue-material-design-icons/HelpCircleOutline.vue'
 import History from 'vue-material-design-icons/History.vue'
 import HumanMaleChild from 'vue-material-design-icons/HumanMaleChild.vue'
 import HumanWheelchair from 'vue-material-design-icons/HumanWheelchair.vue'
+import InboxOutline from 'vue-material-design-icons/InboxOutline.vue'
 import LayersOutline from 'vue-material-design-icons/LayersOutline.vue'
 import Lightbulb from 'vue-material-design-icons/Lightbulb.vue'
 import LinkVariant from 'vue-material-design-icons/LinkVariant.vue'
@@ -368,6 +370,7 @@ export default {
 	FolderPlusOutline,
 	FolderTextOutline,
 	FolderZipOutline,
+	FormatListBulleted,
 	FormatListBulletedType,
 	FormatListChecks,
 	Forum,
@@ -383,6 +386,7 @@ export default {
 	History,
 	HumanMaleChild,
 	HumanWheelchair,
+	InboxOutline,
 	LayersOutline,
 	Lightbulb,
 	LinkVariant,

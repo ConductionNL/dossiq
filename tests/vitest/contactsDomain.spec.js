@@ -60,7 +60,7 @@ describe('the Contacts menu entry', () => {
 	})
 
 	it('names an icon src/icons.js registers (gate-60)', () => {
-		expect(menuEntry.icon).toBe('AccountGroupOutline')
+		expect(menuEntry.icon).toBe('AccountMultipleOutline')
 		expect(iconsSource).toContain(`\n\t${menuEntry.icon},`)
 	})
 
@@ -201,6 +201,8 @@ describe.each([
 			// History, last as on pipelinq's relation pages: the last tab,
 			// with a last-changed card closing the side column.
 			'contact-history',
+			// An organisation's contact persons (DqOrganisatie Hoofdcontact, "Alle 2 contactpersonen").
+			...(id === 'OrganisationDetail' ? ['org-contact-persons'] : []),
 		])
 		// A facts card in two columns, as the board draws it; facts are read only.
 		expect(widget(p, 'contact-card').type).toBe('facts')
@@ -251,6 +253,7 @@ describe.each([
 			undefined,
 			'contact-cases',
 			'contact-moments',
+			...(id === 'OrganisationDetail' ? ['org-contact-persons'] : []),
 			'contact-documents',
 			'contact-history',
 		])

@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigurationImport;
 use OCA\Dossiq\Service\Settings\OpenRegisterBridge;
@@ -55,8 +56,8 @@ class SettingsService {
 		'appointment_backend_api_key',
 		// AI model URL reveals internal infrastructure topology; redact for non-admins.
 		'ai_model_url',
-		// Dwangsom callback HMAC secret — never expose to non-admin callers.
-		'dwangsom_callback_secret',
+		// Payout callback HMAC secret: never expose to non-admin callers.
+		'payout_callback_secret',
 	];
 
 	/**
@@ -70,6 +71,13 @@ class SettingsService {
 	 * @var string[]
 	 */
 	private const CONFIG_KEYS = ConfigKeys::ALL;
+
+	/**
+	 * Current key => the procedure-named key it replaces, read while the current key is missing.
+	 *
+	 * @var array<string, string>
+	 */
+	private const RENAMED_KEYS = MoneyConfigKeys::LEGACY_KEYS;
 
 	/**
 	 * Keys that are written and never read back, to anyone.
@@ -444,6 +452,12 @@ class SettingsService {
 	 */
 	public function getConfigValue(string $key, string $default = ''): string {
 		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+
+		// A renamed money key reads its legacy key until CarryRenamedSettingKeys has run.
+		$legacy = (self::RENAMED_KEYS[$key] ?? null);
+		if ($value === '' && $legacy !== null && $this->appConfig->hasKey(Application::APP_ID, $key) === false) {
+			$value = $this->appConfig->getValueString(Application::APP_ID, $legacy, $default);
+		}
 
 		// LAST, and only when nothing local answered.
 		//

@@ -8,7 +8,8 @@
  * POST /api/cases/{caseId}/household-cases/lookup  look the household up in the other domains, on a chosen ground
  *
  * Both answer only to a reader who may see the social domain's sensitive
- * fields (dossiq-sensitive, or an administrator) and who may read the case.
+ * fields (dossiq-sensitive; an administrator outside that group is refused
+ * too) and who may read the case.
  * An other-domain row carries `exists`, `domain` and `contact` and nothing
  * else, and it exists only because the reader chose a ground and the lookup
  * was logged. It is kept in the reader's session, never stored.

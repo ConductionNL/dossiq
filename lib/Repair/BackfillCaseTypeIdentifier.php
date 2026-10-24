@@ -7,9 +7,10 @@
  * `case.caseTypeIdentifier` is materialised by OpenRegister from the case
  * type's `identifier` when a case is saved, so a case saved before the field
  * existed has none, and a list or quick filter that means every version of a
- * case type ("every Woo request") would miss it. Writes one field in system
- * context, only where the case type carries an identifier and the case
- * differs. Idempotent, counted, non-fatal. See BackfillReferencedCaseValue.
+ * case type ("every Woo request") would miss it. Re-saves the case in system
+ * context so OpenRegister materialises the field, only where the case type
+ * carries an identifier and the case differs. Idempotent, counted, non-fatal.
+ * See BackfillReferencedCaseValue.
  *
  * @category Repair
  * @package  OCA\Dossiq\Repair

@@ -25,4 +25,12 @@ describe('the working days card head', () => {
 	it('leaves the calendar\'s own Add day out', () => {
 		expect(admin).toMatch(/workingCalendarContent\(\) \{[\s\S]*?addButton: false,/)
 	})
+
+	it('says what the red days mean under the calendar, not under the title', () => {
+		const card = admin.slice(admin.indexOf('id="section-working-days"'), admin.indexOf('<CnWorkingCalendarWidget'))
+		expect(card).not.toContain(':description=')
+		const key = 'Red: a holiday or closing day. Terms do not count these days. One calendar for the whole organisation.'
+		expect(admin).toMatch(/workingCalendarContent\(\) \{[\s\S]*?footnote: this\.t\(\s*'dossiq',\s*'Red: a holiday or closing day\. Terms do not count these days\. One calendar for the whole organisation\.',?\s*\)/)
+		expect(nl[key]).toBe('Rood: feestdag of sluitingsdag. Termijnen tellen deze dagen niet mee. Een kalender voor de hele organisatie.')
+	})
 })

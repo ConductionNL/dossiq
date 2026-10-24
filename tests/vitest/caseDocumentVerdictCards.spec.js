@@ -45,9 +45,19 @@ function filesTab(node) {
 }
 
 describe('the Files tab on a case type that reviews its documents', () => {
-	it('holds the verdicts, the folder and the grounds, in that order', () => {
-		expect(filesTab(simple).widgetIds).toEqual(['case-document-verdicts-card', 'case-files', 'case-refusal-grounds-card'])
+	it('holds the folder with the verdicts inside its card, then the grounds', () => {
+		expect(filesTab(simple).widgetIds).toEqual(['case-files', 'case-refusal-grounds-card'])
 		expect(simple.configPatch.widgets['case-files'].content.view).toBe('tab')
+		expect(simple.configPatch.widgets['case-files'].content.leadWidgetIds).toEqual(['case-document-verdicts-card'])
+	})
+
+	it('titles the Files card "Documenten bij dit verzoek" where documents are reviewed, and leaves it untitled elsewhere', () => {
+		const files = simple.configPatch.widgets['case-files']
+		expect(files.titleWhen).toEqual([
+			{ when: { field: '@context.caseType.documentReview.enabled', op: 'eq', value: true }, text: 'Documents for this request' },
+			{ text: '' },
+		])
+		expect(nl['Documents for this request']).toBe('Documenten bij dit verzoek')
 	})
 
 	it('draws the verdicts as a bar headed "4 van 7 beoordeeld"', () => {
@@ -73,7 +83,15 @@ describe('the Files tab on a case type that reviews its documents', () => {
 		expect(grounds.content.endpointSource).toEqual({ url: VERDICTS, responsePath: 'grounds' })
 		expect(grounds.content.title).toBe('{label}')
 		expect(grounds.content.meta).toBe('{documentList}')
-		expect(nl[grounds.content.headerSubtitle]).toBe('Gaan mee in het besluit')
+		expect(nl[grounds.content.headerNote]).toBe('Gaan mee in het besluit')
+		expect(grounds.content.headerSubtitle).toBeUndefined()
+	})
+
+	it('leads each ground with its code under a hairline and ends with the rule the board states', () => {
+		const grounds = card('case-refusal-grounds-card')
+		expect(grounds.content.pillAt).toBe('start')
+		expect(grounds.content.ruleAbove).toBe(true)
+		expect(nl[grounds.content.footnote]).toBe('Een document dat niet of deels openbaar is, heeft altijd ten minste één grond nodig.')
 	})
 })
 

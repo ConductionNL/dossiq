@@ -63,8 +63,40 @@ class QueueFiguresTest extends TestCase {
 		$figures = (new QueueFigures(new DayCount()))->fold(openCases: [], today: new DateTimeImmutable('2026-10-16'), typeTitles: []);
 
 		$this->assertSame(
-			['queueCount' => 0, 'queueNewToday' => 0, 'queueDueSoon' => 0, 'queueOldestDays' => 0, 'queueByType' => []],
+			[
+				'queueCount' => 0,
+				'queueNewToday' => 0,
+				'queueDueSoon' => 0,
+				'queueOldestDays' => 0,
+				'queueOldestType' => '',
+				'queueOldestDueDays' => null,
+				'queueByType' => [],
+			],
 			$figures
 		);
 	}//end testNothingOpenFoldsToZero()
+
+	/**
+	 * The oldest waiting case names its type and the days to its deadline
+	 * (DqTeamwachtrij "Woo-verzoek, termijn over 4 dagen").
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/queue-oldest-case-note/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	public function testTheOldestWaitingCaseNamesItsTypeAndDeadline(): void {
+		$figures = (new QueueFigures(dayCount: new DayCount()))->fold(
+			openCases: [
+				['startDate' => '2026-10-12', 'caseType' => 'bezwaar', 'deadline' => '2026-11-01'],
+				['startDate' => '2026-10-10', 'caseType' => 'woo', 'deadline' => '2026-10-20'],
+				['startDate' => '2026-10-01', 'caseType' => 'woo', 'assignee' => 'pieter', 'deadline' => '2026-10-17'],
+			],
+			today: new DateTimeImmutable('2026-10-16'),
+			typeTitles: ['woo' => 'Woo-verzoek', 'bezwaar' => 'Bezwaar']
+		);
+
+		$this->assertSame(expected: 6, actual: $figures['queueOldestDays']);
+		$this->assertSame(expected: 'Woo-verzoek', actual: $figures['queueOldestType']);
+		$this->assertSame(expected: 4, actual: $figures['queueOldestDueDays']);
+	}//end testTheOldestWaitingCaseNamesItsTypeAndDeadline()
 }//end class
