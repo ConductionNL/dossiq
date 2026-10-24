@@ -35,9 +35,9 @@ describe('the case type Fields tab (DqZaaktypeVelden)', () => {
 		expect(idsOf(tab('fields'))).toEqual(['case-type-fields-editor', 'case-type-field-rules'])
 	})
 
-	it('keeps the case type form, the raw terms and the list columns on an overflow Properties tab', () => {
+	it('keeps the case type form, the raw terms, the collection settings and the list columns on an overflow Properties tab', () => {
 		expect(tab('properties')).toMatchObject({ label: 'Properties', overflow: true })
-		expect(idsOf(tab('properties'))).toEqual(['case-type-core', 'case-type-terms', 'case-type-list-layout'])
+		expect(idsOf(tab('properties'))).toEqual(['case-type-core', 'case-type-terms', 'case-type-collection', 'case-type-list-layout'])
 	})
 
 	it('opens the Properties tab from the written terms\' Edit', () => {
