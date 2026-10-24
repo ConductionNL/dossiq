@@ -4034,6 +4034,9 @@
 							"emptyText": "No messages with the resident yet.",
 							"replyLabel": "Answer to the resident",
 							"replyHint": "Goes to the message box in the portal",
+							"draft": {
+								"url": "/apps/dossiq/api/cases/@objectId/reply-draft"
+							},
 							"replyOption": {
 								"label": "Log as a contact moment on this case",
 								"key": "logContactMoment",

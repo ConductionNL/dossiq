@@ -8773,6 +8773,7 @@
         "The Dossiq background jobs save as %s.": "De achtergrondtaken van Dossiq slaan op als %s.",
         "The dossiq case that wraps the beroep (zaaktype = Beroep)": "De dossiq-zaak die het beroep omhult (zaaktype = Beroep)",
         "The dossiq task that assigns the batch.": "De dossiq-taak die de partij toewijst.",
+        "The draft is too long to keep": "Het concept is te lang om te bewaren",
         "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.": "Het concept opent in Nextcloud Mail met de zaakgegevens al ingevuld. Versturen doet u daar.",
         "The draft was made but could not be opened.": "Het concept is gemaakt maar kon niet worden geopend.",
         "The draft's file name.": "De bestandsnaam van het concept.",

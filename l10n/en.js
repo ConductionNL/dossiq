@@ -8708,6 +8708,7 @@ OC.L10N.register(
         "The Dossiq background jobs save as %s.": "The Dossiq background jobs save as %s.",
         "The dossiq case that wraps the beroep (zaaktype = Beroep)": "The dossiq case that wraps the beroep (zaaktype = Beroep)",
         "The dossiq task that assigns the batch.": "The dossiq task that assigns the batch.",
+        "The draft is too long to keep": "The draft is too long to keep",
         "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.",
         "The draft was made but could not be opened.": "The draft was made but could not be opened.",
         "The draft's file name.": "The draft's file name.",
