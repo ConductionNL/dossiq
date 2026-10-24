@@ -111,6 +111,30 @@
 		{
 			"key": "municipality_city",
 			"value": "Zuiddrecht"
+		},
+		{
+			"key": "ai_enabled",
+			"value": "1"
+		},
+		{
+			"key": "ai_model_type",
+			"value": "local"
+		},
+		{
+			"key": "ai_model_url",
+			"value": "http://ollama.intern:11434"
+		},
+		{
+			"key": "ai_model_name",
+			"value": "llama3.1:8b"
+		},
+		{
+			"key": "email_case_matching_enabled",
+			"value": "1"
+		},
+		{
+			"key": "email_transport",
+			"value": "zaken@zuiddrecht.nl"
 		}
 	],
 	"userPreferences": [
