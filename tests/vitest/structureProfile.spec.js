@@ -105,14 +105,14 @@ describe('the full profile', () => {
 		expect(overrides.sidePanel).toHaveLength(2)
 	})
 
-	it('counts 40 entries: 12 main, 5 footer, 20 settings, 3 integrations (Case objects is settings-only)', () => {
+	it('counts 39 entries: 12 main, 5 footer, 19 settings, 3 integrations (Case objects is settings-only; re-integration pathways is a Cases view, not a menu entry)', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
-		expect(flat(menu)).toHaveLength(40)
+		expect(flat(menu)).toHaveLength(39)
 		expect(count('main')).toBe(12)
 		expect(count('footer')).toBe(5)
-		expect(count('settings')).toBe(20)
+		expect(count('settings')).toBe(19)
 		expect(count('integrations')).toBe(3)
 	})
 })
