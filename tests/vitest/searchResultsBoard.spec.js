@@ -44,4 +44,10 @@ describe('DqZoekresultaten', () => {
 		expect(nl[cases.subtitleTemplate]).toBe('Zaak {identifier}')
 		expect(cases.subtitleField).toBe('identifier')
 	})
+
+	it('names the handler and gives Resultaat room, as the board does (nextcloud-vue search-linked-user-and-widths)', () => {
+		const source = page.config.sourceConfig
+		expect(source.kinds.find((kind) => kind.id === 'cases').linkedUser).toBe(true)
+		expect(source.columnWidths).toEqual({ title: '250px', kindText: '120px', linked: '150px', status: '150px' })
+	})
 })
