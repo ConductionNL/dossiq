@@ -40,3 +40,15 @@ describe('the case documents toolbar', () => {
 		expect(props.folderButton).toBe(true)
 	})
 })
+
+describe('the drop panel (DqZaakDocumentenSlepen)', () => {
+	const props = panels.caseWidget('case-files').props
+
+	it('says the files go to this case by its number, as documents to assess on a review case', () => {
+		expect(props.dropDetailValues).toEqual({ case: '@object.identifier' })
+		expect(props.dropDetail).toEqual([
+			{ when: '@context.caseType.documentReview.enabled', text: '{count} files go to case {case}, as a document still to be assessed.' },
+			{ text: '{count} files go to case {case}.' },
+		])
+	})
+})

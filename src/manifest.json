@@ -3824,6 +3824,11 @@
 							"folderButton": true,
 							"dropOverlay": true,
 							"dropHint": true,
+							"dropDetail": [
+								{ "when": "@context.caseType.documentReview.enabled", "text": "{count} files go to case {case}, as a document still to be assessed." },
+								{ "text": "{count} files go to case {case}." }
+							],
+							"dropDetailValues": { "case": "@object.identifier" },
 							"rowActions": [
 								{
 									"id": "document-properties",
