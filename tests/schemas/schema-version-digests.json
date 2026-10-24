@@ -904,12 +904,12 @@
         "digest": "bb48c2734868033e2a338744b07d51b474182d7f6e3df9ee62829d49ed02ec2b"
     },
     "lib/Settings/register.d/25-brp-kvk.json::brpPerson": {
-        "version": "1.5.0",
-        "digest": "b5836f43e87bf46a9d6c9aa86504baf9acef076b54dde9de11be419d60bcfbd4"
+        "version": "1.6.0",
+        "digest": "ea0271480e01c47e60831c6b03cebcd84393c5d6b1d8463ee2127600260c74dc"
     },
     "lib/Settings/register.d/25-brp-kvk.json::kvkCompany": {
-        "version": "1.4.0",
-        "digest": "21df0cbbb167636286f30da4a484e2c0f2bb68685815c5c8072d6b14ea5c3257"
+        "version": "1.5.0",
+        "digest": "bb350b622520c9a5477658e7742412560574a404f49ae555a1c1f67759993bad"
     },
     "lib/Settings/register.d/30-beschikking.json::beschikking": {
         "version": "1.1.0",

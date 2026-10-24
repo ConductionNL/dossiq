@@ -31,18 +31,28 @@ Why A:
 
 - `register.d` fragment: `kvkCompany` `partyKinds` / `linkRoles`; `brpPerson` `contactAddresses` and
   `addressesProperty` (schema bumps, register version bump).
-- OrganisationDetail: the side card `side-main-contact` and the tab "Contactpersonen" (`parties` widget). A header or
-  card action "Contactpersoon toevoegen" uses the existing parties add flow.
+- OrganisationDetail: the side card `side-main-contact` and the tab "Contactpersonen" (`parties` widget, tab id
+  `org-contact-persons`, counted from the listing's `total`). There is no add flow in the parties widget yet, so
+  "Contactpersoon toevoegen" is a later library change (tasks 4.1); OpenRegister's API already takes the writes.
 - Example set: the two contact persons on Buurtvereniging Oost.
 - l10n: role labels and the card words.
 
-## Open questions (for Ruben)
+## Decisions (Ruben, 24 Oct)
 
-1. **Roles.** Is it Voorzitter, Secretaris, Penningmeester, Contactpersoon, or a different list? The list is config
-   (`linkRoles`), so it can grow per municipality.
-2. **Whose e-mail.** "bestuur@buurtverenigingoost.nl" reads as the organisation's mailbox, not Marja's. Should the
-   card show the person's correspondence address (proposed), or an address on the organisation?
-3. **Who may edit.** Should only the handlers who may edit the organisation link contact persons, or anyone who may
-   read it? Proposed: the organisation's update right, through OpenRegister RBAC.
-4. **Non-resident contact persons.** A contact person outside the municipality is still a `brpPerson` (BRP/RNI).
-   Should dossiq also allow a contact person without a BSN, a party with only a name and an address?
+1. **Roles: Voorzitter, Secretaris, Penningmeester, Contactpersoon, as configuration.** `kvkCompany` declares them as
+   `linkRoles` (`chair`, `secretary`, `treasurer`, `contact`) and its `person` party kind accepts exactly those. A
+   municipality extends the list by adding a role to both; nothing in code names a role. The manifest gives the four
+   their words (`roleLabels`), and a role the manifest does not name shows the label the schema declares.
+2. **The card shows the contact person's OWN correspondence e-mail.** It is the person's party address
+   (`brpPerson.contactAddresses`, kind `correspondence`), cached on the link by OpenRegister. The organisation's
+   mailbox (bestuur@...) stays on the organisation and is not shown as the contact's address. The board is amended
+   to Marja's own address.
+3. **Editing contact persons is the organisation's update right, enforced through OpenRegister RBAC.** Server side:
+   OpenRegister's party writes (link, unlink, replace primary) ask `update` on the object
+   (openregister `party-writes-need-update-right`, REQ-PRM-005), so a user who may read an organisation but not update
+   it gets a 403 on every party write. `kvkCompany` keeps no authorization block of its own: the dossiq register's
+   block decides (staff and the background account read and update; nobody else even reads). A block of its own
+   would replace the register's for organisations, and `read: authenticated` would open them to every account.
+4. **Contact persons without a BSN are allowed.** `brpPerson.citizenServiceNumber` is no longer required: a person
+   party may hold only a name, an address and contact addresses. The BRP registry sync keys on the BSN, so a person
+   without one is never matched or overwritten by it; the pattern and the 11-proef still apply whenever a BSN is set.
