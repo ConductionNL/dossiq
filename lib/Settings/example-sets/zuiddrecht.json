@@ -958,6 +958,132 @@
 			}
 		},
 		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v1",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 1,
+				"isDraft": false,
+				"versionDate": "{{date:-460}}",
+				"validFrom": "{{date:-460}}",
+				"validUntil": "{{date:-280}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v2",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 2,
+				"isDraft": false,
+				"versionDate": "{{date:-279}}",
+				"validFrom": "{{date:-279}}",
+				"validUntil": "{{date:-149}}",
+				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v1.id}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v3",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 3,
+				"isDraft": false,
+				"versionDate": "{{date:-148}}",
+				"validFrom": "{{date:-148}}",
+				"validUntil": "{{date:-8}}",
+				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v2.id}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v4",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 4,
+				"isDraft": false,
+				"versionDate": "{{date:-7}}",
+				"validFrom": "{{date:-7}}",
+				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v3.id}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28
+			}
+		},
+		{
 			"key": "zaaktype-omgevingsvergunning-regulier",
 			"register": "dossiq",
 			"schema": "caseType",
@@ -977,6 +1103,14 @@
 				"version": 5,
 				"isDraft": true,
 				"versionDate": "{{date:-2}}",
+				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28,
 				"rules": [
 					{
 						"id": "welstandsadvies-bij-grote-bouwkosten",
@@ -1810,6 +1944,79 @@
 			}
 		},
 		{
+			"key": "melding-geluidsoverlast-terras-markt",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-marja.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:marja.displayName}}",
+				"intakeChannel": "website",
+				"confidentiality": "openbaar",
+				"title": "Melding geluidsoverlast terras Markt",
+				"description": "Bewoners aan de Markt melden muziek en stemmen op het terras van het café tot na middernacht, drie weekenden achter elkaar.",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-16}}",
+				"receivedAt": "{{datetime:-16 11:20}}",
+				"currentStatusEnteredAt": "{{datetime:-15 09:10}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-16 11:20}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-15 09:10}}"
+					}
+				],
+				"tags": [
+					"markt",
+					"geluid"
+				]
+			}
+		},
+		{
+			"key": "termijn-geluidsoverlast-terras-markt",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:melding-geluidsoverlast-terras-markt.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-16 11:20}}",
+				"endDateCalculated": "{{date:-2}}",
+				"endDateCurrent": "{{date:-2}}",
+				"status": "lopend"
+			}
+		},
+		{
 			"key": "woo-zaaksysteem-resultaat",
 			"register": "dossiq",
 			"schema": "result",
@@ -1926,12 +2133,15 @@
 			"data": {
 				"case": "{{object:kapvergunning-molenweg.id}}",
 				"severity": "ernstig",
-				"behaviour": "goedwillend",
+				"behaviour": "onverschillig",
 				"actorType": "burger",
 				"matrixVersion": 1,
 				"recommendedIntervention": "last_under_penaltypayment",
-				"finalIntervention": "last_under_penaltypayment",
-				"override": false,
+				"finalIntervention": "warning",
+				"override": true,
+				"overrideJustification": "Eerste overtreding, eigenaar werkt mee en herstelt binnen twee weken",
+				"overrideBy": "{{cast:anouk.uid}}",
+				"overrideAuthority": "manager",
 				"recommendedBy": "{{cast:lars.uid}}"
 			}
 		},
@@ -4941,6 +5151,15 @@
 	],
 	"notes": [
 		{
+			"key": "pieter-noteert-fietspad-lindelaan",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:woo-fietspad-besluitklaar.id}}",
+				"message": "Drie documenten beoordeeld, offerte lantaarnpalen deels openbaar.",
+				"createdAt": "{{datetime:0 15:40}}"
+			}
+		},
+		{
 			"key": "pieter-noteert-parkeervergunningen",
 			"data": {
 				"user": "{{cast:pieter.uid}}",
@@ -4951,6 +5170,16 @@
 		}
 	],
 	"readStates": [
+		{
+			"key": "pieter-opende-geluidsoverlast-markt",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:melding-geluidsoverlast-terras-markt.id}}",
+				"register": "dossiq",
+				"schema": "case",
+				"seenAt": "{{datetime:0 13:05}}"
+			}
+		},
 		{
 			"key": "pieter-opende-bezwaar-parkeerboete",
 			"data": {
@@ -5203,6 +5432,33 @@
 			"set": {
 				"ncGroupId": "zuiddrecht-toezicht-en-handhaving",
 				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v1-opgevolgd",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v1",
+			"set": {
+				"supersededBy": "{{object:zaaktype-omgevingsvergunning-regulier-v2.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v2-opgevolgd",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v2",
+			"set": {
+				"supersededBy": "{{object:zaaktype-omgevingsvergunning-regulier-v3.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v3-opgevolgd",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v3",
+			"set": {
+				"supersededBy": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}"
 			}
 		}
 	]

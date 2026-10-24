@@ -26,18 +26,18 @@
 -->
 <template>
 	<CnDialog
-		:name="t('dossiq', 'Move to another version')"
+		:name="t('dossiq', 'To another version')"
 		size="normal"
 		data-testid="case-version-move-dialog"
 		@closing="$emit('close')">
 		<div class="case-version-move">
-			<p v-if="current.version" class="case-version-move__current">
+			<NcNoteCard v-if="current.version" type="info" class="case-version-move__current">
 				{{
 					t('dossiq', 'This case runs on version {version}.', {
 						version: current.version,
 					})
 				}}
-			</p>
+			</NcNoteCard>
 
 			<p
 				v-if="!loading && targets.length === 0"
@@ -159,6 +159,7 @@ import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 
@@ -169,6 +170,7 @@ export default {
 
 	components: {
 		NcButton,
+		NcNoteCard,
 		CnDialog,
 		NcSelect,
 		NcTextArea,

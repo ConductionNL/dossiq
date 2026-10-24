@@ -1121,7 +1121,7 @@
 							"objectId": "@objectId",
 							"config": {
 								"title": "Archive this case",
-								"eyebrow": "Close off",
+								"eyebrow": "Close off · {identifier}",
 								"subtitle": "The case goes to the archive and is only read afterwards.",
 								"summary": {
 									"source": {
@@ -1142,6 +1142,10 @@
 											{
 												"label": "Destruction date",
 												"value": "{archiveActionDate}"
+											},
+											{
+												"label": "Archive status afterwards",
+												"value": "Archived"
 											}
 										]
 									}
@@ -1189,13 +1193,23 @@
 								},
 								"reason": {
 									"label": "Reason",
-									"hint": "Goes into the history of the case."
+									"hint": "Goes into the history of the case. To bring it back, use Restore from the archive under Next step."
 								},
 								"note": {
 									"variant": "info",
 									"title": "Read only afterwards",
 									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
 								},
+								"fields": [
+									{
+										"field": "notifyRequester",
+										"type": "checkbox",
+										"label": "Let {initiatorDisplayName} know the case is completed",
+										"hint": "A message with the result, in the portal, the Berichtenbox or by e-mail",
+										"default": true,
+										"required": false
+									}
+								],
 								"confirm": {
 									"label": "Archive it",
 									"icon": "ArchiveOutline",
@@ -4133,6 +4147,8 @@
 								},
 								"action": {
 									"type": "open-form",
+									"formTitle": "Add a party",
+									"formConfirmLabel": "Add",
 									"register": "dossiq",
 									"schema": "role",
 									"includeFields": [
@@ -4146,7 +4162,9 @@
 									],
 									"fieldOverrides": {
 										"description": {
-											"widget": "textarea"
+											"widget": "textarea",
+											"description": "",
+											"order": 6
 										},
 										"roleType": {
 											"widget": "resource",
@@ -4163,7 +4181,9 @@
 													"dedupeOn": "genericRole"
 												},
 												"failedText": "The roles this case takes could not be read. Nothing has been changed on the case."
-											}
+											},
+											"description": "",
+											"order": 2
 										},
 										"representedParty": {
 											"widget": "party",
@@ -4187,7 +4207,25 @@
 													"secondary": "CoC {kvkNumber}"
 												}
 											],
-											"label": "Represented by"
+											"label": "Represented by",
+											"description": "",
+											"order": 4
+										},
+										"name": {
+											"description": "",
+											"order": 1
+										},
+										"participant": {
+											"description": "",
+											"order": 3
+										},
+										"delegate": {
+											"description": "",
+											"order": 7
+										},
+										"delegateUntil": {
+											"description": "",
+											"order": 5
 										}
 									},
 									"successMessage": "Party added to the case.",
@@ -4640,6 +4678,8 @@
 								"type": "open-form",
 								"label": "Link object",
 								"icon": "Plus",
+								"formTitle": "Link object",
+								"formConfirmLabel": "Link it",
 								"register": "dossiq",
 								"schema": "caseObject",
 								"includeFields": [
@@ -4650,7 +4690,23 @@
 								],
 								"fieldOverrides": {
 									"description": {
-										"widget": "textarea"
+										"widget": "textarea",
+										"description": "",
+										"order": 4
+									},
+									"objectType": {
+										"description": "",
+										"order": 1
+									},
+									"objectIdentification": {
+										"description": "",
+										"order": 2,
+										"label": "Identification"
+									},
+									"objectUrl": {
+										"description": "",
+										"order": 3,
+										"label": "Link to the object"
 									}
 								},
 								"successMessage": "Object linked to this case.",
@@ -6186,7 +6242,7 @@
 						"id": "side-case-type-versions",
 						"type": "record-list",
 						"title": "Versions",
-						"tabs": ["overview", "statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "properties", "history"],
+						"tabs": ["overview", "statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "properties", "history"],
 						"content": {
 							"register": "dossiq",
 							"schema": "caseType",
@@ -6557,7 +6613,11 @@
 										"case-type-variants",
 										"case-type-terms-written",
 										"case-type-messages"
-									]
+									],
+									"countFrom": {
+										"endpoint": "/apps/dossiq/api/case-types/@objectId/phases",
+										"field": "taskCount"
+									}
 								},
 								{
 									"id": "messages",
@@ -6572,7 +6632,8 @@
 									"label": "Rules",
 									"widgetIds": [
 										"case-type-rules"
-									]
+									],
+									"countField": "rules"
 								},
 								{
 									"id": "rights",
@@ -6590,7 +6651,11 @@
 								{
 									"id": "translations",
 									"label": "Translations",
-									"widgetId": "case-type-translations"
+									"widgetId": "case-type-translations",
+									"countFrom": {
+										"endpoint": "/apps/openregister/api/registers/dossiq",
+										"field": "languages"
+									}
 								},
 								{
 									"id": "versions",
@@ -6637,7 +6702,7 @@
 					},
 					{
 						"id": "case-type-rules-summary",
-						"type": "record-list",
+						"type": "CaseTypeRulesWidget",
 						"title": "Rules",
 						"headerActions": [
 							{
@@ -6649,28 +6714,9 @@
 								}
 							}
 						],
-						"_note": "DqZaaktypeOverzicht Regels: the rules OpenRegister holds for the case schema (GET /apps/openregister/api/schemas/case/rules, the inventory the Fields tab's rules widget reads), one row each with whether it is on. The rules belong to the case schema, not to one case type, which is why every case type lists the same ones. Adding a rule happens on OpenRegister's schema page, so there is no Add here.",
+						"_note": "DqZaaktypeOverzicht Regels: the case type's own rules as the Rules tab lists them (\"Als ... / dan ...\" with an On or Off pill), read off the case type; the tab's menus, Add button, schema inventory and trial stay on the Rules tab, which Add a rule opens.",
 						"content": {
-							"endpointSource": {
-								"url": "/apps/openregister/api/schemas/case/rules",
-								"responsePath": "rules"
-							},
-							"presentation": "rows",
-							"title": "{label}",
-							"meta": "{kind}",
-							"pill": {
-								"field": "enabled",
-								"labels": {
-									"true": "On",
-									"false": "Off"
-								},
-								"colorMap": {
-									"true": "success",
-									"false": "default"
-								}
-							},
-							"limit": 5,
-							"emptyText": "No rules for cases yet"
+							"mode": "summary"
 						}
 					},
 					{
@@ -7462,12 +7508,12 @@
 									"path": "decisionTerm"
 								},
 								{
-									"label": "Suspension",
-									"path": "suspension"
-								},
-								{
 									"label": "Penalty for a late decision",
 									"path": "penalty"
+								},
+								{
+									"label": "Suspension",
+									"path": "suspension"
 								},
 								{
 									"label": "Service target",

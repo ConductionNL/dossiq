@@ -7,7 +7,7 @@
   type, so this is a candidate to move to OpenRegister's schema page.
 -->
 <template>
-	<RulesTab :caseTypeId="caseTypeId" />
+	<RulesTab :caseTypeId="caseTypeId" :summary="content.mode === 'summary'" />
 </template>
 
 <script>
@@ -16,6 +16,17 @@ import RulesTab from '../../views/settings/tabs/RulesTab.vue'
 export default {
 	name: 'CaseTypeRulesWidget',
 	components: { RulesTab },
+
+	props: {
+		/**
+		 * The widget content. `mode: "summary"` lists only the case type's own
+		 * rules, for the Overview tab (DqZaaktypeOverzicht Regels).
+		 */
+		content: {
+			type: Object,
+			default: () => ({}),
+		},
+	},
 
 	computed: {
 		/**

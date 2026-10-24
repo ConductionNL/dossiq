@@ -25,7 +25,7 @@
 			{{ error }}
 		</p>
 
-		<div v-if="!loading && caseTypeId" class="rules-tab__head">
+		<div v-if="!loading && caseTypeId && !summary" class="rules-tab__head">
 			<NcButton
 				:disabled="!editable"
 				:title="editable ? '' : t('dossiq', 'A published version does not change. Make a new version to change its rules.')"
@@ -46,7 +46,7 @@
 						class="rules-tab__pill cn-status-badge"
 						:class="row.pill === 'on' ? 'cn-status-badge--success' : 'cn-status-badge--default'"
 						data-testid="case-rule-pill">{{ pillLabel(row.pill) }}</span>
-					<NcActions v-if="editable" :aria-label="t('dossiq', 'Actions for {rule}', { rule: row.title })">
+					<NcActions v-if="editable && !summary" :aria-label="t('dossiq', 'Actions for {rule}', { rule: row.title })">
 						<NcActionButton data-testid="case-rule-edit" @click="dialog = { rule: caseRules[i] }">
 							{{ t('dossiq', 'Edit') }}
 						</NcActionButton>
@@ -61,7 +61,14 @@
 			</li>
 		</ul>
 
-		<p v-if="!loading && !error && rules.length === 0 && caseRuleRows.length === 0" class="rules-tab__empty">
+		<p
+			v-if="summary && !loading && caseRuleRows.length === 0"
+			class="rules-tab__empty"
+			data-testid="case-rules-empty">
+			{{ t('dossiq', 'No rules for cases yet') }}
+		</p>
+
+		<p v-if="!summary && !loading && !error && rules.length === 0 && caseRuleRows.length === 0" class="rules-tab__empty">
 			{{
 				t(
 					'dossiq',
@@ -70,7 +77,7 @@
 			}}
 		</p>
 
-		<ul v-if="!loading && !error && rows.length > 0" class="rules-tab__rows" data-testid="rules-list">
+		<ul v-if="!summary && !loading && !error && rows.length > 0" class="rules-tab__rows" data-testid="rules-list">
 			<li v-for="row in rows" :key="row.id" class="rules-tab__row" data-testid="rules-row">
 				<span class="rules-tab__text">
 					<span class="rules-tab__title">{{ row.title }}</span>
@@ -92,7 +99,7 @@
 			@close="dialog = null"
 			@save="saveRule" />
 
-		<details v-if="rules.length > 0" class="rules-tab__trial">
+		<details v-if="!summary && rules.length > 0" class="rules-tab__trial">
 			<summary>{{ t('dossiq', 'Try a rule against a case') }}</summary>
 			<NcSelect
 				v-model="picked"
@@ -191,6 +198,16 @@ export default {
 		caseTypeId: {
 			type: String,
 			default: '',
+		},
+
+		/**
+		 * Only the case type's own rules, without menus, the Add button, the
+		 * inventory or the trial: the Overview tab's Regels card
+		 * (DqZaaktypeOverzicht).
+		 */
+		summary: {
+			type: Boolean,
+			default: false,
 		},
 	},
 
@@ -345,6 +362,11 @@ export default {
 		async load() {
 			this.loading = true
 			this.error = ''
+			if (this.summary) {
+				await this.loadCaseType()
+				this.loading = false
+				return
+			}
 			this.kinds = kindsByName(await fetchRuleVocabulary())
 			this.properties = await fetchSchemaProperties(this.schemaSlug())
 			await this.loadCaseType()
