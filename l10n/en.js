@@ -1462,6 +1462,7 @@ OC.L10N.register(
         "case types, attributes, templates and object types in folders": "case types, attributes, templates and object types in folders",
         "Case types, with their statuses, fields, messages and workflow, are managed on the Case types page.": "Case types, with their statuses, fields, messages and workflow, are managed on the Case types page.",
         "Case volume, status and performance across the team": "Case volume, status and performance across the team",
+        "Case {identifier}": "Case {identifier}",
         "Case, scheme & handler": "Case, scheme & handler",
         "Case-confidential": "Case-confidential",
         "caseId is required": "caseId is required",

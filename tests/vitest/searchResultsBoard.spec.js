@@ -36,4 +36,12 @@ describe('DqZoekresultaten', () => {
 			['documents', 'Document'],
 		])
 	})
+
+	it('words the line under a case as the board does, "Zaak 2026-0082" (nextcloud-vue search-subtitle-template)', () => {
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
+		const cases = page.config.sourceConfig.kinds.find((kind) => kind.id === 'cases')
+		expect(cases.subtitleTemplate).toBe('Case {identifier}')
+		expect(nl[cases.subtitleTemplate]).toBe('Zaak {identifier}')
+		expect(cases.subtitleField).toBe('identifier')
+	})
 })

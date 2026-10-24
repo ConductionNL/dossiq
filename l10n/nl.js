@@ -1462,6 +1462,7 @@ OC.L10N.register(
         "case types, attributes, templates and object types in folders": "zaaktypen, attributen, sjablonen en objecttypen in mappen",
         "Case types, with their statuses, fields, messages and workflow, are managed on the Case types page.": "Zaaktypen, met hun statussen, velden, berichten en werkstroom, beheert u op de pagina Zaaktypen.",
         "Case volume, status and performance across the team": "Zaakvolume, status en prestaties van het team",
+        "Case {identifier}": "Zaak {identifier}",
         "Case, scheme & handler": "Zaak, regeling en behandelaar",
         "Case-confidential": "Zaakvertrouwelijk",
         "caseId is required": "caseId is verplicht",
