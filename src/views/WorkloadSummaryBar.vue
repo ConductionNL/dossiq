@@ -3,14 +3,21 @@
   - SPDX-License-Identifier: EUPL-1.2
 -->
 <template>
-	<section v-if="rows.length > 0" class="workload-summary" data-testid="workload-summary">
-		<h2 class="workload-summary__title">
-			{{ t('dossiq', 'Team workload') }}
-		</h2>
-		<p class="workload-summary__hint">
-			{{ t('dossiq', 'Open cases per colleague in your teams. Choose a name to see their work.') }}
-		</p>
+	<section
+		v-if="rows.length > 0"
+		class="workload-summary"
+		:class="`workload-summary--${part}`"
+		data-testid="workload-summary">
+		<template v-if="part !== 'chips'">
+			<h2 class="workload-summary__title">
+				{{ t('dossiq', 'Team workload') }}
+			</h2>
+			<p class="workload-summary__hint">
+				{{ t('dossiq', 'Open cases per colleague in your teams. Choose a name to see their work.') }}
+			</p>
+		</template>
 		<CnQuickFilterBar
+			v-if="part !== 'heading'"
 			inline
 			:tabs="tabs"
 			:activeIndex="ownIndex"
@@ -24,6 +31,22 @@ import { CnQuickFilterBar } from '@conduction/nextcloud-vue'
 import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
+
+/** The workload request in flight, shared by the parts mounted together. */
+let workloadRequest = null
+
+/**
+ * Read the team workload once for every part that asks while a request runs.
+ *
+ * @return {Promise<object>} The axios response.
+ */
+function readWorkload() {
+	if (workloadRequest === null) {
+		workloadRequest = axios.get(generateUrl('/apps/dossiq/api/work-queue/workload'))
+			.finally(() => { workloadRequest = null })
+	}
+	return workloadRequest
+}
 
 /**
  * The team's open work per colleague, as a strip of name chips with a count,
@@ -52,6 +75,17 @@ export default {
 		handlers: {
 			type: Array,
 			default: null,
+		},
+
+		/**
+		 * What the strip draws: `all` (heading and chips), `heading` (title
+		 * and hint, under the page header) or `chips` (the name chips, at the
+		 * start of the toolbar row, board DqAanMijToegewezen).
+		 */
+		part: {
+			type: String,
+			default: 'all',
+			validator: (value) => ['all', 'heading', 'chips'].includes(value),
 		},
 	},
 
@@ -117,7 +151,7 @@ export default {
 		 */
 		async fetchWorkload() {
 			try {
-				const response = await axios.get(generateUrl('/apps/dossiq/api/work-queue/workload'))
+				const response = await readWorkload()
 				this.loaded = (response.data && response.data.handlers) || []
 			} catch {
 				this.loaded = []
@@ -167,5 +201,13 @@ export default {
 .workload-summary__hint {
 	margin: 0 0 12px;
 	color: var(--color-text-maxcontrast);
+}
+
+.workload-summary--heading {
+	margin-bottom: 0;
+}
+
+.workload-summary--chips {
+	margin-bottom: 0;
 }
 </style>
