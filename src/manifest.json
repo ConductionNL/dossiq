@@ -1997,7 +1997,7 @@
 				"filter": {
 					"isTemplate": false
 				},
-				"_filterLabelsNote": "How the Active line names a filter, also one that came from a link (`/cases?isFinalStatus=false`). Without it the chip read the schema's own words, \"Is Final Status: false\"; the board DqZaken draws \"Status: lopend\". `deadline` with `relative` names a range from today in words: the view Termijn deze week (deadline from @today, before @today+7d) reads \"Termijn: binnen 7 dagen\" (board DqFilterInMenu). `hidden` marks a working-list rule every view carries (not a draft, not a template, status not hidden in lists): the line under a saved view in Weergaven in mijn menu and the side panel leaves it out (DqPersoonlijkeInstellingen), the Active line still names it.",
+				"_filterLabelsNote": "How the Active line names a filter, also one that came from a link (`/cases?isFinalStatus=false`). Without it the chip read the schema's own words, \"Is Final Status: false\"; the board DqZaken draws \"Status: lopend\". `deadline` with `relative` names a range from today in words: the view Termijn deze week (deadline from @today, before @today+7d) reads \"Termijn: binnen 7 dagen\" (board DqFilterInMenu). `hidden` marks a working-list rule every view carries (not a draft, not a template, status not hidden in lists): the line under a saved view in Weergaven in mijn menu and the side panel leaves it out (DqPersoonlijkeInstellingen), the Active line still names it. `waitingOnApplicant` reads \"Status: wacht op inwoner\" and `assignee` \"Behandelaar\" as the column does (DqFilterBewerken, DqFilterInMenu).",
 				"filterLabels": {
 					"isFinalStatus": {
 						"label": "Status",
@@ -2012,6 +2012,15 @@
 					},
 					"assignedGroup": {
 						"label": "Team"
+					},
+					"assignee": {
+						"label": "Handler"
+					},
+					"waitingOnApplicant": {
+						"label": "Status",
+						"values": {
+							"true": "waiting on the applicant"
+						}
 					},
 					"statusHiddenInLists": {
 						"hidden": true

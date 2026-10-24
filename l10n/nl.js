@@ -10195,6 +10195,7 @@ OC.L10N.register(
         "Waiting on": "Wacht op",
         "Waiting on someone outside the organisation": "Wacht op iemand buiten de organisatie",
         "Waiting on the applicant": "Wacht op inwoner",
+        "waiting on the applicant": "wacht op inwoner",
         "Waiting on {party} for {days} days": "Wacht op {party}, {days} dagen",
         "Waiting on {party} for {days} days, chased once": "Wacht op {party}, {days} dagen, eenmaal herinnerd",
         "Waiting on {party} for {days} days, chased {chases} times": "Wacht op {party}, {days} dagen, {chases} keer herinnerd",
