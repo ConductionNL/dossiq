@@ -20,4 +20,16 @@ describe('the cards about the selected document', () => {
 	it('are still the visibility and checksum cards, first', () => {
 		expect(props.sideCards.map((card) => card.id).slice(0, 2)).toEqual(['visibility', 'checksum'])
 	})
+
+	it('write their dates through formatters the library has, not as raw ISO text', () => {
+		const builtIn = ['date', 'datetime', 'relativeDate', 'relative-time']
+		const dated = props.sideCards.flatMap((card) => card.fields).filter((field) => /date|time/i.test(field.formatter || ''))
+		expect(dated.length).toBeGreaterThan(0)
+		for (const field of dated) {
+			expect(builtIn, field.key).toContain(field.formatter)
+		}
+		const checked = props.sideCards.find((card) => card.id === 'checksum').fields.find((field) => field.key === 'integrity.date')
+		expect(checked.formatter).toBe('relativeDate')
+		expect(checked.formatterOptions).toEqual({ time: true })
+	})
 })

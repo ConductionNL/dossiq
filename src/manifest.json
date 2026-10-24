@@ -4018,7 +4018,8 @@
 										{
 											"key": "integrity.date",
 											"label": "Computed",
-											"formatter": "dateTime"
+											"formatter": "relativeDate",
+											"formatterOptions": { "time": true }
 										}
 									]
 								},
@@ -4043,7 +4044,7 @@
 											"key": "mtime",
 											"label": "Modified",
 											"source": "node",
-											"formatter": "dateTime"
+											"formatter": "datetime"
 										}
 									]
 								}
