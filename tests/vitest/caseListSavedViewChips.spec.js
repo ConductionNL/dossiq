@@ -7,6 +7,8 @@
  * "Mijn weergaven" in the navigation and in the side panel. The case list
  * asks the library to leave the chips out (`savedViewChips: false`, nc-vue
  * feat/saved-views-hide-chip-rows) in both structure profiles. Save view stays.
+ * A view opened from the menu names the list (DqFilterInMenu "Termijn deze
+ * week", nc-vue feat/r25-saved-view-names-the-page `savedViewTitle`).
  *
  * @spec openspec/specs/my-work/spec.md
  */
@@ -37,6 +39,10 @@ describe.each(['menu-layout.json', 'menu-layout.simple.json'])('the case list in
 
 	it('counts every saved view, so the side panel shows its number (DqFilterBeheren)', () => {
 		expect(cases.config.viewCounts).toBe(true)
+	})
+
+	it('heads the list with the applied saved view\'s name (DqFilterInMenu)', () => {
+		expect(cases.config.savedViewTitle).toBe(true)
 	})
 
 	it('draws the board view (DqWerkbord) from the same page', () => {

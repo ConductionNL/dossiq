@@ -33,15 +33,15 @@ export function houseStyleFields(t) {
 			saveParams: { setting: 'name' },
 		},
 		{
-			key: 'staff_app_name',
-			label: t('dossiq', 'Name of the app for staff'),
-			placeholder: 'Dossiq',
-		},
-		{
 			// The lists of contacts and organisations open on this city
 			// (`@config.municipalityCity`); empty leaves that lens out.
 			key: 'municipality_city',
 			label: t('dossiq', 'City of the municipality'),
+		},
+		{
+			key: 'staff_app_name',
+			label: t('dossiq', 'Name of the app for staff'),
+			placeholder: 'Dossiq',
 		},
 		{
 			key: 'theme',
@@ -59,6 +59,7 @@ export function houseStyleFields(t) {
 		{
 			key: 'logo',
 			label: t('dossiq', 'Other logo'),
+			hideLabel: true,
 			uploadLabel: t('dossiq', 'Other logo'),
 			type: 'image',
 			url: '/apps/thematiq/settings/theming',
@@ -93,8 +94,8 @@ export function textsAndAccessFields(t) {
 		{
 			key: 'allowedWebsites',
 			label: t('dossiq', 'Allowed websites (CORS)'),
-			readOnly: true,
-			default: t(
+			type: 'note',
+			text: t(
 				'dossiq',
 				'Set in the portal app (portaliq) and in Nextcloud, not here.',
 			),

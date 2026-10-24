@@ -24,6 +24,8 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\DeadlineReportingService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Money\PayoutReader;
+use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -37,6 +39,13 @@ use PHPUnit\Framework\TestCase;
 class DeadlineReportingServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
 	private DeadlineReportingService $service;
+
+	/**
+	 * The settings the service reads.
+	 *
+	 * @var SettingsService
+	 */
+	private SettingsService $settings;
 
 	protected function setUp(): void {
 		$this->objects = new FakeTermijnStore();
@@ -56,6 +65,7 @@ class DeadlineReportingServiceTest extends TestCase {
 			},
 		);
 
+		$this->settings = $settings;
 		$this->service = new DeadlineReportingService($settings);
 
 		$this->objects->seed('caseType', ['id' => 'ct-omv', 'identifier' => 'omgevingsvergunning-regulier', 'title' => 'Omgevingsvergunning (regulier)']);
@@ -92,6 +102,30 @@ class DeadlineReportingServiceTest extends TestCase {
 		// Each seeded term runs from the Nth of May to the Nth of July: 61 days.
 		self::assertSame(61.0, $row['gemiddeldeDoorlooptijdDagen']);
 	}
+
+	/**
+	 * The quarter's decided terms in one line a footnote reads (DqTermijnen
+	 * "Kwartaal 2 van 2026: 4 zaken beslist, 3 binnen de termijn (75 %)").
+	 *
+	 * @return void
+	 */
+	public function testQuarterlyReportSummarisesTheDecidedTerms(): void {
+		$report = $this->service->generateQuarterlyReport('2026-Q2');
+
+		self::assertSame(
+			[['period' => '2026-Q2', 'quarter' => 2, 'year' => 2026, 'decided' => 4, 'withinTerm' => 3, 'share' => 75]],
+			$report['summaryRows']
+		);
+	}//end testQuarterlyReportSummarisesTheDecidedTerms()
+
+	/**
+	 * A quarter without a decided term has no summary line.
+	 *
+	 * @return void
+	 */
+	public function testQuarterWithoutDecidedTermsHasNoSummary(): void {
+		self::assertSame([], $this->service->generateQuarterlyReport('2027-Q1')['summaryRows']);
+	}//end testQuarterWithoutDecidedTermsHasNoSummary()
 
 	/**
 	 * Seed a term in 2026 Q4 on a new case of the given case type.
@@ -322,6 +356,34 @@ class DeadlineReportingServiceTest extends TestCase {
 		self::assertSame(35700, $report['summary']['totalCents']);
 		self::assertSame(357.0, $report['summary']['totalEuros']);
 		self::assertSame(count($report['warnings']), $report['summary']['warningCount']);
+	}
+
+	/**
+	 * With a finance app the annual statement counts the payouts finance paid
+	 * in the year (REQ-DQM-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	public function testTheAnnualStatementReadsFinancesPayouts(): void {
+		$asked = null;
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (object $event) use (&$asked): void {
+				$asked = $event;
+				$event->answer([['payableId' => 'payable-1', 'reference' => 'DWS-1', 'correlationId' => 'calc-1', 'amount' => 357.0, 'state' => 'paid', 'paidOn' => '2026-04-20', 'bankReference' => 'ERP-1', 'payee' => ['name' => 'J', 'iban' => 'NL91ABNA0417164300']]]);
+			}
+		);
+		$service = new DeadlineReportingService(settingsService: $this->settings, payouts: new PayoutReader(dispatcher: $dispatcher));
+
+		$report = $service->generateDwangsomAuditReport(2026);
+
+		self::assertSame(2026, $asked->getPaidInYear());
+		self::assertSame(1, $report['summary']['count']);
+		self::assertSame(35700, $report['summary']['totalCents']);
+		self::assertSame('ERP-1', $report['rows'][0]['betalingsreferentie']);
+		self::assertSame('NL91ABNA0417164300', $report['rows'][0]['iban']);
 	}
 
 	/**

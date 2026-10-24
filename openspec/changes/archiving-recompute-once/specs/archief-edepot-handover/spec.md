@@ -30,3 +30,17 @@ card's title row.
 - **GIVEN** any reader on the Archiving tab of a case
 - **WHEN** the tab renders
 - **THEN** exactly one recompute control SHALL be shown, in the Archiving card's title row
+
+## ADDED Requirements
+
+### Requirement: An open case shows the archival outcome its type expects (REQ-ARCH-13)
+
+Before a case closes, the Archiving tab SHALL show the appraisal and retention period its case type's result types agree on, or that the outcome depends on the result. It SHALL show whether a legal hold keeps the case for a procedure and whether the case goes to the e-Depot.
+
+#### Scenario: a Woo request in progress
+@e2e exclude config pinned by tests/vitest/recordCardHeaderActions.spec.js; the widget behaviour is tested in nextcloud-vue
+
+- **GIVEN** an open Woo request whose result types all destroy after five years
+- **WHEN** the handler opens the Archiving tab
+- **THEN** it SHALL read Waardering "Vernietigen" and Bewaartermijn "5 jaar na het besluit"
+- **AND** "Geen juridische bewaarplicht" and "Niet van toepassing" for the e-Depot

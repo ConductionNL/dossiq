@@ -1,4 +1,4 @@
-# The Archiving card offers one recompute control
+# The Archiving card offers one recompute control and the expected outcome
 
 ## Why
 

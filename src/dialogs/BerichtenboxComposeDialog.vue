@@ -512,7 +512,7 @@ export default {
 }
 
 .compose-dialog__check-note {
-	padding-inline-start: 44px;
+	padding-inline-start: var(--cn-dialog-check-label-inset, 44px);
 }
 
 .compose-dialog__body {

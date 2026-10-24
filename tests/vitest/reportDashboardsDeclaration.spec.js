@@ -51,6 +51,22 @@ describe('processing time', () => {
 		}
 	})
 
+	it('names its period, draws the norm and writes the months, as DqDoorlooptijd does', () => {
+		// "januari tot en met september 2026 ·": a fixed twelve-month period
+		// without a control (nextcloud-vue page-filter-without-control); the
+		// dashed "norm 28 dagen" from the answer and "jan", "feb" on the axis
+		// (chart-reference-line-from-answer).
+		const config = page('Doorlooptijd').config
+		expect(config.description).toBe('{filter.period}')
+		const period = config.pageFilters.find((f) => f.key === 'period')
+		expect(period).toMatchObject({ control: 'none', default: '12m', placement: 'description' })
+		expect(period.options).toEqual([{ value: '12m', label: 'Last 12 months', months: 12 }])
+		const monthly = widget('Doorlooptijd', 'processing-time-monthly').content
+		expect(monthly.categoryFormat).toBe('month')
+		expect(monthly.referenceLines).toEqual([{ valuePath: 'summary.normDays', label: 'norm {value} days' }])
+		expect(monthly.endpointSource.params.period).toBe('@workspace.period?')
+	})
+
 	it('groups the four compliance charts as small cards in one card, three to a row (DqDoorlooptijd Naleving)', () => {
 		const group = widget('Doorlooptijd', 'processing-time-compliance')
 		expect(group.type).toBe('sections')
@@ -255,7 +271,7 @@ describe('deadline reports', () => {
 			expect(w.content).toMatchObject({ style: 'input', inputType: type, writes: `@workspace.${type}`, submitLabel: submit })
 		}
 		const cards = {
-			'deadline-report-quarterly-card': ['deadline-report-quarter-form', 'deadline-report-quarterly'],
+			'deadline-report-quarterly-card': ['deadline-report-quarter-form', 'deadline-report-quarterly', 'deadline-report-quarterly-summary'],
 			'deadline-report-annual-card': ['deadline-report-year-form', 'deadline-report-annual-summary', 'deadline-report-annual-payments-list', 'deadline-report-annual-warnings'],
 		}
 		for (const [id, children] of Object.entries(cards)) {
@@ -267,6 +283,20 @@ describe('deadline reports', () => {
 				expect(onGrid('TermijnDashboard', child)).toBe(false)
 			}
 		}
+	})
+
+	it('names the week and the quarter\'s decided terms, as board DqTermijnen does', () => {
+		// "Week 41 · alle teams" (nextcloud-vue description-today-week) and
+		// "Kwartaal 3 van 2026: 72 zaken beslist, 67 binnen ... (93 %)." under
+		// the table, from the report's one summary row.
+		expect(page('TermijnDashboard').config.description).toBe('{today|week} · all teams')
+		const summary = widget('TermijnDashboard', 'deadline-report-quarterly-summary')
+		expect(summary.type).toBe('record-list')
+		expect(summary.content.endpointSource).toMatchObject({ url: '/apps/dossiq/api/deadlines/reports/quarterly', params: { period: '@workspace.quarter' }, responsePath: 'summaryRows' })
+		for (const token of ['{quarter}', '{year}', '{decided}', '{withinTerm}', '{share}']) {
+			expect(summary.content.meta).toContain(token)
+		}
+		expect(summary.roles).toEqual(widget('TermijnDashboard', 'deadline-report-quarterly').roles)
 	})
 
 	it('downloads the quarterly report from its card header, as the board does', () => {
@@ -305,5 +335,35 @@ describe('no dashboard reads a dossiq component any more', () => {
 		for (const id of ['Doorlooptijd', 'ProcessMiningDashboard', 'TermijnDashboard']) {
 			expect(page(id).config.widgets.filter((w) => w.type === 'custom')).toEqual([])
 		}
+	})
+})
+
+describe('process mining figures', () => {
+	it('aligns the figures to the end and rules above the first stuck phase, as DqProcesanalyse draws them', () => {
+		const cols = (id) => Object.fromEntries(widget('ProcessMiningDashboard', id).content.columns.map((c) => [c.key, c]))
+		const ranking = cols('pm-bottlenecks')
+		for (const key of ['medianWorkingHours', 'medianHours', 'visitCount', 'score']) {
+			expect(ranking[key].class, key).toBe('cn-table-col--end')
+		}
+		expect(ranking.caseTypeTitle.class).toBeUndefined()
+		const byHandler = cols('pm-dwell-by-assignee')
+		for (const key of ['workingHours', 'wallHours', 'visitCount']) {
+			expect(byHandler[key].class, key).toBe('cn-table-col--end')
+		}
+		// "Waar zaken blijven hangen": a hairline under the title, above the first row.
+		expect(widget('ProcessMiningDashboard', 'pm-stuck').content.ruleAbove).toBe(true)
+	})
+})
+
+describe('throughput per week', () => {
+	it('names the weeks "w40", as DqProcesanalyse and DqDoorlooptijd draw them', () => {
+		// The endpoints key a week as ISO 2026-W40; nextcloud-vue
+		// chart-week-categories writes it as "w40".
+		const mining = widget('ProcessMiningDashboard', 'pm-throughput').content
+		expect(mining.categoryFormat).toBe('week')
+		expect(mining.endpointSource.labelsPath).toBe('week')
+		const processing = widget('Doorlooptijd', 'processing-time-charts-throughput').content
+		expect(processing.categoryFormat).toBe('week')
+		expect(processing.endpointSource.labelsPath).toBe('week')
 	})
 })

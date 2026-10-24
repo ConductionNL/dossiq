@@ -280,6 +280,8 @@ class SocialDomainCaseTypesTest extends TestCase {
 		self::assertSame(expected: 56, actual: $definitions['bijstandsaanvraag']['standardDurationDays']);
 		self::assertSame(expected: 'running', actual: $this->import(package: 'bijstandsaanvraag')['statuses']['decision-voorbereiding']['term']);
 		self::assertSame(expected: 'closed', actual: $this->import(package: 'bijstandsaanvraag')['statuses']['social-assistance-active']['term']);
+		self::assertTrue(condition: $this->import(package: 'jeugdwet')['carriesTerm'], message: 'a Jeugdwet report runs on its eight weeks too (Ruben, 23 Oct)');
+		self::assertSame(expected: 56, actual: $definitions['melding-jeugdwet']['standardDurationDays']);
 	}//end testABenefitApplicationRunsOnItsDecisionTerm()
 
 	/**

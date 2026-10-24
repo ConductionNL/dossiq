@@ -27,6 +27,8 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
+use OCA\Dossiq\Service\Money\PayoutReader;
+use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -68,6 +70,32 @@ class PenaltyPaymentRowsTest extends TestCase {
 		self::assertSame('2026-03-12', $first['forfeitDate']);
 		self::assertSame(1260.0, $first['amountEuros']);
 		self::assertSame('paid', $first['paymentStatus']);
+	}
+
+	/**
+	 * With a finance app the audit reads its payouts, named by their case, beside
+	 * the rows finance does not hold (REQ-DQM-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	public function testReadsThePayoutsFromFinance(): void {
+		$this->objects->seed('dwangsomUitbetaling', ['id' => 'pay-1', 'penaltyPaymentCalculation' => 'calc-1', 'amount' => 126000, 'status' => 'paid', 'payableId' => 'payable-1']);
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (object $event): void {
+				$event->answer([['payableId' => 'payable-1', 'reference' => 'DWS-1', 'correlationId' => 'calc-1', 'amount' => 999.0, 'state' => 'paid', 'paidOn' => '2026-04-01', 'bankReference' => 'B']]);
+			}
+		);
+		$rows = new PenaltyPaymentRows($this->settings(objects: $this->objects, paymentSchema: 'dwangsomUitbetaling'), new PayoutReader(dispatcher: $dispatcher));
+
+		$report = $rows->forYear(2026);
+		$byCase = array_column($report['rows'], null, 'caseIdentifier');
+
+		self::assertSame(999.0, $byCase['2026-0001']['amountEuros'], 'the amount finance holds, not the stored copy');
+		self::assertSame('payable-1', $byCase['2026-0001']['id']);
+		self::assertArrayHasKey('2026-0002', $byCase, 'a row finance does not hold yet stays');
 	}
 
 	/**

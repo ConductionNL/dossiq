@@ -75,6 +75,20 @@ describe('per-card buttons on the record boards', () => {
 		})
 		expect(nl[archival.content.subtitle]).toBe('Wat er met deze zaak gebeurt als hij gesloten is')
 	})
+
+	it('shows an open case the archival outcome its type expects, the procedure hold and the e-Depot transfer', () => {
+		const { content } = simple.configPatch.widgets['case-archival-panel']
+		expect(content.expected.source).toEqual({ register: 'dossiq', schema: 'resultType', filter: { caseType: '@object.caseType' } })
+		expect(content.expected.fields).toEqual({ appraisal: 'archivalAction', period: 'archivalPeriod', selectionListRow: 'selectionListClass' })
+		expect(Object.keys(content.expected.appraisalLabels)).toEqual(['vernietigen', 'bewaren', 'blijvend_bewaren'])
+		expect(nl[content.expected.appraisalLabels.vernietigen]).toBe('Vernietigen')
+		expect(nl[content.expected.periodText]).toBe('{period} na het besluit')
+		expect(nl[content.expected.decidedBy]).toBe('Het zaaktype, bij het sluiten')
+		expect(nl[content.pendingNote]).toBe('Deze zaak is nog niet gesloten. Zijn archieftoekomst wordt vastgelegd zodra hij sluit. Herberekenen vraagt de rol archivaris en een reden.')
+		expect(content.expected.selectionListLookup).toEqual({ url: '/apps/openregister/api/archival/selectielijst/resolve', param: 'url', label: '{code}, {name}' })
+		expect(content.legalHold).toBe(true)
+		expect(content.transfer).toEqual({ keepValues: ['bewaren', 'blijvend_bewaren'] })
+	})
 	it('links an existing meeting or makes one from the Afspraken card, through the calendar leaf', () => {
 		const calendar = appended('case-calendar-card')
 		expect(calendar.integrationId).toBe('calendar')

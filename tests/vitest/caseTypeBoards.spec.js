@@ -121,7 +121,7 @@ describe('the side facts (REQ-CTB-5)', () => {
 		const paths = facts.map((field) => field.path).filter(Boolean)
 		expect(paths).not.toContain('handlingModel')
 		expect(paths).not.toContain('confidentiality')
-		expect(facts.map((field) => field.label)).toEqual(['Domain', 'Origin', 'Origin', 'Form', 'Handling teams'])
+		expect(facts.map((field) => field.label)).toEqual(['Domain', 'Origin', 'Origin', 'Form', 'Handling teams', 'Running cases'])
 	})
 
 	it('name a shipped case type as shipped', () => {

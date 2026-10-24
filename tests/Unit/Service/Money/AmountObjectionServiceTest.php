@@ -24,6 +24,8 @@ namespace OCA\Dossiq\Tests\Unit\Service\Money;
 
 use OCA\Dossiq\Service\Money\AmountObjectionService;
 use OCA\Dossiq\Service\Money\PayoutRequester;
+use OCA\Shillinq\Event\PayablesRequestedEvent;
+use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\Money\PayoutService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
@@ -181,6 +183,56 @@ class AmountObjectionServiceTest extends TestCase {
 
 		return new AmountObjectionService($this->settings, new TermijnService($this->settings, $logger), $logger, $payouts);
 	}//end withFinance()
+
+	/**
+	 * A payout only finance holds is withdrawn by the objection and raised again,
+	 * once, with the decided amount; dossiq writes no payout row (REQ-DQM-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
+	 */
+	public function testAPayoutOnlyFinanceHoldsIsWithdrawnAndRaisedAgain(): void {
+		unset($this->objects->store['dwangsomUitbetaling']['u-1']);
+		$seen = [];
+		$finance = [['payableId' => 'p-9', 'reference' => 'PROC-DWS-NINE', 'correlationId' => 'b-1', 'amount' => 500.0, 'state' => 'requested', 'paidOn' => '', 'bankReference' => '', 'payee' => ['name' => 'J. Burger', 'iban' => 'NL91ABNA0417164300']]];
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (object $event) use (&$seen, &$finance): void {
+				if ($event instanceof PayablesRequestedEvent) {
+					$event->answer($finance);
+					return;
+				}
+
+				$seen[] = $event;
+				if ($event instanceof PayableCancelRequestedEvent) {
+					$finance[0]['state'] = 'cancelled';
+				}
+
+				$event->accept('p-' . (10 + count($seen)), 'requested');
+			}
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$requester = new PayoutRequester(dispatcher: $dispatcher);
+		$service = new AmountObjectionService(
+			$this->settings,
+			new TermijnService($this->settings, $logger),
+			$logger,
+			new PayoutService(settingsService: $this->settings, dates: $this->caseDates(), payouts: $requester),
+			new PayoutReader(dispatcher: $dispatcher),
+		);
+
+		$service->registerObjection('b-1', 'AWB 7:1', 'Belanghebbende betwist bedrag');
+		self::assertInstanceOf(PayableCancelRequestedEvent::class, $seen[0]);
+		self::assertSame('PROC-DWS-NINE', $seen[0]->getReference());
+
+		$service->resolveObjection('b-1', 30000, 'AWB 7:11');
+		self::assertCount(2, $seen, 'raised again once');
+		self::assertInstanceOf(PayableRaisedEvent::class, $seen[1]);
+		self::assertSame(300.0, $seen[1]->toArray()['amount']);
+		self::assertSame(['name' => 'J. Burger', 'iban' => 'NL91ABNA0417164300'], $seen[1]->toArray()['payee']);
+		self::assertSame([], array_values($this->objects->store['dwangsomUitbetaling'] ?? []), 'dossiq writes no payout row');
+	}//end testAPayoutOnlyFinanceHoldsIsWithdrawnAndRaisedAgain()
 
 	/**
 	 * An objection withdraws a payout from finance under its reference before it

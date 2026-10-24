@@ -840,7 +840,6 @@ describe('what this change does NOT move', () => {
 			'Offline sync conflicts',
 			'Needs assessments',
 			'Multidisciplinary consultations',
-			'Re-integration pathways',
 			'Supplier portal accounts',
 			'Data breach register',
 			'Integrations',

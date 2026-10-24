@@ -21,7 +21,7 @@
 			id="section-house-style"
 			appId="dossiq"
 			:name="t('dossiq', 'House style')"
-			:columns="3"
+			:columns="4"
 			:wide="true"
 			valuesPath="config"
 			:fields="houseStyleFields" />
@@ -38,13 +38,7 @@
 		<CnSettingsSection
 			id="section-working-days"
 			:actionsInTitle="true"
-			:name="t('dossiq', 'Working days and holidays')"
-			:description="
-				t(
-					'dossiq',
-					'Red: a holiday or closing day. Terms do not count these days. These days apply to every app that uses the national calendar.',
-				)
-			">
+			:name="t('dossiq', 'Working days and holidays')">
 			<template #actions>
 				<NcButton variant="secondary" data-testid="dossiq-working-days-add" @click="$refs.workingCalendar.openAdd()">
 					<template #icon>
@@ -359,7 +353,8 @@
 			<CnSettingsFieldsSection
 				id="section-kadaster"
 				appId="dossiq"
-				:name="t('dossiq', 'Kadaster (BRK) and WOZ')"
+				:name="t('dossiq', 'Set up Kadaster (BRK) and WOZ')"
+				:openedFrom="t('dossiq', 'Kadaster (BRK) and WOZ')"
 				:description="
 					t(
 						'dossiq',
@@ -868,6 +863,9 @@ export default {
 					label: this.t('dossiq', 'Link'),
 					cellClass: 'cn-cell--strong',
 					formatter: 'translated',
+					// A row opens its settings card on this page.
+					widget: 'link',
+					widgetProps: { href: '{settingsUrl}', target: '_self' },
 					secondary: (row) =>
 						row.description ? this.t('dossiq', row.description) : '',
 				},
@@ -886,6 +884,7 @@ export default {
 						'unconfigured',
 						'unavailable',
 						'simulated',
+						'disabled',
 						'error',
 					],
 
@@ -894,6 +893,7 @@ export default {
 						unconfigured: 'Off',
 						unavailable: 'Not available',
 						simulated: 'Simulated',
+						disabled: 'Off',
 						error: 'Error',
 					},
 				},
@@ -1160,6 +1160,13 @@ export default {
 
 				// The section's title row draws Add day.
 				addButton: false,
+
+				// DqInstellingenAlgemeen says what the red days mean under
+				// the calendar, not under the card title.
+				footnote: this.t(
+					'dossiq',
+					'Red: a holiday or closing day. Terms do not count these days. One calendar for the whole organisation.',
+				),
 			}
 		},
 

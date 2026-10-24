@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.150.1",
+	"version": "2.153.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -942,15 +942,15 @@
 			"pattern": "^@context\\.[A-Za-z][A-Za-z0-9_.]*$",
 			"description": "Detail context: a record a detail page reads beside the loaded one (`config.visibilityContext`), read by a grid widget's or a tab's `visibleWhen` field as @context.<name>.<field> (dot path allowed). Mirrors SENTINEL_TOKEN_PATTERNS.context."
 		},
+		"sentinelSourceToken": {
+			"type": "string",
+			"pattern": "^@source\\.[A-Za-z][A-Za-z0-9_.@]*$",
+			"description": "Facts source: a field of the object a facts widget shows (@source.<field>, dot path allowed), read by a fact row's `route` params. Mirrors SENTINEL_TOKEN_PATTERNS.source."
+		},
 		"sentinelSubjectToken": {
 			"type": "string",
 			"pattern": "^@subject\\.[A-Za-z][A-Za-z0-9_.]*$",
 			"description": "Subject context: a field of the record an attention card names (the first row of its ordered `visibleWhen` source query), read by the banner widget's action route params and query (@subject.<field>, dot path allowed). Mirrors SENTINEL_TOKEN_PATTERNS.subject."
-		},
-		"sentinelSourceToken": {
-			"type": "string",
-			"pattern": "^@source\\.[A-Za-z][A-Za-z0-9_.@]*$",
-			"description": "Facts source: a field of the object a facts widget shows (@source.<field>, dot path allowed), read by a fact row's `route` params (CnFactsWidget substitutes it, nextcloud-vue feat/r23-facts-row-link). Pending in the library schema; the widget already resolves it."
 		},
 		"sentinelTokenAny": {
 			"$comment": "Union of every canonical context plus the deprecated-during-window overlay. Single source the shared resolver + gate import.",
@@ -2623,7 +2623,7 @@
 									"barMax": { "type": "number", "exclusiveMinimum": 0, "description": "chartKind 'bar-list': the value a full track stands for (100 for percentages). Omitted = the largest value." },
 									"footnote": { "type": "string", "description": "A line under the chart, through the host's translate: under the rows of a bar-list or matrix, and under the plot of a line, area or bar chart." },
 									"referenceLines": { "type": "array", "description": "line, area and bar charts: dashed horizontal reference lines on the value axis, such as a norm. Each `{ value, label?, color? }`; the label goes through the host's translate, the colour defaults to the theme's error colour.", "items": { "type": "object", "required": ["value"], "properties": { "value": { "type": "number" }, "label": { "type": "string" }, "color": { "type": "string" } } } },
-									"categoryFormat": { "type": "string", "enum": ["", "month", "month-year"], "description": "How date categories read on the x-axis: `month` (\"jan\") or `month-year` (\"jan 2026\"), in the user's language. Categories that are not dates are left as is." },
+									"categoryFormat": { "type": "string", "enum": ["", "month", "month-year", "week"], "description": "How date categories read on the x-axis: `month` (\"jan\") or `month-year` (\"jan 2026\"), in the user's language, or `week` for ISO week keys (\"2026-W40\" as \"w40\"). Categories that are not dates are left as is." },
 									"emptyCellLabel": { "type": "string", "description": "chartKind 'matrix': the text of a cell without a value (\"geen\"), through the host's translate. Empty leaves the cell blank. Passed through to CnChartWidget." },
 									"highlight": {
 										"type": "object",
@@ -3249,6 +3249,22 @@
 					"default": false,
 					"description": "Confirm-gating (object-op + #91 Wave 3 api-call / open-form + agent): when true, the action presents a CnConfirmDialog before running (the dispatcher / CnActionButtons runs AFTER confirmation). object-op delete ALWAYS confirms regardless of this flag."
 				},
+				"confirmTitle": {
+					"type": "string",
+					"description": "confirm: true: the confirm dialog's title, through the host translate. Absent: the action's label."
+				},
+				"confirmMessage": {
+					"type": "string",
+					"description": "confirm: true: the question the confirm dialog asks, through the host translate. Absent: 'Are you sure you want to continue?'."
+				},
+				"confirmLabel": {
+					"type": "string",
+					"description": "confirm: true: the confirm button's label, through the host translate, e.g. 'Record it'. Absent: 'Confirm'."
+				},
+				"confirmIcon": {
+					"type": "string",
+					"description": "confirm: true: a CnIcon name drawn on the confirm button, e.g. 'Check'. Absent: no icon."
+				},
 				"target": {
 					"type": "string",
 					"description": "Destination for open-modal (modal id), open-page (route name), or navigate (URL). Ignored for handler type."
@@ -3324,7 +3340,8 @@
 				},
 				"exportId": {
 					"type": "string",
-					"description": "export only: the id of the table on the page whose rows the export downloads (an object-table widget's `content.exportId`); the dispatcher emits cn:widget:export with it. Pending in the library schema; its dispatcher already reads it."
+					"minLength": 1,
+					"description": "export only: the id of the table on the page whose rows the export downloads (an object-table widget's `content.exportId`); the dispatcher emits cn:widget:export with it."
 				},
 				"formProperties": {
 					"type": "object",
@@ -3387,8 +3404,8 @@
 				},
 				"method": {
 					"type": "string",
-					"enum": ["POST", "PUT", "GET"],
-					"description": "api-call: HTTP method (default POST); GET sends the resolved params as the query string, and with download: true downloads the file the endpoint answers (DqDoorlooptijd). toggle writeUrl: default PUT."
+					"enum": ["POST", "PUT", "PATCH", "GET"],
+					"description": "api-call: HTTP method (default POST); PATCH changes only the fields in the body (an OpenRegister object); GET sends the resolved params as the query string, and with download: true downloads the file the endpoint answers (DqDoorlooptijd). toggle writeUrl: default PUT."
 				},
 				"payload": {
 					"type": "object",
@@ -3543,7 +3560,7 @@
 					"then": { "required": ["url"] }
 				},
 				{
-					"description": "open-form actions MUST declare the create schema via `schema`.",
+					"description": "open-form actions MUST declare the create schema via `schema`, or edit through an `endpoint` with the `formProperties` it shows.",
 					"if": {
 						"properties": { "type": { "const": "open-form" } },
 						"required": ["type"]
@@ -4944,6 +4961,14 @@
 										"type": "string",
 										"description": "One label for the control's label filter."
 									},
+									"description": {
+										"type": "string",
+										"description": "default-views-secondary (2.151.0): the line under the view in the side panel, what it shows. Translatable."
+									},
+									"secondary": {
+										"type": "boolean",
+										"description": "default-views-secondary (2.151.0): true lists the view behind \"More default views\" in the side panel, folded until opened or applied."
+									},
 									"icon": {
 										"type": "string",
 										"minLength": 1,
@@ -5351,8 +5376,21 @@
 							"description": "type='dashboard' | type='detail': the accessible name of the page's view switch, e.g. \"Whose work\"; defaults to \"View\" (view-switch-containers). Maps to `viewsLabel`."
 						},
 						"headerMeta": {
-							"type": "string",
-							"minLength": 1,
+							"oneOf": [
+								{ "type": "string", "minLength": 1 },
+								{
+									"type": "object",
+									"additionalProperties": false,
+									"required": ["count", "one", "other"],
+									"description": "header-meta-plural: the line in the singular or the plural by a `headerMetaCounts` total (\"1 lopende zaak\" / \"2 lopende zaken\"); each form is translated on its own; `zero`, when given, is used for none (an empty string leaves the line out).",
+									"properties": {
+										"count": { "type": "string", "minLength": 1, "description": "The `headerMetaCounts` name whose total picks the form." },
+										"one": { "type": "string", "description": "The form for exactly one." },
+										"other": { "type": "string", "description": "The form for any other number." },
+										"zero": { "type": "string", "description": "The form for none; without it, none reads `other`." }
+									}
+								}
+							],
 							"description": "type='detail', board look: the meta line on row 2 of the header, after the breadcrumb and a middle dot (screens-detail-page-parity). A field template such as `\"via {channel}\"`: every `{path}` is read from the record, and a line with an empty value is dropped. Maps to CnDetailPage `headerMeta`. type='index' | 'dashboard' | 'settings' (page-header-breadcrumb): the note after the breadcrumb and a middle dot under the title; on an index page `{total}` and `{shown}` are the list's counts."
 						},
 						"headerMetaCounts": {
@@ -5397,7 +5435,7 @@
 									"label": { "type": "string", "description": "Control label (i18n key or plain text)." },
 									"type": { "type": "string", "enum": ["select", "quarter", "year"], "default": "select", "description": "Control type, carried over from v1. \"quarter\" and \"year\" generate their options: the current quarter or year first, then `count - 1` before it, valued YYYY-Qn or YYYY." },
 									"count": { "type": "integer", "minimum": 1, "description": "With type \"quarter\" or \"year\": how many to offer (default 8 quarters, 5 years)." },
-									"control": { "type": "string", "enum": ["select", "segmented"], "default": "select", "description": "How the filter is drawn: a select, or a compact segmented group." },
+									"control": { "type": "string", "enum": ["select", "segmented", "none"], "default": "select", "description": "How the filter is drawn: a select, a compact segmented group, or none (the value is seeded for the widgets and the description, and no control is drawn)." },
 									"clearable": { "type": "boolean", "default": false, "description": "Lets the reader clear the select back to all; `placeholder` names that state (2.130.0)." },
 									"placeholder": { "type": "string", "description": "What a cleared select shows, e.g. \"All case types\", through the app's translate (2.130.0)." },
 									"optionsFrom": {
@@ -5545,7 +5583,7 @@
 									"searchPlaceholder": { "type": "string", "minLength": 1, "description": "The search placeholder while the preset applies." },
 									"footerNote": { "type": "string", "minLength": 1, "description": "The footer note while the preset applies." },
 									"defaultSort": { "type": "array", "description": "The default sort while the preset applies; same shape as config.defaultSort." },
-									"viewSwitch": { "type": "array", "items": { "type": "string", "enum": ["table", "cards", "board", "map"] }, "description": "The drawn view segments while the preset applies." },
+									"viewSwitch": { "type": "array", "items": { "type": "string", "enum": ["table", "cards", "board", "map", "list"] }, "description": "The drawn view segments while the preset applies." },
 									"addLabel": { "type": "string", "minLength": 1, "description": "The add button label while the preset applies (index-scope-presentation)." },
 									"headerButtons": { "type": "array", "description": "The header buttons while the preset applies; same shape as config.headerButtons (index-scope-presentation)." },
 									"breadcrumb": { "description": "The breadcrumb while the preset applies; same shape as config.breadcrumb (index-scope-presentation).", "anyOf": [{ "$ref": "#/$defs/breadcrumbCrumb" }, { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/breadcrumbCrumb" } }] },
@@ -5558,8 +5596,8 @@
 							"type": "array",
 							"minItems": 1,
 							"uniqueItems": true,
-							"items": { "type": "string", "enum": ["table", "cards", "board", "map"] },
-							"description": "type='index', board look: the segments the view switch draws, e.g. [\"table\", \"cards\", \"board\", \"map\"] as the boards do. A listed mode the page can open is an ordinary segment; one it cannot (no board columns, no map) is drawn disabled and named \"<mode>: not available on this list\". Order is always table, cards, board, map. Ignored without the board look (screens-view-switch-parity). Maps to CnIndexPage `viewSwitch`."
+							"items": { "type": "string", "enum": ["table", "cards", "board", "map", "list"] },
+							"description": "type='index', board look: the segments the view switch draws, e.g. [\"table\", \"cards\", \"board\", \"map\"] as the boards do. A listed mode the page can open is an ordinary segment; one it cannot (no board columns, no map) is drawn disabled and named \"<mode>: not available on this list\". The segments are drawn in the order named, `list` included; a view the page offers that is not named is listed under More views (view-switch-order-and-more, 2.152.0). Ignored without the board look (screens-view-switch-parity). Maps to CnIndexPage `viewSwitch`."
 						},
 						"filterStrip": {
 							"type": "object",
@@ -5631,6 +5669,7 @@
 								"title": { "type": "string", "minLength": 1 },
 								"meta": { "type": "array", "description": "The meta line's parts: a field name reads through the page column it names; `{ field, formatter?, formatterOptions? }` reads as plain text through its own formatter (card-layout-part-formatter).", "items": { "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" } } } ] } },
 								"footerPill": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "resolve": { "type": "object", "additionalProperties": false, "description": "pill-color-field: the field holds the id of a record; the pill takes the tone that record's colour maps onto and shows its icon. Register and schema default to the field's reference.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "colorField": { "type": "string", "minLength": 1 }, "iconField": { "type": "string", "minLength": 1 } } }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "due": { "type": "object", "description": "Read the field as a due date: overdue gives the error variant, within `soonWithin` days the warning one; any other date draws no pill.", "properties": { "soonWithin": { "type": "number", "minimum": 0 } } }, "variantWhen": { "type": "array", "description": "Rules on the days left until the field's date, `{ op, value, variant }`; the first match gives the variant, no match draws no pill.", "items": { "type": "object", "required": ["op", "value", "variant"], "properties": { "op": { "type": "string" }, "value": { "type": "number" }, "variant": { "type": "string" } } } } } },
+								"note": { "description": "A line under the meta line, read as a meta part is (`{ field, formatter?, formatterOptions? }`), left out while empty; `tone` purple or teal inks it in that pill tone's text colour, else the soft text colour (card-layout-note, 2.151.0).", "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" }, "tone": { "type": "string", "enum": ["purple", "teal"] } } },
 								"footerCell": { "description": "A part in the footer before the date, read as a meta part is: a field name draws through the page column it names (its widget, e.g. the handler's picture and name), `{ field, formatter?, formatterOptions? }` reads as text through its own formatter; left out while empty (DqZakenSorteren, 2.145.0).", "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" } } }] },
 								"footerDate": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 }, "overdueVariant": { "type": "string", "enum": ["error", "warning"], "description": "The date's tone once it has passed (2.132.0)." } } },
 								"description": { "description": "A line under the meta line: a field, or `{ field, maxLength? }` cut at maxLength characters (140 by default) with an ellipsis (2.132.0).", "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "maxLength": { "type": "integer", "minimum": 1 } } }] },

@@ -200,6 +200,11 @@ describe('BerichtenboxComposeDialog', () => {
 		expect(wrapper.find('[data-testid="compose-bsn-optional"]').exists()).toBe(false)
 	})
 
+	it('lines the besluit note up with its checkbox label, through the board dialog inset', () => {
+		const source = fs.readFileSync(path.join(ROOT, 'src', 'dialogs', 'BerichtenboxComposeDialog.vue'), 'utf8')
+		expect(source).toMatch(/\.compose-dialog__check-note \{\s*padding-inline-start: var\(--cn-dialog-check-label-inset, 44px\);/)
+	})
+
 	it('opens on the kind Status update, as board DqBerichtVersturen does', () => {
 		const wrapper = open()
 		expect(wrapper.vm.form.berichtTypeCode?.code).toBe('status')

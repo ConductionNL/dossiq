@@ -276,7 +276,41 @@
 					"city": "{{cast:marja.address.city}}"
 				},
 				"displayName": "{{cast:marja.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"contactAddresses": [
+					{
+						"kind": "correspondence",
+						"type": "email",
+						"value": "{{cast:marja.email}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "persoon-kees-dewit",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"name": {
+					"givenNames": "{{cast:keesdewit.givenName}}",
+					"namePrefix": "{{cast:keesdewit.prefix}}",
+					"surname": "{{cast:keesdewit.familyName}}"
+				},
+				"residence": {
+					"street": "{{cast:keesdewit.address.street}}",
+					"houseNumber": "{{cast:keesdewit.address.number}}",
+					"postcode": "{{cast:keesdewit.address.postcode}}",
+					"city": "{{cast:keesdewit.address.city}}"
+				},
+				"displayName": "{{cast:keesdewit.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht, contactpersoon zonder BSN. Geen echte persoon.",
+				"contactAddresses": [
+					{
+						"kind": "correspondence",
+						"type": "email",
+						"value": "{{cast:keesdewit.email}}"
+					}
+				]
 			}
 		},
 		{
@@ -942,7 +976,31 @@
 				"parentCaseType": "{{lookup:parent}}",
 				"version": 5,
 				"isDraft": true,
-				"versionDate": "{{date:-2}}"
+				"versionDate": "{{date:-2}}",
+				"rules": [
+					{
+						"id": "welstandsadvies-bij-grote-bouwkosten",
+						"name": "Welstandsadvies bij grote bouwkosten",
+						"enabled": true,
+						"when": {
+							"event": "saved"
+						},
+						"conditions": [
+							{
+								"kind": "fieldCompare",
+								"field": "bouwkosten",
+								"op": "gt",
+								"value": 100000
+							}
+						],
+						"actions": [
+							{
+								"action": "addTask",
+								"title": "Welstandsadvies vragen"
+							}
+						]
+					}
+				]
 			}
 		},
 		{
@@ -2366,6 +2424,50 @@
 			}
 		},
 		{
+			"key": "outbox-molenweg-checklist",
+			"register": "dossiq",
+			"schema": "syncQueue",
+			"data": {
+				"deviceId": "toestel-pieter",
+				"operationType": "submit",
+				"targetEntity": "inspectionChecklistRun",
+				"label": "Molenweg 4, checklist",
+				"queuedAt": "{{datetime:0 10:12}}",
+				"attemptCount": 0,
+				"status": "pending"
+			}
+		},
+		{
+			"key": "outbox-kerkplein-foto",
+			"register": "dossiq",
+			"schema": "syncQueue",
+			"data": {
+				"deviceId": "toestel-pieter",
+				"operationType": "upload",
+				"targetEntity": "inspectionChecklistRun",
+				"label": "Kerkplein 7, foto",
+				"queuedAt": "{{datetime:0 10:52}}",
+				"attemptCount": 0,
+				"status": "pending"
+			}
+		},
+		{
+			"key": "outbox-molenweg-bevinding",
+			"register": "dossiq",
+			"schema": "syncQueue",
+			"data": {
+				"deviceId": "toestel-pieter",
+				"operationType": "update",
+				"targetEntity": "inspectionChecklistRun",
+				"label": "Molenweg 4, bevinding",
+				"queuedAt": "{{datetime:0 10:14}}",
+				"attemptCount": 1,
+				"lastAttemptAt": "{{datetime:0 10:15}}",
+				"lastError": "Tekst gewijzigd, ook op kantoor gewijzigd",
+				"status": "conflict"
+			}
+		},
+		{
 			"key": "inspectie-checklist-brandveiligheid",
 			"register": "dossiq",
 			"schema": "inspectionChecklistTemplate",
@@ -3081,8 +3183,7 @@
 			"data": {
 				"kvkNumber": "00002001",
 				"legalName": "Stichting Kindzorg Drechtsteden",
-				"status": "active",
-				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3092,8 +3193,7 @@
 			"data": {
 				"kvkNumber": "00002002",
 				"legalName": "Groen & Co",
-				"status": "active",
-				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3103,8 +3203,7 @@
 			"data": {
 				"kvkNumber": "00002003",
 				"legalName": "Taxi Drechtstad",
-				"status": "active",
-				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3114,8 +3213,7 @@
 			"data": {
 				"kvkNumber": "00002004",
 				"legalName": "Lumen Infra BV",
-				"status": "active",
-				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3125,8 +3223,7 @@
 			"data": {
 				"kvkNumber": "00002005",
 				"legalName": "Schoon Zuid",
-				"status": "active",
-				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3136,8 +3233,7 @@
 			"data": {
 				"kvkNumber": "00002006",
 				"legalName": "Conduction",
-				"status": "active",
-				"description": "Voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3237,8 +3333,7 @@
 			"data": {
 				"kvkNumber": "00002007",
 				"legalName": "Rivierland Installatietechniek",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3248,8 +3343,7 @@
 			"data": {
 				"kvkNumber": "00002008",
 				"legalName": "Zuidwaard Catering",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3259,8 +3353,7 @@
 			"data": {
 				"kvkNumber": "00002009",
 				"legalName": "Kade & Co Advies",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3270,8 +3363,7 @@
 			"data": {
 				"kvkNumber": "00002010",
 				"legalName": "Polderlicht Elektra",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3281,8 +3373,7 @@
 			"data": {
 				"kvkNumber": "00002011",
 				"legalName": "Oosthaven Drukwerk",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3292,8 +3383,7 @@
 			"data": {
 				"kvkNumber": "00002012",
 				"legalName": "Waalmond ICT",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3303,8 +3393,7 @@
 			"data": {
 				"kvkNumber": "00002013",
 				"legalName": "Linde Facilitair",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3314,8 +3403,7 @@
 			"data": {
 				"kvkNumber": "00002014",
 				"legalName": "Molenwerf Bouw",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3325,8 +3413,7 @@
 			"data": {
 				"kvkNumber": "00002015",
 				"legalName": "Grachtzicht Juridisch Advies",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3336,8 +3423,7 @@
 			"data": {
 				"kvkNumber": "00002016",
 				"legalName": "Dijkveld Beveiliging",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3347,8 +3433,7 @@
 			"data": {
 				"kvkNumber": "00002017",
 				"legalName": "Haventoren Archiefdiensten",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -3358,8 +3443,7 @@
 			"data": {
 				"kvkNumber": "00002018",
 				"legalName": "Zandpad Verhuizingen",
-				"status": "active",
-				"description": "Fictieve voorbeeldleverancier van de gemeente Zuiddrecht. Het KvK-nummer is een voorbeeldnummer."
+				"status": "active"
 			}
 		},
 		{
@@ -4662,6 +4746,25 @@
 				"relevanceSource": "reviewer",
 				"markedBy": "{{cast:pieter.uid}}",
 				"markedAt": "{{datetime:-1 15:31}}"
+			}
+		}
+	],
+	"parties": [
+		{
+			"key": "buurtoost-voorzitter-marja",
+			"data": {
+				"objectUuid": "{{object:bedrijf-buurtoost.id}}",
+				"partyUuid": "{{object:persoon-marja.id}}",
+				"role": "chair",
+				"primary": true
+			}
+		},
+		{
+			"key": "buurtoost-secretaris-kees",
+			"data": {
+				"objectUuid": "{{object:bedrijf-buurtoost.id}}",
+				"partyUuid": "{{object:persoon-kees-dewit.id}}",
+				"role": "secretary"
 			}
 		}
 	],
