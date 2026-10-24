@@ -5621,6 +5621,10 @@
 												"value": "{archiveNomination}"
 											},
 											{
+												"label": "Retention period",
+												"value": "{@self._retention.retentionPeriod|isoDuration}"
+											},
+											{
 												"label": "Destruction date",
 												"value": "{archiveActionDate}"
 											},
