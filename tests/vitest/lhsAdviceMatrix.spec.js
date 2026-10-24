@@ -44,6 +44,10 @@ describe('the LHS matrix on the enforcement advice', () => {
 		}
 	})
 
+	it('fits its card to the matrix, so no empty band sits above it (DqHandhaving)', () => {
+		expect(page.config.layout.find((l) => l.widgetId === 'lhs-matrix').sizeToContent).toBe(true)
+	})
+
 	it('outlines the cell of the advice and comes first on the page', () => {
 		expect(matrix.content.highlight).toEqual({ row: '@object.behaviour', column: '@object.severity' })
 		expect(page.config.layout[0].widgetId).toBe('lhs-matrix')
