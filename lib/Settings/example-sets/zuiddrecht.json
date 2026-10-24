@@ -4747,6 +4747,37 @@
 				"markedBy": "{{cast:pieter.uid}}",
 				"markedAt": "{{datetime:-1 15:31}}"
 			}
+		},
+		{
+			"key": "kaartlaag-luchtfoto",
+			"register": "dossiq",
+			"schema": "wmsLayer",
+			"data": {
+				"title": "Luchtfoto (PDOK)",
+				"type": "WMS",
+				"url": "https://service.pdok.nl/hwh/luchtfotorgb/wms/v1_0",
+				"layerName": "Actueel_orthoHR",
+				"format": "image/png",
+				"attribution": "Beeldmateriaal.nl, PDOK",
+				"isDefault": true,
+				"active": true
+			}
+		},
+		{
+			"key": "kaartlaag-ruimtelijke-plannen",
+			"register": "dossiq",
+			"schema": "wmsLayer",
+			"data": {
+				"title": "Omgevingsplan (WMS)",
+				"type": "WMS",
+				"url": "https://service.pdok.nl/kadaster/plu/wms/v1_0",
+				"layerName": "enkelbestemming",
+				"format": "image/png",
+				"opacity": 0.6,
+				"attribution": "Kadaster, PDOK",
+				"isDefault": true,
+				"active": true
+			}
 		}
 	],
 	"parties": [

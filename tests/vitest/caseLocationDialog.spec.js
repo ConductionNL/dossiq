@@ -135,6 +135,14 @@ describe('CaseLocationDialog', () => {
 		expect(wrapper.emitted('saved')).toHaveLength(1)
 	})
 
+	it('draws a WFS layer as WFS, whatever the case of its stored type', async () => {
+		const wrapper = await mountDialog()
+		await new Promise((resolve) => setTimeout(resolve))
+		wrapper.vm.layers = [{ id: 'w1', title: 'Bomen', type: 'WFS', url: 'https://x', layerName: 'b' }]
+		wrapper.vm.shown = ['w1']
+		expect(wrapper.vm.activeLayers[0].type).toBe('wfs')
+	})
+
 	it('is a registered modal the simple case page opens from Meer', () => {
 		const registry = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 		expect(registry).toContain('CaseLocationDialog: {')
