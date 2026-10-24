@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ZaakdossierController;
+use OCA\Dossiq\Review\DocumentVerdicts;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -276,4 +277,43 @@ class ZaakdossierListContractTest extends TestCase {
 		$this->assertSame([], $offered);
 		$this->assertSame([], $response->getData());
 	}//end testListDossierOffersAnEmptyListWhenTheDossierHasNoDocuments()
+
+	/**
+	 * Each listed document carries its review verdict, read once for the case;
+	 * a document the verdicts do not name carries none.
+	 *
+	 * @return void
+	 */
+	public function testListDossierPutsEachDocumentsReviewVerdictOnItsRow(): void {
+		$this->signIn();
+		$this->fileService->method('getDossierForCase')->willReturn(value: ['informatieobjecten' => [['id' => 'doc-1'], ['id' => 'doc-2']]]);
+		$this->reader->method('filterForUser')->willReturnArgument(argumentIndex: 1);
+		$grouped = [];
+		$this->fileService->method('groupByType')->willReturnCallback(
+			callback: static function (array $documents) use (&$grouped): array {
+				$grouped = $documents;
+				return ['overig' => $documents];
+			}
+		);
+		$verdicts = $this->createMock(originalClassName: DocumentVerdicts::class);
+		$verdicts->expects($this->once())->method('byDocument')->with('case-1')->willReturn(value: ['doc-1' => 'deels_openbaar']);
+
+		$controller = new ZaakdossierController(
+			appName: 'dossiq',
+			request: $this->request,
+			fileService: $this->fileService,
+			reader: $this->reader,
+			uploadHandler: $this->uploadHandler,
+			userSession: $this->userSession,
+			approvals: $this->approvals,
+			bulk: new BulkDocumentActions(reader: $this->reader, fileService: $this->fileService),
+			verdicts: $verdicts,
+		);
+		$controller->listDossier(caseId: 'case-1');
+
+		$this->assertSame(
+			expected: [['id' => 'doc-1', 'reviewVerdict' => 'deels_openbaar'], ['id' => 'doc-2']],
+			actual: $grouped
+		);
+	}//end testListDossierPutsEachDocumentsReviewVerdictOnItsRow()
 }//end class

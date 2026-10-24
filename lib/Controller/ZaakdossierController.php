@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Review\DocumentVerdicts;
 use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
 use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
@@ -65,6 +66,7 @@ class ZaakdossierController extends Controller {
 	 *        so a document in an unfinished route cannot be made final.
 	 * @param BulkDocumentActions $bulk One act over many documents: the clearance gate that runs
 	 *        before a bulk transition writes anything, and the metadata run that reports per id.
+	 * @param DocumentVerdicts|null $verdicts The review verdict of each document, for the row pill.
 	 */
 	public function __construct(
 		string $appName,
@@ -75,6 +77,7 @@ class ZaakdossierController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly DocumentApprovalClearance $approvals,
 		private readonly BulkDocumentActions $bulk,
+		private readonly ?DocumentVerdicts $verdicts = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -113,10 +116,43 @@ class ZaakdossierController extends Controller {
 			informatieobjecten: ($file['informatieobjecten'] ?? []),
 		);
 
-		$regrouped = $this->fileService->groupByType(documents: $this->reader->withScanVerdicts(documents: $filtered));
+		$regrouped = $this->fileService->groupByType(
+			documents: $this->withReviewVerdicts(caseId: $caseId, documents: $this->reader->withScanVerdicts(documents: $filtered))
+		);
 
 		return new JSONResponse($regrouped);
 	}//end listDossier()
+
+	/**
+	 * Put each document's review verdict on its row, so the Files tab draws the
+	 * verdict pill and the Assess button from the listing. A document the
+	 * verdicts do not name (a case that reviews nothing) carries none.
+	 *
+	 * @param string                           $caseId    The case UUID.
+	 * @param array<int, array<string, mixed>> $documents The rows the caller may see.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-each-document-row-carries-its-verdict
+	 */
+	private function withReviewVerdicts(string $caseId, array $documents): array {
+		if ($this->verdicts === null || $documents === []) {
+			return $documents;
+		}
+
+		$byDocument = $this->verdicts->byDocument(caseId: $caseId);
+		return array_map(
+			static function (array $document) use ($byDocument): array {
+				$verdict = $byDocument[(string)($document['id'] ?? '')] ?? null;
+				if ($verdict === null) {
+					return $document;
+				}
+
+				return [...$document, 'reviewVerdict' => $verdict];
+			},
+			$documents
+		);
+	}//end withReviewVerdicts()
 
 	/**
 	 * Upload one or more documents to a case dossier.

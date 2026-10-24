@@ -108,6 +108,33 @@ class DocumentVerdicts {
 	}//end forCase()
 
 	/**
+	 * Each document under review with its verdict, `open` while it has none.
+	 *
+	 * Reads only the assessments the caller may read, as {@see self::forCase()}.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, string> The verdict per document id.
+	 *
+	 * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-each-document-row-carries-its-verdict
+	 */
+	public function byDocument(string $caseId): array {
+		$documents = $this->assessments->getDocumentsUnderReview(caseId: $caseId);
+		$verdictField = $this->settingsService->getConfigValue('document_verdict_field', 'classification');
+
+		$verdicts = array_fill_keys(array_map('strval', $documents), 'open');
+		foreach ($this->assessmentRows(caseId: $caseId) as $row) {
+			$documentRef = (string)($row['documentRef'] ?? '');
+			$verdict = (string)($row[$verdictField] ?? '');
+			if ($verdict !== '' && isset($verdicts[$documentRef]) === true) {
+				$verdicts[$documentRef] = $verdict;
+			}
+		}
+
+		return $verdicts;
+	}//end byDocument()
+
+	/**
 	 * Every cited ground in code order, with its label and the documents citing it.
 	 *
 	 * @param array<string, list<array{documentRef: string, partial: bool}>> $cited The citations per code.
