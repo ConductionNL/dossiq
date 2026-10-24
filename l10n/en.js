@@ -1692,6 +1692,7 @@ OC.L10N.register(
         "Collaboration request": "Collaboration request",
         "Collaboration requests": "Collaboration requests",
         "Collapse": "Collapse",
+        "Colleague (optional)": "Colleague (optional)",
         "Collected mail by sender, recipient and domain": "Collected mail by sender, recipient and domain",
         "Collection": "Collection",
         "College van B&W": "College van B&W",
