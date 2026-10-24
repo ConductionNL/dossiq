@@ -54,7 +54,7 @@ PHPUnit through OpenRegister's real `PermissionHandler` and `MagicRbacHandler` w
 5. An expired row admits nobody; a role without `ncGroupId` admits nobody and is reported.
 6. The assignee edits their own case outside the row's statuses.
 
-## Open questions
+## Decisions (Ruben, 23 October 2026)
 
-- Confidentiality: does a row at level L cover the lower levels? D-2 assumes yes.
-- Edit verbs outside the statuses: should `create` (subcases, tasks) also stop? D-2 limits every edit verb.
+- A row at a confidentiality level also covers the lower levels.
+- Outside a row's statuses every edit verb stops, create included, and so do adding and deleting documents; reading does not. The assignee keeps their own rights.
