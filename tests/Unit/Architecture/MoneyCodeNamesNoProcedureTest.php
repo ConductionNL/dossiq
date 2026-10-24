@@ -50,12 +50,22 @@ final class MoneyCodeNamesNoProcedureTest extends TestCase {
 		return $files;
 	}//end libFiles()
 
+	/**
+	 * No class file is named after the penalty procedure.
+	 *
+	 * @return void
+	 */
 	public function testNoClassFileNamesThePenaltyProcedure(): void {
 		$named = array_values(array_filter(array_keys(self::libFiles()), static fn (string $path): bool => stripos(basename($path), 'dwangsom') !== false));
 
 		self::assertSame(expected: [], actual: $named);
 	}//end testNoClassFileNamesThePenaltyProcedure()
 
+	/**
+	 * The procedure-named setting keys are read only through the legacy map.
+	 *
+	 * @return void
+	 */
 	public function testTheProcedureKeysAreReadOnlyThroughTheLegacyMap(): void {
 		$legacy = array_values(MoneyConfigKeys::LEGACY_KEYS);
 		$readers = [];

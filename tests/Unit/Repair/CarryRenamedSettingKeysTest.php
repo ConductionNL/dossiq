@@ -97,7 +97,7 @@ final class CarryRenamedSettingKeysTest extends TestCase {
 			'ingebrekestelling_schema' => '40',
 		];
 		$output = $this->createMock(originalClassName: IOutput::class);
-		$output->expects($this->once())->method('info')->with($this->stringContains('Carried 4'));
+		$output->expects($this->once())->method('info')->with($this->stringContains(string: 'Carried 4'));
 
 		$this->step()->run($output);
 

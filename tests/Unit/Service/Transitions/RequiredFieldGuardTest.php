@@ -211,7 +211,7 @@ class RequiredFieldGuardTest extends TestCase {
 		self::assertTrue(condition: $answered->passed);
 		self::assertSame(expected: ['field' => 'inkomenstoets'], actual: $answered->details);
 		self::assertFalse(condition: $empty->passed);
-		self::assertStringNotContainsString('480', json_encode([$answered->details, $empty->details, $empty->failureMessage]));
-		self::assertNotSame([], $objects->unscopedReads, 'read as the system');
+		self::assertStringNotContainsString(needle: '480', haystack: json_encode([$answered->details, $empty->details, $empty->failureMessage]));
+		self::assertNotSame(expected: [], actual: $objects->unscopedReads, message: 'read as the system');
 	}//end testASensitiveAnswerIsCheckedAsTheSystemWithoutShowingIt()
 }//end class

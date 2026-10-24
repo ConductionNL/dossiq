@@ -1188,7 +1188,7 @@ $extra = [
     ['name' => 'payout#prepare',             'url' => '/api/accruing-amounts/{id}/payout',             'verb' => 'POST'],
     ['name' => 'accruingAmount#objection',   'url' => '/api/accruing-amounts/{id}/objection',          'verb' => 'POST'],
     ['name' => 'accruingAmount#reconsider',  'url' => '/api/accruing-amounts/{id}/objection/reconsider', 'verb' => 'POST'],
-        // deprecated alias: the URLs above under /api/termijn/, remove one release after case-money-is-configuration.
+        // Deprecated alias: the URLs above under /api/termijn/, remove one release after case-money-is-configuration.
     ['name' => 'accrualNotice#registerLegacyPath',    'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
     ['name' => 'accrualNotice#showLegacyPath',        'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
     ['name' => 'accruingAmount#showLegacyPath',       'url' => '/api/termijn/dwangsom/{id}',             'verb' => 'GET'],

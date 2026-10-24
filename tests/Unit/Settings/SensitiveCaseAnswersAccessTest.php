@@ -49,7 +49,7 @@ class SensitiveCaseAnswersAccessTest extends TestCase {
 	protected function setUp(): void {
 		$lib = realpath(self::OPENREGISTER_LIB);
 		if ($lib === false || is_dir($lib) === false) {
-			self::markTestSkipped('No sibling openregister checkout at ' . self::OPENREGISTER_LIB . '. CI clones it, so this runs there.');
+			self::markTestSkipped(message: 'No sibling openregister checkout at ' . self::OPENREGISTER_LIB . '. CI clones it, so this runs there.');
 		}
 
 		spl_autoload_register(

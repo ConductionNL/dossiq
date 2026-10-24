@@ -339,7 +339,7 @@ class CrossDomainExistenceTest extends TestCase {
 	public function testAnUnreadableCaseStoreRefuses(): void {
 		$this->objects->brokenSchemas = ['case'];
 
-		$this->expectException(RefusedException::class);
+		$this->expectException(exception: RefusedException::class);
 		$this->existence->lookUp(bsn: self::BSN, ownDomain: 'Wmo', ground: 'wettelijke-taak', requester: 'anna');
 	}//end testAnUnreadableCaseStoreRefuses()
 
