@@ -3102,7 +3102,7 @@
 						"content": {
 							"tableBleed": true,
 							"rowTitle": "text",
-							"headerSubtitle": "{total} recorded",
+							"headerNote": "{total} recorded",
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
