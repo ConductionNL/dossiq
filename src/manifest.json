@@ -13392,7 +13392,13 @@
 									"complaint": "Complaint"
 								}
 							},
-							"headerNote": "{total} open",
+							"headerLink": {
+								"label": "View all {total} tickets",
+								"href": "/apps/pipelinq/tickets/party/{ref}",
+								"params": {
+									"ref": "@object.masterEntityRef"
+								}
+							},
 							"emptyText": "No open tickets"
 						}
 					},
@@ -14026,7 +14032,13 @@
 									"complaint": "Complaint"
 								}
 							},
-							"headerNote": "{total} open",
+							"headerLink": {
+								"label": "View all {total} tickets",
+								"href": "/apps/pipelinq/tickets/party/{ref}",
+								"params": {
+									"ref": "@object.masterEntityRef"
+								}
+							},
 							"emptyText": "No open tickets"
 						}
 					},
