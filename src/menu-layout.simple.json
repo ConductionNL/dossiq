@@ -6242,7 +6242,7 @@
 						"id": "side-case-type-versions",
 						"type": "record-list",
 						"title": "Versions",
-						"tabs": ["overview", "statuses", "phases", "rights", "privacy", "translations", "versions", "portal", "properties", "history"],
+						"tabs": ["overview", "statuses", "phases", "rules", "rights", "privacy", "translations", "versions", "portal", "properties", "history"],
 						"content": {
 							"register": "dossiq",
 							"schema": "caseType",
