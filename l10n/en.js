@@ -1426,6 +1426,7 @@ OC.L10N.register(
         "Case transfer request": "Case transfer request",
         "Case Type": "Case type",
         "Case type": "Case type",
+        "Case type complaint handling": "Case type complaint handling",
         "Case type created with {statuses} statuses, {properties} properties, {documents} document types.": "Case type created with {statuses} statuses, {properties} properties, {documents} document types.",
         "Case type flow": "Case type flow",
         "Case type for mail nobody claims": "Case type for mail nobody claims",

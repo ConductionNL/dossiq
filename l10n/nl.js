@@ -1426,6 +1426,7 @@ OC.L10N.register(
         "Case transfer request": "Verzoek tot zaakoverdracht",
         "Case Type": "Zaaktype",
         "Case type": "Zaaktype",
+        "Case type complaint handling": "Zaaktype klachtbehandeling",
         "Case type created with {statuses} statuses, {properties} properties, {documents} document types.": "Zaaktype aangemaakt met {statuses} statussen, {properties} eigenschappen, {documents} documenttypen.",
         "Case type flow": "Flow van zaaktype",
         "Case type for mail nobody claims": "Zaaktype voor mail die niemand oppakt",
