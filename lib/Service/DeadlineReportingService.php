@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
+use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\Reporting\PerTypeRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -115,11 +116,13 @@ class DeadlineReportingService {
 	 * @param SettingsService           $settingsService Settings.
 	 * @param TermCaseTypeResolver|null $caseTypes       The case-type resolver; built from the settings when absent.
 	 * @param DayCount                  $days            Counts the days between two moments.
+	 * @param PayoutReader|null         $payouts         Reads the payouts from the finance app, beside the rows it does not hold.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		?TermCaseTypeResolver $caseTypes = null,
 		private readonly DayCount $days = new DayCount(),
+		private readonly ?PayoutReader $payouts = null,
 	) {
 		$this->caseTypes = ($caseTypes ?? new TermCaseTypeResolver(settingsService: $settingsService));
 		$this->outcomes = new TermOutcome();
@@ -365,6 +368,8 @@ class DeadlineReportingService {
 		} catch (\Throwable $e) {
 			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
 		}
+
+		$rows = ($this->payouts?->mergedRows(storedRows: $rows, paidInYear: $year) ?? $rows);
 
 		$yearPrefix = (string)$year;
 		$outRows = [];
