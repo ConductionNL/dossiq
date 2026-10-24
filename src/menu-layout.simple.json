@@ -2085,6 +2085,27 @@
 									}
 								},
 								{
+									"widgetId": "case-investigation-steps",
+									"label": "Investigation",
+									"permission": "sociaal-domein",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Sociaal domein",
+											"Jeugd",
+											"Jeugdhulp"
+										]
+									},
+									"countObjectRows": {
+										"path": "sensitiveProperties",
+										"where": {
+											"name": "onderzoeksstappen"
+										},
+										"valuePath": "value"
+									}
+								},
+								{
 									"widgetId": "case-social-indications",
 									"label": "Indication",
 									"permission": "sociaal-domein",
@@ -3762,6 +3783,36 @@
 								}
 							],
 							"emptyText": "No indication recorded"
+						}
+					},
+					{
+						"id": "case-investigation-steps",
+						"type": "record-list",
+						"title": "Investigation steps",
+						"_note": "DqSociaalDomein Onderzoek: the case type's list-of-records answer onderzoeksstappen (kind, date, by, with whom, summary, consent, follow-up), flagged sensitive, so stored in case.sensitiveProperties and returned by OpenRegister only to dossiq-sensitive. Listed from the case the page read (nextcloud-vue objectRows), no request of its own; edited in the case form's list editor.",
+						"content": {
+							"objectRows": {
+								"path": "sensitiveProperties",
+								"where": {
+									"name": "onderzoeksstappen"
+								},
+								"valuePath": "value"
+							},
+							"presentation": "rows",
+							"title": "{summary}",
+							"meta": ["{date}", "{withWhom}", "{followUp}"],
+							"pill": {
+								"field": "kind",
+								"labels": {
+									"gesprek": "Conversation",
+									"huisbezoek": "Home visit",
+									"informatie-opgevraagd": "Information requested",
+									"dossieronderzoek": "File review",
+									"anders": "Other"
+								}
+							},
+							"headerCount": true,
+							"emptyText": "No investigation steps recorded, or you may not see them"
 						}
 					},
 					{
