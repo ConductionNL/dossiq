@@ -347,7 +347,11 @@
 							'dossiq',
 							'No connections reported yet. They appear once integriq has read dossiq\'s declaration.',
 						)
-					" />
+					">
+					<template #row-actions="{ row }">
+						<CnRowActions v-if="row.settingsUrl" :actions="connectionRowActions" :row="row" />
+					</template>
+				</CnWidgetObjectTable>
 			</CnSettingsSection>
 
 			<CnSettingsFieldsSection
@@ -620,6 +624,7 @@ import {
 	CnAdminSettingsShell,
 	CnFactsWidget,
 	CnRegisterMapping,
+	CnRowActions,
 	CnSettingsFieldsSection,
 	CnSettingsSection,
 	CnWidgetObjectTable,
@@ -676,6 +681,7 @@ export default {
 		CnAdminSettingsShell,
 		CnFactsWidget,
 		CnRegisterMapping,
+		CnRowActions,
 		CnSettingsFieldsSection,
 		CnSettingsSection,
 		CnWidgetObjectTable,
@@ -848,6 +854,25 @@ export default {
 				order: { order: 'asc' },
 				limit: 50,
 			}
+		},
+
+		/**
+		 * A connection row's menu: what the row itself offers, opening its
+		 * settings card on this page.
+		 *
+		 * @return {Array<object>} The row actions.
+		 * @spec openspec/changes/connection-row-menu/specs/admin-settings/spec.md#requirement-a-connection-row-has-a-menu-with-what-the-row-offers
+		 */
+		connectionRowActions() {
+			return [
+				{
+					id: 'open-settings',
+					label: this.t('dossiq', 'Open settings'),
+					icon: 'CogOutline',
+					href: (row) => row.settingsUrl,
+					linkTarget: '_self',
+				},
+			]
 		},
 
 		/**
