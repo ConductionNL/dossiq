@@ -353,6 +353,18 @@ describe('process mining figures', () => {
 		// "Waar zaken blijven hangen": a hairline under the title, above the first row.
 		expect(widget('ProcessMiningDashboard', 'pm-stuck').content.ruleAbove).toBe(true)
 	})
+
+	it('writes the ranking and handler figures as whole numbers, as DqProcesanalyse does', () => {
+		// "9.936", "432": the endpoints answer hours like 993.5, which read raw.
+		const whole = { style: 'number', decimals: 0 }
+		const cols = (id) => Object.fromEntries(widget('ProcessMiningDashboard', id).content.columns.map((c) => [c.key, c]))
+		for (const key of ['medianWorkingHours', 'medianHours', 'visitCount', 'score']) {
+			expect(cols('pm-bottlenecks')[key].format, key).toEqual(whole)
+		}
+		for (const key of ['workingHours', 'wallHours', 'visitCount']) {
+			expect(cols('pm-dwell-by-assignee')[key].format, key).toEqual(whole)
+		}
+	})
 })
 
 describe('throughput per week', () => {
