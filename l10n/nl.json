@@ -66,6 +66,7 @@
         "%s was refused. This act stays closed while that stands.": "%s is afgewezen. Deze handeling blijft dicht zolang dat zo is.",
         "%s was withdrawn without an answer. Ask for it again in decidiq.": "%s is zonder antwoord ingetrokken. Vraag het opnieuw aan in decidiq.",
         "%s, deadline today": "%s, termijn vandaag",
+        "%s, message box": "%s, berichtenbox",
         "'Valid from' date must be set": "Datum 'Geldig vanaf' moet worden ingevuld",
         "(4 weeks from receipt, extendable by 2 weeks)": "(4 weken vanaf ontvangst, verlengbaar met 2 weken)",
         "(administrators only)": "(alleen voor beheerders)",

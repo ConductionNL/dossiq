@@ -33,15 +33,16 @@ describe('DqContact side cards', () => {
 		expect(nl.Source).toBe('Bron')
 	})
 
-	it('Reachable via says when and how the last contact was, and keeps the registration line', () => {
+	it('Reachable via reads the reachability endpoint: portal mailbox, last contact, registration line', () => {
 		const content = card('side-reach')
-		expect(content.source).toMatchObject({ schema: 'contactmoment', filter: { contact: '@objectId' }, sort: { field: 'startTime', dir: 'desc' } })
-		const [last, registration] = content.fields
-		expect(last.from).toBeUndefined()
-		expect(last.parts.map((part) => part.path)).toEqual(['startTime', 'notificationChannel'])
+		expect(content.endpointSource.url).toBe('/apps/dossiq/api/people/@objectId/reachability')
+		const [portal, last, registration] = content.fields
+		expect(portal).toMatchObject({ path: 'portal', icon: 'EmailOutline' })
+		expect(last.parts.map((part) => part.path)).toEqual(['lastContactAt', 'lastContactChannel'])
 		expect(nl[last.parts[0].label]).toBe('Laatst contact op')
 		expect(nl[last.parts[1].map.webformulier]).toBe('webformulier')
 		expect(registration.from).toBe('object')
 		expect(content.action.props.contact).toBe('@objectId')
+		expect(nl['%s, message box']).toBe('%s, berichtenbox')
 	})
 })

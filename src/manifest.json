@@ -13509,31 +13509,25 @@
 						"id": "side-reach",
 						"type": "facts",
 						"title": "Reachable via",
-						"_note": "Board DqContact: the newest contact moment says when and through which channel; the registration line reads the person, so it shows without contact moments too.",
+						"_note": "Board DqContact Bereikbaar via: the person's portal mailbox (\"Mijn Zuiddrecht, berichtenbox\", answered by portaliq's PortalAccountPresence through GET /api/people/{id}/reachability, which reads the person under the user's rights first) and the newest contact moment; the registration line reads the person, so it shows on its own too.",
 						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "contactmoment",
-								"filter": {
-									"contact": "@objectId"
-								},
-								"sort": {
-									"field": "startTime",
-									"dir": "desc"
-								}
-							},
 							"fields": [
+								{
+									"key": "portal",
+									"path": "portal",
+									"icon": "EmailOutline"
+								},
 								{
 									"as": "text",
 									"separator": ", ",
 									"parts": [
 										{
-											"path": "startTime",
+											"path": "lastContactAt",
 											"format": "longdate",
 											"label": "Last contact on"
 										},
 										{
-											"path": "notificationChannel",
+											"path": "lastContactChannel",
 											"label": "via",
 											"map": {
 												"phone": "phone",
@@ -13561,6 +13555,9 @@
 								"props": {
 									"contact": "@objectId"
 								}
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/people/@objectId/reachability"
 							}
 						}
 					},
