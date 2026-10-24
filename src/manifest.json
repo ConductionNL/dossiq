@@ -8716,6 +8716,30 @@
 						"content": {
 							"chartKind": "line",
 							"categoryFormat": "week",
+							"options": {
+								"stroke": {
+									"curve": "straight",
+									"width": 2.5
+								},
+								"xaxis": {
+									"tickAmount": 10,
+									"labels": {
+										"rotate": 0,
+										"hideOverlappingLabels": true
+									}
+								},
+								"yaxis": {
+									"labels": {
+										"show": false
+									}
+								},
+								"legend": {
+									"show": false
+								},
+								"dataLabels": {
+									"enabled": false
+								}
+							},
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/process-mining",
 								"params": {
