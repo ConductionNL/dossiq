@@ -164,6 +164,10 @@
             "%s, termijn over %n dag",
             "%s, termijn over %n dagen"
         ],
+        "_Not linked yet: %n request waiting_::_Not linked yet: %n requests waiting_": [
+            "Nog niet gekoppeld: %n aanvraag wacht",
+            "Nog niet gekoppeld: %n aanvragen wachten"
+        ],
         "_related[caseObject][case][objectUrl]": "Object",
         "_This case type names a change nobody recognises as a reason to mark a case unread: %s. Nothing watches it, so the case type behaves as if it had named nothing._::_This case type names %n changes nobody recognises as a reason to mark a case unread: %s. Nothing watches them, so the case type behaves as if it had named nothing._": [
             "Dit zaaktype noemt een wijziging die niemand herkent als reden om een zaak ongelezen te maken: %s. Niets let erop, dus het zaaktype gedraagt zich alsof het niets noemde.",
@@ -4396,6 +4400,7 @@
         "Last Login At": "Laatst aangemeld op",
         "Last name": "Geslachtsnaam",
         "Last payment date": "Datum laatste betaling",
+        "Last received": "Laatst ontvangen",
         "Last reminder": "Laatste herinnering",
         "Last run": "Laatst gelopen",
         "Last synchronised": "Laatst gesynchroniseerd",
@@ -5466,6 +5471,8 @@
         "Not installed yet": "Nog niet geïnstalleerd",
         "Not issued": "Nog geen nummer",
         "Not junk": "Niet ongewenst",
+        "Not linked yet: %n request waiting": "Nog niet gekoppeld: %n aanvraag wacht",
+        "Not linked yet: %n requests waiting": "Nog niet gekoppeld: %n aanvragen wachten",
         "Not logged in": "Niet ingelogd",
         "Not made public": "Niet openbaar gemaakt",
         "Not marked yet": "Nog niet gemarkeerd",
