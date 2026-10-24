@@ -4133,6 +4133,8 @@
 								},
 								"action": {
 									"type": "open-form",
+									"formTitle": "Add a party",
+									"formConfirmLabel": "Add",
 									"register": "dossiq",
 									"schema": "role",
 									"includeFields": [
@@ -4146,7 +4148,9 @@
 									],
 									"fieldOverrides": {
 										"description": {
-											"widget": "textarea"
+											"widget": "textarea",
+											"description": "",
+											"order": 6
 										},
 										"roleType": {
 											"widget": "resource",
@@ -4163,7 +4167,9 @@
 													"dedupeOn": "genericRole"
 												},
 												"failedText": "The roles this case takes could not be read. Nothing has been changed on the case."
-											}
+											},
+											"description": "",
+											"order": 2
 										},
 										"representedParty": {
 											"widget": "party",
@@ -4187,7 +4193,25 @@
 													"secondary": "CoC {kvkNumber}"
 												}
 											],
-											"label": "Represented by"
+											"label": "Represented by",
+											"description": "",
+											"order": 4
+										},
+										"name": {
+											"description": "",
+											"order": 1
+										},
+										"participant": {
+											"description": "",
+											"order": 3
+										},
+										"delegate": {
+											"description": "",
+											"order": 7
+										},
+										"delegateUntil": {
+											"description": "",
+											"order": 5
 										}
 									},
 									"successMessage": "Party added to the case.",
@@ -4640,6 +4664,8 @@
 								"type": "open-form",
 								"label": "Link object",
 								"icon": "Plus",
+								"formTitle": "Link object",
+								"formConfirmLabel": "Link it",
 								"register": "dossiq",
 								"schema": "caseObject",
 								"includeFields": [
@@ -4650,7 +4676,23 @@
 								],
 								"fieldOverrides": {
 									"description": {
-										"widget": "textarea"
+										"widget": "textarea",
+										"description": "",
+										"order": 4
+									},
+									"objectType": {
+										"description": "",
+										"order": 1
+									},
+									"objectIdentification": {
+										"description": "",
+										"order": 2,
+										"label": "Identification"
+									},
+									"objectUrl": {
+										"description": "",
+										"order": 3,
+										"label": "Link to the object"
 									}
 								},
 								"successMessage": "Object linked to this case.",

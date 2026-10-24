@@ -5482,6 +5482,8 @@
 						"type": "open-form",
 						"label": "Add party",
 						"icon": "AccountPlusOutline",
+						"formTitle": "Add a party",
+						"formConfirmLabel": "Add",
 						"register": "dossiq",
 						"schema": "role",
 						"includeFields": [
@@ -5495,7 +5497,9 @@
 						],
 						"fieldOverrides": {
 							"description": {
-								"widget": "textarea"
+								"widget": "textarea",
+								"description": "",
+								"order": 6
 							},
 							"roleType": {
 								"widget": "resource",
@@ -5505,13 +5509,58 @@
 									"register": "dossiq",
 									"schema": "roleType",
 									"labelField": "name",
-									"scope": { "field": "caseType", "value": "@object.caseType", "includeUnscoped": true, "dedupeOn": "genericRole" },
+									"scope": {
+										"field": "caseType",
+										"value": "@object.caseType",
+										"includeUnscoped": true,
+										"dedupeOn": "genericRole"
+									},
 									"failedText": "The roles this case takes could not be read. Nothing has been changed on the case."
-								}
+								},
+								"description": "",
+								"order": 2
 							},
 							"representedParty": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
-								"label": "Represented by"
+								"widget": "party",
+								"placeholder": "Name, BSN, trade name or KvK number",
+								"testid": "initiator-picker-search",
+								"sources": [
+									{
+										"id": "person",
+										"register": "dossiq",
+										"schema": "brpPerson",
+										"label": "Resident",
+										"title": "{displayName}",
+										"secondary": "{residence.street} {residence.houseNumber}"
+									},
+									{
+										"id": "company",
+										"register": "dossiq",
+										"schema": "kvkCompany",
+										"label": "Organisation",
+										"title": "{tradeName}",
+										"secondary": "CoC {kvkNumber}"
+									}
+								],
+								"label": "Represented by",
+								"description": "",
+								"order": 4
+							},
+							"name": {
+								"description": "",
+								"order": 1
+							},
+							"participant": {
+								"description": "",
+								"order": 3
+							},
+							"delegate": {
+								"description": "",
+								"order": 7
+							},
+							"delegateUntil": {
+								"description": "",
+								"order": 5
 							}
 						},
 						"successMessage": "Party added to the case.",
@@ -5528,6 +5577,8 @@
 						"type": "open-form",
 						"label": "Link object",
 						"icon": "CubeOutline",
+						"formTitle": "Link object",
+						"formConfirmLabel": "Link it",
 						"register": "dossiq",
 						"schema": "caseObject",
 						"includeFields": [
@@ -5538,7 +5589,23 @@
 						],
 						"fieldOverrides": {
 							"description": {
-								"widget": "textarea"
+								"widget": "textarea",
+								"description": "",
+								"order": 4
+							},
+							"objectType": {
+								"description": "",
+								"order": 1
+							},
+							"objectIdentification": {
+								"description": "",
+								"order": 2,
+								"label": "Identification"
+							},
+							"objectUrl": {
+								"description": "",
+								"order": 3,
+								"label": "Link to the object"
 							}
 						},
 						"successMessage": "Object linked to this case.",

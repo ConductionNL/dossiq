@@ -4476,6 +4476,7 @@ OC.L10N.register(
         "Link to case": "Link to case",
         "Link to send": "Link to send",
         "Link to the hoorzittingverslag owned by the bezwaar-lifecycle / hearing-session": "Link to the hoorzittingverslag owned by the bezwaar-lifecycle / hearing-session",
+        "Link to the object": "Link to the object",
         "Link to the work": "Link to the work",
         "Linked": "Linked",
         "Linked BAC advisory request (Awb 7:13); when set, followsAdvice and deviationRationale apply": "Linked BAC advisory request (Awb 7:13); when set, followsAdvice and deviationRationale apply",
