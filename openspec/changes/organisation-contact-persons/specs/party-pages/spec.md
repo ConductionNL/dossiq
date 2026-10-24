@@ -56,3 +56,18 @@ A person party SHALL be valid with only a name and an address. A BSN, when given
 - **WHEN** the person is saved and linked to Buurtvereniging Oost as Secretaris
 - **THEN** the save succeeds and the contact persons tab lists Kees de Wit under Secretaris
 - @e2e exclude {register configuration, covered by PHPUnit on the register fragment}
+
+### Requirement: A handler adds and removes contact persons on the organisation
+
+The Contactpersonen tab SHALL let a user who may update the organisation add a contact person (somebody already
+known, or somebody new with a name, contact details and an address and no BSN) in one of the configured roles,
+optionally as the main contact, and remove a contact person from a role after a confirm.
+
+#### Scenario: Add a treasurer who is new
+
+- **GIVEN** Pieter on Buurtvereniging Oost's Contactpersonen tab
+- **WHEN** he chooses "Contactpersoon toevoegen", describes Ans Bos with her e-mail address, chooses Penningmeester
+  and confirms
+- **THEN** a person without a BSN is saved and listed under Penningmeester, and the tab counts 3
+- @e2e exclude {needs the nc-vue release with the manage widget; measured live after it}
+

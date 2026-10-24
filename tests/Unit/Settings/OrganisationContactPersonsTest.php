@@ -220,5 +220,25 @@ class OrganisationContactPersonsTest extends TestCase {
 		$tabs = array_column($widgets['contact-panels']['content']['tabs'], null, 'widgetId');
 		$this->assertSame(expected: 'Contact persons', actual: $tabs['org-contact-persons']['label']);
 		$this->assertSame(expected: 'total', actual: $tabs['org-contact-persons']['countFrom']['field']);
+
+		// A handler adds a contact person (somebody known, or somebody new without a BSN), in a role, maybe as the
+		// main contact, and removes one; OpenRegister's party API asks the organisation's update right.
+		$manage = $widgets['org-contact-persons']['content']['manage'];
+		$this->assertSame(expected: 'person', actual: $manage['add']['kind']);
+		$this->assertTrue(condition: $manage['add']['primary']);
+		$this->assertSame(expected: ['dossiq', 'brpPerson'], actual: [$manage['add']['create']['register'], $manage['add']['create']['schema']]);
+		$fields = array_column($manage['add']['create']['fields'], null, 'key');
+		$this->assertArrayNotHasKey(key: 'citizenServiceNumber', array: $fields, message: 'a contact person needs no BSN');
+		$this->assertSame(
+			expected: ['path' => 'contactAddresses', 'kind' => 'correspondence', 'type' => 'email'],
+			actual: $fields['email']['address']
+		);
+		$this->assertSame(expected: 'integer', actual: $fields['houseNumber']['type']);
+		$this->assertSame(
+			expected: ['name.givenNames', 'name.namePrefix', 'name.surname'],
+			actual: $manage['add']['create']['compose']['displayName']
+		);
+		$this->assertSame(expected: ['dossiq', 'brpPerson'], actual: [$manage['add']['sources'][0]['register'], $manage['add']['sources'][0]['schema']]);
+		$this->assertArrayHasKey(key: 'remove', array: $manage);
 	}//end testTheOrganisationPageDrawsTheMainContactAndTheTab()
 }//end class

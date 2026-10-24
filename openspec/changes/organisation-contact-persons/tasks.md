@@ -9,5 +9,7 @@
 - [x] 3.2 dossiq OrganisationDetail: side card "Hoofdcontact" and tab "Contactpersonen".
 - [x] 3.3 Example set: Marja Verbeek (Voorzitter, primary) and Kees de Wit (Secretaris, no BSN) on Buurtvereniging Oost.
 - [ ] 3.4 Live: DqOrganisatie "Hoofdcontact" on :8080 (after the nc-vue release and a Zuiddrecht set re-install).
-- [ ] 4.1 Later: an add/remove flow in the parties widget ("Contactpersoon toevoegen"); until then contact persons are
-  linked through the OpenRegister API.
+- [x] 4.1 Add and remove on the Contactpersonen tab: nc-vue `CnObjectPartiesWidget` `manage` (feat/object-parties-manage),
+  dossiq config: pick a known person or describe a new one without a BSN (name, e-mail, phone, address), a role,
+  optionally the main contact; remove per role after a confirm. OpenRegister's party API asks the organisation's
+  update right.
