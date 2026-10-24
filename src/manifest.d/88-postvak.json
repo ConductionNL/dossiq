@@ -53,6 +53,8 @@
 					]
 				},
 				"showTitle": true,
+				"_breadcrumbNote": "DqPostvak: \"Postvak · berichten van de hele organisatie ...\", the page as its one crumb before the note (nextcloud-vue header-trail-current-once draws a crumb naming the page once).",
+				"breadcrumb": { "label": "Mailbox", "route": "Postvak" },
 				"headerMeta": "messages for the whole organisation that belong to no case yet",
 				"countText": "{shown} of {total} messages",
 				"footerNote": "{shown} of {total} · 20 per page",
