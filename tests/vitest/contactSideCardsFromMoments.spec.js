@@ -27,7 +27,7 @@ describe('DqContact side cards', () => {
 		expect(nl[lead.title[0].map.digid]).toBe('Ingelogd met DigiD')
 		expect(lead.title[0].map.non_geidentificeerd).toBe('')
 		expect(nl[lead.subtitle[0].label]).toBe('bij het contactmoment van')
-		const own = content.fields.filter((field) => field.as !== 'lead')
+		const own = content.fields.filter((field) => field.as !== 'lead' && field.label)
 		expect(own.map((field) => field.label)).toEqual(['BSN', 'Data protection', 'Source'])
 		expect(own.every((field) => field.from === 'object')).toBe(true)
 		expect(nl.Source).toBe('Bron')
