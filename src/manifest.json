@@ -3363,6 +3363,11 @@
 						"type": "integration",
 						"integrationId": "shillinq-financial-documents-panel",
 						"title": "Financial documents",
+						"props": {
+							"kinds": ["quote", "invoice", "credit-note", "payment-request", "payout"],
+							"actions": ["issue-invoice", "request-payment", "send-link", "record-payment"],
+							"objectType": "case"
+						},
 						"_note": "financial-documents-on-any-object (Ruben 23 Oct: one Financial documents card). shillinq-financial-documents-panel lists every quote, invoice, credit note, payment request and payout linked to the case and offers issue invoice, request payment, send payment link and record payment, each behind its own shillinq grant; it replaces shillinq-payment-requests-panel, whose acts it keeps. Earlier, fees-and-payments-on-the-case D-1 and D-3: The money lives in shillinq, so shillinq renders it: this is a PLACEMENT of the `shillinq-payment-requests-panel` leaf, the same shape as the humaniq hours leaf beside it, and not a query against another app's register. What the panel shows is the requests raised on this case, the amount, and the article of the legesverordening the amount rests on, because a citizen may ask why they are being charged and \"because the configuration says so\" is not an answer a gemeente may give. It also carries the acts: raise the leges for this case's intake channel, send the payment link, and record money that arrived another way. THE COUNTER PAYMENT IS DELIBERATELY NOT A DOSSIQ ACT. shillinq puts it behind its own `payment.administer` permission, so the authority that owns the money decides who may say it arrived; a second dossiq path to the same fact would be a second answer with a second rights matrix behind it. dossiq's own half is the word on the case (`paymentState`), refreshed hourly for the list and read live whenever an act must be refused or allowed. A leaf whose app is absent is never registered, so on an install without shillinq this panel is missing rather than empty."
 					},
 					{
