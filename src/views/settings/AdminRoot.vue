@@ -147,6 +147,7 @@
 					)
 				"
 				docUrl="https://dossiq.conduction.nl/docs/n8n-consultation-workflows"
+				:columns="2"
 				valuesPath="config"
 				:saveLabel="t('dossiq', 'Save')"
 				:fields="consultationFields" />
