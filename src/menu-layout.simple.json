@@ -3084,9 +3084,10 @@
 						"id": "case-contact-moments-card",
 						"type": "object-list",
 						"title": "Contact moments on this case",
-						"_note": "DqZaakContact: the contact moments as a card with no Add of its own, as the board draws it; a contact is logged with Contact vastleggen in the header and on the conversation card.",
+						"_note": "DqZaakContact: the contact moments as a card with no Add of its own, as the board draws it; a contact is logged with Contact vastleggen in the header and on the conversation card. A plain log: the date with its time as regular text (rowTitle text), the channel as an icon and its name.",
 						"content": {
 							"tableBleed": true,
+							"rowTitle": "text",
 							"headerSubtitle": "{total} recorded",
 							"register": "dossiq",
 							"schema": "contactmoment",
@@ -3102,11 +3103,15 @@
 								{
 									"key": "startTime",
 									"label": "Date",
-									"format": "date-time"
+									"format": "date-time",
+									"widget": "date",
+									"widgetProps": { "short": true, "showTime": true }
 								},
 								{
 									"key": "notificationChannel",
 									"label": "Channel",
+									"widget": "iconLabel",
+									"widgetProps": { "icons": { "phone": "Phone", "email": "EmailOutline", "webformulier": "Earth", "chat": "MessageTextOutline", "social_media": "ShareVariant", "balie": "OfficeBuildingOutline" } },
 									"enum": ["phone", "email", "webformulier", "chat", "social_media", "balie"],
 									"enumLabels": { "phone": "Phone", "email": "Email", "webformulier": "Web form", "chat": "Chat", "social_media": "Social media", "balie": "Desk" }
 								},
