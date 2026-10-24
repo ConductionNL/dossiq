@@ -11131,6 +11131,7 @@ OC.L10N.register(
         "{case}, location": "{case}, location",
         "{code}, {name}": "{code}, {name}",
         "{competentCourt}": "{competentCourt}",
+        "{count:contracts} contracts with {count:suppliers} suppliers": "{count:contracts} contracts with {count:suppliers} suppliers",
         "{count:open} open case": "{count:open} open case",
         "{count:open} open cases": "{count:open} open cases",
         "{count:status=completed} of {total} steps done": "{count:status=completed} of {total} steps done",
