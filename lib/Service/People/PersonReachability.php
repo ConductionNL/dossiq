@@ -94,7 +94,11 @@ class PersonReachability {
 	 */
 	private function person(string $personId): ?array {
 		$rows = $this->rows(schema: 'brpPerson', filters: ['_ids' => [$personId], '_limit' => 1], trusted: true);
-		return is_array($rows[0] ?? null) === true ? $rows[0] : null;
+		if (is_array($rows[0] ?? null) === false) {
+			return null;
+		}
+
+		return $rows[0];
 	}//end person()
 
 	/**
@@ -106,7 +110,11 @@ class PersonReachability {
 	 */
 	private function newestMoment(string $personId): array {
 		$rows = $this->rows(schema: 'contactmoment', filters: ['contact' => $personId, '_order' => ['startTime' => 'desc'], '_limit' => 1], trusted: false);
-		return is_array($rows[0] ?? null) === true ? $rows[0] : [];
+		if (is_array($rows[0] ?? null) === false) {
+			return [];
+		}
+
+		return $rows[0];
 	}//end newestMoment()
 
 	/**
