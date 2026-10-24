@@ -1235,6 +1235,8 @@ $extra = [
     ['name' => 'fileRequest#parties',              'url' => '/api/cases/{caseId}/file-requests/parties',       'verb' => 'GET'],
     ['name' => 'fileRequest#create',               'url' => '/api/cases/{caseId}/file-requests',               'verb' => 'POST'],
     ['name' => 'zaakdossierDownload#downloadZip',  'url' => '/api/cases/{caseId}/dossier/zip',                 'verb' => 'POST'],
+    // The ticked documents merged into one PDF in the case folder, by filinq (DqDocumentenBeheer "Samenvoegen tot pdf").
+    ['name' => 'caseDocumentMerge#merge',          'url' => '/api/cases/{caseId}/dossier/merge',               'verb' => 'POST'],
         // Generate document: asks Filinq to render a library template over
         // the case (DocumentGenerationRequestedEvent) and files the result
         // as an informatieobject + join, the same filing a flow's

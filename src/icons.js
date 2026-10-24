@@ -128,6 +128,7 @@ import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.v
 import FileDocumentPlusOutline from 'vue-material-design-icons/FileDocumentPlusOutline.vue'
 import FileEditOutline from 'vue-material-design-icons/FileEditOutline.vue'
 import FileEyeOutline from 'vue-material-design-icons/FileEyeOutline.vue'
+import FilePdfBox from 'vue-material-design-icons/FilePdfBox.vue'
 import FileQuestionOutline from 'vue-material-design-icons/FileQuestionOutline.vue'
 import FileSign from 'vue-material-design-icons/FileSign.vue'
 import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
@@ -356,6 +357,7 @@ export default {
 	FileDocumentPlusOutline,
 	FileEditOutline,
 	FileEyeOutline,
+	FilePdfBox,
 	FileQuestionOutline,
 	FileSign,
 	FileTreeOutline,

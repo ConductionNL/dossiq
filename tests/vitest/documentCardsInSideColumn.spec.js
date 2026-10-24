@@ -21,3 +21,10 @@ describe('the cards about the selected document', () => {
 		expect(props.sideCards.map((card) => card.id).slice(0, 2)).toEqual(['visibility', 'checksum'])
 	})
 })
+
+describe('merging the ticked documents (DqDocumentenBeheer "Samenvoegen tot pdf")', () => {
+	it('is the first act in the band, through filinq', () => {
+		const props = panels.caseWidget('case-files').props
+		expect(props.bulkActions[0]).toMatchObject({ id: 'bulk-merge-pdf', target: 'BulkDocumentActionDialog', props: { mode: 'merge-pdf' } })
+	})
+})
