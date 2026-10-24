@@ -12958,20 +12958,25 @@
 					},
 					{
 						"key": "kvkNumber",
-						"label": "KvK number"
+						"label": "KvK number",
+						"width": "130px"
 					},
 					{
 						"key": "legalForm",
-						"label": "Legal form"
+						"label": "Legal form",
+						"width": "151px",
+						"cellClass": "cn-cell--wrap"
 					},
 					{
 						"key": "address.place",
 						"label": "Place",
+						"width": "116px",
 						"sortable": false
 					},
 					{
 						"key": "openCases",
 						"label": "Open cases",
+						"width": "132px",
 						"sortable": false,
 						"aggregate": {
 							"register": "dossiq",
@@ -12982,25 +12987,35 @@
 								"isFinalStatus": false
 							},
 							"zeroLabel": "None",
+							"zeroAs": "text",
 							"filterable": true
 						},
-						"widget": "badge"
+						"widget": "badge",
+						"widgetProps": {
+							"variant": "purple"
+						}
 					},
 					{
 						"key": "openTickets",
 						"label": "Open tickets",
+						"width": "120px",
 						"sortable": false,
 						"aggregate": {
 							"endpoint": "/apps/dossiq/api/parties/open-tickets",
 							"key": "masterEntityRef",
 							"requiresApp": "pipelinq",
-							"zeroLabel": "None"
+							"zeroLabel": "None",
+							"zeroAs": "text"
 						},
-						"widget": "badge"
+						"widget": "badge",
+						"widgetProps": {
+							"variant": "purple"
+						}
 					},
 					{
 						"key": "lastContact",
 						"label": "Last contact",
+						"width": "142px",
 						"sortable": false,
 						"formatter": "date",
 						"aggregate": {
