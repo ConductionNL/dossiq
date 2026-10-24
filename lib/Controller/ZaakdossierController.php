@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
 use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -65,6 +66,8 @@ class ZaakdossierController extends Controller {
 	 *        so a document in an unfinished route cannot be made final.
 	 * @param BulkDocumentActions $bulk One act over many documents: the clearance gate that runs
 	 *        before a bulk transition writes anything, and the metadata run that reports per id.
+	 * @param DocumentCaseWriteGuard $caseWrites The change right on every case a document belongs to,
+	 *        checked before a document is read or written.
 	 */
 	public function __construct(
 		string $appName,
@@ -75,6 +78,7 @@ class ZaakdossierController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly DocumentApprovalClearance $approvals,
 		private readonly BulkDocumentActions $bulk,
+		private readonly DocumentCaseWriteGuard $caseWrites,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -276,6 +280,11 @@ class ZaakdossierController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		$refusedCase = $this->caseWrites->refusedCase(user: $user, documentId: $infoObjectId);
+		if ($refusedCase !== null) {
+			return $this->caseWriteRefusal(documentId: $infoObjectId, caseId: $refusedCase);
+		}
+
 		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
 		if ($authError !== null) {
 			return $authError;
@@ -385,6 +394,11 @@ class ZaakdossierController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		$refusedCase = $this->caseWrites->refusedCase(user: $user, documentId: $infoObjectId);
+		if ($refusedCase !== null) {
+			return $this->caseWriteRefusal(documentId: $infoObjectId, caseId: $refusedCase);
+		}
+
 		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
 		if ($authError !== null) {
 			return $authError;
@@ -421,6 +435,11 @@ class ZaakdossierController extends Controller {
 		$ids = (array)$this->request->getParam('ids', []);
 		$newStatus = (string)$this->request->getParam('status', '');
 
+		$refused = $this->caseWrites->firstRefused(user: $user, documentIds: $ids);
+		if ($refused !== null) {
+			return $this->caseWriteRefusal(documentId: $refused['documentId'], caseId: $refused['caseId']);
+		}
+
 		// Per-object clearance gate before any mutation.
 		if ($this->bulk->allReadable(user: $user, ids: $ids) === false) {
 			return new JSONResponse(
@@ -452,9 +471,35 @@ class ZaakdossierController extends Controller {
 		$ids = (array)$this->request->getParam('ids', []);
 		$metadata = (array)$this->request->getParam('metadata', []);
 
+		$refused = $this->caseWrites->firstRefused(user: $user, documentIds: $ids);
+		if ($refused !== null) {
+			return $this->caseWriteRefusal(documentId: $refused['documentId'], caseId: $refused['caseId']);
+		}
+
 		return new JSONResponse(
 			['results' => $this->bulk->updateAll(user: $user, ids: $ids, metadata: $metadata)]
 		);
 	}//end bulkUpdateMetadata()
+
+	/**
+	 * The refusal of a document write: the document and the case it was refused on.
+	 *
+	 * @param string $documentId The document.
+	 * @param string $caseId     The case the caller may not change.
+	 *
+	 * @return JSONResponse 403.
+	 *
+	 * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md#requirement-a-document-write-needs-the-change-right-on-every-case-of-the-document
+	 */
+	private function caseWriteRefusal(string $documentId, string $caseId): JSONResponse {
+		return new JSONResponse(
+			[
+				'error' => 'You may not change a case this document belongs to; nothing was changed',
+				'documentId' => $documentId,
+				'caseId' => $caseId,
+			],
+			Http::STATUS_FORBIDDEN
+		);
+	}//end caseWriteRefusal()
 
 }//end class
