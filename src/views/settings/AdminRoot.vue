@@ -628,6 +628,7 @@ import {
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { loadState } from '@nextcloud/initial-state'
+import { getCanonicalLocale } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
@@ -646,6 +647,7 @@ import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import manifest from '../../manifest.json'
 import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
+import { feeRuleBasis, feeRuleCalculation, feeRuleName } from '../../utils/feeRules.js'
 import {
 	aiFields,
 	archivalFields,
@@ -712,6 +714,11 @@ export default {
 					typeof value === 'string' && value !== ''
 						? this.t('dossiq', value)
 						: value,
+
+				// A shillinq fee rule: its name, its basis and its calculation in words.
+				feeRuleName: (value, row) => feeRuleName(row),
+				feeRuleBasis: (value, row) => feeRuleBasis(row),
+				feeRuleCalculation: (value, row) => feeRuleCalculation(row, (text, vars) => this.t('dossiq', text, vars), getCanonicalLocale()),
 			},
 		}
 	},
@@ -967,12 +974,13 @@ export default {
 		feeScheduleColumns() {
 			return [
 				{
-					key: 'typeValue',
+					key: 'name',
 					label: this.t('dossiq', 'Rule'),
 					cellClass: 'cn-cell--strong',
+					formatter: 'feeRuleName',
 				},
-				{ key: 'legalBasis.regulation', label: this.t('dossiq', 'Basis') },
-				{ key: 'amount', label: this.t('dossiq', 'Amount') },
+				{ key: 'legalBasis', label: this.t('dossiq', 'Basis'), formatter: 'feeRuleBasis' },
+				{ key: 'calculation', label: this.t('dossiq', 'Amount'), formatter: 'feeRuleCalculation' },
 				{ key: 'validFrom', label: this.t('dossiq', 'Valid from') },
 			]
 		},
