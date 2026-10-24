@@ -107,6 +107,13 @@ class ZaakdossierControllerContractTest extends TestCase {
 	private ZaakdossierController $controller;
 
 	/**
+	 * Whether the signed-in caller may add to the case the route names.
+	 *
+	 * @var bool
+	 */
+	private bool $mayAddToCase = true;
+
+	/**
 	 * Build the controller with all collaborators mocked.
 	 *
 	 * @return void
@@ -118,6 +125,7 @@ class ZaakdossierControllerContractTest extends TestCase {
 		$this->fileService = $this->createMock(ZaakdossierService::class);
 		$this->reader = $this->createMock(InformatieobjectReader::class);
 		$this->uploadHandler = $this->createMock(DossierUploadHandler::class);
+		$this->uploadHandler->method('hasCaseUploadAccess')->willReturnCallback(callback: fn (): bool => $this->mayAddToCase);
 		$this->userSession = $this->createMock(IUserSession::class);
 
 		// The seventh collaborator arrived with the approval chain on a
@@ -543,4 +551,37 @@ class ZaakdossierControllerContractTest extends TestCase {
 		);
 	}//end testApprovalMarkersRefusesAnAnonymousCaller()
 
+	/**
+	 * SECURITY: linking a document into a case the caller may not add to is
+	 * refused before the document is read or anything is linked.
+	 *
+	 * @return void
+	 */
+	public function testLinkExistingRefusesACaseTheCallerMayNotAddToBeforeReadingOrLinking(): void {
+		$this->signIn();
+		$this->mayAddToCase = false;
+		$this->reader->expects($this->never())->method('guardReadable');
+		$this->fileService->expects($this->never())->method('linkExistingInformatieobject');
+
+		$response = $this->controller->linkExisting(caseId: 'someone-elses-case', infoObjectId: 'io-1');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+	}//end testLinkExistingRefusesACaseTheCallerMayNotAddToBeforeReadingOrLinking()
+
+	/**
+	 * SECURITY: unlinking a document from a case the caller may not change is
+	 * refused before the document is read or anything is unlinked.
+	 *
+	 * @return void
+	 */
+	public function testUnlinkDocumentRefusesACaseTheCallerMayNotChangeBeforeReadingOrUnlinking(): void {
+		$this->signIn();
+		$this->mayAddToCase = false;
+		$this->reader->expects($this->never())->method('guardReadable');
+		$this->fileService->expects($this->never())->method('unlinkInformatieobject');
+
+		$response = $this->controller->unlinkDocument(caseId: 'someone-elses-case', infoObjectId: 'io-1');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+	}//end testUnlinkDocumentRefusesACaseTheCallerMayNotChangeBeforeReadingOrUnlinking()
 }//end class
