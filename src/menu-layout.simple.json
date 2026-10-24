@@ -6782,7 +6782,6 @@
 						"description": "Who may do what with cases of this type",
 						"content": {
 							"field": "rightsMatrix",
-							"readOnly": true,
 							"variant": "table",
 							"columns": [
 								{
@@ -6792,15 +6791,50 @@
 								},
 								{
 									"header": "Department",
-									"path": "department"
+									"path": "department",
+									"map": {
+										"$ownTeam": "Own team",
+										"*": "All departments"
+									}
 								},
 								{
-									"header": "Confidentiality",
-									"path": "confidentiality"
+									"header": "Up to",
+									"path": "confidentiality",
+									"map": {
+										"openbaar": "Public",
+										"beperkt_openbaar": "Restricted public",
+										"intern": "Internal",
+										"zaakvertrouwelijk": "Case confidential",
+										"vertrouwelijk": "Confidential",
+										"confidentieel": "Classified confidential",
+										"geheim": "Secret",
+										"zeer_geheim": "Top secret"
+									}
 								},
 								{
 									"header": "Actions",
-									"path": "actions"
+									"path": "actions",
+									"map": {
+										"read": "Read",
+										"update": "Change",
+										"create": "Create",
+										"handle": "Handle",
+										"delete": "Delete"
+									}
+								},
+								{
+									"header": "In statuses",
+									"path": "statuses",
+									"labelsFrom": "statuses"
+								},
+								{
+									"header": "Documents",
+									"path": "documentActions",
+									"map": {
+										"read": "Read",
+										"add": "Add",
+										"delete": "Delete"
+									}
 								},
 								{
 									"header": "Until",
@@ -6808,8 +6842,160 @@
 									"format": "date"
 								}
 							],
-							"emptyText": "No rights declared for this case type yet"
-						}
+							"emptyText": "No rights declared for this case type yet",
+							"add": {
+								"label": "Add right",
+								"trigger": "button",
+								"placement": "header",
+								"fields": [
+									{
+										"key": "role",
+										"label": "Role",
+										"type": "select",
+										"required": true,
+										"optionsSource": {
+											"url": "/apps/openregister/api/objects/dossiq/organisatieRol?_limit=500",
+											"path": "results",
+											"valuePath": "roleName",
+											"labelPath": "roleName"
+										}
+									},
+									{
+										"key": "department",
+										"label": "Department",
+										"type": "select",
+										"required": true,
+										"options": [
+											{
+												"value": "$ownTeam",
+												"label": "Own team"
+											},
+											{
+												"value": "*",
+												"label": "All departments"
+											}
+										],
+										"optionsSource": {
+											"url": "/apps/openregister/api/objects/dossiq/organisatieRol?_limit=500",
+											"path": "results",
+											"valuePath": "department",
+											"labelPath": "department"
+										}
+									},
+									{
+										"key": "confidentiality",
+										"label": "Up to confidentiality",
+										"type": "select",
+										"required": true,
+										"options": [
+											{
+												"value": "openbaar",
+												"label": "Public"
+											},
+											{
+												"value": "beperkt_openbaar",
+												"label": "Restricted public"
+											},
+											{
+												"value": "intern",
+												"label": "Internal"
+											},
+											{
+												"value": "zaakvertrouwelijk",
+												"label": "Case confidential"
+											},
+											{
+												"value": "vertrouwelijk",
+												"label": "Confidential"
+											},
+											{
+												"value": "confidentieel",
+												"label": "Classified confidential"
+											},
+											{
+												"value": "geheim",
+												"label": "Secret"
+											},
+											{
+												"value": "zeer_geheim",
+												"label": "Top secret"
+											}
+										]
+									},
+									{
+										"key": "actions",
+										"label": "Actions",
+										"type": "multiselect",
+										"required": true,
+										"options": [
+											{
+												"value": "read",
+												"label": "Read"
+											},
+											{
+												"value": "update",
+												"label": "Change"
+											},
+											{
+												"value": "create",
+												"label": "Create"
+											},
+											{
+												"value": "handle",
+												"label": "Handle"
+											},
+											{
+												"value": "delete",
+												"label": "Delete"
+											}
+										]
+									},
+									{
+										"key": "statuses",
+										"label": "Edit only in these statuses",
+										"type": "multiselect",
+										"optionsSource": {
+											"url": "/apps/dossiq/api/case-types/@objectId/blueprint",
+											"path": "statusTypes",
+											"valuePath": "id",
+											"labelPath": "name"
+										}
+									},
+									{
+										"key": "documentActions",
+										"label": "Documents",
+										"type": "multiselect",
+										"options": [
+											{
+												"value": "read",
+												"label": "Read"
+											},
+											{
+												"value": "add",
+												"label": "Add"
+											},
+											{
+												"value": "delete",
+												"label": "Delete"
+											}
+										]
+									},
+									{
+										"key": "until",
+										"label": "Until (YYYY-MM-DD)",
+										"pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+										"patternMessage": "Use a date as YYYY-MM-DD."
+									}
+								]
+							},
+							"edit": {
+								"label": "Edit"
+							},
+							"remove": {
+								"label": "Remove"
+							}
+						},
+						"_note": "case-type-rights-enforced: the case type's rights rows, edited here and enforced by OpenRegister (the case matrix asks CaseTypeRightsRowsListener for them). A row grants its role the cases of a department, of every department (*) or of the person's own teams ($ownTeam), up to a confidentiality level and every level below it; its edit rights and document changes hold only in the chosen statuses (none chosen: every status). Roles and departments come from the organisation roles, statuses from the case type's blueprint."
 					},
 					{
 						"id": "case-type-field-rules",
