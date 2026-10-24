@@ -2468,6 +2468,52 @@
 			}
 		},
 		{
+			"key": "inspectie-checklist-asbest",
+			"register": "dossiq",
+			"schema": "inspectionChecklistTemplate",
+			"data": {
+				"name": "Asbest",
+				"version": 1,
+				"status": "draft",
+				"active": false,
+				"sections": [
+					{
+						"order": 1,
+						"name": "Asbestinventarisatie",
+						"items": [
+							{
+								"order": 1,
+								"label": "Is er een asbestinventarisatierapport?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Vraag het rapport op bij de eigenaar",
+								"id": "asbest-1"
+							},
+							{
+								"order": 2,
+								"label": "Is de sanering gemeld bij de gemeente?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Controleer de sloopmelding",
+								"id": "asbest-2"
+							},
+							{
+								"order": 3,
+								"label": "Is het werkgebied afgeschermd en gemarkeerd?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "if_no",
+								"helpText": "Let op folie, onderdruk en waarschuwingsborden",
+								"id": "asbest-3"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
 			"key": "inspectie-checklist-brandveiligheid",
 			"register": "dossiq",
 			"schema": "inspectionChecklistTemplate",
@@ -5203,6 +5249,18 @@
 			"set": {
 				"ncGroupId": "zuiddrecht-toezicht-en-handhaving",
 				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+			}
+		},
+		{
+			"key": "checklist-oplevering-versie-2",
+			"register": "dossiq",
+			"schema": "inspectionChecklistTemplate",
+			"where": {
+				"seedKey": "bouwtoezicht-fase-3-oplevering"
+			},
+			"set": {
+				"name": "Bouwtoezicht oplevering",
+				"version": 2
 			}
 		}
 	]
