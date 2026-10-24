@@ -13,3 +13,6 @@ and is called away keeps it on the case, across a reload or another device.
   check; an empty text clears it, a text over 20,000 characters is refused.
 - The case's resident thread declares `content.draft.url`, read by nc-vue's
   conversation widget (feat/conversation-reply-draft).
+- PortalMessageDialog announces a sent reply on the event bus
+  (`cn:conversation:reply-sent` `{ objectId }`), so the conversation widget
+  clears the saved draft and the reply box.

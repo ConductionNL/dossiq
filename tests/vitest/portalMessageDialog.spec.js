@@ -41,6 +41,8 @@ vi.mock('@nextcloud/axios', () => ({
 	default: { get: (...a) => mockGet(...a), post: (...a) => mockPost(...a) },
 }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
+const mockBusEmit = vi.fn()
+vi.mock('@nextcloud/event-bus', () => ({ emit: (...a) => mockBusEmit(...a), subscribe: vi.fn(), unsubscribe: vi.fn() }))
 vi.mock('@nextcloud/auth', () => ({
 	getCurrentUser: () => ({ uid: 'handler-1', displayName: 'Petra de Vries' }),
 }))
@@ -165,6 +167,19 @@ describe('PortalMessageDialog', () => {
 
 		expect(wrapper.emitted('sent')[0][0]).toEqual({ id: 'msg-9' })
 		expect(wrapper.emitted('close')).toBeTruthy()
+	})
+
+	it('tells the page a reply on this case was sent, so a saved draft is cleared (DqZaakContact)', async () => {
+		mockBusEmit.mockReset()
+		const wrapper = mountDialog()
+		await flushPromises()
+
+		wrapper.vm.form.subject = 'Re: Termijn'
+		wrapper.vm.form.content = 'Within two weeks.'
+		await wrapper.vm.send()
+		await flushPromises()
+
+		expect(mockBusEmit).toHaveBeenCalledWith('cn:conversation:reply-sent', { objectId: 'case-1' })
 	})
 
 	it('reads the case from the route when the action passes the unresolved token', async () => {
