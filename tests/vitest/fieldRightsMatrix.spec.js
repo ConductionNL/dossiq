@@ -1,0 +1,76 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * DqZaaktypeVelden "Wie wat ziet en invult, per rol en status": the field
+ * rights as a matrix of fields by status, over the stored rules.
+ *
+ * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+ */
+
+import fs from 'fs'
+import path from 'path'
+import { describe, expect, it } from 'vitest'
+import { fieldRightsMatrix } from '../../src/utils/fieldRightsMatrix.js'
+
+const ROOT = path.resolve(__dirname, '../..')
+const STATUSES = [
+	{ id: 's1', name: 'Ontvangen', fieldRules: [{ rule: 'required', field: 'bouwkosten' }] },
+	{ id: 's2', name: 'In behandeling' },
+	{ id: 's3', name: 'Afgehandeld' },
+]
+const PROPERTIES = [
+	{ name: 'bouwkosten', title: 'Bouwkosten' },
+	{ name: 'soortBouwwerk', title: 'Soort bouwwerk', requiredAtStatus: { id: 's2' } },
+	{ name: 'welstandsgebied', title: 'Welstandsgebied' },
+	{ name: 'situatietekening', title: 'Situatietekening' },
+]
+const RULES = [
+	{ field: 'bouwkosten', rule: 'readOnly', groups: ['Intaker'], statuses: ['s2', 's3'] },
+	{ field: 'welstandsgebied', rule: 'hidden', groups: ['Intaker'] },
+	{ field: 'welstandsgebied', rule: 'readOnly', groups: ['Iedereen'], statuses: ['s3'] },
+	{ field: 'ignored', rule: 'readOnly', groups: [] },
+]
+
+describe('the field rights matrix', () => {
+	const matrix = fieldRightsMatrix({ rules: RULES, statuses: STATUSES, properties: PROPERTIES })
+
+	it('has a column per status, in order', () => {
+		expect(matrix.columns).toEqual([{ id: 's1', label: 'Ontvangen' }, { id: 's2', label: 'In behandeling' }, { id: 's3', label: 'Afgehandeld' }])
+	})
+
+	it('has a row per field a rule names or a status requires, in declared order', () => {
+		expect(matrix.rows.map((row) => row.label)).toEqual(['Bouwkosten', 'Soort bouwwerk', 'Welstandsgebied'])
+	})
+
+	it('holds a status-limited rule only in its statuses, an unlimited one everywhere', () => {
+		const [bouwkosten, soort, welstand] = matrix.rows
+		expect(bouwkosten.cells.map((cell) => [cell.required, cell.roles.length])).toEqual([[true, 0], [false, 1], [false, 1]])
+		expect(bouwkosten.cells[1].roles).toEqual([{ state: 'readOnly', roles: ['Intaker'] }])
+		expect(soort.cells.map((cell) => cell.required)).toEqual([false, true, false])
+		expect(welstand.cells[0].roles).toEqual([{ state: 'hidden', roles: ['Intaker'] }])
+		expect(welstand.cells[2].roles).toEqual([{ state: 'hidden', roles: ['Intaker'] }, { state: 'readOnly', roles: ['Iedereen'] }])
+	})
+
+	it('is empty for a case type without rules or statuses', () => {
+		expect(fieldRightsMatrix({})).toEqual({ columns: [], rows: [] })
+	})
+
+	it('is the Fields tab card, labelled per role and status', () => {
+		const layout = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/menu-layout.simple.json'), 'utf8'))
+		const page = layout.pages.find((p) => p.id === 'CaseTypeDetail')
+		const card = page.configAppend.widgets.find((widget) => widget.id === 'case-type-field-rules')
+		expect(card.type).toBe('CaseTypeFieldRightsWidget')
+		expect(card.title).toBe('Who sees and fills what, per role and status')
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/nl.json'), 'utf8')).translations
+		expect(nl[card.title]).toBe('Wie wat ziet en invult, per rol en status')
+		expect(nl[card.subtitle]).toBe('Verborgen, verplicht of alleen lezen per rol en status')
+	})
+
+	it('declares the optional statuses on a field rule (caseType 1.41.0)', () => {
+		const fragment = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib/Settings/register.d/99-case-type-field-rule-statuses.json'), 'utf8'))
+		const caseType = fragment.components.schemas.caseType
+		expect(caseType.version).toBe('1.41.0')
+		expect(caseType.properties.fieldRoleRules.items.properties.statuses.type).toBe('array')
+	})
+})

@@ -230,56 +230,6 @@ export function queueUrgencyFields(t) {
 }
 
 /**
- * The mandate matrix behaviour: the Decidiq connection, the default term of a
- * stand-in assignment and whether an approved import goes live by itself.
- *
- * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
- * @return {Array<object>} The fields.
- * @spec openspec/specs/admin-settings/spec.md
- */
-export function mandateSettingsFields(t) {
-	return [
-		{
-			key: 'mandate-delivery',
-			type: 'status',
-			text: t(
-				'dossiq',
-				'The mandate matrix (Awb art. 10:3) is being delivered in the mandaat-matrix chain. This panel will host role hierarchy, Decidiq imports and waarnemer assignments.',
-			),
-		},
-		{
-			key: 'mandaat_decidesk_connection',
-			label: t('dossiq', 'Decidiq connection (Integriq)'),
-			placeholder: 'decidesk-default',
-			default: 'decidesk-default',
-			hint: t(
-				'dossiq',
-				'Identifier of the Integriq connection used to fetch mandateringsbesluiten from Decidiq.',
-			),
-		},
-		{
-			key: 'mandaat_default_extension_days',
-			label: t('dossiq', 'Default extension days for waarnemer assignments'),
-			type: 'number',
-			integer: true,
-			min: 0,
-			default: 14,
-			hint: t(
-				'dossiq',
-				'Used as a hint when a waarnemer assignment is created without an explicit end date.',
-			),
-		},
-		{
-			key: 'mandaat_auto_finalize_approved',
-			label: t('dossiq', 'Automatically activate a mandate import after approval'),
-			type: 'switch',
-			trueValue: '1',
-			falseValue: '0',
-		},
-	]
-}
-
-/**
  * The consultation behaviour: the default term, the warning offset, the base
  * of the external response links and the bottleneck threshold.
  *
@@ -289,15 +239,6 @@ export function mandateSettingsFields(t) {
  */
 export function consultationFields(t) {
 	return [
-		{
-			key: 'consultation-delivery',
-			type: 'status',
-			advanced: true,
-			text: t(
-				'dossiq',
-				'Structured consultation (adviesaanvraag) is being delivered in consultation-management. This panel will host advisory body registry, mandatory-gate config and n8n webhook endpoints.',
-			),
-		},
 		{
 			key: 'consultation_default_deadline_days',
 			label: t('dossiq', 'Standard term in days'),
@@ -833,7 +774,9 @@ export function sharedMailboxFields(t) {
 		},
 		{
 			key: 'email_imap_folder',
-			label: t('dossiq', 'Folder'),
+			// The section translates a label itself. Translated here too, the
+			// Dutch "Map" would be read as the key "Map" and show "Kaart".
+			label: 'Folder',
 			placeholder: 'INBOX',
 			default: 'INBOX',
 		},

@@ -33,6 +33,11 @@ function formOrder() {
 }
 
 describe('Zaak bewerken against DqZaakDialogen', () => {
+	it('is titled Zaak bewerken while the header button keeps Bewerken', () => {
+		expect(dutch(config.editTitle)).toBe('Zaak bewerken')
+		expect(config.editLabel ?? '').toBe('')
+	})
+
 	it('says what the form does not change, in the board words', () => {
 		expect(dutch(config.editSubtitle)).toBe('De velden van de zaak. Status en termijn wijzigt u via Volgende stap.')
 	})

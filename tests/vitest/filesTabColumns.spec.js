@@ -33,7 +33,10 @@ describe('the Files tab columns as the library reads them', () => {
 		const keys = columns.filter((column) => column.hidden !== true && column.when === undefined).map((column) => column.key)
 
 		expect(keys).toEqual(['name', 'scanVerdict', 'vertrouwelijkheidaanduiding'])
-		expect(columns.filter((column) => column.when !== undefined).map((column) => column.key)).toEqual(['reviewVerdict'])
+		// The library keeps a `when` column only once the page resolved its condition to true.
+		expect(columns.map((column) => column.key)).not.toContain('reviewVerdict')
+		const resolved = filesProps().columns.map((column) => (column?.when !== undefined ? { ...column, when: true } : column))
+		expect(normaliseFileColumns(resolved).map((column) => column.key)).toContain('reviewVerdict')
 		// The documents list's Direction and Keywords start hidden, a tick away in Columns.
 		expect(columns.filter((column) => column.hidden === true).map((column) => column.key)).toEqual(['direction', 'keywords'])
 		expect(normaliseFileColumns(filesProps().columns)[0].label, 'board DqDocumentenBeheer heads the name column Document').toBe('Document')
