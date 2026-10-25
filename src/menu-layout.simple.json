@@ -7390,6 +7390,7 @@
 								"dir": "asc"
 							},
 							"limit": 50,
+							"rowTitle": "strong",
 							"columns": [
 								{
 									"key": "name",
@@ -7398,7 +7399,12 @@
 								{
 									"key": "archivalAction",
 									"label": "Archival action",
-									"widget": "label"
+									"widget": "label",
+									"enumLabels": {
+										"bewaren": "Retain",
+										"vernietigen": "Destroy",
+										"blijvend_bewaren": "Retain permanently"
+									}
 								},
 								{
 									"key": "archivalPeriod",
