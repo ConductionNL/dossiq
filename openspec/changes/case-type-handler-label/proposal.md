@@ -8,7 +8,7 @@ configuration of the case type.
 
 ## What changes
 
-- The caseType schema (1.41.0, fragment `99-case-type-handler-label.json`) declares `handlerLabel`, an optional
+- The caseType schema (1.42.0, fragment `99-case-type-handler-label.json`) declares `handlerLabel`, an optional
   string.
 - The jeugdwet package (1.11.0) sets `handlerLabel: "Regisseur"`.
 - The report card's handler row (`case-summary`) reads `labelPath: "@context.caseType.handlerLabel"`, falling back to
