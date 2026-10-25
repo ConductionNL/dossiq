@@ -29,9 +29,11 @@ function filesProps() {
 describe('the Files tab columns as the library reads them', () => {
 	it('renders the name, then the board columns, and keeps the rest in the side cards', () => {
 		const columns = normaliseFileColumns(filesProps().columns)
-		const keys = columns.filter((column) => column.hidden !== true).map((column) => column.key)
+		// A column with `when` (the review verdict) is drawn only on a case type that reviews its documents.
+		const keys = columns.filter((column) => column.hidden !== true && column.when === undefined).map((column) => column.key)
 
 		expect(keys).toEqual(['name', 'scanVerdict', 'vertrouwelijkheidaanduiding'])
+		expect(columns.filter((column) => column.when !== undefined).map((column) => column.key)).toEqual(['reviewVerdict'])
 		// The documents list's Direction and Keywords start hidden, a tick away in Columns.
 		expect(columns.filter((column) => column.hidden === true).map((column) => column.key)).toEqual(['direction', 'keywords'])
 		expect(normaliseFileColumns(filesProps().columns)[0].label, 'board DqDocumentenBeheer heads the name column Document').toBe('Document')

@@ -2610,6 +2610,12 @@
 							]
 						}
 					},
+					"case-notes-panel": {
+						"_note": "DqZaakEmail: the notes under the mail card are a card of their own, \"Notities\" with its subtitle; `view: tab` keeps the notes leaf's full tab (composer behind its button, note actions) inside that card.",
+						"content": {
+							"view": "tab"
+						}
+					},
 					"case-email-panel": {
 						"_note": "DqZaakEmail: the tab opens with the board header and the template row; the mail linked to the case is listed in the same card, as the board draws it, and the notes stand under it. Mail koppelen and Mail opstellen are the library mail tab's own header buttons (content.headerActions).",
 						"content": {
@@ -3189,6 +3195,7 @@
 						"_note": "ontvangstbevestiging REQ-TERM-023 and REQ-TERM-024: whether this case confirmed receipt under Awb 4:3a, when, to whom and by which channel, and the messages it sent on its own. It sits in Communication rather than Data because it IS correspondence, beside the contact a handler logs by hand. A `data` widget and not a bespoke component: both fields are declared on the case schema, so the library renders them from the schema and this change adds no widget to the custom-widget ratchet. Read-only throughout: the duty is written by the acknowledgement service and cleared through the Record receipt confirmed action, never by typing over the field, because a duty a handler can edit silently is the state this feature exists to make visible.",
 						"content": {
 							"title": "Receipt confirmation",
+							"footnote": "If the confirmation went outside dossiq, record it with Record receipt confirmed, under More.",
 							"columns": 3,
 							"include": [
 								"receivedAt",
@@ -4146,6 +4153,9 @@
 							"emptyText": "No messages with the resident yet.",
 							"replyLabel": "Answer to the resident",
 							"replyHint": "Goes to the message box in the portal",
+							"draft": {
+								"url": "/apps/dossiq/api/cases/@objectId/reply-draft"
+							},
 							"replyOption": {
 								"label": "Log as a contact moment on this case",
 								"key": "logContactMoment",
@@ -4171,7 +4181,7 @@
 						},
 						"_note": "DqZaakDocumenten \"4 van 7 beoordeeld\": the verdicts so far over the case's documents under review, from /api/cases/{id}/review/verdicts, each verdict in its tone and what is still to assess as the neutral rest. Only on a case type that reviews its documents (documentReview.enabled). Needs nextcloud-vue CnStackedBarWidget endpointSource, colors, remainder and heading (feat/stacked-bar-remainder-colours).",
 						"content": {
-							"inset": true,
+							"compact": true,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/cases/@objectId/review/verdicts"
 							},

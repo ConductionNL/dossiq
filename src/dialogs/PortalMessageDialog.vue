@@ -50,6 +50,7 @@
 <script>
 import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
+import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import {
@@ -251,6 +252,8 @@ export default {
 					payload,
 				)
 				this.$emit('sent', data)
+				// A reply saved as a draft on this case is now sent (the conversation widget clears it).
+				emit('cn:conversation:reply-sent', { objectId: this.resolvedCaseId })
 				if (this.logContactMoment === true && await this.logAsContactMoment(payload) === false) {
 					this.error = t(
 						'dossiq',

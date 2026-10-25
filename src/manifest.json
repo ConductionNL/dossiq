@@ -3868,8 +3868,15 @@
 						"_dropNote": "files-dropped-on-the-list (boards DqZaakDocumenten and DqZaakDocumentenSlepen, design-system#148): `uploadButton` puts Add files beside the New menu as the primary button, `dropOverlay` draws Drop to add over the list while files are dragged onto it and announces it in a polite live region, `dropHint` puts Or drag files onto this list. under it. All three are nextcloud-vue CnFilesBrowser opt-ins (nextcloud-vue#1419) whose words, and their Dutch, come from the library: a label declared here would reach the component untranslated. The drop is never the only way in: the button stays, and the New menu keeps its upload entry. Carried since nextcloud-vue 2.77.0: the tabs widget renders this leaf bare, so the props reach CnFilesTab, which hands them to CnFilesBrowser.",
 						"props": {
 							"uploadButton": true,
+							"newMenu": false,
+							"folderButton": true,
 							"dropOverlay": true,
 							"dropHint": true,
+							"dropDetail": [
+								{ "when": "@context.caseType.documentReview.enabled", "text": "{count} files go to case {case}, as a document still to be assessed." },
+								{ "text": "{count} files go to case {case}." }
+							],
+							"dropDetailValues": { "case": "@object.identifier" },
 							"rowActions": [
 								{
 									"id": "document-properties",
@@ -3918,26 +3925,47 @@
 									"handler": "readFileAsMessage"
 								}
 							],
-							"newActions": [
+							"headerActions": [
 								{
 									"id": "request-file",
 									"label": "Request a file from a party",
 									"icon": "EmailOutline",
 									"type": "open-modal",
 									"target": "FileRequestDialog"
-								},
-								{
-									"id": "generate-document",
-									"label": "Generate document",
-									"icon": "FileDocumentPlusOutline",
-									"type": "open-modal",
-									"target": "BeschikkingComposerDialog",
-									"props": {
-										"caseId": "@objectId",
-										"open": true
-									}
 								}
 							],
+							"rowButton": {
+								"id": "assess-document",
+								"label": "Assess",
+								"type": "open-modal",
+								"target": "DocumentAssessDialog",
+								"when": "@context.caseType.documentReview.enabled",
+								"rowProps": { "documentId": "id" },
+								"primaryWhen": { "key": "reviewVerdict", "values": ["open"] },
+								"props": {
+									"caseId": "@objectId",
+									"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
+									"assessUrl": "/apps/dossiq/api/cases/{caseId}/woo/assessment",
+									"classifications": [
+										{ "value": "openbaar", "label": "Public" },
+										{ "value": "deels_openbaar", "label": "Disclosed in part", "needsGrounds": true },
+										{ "value": "niet_openbaar", "label": "Not public", "needsGrounds": true }
+									],
+									"grounds": {
+										"register": "dossiq",
+										"schema": "wooRefusalGround",
+										"valueField": "code",
+										"labelField": "label",
+										"filter": { "status": "active", "citable": true }
+									},
+									"fields": {
+										"document": "documentRef",
+										"classification": "classification",
+										"grounds": "weigeringsgronden"
+									}
+								}
+							},
+							"_rowButtonNote": "DqZaakDocumenten: each document of a case type that reviews its documents (documentReview.enabled) shows its verdict (reviewVerdict from the dossier listing, open while unassessed) and Beoordelen, primary while open, opening the same DocumentAssessDialog as the header's Assess documents with that document chosen (rowProps documentId). On any other case (DqDocumentenBeheer) `when` is false and neither is drawn. Needs nc-vue feat/files-review-row-when; an older library draws both everywhere.",
 							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
 							"rowDataUrl": "/apps/dossiq/api/cases/{objectId}/dossier",
 							"rowDataPath": "informatieobjecten",
@@ -3976,6 +4004,30 @@
 									}
 								},
 								{
+									"id": "review-verdict",
+									"key": "reviewVerdict",
+									"source": "row",
+									"label": "Assessment",
+									"property": "reviewVerdict",
+									"when": "@context.caseType.documentReview.enabled",
+									"formatter": "optionLabel",
+									"formatterOptions": {
+										"labels": {
+											"openbaar": "Public",
+											"deels_openbaar": "Partly public",
+											"niet_openbaar": "Not public",
+											"open": "Still to be assessed"
+										}
+									},
+									"widget": "badge",
+									"colorKey": "reviewVerdict",
+									"colorMap": {
+										"openbaar": "success",
+										"deels_openbaar": "warning",
+										"niet_openbaar": "error"
+									}
+								},
+								{
 									"key": "direction",
 									"source": "row",
 									"label": "Direction",
@@ -3999,8 +4051,36 @@
 							"selectionLabel": "{count} documents selected",
 							"selectionLabelOne": "{count} document selected",
 							"showClearSelection": false,
+							"nameSecondary": "{type} · {size} · {modified|date}",
+							"secondLine": [
+								{ "when": "@context.caseType.documentReview.enabled", "fields": ["type", "size", "modified|date"] },
+								{ "fields": ["senderName", "modified|date"] }
+							],
+							"_secondLineNote": "Coordinator 24 Oct: both boards are right. A case that reviews its documents (DqZaakDocumenten) reads type, size and date under each name; any other case (DqDocumentenBeheer) the sender and date. `nameSecondary` stays for a library without `secondLine`.",
 							"sideCardsPlacement": "page-side",
 							"bulkActions": [
+								{
+									"id": "bulk-merge-pdf",
+									"label": "Merge into PDF",
+									"icon": "FilePdfBox",
+									"type": "open-modal",
+									"target": "BulkDocumentActionDialog",
+									"props": {
+										"mode": "merge-pdf",
+										"caseId": "@objectId"
+									}
+								},
+								{
+									"id": "bulk-copy-to-case",
+									"label": "Copy to another case",
+									"icon": "ContentCopy",
+									"type": "open-modal",
+									"target": "BulkDocumentActionDialog",
+									"props": {
+										"mode": "copy-to-case",
+										"caseId": "@objectId"
+									}
+								},
 								{
 									"id": "bulk-confidentiality",
 									"label": "Who can see this",
@@ -4066,7 +4146,20 @@
 										{
 											"key": "integrity.date",
 											"label": "Computed",
-											"formatter": "dateTime"
+											"formatter": "relativeDate",
+											"formatterOptions": { "time": true }
+										},
+										{
+											"key": "integrity.checkedAt",
+											"label": "Last checked",
+											"formatter": "relativeDate",
+											"formatterOptions": { "time": true }
+										},
+										{
+											"key": "integrity.status",
+											"label": "Outcome",
+											"formatter": "integrityStatus",
+											"colorMap": { "changed": "error", "missing": "error" }
 										}
 									]
 								},
@@ -4091,7 +4184,7 @@
 											"key": "mtime",
 											"label": "Modified",
 											"source": "node",
-											"formatter": "dateTime"
+											"formatter": "datetime"
 										}
 									]
 								}

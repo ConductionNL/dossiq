@@ -164,6 +164,42 @@ function lookupRelatedName(type, uuid) {
 
 export default {
 	/**
+	 * A stored code by its label (`formatterOptions.labels`), translated; the
+	 * code itself when it has no label (DqZaakDocumenten verdict pill).
+	 *
+	 * @param {unknown} value The stored code.
+	 * @param {object} row The row.
+	 * @param {object} property The property.
+	 * @param {{labels?: object}} options The column's formatter options.
+	 * @return {string}
+	 * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
+	 */
+	optionLabel: (value, row, property, options) => {
+		const code = value === null || value === undefined ? '' : String(value)
+		const label = options && options.labels && typeof options.labels[code] === 'string' ? options.labels[code] : ''
+		return label === '' ? code : t('dossiq', label)
+	},
+
+	/**
+	 * The outcome of a document checksum's last check, in words; the code
+	 * itself when it is not one of the four.
+	 *
+	 * @param {unknown} value `unchanged`, `changed`, `missing` or `unchecked`.
+	 * @return {string}
+	 * @spec openspec/changes/document-integrity-check/specs/document-integrity-check/spec.md#requirement-the-checksum-card-says-when-and-how-the-file-was-last-checked
+	 */
+	integrityStatus: (value) => {
+		const labels = {
+			unchanged: t('dossiq', 'Unchanged'),
+			changed: t('dossiq', 'Changed since it was stored'),
+			missing: t('dossiq', 'File not found'),
+			unchecked: t('dossiq', 'Too large to check'),
+		}
+		const code = value === null || value === undefined ? '' : String(value)
+		return labels[code] ?? code
+	},
+
+	/**
 	 * Whom a covered case is covered for, and until when ("For Anouk Bakker,
 	 * until 10 Oct"); '' on the reader's own case.
 	 *

@@ -49,3 +49,10 @@ describe('the contact moments on the Contact tab', () => {
 		}
 	})
 })
+
+describe('the answer to the resident', () => {
+	it('can be kept as a draft on the case (DqZaakContact "Opslaan als concept")', () => {
+		const thread = simple.configAppend.widgets.find((widget) => widget.id === 'case-resident-thread')
+		expect(thread.content.draft).toEqual({ url: '/apps/dossiq/api/cases/@objectId/reply-draft' })
+	})
+})
