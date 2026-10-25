@@ -904,7 +904,7 @@
         "digest": "bb48c2734868033e2a338744b07d51b474182d7f6e3df9ee62829d49ed02ec2b"
     },
     "lib/Settings/register.d/25-brp-kvk.json::brpPerson": {
-        "version": "1.6.0",
+        "version": "1.7.0",
         "digest": "ea0271480e01c47e60831c6b03cebcd84393c5d6b1d8463ee2127600260c74dc"
     },
     "lib/Settings/register.d/25-brp-kvk.json::kvkCompany": {

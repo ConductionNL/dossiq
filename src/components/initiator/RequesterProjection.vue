@@ -120,6 +120,17 @@ export default {
 					initiatorSourceId: String(result.sourceId || ''),
 					initiatorDisplayName: result.displayName || '',
 				}
+				// A number this reader was shown masked ("*****7609") or not
+				// at all is not the number: the case keeps the one it holds for
+				// the same requester rather than storing the mask over it.
+				const unknownNumber = projection.initiatorSourceId === '' || projection.initiatorSourceId.includes('*')
+				const sameRequester = String(caseObject.initiatorType ?? '') === projection.initiatorType
+					&& String(caseObject.initiatorDisplayName ?? '') === projection.initiatorDisplayName
+				if (unknownNumber && sameRequester) {
+					delete projection.initiatorSourceId
+				} else if (unknownNumber) {
+					projection.initiatorSourceId = ''
+				}
 				// Written only when it differs: a requester replaced in a form
 				// still carries the old one's name and type until this runs.
 				if (Object.keys(projection).every((key) => String(caseObject[key] ?? '') === projection[key])) {
