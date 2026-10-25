@@ -28,4 +28,9 @@ describe('the case task table', () => {
 		expect(nl[table.stateLabels.completed]).toBe('Klaar')
 		expect(table.stateColors.active).toBe('purple')
 	})
+
+	it('sorts and filters from its column heads, as the board draws them', () => {
+		expect(table.sortable).toBe(true)
+		expect(table.filterable).toBe(true)
+	})
 })

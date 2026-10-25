@@ -3359,6 +3359,8 @@
 						"_note": "DqZaakTaken: the case's tasks as the library task table (CnTasksWidget `variant: table`): every task on the case from OpenRegister's task engine, open first and finished struck through, with the summary under the title and New task in the card header. Claim, complete (also a colleague's task, the engine decides), cancel and adding a task stay on the case page; a task's form, candidates and notes are on its own page, which the task title opens (rowRoute TaskDetail). Complete goes through dossiq's completion route (`completeUrl`), which applies the case type's form and effect refusals first, and a task that asks for a form opens it in a dialog; Claim shows only where dossiq's capability probe says the engine can claim (`claimCapabilityUrl`).",
 						"content": {
 							"variant": "table",
+							"sortable": true,
+							"filterable": true,
 							"objectUuid": "@objectId",
 							"includeDone": true,
 							"limit": 25,
