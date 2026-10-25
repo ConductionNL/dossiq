@@ -40,4 +40,9 @@ describe('the ZGW mapping names', () => {
 		expect(table).toContain('<td>{{ resourceName(key) }}</td>')
 		expect(table).not.toContain('<td>{{ key }}</td>')
 	})
+
+	it('sets a row\'s Edit and Reset side by side', () => {
+		expect(table).toMatch(/<div class="zgw-mapping-settings__actions">\s*<NcButton type="secondary"/)
+		expect(table).toMatch(/\.zgw-mapping-settings__actions \{\s*display: flex;/)
+	})
 })

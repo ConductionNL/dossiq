@@ -26,12 +26,14 @@
 							</span>
 						</td>
 						<td>
-							<NcButton type="secondary" @click="editMapping(key)">
-								{{ t('dossiq', 'Edit') }}
-							</NcButton>
-							<NcButton type="tertiary" @click="resetMapping(key)">
-								{{ t('dossiq', 'Reset') }}
-							</NcButton>
+							<div class="zgw-mapping-settings__actions">
+								<NcButton type="secondary" @click="editMapping(key)">
+									{{ t('dossiq', 'Edit') }}
+								</NcButton>
+								<NcButton type="tertiary" @click="resetMapping(key)">
+									{{ t('dossiq', 'Reset') }}
+								</NcButton>
+							</div>
 						</td>
 					</tr>
 				</tbody>
@@ -170,6 +172,12 @@ export default {
 
 .zgw-mapping-settings th {
 	font-weight: bold;
+}
+
+.zgw-mapping-settings__actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
 }
 
 .status-enabled {
