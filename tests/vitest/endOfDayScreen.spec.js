@@ -105,6 +105,8 @@ describe('the end-of-day page', () => {
 	it('says why the open list is empty, and hides First thing tomorrow when nothing is due', () => {
 		expect(widget('eod-open').content.emptyTexts[0].when).toEqual({ endpoint: DAY, field: 'opened', op: 'eq', value: 0 })
 		expect(widget('eod-tomorrow').visibleWhen).toEqual({ endpoint: DAY, field: 'tomorrow', op: 'notEmpty' })
+		// DqDagAfsluiten: the items 10px under the title and 10px apart, unruled.
+		expect(widget('eod-tomorrow').content.density).toBe('stacked')
 	})
 
 	it('heads Your day and How this works as side headings, as board DqDagAfsluiten (nextcloud-vue titleTone)', () => {

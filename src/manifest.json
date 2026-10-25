@@ -1371,7 +1371,7 @@
 										"url": "/apps/openregister/api/archival/reviews/pending"
 									},
 									"itemsPath": "results",
-									"idField": "entryId",
+									"idField": "uuid",
 									"title": "{title}",
 									"meta": "Disposal date: {archiefactiedatum}",
 									"answers": [
@@ -1400,7 +1400,7 @@
 										"label": "Record this decision",
 										"request": {
 											"method": "POST",
-											"url": "/apps/openregister/api/archival/destruction-lists/{listId}/entries/{entryId}/decision"
+											"url": "/apps/openregister/api/archival/destruction-lists/{list}/entries/{uuid}/decision"
 										}
 									},
 									"emptyText": "You hold no archival decisions right now.",
@@ -6099,7 +6099,10 @@
 									"currentHint": "Now with {team}. The new team picks its own handler.",
 									"currentAs": "team",
 									"hint": "The new team picks its own handler.",
-									"allowTyped": true,
+									"describe": {
+										"register": "dossiq",
+										"schema": "organisatieRol"
+									},
 									"field": "team"
 								},
 								"note": {
@@ -7332,6 +7335,7 @@
 								"responsePath": "tomorrow"
 							},
 							"presentation": "rows",
+							"density": "stacked",
 							"duePlacement": "below",
 							"title": "{title}",
 							"due": {
@@ -11477,7 +11481,8 @@
 								},
 								"responsePath": "summaryRows"
 							},
-							"meta": "Quarter {quarter} of {year}: {decided} cases decided, {withinTerm} within the statutory or extended term ({share} %)."
+							"meta": "Quarter {quarter} of {year}: {decided} cases decided, {withinTerm} within the statutory or extended term ({share} %).",
+							"emptyText": ""
 						}
 					},
 					{
