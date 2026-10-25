@@ -853,6 +853,9 @@ $extra = [
     // Woo review (woo-review-triage): relevance apart from the verdict, and the case summary.
     ['name' => 'documentReview#summary',   'url' => '/api/cases/{id}/review/summary', 'verb' => 'GET'],
     ['name' => 'documentVerdicts#forCase', 'url' => '/api/cases/{id}/review/verdicts', 'verb' => 'GET'],
+    // A reply to the resident kept as the caller's draft on the case (DqZaakContact "Opslaan als concept").
+    ['name' => 'caseReplyDraft#show', 'url' => '/api/cases/{id}/reply-draft', 'verb' => 'GET'],
+    ['name' => 'caseReplyDraft#save', 'url' => '/api/cases/{id}/reply-draft', 'verb' => 'PUT'],
     ['name' => 'documentReview#relevance', 'url' => '/api/cases/{id}/review/documents/{documentRef}/relevance', 'verb' => 'POST'],
     ['name' => 'documentReview#batches',     'url' => '/api/cases/{id}/review/batches', 'verb' => 'GET'],
     ['name' => 'documentReview#createBatch', 'url' => '/api/cases/{id}/review/batches', 'verb' => 'POST'],
