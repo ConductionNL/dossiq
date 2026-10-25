@@ -14099,6 +14099,7 @@
 								{
 									"from": "object",
 									"label": "BSN",
+									"inline": true,
 									"path": "citizenServiceNumber",
 									"format": "masked",
 									"reveal": {

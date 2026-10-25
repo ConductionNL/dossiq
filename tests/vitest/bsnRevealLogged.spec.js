@@ -32,4 +32,10 @@ describe('DqContact BSN reveal', () => {
 		expect(line).toMatchObject({ as: 'line', from: 'object' })
 		expect(nl[line.text]).toBe('Het tonen van het BSN wordt gelogd.')
 	})
+
+	/** @spec openspec/changes/identity-bsn-inline/specs/party-pages/spec.md#requirement-the-bsn-and-tonen-share-one-line */
+	it('draws the BSN, its mask and Tonen on one line across the card', () => {
+		const fields = pages.find((page) => page.id === 'ContactDetail').config.sideColumn.find((entry) => entry.id === 'side-identity').content.fields
+		expect(fields.find((field) => field.path === 'citizenServiceNumber').inline).toBe(true)
+	})
 })
