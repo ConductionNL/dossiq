@@ -10274,7 +10274,8 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 7
+						"gridHeight": 7,
+						"sizeToContent": true
 					},
 					{
 						"id": "violation",
