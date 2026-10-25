@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\Queue\QueueFigures;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Team\PrimaryTeamService;
+use OCA\Dossiq\Service\Team\ReaderTeamCases;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use OCP\IL10N;
@@ -548,16 +549,16 @@ final class KpiAggregationServiceTest extends TestCase {
 			}
 		);
 
-		$teamService = null;
-		$users = null;
+		$teamCases = null;
 		if ($teams !== null) {
 			$teamService = $this->createMock(PrimaryTeamService::class);
 			$teamService->method('teamsOf')->willReturn($teams);
 			$users = $this->createMock(IUserManager::class);
 			$users->method('get')->willReturn($this->createMock(IUser::class));
+			$teamCases = new ReaderTeamCases(teams: $teamService, users: $users);
 		}
 
-		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, new QueueFigures(new DayCount()), $l10n, new NullLogger(), teams: $teamService, users: $users);
+		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, new QueueFigures(new DayCount(), $teamCases), $l10n, new NullLogger());
 	}
 
 	/**

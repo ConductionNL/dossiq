@@ -116,30 +116,9 @@ class PrimaryTeamService {
 	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
 	 */
 	public static function teams(array $roles, array $userGroupIds): array {
-		$byId = [];
-		foreach ($roles as $role) {
-			$roleId = self::roleId(role: $role);
-			if ($roleId !== '') {
-				$byId[$roleId] = $role;
-			}
-		}
-
-		$bound = [];
-		foreach ($roles as $role) {
-			$group = trim((string)($role['ncGroupId'] ?? ''));
-			if ($group === '' || $group === 'admin' || in_array($group, $userGroupIds, true) === false) {
-				continue;
-			}
-
-			$bound[] = $role;
-		}
-
-		$ancestors = [];
-		foreach ($bound as $role) {
-			foreach (self::ancestorIds(role: $role, byId: $byId) as $ancestorId) {
-				$ancestors[$ancestorId] = true;
-			}
-		}
+		$byId = self::rolesById(roles: $roles);
+		$bound = self::boundRoles(roles: $roles, userGroupIds: $userGroupIds);
+		$ancestors = self::ancestorSet(bound: $bound, byId: $byId);
 
 		$teams = [];
 		$seen  = [];
@@ -157,26 +136,91 @@ class PrimaryTeamService {
 			];
 		}
 
-		usort(
-			$teams,
-			static function (array $a, array $b): int {
-				if (self::isBefore(candidate: $a, best: $b) === true) {
-					return -1;
-				}
-
-				if (self::isBefore(candidate: $b, best: $a) === true) {
-					return 1;
-				}
-
-				return 0;
-			}
-		);
+		usort($teams, static fn (array $a, array $b): int => self::order(first: $a, second: $b));
 
 		return array_map(
 			static fn (array $team): array => ['groupId' => $team['groupId'], 'name' => $team['name']],
 			$teams
 		);
 	}//end teams()
+
+	/**
+	 * The roles by id; a role without one is left out.
+	 *
+	 * @param array<int, array<string, mixed>> $roles The organisatieRol rows.
+	 *
+	 * @return array<string, array<string, mixed>> The roles keyed by id.
+	 */
+	private static function rolesById(array $roles): array {
+		$byId = [];
+		foreach ($roles as $role) {
+			$roleId = self::roleId(role: $role);
+			if ($roleId !== '') {
+				$byId[$roleId] = $role;
+			}
+		}
+
+		return $byId;
+	}//end rolesById()
+
+	/**
+	 * The roles that bind one of the user's groups; the admin group binds none.
+	 *
+	 * @param array<int, array<string, mixed>> $roles        The organisatieRol rows.
+	 * @param array<int, string>               $userGroupIds The user's Nextcloud group ids.
+	 *
+	 * @return array<int, array<string, mixed>> The bound roles.
+	 */
+	private static function boundRoles(array $roles, array $userGroupIds): array {
+		return array_values(
+			array_filter(
+				$roles,
+				static function (array $role) use ($userGroupIds): bool {
+					$group = trim((string)($role['ncGroupId'] ?? ''));
+					return $group !== '' && $group !== 'admin' && in_array($group, $userGroupIds, true) === true;
+				}
+			)
+		);
+	}//end boundRoles()
+
+	/**
+	 * The ids of every ancestor of a bound role.
+	 *
+	 * @param array<int, array<string, mixed>>    $bound The bound roles.
+	 * @param array<string, array<string, mixed>> $byId  Every role by id.
+	 *
+	 * @return array<string, true> The ancestor ids.
+	 */
+	private static function ancestorSet(array $bound, array $byId): array {
+		$ancestors = [];
+		foreach ($bound as $role) {
+			foreach (self::ancestorIds(role: $role, byId: $byId) as $ancestorId) {
+				$ancestors[$ancestorId] = true;
+			}
+		}
+
+		return $ancestors;
+	}//end ancestorSet()
+
+	/**
+	 * The order of two teams as the primary team is chosen.
+	 *
+	 * @param array<string, mixed> $first  A team.
+	 * @param array<string, mixed> $second Another team.
+	 *
+	 * @return int Negative when the first comes before the second.
+	 */
+	private static function order(array $first, array $second): int {
+		if (self::isBefore(candidate: $first, best: $second) === true) {
+			return -1;
+		}
+
+		if (self::isBefore(candidate: $second, best: $first) === true) {
+			return 1;
+		}
+
+		return 0;
+	}//end order()
 
 	/**
 	 * Pick the primary team from the organisation's roles and the user's groups.
@@ -189,13 +233,7 @@ class PrimaryTeamService {
 	 * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
 	 */
 	public static function primaryTeam(array $roles, array $userGroupIds): ?array {
-		$byId = [];
-		foreach ($roles as $role) {
-			$roleId = self::roleId(role: $role);
-			if ($roleId !== '') {
-				$byId[$roleId] = $role;
-			}
-		}
+		$byId = self::rolesById(roles: $roles);
 
 		$best = null;
 		foreach ($roles as $role) {
