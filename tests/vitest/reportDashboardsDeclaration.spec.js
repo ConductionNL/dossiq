@@ -301,6 +301,8 @@ describe('deadline reports', () => {
 			expect(summary.content.meta).toContain(token)
 		}
 		expect(summary.roles).toEqual(widget('TermijnDashboard', 'deadline-report-quarterly').roles)
+		// The quarterly report opens on the last complete quarter (decision 25 Oct, DqTermijnen 2026-Q3 in October).
+		expect(widget('TermijnDashboard', 'deadline-report-quarter-form').content.default).toBe('previous')
 		// A quarter without decided terms has no line: no "Nothing here yet"
 		// under the table (nextcloud-vue record-list emptyText "").
 		expect(summary.content.emptyText).toBe('')

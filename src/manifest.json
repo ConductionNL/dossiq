@@ -11478,6 +11478,7 @@
 						"content": {
 							"style": "input",
 							"inputType": "quarter",
+							"default": "previous",
 							"writes": "@workspace.quarter",
 							"label": "Quarter (YYYY-Qn)",
 							"submitLabel": "Load report",
