@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar;
+use OCA\Dossiq\AppInfo\Registrar\DeadlineTimerRegistrar;
 use OCA\Dossiq\Listener\TermInstanceMovesCaseDeadlineListener;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Listener\TermInstanceMovesCaseDeadlineListener
- * @covers \OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar
+ * @covers \OCA\Dossiq\AppInfo\Registrar\DeadlineTimerRegistrar
  */
 class TermInstanceMovesCaseDeadlineListenerTest extends TestCase {
 
@@ -117,7 +117,7 @@ class TermInstanceMovesCaseDeadlineListenerTest extends TestCase {
 			}
 		);
 
-		(new CaseTypeListenerRegistrar())->register($context);
+		(new DeadlineTimerRegistrar())->register($context);
 
 		self::assertContains([ObjectCreatedEvent::class, TermInstanceMovesCaseDeadlineListener::class], $registered);
 		self::assertContains([ObjectUpdatedEvent::class, TermInstanceMovesCaseDeadlineListener::class], $registered);

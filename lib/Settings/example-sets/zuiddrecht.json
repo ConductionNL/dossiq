@@ -7363,8 +7363,8 @@
 		{
 			"key": "zoek-lindelaan",
 			"data": {
-				"name": "Lindelaan",
-				"description": "Alles over de Lindelaan: zaken, objecten en documenten.",
+				"name": "Meldingen verlichting",
+				"description": "Meldingen en verzoeken over de verlichting aan de Lindelaan: zaken, objecten en documenten.",
 				"owner": "{{cast:pieter.uid}}",
 				"isPublic": true,
 				"query": {

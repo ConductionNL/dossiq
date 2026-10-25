@@ -57,7 +57,7 @@ class DeadlineTimerRegistrarTest extends TestCase {
 
 		(new DeadlineTimerRegistrar())->register(context: $context);
 
-		$this->assertCount(expectedCount: 14, haystack: $registered);
+		$this->assertCount(expectedCount: 16, haystack: $registered);
 		$this->assertContains(needle: ['OCA\OpenRegister\Event\FlowTimerFiredEvent', AdviceTimerFiredListener::class], haystack: $registered);
 		$this->assertContains(needle: ['OCA\OpenRegister\Event\ObjectCreatedEvent', MilestoneStallTimerListener::class], haystack: $registered);
 		$this->assertContains(needle: ['OCA\OpenRegister\Event\ObjectUpdatedEvent', MilestoneStallTimerListener::class], haystack: $registered);

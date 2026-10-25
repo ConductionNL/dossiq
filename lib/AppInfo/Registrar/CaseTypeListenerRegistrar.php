@@ -33,7 +33,6 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 use OCA\Dossiq\Listener\ApplicantTermNoteListener;
 use OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener;
 use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
-use OCA\Dossiq\Listener\TermInstanceMovesCaseDeadlineListener;
 use OCA\Dossiq\Listener\CaseTeamAccessListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
@@ -124,12 +123,6 @@ class CaseTypeListenerRegistrar {
 			$context->registerEventListener(
 				event: $event,
 				listener: CaseTeamAccessListener::class
-			);
-			// A statutory term saved outside the term engine (an example set, an import) moves its case's
-			// deadline too; the engine's own saves are followed already and cost a read here.
-			$context->registerEventListener(
-				event: $event,
-				listener: TermInstanceMovesCaseDeadlineListener::class
 			);
 		}
 
