@@ -13584,6 +13584,7 @@
 									"phone": "PhoneInTalk",
 									"email": "EmailOutline",
 									"balie": "AccountOutline",
+									"brief": "EmailOpenOutline",
 									"chat": "MessageTextOutline",
 									"webformulier": "Earth"
 								},
@@ -14326,6 +14327,7 @@
 									"phone": "PhoneInTalk",
 									"email": "EmailOutline",
 									"balie": "AccountOutline",
+									"brief": "EmailOpenOutline",
 									"chat": "MessageTextOutline",
 									"webformulier": "Earth"
 								},

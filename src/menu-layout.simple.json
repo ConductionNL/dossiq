@@ -3169,9 +3169,9 @@
 									"key": "notificationChannel",
 									"label": "Channel",
 									"widget": "iconLabel",
-									"widgetProps": { "icons": { "phone": "Phone", "email": "EmailOutline", "webformulier": "Earth", "chat": "MessageTextOutline", "social_media": "ShareVariant", "balie": "OfficeBuildingOutline" } },
-									"enum": ["phone", "email", "webformulier", "chat", "social_media", "balie"],
-									"enumLabels": { "phone": "Phone", "email": "Email", "webformulier": "Web form", "chat": "Chat", "social_media": "Social media", "balie": "Desk" }
+									"widgetProps": { "icons": { "phone": "Phone", "email": "EmailOutline", "webformulier": "Earth", "chat": "MessageTextOutline", "social_media": "ShareVariant", "balie": "OfficeBuildingOutline", "brief": "EmailOpenOutline" } },
+									"enum": ["phone", "email", "webformulier", "chat", "social_media", "balie", "brief"],
+									"enumLabels": { "phone": "Phone", "email": "Email", "webformulier": "Web form", "chat": "Chat", "social_media": "Social media", "balie": "Desk", "brief": "Letter" }
 								},
 								{
 									"key": "direction",
@@ -4133,7 +4133,8 @@
 								"webformulier": "Web form",
 								"chat": "Chat",
 								"social_media": "Social media",
-								"balie": "Desk"
+								"balie": "Desk",
+								"brief": "Letter"
 							},
 							"senderField": "callerIdentification",
 							"usAuthorField": "kccEmployeeId",
