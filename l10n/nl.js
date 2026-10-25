@@ -10530,7 +10530,7 @@ OC.L10N.register(
         "What went wrong on the last attempt, in one sentence a handler can act on.": "Wat er bij de laatste poging misging, in één zin waar een behandelaar iets mee kan.",
         "What workload is covered": "Welke werkvoorraad wordt gedekt",
         "What would be delivered could not be recorded first, so nothing was published. Try again later.": "Wat zou worden aangeleverd kon niet eerst worden vastgelegd, dus er is niets gepubliceerd. Probeer het later opnieuw.",
-        "What you can do with this case": "Wat je met deze zaak kunt doen",
+        "What you can do with this case": "Wat u met deze zaak kunt doen",
         "What you do": "Wat u doet",
         "what you opened today and has no note yet": "wat u vandaag opende en nog zonder notitie is",
         "What you tick moves to the new case.": "Wat je aanvinkt gaat naar de nieuwe zaak.",
