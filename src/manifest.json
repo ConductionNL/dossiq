@@ -10245,7 +10245,8 @@
 								"columnLabels": {
 									"gering": "Consequence A: minor",
 									"aanzienlijk": "Consequence B: considerable",
-									"ernstig": "Consequence C: serious"
+									"ernstig": "Consequence C: serious",
+									"zeer_ernstig": "Consequence D: very serious"
 								},
 								"valueLabels": {
 									"warning": "Warning",
@@ -10289,7 +10290,8 @@
 									"consequence": {
 										"gering": "consequence A",
 										"aanzienlijk": "consequence B",
-										"ernstig": "consequence C"
+										"ernstig": "consequence C",
+										"zeer_ernstig": "consequence D"
 									}
 								}
 							}

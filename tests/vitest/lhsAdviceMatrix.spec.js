@@ -49,7 +49,7 @@ describe('the LHS matrix on the enforcement advice', () => {
 		const source = matrix.content.cellSource
 		const dutch = (key) => nl.translations[key] || key
 		expect(Object.values(source.rowLabels).map(dutch)).toEqual(['Gedrag 1: welwillend', 'Gedrag 2: onwetend', 'Gedrag 3: calculerend', 'Gedrag 4: crimineel'])
-		expect(Object.values(source.columnLabels).map(dutch)).toEqual(['Gevolg A: gering', 'Gevolg B: aanzienlijk', 'Gevolg C: ernstig'])
+		expect(Object.values(source.columnLabels).map(dutch)).toEqual(['Gevolg A: gering', 'Gevolg B: aanzienlijk', 'Gevolg C: ernstig', 'Gevolg D: zeer ernstig'])
 	})
 
 	it('fits its card to the matrix, so no empty band sits above it (DqHandhaving)', () => {
