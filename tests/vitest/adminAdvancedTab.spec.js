@@ -32,7 +32,7 @@ function sectionsOf(tab) {
 const ADVANCED = [
 	'section-zgw', 'section-kcc', 'section-dmn', 'section-financial', 'section-stuf', 'section-store',
 	'section-first-run', 'section-prerequisites', 'section-shipped-configuration', 'section-queue-urgency',
-	'section-mandate-settings', 'section-archival', 'section-woo-reports',
+	'section-archival', 'section-woo-reports',
 ]
 
 describe('the Geavanceerd admin tab', () => {
@@ -55,5 +55,16 @@ describe('the Geavanceerd admin tab', () => {
 		for (const id of ['zgw', 'stuf', 'kcc', 'dmn', 'store', 'financial']) {
 			expect(urls).toContain(`/settings/admin/dossiq?tab=advanced#section-${id}`)
 		}
+	})
+})
+
+describe('no stub ships on the admin page', () => {
+	/**
+	 * @spec openspec/changes/admin-dead-settings-cards-removed/specs/admin-settings/spec.md#requirement-no-admin-card-promises-what-it-does-not-do
+	 */
+	it('has no "this panel will host" placeholder and no mandate settings card nothing reads', () => {
+		const fields = fs.readFileSync(path.join(ROOT, 'src/views/settings/adminFields.js'), 'utf8')
+		expect(fields).not.toMatch(/This panel will host/)
+		expect(admin).not.toContain('id="section-mandate-settings"')
 	})
 })

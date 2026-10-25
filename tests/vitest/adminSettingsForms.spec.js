@@ -24,7 +24,6 @@ import {
 	contactCentreFields,
 	DEFAULT_CASE_PATTERN,
 	ISO_DURATION_PATTERN,
-	mandateSettingsFields,
 	menuStructureFields,
 	paymentCallbackFields,
 	queueUrgencyFields,
@@ -75,7 +74,6 @@ describe('admin forms saved through dossiq settings', () => {
 	const sections = {
 		menuStructureFields,
 		queueUrgencyFields,
-		mandateSettingsFields,
 		consultationFields,
 		reviewReportFields,
 		paymentCallbackFields,
@@ -123,16 +121,8 @@ describe('the queue urgency', () => {
 	})
 })
 
-describe('the mandate and consultation behaviour', () => {
-	it('stores the auto-activation switch as 1 or 0', () => {
-		const field = byKey(mandateSettingsFields(t)).mandaat_auto_finalize_approved
-		expect(field).toMatchObject({ type: 'switch', trueValue: '1', falseValue: '0' })
-	})
-
+describe('the consultation behaviour', () => {
 	it('shows the defaults the server uses for an unset value', () => {
-		const mandate = byKey(mandateSettingsFields(t))
-		expect(mandate.mandaat_decidesk_connection.default).toBe('decidesk-default')
-		expect(mandate.mandaat_default_extension_days.default).toBe(14)
 		const consultation = byKey(consultationFields(t))
 		expect(consultation.consultation_default_deadline_days.default).toBe(28)
 		expect(consultation.consultation_warning_offset_days.default).toBe(5)
