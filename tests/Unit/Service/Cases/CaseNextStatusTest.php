@@ -46,6 +46,10 @@ class CaseNextStatusTest extends TestCase {
 			 * @return array<int, array<string, mixed>>
 			 */
 			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				if (isset($this->rows['fail']) === true) {
+					throw new \RuntimeException('register unreachable');
+				}
+
 				return $this->rows[$schema] ?? [];
 			}
 		};
@@ -90,4 +94,15 @@ class CaseNextStatusTest extends TestCase {
 		$this->assertSame([], $service->forCase(caseId: 'c1'));
 		$this->assertNull($this->service([])->forCase(caseId: 'c1'));
 	}//end testTheLastStatusAndAnUnreadableCase()
+
+	/**
+	 * A register that cannot be read is not "case not found": the failure
+	 * reaches the controller.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableRegisterIsNotNotFound(): void {
+		$this->expectException(\RuntimeException::class);
+		$this->service(rows: ['fail' => []])->forCase(caseId: 'case-1');
+	}//end testAnUnreadableRegisterIsNotNotFound()
 }//end class

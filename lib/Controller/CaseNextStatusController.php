@@ -28,6 +28,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use Throwable;
 
 /**
  * `GET /api/cases/{caseId}/next-status`: `{name, number}`, `{}` at the last status, 404 for a case the user may not read.
@@ -62,7 +63,12 @@ class CaseNextStatusController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function show(string $caseId): JSONResponse {
-		$next = $this->nextStatus->forCase(caseId: trim($caseId));
+		try {
+			$next = $this->nextStatus->forCase(caseId: trim($caseId));
+		} catch (Throwable) {
+			return new JSONResponse(['error' => 'The case could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
 		if ($next === null) {
 			return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 		}

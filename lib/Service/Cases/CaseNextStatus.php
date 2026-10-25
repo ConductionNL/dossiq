@@ -60,6 +60,8 @@ class CaseNextStatus {
 	 *
 	 * @return array{name?: string, number?: int}|null
 	 *
+	 * @throws Throwable When the register cannot be read.
+	 *
 	 * @spec openspec/changes/task-holds-up-next-status/specs/task-page/spec.md#requirement-a-task-says-which-step-its-case-waits-to-move-to
 	 */
 	public function forCase(string $caseId): ?array {
@@ -150,6 +152,8 @@ class CaseNextStatus {
 	 * @param array<string, mixed> $filters The filters.
 	 *
 	 * @return array<int, array<string, mixed>>
+	 *
+	 * @throws Throwable When the register cannot be read; the caller answers that, not "not found".
 	 */
 	private function rows(string $schema, array $filters): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -158,10 +162,6 @@ class CaseNextStatus {
 			return [];
 		}
 
-		try {
-			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
-		} catch (Throwable) {
-			return [];
-		}
+		return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 	}//end rows()
 }//end class
