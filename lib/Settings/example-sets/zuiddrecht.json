@@ -2613,6 +2613,19 @@
 			}
 		},
 		{
+			"key": "termijn-melding-stoeptegels-kerkplein",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:melding-stoeptegels-kerkplein.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:0 08:40}}",
+				"endDateCalculated": "{{date:12}}",
+				"endDateCurrent": "{{date:12}}",
+				"status": "lopend"
+			}
+		},
+		{
 			"key": "termijn-geluidsoverlast-terras-markt",
 			"register": "dossiq",
 			"schema": "deadlineInstance",
@@ -5486,6 +5499,19 @@
 			}
 		},
 		{
+			"key": "termijn-woo-afvalinzameling-oosthaven",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:woo-afvalinzameling-oosthaven.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-1 09:15}}",
+				"endDateCalculated": "{{date:6}}",
+				"endDateCurrent": "{{date:6}}",
+				"status": "lopend"
+			}
+		},
+		{
 			"key": "woo-dakkapellen-beukenlaan",
 			"register": "dossiq",
 			"schema": "case",
@@ -5544,6 +5570,19 @@
 			}
 		},
 		{
+			"key": "termijn-woo-dakkapellen-beukenlaan",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:woo-dakkapellen-beukenlaan.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-2 14:40}}",
+				"endDateCalculated": "{{date:8}}",
+				"endDateCurrent": "{{date:8}}",
+				"status": "lopend"
+			}
+		},
+		{
 			"key": "woo-afgewezen-parkeervergunningen",
 			"register": "dossiq",
 			"schema": "case",
@@ -5599,6 +5638,19 @@
 					"woo",
 					"parkeren"
 				]
+			}
+		},
+		{
+			"key": "termijn-woo-afgewezen-parkeervergunningen",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:woo-afgewezen-parkeervergunningen.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-2 10:05}}",
+				"endDateCalculated": "{{date:8}}",
+				"endDateCurrent": "{{date:8}}",
+				"status": "lopend"
 			}
 		},
 		{
