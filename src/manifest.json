@@ -13284,6 +13284,7 @@
 				"showViewAction": false,
 				"searchPlaceholder": "Search by name, KvK number or place",
 				"rowIcon": "OfficeBuildingOutline",
+				"rowIconTone": "teal",
 				"sortKey": "tradeName",
 				"sortOrder": "asc",
 				"_defaultFiltersNote": "Board DqOrganisaties opens on All with \"Plaats: Zuiddrecht\" on the Active line and a 1 on Filter: the organisations established in the municipality, from the admin setting `municipality_city` (the same one the Contacts lens reads). A removable default filter, not a lens; without the setting it is left out (src/utils/configLenses.js) and the list opens unfiltered. `address.place` is the KvK Zoeken field.",
