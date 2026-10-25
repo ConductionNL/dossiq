@@ -871,7 +871,7 @@
 										"url": "/apps/openregister/api/archival/reviews/pending"
 									},
 									"itemsPath": "results",
-									"idField": "entryId",
+									"idField": "uuid",
 									"title": "{title}",
 									"meta": "Disposal date: {archiefactiedatum}",
 									"answers": [
@@ -900,7 +900,7 @@
 										"label": "Record this decision",
 										"request": {
 											"method": "POST",
-											"url": "/apps/openregister/api/archival/destruction-lists/{listId}/entries/{entryId}/decision"
+											"url": "/apps/openregister/api/archival/destruction-lists/{list}/entries/{uuid}/decision"
 										}
 									},
 									"emptyText": "You hold no archival decisions right now.",
