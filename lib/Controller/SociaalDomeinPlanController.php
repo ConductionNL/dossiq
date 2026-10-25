@@ -111,20 +111,69 @@ class SociaalDomeinPlanController extends Controller {
 				return new JSONResponse(['error' => 'Family plan not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			return new JSONResponse(
-				[
-					'plan' => $plan,
-					'goals' => $this->goals->ofPlan(planId: $planId),
-					'interventions' => $this->interventions->ofPlan(planId: $planId),
-					'dueForReview' => $this->review->isDue(plan: $plan),
-				]
-			);
+			return new JSONResponse($this->planPayload(plan: $plan, planId: $planId));
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'case-plan', e: $e);
 		} catch (Throwable $e) {
 			return $this->broke(op: 'case-plan', e: $e);
 		}
 	}//end plan()
+
+	/**
+	 * The family plan of a case: the gezinsplan whose `caseId` is this case,
+	 * the most recently prepared one when there are several, in the shape of
+	 * `plan()`. A case without a plan answers an empty plan, so the card says
+	 * the plan has no goals yet; an unreadable register stays a refusal.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return JSONResponse The plan, or an empty one.
+	 *
+	 * @spec openspec/changes/family-plan-by-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-finds-its-family-plan-by-the-plans-case
+	 */
+	#[NoAdminRequired]
+	public function planOfCase(string $caseId): JSONResponse {
+		try {
+			$plans = [];
+			if (trim($caseId) !== '') {
+				$plans = $this->store->rows(schema: CasePlanReview::SCHEMA, filters: ['caseId' => $caseId]);
+			}
+
+			if ($plans === []) {
+				return new JSONResponse(['plan' => null, 'goals' => [], 'interventions' => [], 'dueForReview' => false]);
+			}
+
+			usort(
+				$plans,
+				static fn (array $one, array $two): int => strcmp((string)($two['preparedDate'] ?? ''), (string)($one['preparedDate'] ?? ''))
+			);
+			$plan   = $plans[0];
+			$planId = (string)($plan['id'] ?? ($plan['@self']['id'] ?? ''));
+
+			return new JSONResponse($this->planPayload(plan: $plan, planId: $planId));
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'case-plan-of-case', e: $e);
+		} catch (Throwable $e) {
+			return $this->broke(op: 'case-plan-of-case', e: $e);
+		}//end try
+	}//end planOfCase()
+
+	/**
+	 * A plan with its goals, interventions and review state.
+	 *
+	 * @param array<string, mixed> $plan   The gezinsplan.
+	 * @param string               $planId Its uuid.
+	 *
+	 * @return array<string, mixed> The payload `plan()` and `planOfCase()` answer.
+	 */
+	private function planPayload(array $plan, string $planId): array {
+		return [
+			'plan' => $plan,
+			'goals' => $this->goals->ofPlan(planId: $planId),
+			'interventions' => $this->interventions->ofPlan(planId: $planId),
+			'dueForReview' => $this->review->isDue(plan: $plan),
+		];
+	}//end planPayload()
 
 	/**
 	 * Save a goal on a plan.

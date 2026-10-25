@@ -31,6 +31,7 @@ use DateTimeZone;
 use OCA\Dossiq\Service\Queue\EndOfDayService;
 use OCA\Dossiq\Service\Queue\PersonalQueueService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -45,7 +46,7 @@ class EndOfDayServiceTest extends TestCase {
 	 * The service over a queue, read states and notes.
 	 *
 	 * @param list<array<string, mixed>>        $items       The queue items.
-	 * @param array<string, string>             $lastSeen    Last seen moment per subject id.
+	 * @param array<string, string>             $lastSeen    Last seen moment per case id, or per task engine uuid ('engine-<id>').
 	 * @param array<string, list<array<string, mixed>>> $notes Notes per subject id.
 	 * @param list<array<string, mixed>>        $unavailable Sources that could not be read.
 	 *
@@ -123,10 +124,56 @@ class EndOfDayServiceTest extends TestCase {
 			}
 		};
 
+		// The read states by uuid, as OpenRegister's ObjectReadStateMapper answers them.
+		$readStates = new class($lastSeen) {
+			/**
+			 * @param array<string, string> $lastSeen Last seen per uuid.
+			 */
+			public function __construct(private array $lastSeen) {
+			}
+
+			/**
+			 * @param string $userId     The reader.
+			 * @param string $objectUuid The uuid.
+			 *
+			 * @return object|null The state.
+			 */
+			public function findOne(string $userId, string $objectUuid): ?object {
+				$seen = ($this->lastSeen[$objectUuid] ?? null);
+				if ($seen === null) {
+					return null;
+				}
+
+				return new class($seen) {
+					/**
+					 * @param string $seen The moment.
+					 */
+					public function __construct(private string $seen) {
+					}
+
+					/**
+					 * @return array<string, mixed>
+					 */
+					public function jsonSerialize(): array {
+						return ['lastSeenAt' => $this->seen];
+					}
+				};
+			}
+		};
+		// The task engine knows a task by its id and answers its uuid.
+		$tasks = $this->createMock(EngineTaskGateway::class);
+		$tasks->method('find')->willReturnCallback(
+			static fn (string $taskId): array => ['id' => 'engine-' . $taskId, 'title' => 'Task ' . $taskId]
+		);
+
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getOpenRegisterClass')->willReturnCallback(
-			static fn (string $class): object => str_ends_with($class, 'ReadStateService') === true ? $readState : $noteService
+			static fn (string $class): object => match (true) {
+				str_ends_with($class, 'ReadStateService') => $readState,
+				str_ends_with($class, 'ObjectReadStateMapper') => $readStates,
+				default => $noteService,
+			}
 		);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default=''): string => $default
@@ -138,7 +185,7 @@ class EndOfDayServiceTest extends TestCase {
 			static fn (string $text, array $parameters=[]): string => vsprintf($text, array_values($parameters))
 		);
 
-		return new EndOfDayService(queue: $queue, settings: $settings, l10n: $l10n, logger: new NullLogger());
+		return new EndOfDayService(queue: $queue, settings: $settings, l10n: $l10n, logger: new NullLogger(), tasks: $tasks);
 	}//end service()
 
 	/**
@@ -216,6 +263,25 @@ class EndOfDayServiceTest extends TestCase {
 		$this->assertSame([], $day['open']);
 		$this->assertSame(0, $day['opened']);
 	}//end testOpenedTodayIsTheReadStateNotTheObjectsUpdate()
+
+	/**
+	 * A task lives in the task engine, not in the register: its read state is
+	 * the one of its engine uuid, so a task the reader opened today is listed
+	 * and one opened yesterday is not.
+	 *
+	 * @return void
+	 */
+	public function testATaskOpenedTodayIsReadThroughTheTaskEngine(): void {
+		$day = $this->service(
+			items: [$this->item('task', 't1'), $this->item('task', 't2')],
+			lastSeen: ['engine-t1' => '2026-10-20T09:30:00+00:00', 'engine-t2' => '2026-10-19T09:30:00+00:00'],
+			notes: []
+		)->dayFor(userId: 'pieter', now: $this->now());
+
+		$this->assertSame(['tasks:task:t1'], array_column($day['open'], 'id'));
+		$this->assertSame('/apps/openregister/api/flow-tasks/t1/notes', $day['open'][0]['notesUrl']);
+		$this->assertSame('0 cases, 1 tasks', $day['figures'][0]['note']);
+	}//end testATaskOpenedTodayIsReadThroughTheTaskEngine()
 
 	/**
 	 * A note recorded today is listed again on the next read, so the list

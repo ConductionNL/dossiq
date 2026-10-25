@@ -218,6 +218,22 @@ describe('BerichtenboxComposeDialog', () => {
 		expect(icon?.[0]?.type?.name).toBe('EmailFastOutlineIcon')
 	})
 
+	it('offers the case type\'s Berichtenbox templates and fills subject and message from the chosen one, still editable', async () => {
+		mockGet.mockResolvedValue({ data: { initiatorType: 'person', initiatorSourceId: '999997609', caseType: 'ct-woo' } })
+		const wrapper = mount(BerichtenboxComposeDialog, { props: { open: true, caseId: 'case-1' } })
+		await flushPromises()
+		const picker = wrapper.findComponent({ name: 'MessageTemplateSelect' })
+		expect(picker.props('caseId')).toBe('case-1')
+		expect(picker.props('caseTypeId')).toBe('ct-woo')
+		expect(picker.props('channels')).toEqual(['mailbox', 'mailbox-then-email'])
+		picker.vm.$emit('fill', { templateId: 't-status', subject: 'Uw Woo-verzoek 2026-0082: we beoordelen de stukken', body: 'Beste mevrouw De Vries,' })
+		await flushPromises()
+		expect(wrapper.vm.form.subject).toBe('Uw Woo-verzoek 2026-0082: we beoordelen de stukken')
+		expect(wrapper.vm.form.body).toBe('Beste mevrouw De Vries,')
+		wrapper.findAllComponents({ name: 'NcTextField' })[1].vm.$emit('update:modelValue', 'Eigen onderwerp')
+		expect(wrapper.vm.form.subject).toBe('Eigen onderwerp')
+	})
+
 	it('shows the provider’s own sentence and stays open on a refusal', async () => {
 		mockPost.mockRejectedValue({
 			response: {

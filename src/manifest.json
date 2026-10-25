@@ -5146,7 +5146,7 @@
 						"id": "goal-plan",
 						"type": "sections",
 						"title": "Family plan",
-						"_note": "the-social-domain-plan-and-its-grounds REQ-CPN-01 and REQ-CPN-03: the goals a household agreed to work on, the interventions under each with their provider and target date, and what is late, read from one endpoint (`gezinsplanId` names the plan; the data field stays frozen). Library config: a review-due banner over the same endpoint and grouped cards that join the interventions to their goal. It FAILS CLOSED with a retry: an unreachable register and a plan without goals must not look alike, or a consulent writes a second plan over the first. It was `family-plan`; RenamedLayoutIds rewrites stored layouts to `goal-plan`.",
+						"_note": "the-social-domain-plan-and-its-grounds REQ-CPN-01 and REQ-CPN-03: the goals a household agreed to work on, the interventions under each with their provider and target date, and what is late, read from one endpoint that finds the plan by the plan's own `caseId` (the case schema holds no plan reference). Library config: a review-due banner over the same endpoint and grouped cards that join the interventions to their goal. It FAILS CLOSED with a retry: an unreachable register and a plan without goals must not look alike, or a consulent writes a second plan over the first. It was `family-plan`; RenamedLayoutIds rewrites stored layouts to `goal-plan`.",
 						"content": {
 							"dividers": false,
 							"sections": [
@@ -5158,7 +5158,7 @@
 											"variant": "warning",
 											"text": "This plan was due for review on {subject.plan.reviewDate|date}. A plan that is not revisited stops describing the household it is about.",
 											"visibleWhen": {
-												"endpoint": "/apps/dossiq/api/family-plans/@object.gezinsplanId",
+												"endpoint": "/apps/dossiq/api/cases/@objectId/family-plan",
 												"field": "dueForReview",
 												"op": "eq",
 												"value": true
@@ -5172,7 +5172,7 @@
 										"type": "grouped-cards",
 										"content": {
 											"endpointSource": {
-												"url": "/apps/dossiq/api/family-plans/@object.gezinsplanId"
+												"url": "/apps/dossiq/api/cases/@objectId/family-plan"
 											},
 											"groupsPath": "goals",
 											"itemsPath": "interventions",
@@ -8083,6 +8083,13 @@
 						"title": "Processing Time Distribution",
 						"content": {
 							"chartKind": "bar",
+							"options": {
+								"xaxis": { "labels": { "rotate": 0, "hideOverlappingLabels": true } },
+								"yaxis": { "show": false },
+								"grid": { "show": false },
+								"legend": { "show": false },
+								"dataLabels": { "enabled": false }
+							},
 							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
@@ -8116,6 +8123,15 @@
 						"title": "Monthly SLA Trend",
 						"content": {
 							"chartKind": "line",
+							"categoryFormat": "month",
+							"options": {
+								"stroke": { "curve": "straight", "width": 2 },
+								"markers": { "size": 4 },
+								"xaxis": { "labels": { "rotate": 0, "hideOverlappingLabels": true } },
+								"yaxis": { "labels": { "show": false } },
+								"legend": { "show": false },
+								"dataLabels": { "enabled": false }
+							},
 							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
@@ -8140,7 +8156,7 @@
 								{
 									"value": 100,
 									"label": "100% target",
-									"color": "var(--color-success)"
+									"color": "var(--color-element-error, var(--color-error))"
 								}
 							],
 							"emptyLabel": "No trend data available"
@@ -8159,8 +8175,38 @@
 						"type": "chart",
 						"title": "Throughput (cases closed per week)",
 						"content": {
-							"chartKind": "line",
+							"chartKind": "bar",
 							"categoryFormat": "week",
+							"colors": ["var(--nl-color-teal-text, var(--color-primary-element))"],
+							"options": {
+								"plotOptions": {
+									"bar": {
+										"columnWidth": "62%",
+										"borderRadius": 2,
+										"dataLabels": {
+											"position": "top"
+										}
+									}
+								},
+								"dataLabels": {
+									"enabled": true,
+									"offsetY": -16,
+									"style": {
+										"fontSize": "10px",
+										"fontWeight": 600,
+										"colors": ["var(--color-main-text, #1b1c1d)"]
+									}
+								},
+								"yaxis": {
+									"show": false
+								},
+								"grid": {
+									"show": false
+								},
+								"legend": {
+									"show": false
+								}
+							},
 							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
@@ -8303,10 +8349,12 @@
 								},
 								{
 									"key": "caseTypeName",
+									"cellClass": "cn-cell--wrap",
 									"label": "Case type"
 								},
 								{
 									"key": "remainingLabel",
+									"cellClass": "cn-cell--wrap",
 									"label": "Remaining"
 								},
 								{
@@ -8333,16 +8381,9 @@
 								},
 								{
 									"key": "percentUsedDisplay",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Term used",
-									"widget": "progress",
-									"widgetProps": {
-										"max": 100,
-										"lowerIsBetter": true,
-										"thresholds": {
-											"good": 50,
-											"warn": 25
-										}
-									}
+									"format": { "style": "number", "decimals": 0 }
 								}
 							],
 							"rowRoute": "CaseDetail",
@@ -8379,16 +8420,19 @@
 								},
 								{
 									"key": "targetDays",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Target (days)",
 									"sortable": true
 								},
 								{
 									"key": "avgActualDays",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Avg Actual (days)",
 									"sortable": true
 								},
 								{
 									"key": "complianceRate",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Compliance %",
 									"sortable": true,
 									"format": {
@@ -8399,6 +8443,7 @@
 								},
 								{
 									"key": "total",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Cases",
 									"sortable": true
 								},
@@ -8791,6 +8836,7 @@
 						"title": "Dwell time by status",
 						"content": {
 							"chartKind": "bar-list",
+							"barValueAtEnd": true,
 							"valueFormat": {
 								"name": "number",
 								"decimals": 0,
@@ -8831,6 +8877,30 @@
 						"content": {
 							"chartKind": "line",
 							"categoryFormat": "week",
+							"options": {
+								"stroke": {
+									"curve": "straight",
+									"width": 2.5
+								},
+								"xaxis": {
+									"tickAmount": 10,
+									"labels": {
+										"rotate": 0,
+										"hideOverlappingLabels": true
+									}
+								},
+								"yaxis": {
+									"labels": {
+										"show": false
+									}
+								},
+								"legend": {
+									"show": false
+								},
+								"dataLabels": {
+									"enabled": false
+								}
+							},
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/process-mining",
 								"params": {
@@ -8884,23 +8954,27 @@
 								},
 								{
 									"key": "medianWorkingHours",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Hours, wall clock",
 									"labelPath": "labels.workingHours"
 								},
 								{
 									"key": "medianHours",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Wall-clock hours",
 									"labelPath": "labels.wallHours"
 								},
 								{
 									"key": "visitCount",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Visits"
 								},
 								{
 									"key": "score",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Score"
 								}
@@ -8938,18 +9012,21 @@
 								},
 								{
 									"key": "workingHours",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Hours, wall clock",
 									"labelPath": "labels.workingHours"
 								},
 								{
 									"key": "wallHours",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Wall-clock hours",
 									"labelPath": "labels.wallHours"
 								},
 								{
 									"key": "visitCount",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Visits"
 								}
@@ -13682,10 +13759,46 @@
 						"id": "side-reach",
 						"type": "facts",
 						"title": "Reachable via",
+						"_note": "Board DqContact: the newest contact moment says when and through which channel; the registration line reads the person, so it shows without contact moments too.",
 						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "contactmoment",
+								"filter": {
+									"contact": "@objectId"
+								},
+								"sort": {
+									"field": "startTime",
+									"dir": "desc"
+								}
+							},
 							"fields": [
 								{
+									"as": "text",
+									"separator": ", ",
+									"parts": [
+										{
+											"path": "startTime",
+											"format": "longdate",
+											"label": "Last contact on"
+										},
+										{
+											"path": "notificationChannel",
+											"label": "via",
+											"map": {
+												"phone": "phone",
+												"email": "email",
+												"webformulier": "web form",
+												"chat": "chat",
+												"social_media": "social media",
+												"balie": "desk"
+											}
+										}
+									]
+								},
+								{
 									"as": "line",
+									"from": "object",
 									"text": "Phone and email are not in the base registration."
 								}
 							],
@@ -13705,15 +13818,52 @@
 						"id": "side-identity",
 						"type": "facts",
 						"title": "Identity",
+						"_note": "Board DqContact: the lead says how the person was identified at the newest contact moment (none for an unidentified one); the rows read the person (from object), so they show without contact moments too.",
 						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "contactmoment",
+								"filter": {
+									"contact": "@objectId"
+								},
+								"sort": {
+									"field": "startTime",
+									"dir": "desc"
+								}
+							},
 							"fields": [
 								{
+									"as": "lead",
+									"icon": "ShieldAccountOutline",
+									"tone": "success",
+									"title": [
+										{
+											"path": "identificationMethod",
+											"map": {
+												"digid": "Logged in with DigiD",
+												"bsn_verificatie": "Identified by BSN check",
+												"identificatievragen": "Identified by security questions",
+												"non_geidentificeerd": ""
+											}
+										}
+									],
+									"subtitle": [
+										{
+											"path": "startTime",
+											"format": "longdate",
+											"label": "at the contact moment of"
+										}
+									]
+								},
+								{
+									"from": "object",
 									"label": "BSN",
 									"path": "citizenServiceNumber",
 									"format": "masked",
 									"reveal": true
 								},
 								{
+									"from": "object",
 									"label": "Data protection",
 									"path": "indicatieGeheim",
 									"map": {
@@ -13722,8 +13872,13 @@
 									}
 								},
 								{
-									"as": "line",
-									"text": "Source: Basisregistratie personen"
+									"from": "object",
+									"label": "Source",
+									"parts": [
+										{
+											"text": "Basisregistratie personen"
+										}
+									]
 								}
 							]
 						}
@@ -13778,7 +13933,7 @@
 										},
 										{
 											"path": "@self.updated",
-											"format": "date-long"
+											"format": "longdate"
 										},
 										{
 											"path": "_lastChange.userName",
@@ -14573,7 +14728,7 @@
 										},
 										{
 											"path": "@self.updated",
-											"format": "date-long"
+											"format": "longdate"
 										},
 										{
 											"path": "_lastChange.userName",

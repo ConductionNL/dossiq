@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Queue;
 use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -49,6 +50,12 @@ class EndOfDayService {
 
 	private const READ_STATE = 'OCA\\OpenRegister\\Service\\Interaction\\ReadStateService';
 
+	/**
+	 * The read states by object uuid: a task is no register object, so its
+	 * read state is asked for by its engine uuid.
+	 */
+	private const READ_STATES = 'OCA\\OpenRegister\\Db\\ObjectReadStateMapper';
+
 	private const NOTES = 'OCA\\OpenRegister\\Service\\NoteService';
 
 	/**
@@ -63,12 +70,14 @@ class EndOfDayService {
 	 * @param SettingsService      $settings The app's OpenRegister configuration.
 	 * @param IL10N                $l10n     The labels on screen.
 	 * @param LoggerInterface      $logger   The log.
+	 * @param EngineTaskGateway    $tasks    The task engine, where tasks live.
 	 */
 	public function __construct(
 		private readonly PersonalQueueService $queue,
 		private readonly SettingsService $settings,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
+		private readonly EngineTaskGateway $tasks,
 	) {
 	}//end __construct()
 
@@ -183,20 +192,8 @@ class EndOfDayService {
 	 * @return bool
 	 */
 	private function openedToday(array $item, string $userId, string $today, DateTimeZone $zone): bool {
-		$objectService = $this->settings->getObjectService();
-		$readState = $this->settings->getOpenRegisterClass(class: self::READ_STATE);
-		if ($objectService === null || $readState === null) {
-			return false;
-		}
-
-		$schema = $this->caseSchema();
-		if ($item['subjectType'] === 'task') {
-			$schema = 'task';
-		}
-
 		try {
-			$object = $objectService->find((string)$item['subjectId'], register: $this->register(), schema: $schema);
-			$state = $readState->readStateFor(object: $object, userId: $userId);
+			$state = $this->readStateOf(item: $item, userId: $userId);
 		} catch (Throwable $e) {
 			// The read state is the register's to answer; an item it cannot
 			// answer for has not been opened, as far as anyone can tell.
@@ -211,6 +208,38 @@ class EndOfDayService {
 
 		return $this->isToday(moment: $seen, today: $today, zone: $zone);
 	}//end openedToday()
+
+	/**
+	 * The reader's read state of a queue item, or null: a case's through its
+	 * register object, a task's through the task engine by the task's uuid.
+	 *
+	 * @param array<string, mixed> $item   The queue item.
+	 * @param string               $userId The reader.
+	 *
+	 * @return object|null The read state.
+	 *
+	 * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
+	 */
+	private function readStateOf(array $item, string $userId): ?object {
+		if ($item['subjectType'] === 'task') {
+			$task = $this->tasks->find(taskId: (string)$item['subjectId']);
+			$states = $this->settings->getOpenRegisterClass(class: self::READ_STATES);
+			if ($task === null || $states === null) {
+				return null;
+			}
+
+			return $states->findOne(userId: $userId, objectUuid: (string)$task['id']);
+		}
+
+		$objectService = $this->settings->getObjectService();
+		$readState = $this->settings->getOpenRegisterClass(class: self::READ_STATE);
+		if ($objectService === null || $readState === null) {
+			return null;
+		}
+
+		$object = $objectService->find((string)$item['subjectId'], register: $this->register(), schema: $this->caseSchema());
+		return $readState->readStateFor(object: $object, userId: $userId);
+	}//end readStateOf()
 
 	/**
 	 * The reader's latest note of today on this item, as the fields the
