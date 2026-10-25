@@ -32,7 +32,8 @@
 								"schema": "statusType",
 								"labelField": "name"
 							},
-							"linkedField": "assignee"
+							"linkedField": "assignee",
+     "linkedUser": true
 						},
 						{
 							"id": "objects",
@@ -48,7 +49,9 @@
 							"files": true
 						}
 					],
-					"linkedLabel": "Linked"
+					"linkedLabel": "Linked",
+    "_columnWidthsNote": "DqZoekresultaten: Resultaat about 250px so a title reads whole, Soort 120, Gekoppeld and Status 150 (nextcloud-vue columnWidths).",
+    "columnWidths": { "title": "250px", "kindText": "120px", "linked": "150px", "status": "150px" }
 				},
 				"showTitle": true,
 				"countText": "{total} results in cases, objects and documents, only what you may see",
