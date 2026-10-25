@@ -35,10 +35,9 @@ use PHPUnit\Framework\TestCase;
 class ZuiddrechtWooCasesInTheWooTeamTest extends TestCase {
 
 	/**
-	 * Open Woo requests outside the team, each for a reason: still with the KCC agent who took it in (the request a
-	 * new one duplicates), or unassigned outside the team queue, whose board draws three requests.
+	 * Open Woo requests still with the KCC agent who took them in (the request a new one duplicates).
 	 */
-	private const AT_INTAKE = ['woo-kosten-zwembad', 'woo-vergunningen-evenementen'];
+	private const AT_INTAKE = ['woo-kosten-zwembad'];
 
 	/**
 	 * No open Woo request of the set is left in the generic `behandelaars` group.
