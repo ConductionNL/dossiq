@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\Dossiq\Service\ZipManifestBuilder;
@@ -96,6 +97,7 @@ class ZipManifestBuilderTest extends TestCase {
 			settingsService: $settings,
 			groupManager: $groupManager,
 			logger: $this->createMock(LoggerInterface::class),
+			exceptions: $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true]),
 		);
 		$this->builder = new ZipManifestBuilder(
 			documentService: $this->documents,

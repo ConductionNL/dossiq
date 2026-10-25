@@ -56,6 +56,7 @@ class InformatieobjectReader {
 	 * @param InformatieobjectAccessGuard $accessGuard The confidentiality guard.
 	 * @param ZgwDocumentService $documentService The binary storage service.
 	 * @param ScanVerdictReader|null $verdicts What the virus scanner recorded per file, for the listing's Scan column.
+	 * @param AccessExceptionNames|null $exceptionNames The display names of an access exception, for the Who can see this card.
 	 *
 	 * @return void
 	 */
@@ -64,6 +65,7 @@ class InformatieobjectReader {
 		private readonly InformatieobjectAccessGuard $accessGuard,
 		private readonly ZgwDocumentService $documentService,
 		private readonly ?ScanVerdictReader $verdicts = null,
+		private readonly ?AccessExceptionNames $exceptionNames = null,
 	) {
 	}//end __construct()
 
@@ -176,4 +178,22 @@ class InformatieobjectReader {
 			$documents
 		);
 	}//end withScanVerdicts()
+
+	/**
+	 * Put the display names of each row's access exception on it. Call it on rows already narrowed to what the
+	 * caller may see.
+	 *
+	 * @param array<int, array<string, mixed>> $documents The rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-the-who-can-see-this-card-shows-the-exception-and-changes-it
+	 */
+	public function withAccessExceptionNames(array $documents): array {
+		if ($this->exceptionNames === null) {
+			return $documents;
+		}
+
+		return $this->exceptionNames->withNames(documents: $documents);
+	}//end withAccessExceptionNames()
 }//end class

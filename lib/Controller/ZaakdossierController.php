@@ -45,6 +45,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -117,7 +118,12 @@ class ZaakdossierController extends Controller {
 			informatieobjecten: ($file['informatieobjecten'] ?? []),
 		);
 
-		$regrouped = $this->fileService->groupByType(documents: $this->reader->withScanVerdicts(documents: $filtered));
+		$regrouped = $this->fileService->groupByType(
+			documents: $this->withAccessChangeRight(
+				user: $user,
+				documents: $this->reader->withAccessExceptionNames(documents: $this->reader->withScanVerdicts(documents: $filtered))
+			)
+		);
 
 		return new JSONResponse($regrouped);
 	}//end listDossier()
@@ -480,6 +486,29 @@ class ZaakdossierController extends Controller {
 			['results' => $this->bulk->updateAll(user: $user, ids: $ids, metadata: $metadata)]
 		);
 	}//end bulkUpdateMetadata()
+
+	/**
+	 * Each listing row with `canChangeAccess`: whether the caller may change every case of the document, which is
+	 * who may change its access exception. The Who can see this card offers Change exception by it.
+	 *
+	 * @param IUser                            $user      The caller.
+	 * @param array<int, array<string, mixed>> $documents The rows.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-the-who-can-see-this-card-shows-the-exception-and-changes-it
+	 */
+	private function withAccessChangeRight(IUser $user, array $documents): array {
+		$writable = $this->caseWrites->writableDocuments(
+			user: $user,
+			documentIds: array_values(array_filter(array_map(static fn (array $row): string => (string)($row['id'] ?? ''), $documents)))
+		);
+
+		return array_map(
+			static fn (array $row): array => [...$row, 'canChangeAccess' => ($writable[(string)($row['id'] ?? '')] ?? false)],
+			$documents
+		);
+	}//end withAccessChangeRight()
 
 	/**
 	 * The refusal of a document write: the document and the case it was refused on.

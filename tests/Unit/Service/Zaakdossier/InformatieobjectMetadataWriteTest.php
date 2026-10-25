@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
@@ -123,7 +124,7 @@ class InformatieobjectMetadataWriteTest extends TestCase {
 
 		return new ZaakdossierService(
 			$settings,
-			new InformatieobjectAccessGuard($settings, $this->createMock(IGroupManager::class), $logger),
+			new InformatieobjectAccessGuard($settings, $this->createMock(IGroupManager::class), $logger, $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true])),
 			new InformatieobjectStatusLifecycle($settings, $logger),
 			new InformatieobjectMetadataNormaliser(),
 			$logger,

@@ -452,6 +452,25 @@ export default {
 	 * @return {string} The label.
 	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
 	 */
+	/**
+	 * Who a document's access exception names, as the Who can see this card reads it: "Only Pieter Jansen and
+	 * Woo team". The listing gives the display names, people first, then groups.
+	 *
+	 * @param {Array<string>} value The display names.
+	 * @return {string} The sentence, or '' when the document carries no exception.
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-the-who-can-see-this-card-shows-the-exception-and-changes-it
+	 */
+	accessExceptionNames: (value) => {
+		const names = (Array.isArray(value) ? value : []).map((name) => String(name ?? '').trim()).filter((name) => name !== '')
+		if (names.length === 0) {
+			return ''
+		}
+		if (names.length === 1) {
+			return t('dossiq', 'Only {name}', { name: names[0] })
+		}
+		return t('dossiq', 'Only {names} and {last}', { names: names.slice(0, -1).join(', '), last: names[names.length - 1] })
+	},
+
 	confidentialityLabel: (value) => {
 		const labels = {
 			openbaar: t('dossiq', 'Public'),

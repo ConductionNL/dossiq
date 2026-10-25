@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
@@ -222,6 +223,7 @@ class ZaakdossierServiceTest extends TestCase {
 			settingsService: $this->settings,
 			groupManager: $this->createMock(\OCP\IGroupManager::class),
 			logger: $this->createMock(LoggerInterface::class),
+			exceptions: $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true]),
 		);
 		// A REAL lifecycle collaborator over the same mocked settings, so the
 		// status-transition tests below still exercise the production state

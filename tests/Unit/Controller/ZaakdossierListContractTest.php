@@ -119,6 +119,7 @@ class ZaakdossierListContractTest extends TestCase {
 		$this->fileService = $this->createMock(ZaakdossierService::class);
 		$this->reader = $this->createMock(InformatieobjectReader::class);
 		$this->reader->method('withScanVerdicts')->willReturnArgument(0);
+		$this->reader->method('withAccessExceptionNames')->willReturnArgument(0);
 		$this->uploadHandler = $this->createMock(DossierUploadHandler::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 
@@ -243,11 +244,11 @@ class ZaakdossierListContractTest extends TestCase {
 			'the whole dossier must be offered to the clearance filter for the session user'
 		);
 		$this->assertSame(
-			[$public],
+			[[...$public, 'canChangeAccess' => false]],
 			$grouped,
 			'grouping must consume the FILTERED list — the removed document must not be regrouped'
 		);
-		$this->assertSame(['overig' => [$public]], $response->getData());
+		$this->assertSame(['overig' => [[...$public, 'canChangeAccess' => false]]], $response->getData());
 	}//end testListDossierGroupsTheClearanceFilteredListAndNotTheRawDossier()
 
 	/**

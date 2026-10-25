@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use Psr\Log\LoggerInterface;
@@ -138,6 +139,7 @@ class PortalCaseDocuments {
 	 * @return bool
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-every-path-that-returns-the-document-or-its-file-honours-the-exception
 	 */
 	public function isPublished(array $document, bool $isDecision): bool {
 		if (in_array(($document['status'] ?? ''), self::PUBLISHED_STATUSES, true) === false) {
@@ -145,6 +147,11 @@ class PortalCaseDocuments {
 		}
 
 		if (in_array(($document['vertrouwelijkheidaanduiding'] ?? ''), self::READABLE_CONFIDENTIALITY, true) === false) {
+			return false;
+		}
+
+		// A document that names its only readers never reaches the resident, who is never one of them.
+		if ((new AccessExceptionValue())->exceptionOf(record: $document) !== null) {
 			return false;
 		}
 

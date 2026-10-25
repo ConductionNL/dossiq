@@ -158,6 +158,36 @@ class DocumentRecordStore {
 	}//end caseIdsOf()
 
 	/**
+	 * The id of the document record that names a file, read regardless of the
+	 * caller: OpenRegister asks about a restricted file on behalf of somebody
+	 * who may not see the record. Only the id leaves this method.
+	 *
+	 * @param int $fileId The Nextcloud file id.
+	 *
+	 * @return string The record uuid, '' when no record names the file.
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-every-path-that-returns-the-document-or-its-file-honours-the-exception
+	 */
+	public function recordIdOfFile(int $fileId): string {
+		if ($fileId <= 0) {
+			return '';
+		}
+
+		[$objectService, $register] = $this->requireRegister();
+		$rows = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->schema(key: 'dossier_informatieobject_schema'),
+			filters: ['fileId' => $fileId, '_limit' => 1],
+		);
+		if ($rows === []) {
+			return '';
+		}
+
+		return $this->idOf(row: $this->rowOf(value: $rows[0]));
+	}//end recordIdOfFile()
+
+	/**
 	 * The joins of a record, all of them or those of one case.
 	 *
 	 * @param string $recordId The record uuid.

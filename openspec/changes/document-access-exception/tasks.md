@@ -1,0 +1,17 @@
+# Tasks: document-access-exception
+
+- [x] 1.1 Schema: `accessException` (users, groups, reason, setBy, setAt) and `accessExceptionHistory` on informatieobject, 1.4.2 to 1.5.0 (register.d/99-document-access-exception.json), digest recorded
+- [x] 1.2 AccessExceptionValue + DocumentAccessExceptionRule: listed users, listed groups, whoever may change a case of the document (handler, administrators); an exception naming nobody is none; a failed case lookup refuses
+- [x] 2.1 InformatieobjectAccessGuard asks the rule in canRead and filterDossierForUser, so listing (rows, groups, counts), detail, downloads, ZIP, linked documents, bulk actions and approval markers follow
+- [x] 2.2 Resident portal: a document with an exception is never published (PortalCaseDocuments::isPublished)
+- [x] 2.3 The file: FileRestrictionMirror restricts and frees it through OpenRegister's FileRestrictionService (openregister per-file-read-restriction); refused with 503 when OpenRegister cannot
+- [x] 2.4 FileRestrictionAdmitListener admits the case's handler when OpenRegister asks (DocumentRecordStore::recordIdOfFile, unscoped, id only)
+- [x] 3.1 PUT/DELETE /api/informatieobjecten/{id}/access-exception: DocumentCaseWriteGuard before any read, then the read rule, then validation (existing people and groups, a reason), then the write
+- [x] 3.2 DocumentAccessExceptionWriter: restricts the file first, saves the record, appends the history (who, when, old, new, reason), frees or restores the file when the save fails
+- [x] 4.1 Listing rows carry `accessExceptionNames` (display names) and `canChangeAccess` (DocumentCaseWriteGuard::writableDocuments, each case asked once)
+- [x] 4.2 Who can see this card: Default, Exception, Reason; Change exception opens DocumentAccessExceptionDialog, offered by `visibleIf.row.canChangeAccess` (needs nextcloud-vue files-browser-action-visible-if-row; before it the button shows for everyone and the server refuses)
+- [x] 4.3 DocumentAccessExceptionDialog: sharee search for people and groups, reason, save and remove, the server's sentence on a refusal
+- [x] 5.1 PHPUnit: rule, paths (listing, detail, download, ZIP, portal, clearance still applies), controller (order, validation, history, 503, failed save restores, remove), listener, names, per-row change right
+- [x] 5.2 Vitest: card fields and action, formatter, dialog load, save, remove, refusal, search
+- [ ] 6.1 Live check on :8080 — not run: the lane brief keeps :8080 read-only, and OpenRegister needs per-file-read-restriction merged first
+- [ ] 6.2 OpenRegister record-level read restriction for the informatieobject record on OpenRegister's raw object API — follow-up, see proposal "Known limits"

@@ -1251,6 +1251,9 @@ $extra = [
     ['name' => 'zaakdossier#bulkTransitionStatus', 'url' => '/api/informatieobjecten/bulk/status',            'verb' => 'POST'],
     ['name' => 'zaakdossier#bulkUpdateMetadata',   'url' => '/api/informatieobjecten/bulk/metadata',          'verb' => 'POST'],
     ['name' => 'zaakdossier#transitionStatus',     'url' => '/api/informatieobjecten/{infoObjectId}/status',   'verb' => 'PATCH'],
+    // document-access-exception: only named people and groups see this document (DqDocumentenBeheer, Who can see this).
+    ['name' => 'documentAccessException#update',  'url' => '/api/informatieobjecten/{infoObjectId}/access-exception', 'verb' => 'PUT'],
+    ['name' => 'documentAccessException#destroy', 'url' => '/api/informatieobjecten/{infoObjectId}/access-exception', 'verb' => 'DELETE'],
     ['name' => 'zaakdossier#updateMetadata',       'url' => '/api/informatieobjecten/{infoObjectId}',          'verb' => 'PATCH'],
     ['name' => 'zaakdossierDownload#downloadFile',         'url' => '/api/objects/{register}/{schema}/{objectId}/files/{fileId}/download', 'verb' => 'GET'],
     ['name' => 'zaakdossierDownload#downloadZgwDocumenten','url' => '/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download', 'verb' => 'GET'],

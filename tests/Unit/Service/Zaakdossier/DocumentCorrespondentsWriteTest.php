@@ -18,6 +18,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
@@ -189,6 +190,7 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 				settingsService: $settings,
 				groupManager: $this->createMock(originalClassName: IGroupManager::class),
 				logger: $logger,
+				exceptions: $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true]),
 			),
 			statusLifecycle: new InformatieobjectStatusLifecycle(settingsService: $settings, logger: $logger),
 			normaliser: new InformatieobjectMetadataNormaliser(),

@@ -1,0 +1,60 @@
+{
+ "_note": "document-access-exception (Ruben 24 Oct, board DqDocumentenBeheer, the Who can see this card). A document may name the only people and groups who see it, with a reason. The case's handler and administrators keep access (InformatieobjectAccessGuard + DocumentAccessExceptionRule). Written only through PUT/DELETE /api/informatieobjecten/{id}/access-exception, which also restricts the file in OpenRegister and appends to accessExceptionHistory. Minor bump: two optional properties, nothing existing changes.",
+ "components": {
+  "schemas": {
+   "informatieobject": {
+    "version": "1.5.0",
+    "properties": {
+     "accessException": {
+      "type": "object",
+      "title": "Access exception",
+      "description": "Only these people and groups see this document, besides the case's handler and administrators. A reason is required. Set and removed through the document's Who can see this card.",
+      "properties": {
+       "users": {
+        "type": "array",
+        "title": "People",
+        "items": { "type": "string", "maxLength": 255 }
+       },
+       "groups": {
+        "type": "array",
+        "title": "Groups",
+        "items": { "type": "string", "maxLength": 255 }
+       },
+       "reason": {
+        "type": "string",
+        "title": "Reason",
+        "maxLength": 1024
+       },
+       "setBy": {
+        "type": "string",
+        "title": "Set by",
+        "maxLength": 255
+       },
+       "setAt": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Set at"
+       }
+      }
+     },
+     "accessExceptionHistory": {
+      "type": "array",
+      "title": "Access exception history",
+      "description": "Every set, change and removal of the access exception: who, when, the old and the new exception, and the reason.",
+      "items": {
+       "type": "object",
+       "properties": {
+        "action": { "type": "string", "enum": ["set", "change", "remove"] },
+        "by": { "type": "string", "maxLength": 255 },
+        "at": { "type": "string", "format": "date-time" },
+        "old": { "description": "The exception before, absent when there was none." },
+        "new": { "description": "The exception after, absent when it was removed." },
+        "reason": { "type": "string", "maxLength": 1024 }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}
