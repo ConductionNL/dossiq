@@ -29,10 +29,13 @@
 				"selectable": false,
 				"showTitle": true,
 				"showViewToggle": false,
+				"_showCountNote": "Board DqAfdelingen: no count line under the title; the folder heading already says how many staff.",
+				"showCount": false,
 				"folderSidebar": {
 					"source": "groups",
 					"filterField": "group",
 					"heading": true,
+					"allLabel": "All staff",
 					"countText": "{count} staff",
 					"headingParts": [
 						{ "field": "teamLead", "text": "team lead {value}", "format": "user" }

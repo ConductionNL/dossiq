@@ -27,6 +27,11 @@ describe('the departments page', () => {
 		expect(page.config.selectable).toBe(false)
 	})
 
+	it('draws no count line under the title, and names the all-staff folder, as the board does', () => {
+		expect(page.config.showCount).toBe(false)
+		expect(page.config.folderSidebar.allLabel).toBe('All staff')
+	})
+
 	it('offers no view switch, because the members are only ever a table', () => {
 		expect(page.config.showViewToggle).toBe(false)
 	})
