@@ -7687,7 +7687,8 @@
 									"parts": [
 										{
 											"path": "assignee",
-											"label": "Handler"
+											"label": "Handler",
+											"format": "user"
 										},
 										{
 											"path": "deadline",
