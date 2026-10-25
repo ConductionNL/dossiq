@@ -28,4 +28,8 @@ describe('the closed stage', () => {
 		expect(config.eyebrow).toBe('Close off · {identifier}')
 		expect(config.fields.map((field) => field.field)).toContain('notifyRequester')
 	})
+
+	it('locks the read-only note, as the board draws it', () => {
+		expect(simple.config.primaryActionByStage.closed.props.config.note.icon).toBe('LockOutline')
+	})
 })
