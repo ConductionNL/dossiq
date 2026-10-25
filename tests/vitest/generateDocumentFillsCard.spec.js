@@ -53,3 +53,12 @@ describe('the template facts sit tight under the title (r25b: 22.8px for 8)', ()
 		expect(rule('.generate-document__fills-grid dt,\n.generate-document__fills-grid dd')).toContain('line-height: normal;')
 	})
 })
+
+describe('the note under the template facts (DqDocumentGenereren)', () => {
+	it('carries the board\'s document-with-a-check icon, not the info circle', () => {
+		const template = source.slice(0, source.indexOf('<script'))
+		const note = template.slice(template.indexOf('<NcNoteCard type="info"'), template.indexOf('</NcNoteCard>'))
+		expect(note).toContain('<FileDocumentCheckOutline')
+		expect(source).toContain("import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'")
+	})
+})
