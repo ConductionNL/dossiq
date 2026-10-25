@@ -23,7 +23,6 @@
 		<div class="case-location-dialog">
 			<CnAddressSearch
 				:inputLabel="t('dossiq', 'Search address')"
-				:labelOutside="true"
 				data-testid="case-location-search"
 				@select="onSelect" />
 			<p class="case-location-dialog__hint">
@@ -408,6 +407,27 @@ export default {
 
 .case-location-dialog__layers legend {
 	padding: 0 4px;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+/* The board's layer toggles are plain 14px checkboxes, 8px from their
+   label and without NcCheckboxRadioSwitch's row padding. */
+.case-location-dialog__layers :deep(.checkbox-content) {
+	gap: 8px;
+	min-height: 0;
+	padding: 0;
+	padding-inline-start: 4px;
+}
+
+.case-location-dialog__layers :deep(.checkbox-content__text) {
+	font-size: 14px;
+	line-height: 1.2;
+}
+
+.case-location-dialog :deep(.select__label) {
+	margin-bottom: 6px;
 	font-size: 14px;
 	font-weight: 600;
 	line-height: 1.2;

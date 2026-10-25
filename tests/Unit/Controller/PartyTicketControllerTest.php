@@ -20,6 +20,12 @@ use PHPUnit\Framework\TestCase;
  * @spec openspec/changes/organisation-open-tickets/specs/pipelinq-consumption/spec.md
  */
 class PartyTicketControllerTest extends TestCase {
+	/**
+	 * The status filters the gateway was asked for, in order.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $statuses = [];
 
 	/**
 	 * A controller over a gateway answering the given tickets, and a request with the given parameters.
@@ -40,6 +46,13 @@ class PartyTicketControllerTest extends TestCase {
 		$gateway->method('openTicketsByMasterEntity')->willReturnCallback(
 			static function (array $refs) use ($tickets, &$asked): ?array {
 				$asked[] = $refs;
+				return $tickets;
+			}
+		);
+		$gateway->method('ticketsByMasterEntity')->willReturnCallback(
+			function (array $refs, string $status) use ($tickets, &$asked): ?array {
+				$asked[] = $refs;
+				$this->statuses[] = $status;
 				return $tickets;
 			}
 		);
@@ -110,4 +123,22 @@ class PartyTicketControllerTest extends TestCase {
 		$this->assertSame(expected: ['available' => true, 'results' => [], 'total' => 0], actual: $response->getData());
 		$this->assertSame(expected: [], actual: $asked);
 	}//end testAPartyWithoutAMasterEntityHasNone()
+
+	/**
+	 * The Tickets card asks for all of a party's tickets; anything but
+	 * `closed` or `all` reads the open ones.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/party-tickets-all-with-reference/specs/pipelinq-consumption/spec.md#requirement-a-partys-tickets-card-lists-its-handled-tickets-too
+	 */
+	public function testTheStatusParameterPicksTheTickets(): void {
+		$tickets = ['m1' => [['id' => 't1', 'status' => 'in_progress'], ['id' => 't4', 'status' => 'resolved']]];
+		$response = $this->controller(tickets: $tickets, params: ['key' => 'm1', 'status' => 'all'])->openTickets();
+		$this->assertSame(expected: 2, actual: $response->getData()['total']);
+
+		$this->controller(tickets: $tickets, params: ['key' => 'm1', 'status' => 'deleted'])->openTickets();
+		$this->controller(tickets: $tickets, params: ['key' => 'm1'])->openTickets();
+		$this->assertSame(expected: ['all', 'open', 'open'], actual: $this->statuses);
+	}//end testTheStatusParameterPicksTheTickets()
 }//end class

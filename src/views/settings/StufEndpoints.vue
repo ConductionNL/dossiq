@@ -237,9 +237,10 @@ export default {
 	text-align: left;
 }
 
-.stuf-endpoints__empty {
+.stuf-endpoints__table td.stuf-endpoints__empty {
+	padding: 16px 12px;
 	color: var(--color-text-maxcontrast);
-	font-style: italic;
+	text-align: center;
 }
 
 .stuf-endpoints__health {
@@ -267,8 +268,9 @@ export default {
 
 .stuf-endpoints__note {
 	color: var(--color-text-maxcontrast);
-	margin-top: 12px;
-	font-size: 13px;
+	margin-top: 16px;
+	font-size: 14px;
+	line-height: 1.5;
 }
 
 .stuf-endpoints__error {

@@ -103,11 +103,13 @@ class PartyTicketController extends Controller {
 	}//end openTicketCounts()
 
 	/**
-	 * One party's open tickets.
+	 * One party's tickets: the open ones, or with `status` `closed` or `all`
+	 * the handled ones too.
 	 *
 	 * @return JSONResponse `{available, results, total}`, or `{available: false}`.
 	 *
 	 * @spec openspec/changes/organisation-open-tickets/specs/pipelinq-consumption/spec.md
+	 * @spec openspec/changes/party-tickets-all-with-reference/specs/pipelinq-consumption/spec.md#requirement-a-partys-tickets-card-lists-its-handled-tickets-too
 	 */
 	#[NoAdminRequired]
 	public function openTickets(): JSONResponse {
@@ -116,7 +118,12 @@ class PartyTicketController extends Controller {
 			return new JSONResponse(['available' => true, 'results' => [], 'total' => 0]);
 		}
 
-		$tickets = $this->gateway->openTicketsByMasterEntity(refs: [$key]);
+		$status = (string)$this->request->getParam('status', 'open');
+		if (in_array($status, ['closed', 'all'], true) === false) {
+			$status = 'open';
+		}
+
+		$tickets = $this->gateway->ticketsByMasterEntity(refs: [$key], status: $status);
 		if ($tickets === null) {
 			return new JSONResponse(['available' => false]);
 		}

@@ -2,7 +2,9 @@
   SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
   SPDX-License-Identifier: EUPL-1.2
 
-  What dossiq needs, and what this instance has.
+  What dossiq needs, and what this instance has: three tables (platform,
+  PHP extensions, apps) with what each does and whether it is here, as board
+  DqBeheerGeavanceerd draws them.
 
   Every row is read on the server at page load, from `Prerequisites::check()`.
   Nothing here asks the browser anything: a PHP extension is not visible from
@@ -25,63 +27,109 @@
 			{{ missingRequired.map((row) => row.name || row.id).join(', ') }}
 		</NcNoteCard>
 
-		<h4>{{ t('dossiq', 'Platform') }}</h4>
-		<ul class="prerequisites__list">
-			<li data-testid="prerequisite-php">
-				<span :class="markClass(php.present)">{{ mark(php.present) }}</span>
-				{{ t('dossiq', 'PHP') }} {{ php.required }}
-				{{ t('dossiq', 'or higher') }}
-				<span class="prerequisites__detail">
-					({{ t('dossiq', 'this instance runs') }} {{ php.running }})
-				</span>
-			</li>
-			<li data-testid="prerequisite-nextcloud">
-				<span :class="markClass(nextcloud.present)">
-					{{ mark(nextcloud.present) }}
-				</span>
-				{{ t('dossiq', 'Nextcloud') }} {{ nextcloud.min }}
-				{{ t('dossiq', 'to') }} {{ nextcloud.max }}
-				<span v-if="nextcloud.running" class="prerequisites__detail">
-					({{ t('dossiq', 'this instance runs') }} {{ nextcloud.running }})
-				</span>
-			</li>
-		</ul>
+		<table class="prerequisites__table" data-testid="prerequisites-platform">
+			<thead>
+				<tr>
+					<th scope="col">
+						{{ t('dossiq', 'Platform') }}
+					</th>
+					<th scope="col">
+						{{ t('dossiq', 'What it does') }}
+					</th>
+					<th scope="col" class="prerequisites__here">
+						{{ t('dossiq', 'Here') }}
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr data-testid="prerequisite-php">
+					<th scope="row">
+						{{ t('dossiq', 'PHP') }} {{ php.required }} {{ t('dossiq', 'or higher') }}
+					</th>
+					<td>{{ t('dossiq', 'this instance runs') }} {{ php.running }}</td>
+					<td><span :class="markClass(php.present)">{{ mark(php.present) }}</span></td>
+				</tr>
+				<tr data-testid="prerequisite-nextcloud">
+					<th scope="row">
+						{{ t('dossiq', 'Nextcloud') }} {{ nextcloud.min }} {{ t('dossiq', 'to') }} {{ nextcloud.max }}
+					</th>
+					<td>
+						<template v-if="nextcloud.running">
+							{{ t('dossiq', 'this instance runs') }} {{ nextcloud.running }}
+						</template>
+					</td>
+					<td><span :class="markClass(nextcloud.present)">{{ mark(nextcloud.present) }}</span></td>
+				</tr>
+			</tbody>
+		</table>
 
-		<h4>{{ t('dossiq', 'PHP extensions') }}</h4>
-		<ul class="prerequisites__list">
-			<li
-				v-for="row in extensions"
-				:key="row.name"
-				:data-testid="`prerequisite-ext-${row.name}`">
-				<span :class="markClass(row.present)">{{ mark(row.present) }}</span>
-				{{ row.name }}
-				<span class="prerequisites__detail">{{ t('dossiq', row.why) }}</span>
-			</li>
-		</ul>
+		<table class="prerequisites__table" data-testid="prerequisites-extensions">
+			<thead>
+				<tr>
+					<th scope="col">
+						{{ t('dossiq', 'PHP extension') }}
+					</th>
+					<th scope="col">
+						{{ t('dossiq', 'What it does') }}
+					</th>
+					<th scope="col" class="prerequisites__here">
+						{{ t('dossiq', 'Here') }}
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr
+					v-for="row in extensions"
+					:key="row.name"
+					:data-testid="`prerequisite-ext-${row.name}`">
+					<th scope="row">
+						{{ row.name }}
+					</th>
+					<td>{{ t('dossiq', row.why) }}</td>
+					<td><span :class="markClass(row.present)">{{ mark(row.present) }}</span></td>
+				</tr>
+			</tbody>
+		</table>
 
-		<h4>{{ t('dossiq', 'Apps dossiq needs') }}</h4>
-		<ul class="prerequisites__list">
-			<li
-				v-for="row in required"
-				:key="row.id"
-				:data-testid="`prerequisite-app-${row.id}`">
-				<span :class="markClass(row.present)">{{ mark(row.present) }}</span>
-				{{ row.name || row.id }}
-				<span class="prerequisites__detail">{{ t('dossiq', row.unlocks) }}</span>
-			</li>
-		</ul>
-
-		<h4>{{ t('dossiq', 'Apps dossiq works with') }}</h4>
-		<ul class="prerequisites__list">
-			<li
-				v-for="row in optional"
-				:key="row.id"
-				:data-testid="`prerequisite-app-${row.id}`">
-				<span :class="markClass(row.present)">{{ mark(row.present) }}</span>
-				{{ row.name || row.id }}
-				<span class="prerequisites__detail">{{ t('dossiq', row.unlocks) }}</span>
-			</li>
-		</ul>
+		<table class="prerequisites__table" data-testid="prerequisites-apps">
+			<thead>
+				<tr>
+					<th scope="col">
+						{{ t('dossiq', 'App') }}
+					</th>
+					<th scope="col">
+						{{ t('dossiq', 'What it does') }}
+					</th>
+					<th scope="col" class="prerequisites__here">
+						{{ t('dossiq', 'Here') }}
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr
+					v-for="row in required"
+					:key="row.id"
+					:data-testid="`prerequisite-app-${row.id}`">
+					<th scope="row">
+						{{ row.name || row.id }}
+					</th>
+					<td>{{ t('dossiq', row.unlocks) }}</td>
+					<td><span :class="markClass(row.present)">{{ mark(row.present) }}</span></td>
+				</tr>
+			</tbody>
+			<tbody>
+				<tr
+					v-for="row in optional"
+					:key="row.id"
+					:data-testid="`prerequisite-app-${row.id}`">
+					<th scope="row">
+						{{ row.name || row.id }}
+					</th>
+					<td>{{ t('dossiq', row.unlocks) }}</td>
+					<td><span :class="markClass(row.present)">{{ mark(row.present) }}</span></td>
+				</tr>
+			</tbody>
+		</table>
 	</div>
 </template>
 
@@ -161,14 +209,23 @@ export default {
 </script>
 
 <style scoped>
-.prerequisites__list {
-	list-style: none;
-	margin: 0 0 16px 0;
-	padding: 0;
+.prerequisites {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
-.prerequisites__list li {
-	padding: 2px 0;
+.prerequisites__table th[scope='row'] {
+	font-weight: 600;
+	text-align: start;
+}
+
+.prerequisites__table td:nth-child(2)::first-letter {
+	text-transform: uppercase;
+}
+
+.prerequisites__here {
+	inline-size: 120px;
 }
 
 /*
@@ -179,10 +236,10 @@ export default {
  */
 .prerequisites__mark {
 	display: inline-block;
-	box-sizing: border-box;
-	min-width: 72px;
-	margin-inline-end: 8px;
-	text-align: center;
+}
+
+.prerequisites__mark::first-letter {
+	text-transform: uppercase;
 }
 
 .prerequisites__mark--present {
@@ -195,9 +252,5 @@ export default {
 	background: var(--color-error);
 	--cn-status-badge-ink: var(--color-error-text);
 	color: var(--cn-status-badge-ink);
-}
-
-.prerequisites__detail {
-	color: var(--color-text-maxcontrast);
 }
 </style>
