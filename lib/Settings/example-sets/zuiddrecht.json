@@ -2642,6 +2642,7 @@
 				"operationType": "update",
 				"targetEntity": "inspectionChecklistRun",
 				"label": "Molenweg 4, checklist",
+				"summary": "18 antwoorden, 4 foto's",
 				"queuedAt": "{{datetime:0 10:12}}",
 				"attemptCount": 0,
 				"status": "pending"
@@ -2656,7 +2657,8 @@
 				"operationType": "upload",
 				"targetEntity": "inspectionChecklistRun",
 				"label": "Kerkplein 7, foto",
-				"queuedAt": "{{datetime:0 10:52}}",
+				"summary": "Vraag 7",
+				"queuedAt": "{{datetime:0 10:13}}",
 				"attemptCount": 0,
 				"status": "pending"
 			}

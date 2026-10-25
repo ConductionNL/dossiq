@@ -308,7 +308,7 @@
       "syncQueue": {
         "slug": "syncQueue",
         "icon": "Sync",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "searchable": false,
         "x-schema-org": "schema:Action",
         "title": "Sync Queue Operation",
@@ -348,6 +348,12 @@
             "maxLength": 255,
             "title": "Label",
             "description": "What the queued change is about in words, written by the device when it queues the change (e.g. Molenweg 4, checklist). Lists fall back to the target entity without one."
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Summary",
+            "description": "What the queued change holds, in words, written by the device (e.g. 18 antwoorden, 4 foto's). The outbox shows it under the label."
           },
           "targetId": {
             "type": "string",
