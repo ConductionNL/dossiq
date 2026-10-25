@@ -244,6 +244,11 @@ const MANIFEST_TEXT_FIELDS = new Set([
 // it does `emptyText`, so each value is a key the catalogue must carry.
 const MANIFEST_TEXT_MAPS = new Set(['lensReasonTexts'])
 
+// Maps keyed by a column key whose values are CSS, not text: a search page's
+// `sourceConfig.columnWidths` (`{ title: '250px' }`) names the column `title`,
+// which is not a title to translate.
+const MANIFEST_NON_TEXT_MAPS = new Set(['columnWidths'])
+
 // `filterLabels` (nextcloud-vue index pages) names a filter per key: `label`
 // is caught as a text field below, and each `values` entry is a string the
 // Active line runs through the app's translate, so it is a key too.
@@ -273,7 +278,7 @@ function recordManifestStrings (node, file, trail) {
 		return
 	}
 	for (const [key, value] of Object.entries(node)) {
-		if (key.startsWith('_')) {
+		if (key.startsWith('_') || MANIFEST_NON_TEXT_MAPS.has(key)) {
 			continue
 		}
 		const where = trail ? `${trail}.${key}` : key
