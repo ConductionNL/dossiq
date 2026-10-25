@@ -2668,6 +2668,129 @@
 			}
 		},
 		{
+			"key": "kapvergunning-parkstraat",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Kapvergunning Parkstraat",
+				"description": "Meneer Bakker vroeg een vergunning om de kastanje voor zijn huis aan de Parkstraat te kappen. Het besluit kwam te laat: hij stelde de gemeente in gebreke en kreeg een dwangsom.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henk.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henk.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "openbaar",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-100}}",
+				"deadline": "{{date:-80}}",
+				"receivedAt": "{{datetime:-100 09:15}}",
+				"endDate": "{{date:-23}}",
+				"currentStatusEnteredAt": "{{datetime:-23 14:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-100 09:15}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-23 14:00}}"
+					}
+				],
+				"tags": [
+					"kap",
+					"dwangsom"
+				]
+			}
+		},
+		{
+			"key": "termijn-kapvergunning-parkstraat",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:kapvergunning-parkstraat.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-100 09:15}}",
+				"endDateCalculated": "{{date:-80}}",
+				"endDateCurrent": "{{date:-80}}",
+				"status": "exceeded",
+				"voltooiDatum": "{{date:-23}}"
+			}
+		},
+		{
+			"key": "ingebrekestelling-kapvergunning-parkstraat",
+			"register": "dossiq",
+			"schema": "noticeOfDefault",
+			"data": {
+				"deadlineInstance": "{{object:termijn-kapvergunning-parkstraat.id}}",
+				"receiptDate": "{{date:-79}}",
+				"notificationChannel": "email",
+				"gevalideerd": true,
+				"validityStatus": "valid",
+				"decisionRegisteredDate": "{{date:-23}}"
+			}
+		},
+		{
+			"key": "dwangsom-kapvergunning-parkstraat",
+			"register": "dossiq",
+			"schema": "penaltyPaymentCalculation",
+			"data": {
+				"noticeOfDefault": "{{object:ingebrekestelling-kapvergunning-parkstraat.id}}",
+				"deadlineInstance": "{{object:termijn-kapvergunning-parkstraat.id}}",
+				"startDate": "{{date:-65}}",
+				"stoppedOn": "{{date:-23}}",
+				"currentDag": 42,
+				"dailyRate": 4500,
+				"cumulativeAmount": 144200,
+				"definitiveAmount": 144200,
+				"plafondCalculated": 144200,
+				"plafondBereikt": true,
+				"status": "gestopt-wegens-decision",
+				"regime": "awb-default"
+			}
+		},
+		{
+			"key": "uitbetaling-kapvergunning-parkstraat",
+			"register": "dossiq",
+			"schema": "dwangsomUitbetaling",
+			"data": {
+				"penaltyPaymentCalculation": "{{object:dwangsom-kapvergunning-parkstraat.id}}",
+				"amount": 144200,
+				"accountHolderName": "{{cast:henk.displayName}}",
+				"reference": "Dwangsom Kapvergunning Parkstraat",
+				"legalBasis": "Awb 4:17",
+				"paymentDateLatest": "{{date:-17}}",
+				"status": "in-handling"
+			}
+		},
+		{
 			"key": "inspectie-oplevering-esra",
 			"register": "dossiq",
 			"schema": "inspectionChecklistRun",
