@@ -2257,7 +2257,7 @@
 				"severity": "ernstig",
 				"behaviour": "onverschillig",
 				"actorType": "burger",
-				"matrixVersion": 1,
+				"matrixVersion": 2,
 				"recommendedIntervention": "last_under_penaltypayment",
 				"finalIntervention": "last_under_penaltypayment",
 				"override": false,
@@ -2273,7 +2273,7 @@
 				"severity": "ernstig",
 				"behaviour": "onverschillig",
 				"actorType": "burger",
-				"matrixVersion": 1,
+				"matrixVersion": 2,
 				"recommendedIntervention": "last_under_penaltypayment",
 				"finalIntervention": "warning",
 				"override": true,
@@ -5916,6 +5916,420 @@
 					"woo"
 				]
 			}
+		},
+		{
+			"key": "handhavingsmatrix-zuiddrecht-v2",
+			"register": "dossiq",
+			"schema": "lhsMatrix",
+			"data": {
+				"name": "Handhavingsmatrix Zuiddrecht",
+				"version": 2,
+				"active": true,
+				"severityAxis": [
+					"gering",
+					"aanzienlijk",
+					"ernstig",
+					"zeer_ernstig"
+				],
+				"behaviourAxis": [
+					"goedwillend",
+					"onverschillig",
+					"calculerend",
+					"crimineel"
+				],
+				"actorTypeAxis": [
+					"burger",
+					"bedrijf",
+					"overheid",
+					"recidivist"
+				],
+				"cells": [
+					{
+						"severity": "gering",
+						"behaviour": "goedwillend",
+						"actorType": "burger",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "goedwillend",
+						"actorType": "burger",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "burger",
+						"intervention": "warning"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "burger",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "onverschillig",
+						"actorType": "burger",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "onverschillig",
+						"actorType": "burger",
+						"intervention": "warning"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "burger",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "burger",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "calculerend",
+						"actorType": "burger",
+						"intervention": "warning"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "calculerend",
+						"actorType": "burger",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "calculerend",
+						"actorType": "burger",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "calculerend",
+						"actorType": "burger",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "crimineel",
+						"actorType": "burger",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "crimineel",
+						"actorType": "burger",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "crimineel",
+						"actorType": "burger",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "crimineel",
+						"actorType": "burger",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "goedwillend",
+						"actorType": "bedrijf",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "goedwillend",
+						"actorType": "bedrijf",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "bedrijf",
+						"intervention": "warning"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "bedrijf",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "onverschillig",
+						"actorType": "bedrijf",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "onverschillig",
+						"actorType": "bedrijf",
+						"intervention": "warning"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "bedrijf",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "bedrijf",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "calculerend",
+						"actorType": "bedrijf",
+						"intervention": "warning"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "calculerend",
+						"actorType": "bedrijf",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "calculerend",
+						"actorType": "bedrijf",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "calculerend",
+						"actorType": "bedrijf",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "crimineel",
+						"actorType": "bedrijf",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "crimineel",
+						"actorType": "bedrijf",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "crimineel",
+						"actorType": "bedrijf",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "crimineel",
+						"actorType": "bedrijf",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "goedwillend",
+						"actorType": "overheid",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "goedwillend",
+						"actorType": "overheid",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "overheid",
+						"intervention": "warning"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "overheid",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "onverschillig",
+						"actorType": "overheid",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "onverschillig",
+						"actorType": "overheid",
+						"intervention": "warning"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "overheid",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "overheid",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "calculerend",
+						"actorType": "overheid",
+						"intervention": "warning"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "calculerend",
+						"actorType": "overheid",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "calculerend",
+						"actorType": "overheid",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "calculerend",
+						"actorType": "overheid",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "crimineel",
+						"actorType": "overheid",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "crimineel",
+						"actorType": "overheid",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "crimineel",
+						"actorType": "overheid",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "crimineel",
+						"actorType": "overheid",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "goedwillend",
+						"actorType": "recidivist",
+						"intervention": "warning"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "goedwillend",
+						"actorType": "recidivist",
+						"intervention": "warning"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "recidivist",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "onverschillig",
+						"actorType": "recidivist",
+						"intervention": "warning"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "onverschillig",
+						"actorType": "recidivist",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "calculerend",
+						"actorType": "recidivist",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "calculerend",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "calculerend",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "calculerend",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "crimineel",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "crimineel",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "crimineel",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "crimineel",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					}
+				]
+			}
 		}
 	],
 	"parties": [
@@ -6500,6 +6914,18 @@
 			},
 			"set": {
 				"duplicatePolicy": "block"
+			}
+		},
+		{
+			"key": "landelijke-handhavingsmatrix-niet-actief",
+			"register": "dossiq",
+			"schema": "lhsMatrix",
+			"where": {
+				"name": "Landelijke Handhavingsstrategie 2024",
+				"version": 1
+			},
+			"set": {
+				"active": false
 			}
 		}
 	]
