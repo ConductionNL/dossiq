@@ -49,13 +49,16 @@ use PHPUnit\Framework\TestCase;
 use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
 use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentWriteGate;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCaseIds;
 
 /**
  * Wire-contract tests for ZaakdossierController.
  *
  * @covers \OCA\Dossiq\Controller\ZaakdossierController
  * @uses \OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentWriteGate
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard
  */
 class ZaakdossierControllerContractTest extends TestCase {
 
@@ -141,7 +144,7 @@ class ZaakdossierControllerContractTest extends TestCase {
 		$this->fileService = $this->createMock(ZaakdossierService::class);
 		$this->reader = $this->createMock(InformatieobjectReader::class);
 		$this->uploadHandler = $this->createMock(DossierUploadHandler::class);
-		$store = $this->createMock(originalClassName: DocumentRecordStore::class);
+		$store = $this->createMock(originalClassName: DocumentCaseIds::class);
 		$store->method('caseIdsOf')->willReturnCallback(callback: fn (string $recordId): array => $this->casesOf[$recordId] ?? []);
 		$this->uploadHandler->method('hasCaseUploadAccess')->willReturnCallback(
 			callback: fn (IUser $user, string $caseId): bool => $this->mayAddToCase && in_array($caseId, $this->lockedCases, true) === false
@@ -165,11 +168,13 @@ class ZaakdossierControllerContractTest extends TestCase {
 			// A REAL bulk actions object over the SAME reader and dossier
 			// service the assertions read through. Only the wiring line moved
 			// when one act over many documents was split out.
-			bulk: new BulkDocumentActions(
-				reader: $this->reader,
-				fileService: $this->fileService,
+			writes: new DocumentWriteGate(
+				caseWrites: new DocumentCaseWriteGuard(caseIds: $store, uploads: $this->uploadHandler),
+				bulk: new BulkDocumentActions(
+					reader: $this->reader,
+					fileService: $this->fileService,
+				),
 			),
-			caseWrites: new DocumentCaseWriteGuard(store: $store, uploads: $this->uploadHandler),
 		);
 	}//end setUp()
 

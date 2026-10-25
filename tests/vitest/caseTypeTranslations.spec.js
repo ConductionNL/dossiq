@@ -354,6 +354,12 @@ describe('the translations summary (DqZaaktypeOverzicht)', () => {
 		expect(tabs.find((tab) => tab.id === 'translations').widgetId).toBe('case-type-translations')
 		expect(summary.type).toBe('CaseTypeTranslationsWidget')
 		expect(summary.content.mode).toBe('summary')
-		expect(summary.headerLink).toEqual({ label: 'Edit', tab: 'translations' })
+		expect(summary.headerActions).toEqual([{ label: 'Edit', icon: 'Pencil', action: { type: 'navigate', target: '/settings/case-types/@objectId#translations' } }])
+		expect(summary.headerLink).toBeUndefined()
+	})
+
+	it('draws the Overview summary in a titled card, the tab editor bare (r25b)', () => {
+		const entry = registrySource.slice(registrySource.indexOf('CaseTypeTranslationsWidget: {'))
+		expect(entry.slice(0, entry.indexOf('},'))).toMatch(/chrome: 'card'/)
 	})
 })

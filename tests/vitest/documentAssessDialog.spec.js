@@ -48,7 +48,7 @@ const THREE = [
  * @param {Array<Array<object>>} lists What each successive read of the outstanding list answers.
  * @return {Promise<{wrapper: object, axios: object}>} The mounted dialog and the axios double.
  */
-async function mountDialog(lists = [THREE]) {
+async function mountDialog(lists = [THREE], extra = {}) {
 	const axios = (await import('@nextcloud/axios')).default
 	let read = 0
 	axios.get.mockImplementation((url) => {
@@ -75,7 +75,7 @@ async function mountDialog(lists = [THREE]) {
 	})
 
 	const wrapper = mount(DocumentAssessDialog, {
-		props: { ...action.props, caseId: CASE_ID },
+		props: { ...action.props, caseId: CASE_ID, ...extra },
 		global: {
 			stubs: {
 				NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
@@ -376,5 +376,17 @@ describe('the document-assess header action', () => {
 			field: '@self.archived',
 			op: 'empty',
 		})
+	})
+})
+
+describe('DocumentAssessDialog opened from a document row (DqZaakDocumenten "Beoordelen")', () => {
+	it('starts with that document chosen', async () => {
+		const { wrapper } = await mountDialog([THREE], { documentId: 'io-2' })
+		expect(wrapper.vm.selected).toEqual(['io-2'])
+	})
+
+	it('chooses nothing for a document that is not outstanding', async () => {
+		const { wrapper } = await mountDialog([THREE], { documentId: 'io-9' })
+		expect(wrapper.vm.selected).toEqual([])
 	})
 })

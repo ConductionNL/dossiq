@@ -351,6 +351,9 @@ export default {
 		/**
 		 * Read the vocabulary and the inventory.
 		 *
+		 * The reads run side by side: one after the other they took about 17
+		 * seconds on :8080, longer than anyone waits for a spinner.
+		 *
 		 * The inventory is an admin read, so a handler who opened this page is
 		 * refused and told so in one sentence rather than shown an empty table
 		 * that reads as "this case checks nothing".
@@ -367,12 +370,20 @@ export default {
 				this.loading = false
 				return
 			}
-			this.kinds = kindsByName(await fetchRuleVocabulary())
-			this.properties = await fetchSchemaProperties(this.schemaSlug())
-			await this.loadCaseType()
+			const [vocabulary, properties, rules] = await Promise.all([
+				fetchRuleVocabulary(),
+				fetchSchemaProperties(this.schemaSlug()),
+				fetchSchemaRules(this.schemaSlug(), this.caseTypeId ? { caseType: this.caseTypeId } : {}).then((list) => ({ list }), (e) => ({ e })),
+				this.loadCaseType(),
+			])
+			this.kinds = kindsByName(vocabulary)
+			this.properties = properties
 
 			try {
-				this.rules = await fetchSchemaRules(this.schemaSlug(), this.caseTypeId ? { caseType: this.caseTypeId } : {})
+				if (rules.e) {
+					throw rules.e
+				}
+				this.rules = rules.list
 			} catch (e) {
 				this.rules = []
 				this.error =
@@ -402,15 +413,18 @@ export default {
 			}
 			const store = useObjectStore()
 			const list = async (type) => (await store.fetchCollection(type, { caseType: this.caseTypeId, _limit: 200 }).catch(() => [])) || []
-			this.caseType = (await store.fetchObject('caseType', this.caseTypeId).catch(() => null)) || null
-			const blueprint = await fetchBlueprintCatalogue(this.caseTypeId)
-			this.catalogue = {
-				propertyDefinitions: blueprint ? blueprint.propertyDefinitions : await list('propertyDefinition'),
-				statusTypes: blueprint ? blueprint.statusTypes : await list('statusType'),
-				documentTypes: await list('documentType'),
-				emailTemplates: await list('emailTemplate'),
-				roleTypes: await list('roleType'),
-			}
+			const [caseType, blueprint, documentTypes, emailTemplates, roleTypes] = await Promise.all([
+				store.fetchObject('caseType', this.caseTypeId).catch(() => null),
+				fetchBlueprintCatalogue(this.caseTypeId),
+				list('documentType'),
+				list('emailTemplate'),
+				list('roleType'),
+			])
+			this.caseType = caseType || null
+			const [propertyDefinitions, statusTypes] = blueprint
+				? [blueprint.propertyDefinitions, blueprint.statusTypes]
+				: await Promise.all([list('propertyDefinition'), list('statusType')])
+			this.catalogue = { propertyDefinitions, statusTypes, documentTypes, emailTemplates, roleTypes }
 		},
 
 		/**

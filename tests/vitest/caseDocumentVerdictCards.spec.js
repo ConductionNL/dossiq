@@ -103,3 +103,11 @@ describe('the Files card on a case type that reviews its documents', () => {
 		expect(nl[entry.text]).toBe('Per document beoordelen of het openbaar kan. Wat deels openbaar is, lakt u daarna.')
 	})
 })
+
+describe('the verdicts summary in the files card (DqZaakDocumenten)', () => {
+	it('is the compact box: thin bar, legend on one line, no inset of its own', () => {
+		const summary = card('case-document-verdicts-card')
+		expect(summary.content.compact).toBe(true)
+		expect(summary.content.inset).not.toBe(true)
+	})
+})

@@ -106,9 +106,13 @@
 						"secondary": "{sender} · {receivedAt|relativetime}"
 					},
 					{
-						"key": "recipient",
+						"key": "channel",
 						"label": "Came in via",
-						"width": "230px"
+						"width": "230px",
+						"widget": "label",
+						"enum": ["email", "portal", "webform"],
+						"enumLabels": { "email": "E-mail", "portal": "Portal", "webform": "Web form" },
+						"widgetProps": { "textTemplate": "{value}, {recipient|mailbox}" }
 					},
 					{
 						"key": "suggestion.identifier",
@@ -116,7 +120,8 @@
 						"width": "186px",
 						"widget": "badge",
 						"widgetProps": {
-							"variant": "info"
+							"variant": "info",
+							"textTemplate": "Looks like {value}"
 						}
 					},
 					{

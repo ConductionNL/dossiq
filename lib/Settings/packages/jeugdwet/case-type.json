@@ -4,6 +4,7 @@
     "identifier": "melding-jeugdwet",
     "title": "Melding Jeugdwet",
     "category": "Jeugdhulp",
+    "handlerLabel": "Regisseur",
     "description": "Melding over een kind of gezin onder de Jeugdwet: onderzoek, indicatie en overleg tot een besluit over jeugdhulp.",
     "purpose": "Vaststellen of en welke jeugdhulp een kind of gezin nodig heeft (Jeugdwet artikel 2.3).",
     "trigger": "Melding van een verwijzer, zoals de huisarts, of een hulpvraag van ouders of jeugdige.",
@@ -355,6 +356,58 @@
       "category": "Jeugd",
       "propertyType": "boolean",
       "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "sensitive": true,
+      "hideOnCreate": true
+    },
+    {
+      "id": "9351d74d-7824-5d7a-93f4-e78f8991ceeb",
+      "name": "onderzoeksstappen",
+      "definition": "Onderzoeksstappen",
+      "description": "De stappen van het onderzoek: gesprekken, huisbezoeken en opgevraagde informatie, met wie en waarop het rust.",
+      "category": "Jeugd",
+      "propertyType": "array",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Soort",
+            "enum": [
+              "gesprek",
+              "huisbezoek",
+              "informatie-opgevraagd",
+              "dossieronderzoek",
+              "anders"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Datum"
+          },
+          "by": {
+            "type": "string",
+            "title": "Door"
+          },
+          "withWhom": {
+            "type": "string",
+            "title": "Met wie"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Samenvatting"
+          },
+          "consentRef": {
+            "type": "string",
+            "title": "Toestemming"
+          },
+          "followUp": {
+            "type": "string",
+            "title": "Vervolg"
+          }
+        }
+      },
       "sensitive": true,
       "hideOnCreate": true
     }

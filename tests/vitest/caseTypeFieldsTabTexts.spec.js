@@ -25,10 +25,10 @@ describe('case type Fields tab texts (DqZaaktypeVelden)', () => {
 		expect(nl[widget('case-type-fields-editor').subtitle]).toBe('Het gegevensschema van dit zaaktype.')
 	})
 
-	it('titles the field rights card and draws its line as a subtitle', () => {
+	it('titles the field rights card per role and status and draws its line as a subtitle (field-rights-matrix-by-status)', () => {
 		const rules = widget('case-type-field-rules')
-		expect(nl[rules.title]).toBe('Wie wat ziet en invult, per groep en status')
-		expect(nl[rules.subtitle]).toBe('Verborgen of alleen lezen, per groep en status')
+		expect(nl[rules.title]).toBe('Wie wat ziet en invult, per rol en status')
+		expect(nl[rules.subtitle]).toBe('Verborgen, verplicht of alleen lezen per rol en status')
 		expect(rules.description).toBeUndefined()
 	})
 })

@@ -20,7 +20,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCaseIds;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
@@ -36,7 +36,7 @@ class DocumentCaseWriteGuardTest extends TestCase {
 	 * @return DocumentCaseWriteGuard
 	 */
 	private function guard(): DocumentCaseWriteGuard {
-		$store = $this->createMock(originalClassName: DocumentRecordStore::class);
+		$store = $this->createMock(originalClassName: DocumentCaseIds::class);
 		$store->method('caseIdsOf')->willReturnCallback(
 			callback: static fn (string $recordId): array => [
 				'on-two' => ['case-a', 'case-b'],
@@ -49,7 +49,7 @@ class DocumentCaseWriteGuardTest extends TestCase {
 			callback: static fn (IUser $user, string $caseId): bool => $caseId !== 'case-x'
 		);
 
-		return new DocumentCaseWriteGuard(store: $store, uploads: $uploads);
+		return new DocumentCaseWriteGuard(caseIds: $store, uploads: $uploads);
 	}//end guard()
 
 	/**

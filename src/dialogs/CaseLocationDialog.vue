@@ -231,7 +231,7 @@ export default {
 			return this.layers
 				.filter((layer) => this.shown.includes(layer.id))
 				.map((layer) => ({
-					type: layer.type === 'wfs' ? 'wfs' : 'wms',
+					type: String(layer.type).toLowerCase() === 'wfs' ? 'wfs' : 'wms',
 					url: layer.url,
 					options: { layers: layer.layerName, format: 'image/png', transparent: true },
 				}))

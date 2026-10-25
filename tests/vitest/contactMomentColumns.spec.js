@@ -42,10 +42,24 @@ describe('the contact moments on the Contact tab', () => {
 		for (const key of ['notificationChannel', 'direction']) {
 			expect(column(key).enum).toEqual(schema[key].enum)
 			for (const value of schema[key].enum) {
-				const label = column(key).enumLabels[value]
+				// `config:portalName|Web form`: the portal's name, else the fallback label.
+				const label = String(column(key).enumLabels[value]).replace(/^config:\w+\|/, '')
 				expect(label, `${key}.${value}`).toBeTruthy()
 				expect(nl[label], label).toBeTruthy()
 			}
 		}
+	})
+
+	it('sorts and filters by every column and wraps the summary, as the board draws its head and rows', () => {
+		expect(card.content.sortable).toBe(true)
+		expect(card.content.filterable).toBe(true)
+		expect(column('summary').cellClass).toBe('cn-cell--wrap')
+	})
+})
+
+describe('the answer to the resident', () => {
+	it('can be kept as a draft on the case (DqZaakContact "Opslaan als concept")', () => {
+		const thread = simple.configAppend.widgets.find((widget) => widget.id === 'case-resident-thread')
+		expect(thread.content.draft).toEqual({ url: '/apps/dossiq/api/cases/@objectId/reply-draft' })
 	})
 })

@@ -264,26 +264,26 @@ export default {
 
 <style scoped>
 .case-type-blueprint__summary {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 8px 16px;
 	margin: 0 0 12px;
+	padding: 0;
+	font-size: 14px;
 }
 
 .case-type-blueprint__fact {
-	display: grid;
-	grid-template-columns: 120px 1fr;
-	gap: 12px;
-	font-size: 14px;
+	display: contents;
 }
 
 .case-type-blueprint__fact dt {
 	color: var(--color-text-maxcontrast);
+	text-align: start;
 }
 
 .case-type-blueprint__fact dd {
 	margin: 0;
-	font-weight: 600;
+	font-weight: 500;
 }
 
 .case-type-blueprint__all > summary {
@@ -294,7 +294,7 @@ export default {
 
 .case-type-blueprint {
 	height: 100%;
-	padding: 8px 12px;
+	padding: 0;
 	overflow-y: auto;
 }
 

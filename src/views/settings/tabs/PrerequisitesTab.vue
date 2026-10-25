@@ -55,7 +55,7 @@
 				:data-testid="`prerequisite-ext-${row.name}`">
 				<span :class="markClass(row.present)">{{ mark(row.present) }}</span>
 				{{ row.name }}
-				<span class="prerequisites__detail">{{ row.why }}</span>
+				<span class="prerequisites__detail">{{ t('dossiq', row.why) }}</span>
 			</li>
 		</ul>
 
@@ -67,7 +67,7 @@
 				:data-testid="`prerequisite-app-${row.id}`">
 				<span :class="markClass(row.present)">{{ mark(row.present) }}</span>
 				{{ row.name || row.id }}
-				<span class="prerequisites__detail">{{ row.unlocks }}</span>
+				<span class="prerequisites__detail">{{ t('dossiq', row.unlocks) }}</span>
 			</li>
 		</ul>
 
@@ -79,7 +79,7 @@
 				:data-testid="`prerequisite-app-${row.id}`">
 				<span :class="markClass(row.present)">{{ mark(row.present) }}</span>
 				{{ row.name || row.id }}
-				<span class="prerequisites__detail">{{ row.unlocks }}</span>
+				<span class="prerequisites__detail">{{ t('dossiq', row.unlocks) }}</span>
 			</li>
 		</ul>
 	</div>

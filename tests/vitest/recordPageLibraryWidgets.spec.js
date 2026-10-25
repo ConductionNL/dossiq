@@ -234,9 +234,9 @@ describe('the family plan', () => {
 		expect(plan.visibleWhen.any[0]).toEqual({ field: 'gezinsplanId', op: 'notEmpty' })
 		const [due, goals] = plan.content.sections.map((section) => section.widget)
 		expect(due.type).toBe('banner')
-		expect(due.content.visibleWhen).toMatchObject({ endpoint: '/apps/dossiq/api/family-plans/@object.gezinsplanId', field: 'dueForReview', value: true })
+		expect(due.content.visibleWhen).toMatchObject({ endpoint: '/apps/dossiq/api/cases/@objectId/family-plan', field: 'dueForReview', value: true })
 		expect(goals.type).toBe('grouped-cards')
-		expect(goals.content.endpointSource.url).toBe('/apps/dossiq/api/family-plans/@object.gezinsplanId')
+		expect(goals.content.endpointSource.url).toBe('/apps/dossiq/api/cases/@objectId/family-plan')
 	})
 
 	it('puts each intervention under its goal, the loose ones apart, the late ones flagged in words, and fails closed', () => {

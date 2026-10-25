@@ -102,3 +102,17 @@ describe('the Dutch case type titles', () => {
 		}
 	})
 })
+
+describe('the Dutch labels of the demo case types', () => {
+	it('carry no German term beside the Dutch one, and moved their version for it', () => {
+		for (const object of objectsOf('caseType')) {
+			for (const key of translatable('caseType')) {
+				const value = object[key]
+				if (value && typeof value === 'object' && typeof value.nl === 'string') {
+					expect(value.nl).not.toMatch(/Baugenehmigung|Förderantrag|Bürgerbeschwerde|Informationsfreiheitsgesetz/u)
+				}
+			}
+			expect(versionAbove(object['@self'].version, '1.2.0')).toBe(true)
+		}
+	})
+})

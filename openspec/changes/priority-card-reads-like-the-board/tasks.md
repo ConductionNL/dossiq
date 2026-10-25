@@ -5,3 +5,4 @@
 - [x] 1.3 nl/en keys, catalogues rebuilt
 - [x] 1.4 vitest on the composed CaseDetail config
 - [ ] 2.1 Live check on DqZaak once nextcloud-vue with `emptyValue` is released
+- [x] The matrix note as a muted 13px line (facts `as: line`), as the board draws its footnote (r25b: it read as 15px body text)
