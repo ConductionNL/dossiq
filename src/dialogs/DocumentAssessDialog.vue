@@ -253,6 +253,18 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
+
+		/**
+		 * The document to start with chosen, when the dialog is opened from a
+		 * document's row ("Beoordelen", DqZaakDocumenten). Ignored when it is
+		 * not outstanding.
+		 *
+		 * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
+		 */
+		documentId: {
+			type: String,
+			default: '',
+		},
 	},
 
 	emits: ['close'],
@@ -338,8 +350,11 @@ export default {
 		},
 	},
 
-	mounted() {
-		this.load()
+	async mounted() {
+		if (this.documentId !== '') {
+			this.selected = [this.documentId]
+		}
+		await this.load()
 	},
 
 	methods: {

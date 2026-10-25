@@ -3929,6 +3929,38 @@
 									"target": "FileRequestDialog"
 								}
 							],
+							"rowButton": {
+								"id": "assess-document",
+								"label": "Assess",
+								"type": "open-modal",
+								"target": "DocumentAssessDialog",
+								"when": "@context.caseType.documentReview.enabled",
+								"rowProps": { "documentId": "id" },
+								"primaryWhen": { "key": "reviewVerdict", "values": ["open"] },
+								"props": {
+									"caseId": "@objectId",
+									"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
+									"assessUrl": "/apps/dossiq/api/cases/{caseId}/woo/assessment",
+									"classifications": [
+										{ "value": "openbaar", "label": "Public" },
+										{ "value": "deels_openbaar", "label": "Disclosed in part", "needsGrounds": true },
+										{ "value": "niet_openbaar", "label": "Not public", "needsGrounds": true }
+									],
+									"grounds": {
+										"register": "dossiq",
+										"schema": "wooRefusalGround",
+										"valueField": "code",
+										"labelField": "label",
+										"filter": { "status": "active", "citable": true }
+									},
+									"fields": {
+										"document": "documentRef",
+										"classification": "classification",
+										"grounds": "weigeringsgronden"
+									}
+								}
+							},
+							"_rowButtonNote": "DqZaakDocumenten: each document of a case type that reviews its documents (documentReview.enabled) shows its verdict (reviewVerdict from the dossier listing, open while unassessed) and Beoordelen, primary while open, opening the same DocumentAssessDialog as the header's Assess documents with that document chosen (rowProps documentId). On any other case (DqDocumentenBeheer) `when` is false and neither is drawn. Needs nc-vue feat/files-review-row-when; an older library draws both everywhere.",
 							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
 							"rowDataUrl": "/apps/dossiq/api/cases/{objectId}/dossier",
 							"rowDataPath": "informatieobjecten",
@@ -3964,6 +3996,30 @@
 										"confidentieel": "warning",
 										"geheim": "warning",
 										"zeer_geheim": "warning"
+									}
+								},
+								{
+									"id": "review-verdict",
+									"key": "reviewVerdict",
+									"source": "row",
+									"label": "Assessment",
+									"property": "reviewVerdict",
+									"when": "@context.caseType.documentReview.enabled",
+									"formatter": "optionLabel",
+									"formatterOptions": {
+										"labels": {
+											"openbaar": "Public",
+											"deels_openbaar": "Partly public",
+											"niet_openbaar": "Not public",
+											"open": "Still to be assessed"
+										}
+									},
+									"widget": "badge",
+									"colorKey": "reviewVerdict",
+									"colorMap": {
+										"openbaar": "success",
+										"deels_openbaar": "warning",
+										"niet_openbaar": "error"
 									}
 								},
 								{
