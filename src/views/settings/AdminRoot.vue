@@ -961,7 +961,6 @@ export default {
 				{
 					key: 'activityName',
 					label: this.t('dossiq', 'DSO activity'),
-					cellClass: 'cn-cell--strong',
 					// The row's note and a switched-off row stay readable here.
 					secondary: 'note',
 					pills: [{ field: 'isActive', equals: false, label: this.t('dossiq', 'Inactive') }],
@@ -1012,7 +1011,6 @@ export default {
 				{
 					key: 'name',
 					label: this.t('dossiq', 'Rule'),
-					cellClass: 'cn-cell--strong',
 					formatter: 'feeRuleName',
 				},
 				{ key: 'legalBasis', label: this.t('dossiq', 'Basis'), formatter: 'feeRuleBasis' },
