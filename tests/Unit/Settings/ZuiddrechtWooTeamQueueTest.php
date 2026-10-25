@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 class ZuiddrechtWooTeamQueueTest extends TestCase {
 
 	/**
-	 * Three open, unassigned Woo requests sit with Woo en informatie.
+	 * Three open, unassigned Woo requests sit with Woo en informatie; the team's assigned requests are not in its queue.
 	 *
 	 * @return void
 	 */
@@ -39,11 +39,12 @@ class ZuiddrechtWooTeamQueueTest extends TestCase {
 		$set    = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
 		$queued = [];
 		foreach ($set['objects'] as $object) {
-			if ($object['schema'] !== 'case' || ($object['data']['assignedGroup'] ?? '') !== 'zuiddrecht-woo-en-informatie') {
+			if ($object['schema'] !== 'case' || ($object['data']['assignedGroup'] ?? '') !== 'zuiddrecht-woo-en-informatie'
+				|| isset($object['data']['assignee']) === true
+			) {
 				continue;
 			}
 
-			$this->assertArrayNotHasKey(key: 'assignee', array: $object['data'], message: $object['key']);
 			$this->assertArrayNotHasKey(key: 'endDate', array: $object['data'], message: $object['key']);
 			$this->assertSame(expected: 'woo-verzoek', actual: $object['lookups']['caseType']['where']['identifier'], message: $object['key']);
 			$queued[] = $object['data']['title'];
