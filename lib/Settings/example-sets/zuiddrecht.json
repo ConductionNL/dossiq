@@ -7568,6 +7568,9 @@
 			"register": "dossiq",
 			"schema": "case",
 			"object": "parkeren-henk",
+			"jsonFields": [
+				"geometry"
+			],
 			"set": {
 				"result": "{{object:parkeren-henk-resultaat.id}}"
 			}
