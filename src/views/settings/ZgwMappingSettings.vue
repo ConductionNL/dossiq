@@ -11,7 +11,7 @@
 				</thead>
 				<tbody>
 					<tr v-for="key in resourceKeys" :key="key">
-						<td>{{ key }}</td>
+						<td>{{ resourceName(key) }}</td>
 						<td>
 							<span
 								v-if="mappings[key] && mappings[key].enabled"
@@ -52,9 +52,11 @@
 </template>
 
 <script>
+import { translate } from '@nextcloud/l10n'
 import { NcButton } from '@nextcloud/vue'
 import ZgwMappingDialog from '../../dialogs/ZgwMappingDialog.vue'
 import { useZgwMappingStore } from '../../store/modules/zgwMapping.js'
+import { zgwResourceName } from './zgwResourceNames.js'
 
 export default {
 	name: 'ZgwMappingSettings',
@@ -104,6 +106,17 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * A resource key as a person reads it ("Zaaktype", not "caseType").
+		 *
+		 * @param {string} key The stored resource key.
+		 * @return {string} The name.
+		 * @spec openspec/changes/zgw-mapping-readable-names/specs/admin-settings/spec.md#requirement-a-zgw-mapping-row-names-its-resource
+		 */
+		resourceName(key) {
+			return zgwResourceName(key, translate)
+		},
+
 		/**
 		 * @param {string} key The key.
 		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
