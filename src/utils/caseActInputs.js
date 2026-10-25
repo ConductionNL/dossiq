@@ -169,9 +169,8 @@ export function actForm(entry, { caseType = '', caseId = '', requester = '' } = 
 			label: t('dossiq', 'Days the applicant is given'),
 			helperFrom: { input: 'pauseReason', key: 'legalBasis' },
 			prefillFrom: { input: 'pauseReason', key: 'defaultDays' },
-			preview: {
+			dateField: {
 				label: t('dossiq', 'The case comes back on'),
-				template: '{today+days|date}',
 				note: t('dossiq', 'You pick the case up earlier if the answer comes in earlier.'),
 				testid: 'case-act-comes-back',
 			},
