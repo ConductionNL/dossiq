@@ -91,6 +91,41 @@ class DocumentCaseIds {
 	}//end caseIdsOf()
 
 	/**
+	 * The ids of every document joined to a case, read regardless of the caller: a handler change must reach the
+	 * documents the new handler cannot read yet. Only the ids leave this method.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return list<string> The document ids.
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-openregisters-own-api-applies-the-same-rule-to-the-record
+	 */
+	public function documentIdsOf(string $caseId): array {
+		[$objectService, $register] = $this->requireRegister();
+		$rows = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->schema(key: 'dossier_zaakinformatieobject_schema'),
+			filters: ['case' => $caseId, '_limit' => 500],
+		);
+
+		$ids = [];
+		foreach ($rows as $row) {
+			$documentId = $row['informatieobject'] ?? '';
+			if (is_array($documentId) === true) {
+				$documentId = $documentId['id'] ?? '';
+			}
+
+			$documentId = (string)$documentId;
+			if ($documentId !== '' && in_array($documentId, $ids, true) === false) {
+				$ids[] = $documentId;
+			}
+		}
+
+		return $ids;
+	}//end documentIdsOf()
+
+	/**
 	 * The object service and register, or an exception.
 	 *
 	 * @return array{0: object, 1: string} The object service and the register.

@@ -115,7 +115,12 @@ class ZaakdossierController extends Controller {
 		);
 
 		$regrouped = $this->fileService->groupByType(
-			documents: $this->reader->withReviewVerdicts(caseId: $caseId, documents: $this->reader->withScanVerdicts(documents: $filtered))
+			documents: $this->writes->withChangeRight(
+				user: $user,
+				documents: $this->reader->withAccessExceptionNames(
+					documents: $this->reader->withReviewVerdicts(caseId: $caseId, documents: $this->reader->withScanVerdicts(documents: $filtered))
+				)
+			)
 		);
 
 		return new JSONResponse($regrouped);

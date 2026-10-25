@@ -122,6 +122,7 @@ class ZaakdossierListContractTest extends TestCase {
 		$this->reader = $this->createMock(InformatieobjectReader::class);
 		$this->reader->method('withScanVerdicts')->willReturnArgument(0);
 		$this->reader->method('withReviewVerdicts')->willReturnArgument(1);
+		$this->reader->method('withAccessExceptionNames')->willReturnArgument(0);
 		$this->uploadHandler = $this->createMock(DossierUploadHandler::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 
@@ -143,7 +144,7 @@ class ZaakdossierListContractTest extends TestCase {
 			// service the assertions read through. Only the wiring line moved
 			// when one act over many documents was split out.
 			writes: new DocumentWriteGate(
-				caseWrites: $this->createMock(DocumentCaseWriteGuard::class),
+				caseWrites: $this->caseWrites(),
 				bulk: new BulkDocumentActions(
 					reader: $this->reader,
 					fileService: $this->fileService,
@@ -151,6 +152,23 @@ class ZaakdossierListContractTest extends TestCase {
 			),
 		);
 	}//end setUp()
+
+	/**
+	 * A case write guard that marks every row as not changeable.
+	 *
+	 * @return DocumentCaseWriteGuard
+	 */
+	private function caseWrites(): DocumentCaseWriteGuard {
+		$guard = $this->createMock(DocumentCaseWriteGuard::class);
+		$guard->method('withChangeRight')->willReturnCallback(
+			static fn ($user, array $documents): array => array_map(
+				static fn (array $row): array => [...$row, 'canChangeAccess' => false],
+				$documents
+			)
+		);
+
+		return $guard;
+	}//end caseWrites()
 
 	/**
 	 * Put an authenticated user in the session.
@@ -248,11 +266,11 @@ class ZaakdossierListContractTest extends TestCase {
 			'the whole dossier must be offered to the clearance filter for the session user'
 		);
 		$this->assertSame(
-			[$public],
+			[[...$public, 'canChangeAccess' => false]],
 			$grouped,
 			'grouping must consume the FILTERED list — the removed document must not be regrouped'
 		);
-		$this->assertSame(['overig' => [$public]], $response->getData());
+		$this->assertSame(['overig' => [[...$public, 'canChangeAccess' => false]]], $response->getData());
 	}//end testListDossierGroupsTheClearanceFilteredListAndNotTheRawDossier()
 
 	/**
@@ -303,6 +321,7 @@ class ZaakdossierListContractTest extends TestCase {
 		$reader = $this->createMock(originalClassName: InformatieobjectReader::class);
 		$reader->method('filterForUser')->willReturnArgument(argumentIndex: 1);
 		$reader->method('withScanVerdicts')->willReturnArgument(argumentIndex: 0);
+		$reader->method('withAccessExceptionNames')->willReturnArgument(argumentIndex: 0);
 		$reader->expects($this->once())->method('withReviewVerdicts')
 			->with('case-1', [['id' => 'doc-1'], ['id' => 'doc-2']])
 			->willReturn(value: [['id' => 'doc-1', 'reviewVerdict' => 'deels_openbaar'], ['id' => 'doc-2']]);
@@ -316,14 +335,17 @@ class ZaakdossierListContractTest extends TestCase {
 			userSession: $this->userSession,
 			approvals: $this->approvals,
 			writes: new DocumentWriteGate(
-				caseWrites: $this->createMock(DocumentCaseWriteGuard::class),
+				caseWrites: $this->caseWrites(),
 				bulk: new BulkDocumentActions(reader: $reader, fileService: $this->fileService),
 			),
 		);
 		$controller->listDossier(caseId: 'case-1');
 
 		$this->assertSame(
-			expected: [['id' => 'doc-1', 'reviewVerdict' => 'deels_openbaar'], ['id' => 'doc-2']],
+			expected: [
+				['id' => 'doc-1', 'reviewVerdict' => 'deels_openbaar', 'canChangeAccess' => false],
+				['id' => 'doc-2', 'canChangeAccess' => false],
+			],
 			actual: $grouped
 		);
 	}//end testListDossierPutsEachDocumentsReviewVerdictOnItsRow()

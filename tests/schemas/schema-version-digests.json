@@ -1795,6 +1795,10 @@
         "version": "1.34.0",
         "digest": "28eec69afa9b55bf5cc426042868782ef4120c9615a46848fb65fd411cf2c6aa"
     },
+    "lib/Settings/register.d/99-document-access-exception.json::informatieobject": {
+        "version": "1.7.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-email-template-moment-and-channel.json::emailTemplate": {
         "version": "1.3.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
