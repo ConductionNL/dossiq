@@ -652,6 +652,8 @@ describe('the landing page', () => {
 		}
 		expect(widget('followed-cases').content.ruleAbove).toBe(true)
 		expect(widget('stalled-cases').content.ruleAbove).toBe(true)
+		// DqMijnTeam Wachtrij van uw team too.
+		expect(widget('your-teams-queue').content.ruleAbove).toBe(true)
 	})
 
 	it('continues where the handler left off, over the recent lens the full dashboard already uses', () => {
