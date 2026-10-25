@@ -33,4 +33,9 @@ describe('the cases count line per view', () => {
 		expect(nl.translations[config.countTextByView.board]).toBe('{shown} van {total} lopende zaken in uw teams · bordweergave per status')
 		expect(nl.translations[config.countTextByView.map]).toBe('{shown} van {total} lopende zaken in uw teams')
 	})
+
+	it('ends the footer with the page size, as every case list board draws it ("klik een kolomkop om te sorteren · 20 per pagina")', () => {
+		expect(config.footerNote).toBe('click a column header to sort · 20 per page')
+		expect(nl.translations[config.footerNote]).toBe('klik een kolomkop om te sorteren · 20 per pagina')
+	})
 })
