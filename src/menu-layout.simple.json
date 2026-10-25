@@ -2683,7 +2683,9 @@
 						"_note": "DqZaakHistorie Notitie toevoegen: the case timeline's note form as a card of its own under the history (CnTimelineManage composer only). A saved note reloads the history card above it.",
 						"content": {
 							"manage": true,
-							"composer": "only"
+							"composer": "only",
+							"title": "Add note",
+							"subtitle": "Goes on the timeline above, internal unless you make it visible"
 						}
 					},
 					{
