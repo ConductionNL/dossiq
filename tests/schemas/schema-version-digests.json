@@ -156,7 +156,7 @@
         "digest": "c557d3536bbdbfb337d3043d5cb27cb8cdd5b7a61d71e02a67b51993c1527344"
     },
     "lib/Settings/dossiq_mock_register.json::contactmoment": {
-        "version": "1.5.0",
+        "version": "1.6.0",
         "digest": "d66a1682d798cf119c3d457345744598dcd5a8213e1381bffac4369ab7a67bab"
     },
     "lib/Settings/dossiq_mock_register.json::customerContact": {
@@ -1032,7 +1032,7 @@
         "digest": "103ac9e4f77f544243b3ebd3daf777c4b2ea877d6472faeea155fcbd2321f29b"
     },
     "lib/Settings/register.d/40-kcc-werkplek.json::contactmoment": {
-        "version": "1.5.0",
+        "version": "1.6.0",
         "digest": "d66a1682d798cf119c3d457345744598dcd5a8213e1381bffac4369ab7a67bab"
     },
     "lib/Settings/register.d/40-kcc-werkplek.json::doorverbinding": {
@@ -1064,11 +1064,11 @@
         "digest": "d08d1f68bc7831e21c09a6eb37f7ba3d901c5a28e552b3e5a27b1b441cbd73b4"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::fieldInspection": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "1445dcb17eca4424e726a403bd17493d1ac5a971f6be7cbde9eb1b0987c26b65"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::syncQueue": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "33cd8f5879d6f971427ac3e3e48ad026b94ec0e012fa34c6c1dd6615bcfb188a"
     },
     "lib/Settings/register.d/41-case-knowledge-base.json::caseType": {
@@ -1347,6 +1347,10 @@
         "version": "",
         "digest": "ca25fb91adab5bddc75a610a0e7fe3c45f6f6f10eeff5009afd350e609c8d4c0"
     },
+    "lib/Settings/register.d/69-field-order.json::propertyDefinition": {
+        "version": "1.8.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/70-cmmn-case-model.json::caseModel": {
         "version": "1.0.1",
         "digest": "4b8c3b0310eaae7f6ffb7fd86ee383eb70130dc0b8a3e2714d54579cd9432dca"
@@ -1356,7 +1360,7 @@
         "digest": "5502a3050deecc40a475b936eb99a2f761a594dffadfa9dcaefbab14bbaf95c4"
     },
     "lib/Settings/register.d/70-document-zaakdossier.json::informatieobject": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "b2d86e6d7aacf7df98e996876a73b4042e64235aa96c5b99932e054287c4efc9"
     },
     "lib/Settings/register.d/70-document-zaakdossier.json::informatieobjecttype": {
