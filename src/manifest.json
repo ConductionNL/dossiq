@@ -14725,7 +14725,6 @@
 								{
 									"widgetId": "org-contact-persons",
 									"label": "Contact persons",
-									"overflow": true,
 									"countFrom": {
 										"endpoint": "/apps/openregister/api/objects/dossiq/kvkCompany/@objectId/parties",
 										"field": "total"

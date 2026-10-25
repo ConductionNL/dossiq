@@ -1,6 +1,6 @@
 # party-pages Delta
 
-**Status**: proposed
+**Status**: superseded by organisation-contact-persons-tab
 **Scope**: dossiq
 **OpenSpec changes**:
 
