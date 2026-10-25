@@ -11,6 +11,7 @@
 		tabStorageKey="dossiq.admin.activeTab"
 		tabsVariant="underline"
 		:compact="true"
+		:descGap="6"
 		:sectionColumns="['general', 'vth'].includes(activeTab) ? 2 : 1"
 		:formatters="adminFormatters"
 		:showSetup="true"
