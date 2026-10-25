@@ -349,6 +349,12 @@ describe('processing time table heads', () => {
 		}
 		const atRisk = widget('Doorlooptijd', 'processing-time-at-risk').content.columns.find((c) => c.key === 'percentUsedDisplay')
 		expect(atRisk.class).toContain('cn-cell--wrap')
+		// The case type and the remaining time wrap too, so the title column
+		// keeps its width in the half-width card.
+		const riskCols = Object.fromEntries(widget('Doorlooptijd', 'processing-time-at-risk').content.columns.map((c) => [c.key, c]))
+		for (const key of ['title', 'caseTypeName', 'remainingLabel']) {
+			expect(riskCols[key].cellClass, key).toBe('cn-cell--wrap')
+		}
 	})
 })
 

@@ -8303,10 +8303,12 @@
 								},
 								{
 									"key": "caseTypeName",
+									"cellClass": "cn-cell--wrap",
 									"label": "Case type"
 								},
 								{
 									"key": "remainingLabel",
+									"cellClass": "cn-cell--wrap",
 									"label": "Remaining"
 								},
 								{
