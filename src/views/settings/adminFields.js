@@ -833,7 +833,9 @@ export function sharedMailboxFields(t) {
 		},
 		{
 			key: 'email_imap_folder',
-			label: t('dossiq', 'Folder'),
+			// The section translates a label itself. Translated here too, the
+			// Dutch "Map" would be read as the key "Map" and show "Kaart".
+			label: 'Folder',
 			placeholder: 'INBOX',
 			default: 'INBOX',
 		},
