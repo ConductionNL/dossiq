@@ -68,7 +68,7 @@ class ObjectTypeSchemaResolverTest extends TestCase {
 		$openRegister = $this->openRegister();
 		$resolver     = $this->resolverOver(openRegister: $openRegister);
 
-		$expected = ['title' => 'Bomenregister', 'properties' => 2, 'views' => ['map', 'table']];
+		$expected = ['id' => '17', 'title' => 'Bomenregister', 'properties' => 2, 'views' => ['map', 'table']];
 		$this->assertSame($expected, $resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/a'));
 		$this->assertSame($expected, $resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/b'));
 		$this->assertSame([['7', 'trees']], $openRegister->asked);
@@ -153,6 +153,13 @@ class ObjectTypeSchemaResolverTest extends TestCase {
 					 * @param string $title The title.
 					 */
 					public function __construct(private string $title) {
+					}
+
+					/**
+					 * @return int The schema id.
+					 */
+					public function getId(): int {
+						return 17;
 					}
 
 					/**

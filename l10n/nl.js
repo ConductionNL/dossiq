@@ -5856,6 +5856,7 @@ OC.L10N.register(
         "Open My work in the menu": "Open Mijn werk in het menu",
         "Open now": "Open",
         "Open onboarding steps": "Open onboarding-stappen",
+        "Open schema": "Schema openen",
         "Open settings": "Instellingen openen",
         "Open source object": "Bronobject openen",
         "Open tasks": "Openstaande taken",
