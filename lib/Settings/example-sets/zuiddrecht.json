@@ -1488,6 +1488,31 @@
 			}
 		},
 		{
+			"key": "vernietigingslijst-oosthaven",
+			"register": "destruction-lists",
+			"schema": "destructionList",
+			"data": {
+				"status": "in_review",
+				"title": "Vernietigingslijst meldingen openbare ruimte 2025",
+				"createdBy": "{{cast:pieter.uid}}",
+				"createdAt": "{{datetime:-5 09:00}}",
+				"objectCount": 1,
+				"objects": [
+					{
+						"uuid": "{{object:melding-speeltoestel-oosthavenplein.id}}",
+						"title": "Melding kapot speeltoestel Oosthavenplein",
+						"reviewer": "{{cast:pieter.uid}}",
+						"assignedAt": "{{datetime:-5 09:00}}",
+						"archiefactiedatum": "{{date:+9}}",
+						"classification": "vernietigen"
+					}
+				],
+				"excluded": [],
+				"approvals": [],
+				"decisions": []
+			}
+		},
+		{
 			"key": "buurtoost-speeltoestel-melding",
 			"register": "dossiq",
 			"schema": "contactmoment",
