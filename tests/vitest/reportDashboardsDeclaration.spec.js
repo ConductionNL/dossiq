@@ -388,6 +388,14 @@ describe('process mining figures', () => {
 })
 
 describe('throughput per week', () => {
+	it('keeps DqProcesanalyse\'s weekly line readable over a year: ten flat week labels, a straight line, no y labels', () => {
+		const options = widget('ProcessMiningDashboard', 'pm-throughput').content.options
+		expect(options.xaxis.tickAmount).toBe(10)
+		expect(options.xaxis.labels.rotate).toBe(0)
+		expect(options.stroke.curve).toBe('straight')
+		expect(options.yaxis.labels.show).toBe(false)
+	})
+
 	it('names the weeks "w40", as DqProcesanalyse and DqDoorlooptijd draw them', () => {
 		// The endpoints key a week as ISO 2026-W40; nextcloud-vue
 		// chart-week-categories writes it as "w40".
