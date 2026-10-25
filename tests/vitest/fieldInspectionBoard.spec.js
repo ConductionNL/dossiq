@@ -57,6 +57,11 @@ describe('the field inspection board', () => {
 		expect(content.title).toEqual(['{location}', '{caseRef.title}'])
 	})
 
+	it('draws the day and the outbox as compact cards, the boards\' small framed rows', () => {
+		expect(widget('inspections-today').content.density).toBe('compact')
+		expect(widget('inspection-sync-queue').content.density).toBe('compact')
+	})
+
 	it('opens the running checklist at its first open question', () => {
 		expect(widget('checklist-run').content.startAt).toBe('firstOpen')
 	})
