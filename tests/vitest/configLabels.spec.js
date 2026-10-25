@@ -19,7 +19,7 @@ const widget = (id) => simple.configAppend.widgets.find((entry) => entry.id === 
 
 describe('withConfigLabels', () => {
 	it('puts the config value in, or the fallback when it is empty', () => {
-		const manifest = { pages: [{ config: { map: { webformulier: '@config.portalName|Web form', phone: 'Phone' } } }] }
+		const manifest = { pages: [{ config: { map: { webformulier: 'config:portalName|Web form', phone: 'Phone' } } }] }
 		expect(withConfigLabels(structuredClone(manifest), { portalName: 'Mijn Zuiddrecht' }).pages[0].config.map).toEqual({ webformulier: 'Mijn Zuiddrecht', phone: 'Phone' })
 		expect(withConfigLabels(structuredClone(manifest), { portalName: '  ' }).pages[0].config.map.webformulier).toBe('Web form')
 		expect(withConfigLabels(structuredClone(manifest), {}).pages[0].config.map.webformulier).toBe('Web form')
@@ -33,8 +33,8 @@ describe('withConfigLabels', () => {
 
 describe('the portal channel on the case page (DqZaakContact)', () => {
 	it('is named after the portal in the chips and the contact-moments table', () => {
-		expect(widget('case-resident-thread').content.channelMap.webformulier).toBe('@config.portalName|Web form')
+		expect(widget('case-resident-thread').content.channelMap.webformulier).toBe('config:portalName|Web form')
 		const column = widget('case-contact-moments-card').content.columns.find((entry) => entry.key === 'notificationChannel')
-		expect(column.enumLabels.webformulier).toBe('@config.portalName|Web form')
+		expect(column.enumLabels.webformulier).toBe('config:portalName|Web form')
 	})
 })

@@ -42,8 +42,8 @@ describe('the contact moments on the Contact tab', () => {
 		for (const key of ['notificationChannel', 'direction']) {
 			expect(column(key).enum).toEqual(schema[key].enum)
 			for (const value of schema[key].enum) {
-				// `@config.portalName|Web form`: the portal's name, else the fallback label.
-				const label = String(column(key).enumLabels[value]).replace(/^@config\.\w+\|/, '')
+				// `config:portalName|Web form`: the portal's name, else the fallback label.
+				const label = String(column(key).enumLabels[value]).replace(/^config:\w+\|/, '')
 				expect(label, `${key}.${value}`).toBeTruthy()
 				expect(nl[label], label).toBeTruthy()
 			}

@@ -2,16 +2,17 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * A manifest label written as `@config.<key>|<fallback>` takes the app
+ * A manifest label written as `config:<key>|<fallback>` takes the app
  * config's value for that key (the portal channel named after the portal,
  * "Mijn Zuiddrecht"), and the fallback when the setting is empty. Only that
- * exact shape is read, so filter tokens such as `@config.city` are left to
- * the pages that resolve them.
+ * exact shape is read. It does not start with `@`, so the manifest schema does
+ * not read it as one of the library's tokens (`@config.city` and the like are
+ * left to the pages that resolve them).
  *
  * @spec openspec/changes/portal-channel-label/specs/portal-channel-label/spec.md
  */
 
-const LABEL = /^@config\.([A-Za-z0-9_]+)\|(.*)$/s
+const LABEL = /^config:([A-Za-z0-9_]+)\|(.*)$/s
 
 /**
  * The value of one label: the config value, or the fallback.
@@ -30,7 +31,7 @@ function labelOf(text, config) {
 }
 
 /**
- * Walk a value and replace every `@config.<key>|<fallback>` string in place.
+ * Walk a value and replace every `config:<key>|<fallback>` string in place.
  *
  * @param {unknown} node The value.
  * @param {object} config The app config.
@@ -52,7 +53,7 @@ function walk(node, config) {
 }
 
 /**
- * The manifest with every `@config.<key>|<fallback>` label filled from the app config.
+ * The manifest with every `config:<key>|<fallback>` label filled from the app config.
  *
  * @param {object} manifest The manifest; changed in place.
  * @param {object} config The app config (`loadState('dossiq', 'config')`).
