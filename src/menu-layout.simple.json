@@ -4770,11 +4770,24 @@
 								},
 								{
 									"key": "status",
-									"label": "Status"
+									"label": "Status",
+									"formatter": "statusTypeName",
+									"widget": "badge",
+									"widgetProps": {
+										"resolve": {
+											"register": "dossiq",
+											"schema": "statusType",
+											"colorField": "colour"
+										}
+									}
 								},
 								{
 									"key": "assignee",
-									"label": "Assignee"
+									"label": "Handler",
+									"widget": "avatar",
+									"widgetProps": {
+										"user": true
+									}
 								},
 								{
 									"key": "deadline",
@@ -4782,6 +4795,7 @@
 								}
 							],
 							"rowRoute": "CaseDetail",
+							"footnote": "A sub-case is a case, with a number and a term of its own. It can only be removed once no sub-case hangs under it.",
 							"emptyText": "No sub-cases yet",
 							"createAction": {
 								"id": "create-sub-case",
