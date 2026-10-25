@@ -13229,6 +13229,8 @@
 					{
 						"key": "citizenServiceNumber",
 						"label": "BSN",
+						"sortable": false,
+						"filterable": false,
 						"width": "211px",
 						"formatter": "masked",
 						"pills": [
