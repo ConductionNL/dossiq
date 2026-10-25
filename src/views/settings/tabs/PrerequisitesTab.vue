@@ -220,6 +220,10 @@ export default {
 	text-align: start;
 }
 
+.prerequisites__table td:nth-child(2)::first-letter {
+	text-transform: uppercase;
+}
+
 .prerequisites__here {
 	inline-size: 120px;
 }
