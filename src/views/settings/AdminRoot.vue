@@ -133,6 +133,7 @@
 					)
 				"
 				url="/apps/dossiq/api/ai/settings"
+				:columns="2"
 				valuesPath="settings"
 				saveMethod="POST"
 				:autoSave="true"

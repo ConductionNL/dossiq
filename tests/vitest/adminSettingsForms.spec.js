@@ -337,3 +337,14 @@ describe('the shared mailbox', () => {
 		expect(recognizer).toContain(`DEFAULT_PATTERN = '${DEFAULT_CASE_PATTERN}'`)
 	})
 })
+
+describe('the AI card layout', () => {
+	it('keeps a switch or a choice on a row of its own in the two-column card', async () => {
+		const { aiFields } = await import('../../src/views/settings/adminFields.js')
+		const fields = aiFields((app, text) => text)
+		for (const field of fields.filter((f) => f.type === 'switch' || f.type === 'radio')) {
+			expect(field.wide, field.key).toBe(true)
+		}
+		expect(fields.find((f) => f.key === 'ai_model_url').wide).toBeUndefined()
+	})
+})

@@ -577,7 +577,7 @@ export function aiFields(t) {
 		['ai_feature_routing', t('dossiq', 'Routing suggestions')],
 		['ai_feature_decision_support', t('dossiq', 'Decision support')],
 	]
-	return [
+	const fields = [
 		{ key: 'ai_enabled', label: t('dossiq', 'Switch on AI-assisted processing'), type: 'switch' },
 		{
 			key: 'ai_model_type',
@@ -646,6 +646,10 @@ export function aiFields(t) {
 			visibleWhen: on,
 		},
 	]
+	// The card lays its fields out in two columns, model address beside model
+	// name as board DqBeheerinstellingen draws them; a switch or a choice
+	// keeps a row of its own.
+	return fields.map((field) => (field.type === 'switch' || field.type === 'radio' ? { ...field, wide: true } : field))
 }
 
 /**
