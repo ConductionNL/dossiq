@@ -41,13 +41,13 @@ class DocumentCaseWriteGuard {
 	/**
 	 * Constructor.
 	 *
-	 * @param DocumentRecordStore  $store   The cases a document belongs to.
+	 * @param DocumentCaseIds      $caseIds The cases a document belongs to.
 	 * @param DossierUploadHandler $uploads The change right on a case, as an upload checks it.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly DocumentRecordStore $store,
+		private readonly DocumentCaseIds $caseIds,
 		private readonly DossierUploadHandler $uploads,
 	) {
 	}//end __construct()
@@ -63,7 +63,7 @@ class DocumentCaseWriteGuard {
 	 * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md#requirement-a-document-write-needs-the-change-right-on-every-case-of-the-document
 	 */
 	public function refusedCase(IUser $user, string $documentId): ?string {
-		foreach ($this->store->caseIdsOf(recordId: $documentId) as $caseId) {
+		foreach ($this->caseIds->caseIdsOf(recordId: $documentId) as $caseId) {
 			if ($this->uploads->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
 				return $caseId;
 			}
