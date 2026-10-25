@@ -5010,7 +5010,7 @@
       "contactmoment": {
         "slug": "contactmoment",
         "icon": "PhoneInTalk",
-        "version": "1.5.0",
+        "version": "1.6.0",
         "configuration": {
           "x-openregister-processing": {
             "logReads": true,
@@ -5043,8 +5043,18 @@
               "webformulier",
               "chat",
               "social_media",
-              "balie"
+              "balie",
+              "brief"
             ],
+            "x-enum-labels": {
+              "phone": "Phone",
+              "email": "Email",
+              "webformulier": "Web form",
+              "chat": "Chat",
+              "social_media": "Social media",
+              "balie": "Desk",
+              "brief": "Letter"
+            },
             "description": "Communication channel"
           },
           "direction": {

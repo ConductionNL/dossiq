@@ -10,3 +10,8 @@ button SHALL bring that card into view.
 - GIVEN the Historie tab of a case
 - WHEN the handler writes a note in the "Notitie toevoegen" card and adds it
 - THEN the history card above lists the note
+
+#### Scenario: both cards framed and titled
+- GIVEN the Historie tab of a case
+- WHEN it opens
+- THEN the history and the note form each stand in a card, the note card titled "Notitie toevoegen" with "Komt op de tijdlijn hierboven, intern tenzij u hem zichtbaar maakt" under it

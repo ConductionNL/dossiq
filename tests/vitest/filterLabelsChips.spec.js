@@ -53,6 +53,21 @@ describe('a saved view\'s line leaves the working-list rules out', () => {
 	})
 })
 
+describe('a saved view\'s filters read as the board words them', () => {
+	const labels = page('Cases').config.filterLabels
+
+	// DqFilterBewerken: "Wacht op inwoner ja" under Keep what is saved, and the
+	// Active line named the handler by the schema's "Toegewezen aan" where the
+	// board and the column header say "Behandelaar".
+	it('reads Status: wacht op inwoner for waitingOnApplicant', () => {
+		expect(dutchChip(labels, 'waitingOnApplicant', 'true')).toBe('Status: wacht op inwoner')
+	})
+
+	it('names the handler filter Behandelaar', () => {
+		expect(nl[labels.assignee.label]).toBe('Behandelaar')
+	})
+})
+
 describe('the cases list names the open-or-closed filter', () => {
 	const labels = page('Cases').config.filterLabels
 
