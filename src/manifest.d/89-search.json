@@ -24,6 +24,7 @@
 							"register": "dossiq",
 							"schema": "case",
 							"subtitleField": "identifier",
+							"subtitleTemplate": "Case {identifier}",
 							"statusField": "status",
 							"href": "/apps/dossiq/cases/{id}",
 							"statusResolve": {

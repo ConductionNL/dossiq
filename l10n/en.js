@@ -1490,6 +1490,7 @@ OC.L10N.register(
         "Case types, with their statuses, fields, messages and workflow, are managed on the Case types page.": "Case types, with their statuses, fields, messages and workflow, are managed on the Case types page.",
         "Case volume, status and performance across the team": "Case volume, status and performance across the team",
         "case {case.identifier}": "case {case.identifier}",
+        "Case {identifier}": "Case {identifier}",
         "Case, scheme & handler": "Case, scheme & handler",
         "Case-confidential": "Case-confidential",
         "caseId is required": "caseId is required",
