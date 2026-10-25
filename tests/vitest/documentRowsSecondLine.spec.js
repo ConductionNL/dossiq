@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * DqZaakDocumenten draws each document on two lines: the name, and under it
- * its type, size and date ("PDF · 1,2 MB · 14 januari 2026").
+ * its type, size and date ("PDF · 1,2 MB · 14 januari 2026": the long date with
+ * the year on a review case).
  */
 
 import { describe, expect, it } from 'vitest'
@@ -18,7 +19,7 @@ describe('the case documents rows', () => {
 describe('the second line per case', () => {
 	it('is type, size and date on a case that reviews its documents, sender and date otherwise', () => {
 		expect(panels.caseWidget('case-files').props.secondLine).toEqual([
-			{ when: '@context.caseType.documentReview.enabled', fields: ['type', 'size', 'modified|date'] },
+			{ when: '@context.caseType.documentReview.enabled', fields: ['type', 'size', 'modified|longdate:year'] },
 			{ fields: ['senderName', 'modified|date'] },
 		])
 	})
