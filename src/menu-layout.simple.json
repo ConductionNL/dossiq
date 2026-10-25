@@ -7674,7 +7674,9 @@
 									"post": "Post (mail)"
 								}
 							},
+							"tableLook": "data",
 							"footnote": "Anyone who opted out of messages only receives what the law requires. Every e-mail carries an unsubscribe link.",
+							"footnoteVariant": "info",
 							"emptyText": "This case type sends no messages yet"
 						}
 					},
