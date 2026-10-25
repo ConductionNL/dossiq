@@ -13283,7 +13283,16 @@
 						"key": "legalForm",
 						"label": "Legal form",
 						"width": "151px",
-						"cellClass": "cn-cell--wrap"
+						"cellClass": "cn-cell--wrap",
+						"formatter": "valueMap",
+						"formatterOptions": {
+							"map": {
+								"Besloten Vennootschap": "BV",
+								"Naamloze Vennootschap": "NV",
+								"Vennootschap onder firma": "VOF",
+								"Commanditaire Vennootschap": "CV"
+							}
+						}
 					},
 					{
 						"key": "address.place",
