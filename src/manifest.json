@@ -13602,6 +13602,7 @@
 						"title": "Cases",
 						"icon": "FolderAccountOutline",
 						"content": {
+							"ruleAbove": true,
 							"register": "dossiq",
 							"schema": "case",
 							"filter": {
@@ -13644,6 +13645,7 @@
 						"title": "Latest contact moments",
 						"icon": "PhoneLogOutline",
 						"content": {
+							"ruleAbove": true,
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
@@ -13706,6 +13708,7 @@
 							"appInstalled": "pipelinq"
 						},
 						"content": {
+							"ruleAbove": true,
 							"requiresApp": "pipelinq",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/parties/open-tickets/list",
@@ -14350,6 +14353,7 @@
 						"title": "Cases",
 						"icon": "FolderAccountOutline",
 						"content": {
+							"ruleAbove": true,
 							"register": "dossiq",
 							"schema": "case",
 							"filter": {
@@ -14392,6 +14396,7 @@
 						"title": "Latest contact moments",
 						"icon": "PhoneLogOutline",
 						"content": {
+							"ruleAbove": true,
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
@@ -14454,6 +14459,7 @@
 							"appInstalled": "pipelinq"
 						},
 						"content": {
+							"ruleAbove": true,
 							"requiresApp": "pipelinq",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/parties/open-tickets/list",
