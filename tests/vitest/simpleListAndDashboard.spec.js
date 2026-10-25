@@ -656,6 +656,8 @@ describe('the landing page', () => {
 		expect(widget('stalled-cases').content.ruleAbove).toBe(true)
 		// DqMijnWerk Verder werken too (design-system #393).
 		expect(widget('simple-continue').content.ruleAbove).toBe(true)
+		// DqMijnTeam Wachtrij van uw team too.
+		expect(widget('your-teams-queue').content.ruleAbove).toBe(true)
 	})
 
 	it('shows recent activity without tag changes, each item in the tone of its app', () => {

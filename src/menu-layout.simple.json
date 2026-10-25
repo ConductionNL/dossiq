@@ -243,6 +243,7 @@
 									],
 									"limit": 3,
 									"presentation": "rows",
+									"ruleAbove": true,
 									"title": "{title}",
 									"meta": {
 										"parts": [
