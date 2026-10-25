@@ -10263,6 +10263,31 @@
 							"highlight": {
 								"row": "@object.behaviour",
 								"column": "@object.severity"
+							},
+							"notice": {
+								"lead": "Advice: {intervention}",
+								"text": "Outcome of the decision table, version {version}, with {behaviour} and {consequence}.",
+								"tone": "info",
+								"values": {
+									"intervention": "@object.recommendedIntervention",
+									"version": "@object.matrixVersion",
+									"behaviour": "@object.behaviour",
+									"consequence": "@object.severity"
+								},
+								"labels": {
+									"intervention": "values",
+									"behaviour": {
+										"goedwillend": "behaviour 1",
+										"onverschillig": "behaviour 2",
+										"calculerend": "behaviour 3",
+										"crimineel": "behaviour 4"
+									},
+									"consequence": {
+										"gering": "consequence A",
+										"aanzienlijk": "consequence B",
+										"ernstig": "consequence C"
+									}
+								}
 							}
 						}
 					}
