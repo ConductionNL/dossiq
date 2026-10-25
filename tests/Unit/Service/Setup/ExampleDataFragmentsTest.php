@@ -24,6 +24,8 @@ namespace OCA\Dossiq\Tests\Unit\Service\Setup;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Setup\ExampleDataFragments;
+use OCA\Dossiq\Service\SettingsService;
+use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IGroupManager;
@@ -51,10 +53,11 @@ class ExampleDataFragmentsTest extends TestCase {
 	 * @param string      $appDir The app directory.
 	 * @param string|null $uid    The loading user, null for nobody.
 	 * @param array<int, string> $groupIds The loading user's groups.
+	 * @param SettingsService|null $settings The register, for stored references.
 	 *
 	 * @return ExampleDataFragments The reader.
 	 */
-	private function fragments(string $appDir, ?string $uid, array $groupIds = ['admin', 'vergunningen', 'team-woo']): ExampleDataFragments {
+	private function fragments(string $appDir, ?string $uid, array $groupIds = ['admin', 'vergunningen', 'team-woo'], ?SettingsService $settings = null): ExampleDataFragments {
 		$apps = $this->createMock(IAppManager::class);
 		$apps->method('getAppPath')->willReturn($appDir);
 
@@ -73,7 +76,7 @@ class ExampleDataFragmentsTest extends TestCase {
 		$groups = $this->createMock(IGroupManager::class);
 		$groups->method('getUserGroupIds')->willReturn($groupIds);
 
-		return new ExampleDataFragments(appManager: $apps, userSession: $session, time: $time, groups: $groups);
+		return new ExampleDataFragments(appManager: $apps, userSession: $session, time: $time, groups: $groups, settingsService: $settings);
 
 	}//end fragments()
 
@@ -231,6 +234,96 @@ class ExampleDataFragmentsTest extends TestCase {
 		$this->assertSame('["first","last"]', json_encode($object['tags']));
 
 	}//end testADroppedListElementLeavesNoGap()
+
+	/**
+	 * A register holding stored objects, keyed by `<schema>:<slug>`.
+	 *
+	 * @param array<string, string> $stored The stored ids.
+	 *
+	 * @return SettingsService The settings, with an ObjectService over them.
+	 */
+	private function registerWith(array $stored): SettingsService {
+		$objects = new class($stored) {
+			/**
+			 * Constructor.
+			 *
+			 * @param array<string, string> $stored The stored ids.
+			 */
+			public function __construct(private array $stored) {
+			}
+
+			/**
+			 * Find a stored object by slug.
+			 *
+			 * @param string $id       The slug.
+			 * @param mixed  $register The register.
+			 * @param string $schema   The schema slug.
+			 *
+			 * @return array<string, mixed> The object.
+			 */
+			public function find(string $id, mixed $register, string $schema): array {
+				if (isset($this->stored[$schema . ':' . $id]) === false) {
+					throw new DoesNotExistException('not stored');
+				}
+
+				return ['@self' => ['id' => $this->stored[$schema . ':' . $id], 'register' => $register]];
+			}
+		};
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objects);
+		$settings->method('getConfigValue')->willReturn('dossiq');
+
+		return $settings;
+
+	}//end registerWith()
+
+	/**
+	 * A reference to a stored register object becomes its id; one to another fragment object is left for the importer.
+	 *
+	 * @return void
+	 */
+	public function testAReferenceToAStoredObjectBecomesItsId(): void {
+		$dir = $this->appWith(
+			[
+				['@self' => ['schema' => 'case', 'slug' => 'a'], 'caseType' => '@ref:caseType:building-permit-type', 'status' => '@ref:statusType:bp-received'],
+				['@self' => ['schema' => 'caseObject', 'slug' => 'b'], 'case' => '@ref:case:a', 'other' => '@ref:caseType:not-stored'],
+			]
+		);
+		$settings = $this->registerWith(['caseType:building-permit-type' => 'uuid-type', 'statusType:bp-received' => 'uuid-status']);
+
+		$objects = $this->fragments(appDir: $dir, uid: 'pieter', settings: $settings)->objects();
+
+		$this->assertSame('uuid-type', $objects[0]['caseType']);
+		$this->assertSame('uuid-status', $objects[0]['status']);
+		$this->assertSame('@ref:case:a', $objects[1]['case']);
+		$this->assertSame('@ref:caseType:not-stored', $objects[1]['other']);
+
+	}//end testAReferenceToAStoredObjectBecomesItsId()
+
+	/**
+	 * The English demo cases ship as example data, and every type they name is found in the register.
+	 *
+	 * @return void
+	 */
+	public function testTheEnglishDemoCasesResolveTheirTypes(): void {
+		$stored = [];
+		$data = json_decode((string)file_get_contents(self::ROOT . '/lib/Settings/register.d/46-demo-cases-english.json'), true);
+		foreach ($data['components']['objects'] as $object) {
+			$stored[$object['@self']['schema'] . ':' . $object['@self']['slug']] = 'uuid-' . $object['@self']['slug'];
+		}
+
+		$objects = $this->fragments(appDir: self::ROOT, uid: 'pieter', settings: $this->registerWith($stored))->objects();
+		$english = array_values(array_filter($objects, static fn (array $object): bool => str_starts_with((string)$object['@self']['slug'], 'case-') && ($object['@self']['schema'] === 'case')));
+
+		$this->assertCount(10, $english);
+		foreach ($english as $case) {
+			$this->assertStringStartsWith('uuid-', $case['caseType'], $case['@self']['slug']);
+			$this->assertStringStartsWith('uuid-', $case['status'], $case['@self']['slug']);
+			$this->assertSame('pieter', $case['assignee']);
+		}
+
+	}//end testTheEnglishDemoCasesResolveTheirTypes()
 
 	/**
 	 * Objects an earlier load created are left out, and the slugs are listed.
