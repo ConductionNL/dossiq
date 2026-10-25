@@ -8333,6 +8333,7 @@
 								},
 								{
 									"key": "percentUsedDisplay",
+									"class": "cn-cell--wrap",
 									"label": "Term used",
 									"widget": "progress",
 									"widgetProps": {
@@ -8379,16 +8380,19 @@
 								},
 								{
 									"key": "targetDays",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Target (days)",
 									"sortable": true
 								},
 								{
 									"key": "avgActualDays",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Avg Actual (days)",
 									"sortable": true
 								},
 								{
 									"key": "complianceRate",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Compliance %",
 									"sortable": true,
 									"format": {
@@ -8399,6 +8403,7 @@
 								},
 								{
 									"key": "total",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Cases",
 									"sortable": true
 								},

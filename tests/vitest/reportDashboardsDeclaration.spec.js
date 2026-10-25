@@ -338,6 +338,20 @@ describe('no dashboard reads a dossiq component any more', () => {
 	})
 })
 
+describe('processing time table heads', () => {
+	it('lets the half-width tables wrap their figure heads and aligns the figures to the end, as DqDoorlooptijd does', () => {
+		// "Doel (dagen)", "Gem. werkelijk (dagen)" and "Termijn gebruikt" wrap
+		// over two or three lines in the half-width cards; one-line heads made
+		// the Prestaties table wider than its card.
+		const breakdown = Object.fromEntries(widget('Doorlooptijd', 'processing-time-breakdown').content.columns.map((c) => [c.key, c]))
+		for (const key of ['targetDays', 'avgActualDays', 'complianceRate', 'total']) {
+			expect(breakdown[key].class.split(' '), key).toEqual(expect.arrayContaining(['cn-table-col--end', 'cn-cell--wrap']))
+		}
+		const atRisk = widget('Doorlooptijd', 'processing-time-at-risk').content.columns.find((c) => c.key === 'percentUsedDisplay')
+		expect(atRisk.class).toContain('cn-cell--wrap')
+	})
+})
+
 describe('process mining figures', () => {
 	it('aligns the figures to the end and rules above the first stuck phase, as DqProcesanalyse draws them', () => {
 		const cols = (id) => Object.fromEntries(widget('ProcessMiningDashboard', id).content.columns.map((c) => [c.key, c]))
