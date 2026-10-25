@@ -46,3 +46,10 @@ describe('the template fills card on board DqDocumentGenereren', () => {
 		expect(title).toContain('line-height: 1.2;')
 	})
 })
+
+describe('the template facts sit tight under the title (r25b: 22.8px for 8)', () => {
+	it('takes away the padding core gives a dl, and sets the facts at the normal line height', () => {
+		expect(rule('.generate-document__fills-grid')).toContain('padding: 0;')
+		expect(rule('.generate-document__fills-grid dt,\n.generate-document__fills-grid dd')).toContain('line-height: normal;')
+	})
+})

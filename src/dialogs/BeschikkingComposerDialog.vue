@@ -312,6 +312,8 @@ export default {
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 12px 24px;
 	margin: 0;
+	/* Core gives a dl 12px of padding at the top. */
+	padding: 0;
 }
 
 .generate-document__fills-grid > div {
@@ -325,6 +327,7 @@ export default {
 	display: block;
 	width: auto;
 	padding: 0;
+	line-height: normal;
 	text-align: start;
 	white-space: normal;
 }
