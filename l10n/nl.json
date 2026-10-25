@@ -348,6 +348,7 @@
         "A StUF connection was switched off": "Een StUF-koppeling is uitgezet",
         "A StUF message timed out": "Een StUF-bericht kreeg geen antwoord",
         "A StUF message was refused": "Een StUF-bericht is geweigerd",
+        "A sub-case is a case, with a number and a term of its own. It can only be removed once no sub-case hangs under it.": "Een deelzaak is een zaak, met een eigen nummer en termijn. Verwijderen kan pas als er geen deelzaak meer onder hangt.",
         "A substitute is required": "Een waarnemer is verplicht",
         "A supplier contract is about to end": "Een leverancierscontract loopt bijna af",
         "A supplier gets a new message": "Een leverancier krijgt een nieuw bericht",

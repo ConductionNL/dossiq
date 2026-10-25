@@ -277,6 +277,7 @@ OC.L10N.register(
         "A StUF connection was switched off": "A StUF connection was switched off",
         "A StUF message timed out": "A StUF message timed out",
         "A StUF message was refused": "A StUF message was refused",
+        "A sub-case is a case, with a number and a term of its own. It can only be removed once no sub-case hangs under it.": "A sub-case is a case, with a number and a term of its own. It can only be removed once no sub-case hangs under it.",
         "A substitute is required": "A substitute is required",
         "A supplier contract is about to end": "A supplier contract is about to end",
         "A supplier gets a new message": "A supplier gets a new message",
