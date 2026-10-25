@@ -83,6 +83,8 @@ class ZuiddrechtSocialSearchContactTest extends TestCase {
 		$this->assertArrayHasKey(key: 'zoek-lindelaan', array: $views);
 		$view = $views['zoek-lindelaan'];
 		$this->assertSame(expected: 'Lindelaan', actual: $view['query']['search']);
+		// DqZoekresultaten's saved-search card names it as the board does.
+		$this->assertSame(expected: 'Meldingen verlichting', actual: $view['name']);
 		$this->assertSame(expected: 'source:search', actual: $view['query']['scope']);
 		$this->assertSame(expected: 'gte', actual: $view['alert']['operator']);
 		$this->assertSame(expected: 12, actual: $view['alert']['threshold']);
