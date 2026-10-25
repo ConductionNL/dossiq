@@ -2109,7 +2109,7 @@
 				"communicationChannel": "portal",
 				"confidentiality": "intern",
 				"assignee": "{{cast:pieter.uid}}",
-				"assignedGroup": "behandelaars",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
 				"startDate": "{{date:-28}}",
 				"receivedAt": "{{datetime:-28 10:05}}",
 				"currentStatusEnteredAt": "{{datetime:-9 14:00}}",
@@ -2755,6 +2755,142 @@
 				"vertrouwelijkheidaanduiding": "intern",
 				"schema": "informatieobject",
 				"startValidity": "{{date:-365}}"
+			}
+		},
+		{
+			"key": "parkweg-doc-aanvraag",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/kapvergunning-essen-parkweg/Aanvraag kapvergunning.pdf",
+					"title": "Aanvraag kapvergunning"
+				}
+			],
+			"data": {
+				"title": "Aanvraag kapvergunning",
+				"fileName": "Aanvraag kapvergunning.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "openbaar",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"sender": "{{cast:henk.displayName}}",
+				"creatiedatum": "{{date:-12}}",
+				"taal": "nld",
+				"recipients": [
+					"Team Vergunningen"
+				]
+			}
+		},
+		{
+			"key": "parkweg-zio-aanvraag",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:kapvergunning-essen-parkweg.id}}",
+				"informatieobject": "{{object:parkweg-doc-aanvraag.id}}",
+				"registrationDate": "{{datetime:-12 10:12}}"
+			}
+		},
+		{
+			"key": "parkweg-doc-advies-groenbeheer",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/kapvergunning-essen-parkweg/Advies Groenbeheer.docx",
+					"title": "Advies Groenbeheer"
+				}
+			],
+			"data": {
+				"title": "Advies Groenbeheer",
+				"fileName": "Advies Groenbeheer.docx",
+				"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				"vertrouwelijkheidaanduiding": "openbaar",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"sender": "Groenbeheer",
+				"creatiedatum": "{{date:-11}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "parkweg-zio-advies-groenbeheer",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:kapvergunning-essen-parkweg.id}}",
+				"informatieobject": "{{object:parkweg-doc-advies-groenbeheer.id}}",
+				"registrationDate": "{{datetime:-11 11:30}}"
+			}
+		},
+		{
+			"key": "parkweg-doc-offerte-herplant",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/kapvergunning-essen-parkweg/Offerte herplant essen.pdf",
+					"title": "Offerte herplant essen"
+				}
+			],
+			"data": {
+				"title": "Offerte herplant essen",
+				"fileName": "Offerte herplant essen.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "vertrouwelijk",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"sender": "{{cast:groenenco.name}}",
+				"creatiedatum": "{{date:-10}}",
+				"taal": "nld",
+				"description": "Bedrijfsgevoelige prijzen: alleen Pieter Jansen en team Vergunningen."
+			}
+		},
+		{
+			"key": "parkweg-zio-offerte-herplant",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:kapvergunning-essen-parkweg.id}}",
+				"informatieobject": "{{object:parkweg-doc-offerte-herplant.id}}",
+				"registrationDate": "{{datetime:-10 09:45}}"
+			}
+		},
+		{
+			"key": "parkweg-doc-situatiefotos",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/kapvergunning-essen-parkweg/Situatiefoto's essen.zip",
+					"title": "Situatiefoto's essen"
+				}
+			],
+			"data": {
+				"title": "Situatiefoto's essen",
+				"fileName": "Situatiefoto's essen.zip",
+				"format": "application/zip",
+				"vertrouwelijkheidaanduiding": "openbaar",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"sender": "{{cast:henk.displayName}}",
+				"creatiedatum": "{{date:-12}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "parkweg-zio-situatiefotos",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:kapvergunning-essen-parkweg.id}}",
+				"informatieobject": "{{object:parkweg-doc-situatiefotos.id}}",
+				"registrationDate": "{{datetime:-12 10:14}}"
 			}
 		},
 		{
@@ -4882,7 +5018,7 @@
 			"register": "dossiq",
 			"schema": "organisatieRol",
 			"data": {
-				"roleName": "Informatie en Woo",
+				"roleName": "Woo en informatie",
 				"roleType": "ambtelijk",
 				"ncGroupId": "zuiddrecht-woo-en-informatie",
 				"parentRoleId": "{{object:afdeling-gemeente.id}}"
@@ -5251,7 +5387,7 @@
 				"communicationChannel": "email",
 				"confidentiality": "intern",
 				"assignee": "{{cast:pieter.uid}}",
-				"assignedGroup": "behandelaars",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
 				"startDate": "{{date:-24}}",
 				"receivedAt": "{{datetime:-24 09:40}}",
 				"currentStatusEnteredAt": "{{datetime:-2 11:00}}",
@@ -7595,6 +7731,9 @@
 			"register": "dossiq",
 			"schema": "case",
 			"object": "parkeren-henk",
+			"jsonFields": [
+				"geometry"
+			],
 			"set": {
 				"result": "{{object:parkeren-henk-resultaat.id}}"
 			}

@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service\Redaction;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\FindsFilesById;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\RestrictedDocumentReaders;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use RuntimeException;
@@ -58,11 +59,13 @@ class RedactedCopyRecorder {
 	 * @param DocumentRecordStore  $store           Reads and writes informatieobjecten and their case joins.
 	 * @param IRootFolder          $rootFolder      Reads the copy's file by its id, outside OpenRegister's tree.
 	 * @param SettingsService|null $settingsService OpenRegister's file service, which reads the copy on the case.
+	 * @param RestrictedDocumentReaders|null $readers Gives the copy the original's access exception. Null only in legacy fixtures.
 	 */
 	public function __construct(
 		private readonly DocumentRecordStore $store,
 		private readonly IRootFolder $rootFolder,
 		private readonly ?SettingsService $settingsService = null,
+		private readonly ?RestrictedDocumentReaders $readers = null,
 	) {
 	}//end __construct()
 
@@ -90,6 +93,9 @@ class RedactedCopyRecorder {
 		}
 
 		$this->store->ensureJoin(caseId: $caseId, recordId: $recordId);
+
+		// A copy of a document only some people may see is seen by the same people.
+		$this->readers?->inherit(original: $original, fileId: $fileId);
 
 		return $recordId;
 	}//end recordFile()

@@ -157,4 +157,18 @@ class DocumentWriteGate {
 			Http::STATUS_FORBIDDEN
 		);
 	}//end caseWriteRefusal()
+
+	/**
+	 * Each listing row with `canChangeAccess`, which the Who can see this card offers Change exception by.
+	 *
+	 * @param IUser                            $user      The caller.
+	 * @param array<int, array<string, mixed>> $documents The rows.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-the-who-can-see-this-card-shows-the-exception-and-changes-it
+	 */
+	public function withChangeRight(IUser $user, array $documents): array {
+		return $this->caseWrites->withChangeRight(user: $user, documents: $documents);
+	}//end withChangeRight()
 }//end class

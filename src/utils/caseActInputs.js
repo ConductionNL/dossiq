@@ -30,7 +30,7 @@ import { contentTemplateOption } from './templatePicker.js'
  * - `reasonWidget` is the reason's field: one line beside the days, else a text area.
  * - `summary` and `notice` show the case and what the act makes of it; a
  *   notice's `icon` names a CnIcon (board DqArchiveren draws a lock).
- * - `reasonNote` replaces the line under the reason.
+ * - `reasonNote` replaces the line under the reason; '' draws none (DqVolgendeStap).
  * - `notifyRequester` adds a ticked checkbox that tells the requester afterwards.
  * - `title` names the dialog while the act is open; `confirmIcon` sits on its confirm button.
  *
@@ -43,6 +43,7 @@ function actLayouts() {
 			columns: 2,
 			pauseReasons: true,
 			reasonWidget: 'text',
+			reasonNote: '',
 		},
 		archive: {
 			title: t('dossiq', 'Archive this case'),
@@ -167,6 +168,8 @@ export function actForm(entry, { caseType = '', caseId = '', requester = '' } = 
 			field: 'days',
 			widget: 'number',
 			label: t('dossiq', 'Days the applicant is given'),
+			labelOutside: true,
+			id: 'case-act-days',
 			helperFrom: { input: 'pauseReason', key: 'legalBasis' },
 			prefillFrom: { input: 'pauseReason', key: 'defaultDays' },
 			dateField: {

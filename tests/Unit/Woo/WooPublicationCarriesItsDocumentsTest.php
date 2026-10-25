@@ -162,6 +162,26 @@ class WooPublicationCarriesItsDocumentsTest extends TestCase {
 	}//end testAPublicationWhoseFilesCannotBeReadIsRefused()
 
 	/**
+	 * A disclosable document that names its only readers is not published, and nothing goes out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-never-published
+	 */
+	public function testAPublicationWithADocumentUnderAnAccessExceptionIsRefused(): void {
+		$row = $this->store->row(schema: 'informatieobject', uuid: 'io-public');
+		$row['accessException'] = ['users' => ['pieter'], 'groups' => [], 'reason' => 'Bedrijfsgevoelig'];
+		$this->store->seed(schema: 'informatieobject', uuid: 'io-public', row: $row);
+
+		$published = $this->service(fileService: $this->openRegisterFiles())->publish(self::CASE);
+
+		self::assertFalse($published['available']);
+		self::assertSame('documents_restricted', $published['reason']);
+		self::assertSame(['klachtenoverzicht.pdf'], $published['documents']);
+		self::assertSame([], $this->attached);
+	}//end testAPublicationWithADocumentUnderAnAccessExceptionIsRefused()
+
+	/**
 	 * OpenRegister's file service as the case files see it: it knows every file by id.
 	 *
 	 * @return object

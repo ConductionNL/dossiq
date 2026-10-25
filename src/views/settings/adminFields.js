@@ -130,6 +130,8 @@ export function kadasterFields(t) {
 				type: 'select',
 				options: modes,
 				default: 'log',
+				// Off is one of the sources, so the choice is never empty: no clear button.
+				required: true,
 			},
 			{
 				key: `integration.${integration}.baseUrl`,

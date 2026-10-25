@@ -54,6 +54,36 @@ describe('the Files tab columns as the library reads them', () => {
 		expect(props.rowDataKey).toBe('fileId')
 	})
 
+	/**
+	 * The declared columns with the case type flag filled in, as the detail page
+	 * resolves `@context.caseType.documentReview.enabled` in widget props.
+	 *
+	 * @param {boolean} reviews Whether the case type reviews its documents.
+	 * @return {Array<object>} The normalised columns.
+	 */
+	function columnsFor(reviews) {
+		const token = '@context.caseType.documentReview.enabled'
+		const declared = filesProps().columns.map((column) => (column.hidden === token ? { ...column, hidden: reviews } : column))
+		return normaliseFileColumns(declared)
+	}
+
+	// @spec openspec/changes/review-case-columns-hidden/specs/review-case-columns-hidden/spec.md#requirement-a-review-case-hides-scan-and-visible-to-by-default
+	it('a review case starts without Scan and Visible to, which stay in Columns', () => {
+		const review = columnsFor(true)
+
+		expect(review.filter((column) => column.hidden !== true).map((column) => column.key)).toEqual(['name'])
+		expect(review.map((column) => column.key)).toEqual(expect.arrayContaining(['scanVerdict', 'vertrouwelijkheidaanduiding']))
+		expect(columnsFor(false).filter((column) => column.hidden !== true).map((column) => column.key)).toEqual(['name', 'scanVerdict', 'vertrouwelijkheidaanduiding'])
+	})
+
+	// @spec openspec/changes/scan-column-needs-a-scanner/specs/scan-column-needs-a-scanner/spec.md#requirement-the-scan-column-shows-only-with-a-virus-scanner
+	it('shows the Scan column only where the virus scanner files_antivirus is enabled', () => {
+		const scan = filesProps().columns.find((column) => column.key === 'scanVerdict')
+
+		expect(scan.requiredApp).toBe('files_antivirus')
+		expect(filesProps().columns.filter((column) => column.requiredApp !== undefined).map((column) => column.key)).toEqual(['scanVerdict'])
+	})
+
 	it('control: the old declaration leaves the library nothing to render', () => {
 		const old = [
 			{ id: 'sender', label: 'Sender', property: 'senderName' },

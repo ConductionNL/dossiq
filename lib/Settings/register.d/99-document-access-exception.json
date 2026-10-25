@@ -1,0 +1,279 @@
+{
+ "_note": "document-access-exception (Ruben 24 Oct, board DqDocumentenBeheer, the Who can see this card). A document may name the only people and groups who see it, with a reason. The case's handler and administrators keep access (InformatieobjectAccessGuard + DocumentAccessExceptionRule). Written only through PUT/DELETE /api/informatieobjecten/{id}/access-exception, which also restricts the file in OpenRegister and appends to accessExceptionHistory. Minor bump: two optional properties, nothing existing changes. Raw OpenRegister access (review 25 Oct): the schema's own authorization admits dossiq-medewerkers only to documents without an exception (restricted false or absent) and everyone else through the derived accessUsers/accessGroups (SharePrincipalDeriver pattern), on read; update and delete of a restricted document are for its cases' handlers (accessHandlers) only, not for a listed outsider, so lists, totals and facets agree with dossiq's own rule. The exception fields and the derived lists are written only by dossiq-background-service (property authorization); DocumentAccessExceptionWriter saves them as that account after its own checks.",
+ "components": {
+  "schemas": {
+   "informatieobject": {
+    "version": "1.7.0",
+    "properties": {
+     "accessException": {
+      "type": "object",
+      "title": "Access exception",
+      "description": "Only these people and groups see this document, besides the case's handler and administrators. A reason is required. Set and removed through the document's Who can see this card.",
+      "properties": {
+       "users": {
+        "type": "array",
+        "title": "People",
+        "items": {
+         "type": "string",
+         "maxLength": 255
+        }
+       },
+       "groups": {
+        "type": "array",
+        "title": "Groups",
+        "items": {
+         "type": "string",
+         "maxLength": 255
+        }
+       },
+       "reason": {
+        "type": "string",
+        "title": "Reason",
+        "maxLength": 1024
+       },
+       "setBy": {
+        "type": "string",
+        "title": "Set by",
+        "maxLength": 255
+       },
+       "setAt": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Set at"
+       }
+      },
+      "authorization": {
+       "create": [
+        {
+         "group": "dossiq-background-service"
+        }
+       ],
+       "update": [
+        {
+         "group": "dossiq-background-service"
+        }
+       ]
+      }
+     },
+     "accessExceptionHistory": {
+      "type": "array",
+      "title": "Access exception history",
+      "description": "Every set, change and removal of the access exception: who, when, the old and the new exception, and the reason.",
+      "items": {
+       "type": "object",
+       "properties": {
+        "action": {
+         "type": "string",
+         "enum": [
+          "set",
+          "change",
+          "remove"
+         ]
+        },
+        "by": {
+         "type": "string",
+         "maxLength": 255
+        },
+        "at": {
+         "type": "string",
+         "format": "date-time"
+        },
+        "old": {
+         "description": "The exception before, absent when there was none."
+        },
+        "new": {
+         "description": "The exception after, absent when it was removed."
+        },
+        "reason": {
+         "type": "string",
+         "maxLength": 1024
+        }
+       }
+      },
+      "authorization": {
+       "create": [
+        {
+         "group": "dossiq-background-service"
+        }
+       ],
+       "update": [
+        {
+         "group": "dossiq-background-service"
+        }
+       ]
+      }
+     },
+     "restricted": {
+      "type": "boolean",
+      "title": "Restricted",
+      "description": "DERIVED from accessException by the writer; true while the document names its only readers. The read rule admits dossiq-medewerkers only where this is false or absent. Written only by the background service account.",
+      "authorization": {
+       "create": [
+        {
+         "group": "dossiq-background-service"
+        }
+       ],
+       "update": [
+        {
+         "group": "dossiq-background-service"
+        }
+       ]
+      }
+     },
+     "accessUsers": {
+      "type": "array",
+      "title": "Readers (people)",
+      "description": "DERIVED: the people of the access exception plus the handlers of the document's cases, as bare uids, so the read rule can say accessUsers $contains $userId. Recomputed when an exception is set and when a case's handler changes.",
+      "items": {
+       "type": "string",
+       "maxLength": 255
+      },
+      "authorization": {
+       "create": [
+        {
+         "group": "dossiq-background-service"
+        }
+       ],
+       "update": [
+        {
+         "group": "dossiq-background-service"
+        }
+       ]
+      }
+     },
+     "accessGroups": {
+      "type": "array",
+      "title": "Readers (groups)",
+      "description": "DERIVED: the groups of the access exception, as bare group ids, so the read rule can say accessGroups $contains $user.groups.",
+      "items": {
+       "type": "string",
+       "maxLength": 255
+      },
+      "authorization": {
+       "create": [
+        {
+         "group": "dossiq-background-service"
+        }
+       ],
+       "update": [
+        {
+         "group": "dossiq-background-service"
+        }
+       ]
+      }
+     },
+     "accessHandlers": {
+      "type": "array",
+      "title": "Handlers",
+      "description": "DERIVED: the handlers (assignee) of the document's cases, as bare uids. Only they, besides staff on an unrestricted document, may update or delete the record through OpenRegister.",
+      "items": {
+       "type": "string",
+       "maxLength": 255
+      },
+      "authorization": {
+       "create": [
+        {
+         "group": "dossiq-background-service"
+        }
+       ],
+       "update": [
+        {
+         "group": "dossiq-background-service"
+        }
+       ]
+      }
+     }
+    },
+    "authorization": {
+     "read": [
+      {
+       "group": "dossiq-medewerkers",
+       "match": {
+        "restricted": false
+       }
+      },
+      {
+       "group": "dossiq-medewerkers",
+       "match": {
+        "restricted": {
+         "$exists": false
+        }
+       }
+      },
+      {
+       "group": "authenticated",
+       "match": {
+        "accessUsers": {
+         "$contains": "$userId"
+        }
+       }
+      },
+      {
+       "group": "authenticated",
+       "match": {
+        "accessGroups": {
+         "$contains": "$user.groups"
+        }
+       }
+      },
+      "dossiq-background-service"
+     ],
+     "create": [
+      "dossiq-medewerkers",
+      "dossiq-background-service"
+     ],
+     "update": [
+      {
+       "group": "dossiq-medewerkers",
+       "match": {
+        "restricted": false
+       }
+      },
+      {
+       "group": "dossiq-medewerkers",
+       "match": {
+        "restricted": {
+         "$exists": false
+        }
+       }
+      },
+      {
+       "group": "dossiq-medewerkers",
+       "match": {
+        "accessHandlers": {
+         "$contains": "$userId"
+        }
+       }
+      },
+      "dossiq-background-service"
+     ],
+     "delete": [
+      {
+       "group": "dossiq-medewerkers",
+       "match": {
+        "restricted": false
+       }
+      },
+      {
+       "group": "dossiq-medewerkers",
+       "match": {
+        "restricted": {
+         "$exists": false
+        }
+       }
+      },
+      {
+       "group": "dossiq-medewerkers",
+       "match": {
+        "accessHandlers": {
+         "$contains": "$userId"
+        }
+       }
+      },
+      "dossiq-background-service"
+     ]
+    }
+   }
+  }
+ }
+}

@@ -14,6 +14,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\CaseFolderNodeListener;
+use OCA\Dossiq\Listener\FileRestrictionAdmitListener;
+use OCA\Dossiq\Listener\RestrictedDocumentHandlerListener;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\Files\Events\Node\NodeCreatedEvent;
 use OCP\Files\Events\Node\NodeDeletedEvent;
@@ -57,6 +60,10 @@ class DocumentListenerRegistrar {
 		foreach (self::NODE_EVENTS as $event) {
 			$context->registerEventListener(event: $event, listener: CaseFolderNodeListener::class);
 		}
+
+		// Document-access-exception: OpenRegister asks whether the case's handler may read a restricted document file.
+		$context->registerEventListener(event: FileRestrictionAdmitListener::EVENT, listener: FileRestrictionAdmitListener::class);
+		$context->registerEventListener(event: ObjectUpdatedEvent::class, listener: RestrictedDocumentHandlerListener::class);
 
 		// The document review's write guards (verdicts wait for the pages, the stopping rule is fixed).
 		(new ReviewListenerRegistrar())->register(context: $context);

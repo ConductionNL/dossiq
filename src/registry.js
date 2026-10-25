@@ -99,6 +99,7 @@ import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
+import DocumentAccessExceptionDialog from './dialogs/DocumentAccessExceptionDialog.vue'
 import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
 import DocumentCompareDialog from './dialogs/DocumentCompareDialog.vue'
 import FileContactMomentDialog from './dialogs/FileContactMomentDialog.vue'
@@ -651,6 +652,13 @@ const registry = {
 		component: FileRequestDialog,
 		propsSchema: {},
 		_note: "Ask a party of the case for a file. Opened by the Files tab's `newActions` entry as `type: open-modal`, so the registry mounts it with the action's props (the folder's path and whatever the manifest declared) and nothing else; it reads the case from `caseId` or the route and fetches the parties itself. The recipients are the people linked to the case (people-on-the-case), because Nextcloud's own file request can name nobody: it asks for an address a handler has to know by heart. A party with no address is listed and disabled with the reason.",
+	},
+	// @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-the-who-can-see-this-card-shows-the-exception-and-changes-it
+	DocumentAccessExceptionDialog: {
+		kind: 'modal',
+		component: DocumentAccessExceptionDialog,
+		propsSchema: {},
+		_note: "Who may see one document (board DqDocumentenBeheer, the Who can see this card's Change exception). Opened by the case-files side card action as open-modal; CnFilesBrowser merges the selected file's fileId and fileName onto the props and the case's dossier listing names the document. Offered only on a row whose `canChangeAccess` is true (visibleIf.row), the same right the server checks: whoever may change every case of the document. Saving restricts the file in OpenRegister too.",
 	},
 	BulkDocumentActionDialog: {
 		kind: 'modal',

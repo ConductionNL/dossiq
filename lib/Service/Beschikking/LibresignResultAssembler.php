@@ -99,18 +99,29 @@ class LibresignResultAssembler {
 	public const UNKNOWN = LibresignStatusMapper::UNKNOWN;
 
 	/**
+	 * Gives a signed version its original's access exception, when wired.
+	 *
+	 * @var callable|null
+	 */
+	private $signedVersionOf;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRootFolder $rootFolder Reads the LibreSign-produced signed file by id.
 	 * @param ZgwDocumentService $documentService The EXISTING binary document storage service.
 	 * @param LibresignStatusMapper $statusMapper Maps LibreSign status values onto the internal
 	 *                                            vocabulary (stateless; defaults to a fresh instance).
+	 * @param callable|null $signedVersionOf `(originalId, signedFileId, signatory)`: gives the signed version
+	 *                                       its original's access exception.
 	 */
 	public function __construct(
 		private readonly IRootFolder $rootFolder,
 		private readonly ZgwDocumentService $documentService,
 		private readonly LibresignStatusMapper $statusMapper = new LibresignStatusMapper(),
+		?callable $signedVersionOf = null,
 	) {
+		$this->signedVersionOf = $signedVersionOf;
 	}//end __construct()
 
 	/**
@@ -162,6 +173,11 @@ class LibresignResultAssembler {
 		// wrote, both against the same service.
 		$this->documentService->storeRaw(uuid: $fileId, fileName: $fileName, content: $content);
 		$newFileId = $this->documentService->getFileId(uuid: $fileId, fileName: $fileName);
+
+		// The signed version of a document only some people may see is seen by the same people.
+		if ($this->signedVersionOf !== null) {
+			($this->signedVersionOf)($fileId, (int)$newFileId, $signatory);
+		}
 
 		return [
 			'signedBestandId' => (string)$newFileId,
