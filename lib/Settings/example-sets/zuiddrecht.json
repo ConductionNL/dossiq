@@ -4559,6 +4559,180 @@
 			}
 		},
 		{
+			"key": "woo-afvalinzameling-oosthaven",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Afvalinzameling Oosthaven 2025",
+				"description": "Mevrouw Verbeek vraagt de afspraken met de inzamelaar en de klachten over de afvalinzameling in Oosthaven in 2025.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-marja.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:marja.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "intern",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"startDate": "{{date:-1}}",
+				"receivedAt": "{{datetime:-1 09:15}}",
+				"deadline": "{{date:6}}",
+				"currentStatusEnteredAt": "{{datetime:-1 09:15}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-1 09:15}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Afvalinzameling Oosthaven 2025",
+					"omschrijving": "Mevrouw Verbeek vraagt de afspraken met de inzamelaar en de klachten over de afvalinzameling in Oosthaven in 2025.",
+					"periodeVan": "{{date:-365}}",
+					"periodeTot": "{{date:-1}}",
+					"origin": "portal"
+				},
+				"tags": [
+					"woo",
+					"afval"
+				]
+			}
+		},
+		{
+			"key": "woo-dakkapellen-beukenlaan",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Vergunningen dakkapellen Beukenlaan",
+				"description": "Meneer Visser vraagt de verleende vergunningen en de welstandsadviezen voor de dakkapellen aan de Beukenlaan sinds 2020.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henkvisser.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henkvisser.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "intern",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"startDate": "{{date:-2}}",
+				"receivedAt": "{{datetime:-2 14:40}}",
+				"deadline": "{{date:8}}",
+				"currentStatusEnteredAt": "{{datetime:-2 14:40}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 14:40}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Vergunningen dakkapellen Beukenlaan",
+					"omschrijving": "Meneer Visser vraagt de verleende vergunningen en de welstandsadviezen voor de dakkapellen aan de Beukenlaan sinds 2020.",
+					"periodeVan": "{{date:-365}}",
+					"periodeTot": "{{date:-2}}",
+					"origin": "portal"
+				},
+				"tags": [
+					"woo",
+					"beukenlaan"
+				]
+			}
+		},
+		{
+			"key": "woo-afgewezen-parkeervergunningen",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Afgewezen parkeervergunningen 2025",
+				"description": "Mevrouw Bakker vraagt hoeveel parkeervergunningen in 2025 zijn afgewezen, met de redenen en de beleidsregels.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-linda.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:linda.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "intern",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"startDate": "{{date:-2}}",
+				"receivedAt": "{{datetime:-2 10:05}}",
+				"deadline": "{{date:8}}",
+				"currentStatusEnteredAt": "{{datetime:-2 10:05}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 10:05}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Afgewezen parkeervergunningen 2025",
+					"omschrijving": "Mevrouw Bakker vraagt hoeveel parkeervergunningen in 2025 zijn afgewezen, met de redenen en de beleidsregels.",
+					"periodeVan": "{{date:-365}}",
+					"periodeTot": "{{date:-2}}",
+					"origin": "portal"
+				},
+				"tags": [
+					"woo",
+					"parkeren"
+				]
+			}
+		},
+		{
 			"key": "woo-fietspad-besluitklaar-doc-advies",
 			"register": "dossiq",
 			"schema": "informatieobject",
