@@ -5769,6 +5769,10 @@
 				"countSubtitle": "{total} cases",
 				"defaultOrder": "deadline",
 				"countText": "{shown} of {total} open cases in your teams, sorted by deadline",
+				"defaultFilters": {
+					"isFinalStatus": false
+				},
+				"_defaultFiltersNote": "The line says open cases, so the list opens on them: isFinalStatus false as a removable default filter, \"Status: lopend\" on the Active line (board DqZaken). A link with filters of its own or a saved view starts from those instead (nextcloud-vue defaultFilters). The All lens filters drafts and hidden statuses only, so without this closed cases stood under \"lopende zaken\".",
 				"_savedViewCountTextNote": "DqFilterInMenu: while a saved view is applied the line names what it holds, \"3 van 48 lopende zaken · termijn binnen 7 dagen, van mij · gesorteerd op termijn\"; {view} is the view's description, else its filters in words (nextcloud-vue savedViewCountText).",
 				"savedViewCountText": "{shown} of {total} open cases · {view} · sorted by deadline",
 				"_countTextByViewNote": "DqWerkbord, DqZakenKaart: the line under the title says what the open view shows. The board view is not sorted by deadline but grouped by status; the map gives only the count, and nextcloud-vue adds how many of them have an address on the map. Other views keep countText (nextcloud-vue countTextByView).",
