@@ -64,6 +64,7 @@
 				"register": "dossiq",
 				"schema": "case",
 				"filter": {
+					"assignedGroup": "@myTeam",
 					"assignee": "IS NULL",
 					"isFinalStatus": false,
 					"statusHiddenInLists": false,

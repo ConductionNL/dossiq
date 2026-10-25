@@ -63,7 +63,7 @@ class MyTeamControllerTest extends TestCase {
 	 */
 	public function testNoUserIsUnauthorisedAndAsksNothing(): void {
 		$teams = $this->createMock(originalClassName: PrimaryTeamService::class);
-		$teams->expects($this->never())->method('teamOf');
+		$teams->expects($this->never())->method('teamsOf');
 
 		$response = $this->controller(user: null, teams: $teams)->show();
 
@@ -78,14 +78,22 @@ class MyTeamControllerTest extends TestCase {
 	public function testTheSignedInUsersTeamIsAnswered(): void {
 		$user  = $this->createMock(originalClassName: IUser::class);
 		$teams = $this->createMock(originalClassName: PrimaryTeamService::class);
-		$teams->expects($this->once())->method('teamOf')->with($user)
-			->willReturn(['groupId' => 'zuiddrecht-woo-en-informatie', 'name' => 'Informatie en Woo']);
+		$teams->expects($this->once())->method('teamsOf')->with($user)
+			->willReturn([
+				['groupId' => 'zuiddrecht-woo-en-informatie', 'name' => 'Informatie en Woo'],
+				['groupId' => 'zuiddrecht-vergunningen', 'name' => 'Vergunningen'],
+			]);
 
 		$response = $this->controller(user: $user, teams: $teams)->show();
 
 		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 		$this->assertSame(
-			expected: ['groupId' => 'zuiddrecht-woo-en-informatie', 'name' => 'Informatie en Woo'],
+			expected: [
+				'groupId'  => 'zuiddrecht-woo-en-informatie',
+				'name'     => 'Informatie en Woo',
+				'groupIds' => ['zuiddrecht-woo-en-informatie', 'zuiddrecht-vergunningen'],
+				'names'    => ['Informatie en Woo', 'Vergunningen'],
+			],
 			actual: $response->getData()
 		);
 	}//end testTheSignedInUsersTeamIsAnswered()
@@ -97,7 +105,7 @@ class MyTeamControllerTest extends TestCase {
 	 */
 	public function testUnreadableRolesAnswerServiceUnavailable(): void {
 		$teams = $this->createMock(originalClassName: PrimaryTeamService::class);
-		$teams->method('teamOf')->willThrowException(new \RuntimeException('store down'));
+		$teams->method('teamsOf')->willThrowException(new \RuntimeException('store down'));
 
 		$response = $this->controller(user: $this->createMock(originalClassName: IUser::class), teams: $teams)->show();
 
@@ -111,10 +119,10 @@ class MyTeamControllerTest extends TestCase {
 	 */
 	public function testAUserInNoTeamGetsNulls(): void {
 		$teams = $this->createMock(originalClassName: PrimaryTeamService::class);
-		$teams->method('teamOf')->willReturn(null);
+		$teams->method('teamsOf')->willReturn([]);
 
 		$response = $this->controller(user: $this->createMock(originalClassName: IUser::class), teams: $teams)->show();
 
-		$this->assertSame(expected: ['groupId' => null, 'name' => null], actual: $response->getData());
+		$this->assertSame(expected: ['groupId' => null, 'name' => null, 'groupIds' => [], 'names' => []], actual: $response->getData());
 	}//end testAUserInNoTeamGetsNulls()
 }//end class

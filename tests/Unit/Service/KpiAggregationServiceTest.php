@@ -41,9 +41,12 @@ use OCA\Dossiq\Service\KpiAggregationService;
 use OCA\Dossiq\Service\Queue\QueueFigures;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Team\PrimaryTeamService;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use OCP\IL10N;
+use OCP\IUser;
+use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -229,6 +232,29 @@ final class KpiAggregationServiceTest extends TestCase {
 			'the breakdown groups by status, most frequent first.'
 		);
 	}
+
+	/**
+	 * The queue figures count the reader's teams only, as the team queue list
+	 * and its menu badge do; a reader in no team counts every case, as the list
+	 * drops its team filter then.
+	 *
+	 * @return void
+	 */
+	public function testQueueFiguresCountTheReadersTeamsOnly(): void {
+		$rows = [
+			['caseType' => 'woo', 'assignee' => '', 'assignedGroup' => 'woo', 'startDate' => $this->today],
+			['caseType' => 'woo', 'assignee' => '', 'assignedGroup' => 'vergunningen', 'startDate' => $this->today],
+			['caseType' => 'woo', 'assignee' => '', 'assignedGroup' => 'handhaving', 'startDate' => $this->today],
+			['caseType' => 'woo', 'assignee' => 'pieter', 'assignedGroup' => 'woo', 'startDate' => $this->today],
+		];
+		$teams = [['groupId' => 'woo', 'name' => 'Woo'], ['groupId' => 'vergunningen', 'name' => 'Vergunningen']];
+
+		$kpis = $this->service(objectService: $this->objectService(openRows: $rows), teams: $teams)->computeKpis('pieter');
+		$this->assertSame(2, $kpis['queueCount'], 'only the unassigned cases of the reader\'s two teams.');
+
+		$kpis = $this->service(objectService: $this->objectService(openRows: $rows), teams: [])->computeKpis('pieter');
+		$this->assertSame(3, $kpis['queueCount'], 'a reader in no team counts every unassigned case, as the list.');
+	}//end testQueueFiguresCountTheReadersTeamsOnly()
 
 	/**
 	 * The queue figures count the open cases without a handler, and group every open case by type.
@@ -457,6 +483,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		bool $openRegisterInstalled = true,
 		bool $containerThrows = false,
 		array $engineTaskCounts = [23, 2],
+		?array $teams = null,
 	): KpiAggregationService {
 		$objectService = ($objectService ?? $this->objectService(closedCases: $closedCases));
 
@@ -521,7 +548,16 @@ final class KpiAggregationServiceTest extends TestCase {
 			}
 		);
 
-		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, new QueueFigures(new DayCount()), $l10n, new NullLogger());
+		$teamService = null;
+		$users = null;
+		if ($teams !== null) {
+			$teamService = $this->createMock(PrimaryTeamService::class);
+			$teamService->method('teamsOf')->willReturn($teams);
+			$users = $this->createMock(IUserManager::class);
+			$users->method('get')->willReturn($this->createMock(IUser::class));
+		}
+
+		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, new QueueFigures(new DayCount()), $l10n, new NullLogger(), teams: $teamService, users: $users);
 	}
 
 	/**

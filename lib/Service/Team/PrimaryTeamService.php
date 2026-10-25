@@ -83,6 +83,102 @@ class PrimaryTeamService {
 	}//end teamOf()
 
 	/**
+	 * Every team the user belongs to, the primary team first.
+	 *
+	 * @param IUser $user The user.
+	 *
+	 * @return array<int, array{groupId: string, name: string}> The teams; empty for a user in none.
+	 *
+	 * @throws Throwable When the organisation roles cannot be read.
+	 *
+	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
+	 */
+	public function teamsOf(IUser $user): array {
+		$groupIds = $this->groupManager->getUserGroupIds($user);
+		if ($groupIds === []) {
+			return [];
+		}
+
+		return self::teams(roles: $this->roles(), userGroupIds: $groupIds);
+	}//end teamsOf()
+
+	/**
+	 * The user's teams: each role that binds one of the user's groups and is no
+	 * ancestor of another such role (the municipality above a team is not a
+	 * team of its own), ordered as the primary team is chosen: deepest first,
+	 * then by name. The admin group is never a team.
+	 *
+	 * @param array<int, array<string, mixed>> $roles        The organisatieRol rows.
+	 * @param array<int, string>               $userGroupIds The user's Nextcloud group ids.
+	 *
+	 * @return array<int, array{groupId: string, name: string}> The teams.
+	 *
+	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
+	 */
+	public static function teams(array $roles, array $userGroupIds): array {
+		$byId = [];
+		foreach ($roles as $role) {
+			$roleId = self::roleId(role: $role);
+			if ($roleId !== '') {
+				$byId[$roleId] = $role;
+			}
+		}
+
+		$bound = [];
+		foreach ($roles as $role) {
+			$group = trim((string)($role['ncGroupId'] ?? ''));
+			if ($group === '' || $group === 'admin' || in_array($group, $userGroupIds, true) === false) {
+				continue;
+			}
+
+			$bound[] = $role;
+		}
+
+		$ancestors = [];
+		foreach ($bound as $role) {
+			foreach (self::ancestorIds(role: $role, byId: $byId) as $ancestorId) {
+				$ancestors[$ancestorId] = true;
+			}
+		}
+
+		$teams = [];
+		$seen  = [];
+		foreach ($bound as $role) {
+			$group = trim((string)$role['ncGroupId']);
+			if (isset($ancestors[self::roleId(role: $role)]) === true || isset($seen[$group]) === true) {
+				continue;
+			}
+
+			$seen[$group] = true;
+			$teams[] = [
+				'groupId' => $group,
+				'name'    => trim((string)($role['roleName'] ?? '')),
+				'depth'   => self::depth(role: $role, byId: $byId),
+			];
+		}
+
+		usort(
+			$teams,
+			static function (array $a, array $b): int {
+				if (self::isBefore(candidate: $a, best: $b) === true) {
+					return -1;
+				}
+
+				if (self::isBefore(candidate: $b, best: $a) === true) {
+					return 1;
+				}
+
+				return 0;
+			}
+		);
+
+		return array_map(
+			static fn (array $team): array => ['groupId' => $team['groupId'], 'name' => $team['name']],
+			$teams
+		);
+	}//end teams()
+
+	/**
 	 * Pick the primary team from the organisation's roles and the user's groups.
 	 *
 	 * @param array<int, array<string, mixed>> $roles        The organisatieRol rows, each with `id`, `roleName`, `ncGroupId`, `parentRoleId`.
@@ -161,6 +257,25 @@ class PrimaryTeamService {
 
 		return $depth;
 	}//end depth()
+
+	/**
+	 * The ids of a role's parents, nearest first, stopping at a cycle or a missing parent.
+	 *
+	 * @param array<string, mixed>                $role The role.
+	 * @param array<string, array<string, mixed>> $byId Every role by id.
+	 *
+	 * @return array<int, string> The parent role ids.
+	 */
+	private static function ancestorIds(array $role, array $byId): array {
+		$ids = [];
+		$parent = trim((string)($role['parentRoleId'] ?? ''));
+		while ($parent !== '' && isset($byId[$parent]) === true && in_array($parent, $ids, true) === false) {
+			$ids[] = $parent;
+			$parent = trim((string)($byId[$parent]['parentRoleId'] ?? ''));
+		}
+
+		return $ids;
+	}//end ancestorIds()
 
 	/**
 	 * A role's id, as OpenRegister returns it.
