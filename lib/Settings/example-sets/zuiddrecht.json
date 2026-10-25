@@ -437,7 +437,8 @@
 					"postcode": "{{cast:buurtoost.address.postcode}}",
 					"place": "{{cast:buurtoost.address.city}}"
 				},
-				"description": "Organiseert het buurtfeest en de speeldagen in Oosthaven. Voorbeeldvereniging van de gemeente Zuiddrecht, geen echte vereniging."
+				"description": "Organiseert het buurtfeest en de speeldagen in Oosthaven. Voorbeeldvereniging van de gemeente Zuiddrecht, geen echte vereniging.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000007"
 			}
 		},
 		{
