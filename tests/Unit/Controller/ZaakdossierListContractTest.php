@@ -144,9 +144,26 @@ class ZaakdossierListContractTest extends TestCase {
 				reader: $this->reader,
 				fileService: $this->fileService,
 			),
-			caseWrites: $this->createMock(DocumentCaseWriteGuard::class),
+			caseWrites: $this->caseWrites(),
 		);
 	}//end setUp()
+
+	/**
+	 * A case write guard that marks every row as not changeable.
+	 *
+	 * @return DocumentCaseWriteGuard
+	 */
+	private function caseWrites(): DocumentCaseWriteGuard {
+		$guard = $this->createMock(DocumentCaseWriteGuard::class);
+		$guard->method('withChangeRight')->willReturnCallback(
+			static fn ($user, array $documents): array => array_map(
+				static fn (array $row): array => [...$row, 'canChangeAccess' => false],
+				$documents
+			)
+		);
+
+		return $guard;
+	}//end caseWrites()
 
 	/**
 	 * Put an authenticated user in the session.

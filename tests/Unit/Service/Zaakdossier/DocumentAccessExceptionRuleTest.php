@@ -17,6 +17,7 @@ use OCA\Dossiq\Service\Zaakdossier\AccessExceptionNames;
 use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
+use OCA\Dossiq\Service\Zaakdossier\FileDocumentLookup;
 use OCP\IGroup;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCP\EventDispatcher\Event;
@@ -52,7 +53,6 @@ class DocumentAccessExceptionRuleTest extends TestCase {
 		parent::setUp();
 		$this->store = $this->createMock(DocumentRecordStore::class);
 		$this->store->method('caseIdsOf')->willReturn(['case-1']);
-		$this->store->method('recordIdOfFile')->willReturnCallback(static fn (int $fileId): string => $fileId === 42 ? 'doc-offerte' : '');
 		$cases = $this->createMock(CaseAccessGuard::class);
 		$cases->method('hasCaseMutationAccess')->willReturnCallback(
 			static fn (string $caseId, IUser $user): bool => $caseId === 'case-1' && in_array($user->getUID(), ['hanna', 'root'], true)
@@ -123,7 +123,7 @@ class DocumentAccessExceptionRuleTest extends TestCase {
 		if (class_exists(FileRestrictionAdmitListener::EVENT) === false) {
 			eval('namespace OCA\OpenRegister\Event; class FileRestrictionAdmitEvent extends \OCP\EventDispatcher\Event {'
 				. ' private bool $admitted = false;'
-				. ' public function __construct(private int $fileId, private string $userId) {}'
+				. ' public function __construct(private int $fileId, private string $userId, private array $restriction = []) {}'
 				. ' public function getFileId(): int { return $this->fileId; }'
 				. ' public function getUserId(): string { return $this->userId; }'
 				. ' public function admit(): void { $this->admitted = true; }'
@@ -132,13 +132,15 @@ class DocumentAccessExceptionRuleTest extends TestCase {
 
 		$class = FileRestrictionAdmitListener::EVENT;
 
-		return new $class($fileId, $uid);
+		return new $class($fileId, $uid, ['users' => ['pieter'], 'groups' => ['woo-team']]);
 	}//end admitEvent()
 
 	public function testOpenRegisterIsToldToAdmitTheHandlerAndNobodyElse(): void {
 		$users = $this->createMock(IUserManager::class);
 		$users->method('get')->willReturnCallback(fn (string $uid): IUser => $this->user($uid));
-		$listener = new FileRestrictionAdmitListener(store: $this->store, rule: $this->rule, userManager: $users);
+		$files = $this->createMock(FileDocumentLookup::class);
+		$files->method('recordIdOfFile')->willReturnCallback(static fn (int $fileId): string => $fileId === 42 ? 'doc-offerte' : '');
+		$listener = new FileRestrictionAdmitListener(files: $files, rule: $this->rule, userManager: $users);
 
 		$handler = $this->admitEvent(fileId: 42, uid: 'hanna');
 		$reader = $this->admitEvent(fileId: 42, uid: 'anna');

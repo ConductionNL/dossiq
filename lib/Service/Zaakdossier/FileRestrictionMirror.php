@@ -123,10 +123,11 @@ class FileRestrictionMirror {
 			return null;
 		}
 
+		$service = null;
 		try {
 			$service = $this->container->get(self::SERVICE);
 		} catch (Throwable $e) {
-			return null;
+			$service = null;
 		}
 
 		if (is_object($service) === false) {

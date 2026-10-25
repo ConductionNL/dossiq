@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\FileDocumentLookup;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IUserManager;
@@ -49,14 +49,14 @@ class FileRestrictionAdmitListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param DocumentRecordStore     $store       Which document names the file.
+	 * @param FileDocumentLookup      $files       Which document names the file.
 	 * @param DocumentAccessExceptionRule $rule        Whether the person handles a case of the document.
 	 * @param IUserManager            $userManager Resolves the person asking.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly DocumentRecordStore $store,
+		private readonly FileDocumentLookup $files,
 		private readonly DocumentAccessExceptionRule $rule,
 		private readonly IUserManager $userManager,
 	) {
@@ -86,7 +86,7 @@ class FileRestrictionAdmitListener implements IEventListener {
 				return;
 			}
 
-			$documentId = $this->store->recordIdOfFile(fileId: (int)$event->getFileId());
+			$documentId = $this->files->recordIdOfFile(fileId: (int)$event->getFileId());
 			if ($documentId !== '' && $this->rule->handlesACaseOf(user: $user, documentId: $documentId) === true) {
 				$event->admit();
 			}
