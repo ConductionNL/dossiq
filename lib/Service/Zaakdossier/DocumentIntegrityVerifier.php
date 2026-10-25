@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -140,7 +141,7 @@ class DocumentIntegrityVerifier {
 					'integrity' => [
 						...$integrity,
 						'status' => $status,
-						'checkedAt' => (new \DateTimeImmutable())->format(format: 'Y-m-d\TH:i:s'),
+						'checkedAt' => (new DateTimeImmutable())->format(format: 'Y-m-d\TH:i:s'),
 					],
 				],
 			);

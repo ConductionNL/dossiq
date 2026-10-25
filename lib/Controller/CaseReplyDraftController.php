@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
@@ -128,7 +129,7 @@ class CaseReplyDraftController extends Controller {
 			return new JSONResponse(['text' => '', 'savedAt' => '']);
 		}
 
-		$savedAt = (new \DateTimeImmutable())->format(format: DATE_ATOM);
+		$savedAt = (new DateTimeImmutable())->format(format: DATE_ATOM);
 		$this->config->setUserValue(
 			userId: $user->getUID(),
 			appName: Application::APP_ID,

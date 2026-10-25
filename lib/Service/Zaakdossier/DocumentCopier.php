@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use DateTimeImmutable;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -112,7 +113,7 @@ class DocumentCopier {
 					'kind' => 'copy',
 					'document' => $id,
 					'by' => $user->getUID(),
-					'at' => (new \DateTimeImmutable())->format(format: DATE_ATOM),
+					'at' => (new DateTimeImmutable())->format(format: DATE_ATOM),
 				],
 				mimeType: (string)($record['format'] ?? $file->getMimeType()),
 			);
