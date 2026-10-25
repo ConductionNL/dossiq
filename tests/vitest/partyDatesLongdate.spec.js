@@ -25,7 +25,7 @@ describe('party side-card dates', () => {
 	it('the Identity lead and Bereikbaar via spell the month out', () => {
 		const identity = side('ContactDetail').find((entry) => entry.id === 'side-identity').content.fields[0]
 		expect(identity.subtitle[0].format).toBe('longdate')
-		const reach = side('ContactDetail').find((entry) => entry.id === 'side-reach').content.fields[0]
+		const reach = side('ContactDetail').find((entry) => entry.id === 'side-reach').content.fields.find((field) => field.as === 'text')
 		expect(reach.parts[0].format).toBe('longdate')
 	})
 })

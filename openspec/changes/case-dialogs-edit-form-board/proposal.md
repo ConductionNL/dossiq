@@ -13,5 +13,5 @@ line, asked the assignee after the description as "Toegewezen aan", and the requ
 - Edit form `fieldOverrides.assignee`: order 1.5 (after the case type, before the title), label "Handler" (Behandelaar).
 - Edit form requester label "Applicant" (Verzoeker). The New case form keeps "Aanvrager" as DqNieuweZaak draws it.
 
-Not changed: the dialog title stays the header button's "Bewerken" (the board says "Zaak bewerken"); a separate edit
-form title would need its own library key.
+- CaseDetail `editTitle`: "Edit case" (Zaak bewerken), the header button keeps "Bewerken". Needs nc-vue
+  feat/detail-edit-form-title (CnDetailPage `editTitle`); before that release the key is ignored.

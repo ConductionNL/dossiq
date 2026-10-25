@@ -627,7 +627,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -1160,7 +1160,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -2739,7 +2739,7 @@
 									"widget": "textarea"
 								},
 								"requester": {
-									"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+									"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 									"label": "Requester"
 								}
 							},
@@ -2808,7 +2808,7 @@
 				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
 				"fieldOverrides": {
 					"description": { "widget": "textarea" },
-					"requester": { "widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }], "label": "Requester" },
+					"requester": { "widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }], "label": "Requester" },
 					"confidentiality": { "enumLabels": { "openbaar": "Public", "beperkt_openbaar": "Restricted public", "intern": "Internal", "zaakvertrouwelijk": "Case confidential", "vertrouwelijk": "Confidential", "confidentieel": "Classified confidential", "geheim": "Secret", "zeer_geheim": "Top secret" } }
 				},
 				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
@@ -3370,6 +3370,7 @@
 				"_editFormNote": "The same form the index pages open, so editing a case asks what filing one asks wherever it is done. It was the raw schema-driven default here \u2014 one column, normal width, every property the schema declares \u2014 because CnDetailPage took `formSize` and `formColumns` and forwarded neither `includeFields`, `excludeFields` nor `fieldOverrides` to its dialogs. nextcloud-vue now does. `excludeFields` keeps `status` off for the reason the Cases page gives: a status is the OUTPUT of a transition, and a raw dropdown writes it through without a statusRecord, a guard or the transition's automaticActions. The priority trio goes with it, being derived from impact and urgency.",
 				"formSize": "large",
 				"formColumns": 2,
+				"editTitle": "Edit case",
 				"editSubtitle": "The case's fields. You change the status and the term through Next step.",
 				"includeFields": [
 					"caseType",
@@ -3399,7 +3400,7 @@
 						"label": "Handler"
 					},
 					"requester": {
-						"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+						"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 						"label": "Applicant"
 					},
 					"confidentiality": {
@@ -3714,7 +3715,7 @@
 													"editable": false
 												},
 												"requester": {
-													"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+													"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 													"label": "Requester",
 													"formatter": "requesterName"
 												},
@@ -5700,6 +5701,7 @@
 										"id": "person",
 										"register": "dossiq",
 										"schema": "brpPerson",
+										"lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" },
 										"label": "Resident",
 										"title": "{displayName}",
 										"secondary": "{residence.street} {residence.houseNumber}"
@@ -12130,14 +12132,52 @@
 							},
 							"editable": true,
 							"limit": 50,
+							"rowTitle": "strong",
 							"columns": [
 								{
 									"key": "name",
-									"label": "Status"
+									"label": "Status",
+									"format": {
+										"style": "swatch",
+										"colorField": "colour",
+										"colorMap": {
+											"blue": "var(--nl-color-blue, #0b71ab)",
+											"blue-light": "var(--nl-color-blue-light, #e5f1f8)",
+											"green": "var(--nl-color-green, #39870c)",
+											"green-light": "var(--nl-color-green-light, #eaf5e4)",
+											"orange": "var(--nl-color-orange, #e17000)",
+											"orange-light": "var(--nl-color-orange-light, #fdf2e5)",
+											"red": "var(--nl-color-red, #d52b1e)",
+											"red-light": "var(--nl-color-red-light, #fbe9e8)",
+											"purple": "var(--nl-color-purple, #762f8e)",
+											"purple-light": "var(--nl-color-purple-light, #f2eaf5)",
+											"teal": "var(--nl-color-teal, #1d5e66)",
+											"teal-light": "var(--nl-color-teal-light, #e3f1f3)",
+											"grey": "var(--nl-color-grey, #696969)",
+											"grey-light": "var(--nl-color-grey-light, #f0f0f0)"
+										}
+									}
 								},
 								{
 									"key": "colour",
-									"label": "Colour in lists"
+									"label": "Colour in lists",
+									"widget": "label",
+									"enumLabels": {
+										"blue": "Blue",
+										"blue-light": "Light blue",
+										"green": "Green",
+										"green-light": "Light green",
+										"orange": "Orange",
+										"orange-light": "Light orange",
+										"red": "Red",
+										"red-light": "Light red",
+										"purple": "Purple",
+										"purple-light": "Light purple",
+										"teal": "Teal",
+										"teal-light": "Light teal",
+										"grey": "Grey",
+										"grey-light": "Light grey"
+									}
 								},
 								{
 									"key": "isFinal",
@@ -13426,7 +13466,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -13895,31 +13935,25 @@
 						"id": "side-reach",
 						"type": "facts",
 						"title": "Reachable via",
-						"_note": "Board DqContact: the newest contact moment says when and through which channel; the registration line reads the person, so it shows without contact moments too.",
+						"_note": "Board DqContact Bereikbaar via: the person's portal mailbox (\"Mijn Zuiddrecht, berichtenbox\", answered by portaliq's PortalAccountPresence through GET /api/people/{id}/reachability, which reads the person under the user's rights first) and the newest contact moment; the registration line reads the person, so it shows on its own too.",
 						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "contactmoment",
-								"filter": {
-									"contact": "@objectId"
-								},
-								"sort": {
-									"field": "startTime",
-									"dir": "desc"
-								}
-							},
 							"fields": [
+								{
+									"key": "portal",
+									"path": "portal",
+									"icon": "EmailOutline"
+								},
 								{
 									"as": "text",
 									"separator": ", ",
 									"parts": [
 										{
-											"path": "startTime",
+											"path": "lastContactAt",
 											"format": "longdate",
 											"label": "Last contact on"
 										},
 										{
-											"path": "notificationChannel",
+											"path": "lastContactChannel",
 											"label": "via",
 											"map": {
 												"phone": "phone",
@@ -13947,6 +13981,9 @@
 								"props": {
 									"contact": "@objectId"
 								}
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/people/@objectId/reachability"
 							}
 						}
 					},
@@ -13954,7 +13991,7 @@
 						"id": "side-identity",
 						"type": "facts",
 						"title": "Identity",
-						"_note": "Board DqContact: the lead says how the person was identified at the newest contact moment (none for an unidentified one); the rows read the person (from object), so they show without contact moments too.",
+						"_note": "Board DqContact: the lead says how the person was identified at the newest contact moment (none for an unidentified one); the rows read the person (from object), so they show without contact moments too. The BSN arrives masked (brpPerson.citizenServiceNumber reveal explicit); Tonen reads it with _reveal, which OpenRegister checks and records (property-explicit-reveal), so the line under it is true.",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -13996,7 +14033,10 @@
 									"label": "BSN",
 									"path": "citizenServiceNumber",
 									"format": "masked",
-									"reveal": true
+									"reveal": {
+										"url": "/apps/openregister/api/objects/dossiq/brpPerson/@objectId?_reveal=citizenServiceNumber",
+										"path": "citizenServiceNumber"
+									}
 								},
 								{
 									"from": "object",
@@ -14015,6 +14055,11 @@
 											"text": "Basisregistratie personen"
 										}
 									]
+								},
+								{
+									"as": "line",
+									"from": "object",
+									"text": "Showing the BSN is logged."
 								}
 							]
 						}
@@ -14174,7 +14219,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -14662,6 +14707,10 @@
 											"id": "person",
 											"register": "dossiq",
 											"schema": "brpPerson",
+											"lookup": {
+												"url": "/apps/dossiq/api/people/lookup",
+												"when": "^[0-9]{9}$"
+											},
 											"label": "Person",
 											"title": "{displayName}",
 											"secondary": "{residence.street} {residence.houseNumber}"

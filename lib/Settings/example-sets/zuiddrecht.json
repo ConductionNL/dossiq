@@ -1089,6 +1089,138 @@
 			}
 		},
 		{
+			"key": "documenttype-regulier-v4-aanvraagformulier",
+			"register": "dossiq",
+			"schema": "documentType",
+			"data": {
+				"name": "Aanvraagformulier",
+				"description": "Het aanvraagformulier uit het Omgevingsloket.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"confidentiality": "zaakvertrouwelijk",
+				"isRequired": true,
+				"validFrom": "{{date:-7}}"
+			}
+		},
+		{
+			"key": "documenttype-regulier-v4-bouwtekening",
+			"register": "dossiq",
+			"schema": "documentType",
+			"data": {
+				"name": "Bouwtekening",
+				"description": "Plattegronden, gevels en doorsneden van het bouwwerk.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"confidentiality": "zaakvertrouwelijk",
+				"isRequired": true,
+				"validFrom": "{{date:-7}}"
+			}
+		},
+		{
+			"key": "documenttype-regulier-v4-welstandsadvies",
+			"register": "dossiq",
+			"schema": "documentType",
+			"data": {
+				"name": "Welstandsadvies",
+				"description": "Het advies van de welstandscommissie, bij een bouwwerk in een welstandsgebied.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"confidentiality": "zaakvertrouwelijk",
+				"isRequired": false,
+				"validFrom": "{{date:-7}}"
+			}
+		},
+		{
+			"key": "documenttype-regulier-v4-besluit",
+			"register": "dossiq",
+			"schema": "documentType",
+			"data": {
+				"name": "Besluit",
+				"description": "De verleende of geweigerde omgevingsvergunning.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"confidentiality": "openbaar",
+				"isRequired": false,
+				"validFrom": "{{date:-7}}"
+			}
+		},
+		{
+			"key": "besluittype-regulier-v4-verleend",
+			"register": "dossiq",
+			"schema": "decisionType",
+			"data": {
+				"name": "Omgevingsvergunning verleend",
+				"description": "De vergunning is verleend, met voorschriften.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"isDraft": false,
+				"publicationRequired": true,
+				"documentTypes": [
+					"{{object:documenttype-regulier-v4-besluit.id}}"
+				],
+				"validFrom": "{{date:-7}}"
+			}
+		},
+		{
+			"key": "besluittype-regulier-v4-geweigerd",
+			"register": "dossiq",
+			"schema": "decisionType",
+			"data": {
+				"name": "Weigering omgevingsvergunning",
+				"description": "De vergunning is geweigerd, met de gronden en een bezwaarclausule.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"isDraft": false,
+				"publicationRequired": true,
+				"documentTypes": [
+					"{{object:documenttype-regulier-v4-besluit.id}}"
+				],
+				"validFrom": "{{date:-7}}"
+			}
+		},
+		{
+			"key": "veld-regulier-v4-bouwkosten",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"data": {
+				"name": "bouwkosten",
+				"definition": "Bouwkosten",
+				"description": "De geschatte bouwkosten in euro, zonder btw.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"propertyType": "number",
+				"minimum": 0,
+				"isRequired": true
+			}
+		},
+		{
+			"key": "veld-regulier-v4-soort-bouwwerk",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"data": {
+				"name": "soortBouwwerk",
+				"definition": "Soort bouwwerk",
+				"description": "Wat er gebouwd wordt.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"propertyType": "enum",
+				"enumValues": [
+					"Woning",
+					"Bijgebouw",
+					"Dakkapel",
+					"Bedrijfspand",
+					"Overig"
+				],
+				"isRequired": true,
+				"filterable": true
+			}
+		},
+		{
+			"key": "veld-regulier-v4-welstandsgebied",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"data": {
+				"name": "welstandsgebied",
+				"definition": "Welstandsgebied",
+				"description": "Of het bouwwerk in een gebied met welstandseisen staat.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"propertyType": "boolean",
+				"defaultValue": "false"
+			}
+		},
+		{
 			"key": "zaaktype-omgevingsvergunning-regulier",
 			"register": "dossiq",
 			"schema": "caseType",
@@ -6237,6 +6369,67 @@
 			"object": "zaaktype-omgevingsvergunning-regulier-v3",
 			"set": {
 				"supersededBy": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v4-besluiten-en-regels",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v4",
+			"set": {
+				"decisionTypes": [
+					"{{object:besluittype-regulier-v4-verleend.id}}",
+					"{{object:besluittype-regulier-v4-geweigerd.id}}"
+				],
+				"rules": [
+					{
+						"id": "constructeur-bij-hoge-bouwkosten",
+						"name": "Toets door constructeur",
+						"enabled": true,
+						"when": {
+							"event": "saved"
+						},
+						"conditions": [
+							{
+								"kind": "fieldCompare",
+								"field": "bouwkosten",
+								"op": "gt",
+								"value": 100000
+							}
+						],
+						"actions": [
+							{
+								"action": "addTask",
+								"title": "Toets door constructeur"
+							}
+						]
+					},
+					{
+						"id": "welstand-in-welstandsgebied",
+						"name": "Met welstand",
+						"enabled": true,
+						"when": {
+							"event": "saved"
+						},
+						"conditions": [
+							{
+								"kind": "fieldEquals",
+								"field": "welstandsgebied",
+								"value": true
+							}
+						],
+						"actions": [
+							{
+								"action": "chooseVariant",
+								"variant": "met-welstand"
+							},
+							{
+								"action": "requireDocument",
+								"documentType": "{{object:documenttype-regulier-v4-welstandsadvies.id}}"
+							}
+						]
+					}
+				]
 			}
 		}
 	]

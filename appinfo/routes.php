@@ -151,6 +151,8 @@ $extra = [
     // A party's open pipelinq tickets by master entity (organisation-open-tickets).
     ['name' => 'partyTicket#openTicketCounts', 'url' => '/api/parties/open-tickets',      'verb' => 'GET'],
     ['name' => 'partyTicket#openTickets',      'url' => '/api/parties/open-tickets/list', 'verb' => 'GET'],
+    ['name' => 'personReachability#show',      'url' => '/api/people/{id}/reachability',  'verb' => 'GET'],
+    ['name' => 'personLookup#lookup',          'url' => '/api/people/lookup',             'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#contactMoments',      'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#logContactMoment',    'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#fileContactMoment',   'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}/file',   'verb' => 'POST'],
@@ -749,6 +751,9 @@ $extra = [
         // ── Consultation (advice requests and responses) ─────────────────
     ['name' => 'consultation#index',               'url' => '/api/consultations/case/{caseId}',                'verb' => 'GET'],
     ['name' => 'consultation#create',              'url' => '/api/consultations',                              'verb' => 'POST'],
+    // Before {id}, so the router does not read these words as an id.
+    ['name' => 'consultationReport#dueSoon',             'url' => '/api/consultations/due-soon',                     'verb' => 'GET'],
+    ['name' => 'consultationReport#bottlenecks',         'url' => '/api/consultations/bottlenecks',                  'verb' => 'GET'],
     ['name' => 'consultation#show',                'url' => '/api/consultations/{id}',                         'verb' => 'GET'],
     ['name' => 'consultation#delete',              'url' => '/api/consultations/{id}',                         'verb' => 'DELETE'],
     ['name' => 'consultation#updateStatus',        'url' => '/api/consultations/{id}/status',                  'verb' => 'POST'],

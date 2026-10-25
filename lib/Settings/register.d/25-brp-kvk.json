@@ -12,7 +12,7 @@
             "brpPerson": {
                 "slug": "brpPerson",
                 "icon": "AccountOutline",
-                "version": "1.6.0",
+                "version": "1.7.0",
                 "x-schema-org": "schema:Person",
                 "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
                 "x-openregister-registry": { "registry": "brp", "identity": "citizenServiceNumber", "owned": ["name", "birth", "residence", "indicatieGeheim"] },
@@ -29,7 +29,9 @@
                                 {
                                     "group": "dossiq-sensitive"
                                 }
-                            ]
+                            ],
+                            "audit": true,
+                            "reveal": "explicit"
                         },
                         "type": "string",
                         "pattern": "^[0-9]{9}$",

@@ -7,13 +7,13 @@
 	"components": {
 		"objects": [
 			{
-				"@self": { "register": "dossiq", "schema": "caseType", "slug": "building-permit-type", "version": "1.2.0" },
+				"@self": { "register": "dossiq", "schema": "caseType", "slug": "building-permit-type", "version": "1.2.1" },
 				"title": { "nl": "Bouwaanvraag", "en": "Building Permit" },
 				"colour": "teal",
 				"icon": "OfficeBuildingOutline",
 				"category": "Permits",
 				"identifier": "building-permit",
-				"description": { "nl": "Aanvragen voor een omgevingsvergunning om te bouwen (Baugenehmigung): nieuwbouw, uitbreidingen en verbouwingen.", "en": "Environmental building permits (Baugenehmigung): construction, extensions and alterations." },
+				"description": { "nl": "Aanvragen voor een omgevingsvergunning om te bouwen: nieuwbouw, uitbreidingen en verbouwingen.", "en": "Environmental building permits (Baugenehmigung): construction, extensions and alterations." },
 				"purpose": { "nl": "Aanvragen behandelen voor nieuwbouw, uitbreidingen en verbouwingen in de fysieke leefomgeving.", "en": "Handling applications for construction, extensions and alterations in the physical environment." },
 				"trigger": { "nl": "Een inwoner of bedrijf dient een aanvraag in.", "en": "Application submitted by a citizen or business." },
 				"subject": { "nl": "Bouwaanvraag", "en": "Building permit" },
@@ -33,13 +33,13 @@
 			{ "@self": { "register": "dossiq", "schema": "statusType", "version": "1.1.0", "slug": "bp-completed" }, "name": { "nl": "Afgehandeld", "en": "Completed" }, "description": { "nl": "De zaak is afgehandeld en gearchiveerd.", "en": "Case completed and archived." }, "caseType": "@ref:caseType:building-permit-type", "order": 4, "isFinal": true, "colour": "green", "hiddenInLists": true, "publicLabel": { "nl": "Afgehandeld", "en": "Completed" }, "publicDescription": { "nl": "Uw aanvraag is afgehandeld.", "en": "Your application has been handled." } },
 
 			{
-				"@self": { "register": "dossiq", "schema": "caseType", "slug": "grant-application-type", "version": "1.2.0" },
+				"@self": { "register": "dossiq", "schema": "caseType", "slug": "grant-application-type", "version": "1.2.1" },
 				"title": { "nl": "Subsidieverzoek", "en": "Grant application" },
 				"colour": "teal",
 				"icon": "CashMultiple",
 				"category": "Grants",
 				"identifier": "grant-application",
-				"description": { "nl": "Aanvragen voor subsidies van de overheid (Förderantrag).", "en": "Applications for public grants and subsidies (Förderantrag)." },
+				"description": { "nl": "Aanvragen voor subsidies van de overheid.", "en": "Applications for public grants and subsidies (Förderantrag)." },
 				"purpose": { "nl": "Aanvragen voor subsidies van de overheid behandelen.", "en": "Handling applications for public grants and subsidies." },
 				"trigger": { "nl": "Een inwoner of organisatie dient een subsidieaanvraag in.", "en": "Grant application submitted by a citizen or organisation." },
 				"subject": { "nl": "Subsidieverzoek", "en": "Grant application" },
@@ -60,13 +60,13 @@
 			{ "@self": { "register": "dossiq", "schema": "statusType", "version": "1.1.0", "slug": "grant-completed" }, "name": { "nl": "Afgehandeld", "en": "Completed" }, "description": { "nl": "De zaak is afgehandeld en gearchiveerd.", "en": "Case completed and archived." }, "caseType": "@ref:caseType:grant-application-type", "order": 5, "isFinal": true, "colour": "green", "hiddenInLists": true, "publicLabel": { "nl": "Afgehandeld", "en": "Completed" }, "publicDescription": { "nl": "Uw aanvraag is afgehandeld.", "en": "Your application has been handled." } },
 
 			{
-				"@self": { "register": "dossiq", "schema": "caseType", "slug": "citizen-complaint-type", "version": "1.2.0" },
+				"@self": { "register": "dossiq", "schema": "caseType", "slug": "citizen-complaint-type", "version": "1.2.1" },
 				"title": { "nl": "Klacht van een inwoner", "en": "Citizen Complaint" },
 				"colour": "orange",
 				"icon": "MessageAlertOutline",
 				"category": "Complaints",
 				"identifier": "citizen-complaint",
-				"description": { "nl": "Klachten van inwoners over de dienstverlening van de overheid (Bürgerbeschwerde).", "en": "Complaints submitted by citizens about public services (Bürgerbeschwerde)." },
+				"description": { "nl": "Klachten van inwoners over de dienstverlening van de overheid.", "en": "Complaints submitted by citizens about public services (Bürgerbeschwerde)." },
 				"purpose": { "nl": "Klachten van inwoners over de dienstverlening behandelen.", "en": "Handling complaints from citizens about public services." },
 				"trigger": { "nl": "Een inwoner dient een klacht in.", "en": "Complaint submitted by a citizen." },
 				"subject": { "nl": "Klacht van een inwoner", "en": "Citizen complaint" },
@@ -86,13 +86,13 @@
 			{ "@self": { "register": "dossiq", "schema": "statusType", "version": "1.1.0", "slug": "complaint-completed" }, "name": { "nl": "Afgehandeld", "en": "Completed" }, "description": { "nl": "De zaak is afgehandeld en gearchiveerd.", "en": "Case completed and archived." }, "caseType": "@ref:caseType:citizen-complaint-type", "order": 4, "isFinal": true, "colour": "green", "hiddenInLists": true, "publicLabel": { "nl": "Afgehandeld", "en": "Completed" }, "publicDescription": { "nl": "Uw klacht is afgehandeld.", "en": "Your complaint has been handled." } },
 
 			{
-				"@self": { "register": "dossiq", "schema": "caseType", "slug": "foi-request-type", "version": "1.2.0" },
+				"@self": { "register": "dossiq", "schema": "caseType", "slug": "foi-request-type", "version": "1.2.1" },
 				"title": { "nl": "Informatieverzoek", "en": "Freedom of Information Request" },
 				"colour": "red",
 				"icon": "FileDocumentOutline",
 				"category": "Information requests",
 				"identifier": "foi-request",
-				"description": { "nl": "Verzoeken om toegang tot overheidsinformatie (IFG, Informationsfreiheitsgesetz).", "en": "Requests for access to government information (IFG / Informationsfreiheitsgesetz)." },
+				"description": { "nl": "Verzoeken om toegang tot overheidsinformatie.", "en": "Requests for access to government information (IFG / Informationsfreiheitsgesetz)." },
 				"purpose": { "nl": "Verzoeken van inwoners en pers om toegang tot officiële documenten behandelen.", "en": "Handling citizen and press requests for access to official documents." },
 				"trigger": { "nl": "Een inwoner, journalist of organisatie dient een verzoek in.", "en": "Request submitted by a citizen, journalist or organisation." },
 				"subject": { "nl": "Toegang tot informatie", "en": "Access to information" },
