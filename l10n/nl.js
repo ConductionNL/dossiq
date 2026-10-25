@@ -3962,6 +3962,7 @@ OC.L10N.register(
         "If false, the layer is hidden from selection but kept for audit": "Staat dit op onwaar, dan is de laag niet te kiezen maar blijft hij voor de audit bewaard",
         "If no": "Bij nee",
         "If Part": "Als-deel",
+        "If the confirmation went outside dossiq, record it with Record receipt confirmed, under More.": "Ging de bevestiging buiten dossiq om, dan legt u hem vast met Ontvangst bevestigd vastleggen, onder Meer.",
         "If the objector disagrees with the decision, they can file an appeal (beroep) at the administrative court within 6 weeks.": "Als de bezwaarmaker het niet eens is met het besluit, kan binnen 6 weken beroep worden ingesteld bij de bestuursrechter.",
         "If true, only one base layer visible at a time": "Staat dit op waar, dan is er maar één ondergrond tegelijk zichtbaar",
         "If true, the map binds GetFeatureInfo (WMS) or feature popup (WFS) on click": "Staat dit op waar, dan koppelt de kaart GetFeatureInfo (WMS) of een objectvenster (WFS) aan een klik",

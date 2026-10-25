@@ -3962,6 +3962,7 @@ OC.L10N.register(
         "If false, the layer is hidden from selection but kept for audit": "If false, the layer is hidden from selection but kept for audit",
         "If no": "If no",
         "If Part": "If Part",
+        "If the confirmation went outside dossiq, record it with Record receipt confirmed, under More.": "If the confirmation went outside dossiq, record it with Record receipt confirmed, under More.",
         "If the objector disagrees with the decision, they can file an appeal (beroep) at the administrative court within 6 weeks.": "If the objector disagrees with the decision, they can file an appeal (beroep) at the administrative court within 6 weeks.",
         "If true, only one base layer visible at a time": "If true, only one base layer visible at a time",
         "If true, the map binds GetFeatureInfo (WMS) or feature popup (WFS) on click": "If true, the map binds GetFeatureInfo (WMS) or feature popup (WFS) on click",
