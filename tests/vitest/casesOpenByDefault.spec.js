@@ -29,4 +29,9 @@ describe('the Cases list that counts open cases', () => {
 	it('opens on the open cases, as a filter the reader can remove', () => {
 		expect(cases.defaultFilters).toMatchObject({ isFinalStatus: false })
 	})
+
+	it('opens on the reader\'s teams, as the line says ("in uw teams")', () => {
+		expect(cases.countText).toMatch(/in your teams/)
+		expect(cases.defaultFilters.assignedGroup).toBe('@myTeam')
+	})
 })
