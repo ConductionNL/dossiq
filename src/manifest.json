@@ -12559,9 +12559,14 @@
 							"rowSelection": true,
 							"editable": true,
 							"sort": {
-								"field": "category",
+								"field": "order",
 								"dir": "asc"
 							},
+							"reorder": {
+								"field": "order"
+							},
+							"sortable": true,
+							"filterable": true,
 							"limit": 100,
 							"columns": [
 								{
