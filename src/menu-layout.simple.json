@@ -256,7 +256,8 @@
 										"id": "claim",
 										"label": "Pick up",
 										"type": "handler",
-										"handler": "claimCase"
+										"handler": "claimCase",
+										"variant": "outlined"
 									},
 									"chevron": false,
 									"rowRoute": "CaseDetail",
