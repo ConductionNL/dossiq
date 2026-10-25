@@ -1694,8 +1694,8 @@
 				"confidentiality": "openbaar",
 				"title": "Subsidie buurtfeest Oosthaven",
 				"description": "Buurtvereniging Oost vraagt een bijdrage voor het buurtfeest op het Oosthavenplein in september.",
-				"assignee": "{{cast:lars.uid}}",
-				"assignedGroup": "zuiddrecht-medewerkers",
+				"assignee": "{{cast:mehmet.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
 				"startDate": "{{date:-40}}",
 				"receivedAt": "{{datetime:-40 10:30}}",
 				"currentStatusEnteredAt": "{{datetime:-3 09:00}}",
@@ -1882,7 +1882,7 @@
 				"durationSeconds": 300,
 				"identificationMethod": "identificatievragen",
 				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
-				"kccEmployeeId": "{{cast:lars.uid}}",
+				"kccEmployeeId": "{{cast:mehmet.uid}}",
 				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
 				"contact": "{{object:bedrijf-buurtoost.id}}",
 				"nature": "new_request",
@@ -2624,7 +2624,7 @@
 				"overrideJustification": "Eerste overtreding, eigenaar werkt mee en herstelt binnen twee weken",
 				"overrideBy": "{{cast:anouk.uid}}",
 				"overrideAuthority": "manager",
-				"recommendedBy": "{{cast:lars.uid}}"
+				"recommendedBy": "{{cast:jamal.uid}}"
 			}
 		},
 		{
@@ -6251,8 +6251,8 @@
 				"status": "{{lookup:status}}",
 				"intakeChannel": "website",
 				"confidentiality": "intern",
-				"assignee": "{{cast:lars.uid}}",
-				"assignedGroup": "zuiddrecht-medewerkers",
+				"assignee": "{{cast:mehmet.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
 				"startDate": "{{date:-20}}",
 				"deadline": "{{date:36}}",
 				"endDate": "{{date:-6}}",
