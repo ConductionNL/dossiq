@@ -1571,6 +1571,7 @@
         "Case volume, status and performance across the team": "Case volume, status and performance across the team",
         "case {case.identifier}": "case {case.identifier}",
         "Case {identifier}": "Case {identifier}",
+        "Case {identifier} · {caseTypeTitle}": "Case {identifier} · {caseTypeTitle}",
         "Case, scheme & handler": "Case, scheme & handler",
         "Case-confidential": "Case-confidential",
         "caseId is required": "caseId is required",

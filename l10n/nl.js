@@ -1500,6 +1500,7 @@ OC.L10N.register(
         "Case volume, status and performance across the team": "Zaakvolume, status en prestaties van het team",
         "case {case.identifier}": "zaak {case.identifier}",
         "Case {identifier}": "Zaak {identifier}",
+        "Case {identifier} · {caseTypeTitle}": "Zaak {identifier} · {caseTypeTitle}",
         "Case, scheme & handler": "Zaak, regeling en behandelaar",
         "Case-confidential": "Zaakvertrouwelijk",
         "caseId is required": "caseId is verplicht",
