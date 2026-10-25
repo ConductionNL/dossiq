@@ -2285,6 +2285,10 @@
 					}
 				}
 			},
+			"verbatimFields": [
+				"subject",
+				"body"
+			],
 			"data": {
 				"caseType": "{{lookup:caseType}}",
 				"name": "Ontvangstbevestiging Woo",
@@ -2310,6 +2314,10 @@
 					}
 				}
 			},
+			"verbatimFields": [
+				"subject",
+				"body"
+			],
 			"data": {
 				"caseType": "{{lookup:caseType}}",
 				"name": "Ontvangstbevestiging Woo",
