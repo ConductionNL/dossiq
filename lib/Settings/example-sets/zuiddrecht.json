@@ -4094,6 +4094,7 @@
 			},
 			"data": {
 				"caseRef": "{{object:kapvergunning-molenweg.id}}",
+				"location": "Molenweg 4",
 				"inspectorRef": "{{cast:pieter.uid}}",
 				"checklistTemplateRef": "{{lookup:template}}",
 				"scheduledAt": "{{datetime:0 09:30}}",
@@ -4109,6 +4110,7 @@
 			"schema": "fieldInspection",
 			"data": {
 				"caseRef": "{{object:parkeren-henk.id}}",
+				"location": "Kerkplein 7",
 				"inspectorRef": "{{cast:pieter.uid}}",
 				"checklistTemplateRef": "{{object:inspectie-checklist-brandveiligheid.id}}",
 				"scheduledAt": "{{datetime:0 10:45}}",
@@ -4122,6 +4124,7 @@
 			"schema": "fieldInspection",
 			"data": {
 				"caseRef": "{{object:terras-slagerij.id}}",
+				"location": "Dorpsstraat 39",
 				"inspectorRef": "{{cast:pieter.uid}}",
 				"checklistTemplateRef": "{{object:inspectie-checklist-brandveiligheid.id}}",
 				"scheduledAt": "{{datetime:0 13:15}}",
@@ -4134,6 +4137,7 @@
 			"schema": "fieldInspection",
 			"data": {
 				"caseRef": "{{object:melding-fatima.id}}",
+				"location": "Havenstraat, speeltuin",
 				"inspectorRef": "{{cast:pieter.uid}}",
 				"scheduledAt": "{{datetime:0 15:00}}",
 				"status": "planned"
