@@ -80,7 +80,9 @@ describe('the Systeem cards in the board\'s words', () => {
 
 	it('labels the mailbox fields as the board, with the explanation behind Geavanceerd', () => {
 		const fields = byKey(sharedMailboxFields(t))
-		expect(fields.email_imap_folder.label).toBe('Map')
+		// Handed over as its key: the section translates it once (Folder, Map), not twice (Kaart).
+		expect(fields.email_imap_folder.label).toBe('Folder')
+		expect(t('dossiq', fields.email_imap_folder.label)).toBe('Map')
 		expect(fields.email_poll_interval.label).toBe('Ophalen elke (seconden)')
 		expect(fields.email_poll_batch_size.label).toBe('Berichten per keer')
 		expect(fields.email_fallback_case_type.label).toBe('Zaaktype voor mail die niemand oppakt')
