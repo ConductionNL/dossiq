@@ -1118,6 +1118,7 @@
 				"statusHistory"
 			],
 			"data": {
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6719,51.8131]}",
 				"caseType": "{{lookup:caseType}}",
 				"status": "{{lookup:status}}",
 				"requester": "{{object:bedrijf-buurtoost.id}}",

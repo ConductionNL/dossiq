@@ -32,7 +32,7 @@ class ZuiddrechtCasePlacesTest extends TestCase {
 
 	/**
 	 * Every case with a place is a GeoJSON point inside Zuiddrecht, and the
-	 * board's Molenweg, binnenstad and Lindelaan cases have one.
+	 * board's Molenweg, binnenstad, Lindelaan and Oosthaven cases have one.
 	 *
 	 * @return void
 	 */
@@ -51,7 +51,7 @@ class ZuiddrechtCasePlacesTest extends TestCase {
 			$placed[] = $object['key'];
 		}
 
-		foreach (['kapvergunning-molenweg', 'woo-parkeervergunningen-binnenstad', 'melding-afval-lindelaan'] as $key) {
+		foreach (['kapvergunning-molenweg', 'woo-parkeervergunningen-binnenstad', 'melding-afval-lindelaan', 'subsidie-buurtfeest-oosthaven'] as $key) {
 			$this->assertContains(needle: $key, haystack: $placed);
 		}
 	}//end testThePlacesAreInZuiddrecht()
