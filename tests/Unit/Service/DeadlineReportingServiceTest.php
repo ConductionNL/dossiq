@@ -155,6 +155,52 @@ class DeadlineReportingServiceTest extends TestCase {
 	}//end testQuarterlyReportCountsNoticesAndPenaltiesFromAccruals()
 
 	/**
+	 * Amounts that cannot be read stop the report rather than read as
+	 * "no notices, no penalties".
+	 *
+	 * @return void
+	 */
+	public function testQuarterlyReportStopsWhenTheAccrualsCannotBeRead(): void {
+		$objects = new class ($this->objects) {
+			/**
+			 * @param object $inner The store every other read goes to.
+			 */
+			public function __construct(private object $inner) {
+			}
+
+			/**
+			 * @param string       $name      The method.
+			 * @param array<mixed> $arguments The arguments.
+			 *
+			 * @return mixed
+			 */
+			public function __call(string $name, array $arguments): mixed {
+				$schema = (string)($arguments['schema'] ?? ($arguments[1] ?? ''));
+				if ($schema === 'penaltyPaymentCalculation') {
+					throw new \RuntimeException('register unreachable');
+				}
+
+				return $this->inner->$name(...$arguments);
+			}
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'termijn_instance_schema' => 'deadlineInstance',
+				'case_type_schema' => 'caseType',
+				'case_schema' => 'case',
+				'accruing_amount_schema' => 'penaltyPaymentCalculation',
+				default => '',
+			},
+		);
+
+		$this->expectException(\RuntimeException::class);
+		(new DeadlineReportingService(settingsService: $settings))->generateQuarterlyReport(period: '2026-Q2');
+	}//end testQuarterlyReportStopsWhenTheAccrualsCannotBeRead()
+
+	/**
 	 * A quarter without a decided term has no summary line.
 	 *
 	 * @return void

@@ -271,6 +271,8 @@ class DeadlineReportingService {
 	 *
 	 * @return array<string, array{notices: array<string, true>, cents: int}> Per instance id.
 	 *
+	 * @throws \Throwable When the amounts cannot be read; a report without them would read "no notices, no penalties".
+	 *
 	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	private function accrualsByInstance(): array {
@@ -281,11 +283,7 @@ class DeadlineReportingService {
 			return [];
 		}
 
-		try {
-			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
-		} catch (\Throwable $e) {
-			return [];
-		}
+		$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
 
 		$byInstance = [];
 		foreach ($rows as $row) {
