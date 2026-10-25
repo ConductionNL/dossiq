@@ -97,7 +97,11 @@ describe('processing time', () => {
 		const severity = w.content.columns.find((c) => c.key === 'severity')
 		expect(severity.enumLabels).toEqual({ overdue: 'Overdue', critical: 'Critical', warning: 'At risk', ok: 'On track' })
 		expect(Object.keys(severity.colorMap).sort()).toEqual([...severity.enum].sort())
-		expect(w.content.columns.find((c) => c.key === 'percentUsedDisplay').widget).toBe('progress')
+		// "Termijn gebruikt" is a figure at the column's end ("93"), as DqDoorlooptijd draws it.
+		const used = w.content.columns.find((c) => c.key === 'percentUsedDisplay')
+		expect(used.widget).toBeUndefined()
+		expect(used.format).toEqual({ style: 'number', decimals: 0 })
+		expect(used.class).toContain('cn-table-col--end')
 	})
 
 	it('selects one case type for the deadline list by configuration, never by a word in its title', () => {
