@@ -367,6 +367,19 @@ describe('the holdings as rows (DqZaakArchivering Bewaring)', () => {
 		expect(rows[0].find('.case-custody__meta').text()).toContain('doorgezet na het telefoongesprek')
 	})
 
+	it('leaves the holdings under the card title and heads the requests as the board does', async () => {
+		const wrapper = await mountChain([
+			{ id: 'h-1', organisationUnit: 'Team Woo en informatie', from: '2026-10-03T14:18:00+02:00', until: '', open: true, reason: '' },
+		])
+		const headings = wrapper.findAll('.case-custody__heading')
+		expect(headings[0].classes()).toContain('hidden-visually')
+		expect(headings[0].text()).toBe('Who has held this case')
+		expect(headings[1].classes()).not.toContain('hidden-visually')
+		expect(headings[1].text()).toBe('Request for this case')
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
+		expect(nl['Request for this case']).toBe('Verzoek om de zaak')
+	})
+
 	it('reads the backfill\'s reason through the translation', async () => {
 		const wrapper = await mountChain([
 			{ id: 'h-1', organisationUnit: 'behandelaars', from: '2026-10-12T09:00:00+02:00', until: '', open: true, reason: 'Opened by the custody backfill from the case as it stood' },

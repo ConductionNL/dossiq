@@ -7107,6 +7107,7 @@ OC.L10N.register(
         "Request envelope": "Aanvraagenvelop",
         "Request Extension": "Verlenging aanvragen",
         "Request for more information": "Aanvullingsverzoek",
+        "Request for this case": "Verzoek om de zaak",
         "request of the person concerned": "verzoek van de betrokkene",
         "Request received": "Aanvraag ontvangen",
         "Requested": "Aangevraagd",

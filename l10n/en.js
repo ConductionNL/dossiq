@@ -7107,6 +7107,7 @@ OC.L10N.register(
         "Request envelope": "Request envelope",
         "Request Extension": "Request Extension",
         "Request for more information": "Request for more information",
+        "Request for this case": "Request for this case",
         "request of the person concerned": "request of the person concerned",
         "Request received": "Request received",
         "Requested": "Requested",
