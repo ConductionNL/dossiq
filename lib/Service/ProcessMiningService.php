@@ -134,7 +134,7 @@ class ProcessMiningService {
 			}
 		}
 
-		$recordsByCase = $this->groupRecordsByCase(records: $records, caseIds: array_keys($casesById));
+		$recordsByCase = $this->groupRecordsByCase(records: $records, cases: $casesById);
 
 		$statusTypeIndex = $this->dataLoader->indexById(rows: $statusTypes);
 		$caseTypeIndex = $this->dataLoader->indexByIdAndSlug(rows: $caseTypes);
@@ -375,23 +375,31 @@ class ProcessMiningService {
 
 	/**
 	 * Group and chronologically sort statusRecords by their `case` field,
-	 * restricted to the given set of case ids.
+	 * restricted to the cases in scope; a case without records is read from
+	 * its own status history.
 	 *
-	 * @param array<int, array<string, mixed>> $records Raw statusRecord rows.
-	 * @param array<int, string> $caseIds Case ids in scope.
+	 * @param array<int, array<string, mixed>>    $records Raw statusRecord rows.
+	 * @param array<string, array<string, mixed>> $cases   The cases in scope, by id.
 	 *
 	 * @return array<string, array<int, array<string, mixed>>>
 	 */
-	private function groupRecordsByCase(array $records, array $caseIds): array {
-		$allowed = array_flip($caseIds);
+	private function groupRecordsByCase(array $records, array $cases): array {
 		$grouped = [];
 		foreach ($records as $record) {
 			$caseId = (string)($record['case'] ?? '');
-			if ($caseId === '' || isset($allowed[$caseId]) === false) {
+			if ($caseId === '' || isset($cases[$caseId]) === false) {
 				continue;
 			}
 
 			$grouped[$caseId][] = $record;
+		}
+
+		// A case without status records (example data, an imported case) is read from its own status history.
+		foreach (array_diff_key($cases, $grouped) as $caseId => $case) {
+			$fromHistory = $this->recordsFromHistory(caseId: (string)$caseId, case: $case);
+			if ($fromHistory !== []) {
+				$grouped[$caseId] = $fromHistory;
+			}
 		}
 
 		foreach ($grouped as $caseId => $rows) {
@@ -412,6 +420,34 @@ class ProcessMiningService {
 
 		return $grouped;
 	}//end groupRecordsByCase()
+
+	/**
+	 * Status records read off a case's own status history: one per entry, at the moment it entered that status.
+	 *
+	 * @param string               $caseId The case id.
+	 * @param array<string, mixed> $case   The case; `statusHistory` as a list or as JSON text.
+	 *
+	 * @return array<int, array{case: string, statusType: string, createdAt: string}>
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	private function recordsFromHistory(string $caseId, array $case): array {
+		$history = ($case['statusHistory'] ?? []);
+		if (is_string($history) === true) {
+			$history = json_decode($history, true);
+		}
+
+		$records = [];
+		foreach ((array)$history as $entry) {
+			$status = (string)($entry['status'] ?? '');
+			$moment = (string)($entry['enteredAt'] ?? '');
+			if (is_array($entry) === true && $status !== '' && $moment !== '') {
+				$records[] = ['case' => $caseId, 'statusType' => $status, 'createdAt' => $moment];
+			}
+		}
+
+		return $records;
+	}//end recordsFromHistory()
 
 	/**
 	 * Extract a record's creation timestamp — either the flattened

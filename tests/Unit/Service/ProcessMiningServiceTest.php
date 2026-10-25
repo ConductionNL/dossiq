@@ -366,6 +366,33 @@ class ProcessMiningServiceTest extends TestCase {
 	}//end testGetReportOrchestratesFullPayload()
 
 	/**
+	 * A case without status records (example data, an imported case) is read from its own status history: each
+	 * entry is a moment the case entered that status, so its phases count too.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	public function testACaseWithoutStatusRecordsIsReadFromItsStatusHistory(): void {
+		$this->objects->seed('caseType', ['id' => 'ct-1', 'title' => 'Woo-verzoek']);
+		$this->objects->seed('statusType', ['id' => 'st-received', 'name' => 'Ontvangen']);
+		$this->objects->seed('statusType', ['id' => 'st-handling', 'name' => 'In behandeling']);
+		$this->objects->seed('case', [
+			'id'            => 'case-1',
+			'caseType'      => 'ct-1',
+			'startDate'     => '2026-06-01',
+			'endDate'       => '2026-06-10',
+			'statusHistory' => '[{"status":"st-received","enteredAt":"2026-06-01T09:00:00+02:00"},{"status":"st-handling","enteredAt":"2026-06-03T09:00:00+02:00"}]',
+		]);
+
+		$report = $this->service->getReport(['from' => '2026-01-01', 'to' => '2026-12-31']);
+
+		self::assertNotEmpty($report['caseTypes'][0]['dwellTime']);
+		$names = array_column($report['caseTypes'][0]['dwellTime'], 'statusName');
+		self::assertContains('Ontvangen', $names);
+	}//end testACaseWithoutStatusRecordsIsReadFromItsStatusHistory()
+
+	/**
 	 * `caseType` filter scopes the loaded case set — an unrelated case type
 	 * must not appear in the response.
 	 *
