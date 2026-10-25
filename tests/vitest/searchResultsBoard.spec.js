@@ -50,4 +50,14 @@ describe('DqZoekresultaten', () => {
 		expect(source.kinds.find((kind) => kind.id === 'cases').linkedUser).toBe(true)
 		expect(source.columnWidths).toEqual({ title: '250px', kindText: '120px', linked: '150px', status: '150px' })
 	})
+
+	it('colours the status pill as the case list does (r29: In behandeling purple, Ontvangen blue, Afgehandeld green)', () => {
+		expect(page.config.sourceConfig.statusColorMap).toMatchObject({
+			'In behandeling': 'purple',
+			Ontvangen: 'info',
+			Afgehandeld: 'success',
+			Besluit: 'teal',
+			'Wacht op inwoner': 'warning',
+		})
+	})
 })
