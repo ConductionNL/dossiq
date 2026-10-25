@@ -2247,6 +2247,57 @@
 			}
 		},
 		{
+			"key": "mailsjabloon-ontvangst-woo-v1",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				}
+			},
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"name": "Ontvangstbevestiging Woo",
+				"subject": "Uw Woo-verzoek {{zaakNummer}} is ontvangen",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben uw Woo-verzoek ontvangen. Het zaaknummer is {{zaakNummer}}.\n\nMet vriendelijke groet,\n\nTeam Woo en informatie",
+				"messageCategory": "case-update",
+				"version": 1,
+				"isActive": false,
+				"moment": "case-received",
+				"channel": "mailbox-then-email"
+			}
+		},
+		{
+			"key": "mailsjabloon-ontvangst-woo-v2",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				}
+			},
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"name": "Ontvangstbevestiging Woo",
+				"subject": "Uw Woo-verzoek {{zaakNummer}} is ontvangen",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben uw Woo-verzoek op {{startDate}} ontvangen. Het zaaknummer is {{zaakNummer}}; noem dat nummer als u ons schrijft.\n\nWij beslissen uiterlijk op {{deadline}}. Hebben wij meer tijd nodig, dan hoort u dat voor die datum.\n\nMet vriendelijke groet,\n\nTeam Woo en informatie\nGemeente Zuiddrecht",
+				"messageCategory": "case-update",
+				"version": 2,
+				"isActive": true,
+				"previousVersion": "{{object:mailsjabloon-ontvangst-woo-v1.id}}",
+				"moment": "case-received",
+				"channel": "mailbox-then-email"
+			}
+		},
+		{
 			"key": "woo-zaaksysteem",
 			"register": "dossiq",
 			"schema": "case",
