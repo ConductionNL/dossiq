@@ -70,6 +70,7 @@
         "%s was refused. This act stays closed while that stands.": "%s was refused. This act stays closed while that stands.",
         "%s was withdrawn without an answer. Ask for it again in decidiq.": "%s was withdrawn without an answer. Ask for it again in decidiq.",
         "%s, deadline today": "%s, deadline today",
+        "%s, message box": "%s, message box",
         "'Valid from' date must be set": "'Valid from' date must be set",
         "(4 weeks from receipt, extendable by 2 weeks)": "(4 weeks from receipt, extendable by 2 weeks)",
         "(administrators only)": "(administrators only)",
