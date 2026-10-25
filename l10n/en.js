@@ -667,6 +667,7 @@ OC.L10N.register(
         "All open cases": "All open cases",
         "All phases": "All phases",
         "All requested documents become public": "All requested documents become public",
+        "All staff": "All staff",
         "All tasks": "All tasks",
         "All tasks of this case in Tasks": "All tasks of this case in Tasks",
         "All time": "All time",

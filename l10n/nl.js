@@ -667,6 +667,7 @@ OC.L10N.register(
         "All open cases": "Alle lopende zaken",
         "All phases": "Alle fasen",
         "All requested documents become public": "Alle gevraagde documenten worden openbaar",
+        "All staff": "Alle",
         "All tasks": "Alle taken",
         "All tasks of this case in Tasks": "Alle taken van deze zaak in Taken",
         "All time": "Alle tijd",
