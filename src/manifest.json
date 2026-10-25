@@ -6099,7 +6099,6 @@
 									"currentHint": "Now with {team}. The new team picks its own handler.",
 									"currentAs": "team",
 									"hint": "The new team picks its own handler.",
-									"allowTyped": true,
 									"field": "team"
 								},
 								"note": {

@@ -38,6 +38,13 @@ function actionsWithId(node, id, found = []) {
 }
 
 describe('the Hand to another team dialog against board DqOverdragen', () => {
+	it('offers only teams that exist, never what was typed', () => {
+		for (const action of actionsWithId(manifest, 'case-hand-over')) {
+			expect(action.props.config.assignee.allowTyped).toBeUndefined()
+			expect(action.props.config.assignee.kinds).toEqual(['group'])
+		}
+	})
+
 	it('names the case number in the eyebrow', () => {
 		const found = actionsWithId(manifest, 'case-hand-over')
 		expect(found).toHaveLength(1)
