@@ -32,6 +32,14 @@ describe('the Opschorten form', () => {
 		expect(days.preview).toBeUndefined()
 	})
 
+	it('labels the days above the field and draws no history line under the reason, as the board draws them', () => {
+		const inputs = actForm({ kind: 'gesture', id: 'suspend' }).inputs
+		expect(inputs.find((input) => input.field === 'days').labelOutside).toBe(true)
+		expect(inputs.find((input) => input.field === 'reason').note).toBe('')
+		const abort = actForm({ kind: 'gesture', id: 'abort' }).inputs.find((input) => input.field === 'reason')
+		expect(abort.note).toBe('Goes into the history of the case.')
+	})
+
 	it('pairs the reason and the days only on suspend', () => {
 		expect(actForm({ kind: 'gesture', id: 'suspend' }).columns).toBe(2)
 		expect(actForm({ kind: 'state', id: 'hold' }).columns).toBe(1)
