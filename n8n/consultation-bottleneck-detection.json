@@ -5,7 +5,10 @@
       "parameters": {
         "rule": {
           "interval": [
-            { "field": "hours", "hoursInterval": 24 }
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
           ]
         }
       },
@@ -13,54 +16,68 @@
       "name": "Daily at 08:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [200, 300]
+      "position": [
+        200,
+        300
+      ]
     },
     {
       "parameters": {
-        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/consultations/analytics",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/consultations/bottlenecks",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "OCS-APIRequest", "value": "true" },
-            { "name": "Accept", "value": "application/json" }
-          ]
-        },
-        "sendQuery": true,
-        "queryParameters": {
-          "parameters": [
-            { "name": "groupBy", "value": "adviesinstantieId" },
-            { "name": "window", "value": "P30D" }
+            {
+              "name": "OCS-APIRequest",
+              "value": "true"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
           ]
         }
       },
       "id": "fetch-analytics",
-      "name": "GET /consultations/analytics (last 30d)",
+      "name": "GET /consultations/bottlenecks (last 30d)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [420, 300]
+      "position": [
+        420,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Bottleneck rule (spec): coordinator MUST be alerted when an advisory body's\n// 30-day overdue rate exceeds 20% (#bottleneck-detection scenario).\n//\n// Analytics payload contract: {\n//   bodies: [\n//     { adviesinstantieId, naam, totalLast30Days, overdueLast30Days,\n//       avgDoorlooptijdDagen, avgDoorlooptijdDagenPrev30 }\n//   ]\n// }\nconst payload = $input.first().json || {};\nconst bodies = payload.bodies || [];\nconst alerts = [];\nfor (const b of bodies) {\n  const total = Number(b.totalLast30Days || 0);\n  if (total === 0) continue;\n  const overdueRate = Number(b.overdueLast30Days || 0) / total;\n  if (overdueRate > 0.20) {\n    alerts.push({\n      adviesinstantieId: b.adviesinstantieId,\n      naam: b.naam,\n      overdueCount: b.overdueLast30Days,\n      overdueRate: Math.round(overdueRate * 100),\n      avgDoorlooptijd: b.avgDoorlooptijdDagen,\n      avgDoorlooptijdVorig: b.avgDoorlooptijdDagenPrev30,\n      message: `${b.naam}: ${b.overdueLast30Days} verlopen adviezen, gemiddelde doorlooptijd ${b.avgDoorlooptijdDagen} dagen (was ${b.avgDoorlooptijdDagenPrev30}).`\n    });\n  }\n}\nreturn alerts.length ? alerts.map(a => ({ json: a })) : [{ json: { _empty: true } }];"
+        "jsCode": "// Bottleneck rule: alert the coordinators about every advisory body whose\n// late share over the last 30 days passes the threshold set in\n// Adviseringsbeheer. dossiq computes the report and the flag\n// (GET /api/consultations/bottlenecks: { threshold, windowDays, bodies:\n// [{ adviceAuthority, total, late, lateShare, flagged }] }).\nconst payload = $input.first().json || {};\nconst alerts = (payload.bodies || []).filter((b) => b.flagged === true).map((b) => ({\n  adviesinstantieId: b.adviceAuthority,\n  naam: b.adviceAuthority,\n  overdueCount: b.late,\n  overdueRate: Math.round(Number(b.lateShare || 0) * 100),\n  threshold: Math.round(Number(payload.threshold || 0) * 100),\n  message: `${b.adviceAuthority}: ${b.late} van ${b.total} adviezen te laat in ${payload.windowDays} dagen (${Math.round(Number(b.lateShare || 0) * 100)}%, drempel ${Math.round(Number(payload.threshold || 0) * 100)}%).`\n}));\nreturn alerts.length ? alerts.map(a => ({ json: a })) : [{ json: { _empty: true } }];"
       },
       "id": "rule",
-      "name": "Apply >20% rule",
+      "name": "Keep the flagged bodies",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [640, 300]
+      "position": [
+        640,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "has-alerts",
               "leftValue": "={{ $json._empty }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "notEquals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
             }
           ],
           "combinator": "and"
@@ -70,7 +87,10 @@
       "name": "Any bottlenecks?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [860, 300]
+      "position": [
+        860,
+        300
+      ]
     },
     {
       "parameters": {
@@ -81,35 +101,74 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "OCS-APIRequest", "value": "true" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "OCS-APIRequest",
+              "value": "true"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"recipientGroup\": \"consultation-coordinators\",\n  \"template\": \"consultation-bottleneck-alert\",\n  \"priority\": \"warning\",\n  \"context\": {\n    \"adviesinstantieId\": $json.adviesinstantieId,\n    \"naam\": $json.naam,\n    \"overdueCount\": $json.overdueCount,\n    \"overdueRatePct\": $json.overdueRate,\n    \"avgDoorlooptijd\": $json.avgDoorlooptijd,\n    \"avgDoorlooptijdVorig\": $json.avgDoorlooptijdVorig,\n    \"message\": $json.message\n  }\n}"
+        "jsonBody": "={\n  \"recipientGroup\": \"consultation-coordinators\",\n  \"template\": \"consultation-bottleneck-alert\",\n  \"priority\": \"warning\",\n  \"context\": {\n    \"adviesinstantieId\": $json.adviesinstantieId,\n    \"naam\": $json.naam,\n    \"overdueCount\": $json.overdueCount,\n    \"overdueRatePct\": $json.overdueRate,\n    \"thresholdPct\": $json.threshold,\n    \"message\": $json.message\n  }\n}"
       },
       "id": "alert",
       "name": "Notify coordinator group",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1080, 220]
+      "position": [
+        1080,
+        220
+      ]
     }
   ],
   "connections": {
     "Daily at 08:00": {
-      "main": [[{ "node": "GET /consultations/analytics (last 30d)", "type": "main", "index": 0 }]]
-    },
-    "GET /consultations/analytics (last 30d)": {
-      "main": [[{ "node": "Apply >20% rule", "type": "main", "index": 0 }]]
-    },
-    "Apply >20% rule": {
-      "main": [[{ "node": "Any bottlenecks?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "GET /consultations/bottlenecks (last 30d)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Any bottlenecks?": {
       "main": [
-        [{ "node": "Notify coordinator group", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "Notify coordinator group",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
+      ]
+    },
+    "GET /consultations/bottlenecks (last 30d)": {
+      "main": [
+        [
+          {
+            "node": "Keep the flagged bodies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep the flagged bodies": {
+      "main": [
+        [
+          {
+            "node": "Any bottlenecks?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
