@@ -62,32 +62,50 @@
 		{
 			"group": "zuiddrecht-fysiek-domein",
 			"displayName": "Fysiek domein",
-			"members": []
+			"members": [],
+			"subAdmins": [
+				"pieter"
+			]
 		},
 		{
 			"group": "zuiddrecht-toezicht-en-handhaving",
 			"displayName": "Toezicht en handhaving",
-			"members": []
+			"members": [],
+			"subAdmins": [
+				"pieter"
+			]
 		},
 		{
 			"group": "zuiddrecht-buitenruimte",
 			"displayName": "Buitenruimte",
-			"members": []
+			"members": [],
+			"subAdmins": [
+				"pieter"
+			]
 		},
 		{
 			"group": "zuiddrecht-jeugdteam",
 			"displayName": "Jeugdteam",
-			"members": []
+			"members": [],
+			"subAdmins": [
+				"pieter"
+			]
 		},
 		{
 			"group": "zuiddrecht-werk-en-inkomen",
 			"displayName": "Werk en inkomen",
-			"members": []
+			"members": [],
+			"subAdmins": [
+				"pieter"
+			]
 		},
 		{
 			"group": "zuiddrecht-bedrijfsvoering",
 			"displayName": "Bedrijfsvoering",
-			"members": []
+			"members": [],
+			"subAdmins": [
+				"pieter"
+			]
 		}
 	],
 	"serviceAccounts": [
