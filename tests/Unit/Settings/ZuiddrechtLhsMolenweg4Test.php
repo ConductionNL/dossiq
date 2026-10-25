@@ -46,7 +46,7 @@ class ZuiddrechtLhsMolenweg4Test extends TestCase {
 
 		$this->assertSame(expected: '{{object:kapvergunning-molenweg.id}}', actual: $advice['case']);
 		$this->assertSame(expected: '{{cast:lars.uid}}', actual: $advice['recommendedBy']);
-		$this->assertSame(expected: [1, 'ernstig', 'last_under_penaltypayment'], actual: [$advice['matrixVersion'], $advice['severity'], $advice['recommendedIntervention']]);
+		$this->assertSame(expected: [2, 'ernstig', 'last_under_penaltypayment'], actual: [$advice['matrixVersion'], $advice['severity'], $advice['recommendedIntervention']]);
 	}//end testMolenweg4HasItsRecommendation()
 
 	/**
