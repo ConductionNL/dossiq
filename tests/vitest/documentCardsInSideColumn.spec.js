@@ -33,3 +33,12 @@ describe('the cards about the selected document', () => {
 		expect(checked.formatterOptions).toEqual({ time: true })
 	})
 })
+
+describe('the bulk bar over the ticked documents (DqDocumentenBeheer)', () => {
+	const props = panels.caseWidget('case-files').props
+
+	it('copies the ticked documents to another case, first, as the board draws it', () => {
+		expect(props.bulkActions[0]).toMatchObject({ id: 'bulk-copy-to-case', target: 'BulkDocumentActionDialog', props: { mode: 'copy-to-case' } })
+		expect(props.bulkActions.map((action) => action.id)).toEqual(expect.arrayContaining(['bulk-confidentiality', 'bulk-mark-final']))
+	})
+})
