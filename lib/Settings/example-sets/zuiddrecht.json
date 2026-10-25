@@ -501,6 +501,295 @@
 			}
 		},
 		{
+			"key": "bedrijf-vandam",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:vandam.kvk}}",
+				"tradeName": "{{cast:vandam.name}}",
+				"legalForm": "{{cast:vandam.legalForm}}",
+				"address": {
+					"streetName": "{{cast:vandam.address.street}}",
+					"houseNumber": "{{cast:vandam.address.number}}",
+					"postcode": "{{cast:vandam.address.postcode}}",
+					"place": "{{cast:vandam.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-bakkerijdemolen",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:bakkerijdemolen.kvk}}",
+				"tradeName": "{{cast:bakkerijdemolen.name}}",
+				"legalForm": "{{cast:bakkerijdemolen.legalForm}}",
+				"address": {
+					"streetName": "{{cast:bakkerijdemolen.address.street}}",
+					"houseNumber": "{{cast:bakkerijdemolen.address.number}}",
+					"postcode": "{{cast:bakkerijdemolen.address.postcode}}",
+					"place": "{{cast:bakkerijdemolen.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-dagblad",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:dagblad.kvk}}",
+				"tradeName": "{{cast:dagblad.name}}",
+				"legalForm": "{{cast:dagblad.legalForm}}",
+				"address": {
+					"streetName": "{{cast:dagblad.address.street}}",
+					"houseNumber": "{{cast:dagblad.address.number}}",
+					"postcode": "{{cast:dagblad.address.postcode}}",
+					"place": "{{cast:dagblad.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-lumeninfra",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:lumeninfra.kvk}}",
+				"tradeName": "{{cast:lumeninfra.name}}",
+				"legalForm": "{{cast:lumeninfra.legalForm}}",
+				"address": {
+					"streetName": "{{cast:lumeninfra.address.street}}",
+					"houseNumber": "{{cast:lumeninfra.address.number}}",
+					"postcode": "{{cast:lumeninfra.address.postcode}}",
+					"place": "{{cast:lumeninfra.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-groenenco",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:groenenco.kvk}}",
+				"tradeName": "{{cast:groenenco.name}}",
+				"legalForm": "{{cast:groenenco.legalForm}}",
+				"address": {
+					"streetName": "{{cast:groenenco.address.street}}",
+					"houseNumber": "{{cast:groenenco.address.number}}",
+					"postcode": "{{cast:groenenco.address.postcode}}",
+					"place": "{{cast:groenenco.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-sportclub",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:sportclub.kvk}}",
+				"tradeName": "{{cast:sportclub.name}}",
+				"legalForm": "{{cast:sportclub.legalForm}}",
+				"address": {
+					"streetName": "{{cast:sportclub.address.street}}",
+					"houseNumber": "{{cast:sportclub.address.number}}",
+					"postcode": "{{cast:sportclub.address.postcode}}",
+					"place": "{{cast:sportclub.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-vvekerkplein",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:vvekerkplein.kvk}}",
+				"tradeName": "{{cast:vvekerkplein.name}}",
+				"legalForm": "{{cast:vvekerkplein.legalForm}}",
+				"address": {
+					"streetName": "{{cast:vvekerkplein.address.street}}",
+					"houseNumber": "{{cast:vvekerkplein.address.number}}",
+					"postcode": "{{cast:vvekerkplein.address.postcode}}",
+					"place": "{{cast:vvekerkplein.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-harmonie",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:harmonie.kvk}}",
+				"tradeName": "{{cast:harmonie.name}}",
+				"legalForm": "{{cast:harmonie.legalForm}}",
+				"address": {
+					"streetName": "{{cast:harmonie.address.street}}",
+					"houseNumber": "{{cast:harmonie.address.number}}",
+					"postcode": "{{cast:harmonie.address.postcode}}",
+					"place": "{{cast:harmonie.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-tennisdekade",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:tennisdekade.kvk}}",
+				"tradeName": "{{cast:tennisdekade.name}}",
+				"legalForm": "{{cast:tennisdekade.legalForm}}",
+				"address": {
+					"streetName": "{{cast:tennisdekade.address.street}}",
+					"houseNumber": "{{cast:tennisdekade.address.number}}",
+					"postcode": "{{cast:tennisdekade.address.postcode}}",
+					"place": "{{cast:tennisdekade.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-ondernemers",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:ondernemers.kvk}}",
+				"tradeName": "{{cast:ondernemers.name}}",
+				"legalForm": "{{cast:ondernemers.legalForm}}",
+				"address": {
+					"streetName": "{{cast:ondernemers.address.street}}",
+					"houseNumber": "{{cast:ondernemers.address.number}}",
+					"postcode": "{{cast:ondernemers.address.postcode}}",
+					"place": "{{cast:ondernemers.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-scouting",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:scouting.kvk}}",
+				"tradeName": "{{cast:scouting.name}}",
+				"legalForm": "{{cast:scouting.legalForm}}",
+				"address": {
+					"streetName": "{{cast:scouting.address.street}}",
+					"houseNumber": "{{cast:scouting.address.number}}",
+					"postcode": "{{cast:scouting.address.postcode}}",
+					"place": "{{cast:scouting.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-kindzorg",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:kindzorg.kvk}}",
+				"tradeName": "{{cast:kindzorg.name}}",
+				"legalForm": "{{cast:kindzorg.legalForm}}",
+				"address": {
+					"streetName": "{{cast:kindzorg.address.street}}",
+					"houseNumber": "{{cast:kindzorg.address.number}}",
+					"postcode": "{{cast:kindzorg.address.postcode}}",
+					"place": "{{cast:kindzorg.address.city}}"
+				},
+				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+			}
+		},
+		{
+			"key": "bedrijf-drechthof",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:drechthof.kvk}}",
+				"tradeName": "{{cast:drechthof.name}}",
+				"legalForm": "{{cast:drechthof.legalForm}}",
+				"address": {
+					"streetName": "{{cast:drechthof.address.street}}",
+					"houseNumber": "{{cast:drechthof.address.number}}",
+					"postcode": "{{cast:drechthof.address.postcode}}",
+					"place": "{{cast:drechthof.address.city}}"
+				},
+				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+			}
+		},
+		{
+			"key": "bedrijf-voedselbank",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:voedselbank.kvk}}",
+				"tradeName": "{{cast:voedselbank.name}}",
+				"legalForm": "{{cast:voedselbank.legalForm}}",
+				"address": {
+					"streetName": "{{cast:voedselbank.address.street}}",
+					"houseNumber": "{{cast:voedselbank.address.number}}",
+					"postcode": "{{cast:voedselbank.address.postcode}}",
+					"place": "{{cast:voedselbank.address.city}}"
+				},
+				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+			}
+		},
+		{
+			"key": "bedrijf-dorpshuis",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:dorpshuis.kvk}}",
+				"tradeName": "{{cast:dorpshuis.name}}",
+				"legalForm": "{{cast:dorpshuis.legalForm}}",
+				"address": {
+					"streetName": "{{cast:dorpshuis.address.street}}",
+					"houseNumber": "{{cast:dorpshuis.address.number}}",
+					"postcode": "{{cast:dorpshuis.address.postcode}}",
+					"place": "{{cast:dorpshuis.address.city}}"
+				},
+				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+			}
+		},
+		{
+			"key": "bedrijf-jeugdtheater",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:jeugdtheater.kvk}}",
+				"tradeName": "{{cast:jeugdtheater.name}}",
+				"legalForm": "{{cast:jeugdtheater.legalForm}}",
+				"address": {
+					"streetName": "{{cast:jeugdtheater.address.street}}",
+					"houseNumber": "{{cast:jeugdtheater.address.number}}",
+					"postcode": "{{cast:jeugdtheater.address.postcode}}",
+					"place": "{{cast:jeugdtheater.address.city}}"
+				},
+				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+			}
+		},
+		{
+			"key": "bedrijf-erfgoed",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:erfgoed.kvk}}",
+				"tradeName": "{{cast:erfgoed.name}}",
+				"legalForm": "{{cast:erfgoed.legalForm}}",
+				"address": {
+					"streetName": "{{cast:erfgoed.address.street}}",
+					"houseNumber": "{{cast:erfgoed.address.number}}",
+					"postcode": "{{cast:erfgoed.address.postcode}}",
+					"place": "{{cast:erfgoed.address.city}}"
+				},
+				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+			}
+		},
+		{
 			"key": "kcc-daan",
 			"register": "dossiq",
 			"schema": "kccAgent",
@@ -4563,7 +4852,7 @@
 			"data": {
 				"mailMessageId": "<postvak-07@zuiddrecht.example>",
 				"mailbox": "INBOX",
-				"sender": "{{cast:vandam.email}}",
+				"sender": "{{cast:lumeninfra.email}}",
 				"recipient": "zaken@zuiddrecht.example",
 				"subject": "Factuur onderhoud openbare verlichting",
 				"receivedAt": "{{datetime:0 07:58}}",
