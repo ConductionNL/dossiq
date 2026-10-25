@@ -25,6 +25,8 @@
 			"permission": "admin",
 			"config": {
 				"entitySource": "users",
+				"_selectableNote": "Board DqAfdelingen: no selection column. Staff come from Nextcloud and nothing acts on several of them at once here.",
+				"selectable": false,
 				"showTitle": true,
 				"showViewToggle": false,
 				"folderSidebar": {
