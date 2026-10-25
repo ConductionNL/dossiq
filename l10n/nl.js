@@ -10762,6 +10762,7 @@ OC.L10N.register(
         "Where the file can be opened.": "Waar het bestand kan worden geopend.",
         "Where the goal stands": "Stand van het doel",
         "Where the heading sits under, as a label and the page it opens.": "Waar de kop onder valt, als opschrift en de pagina die het opent.",
+        "Where the inspection is, in words (e.g. Molenweg 4). The day list names the inspection by it, else by the case.": "Waar de inspectie is, in woorden (bijv. Molenweg 4). De dagenlijst noemt de inspectie daarnaar, anders naar de zaak.",
         "Where the intervention stands": "Stand van de interventie",
         "Where the legal basis is written: each entry names the article and the address of the official text, so anyone can check the term against the law. Empty for a service norm, which no law sets.": "Waar de wettelijke grondslag staat: elke regel noemt het artikel en het adres van de officiële tekst, zodat iedereen de termijn aan de wet kan toetsen. Leeg bij een servicenorm, want die legt geen wet vast.",
         "Where the plan stands: being drawn up with the household, adopted, or evaluated. Optional; a plan without one has not been given a status yet.": "Waar het plan staat: in opbouw met het gezin, vastgesteld of geëvalueerd. Niet verplicht; een plan zonder status heeft er nog geen gekregen.",
