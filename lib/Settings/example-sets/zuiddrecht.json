@@ -2436,6 +2436,55 @@
 			}
 		},
 		{
+			"key": "melding-stoeptegels-kerkplein",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"initiatorDisplayName": "Anoniem",
+				"intakeChannel": "website",
+				"confidentiality": "openbaar",
+				"title": "Melding losse stoeptegels Kerkplein",
+				"description": "Iemand meldt zonder naam drie losse stoeptegels voor Kerkplein 7. Een fietser is er bijna over gevallen.",
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6616,51.8151]}",
+				"assignee": "{{cast:anouk.uid}}",
+				"assignedGroup": "zuiddrecht-toezicht-en-handhaving",
+				"startDate": "{{date:0}}",
+				"receivedAt": "{{datetime:0 08:40}}",
+				"deadline": "{{date:12}}",
+				"currentStatusEnteredAt": "{{datetime:0 08:40}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:0 08:40}}"
+					}
+				],
+				"tags": [
+					"kerkplein",
+					"stoep"
+				]
+			}
+		},
+		{
 			"key": "termijn-geluidsoverlast-terras-markt",
 			"register": "dossiq",
 			"schema": "deadlineInstance",
