@@ -13224,6 +13224,10 @@
 						"label": "Name",
 						"width": "250px",
 						"widget": "avatar",
+						"widgetProps": {
+							"size": 36,
+							"tone": "neutral"
+						},
 						"secondary": "{residence.street} {residence.houseNumber}, {residence.city}"
 					},
 					{

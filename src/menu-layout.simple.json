@@ -6126,6 +6126,7 @@
 						"widget": "avatar",
 						"widgetProps": {
 							"user": true,
+							"size": 28,
 							"groupField": "candidateGroups",
 							"groupLabel": "{group}, unclaimed"
 						}
