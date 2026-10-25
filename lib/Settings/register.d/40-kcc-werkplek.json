@@ -16,7 +16,7 @@
             "contactmoment": {
                 "slug": "contactmoment",
                 "icon": "PhoneInTalk",
-                "version": "1.5.0",
+                "version": "1.6.0",
                 "configuration": {
                     "x-openregister-processing": {
                         "logReads": true,
@@ -33,7 +33,7 @@
                 "type": "object",
                 "required": ["notificationChannel", "direction", "identificationMethod", "kccEmployeeId", "nature", "summary"],
                 "properties": {
-                    "notificationChannel": {"type": "string", "title": "Channel", "enum": ["phone", "email", "webformulier", "chat", "social_media", "balie"], "description": "Communication channel"},
+                    "notificationChannel": {"type": "string", "title": "Channel", "enum": ["phone", "email", "webformulier", "chat", "social_media", "balie", "brief"], "x-enum-labels": {"phone": "Phone", "email": "Email", "webformulier": "Web form", "chat": "Chat", "social_media": "Social media", "balie": "Desk", "brief": "Letter"}, "description": "Communication channel"},
                     "direction": {"type": "string", "title": "Direction", "enum": ["inbound", "outbound"], "description": "Direction of the contact"},
                     "startTime": {"type": "string", "title": "Start time", "format": "date-time", "description": "Start time of the contact"},
                     "endTime": {"type": "string", "title": "End Time", "format": "date-time", "description": "End time of the contact"},

@@ -58,6 +58,7 @@ class ContactMomentBridge {
 		'chat' => 'chat',
 		'social_media' => 'social',
 		'balie' => 'balie',
+		'brief' => 'brief',
 	];
 
 	/**

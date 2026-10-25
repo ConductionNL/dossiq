@@ -57,14 +57,15 @@ describe('the Files tab declares its columns', () => {
 		// answers renders blank forever and raises nothing anywhere. The table
 		// shows the DqDocumentenBeheer columns: scanVerdict, which the dossier
 		// listing carries per row, and vertrouwelijkheidaanduiding, the row's
-		// own confidentiality. Direction and keywords are the informatieobject's
+		// own confidentiality; reviewVerdict, which the listing puts on each row
+		// of a case under review. Direction and keywords are the informatieobject's
 		// own fields, which the listing carries whole; they start hidden.
 		// The name column is the library's own, relabelled, and binds no property.
 		expect(
 			props.columns
 				.filter((column) => typeof column === 'object' && column.key !== 'name')
 				.map((column) => column.property),
-		).toEqual(['scanVerdict', 'vertrouwelijkheidaanduiding', 'direction', 'keywords'])
+		).toEqual(['scanVerdict', 'vertrouwelijkheidaanduiding', 'reviewVerdict', 'direction', 'keywords'])
 
 		// The listing's senderName and recipientNames, and the approval marker
 		// (#3004, where a document sits in decidiq's route), moved into the

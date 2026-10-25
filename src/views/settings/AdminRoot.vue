@@ -12,6 +12,7 @@
 		tabsVariant="underline"
 		:compact="true"
 		:sectionColumns="['general', 'vth'].includes(activeTab) ? 2 : 1"
+		:formatters="adminFormatters"
 		:showSetup="true"
 		:setupSteps="setupSteps"
 		lazyTabs
@@ -523,10 +524,11 @@
 				<CnWidgetObjectTable
 					v-else
 					:hideWrapper="true"
-					:source="intakeActivitySource"
+					:endpointSource="intakeActivitySource"
 					:sortable="true"
 					:filterable="true"
 					:columns="intakeActivityColumns"
+					:rowClass="[{ when: { field: 'unmapped', value: true }, class: 'dq-dso-activity--unmapped' }]"
 					:emptyText="t('dossiq', 'No activities linked yet.')" />
 			</CnSettingsSection>
 
@@ -583,13 +585,16 @@
 				id="section-enforcement-strategy"
 				:name="t('dossiq', 'Enforcement strategy')">
 				<CnFactsWidget :content="enforcementMatrixFacts" />
-				<NcButton
-					variant="tertiary"
-					:aria-expanded="String(showEarlierMatrices)"
-					data-testid="enforcement-earlier-versions"
-					@click="showEarlierMatrices = !showEarlierMatrices">
-					{{ showEarlierMatrices ? t('dossiq', 'Hide earlier versions') : t('dossiq', 'Earlier versions') }}
-				</NcButton>
+				<p>
+					<a
+						href="#section-enforcement-strategy"
+						role="button"
+						data-testid="enforcement-earlier-versions"
+						:aria-expanded="String(showEarlierMatrices)"
+						@click.prevent="showEarlierMatrices = !showEarlierMatrices">
+						{{ showEarlierMatrices ? t('dossiq', 'Hide earlier versions') : t('dossiq', 'Earlier versions') }}
+					</a>
+				</p>
 				<CnWidgetObjectTable
 					v-if="showEarlierMatrices"
 					:hideWrapper="true"
@@ -665,6 +670,7 @@ import {
 	storeRegistryFields,
 	textsAndAccessFields,
 } from './adminFields.js'
+import { dsoActivityFormatters } from './dsoActivityFormatters.js'
 
 export default {
 	name: 'AdminRoot',
@@ -718,6 +724,8 @@ export default {
 
 	data() {
 		return {
+			// Cell formatters for the tables on this page, handed to the shell.
+			adminFormatters: dsoActivityFormatters,
 			storesReady: false,
 			registerConfiguration: {},
 			registerSaving: false,
@@ -907,24 +915,24 @@ export default {
 		},
 
 		/**
-		 * integriq's DSO activity mappings: which case type an activity becomes.
+		 * integriq's DSO activity overview: every mapping row with when an
+		 * application last arrived for it, then the activities no row links yet.
 		 *
-		 * @return {object} The table source.
-		 * @spec openspec/specs/admin-settings/spec.md
+		 * @return {object} The table's endpoint source.
+		 * @spec openspec/changes/vth-dso-activity-board-columns/specs/admin-settings/spec.md#requirement-the-dso-activity-table-shows-what-each-activity-becomes-and-when-it-last-arrived
 		 */
 		intakeActivitySource() {
 			return {
-				register: 'integriq',
-				schema: 'dso_activity_mapping',
-				limit: 50,
+				url: '/apps/integriq/api/admin/dso-activities',
+				responsePath: 'results',
 			}
 		},
 
 		/**
-		 * The DSO activity table's columns.
+		 * The DSO activity table's columns, as the board draws them.
 		 *
 		 * @return {Array<object>} The columns.
-		 * @spec openspec/specs/admin-settings/spec.md
+		 * @spec openspec/changes/vth-dso-activity-board-columns/specs/admin-settings/spec.md#requirement-the-dso-activity-table-shows-what-each-activity-becomes-and-when-it-last-arrived
 		 */
 		intakeActivityColumns() {
 			return [
@@ -932,13 +940,26 @@ export default {
 					key: 'activityName',
 					label: this.t('dossiq', 'DSO activity'),
 					cellClass: 'cn-cell--strong',
+					// The row's note and a switched-off row stay readable here.
+					secondary: 'note',
+					pills: [{ field: 'isActive', equals: false, label: this.t('dossiq', 'Inactive') }],
 				},
-				{ key: 'caseTypes', label: this.t('dossiq', 'Becomes case type') },
-				{ key: 'note', label: this.t('dossiq', 'Note') },
 				{
-					key: 'isActive',
-					label: this.t('dossiq', 'Active'),
-					widget: 'badge',
+					key: 'caseTypes',
+					label: this.t('dossiq', 'Becomes case type'),
+					formatter: 'dsoCaseTypes',
+					cellClass: 'dq-dso-activity__case-types',
+				},
+				{
+					key: 'variant',
+					valueField: 'caseTypes',
+					label: this.t('dossiq', 'Variant'),
+					formatter: 'dsoVariants',
+				},
+				{
+					key: 'lastReceivedAt',
+					label: this.t('dossiq', 'Last received'),
+					formatter: 'relativeDate',
 				},
 			]
 		},
@@ -1352,3 +1373,11 @@ export default {
 	},
 }
 </script>
+
+<style>
+/* An activity no mapping links yet: its case type cell reads as a warning. */
+.dq-dso-activity--unmapped .dq-dso-activity__case-types {
+	color: var(--color-error-text);
+	font-weight: 600;
+}
+</style>

@@ -33,14 +33,14 @@ describe.each(['ContactDetail', 'OrganisationDetail'])(
 	(id) => {
 		const p = page(id)
 
-		it('stacks the card, the cases and the latest contact moments on Overview', () => {
+		it('stacks the card, the cases, the tickets and the latest contact moments on Overview (board order)', () => {
 			const tabs = widget(p, 'contact-panels').content.tabs
 			expect(tabs[0]).toEqual({
 				widgetIds: [
 					'contact-card',
 					'contact-open-cases',
-					'contact-latest-moments',
 					'contact-open-tickets',
+					'contact-latest-moments',
 				],
 				label: 'Overview',
 			})

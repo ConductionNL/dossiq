@@ -47,9 +47,11 @@ describe('the TaskDetail manifest page', () => {
 		expect(config.statusPill).toMatchObject({ field: 'priority', values: ['high', 'urgent'], colorMap: { high: 'warning', urgent: 'error' } })
 	})
 
-	it('has a breadcrumb back to Tasks and the deadline in words beside it', () => {
+	it('has a breadcrumb back to Tasks and its case and deadline beside it (DqTaak "bij zaak 2026-0074, deadline vandaag")', () => {
 		expect(config.breadcrumb).toMatchObject({ label: 'Tasks', route: 'Tasks' })
-		expect(config.headerMeta).toBe('{dueLabel}')
+		expect(config.headerMeta).toBe('at case {subject.identifier}, deadline {dueAt|relative}')
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/nl.json'), 'utf8')).translations
+		expect(nl[config.headerMeta]).toBe('bij zaak {subject.identifier}, deadline {dueAt|relative}')
 	})
 
 	it('completes through dossiq and every other verb through the engine', () => {
@@ -61,10 +63,12 @@ describe('the TaskDetail manifest page', () => {
 		expect(config.layout.map((item) => item.widgetId)).toEqual(['task-panels'])
 		expect(panels.type).toBe('tabs')
 		expect(panels.content.tabs).toEqual([
-			{ label: 'Overview', widgetIds: ['task-description', 'task-checklist', 'task-appointments', 'task-notes'] },
+			{ label: 'Overview', widgetIds: ['task-checklist', 'task-appointments', 'task-notes'] },
 			{ label: 'Task history', widgetId: 'task-history' },
 		])
-		expect(widget('task-description')).toMatchObject({ type: 'facts', visibleWhen: { field: 'description', op: 'notEmpty' } })
+		// Board DqTaak draws no description card: the description is the first line of the side Task card.
+		expect(widget('task-description')).toBeUndefined()
+		expect(config.sideColumn.find((entry) => entry.id === 'side-task').content.fields[0]).toEqual({ key: 'description', as: 'text', path: 'description' })
 		expect(widget('task-checklist')).toMatchObject({ type: 'checklist', content: { path: 'checklist' } })
 		// The leaves are the library cards on the task's engine endpoints
 		// (`source: flow-task`), with dossiq's empty lines kept.
@@ -77,7 +81,7 @@ describe('the TaskDetail manifest page', () => {
 	it('has the task facts, the case card, the waiting-case card and the history beside the body', () => {
 		expect(config.sideColumn.map((entry) => entry.id)).toEqual(['side-task', 'side-case', 'side-waiting', 'side-history'])
 		expect(widget('side-task').content.fields.map((field) => field.path)).toEqual([
-			'assignee', 'candidateGroups', 'dueAt', 'expiresAt', 'priority', 'requester', 'created',
+			'description', 'assignee', 'candidateGroups', 'dueAt', 'expiresAt', 'priority', 'requester', 'created',
 		])
 		expect(widget('side-case')).toMatchObject({ type: 'facts', visibleWhen: { field: 'objectUuid', op: 'notEmpty' } })
 		expect(widget('side-case').content.link.route).toEqual({ name: 'CaseDetail', params: { id: '@object.objectUuid' } })

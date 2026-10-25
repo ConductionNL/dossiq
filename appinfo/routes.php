@@ -193,6 +193,7 @@ $extra = [
         // anything; `grounds` exists so the dialog offers the server's own list
         // rather than a second copy that can drift out of it.
     ['name' => 'sociaalDomeinPlan#plan',             'url' => '/api/family-plans/{planId}',                    'verb' => 'GET'],
+    ['name' => 'sociaalDomeinPlan#planOfCase',       'url' => '/api/cases/{caseId}/family-plan',               'verb' => 'GET'],
     ['name' => 'sociaalDomeinPlan#saveGoal',         'url' => '/api/family-plans/{planId}/goals',              'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#saveIntervention', 'url' => '/api/family-plans/{planId}/interventions',      'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#recordReview',     'url' => '/api/family-plans/{planId}/reviews',            'verb' => 'POST'],
@@ -852,6 +853,9 @@ $extra = [
     // Woo review (woo-review-triage): relevance apart from the verdict, and the case summary.
     ['name' => 'documentReview#summary',   'url' => '/api/cases/{id}/review/summary', 'verb' => 'GET'],
     ['name' => 'documentVerdicts#forCase', 'url' => '/api/cases/{id}/review/verdicts', 'verb' => 'GET'],
+    // A reply to the resident kept as the caller's draft on the case (DqZaakContact "Opslaan als concept").
+    ['name' => 'caseReplyDraft#show', 'url' => '/api/cases/{id}/reply-draft', 'verb' => 'GET'],
+    ['name' => 'caseReplyDraft#save', 'url' => '/api/cases/{id}/reply-draft', 'verb' => 'PUT'],
     ['name' => 'documentReview#relevance', 'url' => '/api/cases/{id}/review/documents/{documentRef}/relevance', 'verb' => 'POST'],
     ['name' => 'documentReview#batches',     'url' => '/api/cases/{id}/review/batches', 'verb' => 'GET'],
     ['name' => 'documentReview#createBatch', 'url' => '/api/cases/{id}/review/batches', 'verb' => 'POST'],
@@ -1235,6 +1239,8 @@ $extra = [
     ['name' => 'fileRequest#parties',              'url' => '/api/cases/{caseId}/file-requests/parties',       'verb' => 'GET'],
     ['name' => 'fileRequest#create',               'url' => '/api/cases/{caseId}/file-requests',               'verb' => 'POST'],
     ['name' => 'zaakdossierDownload#downloadZip',  'url' => '/api/cases/{caseId}/dossier/zip',                 'verb' => 'POST'],
+    // The ticked documents merged into one PDF in the case folder, by filinq (DqDocumentenBeheer "Samenvoegen tot pdf").
+    ['name' => 'caseDocumentMerge#merge',          'url' => '/api/cases/{caseId}/dossier/merge',               'verb' => 'POST'],
         // Generate document: asks Filinq to render a library template over
         // the case (DocumentGenerationRequestedEvent) and files the result
         // as an informatieobject + join, the same filing a flow's
@@ -1250,6 +1256,7 @@ $extra = [
     ['name' => 'zaakdossier#approvalMarkers',      'url' => '/api/informatieobjecten/approval-markers',       'verb' => 'GET'],
     ['name' => 'zaakdossier#bulkTransitionStatus', 'url' => '/api/informatieobjecten/bulk/status',            'verb' => 'POST'],
     ['name' => 'zaakdossier#bulkUpdateMetadata',   'url' => '/api/informatieobjecten/bulk/metadata',          'verb' => 'POST'],
+    ['name' => 'documentCopy#bulkCopy',           'url' => '/api/informatieobjecten/bulk/copy',              'verb' => 'POST'],
     ['name' => 'zaakdossier#transitionStatus',     'url' => '/api/informatieobjecten/{infoObjectId}/status',   'verb' => 'PATCH'],
     // document-access-exception: only named people and groups see this document (DqDocumentenBeheer, Who can see this).
     ['name' => 'documentAccessException#update',  'url' => '/api/informatieobjecten/{infoObjectId}/access-exception', 'verb' => 'PUT'],

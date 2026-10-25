@@ -144,7 +144,8 @@ import PublicFederatedTransferPage from './views/public/PublicFederatedTransferP
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
 import MailPartiesReportWidget from './views/reports/MailPartiesReportWidget.vue'
 import CaseTypeFlowView from './views/settings/CaseTypeFlowView.vue'
-import WorkloadSummaryBar from './views/WorkloadSummaryBar.vue'
+import WorkloadTeamChips from './views/WorkloadTeamChips.vue'
+import WorkloadTeamHeading from './views/WorkloadTeamHeading.vue'
 import { leafTab } from './integrations/leafTabs.js'
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
 import {
@@ -249,12 +250,17 @@ const HEADLESS_WIDGET_META = {
  */
 const registry = {
 	// --- Genuine exceptions: no abstract manifest analogue. ---
-	// The Assigned to me view's below-header slot (Cases `defaultSavedViews`
-	// my-work `overrides.slots`): the list itself is manifest config.
-	WorkloadSummaryBar: {
+	// The Assigned to me view's slots (Cases `defaultSavedViews` my-work
+	// `overrides.slots`): the list itself is manifest config.
+	WorkloadTeamHeading: {
 		kind: 'page',
-		component: WorkloadSummaryBar,
-		_note: "Below-header slot: the coordinator's open cases per colleague, read from /api/work-queue/workload (403, and so nothing, for anyone else). A colleague's chip opens their open cases on the Cases page.",
+		component: WorkloadTeamHeading,
+		_note: "Below-header slot: the team workload's title and hint, drawn only for a coordinator (/api/work-queue/workload answers 403, and so nothing, for anyone else).",
+	},
+	WorkloadTeamChips: {
+		kind: 'page',
+		component: WorkloadTeamChips,
+		_note: "Toolbar-start slot: the coordinator's open cases per colleague as name chips, at the start of the toolbar row (board DqAanMijToegewezen). A colleague's chip opens their open cases on the Cases page.",
 	},
 
 	// --- The case's lifecycle on the case page (case-lifecycle-on-the-page). ---

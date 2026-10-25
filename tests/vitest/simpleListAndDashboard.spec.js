@@ -314,6 +314,8 @@ describe('the cases list', () => {
 			countText,
 			countTextByView,
 			_countTextByViewNote,
+			savedViewCountText,
+			_savedViewCountTextNote,
 			defaultOrder,
 			footerNote,
 			bulkHint,
@@ -652,6 +654,19 @@ describe('the landing page', () => {
 		}
 		expect(widget('followed-cases').content.ruleAbove).toBe(true)
 		expect(widget('stalled-cases').content.ruleAbove).toBe(true)
+	})
+
+	it('shows recent activity without tag changes, each item in the tone of its app', () => {
+		// DqMijnWerk Recente activiteit: a reaction primary, a publication
+		// green, a handover grey; tag changes are not work.
+		const content = widget('simple-recent-activity').content
+		expect(content.excludeApps).toEqual(['systemtags'])
+		expect(content.itemTones).toEqual({
+			comments: 'info',
+			files: 'success',
+			openregister: 'neutral',
+			dossiq: 'neutral',
+		})
 	})
 
 	it('continues where the handler left off, over the recent lens the full dashboard already uses', () => {

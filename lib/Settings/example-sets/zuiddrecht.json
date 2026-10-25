@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour.",
+	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour. Pieter also has his saved view \"Termijn deze week\" in his menu (`pref_cn_saved_view_menu`, the view quoted by `{{view:pieter-termijn-deze-week.uuid}}`, which needs OpenRegister feat/example-set-view-placeholder), as board DqFilterInMenu draws it.",
 	"after": [
 		"opencatalogi"
 	],
@@ -158,6 +158,11 @@
 			"user": "{{cast:noor.uid}}",
 			"key": "pref_walkthrough_completed_version",
 			"value": "1.2.0"
+		},
+		{
+			"user": "{{cast:pieter.uid}}",
+			"key": "pref_cn_saved_view_menu",
+			"value": "[{\"id\":\"{{view:pieter-termijn-deze-week.uuid}}\",\"page\":\"Cases\",\"name\":\"Termijn deze week\"}]"
 		}
 	],
 	"objects": [
@@ -4957,6 +4962,770 @@
 				"markedBy": "{{cast:pieter.uid}}",
 				"markedAt": "{{datetime:-1 15:31}}"
 			}
+		},
+		{
+			"key": "besloten-woo-camerabeelden-markt",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluit"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Woo-verzoek camerabeelden Markt",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-21}}",
+				"deadline": "{{date:7}}",
+				"endDate": "{{date:-2}}",
+				"receivedAt": "{{datetime:-21 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-2 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-21 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-15 10:30}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-9 14:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 15:20}}"
+					}
+				],
+				"tags": [
+					"woo",
+					"markt"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-woo-camerabeelden-markt",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-woo-camerabeelden-markt.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-21 09:10}}",
+				"endDateCalculated": "{{date:7}}",
+				"endDateCurrent": "{{date:7}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-2}}"
+			}
+		},
+		{
+			"key": "besloten-woo-subsidieregister-sport",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluit"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Woo-verzoek subsidieregister sportverenigingen",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-18}}",
+				"deadline": "{{date:10}}",
+				"endDate": "{{date:-5}}",
+				"receivedAt": "{{datetime:-18 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-5 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-18 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-14 10:30}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-10 14:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-5 15:20}}"
+					}
+				],
+				"tags": [
+					"woo",
+					"sport"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-woo-subsidieregister-sport",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-woo-subsidieregister-sport.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-18 09:10}}",
+				"endDateCalculated": "{{date:10}}",
+				"endDateCurrent": "{{date:10}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-5}}"
+			}
+		},
+		{
+			"key": "besloten-dakkapel-lindelaan",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluitvorming"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Dakkapel Lindelaan 12",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-20}}",
+				"deadline": "{{date:36}}",
+				"endDate": "{{date:-4}}",
+				"receivedAt": "{{datetime:-20 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-4 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-20 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-15 10:30}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-10 14:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-4 15:20}}"
+					}
+				],
+				"tags": [
+					"lindelaan",
+					"bouwen"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-dakkapel-lindelaan",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-dakkapel-lindelaan.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-20 09:10}}",
+				"endDateCalculated": "{{date:36}}",
+				"endDateCurrent": "{{date:36}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-4}}"
+			}
+		},
+		{
+			"key": "besloten-schutting-parkweg",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluitvorming"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Schutting achtertuin Parkweg 8",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-19}}",
+				"deadline": "{{date:37}}",
+				"endDate": "{{date:-6}}",
+				"receivedAt": "{{datetime:-19 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-6 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-19 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-15 10:30}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-11 14:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-6 15:20}}"
+					}
+				],
+				"tags": [
+					"parkweg",
+					"bouwen"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-schutting-parkweg",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-schutting-parkweg.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-19 09:10}}",
+				"endDateCalculated": "{{date:37}}",
+				"endDateCurrent": "{{date:37}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-6}}"
+			}
+		},
+		{
+			"key": "besloten-bezwaar-standplaats-markt",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "bezwaar",
+						"icon": "Gavel"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Beslissing op bezwaar"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Bezwaar afwijzing standplaats Markt",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-juridische-zaken",
+				"startDate": "{{date:-22}}",
+				"deadline": "{{date:20}}",
+				"endDate": "{{date:-2}}",
+				"receivedAt": "{{datetime:-22 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-2 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-22 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-16 10:30}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-9 14:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 15:20}}"
+					}
+				],
+				"tags": [
+					"markt",
+					"bezwaar"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-bezwaar-standplaats-markt",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-bezwaar-standplaats-markt.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-22 09:10}}",
+				"endDateCalculated": "{{date:20}}",
+				"endDateCurrent": "{{date:20}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-2}}"
+			}
+		},
+		{
+			"key": "besloten-lantaarn-kerkstraat",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Lantaarnpaal kapot Kerkstraat",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:daan.uid}}",
+				"assignedGroup": "zuiddrecht-kcc",
+				"startDate": "{{date:-15}}",
+				"deadline": "{{date:-1}}",
+				"endDate": "{{date:-8}}",
+				"receivedAt": "{{datetime:-15 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-8 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-15 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-12 10:30}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-8 15:20}}"
+					}
+				],
+				"tags": [
+					"kerkstraat",
+					"verlichting"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-lantaarn-kerkstraat",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-lantaarn-kerkstraat.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-15 09:10}}",
+				"endDateCalculated": "{{date:-1}}",
+				"endDateCurrent": "{{date:-1}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-8}}"
+			}
+		},
+		{
+			"key": "besloten-stoeptegels-havenstraat",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Losse stoeptegels Havenstraat",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:daan.uid}}",
+				"assignedGroup": "zuiddrecht-kcc",
+				"startDate": "{{date:-21}}",
+				"deadline": "{{date:-7}}",
+				"endDate": "{{date:-3}}",
+				"receivedAt": "{{datetime:-21 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-3 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-21 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-12 10:30}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-3 15:20}}"
+					}
+				],
+				"tags": [
+					"havenstraat",
+					"bestrating"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-stoeptegels-havenstraat",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-stoeptegels-havenstraat.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-21 09:10}}",
+				"endDateCalculated": "{{date:-7}}",
+				"endDateCurrent": "{{date:-7}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-3}}"
+			}
+		},
+		{
+			"key": "besloten-subsidie-jeugdtheater",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "subsidieaanvraag"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Beoordeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluitvorming"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Subsidie jeugdtheater De Kade",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:lars.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-20}}",
+				"deadline": "{{date:36}}",
+				"endDate": "{{date:-6}}",
+				"receivedAt": "{{datetime:-20 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-6 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-20 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-16 10:30}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-11 14:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-6 15:20}}"
+					}
+				],
+				"tags": [
+					"subsidie",
+					"cultuur"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-subsidie-jeugdtheater",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-subsidie-jeugdtheater.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-20 09:10}}",
+				"endDateCalculated": "{{date:36}}",
+				"endDateCurrent": "{{date:36}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-6}}"
+			}
+		},
+		{
+			"key": "kaartlaag-luchtfoto",
+			"register": "dossiq",
+			"schema": "wmsLayer",
+			"data": {
+				"title": "Luchtfoto (PDOK)",
+				"type": "WMS",
+				"url": "https://service.pdok.nl/hwh/luchtfotorgb/wms/v1_0",
+				"layerName": "Actueel_orthoHR",
+				"format": "image/png",
+				"attribution": "Beeldmateriaal.nl, PDOK",
+				"isDefault": true,
+				"active": true
+			}
+		},
+		{
+			"key": "kaartlaag-ruimtelijke-plannen",
+			"register": "dossiq",
+			"schema": "wmsLayer",
+			"data": {
+				"title": "Omgevingsplan (WMS)",
+				"type": "WMS",
+				"url": "https://service.pdok.nl/kadaster/plu/wms/v1_0",
+				"layerName": "enkelbestemming",
+				"format": "image/png",
+				"opacity": 0.6,
+				"attribution": "Kadaster, PDOK",
+				"isDefault": true,
+				"active": true
+			}
 		}
 	],
 	"parties": [
@@ -5157,6 +5926,15 @@
 				"objectUuid": "{{object:woo-fietspad-besluitklaar.id}}",
 				"message": "Drie documenten beoordeeld, offerte lantaarnpalen deels openbaar.",
 				"createdAt": "{{datetime:0 15:40}}"
+			}
+		},
+		{
+			"key": "pieter-noteert-hoorzitting",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{task:hoorzitting-inplannen.uuid}}",
+				"message": "Zaal en commissie vastgelegd voor 21 oktober.",
+				"createdAt": "{{datetime:0 11:15}}"
 			}
 		},
 		{

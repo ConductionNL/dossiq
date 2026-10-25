@@ -46,7 +46,7 @@ describe('DqZaak Prioriteit card', () => {
 		const derived = rows[0].parts.flatMap((part) => (part.parts ? part.parts : [part])).map((part) => part.path)
 		expect(derived).toEqual(['priorityDerived', 'impact', 'urgency'])
 		expect(rows[1].emptyValue).toBe('No')
-		expect(card.content.fields.at(-1)).toMatchObject({ as: 'text', text: 'The priority follows from the matrix. Override it with a reason.' })
+		expect(card.content.fields.at(-1)).toMatchObject({ as: 'line', text: 'The priority follows from the matrix. Override it with a reason.' })
 	})
 
 	it('keeps overriding on the card, saving only the override and its reason', () => {

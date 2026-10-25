@@ -13,31 +13,19 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
-import { loadState } from '@nextcloud/initial-state'
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
 import { formatDuration, parseDuration } from '../utils/durationHelpers.js'
 import { fieldFill, fieldInCaseList, fieldKind, fieldOrigin } from '../utils/fieldDescription.js'
+import { portalName } from '../utils/portalName.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
 import { caseAddress } from './caseAddress.js'
 import { caseAnswerText } from './caseAnswer.js'
 import { coveredForLabel } from './coveredFor.js'
 import { scanVerdictLabel } from './scanVerdict.js'
 
-/**
- * The resident portal's name portaliq holds, from the page's `config` state.
- *
- * @return {string} The name, or '' when none is set.
- */
-function portalName() {
-	try {
-		return String(loadState('dossiq', 'config', {})?.portalName ?? '').trim()
-	} catch {
-		return ''
-	}
-}
 
 // Guard so each lookup collection is fetched at most once per page load.
 const lookupFetchStarted = {}
@@ -163,6 +151,42 @@ function lookupRelatedName(type, uuid) {
 }
 
 export default {
+	/**
+	 * A stored code by its label (`formatterOptions.labels`), translated; the
+	 * code itself when it has no label (DqZaakDocumenten verdict pill).
+	 *
+	 * @param {unknown} value The stored code.
+	 * @param {object} row The row.
+	 * @param {object} property The property.
+	 * @param {{labels?: object}} options The column's formatter options.
+	 * @return {string}
+	 * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
+	 */
+	optionLabel: (value, row, property, options) => {
+		const code = value === null || value === undefined ? '' : String(value)
+		const label = options && options.labels && typeof options.labels[code] === 'string' ? options.labels[code] : ''
+		return label === '' ? code : t('dossiq', label)
+	},
+
+	/**
+	 * The outcome of a document checksum's last check, in words; the code
+	 * itself when it is not one of the four.
+	 *
+	 * @param {unknown} value `unchanged`, `changed`, `missing` or `unchecked`.
+	 * @return {string}
+	 * @spec openspec/changes/document-integrity-check/specs/document-integrity-check/spec.md#requirement-the-checksum-card-says-when-and-how-the-file-was-last-checked
+	 */
+	integrityStatus: (value) => {
+		const labels = {
+			unchanged: t('dossiq', 'Unchanged'),
+			changed: t('dossiq', 'Changed since it was stored'),
+			missing: t('dossiq', 'File not found'),
+			unchecked: t('dossiq', 'Too large to check'),
+		}
+		const code = value === null || value === undefined ? '' : String(value)
+		return labels[code] ?? code
+	},
+
 	/**
 	 * Whom a covered case is covered for, and until when ("For Anouk Bakker,
 	 * until 10 Oct"); '' on the reader's own case.

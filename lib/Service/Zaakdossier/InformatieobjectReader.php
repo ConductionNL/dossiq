@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Review\DocumentVerdicts;
 use OCA\Dossiq\Service\Documents\ScanVerdictReader;
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -56,6 +57,7 @@ class InformatieobjectReader {
 	 * @param InformatieobjectAccessGuard $accessGuard The confidentiality guard.
 	 * @param ZgwDocumentService $documentService The binary storage service.
 	 * @param ScanVerdictReader|null $verdicts What the virus scanner recorded per file, for the listing's Scan column.
+	 * @param DocumentVerdicts|null $reviewVerdicts The review verdict of each document, for the row pill.
 	 * @param AccessExceptionNames|null $exceptionNames The display names of an access exception, for the Who can see this card.
 	 *
 	 * @return void
@@ -65,6 +67,7 @@ class InformatieobjectReader {
 		private readonly InformatieobjectAccessGuard $accessGuard,
 		private readonly ZgwDocumentService $documentService,
 		private readonly ?ScanVerdictReader $verdicts = null,
+		private readonly ?DocumentVerdicts $reviewVerdicts = null,
 		private readonly ?AccessExceptionNames $exceptionNames = null,
 	) {
 	}//end __construct()
@@ -178,6 +181,37 @@ class InformatieobjectReader {
 			$documents
 		);
 	}//end withScanVerdicts()
+
+	/**
+	 * Put each document's review verdict on its row, so the Files tab draws the
+	 * verdict pill and the Assess button from the listing. A document the
+	 * verdicts do not name (a case that reviews nothing) carries none.
+	 *
+	 * @param string                           $caseId    The case UUID.
+	 * @param array<int, array<string, mixed>> $documents The rows the caller may see.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-each-document-row-carries-its-verdict
+	 */
+	public function withReviewVerdicts(string $caseId, array $documents): array {
+		if ($this->reviewVerdicts === null || $documents === []) {
+			return $documents;
+		}
+
+		$byDocument = $this->reviewVerdicts->byDocument(caseId: $caseId);
+		return array_map(
+			static function (array $document) use ($byDocument): array {
+				$verdict = $byDocument[(string)($document['id'] ?? '')] ?? null;
+				if ($verdict === null) {
+					return $document;
+				}
+
+				return [...$document, 'reviewVerdict' => $verdict];
+			},
+			$documents
+		);
+	}//end withReviewVerdicts()
 
 	/**
 	 * Put the display names of each row's access exception on it. Call it on rows already narrowed to what the

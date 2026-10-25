@@ -168,6 +168,19 @@ describe('the shared screen is what renders', () => {
 	})
 })
 
+describe('every rule reads as words', () => {
+	it('names a rule its own list does not cover from the app\'s notification labels, never as its key', async () => {
+		fetchPreferences.mockResolvedValue([
+			{ schema: 'case', schemaTitle: 'Case', notification: 'caseDeclaredMajor', enabled: true, source: 'app-default' },
+			{ schema: 'case', schemaTitle: 'Case', notification: 'caseMovedForItsFollowers', enabled: true, source: 'app-default' },
+		])
+		const wrapper = await mountSettings()
+
+		const labels = wrapper.findComponent(SharedScreenStub).props('events').map((event) => event.label)
+		expect(labels).toEqual(['A case is declared major', 'A case I follow changes status'])
+	})
+})
+
 describe('a change goes back to the platform', () => {
 	it('writes the notification the row stands for', async () => {
 		const wrapper = await mountSettings()
