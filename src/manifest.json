@@ -7613,6 +7613,7 @@
 						"type": "audit-trail",
 						"title": "Task history",
 						"content": {
+							"layout": "stacked",
 							"source": {
 								"kind": "flow-task"
 							},
