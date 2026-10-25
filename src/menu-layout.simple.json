@@ -4178,7 +4178,7 @@
 						},
 						"_note": "DqZaakDocumenten \"4 van 7 beoordeeld\": the verdicts so far over the case's documents under review, from /api/cases/{id}/review/verdicts, each verdict in its tone and what is still to assess as the neutral rest. Only on a case type that reviews its documents (documentReview.enabled). Needs nextcloud-vue CnStackedBarWidget endpointSource, colors, remainder and heading (feat/stacked-bar-remainder-colours).",
 						"content": {
-							"inset": true,
+							"compact": true,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/cases/@objectId/review/verdicts"
 							},
