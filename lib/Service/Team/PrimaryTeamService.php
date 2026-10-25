@@ -83,6 +83,146 @@ class PrimaryTeamService {
 	}//end teamOf()
 
 	/**
+	 * Every team the user belongs to, the primary team first.
+	 *
+	 * @param IUser $user The user.
+	 *
+	 * @return array<int, array{groupId: string, name: string}> The teams; empty for a user in none.
+	 *
+	 * @throws Throwable When the organisation roles cannot be read.
+	 *
+	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
+	 */
+	public function teamsOf(IUser $user): array {
+		$groupIds = $this->groupManager->getUserGroupIds($user);
+		if ($groupIds === []) {
+			return [];
+		}
+
+		return self::teams(roles: $this->roles(), userGroupIds: $groupIds);
+	}//end teamsOf()
+
+	/**
+	 * The user's teams: each role that binds one of the user's groups and is no
+	 * ancestor of another such role (the municipality above a team is not a
+	 * team of its own), ordered as the primary team is chosen: deepest first,
+	 * then by name. The admin group is never a team.
+	 *
+	 * @param array<int, array<string, mixed>> $roles        The organisatieRol rows.
+	 * @param array<int, string>               $userGroupIds The user's Nextcloud group ids.
+	 *
+	 * @return array<int, array{groupId: string, name: string}> The teams.
+	 *
+	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
+	 */
+	public static function teams(array $roles, array $userGroupIds): array {
+		$byId = self::rolesById(roles: $roles);
+		$bound = self::boundRoles(roles: $roles, userGroupIds: $userGroupIds);
+		$ancestors = self::ancestorSet(bound: $bound, byId: $byId);
+
+		$teams = [];
+		$seen  = [];
+		foreach ($bound as $role) {
+			$group = trim((string)$role['ncGroupId']);
+			if (isset($ancestors[self::roleId(role: $role)]) === true || isset($seen[$group]) === true) {
+				continue;
+			}
+
+			$seen[$group] = true;
+			$teams[] = [
+				'groupId' => $group,
+				'name'    => trim((string)($role['roleName'] ?? '')),
+				'depth'   => self::depth(role: $role, byId: $byId),
+			];
+		}
+
+		usort($teams, static fn (array $a, array $b): int => self::order(first: $a, second: $b));
+
+		return array_map(
+			static fn (array $team): array => ['groupId' => $team['groupId'], 'name' => $team['name']],
+			$teams
+		);
+	}//end teams()
+
+	/**
+	 * The roles by id; a role without one is left out.
+	 *
+	 * @param array<int, array<string, mixed>> $roles The organisatieRol rows.
+	 *
+	 * @return array<string, array<string, mixed>> The roles keyed by id.
+	 */
+	private static function rolesById(array $roles): array {
+		$byId = [];
+		foreach ($roles as $role) {
+			$roleId = self::roleId(role: $role);
+			if ($roleId !== '') {
+				$byId[$roleId] = $role;
+			}
+		}
+
+		return $byId;
+	}//end rolesById()
+
+	/**
+	 * The roles that bind one of the user's groups; the admin group binds none.
+	 *
+	 * @param array<int, array<string, mixed>> $roles        The organisatieRol rows.
+	 * @param array<int, string>               $userGroupIds The user's Nextcloud group ids.
+	 *
+	 * @return array<int, array<string, mixed>> The bound roles.
+	 */
+	private static function boundRoles(array $roles, array $userGroupIds): array {
+		return array_values(
+			array_filter(
+				$roles,
+				static function (array $role) use ($userGroupIds): bool {
+					$group = trim((string)($role['ncGroupId'] ?? ''));
+					return $group !== '' && $group !== 'admin' && in_array($group, $userGroupIds, true) === true;
+				}
+			)
+		);
+	}//end boundRoles()
+
+	/**
+	 * The ids of every ancestor of a bound role.
+	 *
+	 * @param array<int, array<string, mixed>>    $bound The bound roles.
+	 * @param array<string, array<string, mixed>> $byId  Every role by id.
+	 *
+	 * @return array<string, true> The ancestor ids.
+	 */
+	private static function ancestorSet(array $bound, array $byId): array {
+		$ancestors = [];
+		foreach ($bound as $role) {
+			foreach (self::ancestorIds(role: $role, byId: $byId) as $ancestorId) {
+				$ancestors[$ancestorId] = true;
+			}
+		}
+
+		return $ancestors;
+	}//end ancestorSet()
+
+	/**
+	 * The order of two teams as the primary team is chosen.
+	 *
+	 * @param array<string, mixed> $first  A team.
+	 * @param array<string, mixed> $second Another team.
+	 *
+	 * @return int Negative when the first comes before the second.
+	 */
+	private static function order(array $first, array $second): int {
+		if (self::isBefore(candidate: $first, best: $second) === true) {
+			return -1;
+		}
+
+		if (self::isBefore(candidate: $second, best: $first) === true) {
+			return 1;
+		}
+
+		return 0;
+	}//end order()
+
+	/**
 	 * Pick the primary team from the organisation's roles and the user's groups.
 	 *
 	 * @param array<int, array<string, mixed>> $roles        The organisatieRol rows, each with `id`, `roleName`, `ncGroupId`, `parentRoleId`.
@@ -93,13 +233,7 @@ class PrimaryTeamService {
 	 * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
 	 */
 	public static function primaryTeam(array $roles, array $userGroupIds): ?array {
-		$byId = [];
-		foreach ($roles as $role) {
-			$roleId = self::roleId(role: $role);
-			if ($roleId !== '') {
-				$byId[$roleId] = $role;
-			}
-		}
+		$byId = self::rolesById(roles: $roles);
 
 		$best = null;
 		foreach ($roles as $role) {
@@ -161,6 +295,25 @@ class PrimaryTeamService {
 
 		return $depth;
 	}//end depth()
+
+	/**
+	 * The ids of a role's parents, nearest first, stopping at a cycle or a missing parent.
+	 *
+	 * @param array<string, mixed>                $role The role.
+	 * @param array<string, array<string, mixed>> $byId Every role by id.
+	 *
+	 * @return array<int, string> The parent role ids.
+	 */
+	private static function ancestorIds(array $role, array $byId): array {
+		$ids = [];
+		$parent = trim((string)($role['parentRoleId'] ?? ''));
+		while ($parent !== '' && isset($byId[$parent]) === true && in_array($parent, $ids, true) === false) {
+			$ids[] = $parent;
+			$parent = trim((string)($byId[$parent]['parentRoleId'] ?? ''));
+		}
+
+		return $ids;
+	}//end ancestorIds()
 
 	/**
 	 * A role's id, as OpenRegister returns it.

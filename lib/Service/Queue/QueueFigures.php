@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Team\ReaderTeamCases;
 use OCA\Dossiq\Service\Term\DayCount;
 
 /**
@@ -40,14 +41,36 @@ class QueueFigures {
 	/**
 	 * Constructor.
 	 *
-	 * @param DayCount $dayCount Counts the days a case has waited.
+	 * @param DayCount             $dayCount  Counts the days a case has waited.
+	 * @param ReaderTeamCases|null $teamCases The open cases of the reader's teams, which the figures count.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly DayCount $dayCount,
+		private readonly ?ReaderTeamCases $teamCases = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * Fold the open cases of the reader's teams into the queue figures.
+	 *
+	 * @param string                $userId     The reader.
+	 * @param array<int, array>     $openCases  The open cases, as plain arrays.
+	 * @param DateTimeImmutable     $today      Today, at midnight.
+	 * @param array<string, string> $typeTitles Case type titles by id.
+	 *
+	 * @return array<string, mixed> The queue figures.
+	 *
+	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
+	 */
+	public function foldFor(string $userId, array $openCases, DateTimeImmutable $today, array $typeTitles): array {
+		if ($this->teamCases !== null) {
+			$openCases = $this->teamCases->casesOf(userId: $userId, cases: $openCases);
+		}
+
+		return $this->fold(openCases: $openCases, today: $today, typeTitles: $typeTitles);
+	}//end foldFor()
 
 	/**
 	 * Fold the open cases into the queue figures.

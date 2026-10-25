@@ -57,10 +57,12 @@ class MyTeamController extends Controller {
 	/**
 	 * The current user's primary team.
 	 *
-	 * @return JSONResponse `{groupId: string|null, name: string|null}`; both null for a user in no team;
+	 * @return JSONResponse `{groupId: string|null, name: string|null, groupIds: string[], names: string[]}`: the
+	 *                      primary team and every team of the user; nulls and empty lists for a user in no team;
 	 *                      503 when the organisation roles cannot be read, so no team is guessed.
 	 *
 	 * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
+	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
 	 */
 	#[NoAdminRequired]
 	public function show(): JSONResponse {
@@ -72,7 +74,7 @@ class MyTeamController extends Controller {
 		}
 
 		try {
-			$team = $this->teams->teamOf(user: $user);
+			$teams = $this->teams->teamsOf(user: $user);
 		} catch (Throwable) {
 			return new JSONResponse(
 				data: ['message' => 'The organisation roles could not be read'],
@@ -80,10 +82,13 @@ class MyTeamController extends Controller {
 			);
 		}
 
+		$primary = ($teams[0] ?? null);
 		return new JSONResponse(
 			data: [
-				'groupId' => $team['groupId'] ?? null,
-				'name' => $team['name'] ?? null,
+				'groupId'  => $primary['groupId'] ?? null,
+				'name'     => $primary['name'] ?? null,
+				'groupIds' => array_column($teams, 'groupId'),
+				'names'    => array_column($teams, 'name'),
 			]
 		);
 	}//end show()

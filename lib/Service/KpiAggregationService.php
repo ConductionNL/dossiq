@@ -165,7 +165,12 @@ class KpiAggregationService {
 			filters: self::OPEN_WORK
 		);
 
-		$queue = $this->queueFigures->fold(openCases: $openCases, today: $now, typeTitles: $this->caseTypeTitles(ids: $ids));
+		$queue = $this->queueFigures->foldFor(
+			userId: $userId,
+			openCases: $openCases,
+			today: $now,
+			typeTitles: $this->caseTypeTitles(ids: $ids)
+		);
 		$oldestNote = (new QueueOldestNote(l10n: $this->l10n))->line(
 			type: (string)$queue['queueOldestType'],
 			dueDays: $queue['queueOldestDueDays']

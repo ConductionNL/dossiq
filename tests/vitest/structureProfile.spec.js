@@ -320,7 +320,7 @@ describe('the simple profile', () => {
 		expect(entry('Queue').count).toEqual({
 			register: 'dossiq',
 			schema: 'case',
-			filter: teamQueue.overrides.lockedFilters,
+			filter: { ...teamQueue.filters, ...teamQueue.overrides.lockedFilters },
 		})
 		expect(entry('WorkGroup').count).toEqual({
 			register: 'dossiq',

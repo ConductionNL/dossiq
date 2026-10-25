@@ -16,7 +16,7 @@
       "fieldInspection": {
         "slug": "fieldInspection",
         "icon": "ClipboardSearchOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Action",
         "title": "Field Inspection",
         "description": "A planned or in-progress field inspection synchronized to an inspector's device for offline fieldwork. Extends a Dossiq case with offline lifecycle metadata.",
@@ -36,6 +36,12 @@
             "type": "string",
             "title": "Case Reference",
             "description": "Reference to the Dossiq case this inspection belongs to"
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Location",
+            "description": "Where the inspection is, in words (e.g. Molenweg 4). The day list names the inspection by it, else by the case."
           },
           "inspectorRef": {
             "type": "string",

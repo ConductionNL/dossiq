@@ -119,4 +119,16 @@ class ZuiddrechtFieldInspectionDayTest extends TestCase {
 		$this->assertSame(expected: '{{object:'.self::TEMPLATE_KEY.'.id}}', actual: $kerkplein['checklistTemplateRef']);
 		$this->assertSame(expected: 'in_progress', actual: $kerkplein['status']);
 	}//end testTodaysInspectionsNameTheirChecklist()
+
+	/**
+	 * Today's inspections carry the location the day list names them by.
+	 *
+	 * @return void
+	 */
+	public function testTodaysInspectionsNameTheirLocation(): void {
+		$set  = json_decode(json: (string)file_get_contents(filename: __DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), associative: true);
+		$rows = array_filter(array: $set['objects'], callback: static fn (array $o): bool => $o['schema'] === 'fieldInspection');
+		$locations = array_column(array: array_column(array: $rows, column_key: 'data'), column_key: 'location');
+		$this->assertSame(expected: ['Molenweg 4', 'Kerkplein 7', 'Dorpsstraat 39', 'Havenstraat, speeltuin'], actual: $locations);
+	}//end testTodaysInspectionsNameTheirLocation()
 }//end class

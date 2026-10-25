@@ -50,7 +50,8 @@ describe('the team-queue view', () => {
 		expect(full.relocations.Queue).toBe('WorkGroup')
 		const badge = simple.menu.find((item) => item.id === 'Queue')
 		expect(badge).toMatchObject({ label: 'Team queue', counterVariant: 'attention' })
-		expect(badge.count.filter).toEqual(view('team-queue').overrides.lockedFilters)
+		// The badge counts what the list shows: its team filter and its locked filters.
+		expect(badge.count.filter).toEqual({ ...view('team-queue').filters, ...view('team-queue').overrides.lockedFilters })
 	})
 })
 

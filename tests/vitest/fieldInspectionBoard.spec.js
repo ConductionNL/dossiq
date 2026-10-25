@@ -51,6 +51,12 @@ describe('the field inspection board', () => {
 		expect(content.meta).toEqual(['{summary}', '{lastError}', '{operationType} · {queuedAt|datetime}'])
 	})
 
+	it('draws today\'s inspections as cards named by their location, else the case', () => {
+		const { content } = widget('inspections-today')
+		expect(content.presentation).toBe('cards')
+		expect(content.title).toEqual(['{location}', '{caseRef.title}'])
+	})
+
 	it('opens the running checklist at its first open question', () => {
 		expect(widget('checklist-run').content.startAt).toBe('firstOpen')
 	})
