@@ -55,7 +55,7 @@ describe('Contact vastleggen against DqZaakDialogen', () => {
 		const direction = w.find('[data-testid="log-contact-direction"]')
 		expect(dutch(channel.attributes('data-label'))).toBe('Kanaal (niet verplicht)')
 		expect(dutch(direction.attributes('data-label'))).toBe('Richting (niet verplicht)')
-		expect(JSON.parse(channel.attributes('data-options'))).toEqual(['phone', 'email', 'balie', 'webformulier', 'chat', 'social_media'])
+		expect(JSON.parse(channel.attributes('data-options'))).toEqual(['phone', 'email', 'balie', 'brief', 'webformulier', 'chat', 'social_media'])
 		expect(JSON.parse(direction.attributes('data-options'))).toEqual(['inbound', 'outbound'])
 		await w.setData({ channel: 'email', direction: 'outbound', summary: 'Vraagt wanneer het besluit komt.' })
 		await w.vm.save()
