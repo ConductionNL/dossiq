@@ -528,7 +528,7 @@
             "gezinsplan": {
                 "slug": "gezinsplan",
                 "icon": "FileTreeOutline",
-                "version": "1.2.1",
+                "version": "1.3.0",
                 "searchable": false,
                 "title": "Family plan",
                 "description": "Jeugdwet gezinsplan met doelen, trajecten, evaluaties en expliciete toestemming per gezinslid (16+ jeugdige tekent zelfstandig). OpenRegister-backed.",
@@ -550,6 +550,13 @@
                         "type": "string",
                         "format": "date",
                         "description": "The date the plan was drawn up"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": ["in_opbouw", "vastgesteld", "geevalueerd"],
+                        "x-enum-labels": {"in_opbouw": "Being drawn up", "vastgesteld": "Adopted", "geevalueerd": "Evaluated"},
+                        "description": "Where the plan stands: being drawn up with the household, adopted, or evaluated. Optional; a plan without one has not been given a status yet."
                     },
                     "gezinsleden": {
                         "authorization": {
