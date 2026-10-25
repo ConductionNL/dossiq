@@ -32,4 +32,14 @@ describe('the Objecten card', () => {
 	it('does not offer it on an archived case', () => {
 		expect(card.createAction.visibleWhen).toEqual(link.visibleWhen)
 	})
+
+	it('links the object from its title, with no separate Link column (coordinator, 24 Oct)', () => {
+		const keys = card.columns.map((column) => column.key)
+		expect(keys).not.toContain('objectUrl')
+		expect(card.columns[0]).toMatchObject({ key: 'objectTitle', widget: 'link', widgetProps: { href: '{objectUrl}' } })
+	})
+
+	it('keeps All cases on this object in the row menu', () => {
+		expect(card.rowActions.map((action) => action.label)).toContain('All cases on this object')
+	})
 })

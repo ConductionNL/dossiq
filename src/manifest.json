@@ -61,7 +61,8 @@
 				"title": "Example data",
 				"required": false,
 				"body": "Want to look around with example cases first? You can delete them afterwards.",
-				"note": "Example data uses fictional people and organisations only."
+				"note": "Example data uses fictional people and organisations only.",
+				"noteStyle": "card"
 			},
 			{
 				"id": "done",
@@ -626,7 +627,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -1159,7 +1160,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -1934,9 +1935,9 @@
 				"_allowExportNote": "case-list-export-via-or-export-leaf. The library's own Export menu (CSV and Excel) on the actions bar; it shows because the case schema is flagged `exportable` in lib/Settings/dossiq_register.json. A click sends the browser to OpenRegister's export leaf with the query the list itself sends (search, sort, facets, the active lens and the case-type folder, without paging), so the file holds the rows the table is filtered to and OpenRegister enforces access as the reader. dossiq serialises nothing (ADR-022).",
 				"relatedFieldFilters": {
 					"definitions": { "register": "dossiq", "schema": "propertyDefinition", "filter": { "caseType": "$route.query.caseType" } },
-					"related": { "schema": "caseProperty", "backref": "case", "definitionKey": "propertyDefinition", "valueKey": "value" }
+					"related": { "element": "properties", "definitionKey": "propertyDefinition", "valueKey": "value" }
 				},
-				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are NOT on the case: dossiq stores each declared field as a `caseProperty` row pointing back at it, so the query is openregister's `_related[caseProperty][case][\u2026]` (query-related-schema-rows). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. The library's CnRelatedFieldFilters draws it beside the search (`relatedFieldFilters`), names a refused block's field under the bar, and feeds the list's fetch through `sidebarState.onFilterChange`, since the index page drops `_`-prefixed route keys.",
+				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are the case's own answers in `properties[]` (`{ propertyDefinition, name, value }`, written by the case form), so the query is openregister's `_element[properties][…]` (array-element-filters): one element that is both the definition and passes the value test (DQ-REINT 23 Oct: the earlier `_related[caseProperty]` read rows nothing writes, 0 on :8080 against 14 cases with answers). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. The library's CnRelatedFieldFilters draws it beside the search (`relatedFieldFilters`, `related.element`), names a refused block's field under the bar, and feeds the list's fetch through `sidebarState.onFilterChange`, since the index page drops `_`-prefixed route keys.",
 				"bulkBandAlways": true,
 				"_bulkBandViewsNote": "DqWerkbord: over the board the bulk band counts the selected cards and offers the status move and a way out (\"1 zaak geselecteerd · Status wijzigen · Annuleren\"), only while cards are selected. The other bulk acts stay in the table and card views' band.",
 				"bulkBandViews": {
@@ -1997,7 +1998,7 @@
 				"filter": {
 					"isTemplate": false
 				},
-				"_filterLabelsNote": "How the Active line names a filter, also one that came from a link (`/cases?isFinalStatus=false`). Without it the chip read the schema's own words, \"Is Final Status: false\"; the board DqZaken draws \"Status: lopend\". `deadline` with `relative` names a range from today in words: the view Termijn deze week (deadline from @today, before @today+7d) reads \"Termijn: binnen 7 dagen\" (board DqFilterInMenu). `hidden` marks a working-list rule every view carries (not a draft, not a template, status not hidden in lists): the line under a saved view in Weergaven in mijn menu and the side panel leaves it out (DqPersoonlijkeInstellingen), the Active line still names it.",
+				"_filterLabelsNote": "How the Active line names a filter, also one that came from a link (`/cases?isFinalStatus=false`). Without it the chip read the schema's own words, \"Is Final Status: false\"; the board DqZaken draws \"Status: lopend\". `deadline` with `relative` names a range from today in words: the view Termijn deze week (deadline from @today, before @today+7d) reads \"Termijn: binnen 7 dagen\" (board DqFilterInMenu). `hidden` marks a working-list rule every view carries (not a draft, not a template, status not hidden in lists): the line under a saved view in Weergaven in mijn menu and the side panel leaves it out (DqPersoonlijkeInstellingen), the Active line still names it. `waitingOnApplicant` reads \"Status: wacht op inwoner\" and `assignee` \"Behandelaar\" as the column does (DqFilterBewerken, DqFilterInMenu).",
 				"filterLabels": {
 					"isFinalStatus": {
 						"label": "Status",
@@ -2012,6 +2013,23 @@
 					},
 					"assignedGroup": {
 						"label": "Team"
+					},
+					"assignee": {
+						"label": "Handler"
+					},
+					"waitingOnApplicant": {
+						"label": "Status",
+						"values": {
+							"true": "waiting on the applicant"
+						}
+					},
+					"caseTypeIdentifier": {
+						"label": "Case type",
+						"reference": {
+							"schema": "caseType",
+							"matchField": "identifier",
+							"labelField": "title"
+						}
 					},
 					"statusHiddenInLists": {
 						"hidden": true
@@ -2128,7 +2146,7 @@
 								{
 									"label": "Including work you cover",
 									"activeLabel": "Including work you cover",
-									"_note": "The view opens including the work the reader covers for an absent colleague (board DqAanMijToegewezen, `Inclusief werk waarvoor u waarneemt` on the Active line; removing the chip leaves only their own cases). The server computes the covered cases: the lens asks the urgency source, GET /api/work-queue, for `covering=1` (nextcloud-vue `sourceParams`), and WorkQueueController adds the open cases the active substitutions route to the reader, each one a case CaseAccessGuard already lets them read (CoveredWork), so covering never widens access. Its filter repeats the view's open-case conditions because a lens filter replaces the page's All lens. The Cases page's other lenses are not offered here: the board draws none on this view.",
+									"_note": "The view opens including the work the reader covers for an absent colleague (board DqAanMijToegewezen, `Inclusief werk waarvoor u waarneemt` on the Active line; removing the chip leaves only their own cases). The server computes the covered cases: the lens asks the urgency source, GET /api/work-queue, for `covering=1` (nextcloud-vue `sourceParams`), and WorkQueueController adds the open cases the active substitutions route to the reader, each one a case CaseAccessGuard already lets them read (CoveredWork), so covering never widens access. Its filter repeats the view's open-case conditions because a lens filter replaces the page's All lens. The Cases page's other lenses are not offered here: the board draws none on this view. No tab is drawn for it either (quickFilterPlacement active): the toolbar row starts with the team's name chips (slot toolbar-start).",
 									"filter": {
 										"statusHiddenInLists": false,
 										"isDraft": false
@@ -2139,6 +2157,7 @@
 									"default": true
 								}
 							],
+							"quickFilterPlacement": "active",
 							"sortOption": "urgency",
 							"cardLayout": {
 								"headPill": {
@@ -2186,7 +2205,10 @@
 							},
 							"slots": {
 								"below-header": [
-									"WorkloadSummaryBar"
+									"WorkloadTeamHeading"
+								],
+								"toolbar-start": [
+									"WorkloadTeamChips"
 								]
 							}
 						}
@@ -2341,7 +2363,16 @@
 									"key": "startDate",
 									"width": "96px",
 									"label": "Waiting",
-									"widget": "age"
+									"widget": "age",
+									"widgetProps": {
+										"variantWhen": [
+											{
+												"op": "gte",
+												"value": 5,
+												"variant": "error"
+											}
+										]
+									}
 								},
 								{
 									"key": "title",
@@ -2416,7 +2447,16 @@
 								"leading": {
 									"key": "startDate",
 									"widget": "age",
-									"width": "96px"
+									"width": "96px",
+									"widgetProps": {
+										"variantWhen": [
+											{
+												"op": "gte",
+												"value": 5,
+												"variant": "error"
+											}
+										]
+									}
 								},
 								"trailing": [
 									{
@@ -2699,7 +2739,7 @@
 									"widget": "textarea"
 								},
 								"requester": {
-									"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+									"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 									"label": "Requester"
 								}
 							},
@@ -2723,6 +2763,26 @@
 				"_listsAsViewsNote": "Lists that were pages of their own are views of this list (Ruben, 19 October 2026): Assigned to me (`my-work`, was /my-work), the team queue (`team-queue`, was /queue; its late window is `unclaimed-overdue`, its week window `unclaimed-due-this-week`) and the data subject requests (`data-subject-requests`, was /privacy/requests). The old addresses redirect here with `?savedView=default:<slug>` (RETIRED_ROUTES). The subsidies (`subsidies`, was /subsidies) are a view too: there are no case-type-specific pages or menu entries (Ruben, 20 October 2026). Complaints is a view per instance, added by the /api/manifest delta, because the complaint case type has no fixed id. The conditions each page applied as a base filter are the view's `overrides.lockedFilters`, which the reader cannot clear, so the view's own `filters` stay empty, except the team queue's `assignedGroup: @myTeam`: the reader's own team as a removable chip (\"Team: Woo en informatie\", board DqTeamwachtrij), dropped for a reader in no team (my-team-queue). Each view carries what its page had as `overrides` (nextcloud-vue saved-view-overrides, openspec/changes/lists-are-views/restore.md): the team queue's counts, case type chips, side cards and columns; Assigned to me's cards, urgency order (`sortOption: urgency`, the server's ranking from GET /api/work-queue) and its two slots; the data subject requests' tabs, notice, chips and columns. The team queue and Assigned to me keep their menu entries `Queue` and `MyWork`, each opening its view, so their pins keep working.",
 				"showSortSelect": true,
 				"sortSelectOptions": [
+					{
+						"value": "deadline",
+						"label": "Deadline",
+						"order": "deadline"
+					},
+					{
+						"value": "title",
+						"label": "Case",
+						"order": "title"
+					},
+					{
+						"value": "assignee",
+						"label": "Handler",
+						"order": "assignee"
+					},
+					{
+						"value": "updated",
+						"label": "Last changed",
+						"order": "-@self.updated"
+					},
 					{
 						"value": "urgency",
 						"label": "Urgency",
@@ -2748,7 +2808,7 @@
 				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
 				"fieldOverrides": {
 					"description": { "widget": "textarea" },
-					"requester": { "widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }], "label": "Requester" },
+					"requester": { "widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }], "label": "Requester" },
 					"confidentiality": { "enumLabels": { "openbaar": "Public", "beperkt_openbaar": "Restricted public", "intern": "Internal", "zaakvertrouwelijk": "Case confidential", "vertrouwelijk": "Confidential", "confidentieel": "Classified confidential", "geheim": "Secret", "zeer_geheim": "Top secret" } }
 				},
 				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
@@ -3310,6 +3370,8 @@
 				"_editFormNote": "The same form the index pages open, so editing a case asks what filing one asks wherever it is done. It was the raw schema-driven default here \u2014 one column, normal width, every property the schema declares \u2014 because CnDetailPage took `formSize` and `formColumns` and forwarded neither `includeFields`, `excludeFields` nor `fieldOverrides` to its dialogs. nextcloud-vue now does. `excludeFields` keeps `status` off for the reason the Cases page gives: a status is the OUTPUT of a transition, and a raw dropdown writes it through without a statusRecord, a guard or the transition's automaticActions. The priority trio goes with it, being derived from impact and urgency.",
 				"formSize": "large",
 				"formColumns": 2,
+				"editTitle": "Edit case",
+				"editSubtitle": "The case's fields. You change the status and the term through Next step.",
 				"includeFields": [
 					"caseType",
 					"title",
@@ -3333,9 +3395,13 @@
 					"description": {
 						"widget": "textarea"
 					},
+					"assignee": {
+						"order": 1.5,
+						"label": "Handler"
+					},
 					"requester": {
-						"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
-						"label": "Requester"
+						"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+						"label": "Applicant"
 					},
 					"confidentiality": {
 						"enumLabels": {
@@ -3649,7 +3715,7 @@
 													"editable": false
 												},
 												"requester": {
-													"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+													"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 													"label": "Requester",
 													"formatter": "requesterName"
 												},
@@ -3820,8 +3886,15 @@
 						"_dropNote": "files-dropped-on-the-list (boards DqZaakDocumenten and DqZaakDocumentenSlepen, design-system#148): `uploadButton` puts Add files beside the New menu as the primary button, `dropOverlay` draws Drop to add over the list while files are dragged onto it and announces it in a polite live region, `dropHint` puts Or drag files onto this list. under it. All three are nextcloud-vue CnFilesBrowser opt-ins (nextcloud-vue#1419) whose words, and their Dutch, come from the library: a label declared here would reach the component untranslated. The drop is never the only way in: the button stays, and the New menu keeps its upload entry. Carried since nextcloud-vue 2.77.0: the tabs widget renders this leaf bare, so the props reach CnFilesTab, which hands them to CnFilesBrowser.",
 						"props": {
 							"uploadButton": true,
+							"newMenu": false,
+							"folderButton": true,
 							"dropOverlay": true,
 							"dropHint": true,
+							"dropDetail": [
+								{ "when": "@context.caseType.documentReview.enabled", "text": "{count} files go to case {case}, as a document still to be assessed." },
+								{ "text": "{count} files go to case {case}." }
+							],
+							"dropDetailValues": { "case": "@object.identifier" },
 							"rowActions": [
 								{
 									"id": "document-properties",
@@ -3870,26 +3943,47 @@
 									"handler": "readFileAsMessage"
 								}
 							],
-							"newActions": [
+							"headerActions": [
 								{
 									"id": "request-file",
 									"label": "Request a file from a party",
 									"icon": "EmailOutline",
 									"type": "open-modal",
 									"target": "FileRequestDialog"
-								},
-								{
-									"id": "generate-document",
-									"label": "Generate document",
-									"icon": "FileDocumentPlusOutline",
-									"type": "open-modal",
-									"target": "BeschikkingComposerDialog",
-									"props": {
-										"caseId": "@objectId",
-										"open": true
-									}
 								}
 							],
+							"rowButton": {
+								"id": "assess-document",
+								"label": "Assess",
+								"type": "open-modal",
+								"target": "DocumentAssessDialog",
+								"when": "@context.caseType.documentReview.enabled",
+								"rowProps": { "documentId": "id" },
+								"primaryWhen": { "key": "reviewVerdict", "values": ["open"] },
+								"props": {
+									"caseId": "@objectId",
+									"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
+									"assessUrl": "/apps/dossiq/api/cases/{caseId}/woo/assessment",
+									"classifications": [
+										{ "value": "openbaar", "label": "Public" },
+										{ "value": "deels_openbaar", "label": "Disclosed in part", "needsGrounds": true },
+										{ "value": "niet_openbaar", "label": "Not public", "needsGrounds": true }
+									],
+									"grounds": {
+										"register": "dossiq",
+										"schema": "wooRefusalGround",
+										"valueField": "code",
+										"labelField": "label",
+										"filter": { "status": "active", "citable": true }
+									},
+									"fields": {
+										"document": "documentRef",
+										"classification": "classification",
+										"grounds": "weigeringsgronden"
+									}
+								}
+							},
+							"_rowButtonNote": "DqZaakDocumenten: each document of a case type that reviews its documents (documentReview.enabled) shows its verdict (reviewVerdict from the dossier listing, open while unassessed) and Beoordelen, primary while open, opening the same DocumentAssessDialog as the header's Assess documents with that document chosen (rowProps documentId). On any other case (DqDocumentenBeheer) `when` is false and neither is drawn. Needs nc-vue feat/files-review-row-when; an older library draws both everywhere.",
 							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
 							"rowDataUrl": "/apps/dossiq/api/cases/{objectId}/dossier",
 							"rowDataPath": "informatieobjecten",
@@ -3928,6 +4022,30 @@
 									}
 								},
 								{
+									"id": "review-verdict",
+									"key": "reviewVerdict",
+									"source": "row",
+									"label": "Assessment",
+									"property": "reviewVerdict",
+									"when": "@context.caseType.documentReview.enabled",
+									"formatter": "optionLabel",
+									"formatterOptions": {
+										"labels": {
+											"openbaar": "Public",
+											"deels_openbaar": "Partly public",
+											"niet_openbaar": "Not public",
+											"open": "Still to be assessed"
+										}
+									},
+									"widget": "badge",
+									"colorKey": "reviewVerdict",
+									"colorMap": {
+										"openbaar": "success",
+										"deels_openbaar": "warning",
+										"niet_openbaar": "error"
+									}
+								},
+								{
 									"key": "direction",
 									"source": "row",
 									"label": "Direction",
@@ -3951,8 +4069,36 @@
 							"selectionLabel": "{count} documents selected",
 							"selectionLabelOne": "{count} document selected",
 							"showClearSelection": false,
+							"nameSecondary": "{type} · {size} · {modified|date}",
+							"secondLine": [
+								{ "when": "@context.caseType.documentReview.enabled", "fields": ["type", "size", "modified|date"] },
+								{ "fields": ["senderName", "modified|date"] }
+							],
+							"_secondLineNote": "Coordinator 24 Oct: both boards are right. A case that reviews its documents (DqZaakDocumenten) reads type, size and date under each name; any other case (DqDocumentenBeheer) the sender and date. `nameSecondary` stays for a library without `secondLine`.",
 							"sideCardsPlacement": "page-side",
 							"bulkActions": [
+								{
+									"id": "bulk-merge-pdf",
+									"label": "Merge into PDF",
+									"icon": "FilePdfBox",
+									"type": "open-modal",
+									"target": "BulkDocumentActionDialog",
+									"props": {
+										"mode": "merge-pdf",
+										"caseId": "@objectId"
+									}
+								},
+								{
+									"id": "bulk-copy-to-case",
+									"label": "Copy to another case",
+									"icon": "ContentCopy",
+									"type": "open-modal",
+									"target": "BulkDocumentActionDialog",
+									"props": {
+										"mode": "copy-to-case",
+										"caseId": "@objectId"
+									}
+								},
 								{
 									"id": "bulk-confidentiality",
 									"label": "Who can see this",
@@ -4018,7 +4164,20 @@
 										{
 											"key": "integrity.date",
 											"label": "Computed",
-											"formatter": "dateTime"
+											"formatter": "relativeDate",
+											"formatterOptions": { "time": true }
+										},
+										{
+											"key": "integrity.checkedAt",
+											"label": "Last checked",
+											"formatter": "relativeDate",
+											"formatterOptions": { "time": true }
+										},
+										{
+											"key": "integrity.status",
+											"label": "Outcome",
+											"formatter": "integrityStatus",
+											"colorMap": { "changed": "error", "missing": "error" }
 										}
 									]
 								},
@@ -4043,7 +4202,7 @@
 											"key": "mtime",
 											"label": "Modified",
 											"source": "node",
-											"formatter": "dateTime"
+											"formatter": "datetime"
 										}
 									]
 								}
@@ -5098,7 +5257,7 @@
 						"id": "goal-plan",
 						"type": "sections",
 						"title": "Family plan",
-						"_note": "the-social-domain-plan-and-its-grounds REQ-CPN-01 and REQ-CPN-03: the goals a household agreed to work on, the interventions under each with their provider and target date, and what is late, read from one endpoint (`gezinsplanId` names the plan; the data field stays frozen). Library config: a review-due banner over the same endpoint and grouped cards that join the interventions to their goal. It FAILS CLOSED with a retry: an unreachable register and a plan without goals must not look alike, or a consulent writes a second plan over the first. It was `family-plan`; RenamedLayoutIds rewrites stored layouts to `goal-plan`.",
+						"_note": "the-social-domain-plan-and-its-grounds REQ-CPN-01 and REQ-CPN-03: the goals a household agreed to work on, the interventions under each with their provider and target date, and what is late, read from one endpoint that finds the plan by the plan's own `caseId` (the case schema holds no plan reference). Library config: a review-due banner over the same endpoint and grouped cards that join the interventions to their goal. It FAILS CLOSED with a retry: an unreachable register and a plan without goals must not look alike, or a consulent writes a second plan over the first. It was `family-plan`; RenamedLayoutIds rewrites stored layouts to `goal-plan`.",
 						"content": {
 							"dividers": false,
 							"sections": [
@@ -5110,7 +5269,7 @@
 											"variant": "warning",
 											"text": "This plan was due for review on {subject.plan.reviewDate|date}. A plan that is not revisited stops describing the household it is about.",
 											"visibleWhen": {
-												"endpoint": "/apps/dossiq/api/family-plans/@object.gezinsplanId",
+												"endpoint": "/apps/dossiq/api/cases/@objectId/family-plan",
 												"field": "dueForReview",
 												"op": "eq",
 												"value": true
@@ -5124,7 +5283,7 @@
 										"type": "grouped-cards",
 										"content": {
 											"endpointSource": {
-												"url": "/apps/dossiq/api/family-plans/@object.gezinsplanId"
+												"url": "/apps/dossiq/api/cases/@objectId/family-plan"
 											},
 											"groupsPath": "goals",
 											"itemsPath": "interventions",
@@ -5482,6 +5641,8 @@
 						"type": "open-form",
 						"label": "Add party",
 						"icon": "AccountPlusOutline",
+						"formTitle": "Add a party",
+						"formConfirmLabel": "Add",
 						"register": "dossiq",
 						"schema": "role",
 						"includeFields": [
@@ -5495,7 +5656,9 @@
 						],
 						"fieldOverrides": {
 							"description": {
-								"widget": "textarea"
+								"widget": "textarea",
+								"description": "",
+								"order": 6
 							},
 							"roleType": {
 								"widget": "resource",
@@ -5505,13 +5668,59 @@
 									"register": "dossiq",
 									"schema": "roleType",
 									"labelField": "name",
-									"scope": { "field": "caseType", "value": "@object.caseType", "includeUnscoped": true, "dedupeOn": "genericRole" },
+									"scope": {
+										"field": "caseType",
+										"value": "@object.caseType",
+										"includeUnscoped": true,
+										"dedupeOn": "genericRole"
+									},
 									"failedText": "The roles this case takes could not be read. Nothing has been changed on the case."
-								}
+								},
+								"description": "",
+								"order": 2
 							},
 							"representedParty": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
-								"label": "Represented by"
+								"widget": "party",
+								"placeholder": "Name, BSN, trade name or KvK number",
+								"testid": "initiator-picker-search",
+								"sources": [
+									{
+										"id": "person",
+										"register": "dossiq",
+										"schema": "brpPerson",
+										"lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" },
+										"label": "Resident",
+										"title": "{displayName}",
+										"secondary": "{residence.street} {residence.houseNumber}"
+									},
+									{
+										"id": "company",
+										"register": "dossiq",
+										"schema": "kvkCompany",
+										"label": "Organisation",
+										"title": "{tradeName}",
+										"secondary": "CoC {kvkNumber}"
+									}
+								],
+								"label": "Represented by",
+								"description": "",
+								"order": 4
+							},
+							"name": {
+								"description": "",
+								"order": 1
+							},
+							"participant": {
+								"description": "",
+								"order": 3
+							},
+							"delegate": {
+								"description": "",
+								"order": 7
+							},
+							"delegateUntil": {
+								"description": "",
+								"order": 5
 							}
 						},
 						"successMessage": "Party added to the case.",
@@ -5528,6 +5737,8 @@
 						"type": "open-form",
 						"label": "Link object",
 						"icon": "CubeOutline",
+						"formTitle": "Link object",
+						"formConfirmLabel": "Link it",
 						"register": "dossiq",
 						"schema": "caseObject",
 						"includeFields": [
@@ -5538,7 +5749,23 @@
 						],
 						"fieldOverrides": {
 							"description": {
-								"widget": "textarea"
+								"widget": "textarea",
+								"description": "",
+								"order": 4
+							},
+							"objectType": {
+								"description": "",
+								"order": 1
+							},
+							"objectIdentification": {
+								"description": "",
+								"order": 2,
+								"label": "Identification"
+							},
+							"objectUrl": {
+								"description": "",
+								"order": 3,
+								"label": "Link to the object"
 							}
 						},
 						"successMessage": "Object linked to this case.",
@@ -5621,6 +5848,10 @@
 												"value": "{archiveNomination}"
 											},
 											{
+												"label": "Retention period",
+												"value": "{@self._retention.retentionPeriod|isoDuration}"
+											},
+											{
 												"label": "Destruction date",
 												"value": "{archiveActionDate}"
 											},
@@ -5678,6 +5909,7 @@
 								},
 								"note": {
 									"variant": "info",
+									"icon": "LockOutline",
 									"title": "Read only afterwards",
 									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
 								},
@@ -7237,7 +7469,7 @@
 						"urgent": "error"
 					}
 				},
-				"headerMeta": "{dueLabel}",
+				"headerMeta": "at case {subject.identifier}, deadline {dueAt|relative}",
 				"verbEndpoints": {
 					"complete": "/apps/dossiq/api/case-tasks/{id}/complete"
 				},
@@ -7252,7 +7484,6 @@
 								{
 									"label": "Overview",
 									"widgetIds": [
-										"task-description",
 										"task-checklist",
 										"task-appointments",
 										"task-notes"
@@ -7261,23 +7492,6 @@
 								{
 									"label": "Task history",
 									"widgetId": "task-history"
-								}
-							]
-						}
-					},
-					{
-						"id": "task-description",
-						"type": "facts",
-						"title": "Description",
-						"visibleWhen": {
-							"field": "description",
-							"op": "notEmpty"
-						},
-						"content": {
-							"fields": [
-								{
-									"as": "text",
-									"path": "description"
 								}
 							]
 						}
@@ -7372,6 +7586,11 @@
 						"content": {
 							"fields": [
 								{
+									"key": "description",
+									"as": "text",
+									"path": "description"
+								},
+								{
 									"key": "assignee",
 									"label": "Handler",
 									"path": "assignee",
@@ -7462,7 +7681,8 @@
 									"parts": [
 										{
 											"path": "assignee",
-											"label": "Handler"
+											"label": "Handler",
+											"format": "user"
 										},
 										{
 											"path": "deadline",
@@ -7511,25 +7731,40 @@
 					},
 					{
 						"id": "side-waiting",
-						"type": "notice",
+						"type": "facts",
 						"title": "What this task holds up",
 						"visibleWhen": {
 							"field": "runUuid",
 							"op": "notEmpty"
 						},
+						"_note": "Board DqTaak Wat deze taak tegenhoudt: the status the case moves to once this task is done (GET /api/cases/{id}/next-status, the case type's next status, read under the user's rights) and since when the flow has waited on it (the task's created date).",
 						"content": {
-							"variant": "info",
-							"icon": "CheckboxMarkedCircleOutline",
-							"title": "A case is waiting on this task",
-							"text": "Complete the task and the case moves on.",
-							"link": {
-								"route": "CaseDetail",
-								"params": {
-									"id": "@object.objectUuid"
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@object.objectUuid/next-status"
+							},
+							"fields": [
+								{
+									"key": "next",
+									"as": "text",
+									"template": "The case only moves to {name} once this task is done."
 								},
-								"label": "@object.subjectLabel",
-								"fallbackLabel": "Open the case"
-							}
+								{
+									"key": "since",
+									"as": "text",
+									"from": "object",
+									"parts": [
+										{
+											"text": "The flow has been waiting on it since"
+										},
+										{
+											"path": "created",
+											"format": "longdate"
+										}
+									],
+									"separator": " ",
+									"suffix": "."
+								}
+							]
 						}
 					},
 					{
@@ -7537,6 +7772,7 @@
 						"type": "audit-trail",
 						"title": "Task history",
 						"content": {
+							"layout": "stacked",
 							"source": {
 								"kind": "flow-task"
 							},
@@ -7968,6 +8204,13 @@
 						"title": "Processing Time Distribution",
 						"content": {
 							"chartKind": "bar",
+							"options": {
+								"xaxis": { "labels": { "rotate": 0, "hideOverlappingLabels": true } },
+								"yaxis": { "show": false },
+								"grid": { "show": false },
+								"legend": { "show": false },
+								"dataLabels": { "enabled": false }
+							},
 							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
@@ -8001,6 +8244,15 @@
 						"title": "Monthly SLA Trend",
 						"content": {
 							"chartKind": "line",
+							"categoryFormat": "month",
+							"options": {
+								"stroke": { "curve": "straight", "width": 2 },
+								"markers": { "size": 4 },
+								"xaxis": { "labels": { "rotate": 0, "hideOverlappingLabels": true } },
+								"yaxis": { "labels": { "show": false } },
+								"legend": { "show": false },
+								"dataLabels": { "enabled": false }
+							},
 							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
@@ -8025,7 +8277,7 @@
 								{
 									"value": 100,
 									"label": "100% target",
-									"color": "var(--color-success)"
+									"color": "var(--color-element-error, var(--color-error))"
 								}
 							],
 							"emptyLabel": "No trend data available"
@@ -8044,8 +8296,38 @@
 						"type": "chart",
 						"title": "Throughput (cases closed per week)",
 						"content": {
-							"chartKind": "line",
+							"chartKind": "bar",
 							"categoryFormat": "week",
+							"colors": ["var(--nl-color-teal-text, var(--color-primary-element))"],
+							"options": {
+								"plotOptions": {
+									"bar": {
+										"columnWidth": "62%",
+										"borderRadius": 2,
+										"dataLabels": {
+											"position": "top"
+										}
+									}
+								},
+								"dataLabels": {
+									"enabled": true,
+									"offsetY": -16,
+									"style": {
+										"fontSize": "10px",
+										"fontWeight": 600,
+										"colors": ["var(--color-main-text, #1b1c1d)"]
+									}
+								},
+								"yaxis": {
+									"show": false
+								},
+								"grid": {
+									"show": false
+								},
+								"legend": {
+									"show": false
+								}
+							},
 							"height": 150,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
@@ -8188,10 +8470,12 @@
 								},
 								{
 									"key": "caseTypeName",
+									"cellClass": "cn-cell--wrap",
 									"label": "Case type"
 								},
 								{
 									"key": "remainingLabel",
+									"cellClass": "cn-cell--wrap",
 									"label": "Remaining"
 								},
 								{
@@ -8218,16 +8502,9 @@
 								},
 								{
 									"key": "percentUsedDisplay",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Term used",
-									"widget": "progress",
-									"widgetProps": {
-										"max": 100,
-										"lowerIsBetter": true,
-										"thresholds": {
-											"good": 50,
-											"warn": 25
-										}
-									}
+									"format": { "style": "number", "decimals": 0 }
 								}
 							],
 							"rowRoute": "CaseDetail",
@@ -8264,16 +8541,19 @@
 								},
 								{
 									"key": "targetDays",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Target (days)",
 									"sortable": true
 								},
 								{
 									"key": "avgActualDays",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Avg Actual (days)",
 									"sortable": true
 								},
 								{
 									"key": "complianceRate",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Compliance %",
 									"sortable": true,
 									"format": {
@@ -8284,6 +8564,7 @@
 								},
 								{
 									"key": "total",
+									"class": "cn-table-col--end cn-cell--wrap",
 									"label": "Cases",
 									"sortable": true
 								},
@@ -8676,6 +8957,7 @@
 						"title": "Dwell time by status",
 						"content": {
 							"chartKind": "bar-list",
+							"barValueAtEnd": true,
 							"valueFormat": {
 								"name": "number",
 								"decimals": 0,
@@ -8716,6 +8998,30 @@
 						"content": {
 							"chartKind": "line",
 							"categoryFormat": "week",
+							"options": {
+								"stroke": {
+									"curve": "straight",
+									"width": 2.5
+								},
+								"xaxis": {
+									"tickAmount": 10,
+									"labels": {
+										"rotate": 0,
+										"hideOverlappingLabels": true
+									}
+								},
+								"yaxis": {
+									"labels": {
+										"show": false
+									}
+								},
+								"legend": {
+									"show": false
+								},
+								"dataLabels": {
+									"enabled": false
+								}
+							},
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/process-mining",
 								"params": {
@@ -8769,23 +9075,27 @@
 								},
 								{
 									"key": "medianWorkingHours",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Hours, wall clock",
 									"labelPath": "labels.workingHours"
 								},
 								{
 									"key": "medianHours",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Wall-clock hours",
 									"labelPath": "labels.wallHours"
 								},
 								{
 									"key": "visitCount",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Visits"
 								},
 								{
 									"key": "score",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Score"
 								}
@@ -8823,18 +9133,21 @@
 								},
 								{
 									"key": "workingHours",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Hours, wall clock",
 									"labelPath": "labels.workingHours"
 								},
 								{
 									"key": "wallHours",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Wall-clock hours",
 									"labelPath": "labels.wallHours"
 								},
 								{
 									"key": "visitCount",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Visits"
 								}
@@ -9940,15 +10253,16 @@
 								"rowOrderPath": "behaviourAxis",
 								"columnOrderPath": "severityAxis",
 								"rowLabels": {
-									"goedwillend": "Behaviour: well-meaning",
-									"onverschillig": "Behaviour: indifferent",
-									"calculerend": "Behaviour: calculating",
-									"crimineel": "Behaviour: criminal"
+									"goedwillend": "Behaviour 1: well-meaning",
+									"onverschillig": "Behaviour 2: indifferent",
+									"calculerend": "Behaviour 3: calculating",
+									"crimineel": "Behaviour 4: criminal"
 								},
 								"columnLabels": {
-									"gering": "Consequence: minor",
-									"aanzienlijk": "Consequence: considerable",
-									"ernstig": "Consequence: serious"
+									"gering": "Consequence A: minor",
+									"aanzienlijk": "Consequence B: considerable",
+									"ernstig": "Consequence C: serious",
+									"zeer_ernstig": "Consequence D: very serious"
 								},
 								"valueLabels": {
 									"warning": "Warning",
@@ -9970,6 +10284,32 @@
 							"highlight": {
 								"row": "@object.behaviour",
 								"column": "@object.severity"
+							},
+							"notice": {
+								"lead": "Advice: {intervention}",
+								"text": "Outcome of the decision table, version {version}, with {behaviour} and {consequence}.",
+								"tone": "info",
+								"values": {
+									"intervention": "@object.recommendedIntervention",
+									"version": "@object.matrixVersion",
+									"behaviour": "@object.behaviour",
+									"consequence": "@object.severity"
+								},
+								"labels": {
+									"intervention": "values",
+									"behaviour": {
+										"goedwillend": "behaviour 1",
+										"onverschillig": "behaviour 2",
+										"calculerend": "behaviour 3",
+										"crimineel": "behaviour 4"
+									},
+									"consequence": {
+										"gering": "consequence A",
+										"aanzienlijk": "consequence B",
+										"ernstig": "consequence C",
+										"zeer_ernstig": "consequence D"
+									}
+								}
 							}
 						}
 					}
@@ -9981,7 +10321,8 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 7
+						"gridHeight": 7,
+						"sizeToContent": true
 					},
 					{
 						"id": "violation",
@@ -11762,6 +12103,7 @@
 						"id": "case-type-blueprint",
 						"type": "custom",
 						"title": "Statuses, results and attributes",
+						"subtitle": "What this case type offers, also what it inherits from its parent type",
 						"icon": "FormatListBulletedType",
 						"_note": "The one widget on this page that a declared type cannot be. An object-list fetches OpenRegister itself, so the only question it can ask is `statusType where caseType = @objectId` -- the type's OWN rows. A type that derives its lifecycle from a parent has none of those, so three declared lists would render three empty tables about a case type that plainly has four statuses, and nothing would say so. The merge exists only in CaseTypeResolver, and /api/case-types/{id}/blueprint is how a page reads it. It sits in the LAYOUT and not inside a tab strip on purpose: a `type: \"custom\"` widget named as a tab CHILD resolves by registry TYPE, finds nothing, and renders an empty panel without logging anything."
 					},
@@ -11826,14 +12168,52 @@
 							},
 							"editable": true,
 							"limit": 50,
+							"rowTitle": "strong",
 							"columns": [
 								{
 									"key": "name",
-									"label": "Status"
+									"label": "Status",
+									"format": {
+										"style": "swatch",
+										"colorField": "colour",
+										"colorMap": {
+											"blue": "var(--nl-color-blue, #0b71ab)",
+											"blue-light": "var(--nl-color-blue-light, #e5f1f8)",
+											"green": "var(--nl-color-green, #39870c)",
+											"green-light": "var(--nl-color-green-light, #eaf5e4)",
+											"orange": "var(--nl-color-orange, #e17000)",
+											"orange-light": "var(--nl-color-orange-light, #fdf2e5)",
+											"red": "var(--nl-color-red, #d52b1e)",
+											"red-light": "var(--nl-color-red-light, #fbe9e8)",
+											"purple": "var(--nl-color-purple, #762f8e)",
+											"purple-light": "var(--nl-color-purple-light, #f2eaf5)",
+											"teal": "var(--nl-color-teal, #1d5e66)",
+											"teal-light": "var(--nl-color-teal-light, #e3f1f3)",
+											"grey": "var(--nl-color-grey, #696969)",
+											"grey-light": "var(--nl-color-grey-light, #f0f0f0)"
+										}
+									}
 								},
 								{
 									"key": "colour",
-									"label": "Colour in lists"
+									"label": "Colour in lists",
+									"widget": "label",
+									"enumLabels": {
+										"blue": "Blue",
+										"blue-light": "Light blue",
+										"green": "Green",
+										"green-light": "Light green",
+										"orange": "Orange",
+										"orange-light": "Light orange",
+										"red": "Red",
+										"red-light": "Light red",
+										"purple": "Purple",
+										"purple-light": "Light purple",
+										"teal": "Teal",
+										"teal-light": "Light teal",
+										"grey": "Grey",
+										"grey-light": "Light grey"
+									}
 								},
 								{
 									"key": "isFinal",
@@ -12860,11 +13240,17 @@
 						"label": "Name",
 						"width": "250px",
 						"widget": "avatar",
+						"widgetProps": {
+							"size": 36,
+							"tone": "neutral"
+						},
 						"secondary": "{residence.street} {residence.houseNumber}, {residence.city}"
 					},
 					{
 						"key": "citizenServiceNumber",
 						"label": "BSN",
+						"sortable": false,
+						"filterable": false,
 						"width": "211px",
 						"formatter": "masked",
 						"pills": [
@@ -12920,6 +13306,7 @@
 				"showViewAction": false,
 				"searchPlaceholder": "Search by name, KvK number or place",
 				"rowIcon": "OfficeBuildingOutline",
+				"rowIconTone": "teal",
 				"sortKey": "tradeName",
 				"sortOrder": "asc",
 				"_defaultFiltersNote": "Board DqOrganisaties opens on All with \"Plaats: Zuiddrecht\" on the Active line and a 1 on Filter: the organisations established in the municipality, from the admin setting `municipality_city` (the same one the Contacts lens reads). A removable default filter, not a lens; without the setting it is left out (src/utils/configLenses.js) and the list opens unfiltered. `address.place` is the KvK Zoeken field.",
@@ -12985,20 +13372,34 @@
 					},
 					{
 						"key": "kvkNumber",
-						"label": "KvK number"
+						"label": "KvK number",
+						"width": "130px"
 					},
 					{
 						"key": "legalForm",
-						"label": "Legal form"
+						"label": "Legal form",
+						"width": "151px",
+						"cellClass": "cn-cell--wrap",
+						"formatter": "valueMap",
+						"formatterOptions": {
+							"map": {
+								"Besloten Vennootschap": "BV",
+								"Naamloze Vennootschap": "NV",
+								"Vennootschap onder firma": "VOF",
+								"Commanditaire Vennootschap": "CV"
+							}
+						}
 					},
 					{
 						"key": "address.place",
 						"label": "Place",
+						"width": "116px",
 						"sortable": false
 					},
 					{
 						"key": "openCases",
 						"label": "Open cases",
+						"width": "132px",
 						"sortable": false,
 						"aggregate": {
 							"register": "dossiq",
@@ -13009,25 +13410,35 @@
 								"isFinalStatus": false
 							},
 							"zeroLabel": "None",
+							"zeroAs": "text",
 							"filterable": true
 						},
-						"widget": "badge"
+						"widget": "badge",
+						"widgetProps": {
+							"variant": "purple"
+						}
 					},
 					{
 						"key": "openTickets",
 						"label": "Open tickets",
+						"width": "120px",
 						"sortable": false,
 						"aggregate": {
 							"endpoint": "/apps/dossiq/api/parties/open-tickets",
 							"key": "masterEntityRef",
 							"requiresApp": "pipelinq",
-							"zeroLabel": "None"
+							"zeroLabel": "None",
+							"zeroAs": "text"
 						},
-						"widget": "badge"
+						"widget": "badge",
+						"widgetProps": {
+							"variant": "purple"
+						}
 					},
 					{
 						"key": "lastContact",
 						"label": "Last contact",
+						"width": "142px",
 						"sortable": false,
 						"formatter": "date",
 						"aggregate": {
@@ -13098,7 +13509,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -13207,6 +13618,7 @@
 						"title": "Cases",
 						"icon": "FolderAccountOutline",
 						"content": {
+							"ruleAbove": true,
 							"register": "dossiq",
 							"schema": "case",
 							"filter": {
@@ -13249,6 +13661,7 @@
 						"title": "Latest contact moments",
 						"icon": "PhoneLogOutline",
 						"content": {
+							"ruleAbove": true,
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
@@ -13258,6 +13671,9 @@
 								"field": "startTime",
 								"dir": "desc"
 							},
+							"extend": [
+								"case"
+							],
 							"limit": 3,
 							"presentation": "feed",
 							"icon": {
@@ -13266,14 +13682,36 @@
 									"phone": "PhoneInTalk",
 									"email": "EmailOutline",
 									"balie": "AccountOutline",
+									"brief": "EmailOpenOutline",
 									"chat": "MessageTextOutline",
 									"webformulier": "Earth"
 								},
 								"default": "EmailOutline"
 							},
-							"meta": "{startTime|datetime}",
+							"meta": {
+								"parts": [
+									"{startTime|datetime}",
+									"{notificationChannel}",
+									"{direction}",
+									"case {case.identifier}"
+								]
+							},
+							"valueLabels": {
+								"notificationChannel": {
+									"phone": "phone",
+									"email": "email",
+									"webformulier": "web form",
+									"chat": "chat",
+									"social_media": "social media",
+									"balie": "desk"
+								},
+								"direction": {
+									"inbound": "inbound",
+									"outbound": "outbound"
+								}
+							},
 							"text": "{summary}",
-							"headerSubtitle": "{total} in total",
+							"headerNote": "{total} in total",
 							"emptyText": "No contact moments yet"
 						}
 					},
@@ -13286,6 +13724,7 @@
 							"appInstalled": "pipelinq"
 						},
 						"content": {
+							"ruleAbove": true,
 							"requiresApp": "pipelinq",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/parties/open-tickets/list",
@@ -13315,7 +13754,13 @@
 									"complaint": "Complaint"
 								}
 							},
-							"headerNote": "{total} open",
+							"headerLink": {
+								"label": "View all {total} tickets",
+								"href": "/apps/pipelinq/tickets/party/{ref}",
+								"params": {
+									"ref": "@object.masterEntityRef"
+								}
+							},
 							"emptyText": "No open tickets"
 						}
 					},
@@ -13477,8 +13922,8 @@
 									"widgetIds": [
 										"contact-card",
 										"contact-open-cases",
-										"contact-latest-moments",
-										"contact-open-tickets"
+										"contact-open-tickets",
+										"contact-latest-moments"
 									],
 									"label": "Overview"
 								},
@@ -13536,10 +13981,40 @@
 						"id": "side-reach",
 						"type": "facts",
 						"title": "Reachable via",
+						"_note": "Board DqContact Bereikbaar via: the person's portal mailbox (\"Mijn Zuiddrecht, berichtenbox\", answered by portaliq's PortalAccountPresence through GET /api/people/{id}/reachability, which reads the person under the user's rights first) and the newest contact moment; the registration line reads the person, so it shows on its own too.",
 						"content": {
 							"fields": [
 								{
+									"key": "portal",
+									"path": "portal",
+									"icon": "EmailOutline"
+								},
+								{
+									"as": "text",
+									"separator": ", ",
+									"parts": [
+										{
+											"path": "lastContactAt",
+											"format": "longdate",
+											"label": "Last contact on"
+										},
+										{
+											"path": "lastContactChannel",
+											"label": "via",
+											"map": {
+												"phone": "phone",
+												"email": "email",
+												"webformulier": "web form",
+												"chat": "chat",
+												"social_media": "social media",
+												"balie": "desk"
+											}
+										}
+									]
+								},
+								{
 									"as": "line",
+									"from": "object",
 									"text": "Phone and email are not in the base registration."
 								}
 							],
@@ -13552,6 +14027,9 @@
 								"props": {
 									"contact": "@objectId"
 								}
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/people/@objectId/reachability"
 							}
 						}
 					},
@@ -13559,15 +14037,55 @@
 						"id": "side-identity",
 						"type": "facts",
 						"title": "Identity",
+						"_note": "Board DqContact: the lead says how the person was identified at the newest contact moment (none for an unidentified one); the rows read the person (from object), so they show without contact moments too. The BSN arrives masked (brpPerson.citizenServiceNumber reveal explicit); Tonen reads it with _reveal, which OpenRegister checks and records (property-explicit-reveal), so the line under it is true.",
 						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "contactmoment",
+								"filter": {
+									"contact": "@objectId"
+								},
+								"sort": {
+									"field": "startTime",
+									"dir": "desc"
+								}
+							},
 							"fields": [
 								{
+									"as": "lead",
+									"icon": "ShieldAccountOutline",
+									"tone": "success",
+									"title": [
+										{
+											"path": "identificationMethod",
+											"map": {
+												"digid": "Logged in with DigiD",
+												"bsn_verificatie": "Identified by BSN check",
+												"identificatievragen": "Identified by security questions",
+												"non_geidentificeerd": ""
+											}
+										}
+									],
+									"subtitle": [
+										{
+											"path": "startTime",
+											"format": "longdate",
+											"label": "at the contact moment of"
+										}
+									]
+								},
+								{
+									"from": "object",
 									"label": "BSN",
 									"path": "citizenServiceNumber",
 									"format": "masked",
-									"reveal": true
+									"reveal": {
+										"url": "/apps/openregister/api/objects/dossiq/brpPerson/@objectId?_reveal=citizenServiceNumber",
+										"path": "citizenServiceNumber"
+									}
 								},
 								{
+									"from": "object",
 									"label": "Data protection",
 									"path": "indicatieGeheim",
 									"map": {
@@ -13576,8 +14094,18 @@
 									}
 								},
 								{
+									"from": "object",
+									"label": "Source",
+									"parts": [
+										{
+											"text": "Basisregistratie personen"
+										}
+									]
+								},
+								{
 									"as": "line",
-									"text": "Source: Basisregistratie personen"
+									"from": "object",
+									"text": "Showing the BSN is logged."
 								}
 							]
 						}
@@ -13632,7 +14160,7 @@
 										},
 										{
 											"path": "@self.updated",
-											"format": "date-long"
+											"format": "longdate"
 										},
 										{
 											"path": "_lastChange.userName",
@@ -13737,7 +14265,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -13841,6 +14369,7 @@
 						"title": "Cases",
 						"icon": "FolderAccountOutline",
 						"content": {
+							"ruleAbove": true,
 							"register": "dossiq",
 							"schema": "case",
 							"filter": {
@@ -13883,6 +14412,7 @@
 						"title": "Latest contact moments",
 						"icon": "PhoneLogOutline",
 						"content": {
+							"ruleAbove": true,
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
@@ -13892,6 +14422,9 @@
 								"field": "startTime",
 								"dir": "desc"
 							},
+							"extend": [
+								"case"
+							],
 							"limit": 3,
 							"presentation": "feed",
 							"icon": {
@@ -13900,14 +14433,36 @@
 									"phone": "PhoneInTalk",
 									"email": "EmailOutline",
 									"balie": "AccountOutline",
+									"brief": "EmailOpenOutline",
 									"chat": "MessageTextOutline",
 									"webformulier": "Earth"
 								},
 								"default": "EmailOutline"
 							},
-							"meta": "{startTime|datetime}",
+							"meta": {
+								"parts": [
+									"{startTime|datetime}",
+									"{notificationChannel}",
+									"{direction}",
+									"case {case.identifier}"
+								]
+							},
+							"valueLabels": {
+								"notificationChannel": {
+									"phone": "phone",
+									"email": "email",
+									"webformulier": "web form",
+									"chat": "chat",
+									"social_media": "social media",
+									"balie": "desk"
+								},
+								"direction": {
+									"inbound": "inbound",
+									"outbound": "outbound"
+								}
+							},
 							"text": "{summary}",
-							"headerSubtitle": "{total} in total",
+							"headerNote": "{total} in total",
 							"emptyText": "No contact moments yet"
 						}
 					},
@@ -13920,6 +14475,7 @@
 							"appInstalled": "pipelinq"
 						},
 						"content": {
+							"ruleAbove": true,
 							"requiresApp": "pipelinq",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/parties/open-tickets/list",
@@ -13949,7 +14505,13 @@
 									"complaint": "Complaint"
 								}
 							},
-							"headerNote": "{total} open",
+							"headerLink": {
+								"label": "View all {total} tickets",
+								"href": "/apps/pipelinq/tickets/party/{ref}",
+								"params": {
+									"ref": "@object.masterEntityRef"
+								}
+							},
 							"emptyText": "No open tickets"
 						}
 					},
@@ -14111,8 +14673,8 @@
 									"widgetIds": [
 										"contact-card",
 										"contact-open-cases",
-										"contact-latest-moments",
-										"contact-open-tickets"
+										"contact-open-tickets",
+										"contact-latest-moments"
 									],
 									"label": "Overview"
 								},
@@ -14141,6 +14703,7 @@
 								{
 									"widgetId": "org-contact-persons",
 									"label": "Contact persons",
+									"overflow": true,
 									"countFrom": {
 										"endpoint": "/apps/openregister/api/objects/dossiq/kvkCompany/@objectId/parties",
 										"field": "total"
@@ -14193,6 +14756,10 @@
 											"id": "person",
 											"register": "dossiq",
 											"schema": "brpPerson",
+											"lookup": {
+												"url": "/apps/dossiq/api/people/lookup",
+												"when": "^[0-9]{9}$"
+											},
 											"label": "Person",
 											"title": "{displayName}",
 											"secondary": "{residence.street} {residence.houseNumber}"
@@ -14397,7 +14964,7 @@
 										},
 										{
 											"path": "@self.updated",
-											"format": "date-long"
+											"format": "longdate"
 										},
 										{
 											"path": "_lastChange.userName",

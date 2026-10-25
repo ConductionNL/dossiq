@@ -52,13 +52,13 @@ export const SCOPE_RESULT = 'result'
  * Do not add the retired names back: they would suggest the prefix is handled,
  * and it is not.
  *
- * 🔴 NEITHER IS `_related[…]`, FOR THE SAME REASON. A filter on a case type's
- * own field narrows the result set exactly as a search term does: it is
- * openregister's related-row query over the `caseProperty` rows that hang off
- * each case, and it resolves inside the same `searchObjects()` call. Dropping
+ * 🔴 NEITHER IS `_element[…]` (or `_related[…]`), FOR THE SAME REASON. A filter
+ * on a case type's own field narrows the result set exactly as a search term
+ * does: it is openregister's array-element query over the answers in each
+ * case's `properties[]`, and it resolves inside the same `searchObjects()` call. Dropping
  * it would hand the job every case in the register while the button said
- * "Select all 43 cases matching this filter". This list is a DENY list, so a
- * `_related` key already survives; the point of saying so here is that it must
+ * "Select all 43 cases matching this filter". This list is a DENY list, so an
+ * `_element` key already survives; the point of saying so here is that it must
  * keep surviving, and the test that checks it is what makes adding it to this
  * list a change somebody has to defend.
  *

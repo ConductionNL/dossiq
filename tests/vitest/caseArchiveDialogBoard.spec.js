@@ -59,10 +59,11 @@ describe('the Archive this case dialog against board DqArchiveren', () => {
 		const items = archive().facts[0].items
 		expect(items.map((item) => item.label)).toEqual([
 			'Archive nomination',
+			'Retention period',
 			'Destruction date',
 			'Archive status afterwards',
 		])
-		expect(items[2].value).toBe('Archived')
+		expect(items[3].value).toBe('Archived')
 		expect(nl.Archived).toBe('Gearchiveerd')
 	})
 

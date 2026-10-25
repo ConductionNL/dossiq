@@ -2,8 +2,9 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Board DqZaaktypeOverzicht, Versies: the versions card ends with the case
- * type's existing Publish action, disabled once the version is published.
+ * Board DqZaaktypeOverzicht, Versies: on a draft the versions card ends with
+ * the case type's existing Publish action; a published version offers a new
+ * version instead.
  *
  * @spec openspec/specs/case-types/spec.md
  */
@@ -20,11 +21,11 @@ describe('the versions card of a case type', () => {
 		const header = manifest.pages
 			.find((p) => p.id === 'CaseTypeDetail')
 			.config.headerActions.find((a) => a.id === 'case-type-publish')
-		expect(card.content.footerAction).toMatchObject({ type: header.type, target: header.target, label: 'Publish' })
+		expect(card.content.footerAction[0]).toMatchObject({ type: header.type, target: header.target, label: 'Publish' })
 	})
 
-	it('is disabled, with a reason, on a version that is no draft', () => {
-		expect(card.content.footerAction.disabledWhen).toEqual({ field: 'isDraft', op: 'neq', value: true })
-		expect(card.content.footerAction.disabledReason).toBe('This version is already published')
+	it('offers Publish on a draft only', () => {
+		expect(card.content.footerAction[0].visibleWhen).toEqual({ field: 'isDraft', op: 'eq', value: true })
+		expect(card.content.footerAction[1].label).toBe('Make a new version')
 	})
 })

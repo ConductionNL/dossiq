@@ -37,7 +37,7 @@ describe('processing time', () => {
 			'processing-time-charts': ['bar-list', 'sla'],
 			'processing-time-charts-distribution': ['bar', 'distribution'],
 			'processing-time-charts-trend': ['line', 'trend'],
-			'processing-time-charts-throughput': ['line', 'throughput'],
+			'processing-time-charts-throughput': ['bar', 'throughput'],
 		}
 		for (const [id, [kind, view]] of Object.entries(views)) {
 			const w = widget('Doorlooptijd', id)
@@ -97,7 +97,11 @@ describe('processing time', () => {
 		const severity = w.content.columns.find((c) => c.key === 'severity')
 		expect(severity.enumLabels).toEqual({ overdue: 'Overdue', critical: 'Critical', warning: 'At risk', ok: 'On track' })
 		expect(Object.keys(severity.colorMap).sort()).toEqual([...severity.enum].sort())
-		expect(w.content.columns.find((c) => c.key === 'percentUsedDisplay').widget).toBe('progress')
+		// "Termijn gebruikt" is a figure at the column's end ("93"), as DqDoorlooptijd draws it.
+		const used = w.content.columns.find((c) => c.key === 'percentUsedDisplay')
+		expect(used.widget).toBeUndefined()
+		expect(used.format).toEqual({ style: 'number', decimals: 0 })
+		expect(used.class).toContain('cn-table-col--end')
 	})
 
 	it('selects one case type for the deadline list by configuration, never by a word in its title', () => {
@@ -338,7 +342,33 @@ describe('no dashboard reads a dossiq component any more', () => {
 	})
 })
 
+describe('processing time table heads', () => {
+	it('lets the half-width tables wrap their figure heads and aligns the figures to the end, as DqDoorlooptijd does', () => {
+		// "Doel (dagen)", "Gem. werkelijk (dagen)" and "Termijn gebruikt" wrap
+		// over two or three lines in the half-width cards; one-line heads made
+		// the Prestaties table wider than its card.
+		const breakdown = Object.fromEntries(widget('Doorlooptijd', 'processing-time-breakdown').content.columns.map((c) => [c.key, c]))
+		for (const key of ['targetDays', 'avgActualDays', 'complianceRate', 'total']) {
+			expect(breakdown[key].class.split(' '), key).toEqual(expect.arrayContaining(['cn-table-col--end', 'cn-cell--wrap']))
+		}
+		const atRisk = widget('Doorlooptijd', 'processing-time-at-risk').content.columns.find((c) => c.key === 'percentUsedDisplay')
+		expect(atRisk.class).toContain('cn-cell--wrap')
+		// The case type and the remaining time wrap too, so the title column
+		// keeps its width in the half-width card.
+		const riskCols = Object.fromEntries(widget('Doorlooptijd', 'processing-time-at-risk').content.columns.map((c) => [c.key, c]))
+		for (const key of ['title', 'caseTypeName', 'remainingLabel']) {
+			expect(riskCols[key].cellClass, key).toBe('cn-cell--wrap')
+		}
+	})
+})
+
 describe('process mining figures', () => {
+	it('draws the dwell time per status with the value at each bar\'s end, as DqProcesanalyse does', () => {
+		const dwell = widget('ProcessMiningDashboard', 'pm-dwell').content
+		expect(dwell.chartKind).toBe('bar-list')
+		expect(dwell.barValueAtEnd).toBe(true)
+	})
+
 	it('aligns the figures to the end and rules above the first stuck phase, as DqProcesanalyse draws them', () => {
 		const cols = (id) => Object.fromEntries(widget('ProcessMiningDashboard', id).content.columns.map((c) => [c.key, c]))
 		const ranking = cols('pm-bottlenecks')
@@ -353,9 +383,43 @@ describe('process mining figures', () => {
 		// "Waar zaken blijven hangen": a hairline under the title, above the first row.
 		expect(widget('ProcessMiningDashboard', 'pm-stuck').content.ruleAbove).toBe(true)
 	})
+
+	it('writes the ranking and handler figures as whole numbers, as DqProcesanalyse does', () => {
+		// "9.936", "432": the endpoints answer hours like 993.5, which read raw.
+		const whole = { style: 'number', decimals: 0 }
+		const cols = (id) => Object.fromEntries(widget('ProcessMiningDashboard', id).content.columns.map((c) => [c.key, c]))
+		for (const key of ['medianWorkingHours', 'medianHours', 'visitCount', 'score']) {
+			expect(cols('pm-bottlenecks')[key].format, key).toEqual(whole)
+		}
+		for (const key of ['workingHours', 'wallHours', 'visitCount']) {
+			expect(cols('pm-dwell-by-assignee')[key].format, key).toEqual(whole)
+		}
+	})
+})
+
+describe('the small compliance charts', () => {
+	it('draw flat labels and no y labels in their narrow cards, the SLA trend by month with the red target line, as DqDoorlooptijd does', () => {
+		const distribution = widget('Doorlooptijd', 'processing-time-charts-distribution').content
+		expect(distribution.options.xaxis.labels.rotate).toBe(0)
+		expect(distribution.options.yaxis.show).toBe(false)
+		const trend = widget('Doorlooptijd', 'processing-time-charts-trend').content
+		expect(trend.categoryFormat).toBe('month')
+		expect(trend.options.xaxis.labels.rotate).toBe(0)
+		expect(trend.options.yaxis.labels.show).toBe(false)
+		expect(trend.options.markers.size).toBe(4)
+		expect(trend.referenceLines[0].color).toContain('--color-error')
+	})
 })
 
 describe('throughput per week', () => {
+	it('keeps DqProcesanalyse\'s weekly line readable over a year: ten flat week labels, a straight line, no y labels', () => {
+		const options = widget('ProcessMiningDashboard', 'pm-throughput').content.options
+		expect(options.xaxis.tickAmount).toBe(10)
+		expect(options.xaxis.labels.rotate).toBe(0)
+		expect(options.stroke.curve).toBe('straight')
+		expect(options.yaxis.labels.show).toBe(false)
+	})
+
 	it('names the weeks "w40", as DqProcesanalyse and DqDoorlooptijd draw them', () => {
 		// The endpoints key a week as ISO 2026-W40; nextcloud-vue
 		// chart-week-categories writes it as "w40".
@@ -365,5 +429,16 @@ describe('throughput per week', () => {
 		const processing = widget('Doorlooptijd', 'processing-time-charts-throughput').content
 		expect(processing.categoryFormat).toBe('week')
 		expect(processing.endpointSource.labelsPath).toBe('week')
+	})
+
+	it('draws each page as its board does: a line on DqProcesanalyse, teal bars with their values on DqDoorlooptijd', () => {
+		// Coordinator 24 Oct: each page follows its own board.
+		expect(widget('ProcessMiningDashboard', 'pm-throughput').content.chartKind).toBe('line')
+		const processing = widget('Doorlooptijd', 'processing-time-charts-throughput').content
+		expect(processing.chartKind).toBe('bar')
+		expect(processing.colors[0]).toContain('--nl-color-teal-text')
+		expect(processing.options.dataLabels.enabled).toBe(true)
+		expect(processing.options.plotOptions.bar.dataLabels.position).toBe('top')
+		expect(processing.options.yaxis.show).toBe(false)
 	})
 })

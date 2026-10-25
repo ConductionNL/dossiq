@@ -139,6 +139,7 @@ import {
 	saveGroupDefault,
 	savePreference,
 } from '../../services/notificationRoutingApi.js'
+import { notificationLabels } from '../../utils/notificationLabels.js'
 
 export default {
 	name: 'NotificationRoutingSettings',
@@ -282,7 +283,8 @@ export default {
 		},
 
 		/**
-		 * What to call this notification on screen.
+		 * What to call this notification on screen: this screen's own words,
+		 * else the app's notification labels, else the schema and the key.
 		 *
 		 * @param {object} entry The entry.
 		 * @return {string} The label.
@@ -304,8 +306,12 @@ export default {
 				workDigestReady: t('dossiq', 'My daily work digest'),
 			}
 
+			const shared = notificationLabels()
+
 			return (
 				known[entry.notification]
+				|| shared[`${entry.schema}.${entry.notification}`]
+				|| shared[entry.notification]
 				|| `${entry.schemaTitle || entry.schema}: ${entry.notification}`
 			)
 		},
@@ -412,8 +418,10 @@ export default {
 }
 
 /* Wide enough for the longest domain without squeezing the value. */
+/* DqPersoonlijkeInstellingen: the domain select runs the section's width. */
 .notification-routing__scope :deep(.v-select.select) {
-	min-width: min(100%, 360px);
+	width: 100%;
+	max-width: none;
 }
 
 .notification-routing__explainer {

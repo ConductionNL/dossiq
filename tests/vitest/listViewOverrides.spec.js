@@ -97,8 +97,9 @@ describe('the my-work view', () => {
 	})
 
 	it('mounts the workload strip, and no substituted-work card: the work queue lists covered work', () => {
-		expect(overrides.slots).toEqual({ 'below-header': ['WorkloadSummaryBar'] })
-		expect(registry).toMatch(/\tWorkloadSummaryBar: \{\n\t\tkind: 'page',\n\t\tcomponent: WorkloadSummaryBar,/)
+		expect(overrides.slots).toEqual({ 'below-header': ['WorkloadTeamHeading'], 'toolbar-start': ['WorkloadTeamChips'] })
+		expect(registry).toMatch(/\tWorkloadTeamHeading: \{\n\t\tkind: 'page',\n\t\tcomponent: WorkloadTeamHeading,/)
+		expect(registry).toMatch(/\tWorkloadTeamChips: \{\n\t\tkind: 'page',\n\t\tcomponent: WorkloadTeamChips,/)
 		expect(registry).not.toMatch(/\tSubstitutedWork: \{/)
 	})
 })

@@ -16,7 +16,10 @@
  * - `@myGroup`: that user's first group other than `admin`, by id, the team
  *   whose queue the example cases land in;
  * - `@today`, `@today+3d`, `@today-2d`: a date relative to the load day;
- * - `@now`, `@now-1d`: a date-time relative to the moment of loading.
+ * - `@now`, `@now-1d`: a date-time relative to the moment of loading;
+ * - `@ref:<schema>:<slug>` naming no fragment object: the id of the stored
+ *   register object with that slug, such as a case type the register ships.
+ *   A reference to another fragment object is left for the importer.
  * Everything in these files is fictional.
  *
  * @category Service
@@ -43,10 +46,13 @@ namespace OCA\Dossiq\Service\Setup;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IGroupManager;
 use OCP\IUserSession;
+use Throwable;
 
 /**
  * Reads the curated example data fragments and fills in their load-time tokens.
@@ -54,6 +60,8 @@ use OCP\IUserSession;
  * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
  */
 class ExampleDataFragments {
+
+	use SearchesObjects;
 
 	/**
 	 * App-relative directory of the fragments.
@@ -69,12 +77,14 @@ class ExampleDataFragments {
 	 * @param IUserSession  $userSession The user loading the example data.
 	 * @param ITimeFactory  $time        The clock the relative dates count from.
 	 * @param IGroupManager $groups      The loading user's groups, for `@myGroup`.
+	 * @param SettingsService|null $settingsService The register and the ObjectService, for stored references.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,
 		private readonly IGroupManager $groups,
+		private readonly ?SettingsService $settingsService = null,
 	) {
 	}//end __construct()
 
@@ -143,16 +153,86 @@ class ExampleDataFragments {
 
 		$now = $this->time->now();
 
+		$raw = $this->rawObjects();
 		$fresh = array_filter(
-			$this->rawObjects(),
+			$raw,
 			static fn (array $object): bool => in_array((string)($object['@self']['slug'] ?? ''), $skipSlugs, true) === false
 		);
+		$who = array_merge($who, $this->storedReferences(objects: $fresh, siblings: $raw));
 
 		return array_map(
 			fn (array $object): array => $this->resolve(value: $object, who: $who, now: $now),
 			array_values($fresh)
 		);
 	}//end objects()
+
+	/**
+	 * The stored ids behind the `@ref:<schema>:<slug>` tokens that name no fragment object.
+	 *
+	 * A token that cannot be resolved is left out, so it stays in the object
+	 * and the importer reports it as unresolved.
+	 *
+	 * @param array<int, array<string, mixed>> $objects  The objects being loaded.
+	 * @param array<int, array<string, mixed>> $siblings Every fragment object.
+	 *
+	 * @return array<string, string> The ids, keyed by token.
+	 */
+	private function storedReferences(array $objects, array $siblings): array {
+		$fragments = [];
+		foreach ($siblings as $sibling) {
+			$fragments['@ref:' . (string)($sibling['@self']['schema'] ?? '') . ':' . (string)($sibling['@self']['slug'] ?? '')] = true;
+		}
+
+		$tokens = [];
+		array_walk_recursive(
+			$objects,
+			static function (mixed $value) use (&$tokens, $fragments): void {
+				if (is_string($value) === true && preg_match('/^@ref:[^:]+:.+$/', $value) === 1 && isset($fragments[$value]) === false) {
+					$tokens[$value] = true;
+				}
+			}
+		);
+
+		$ids = [];
+		foreach (array_keys($tokens) as $token) {
+			[, $schema, $slug] = explode(':', $token, 3);
+			$id = $this->storedId(schema: $schema, slug: $slug);
+			if ($id !== '') {
+				$ids[$token] = $id;
+			}
+		}
+
+		return $ids;
+	}//end storedReferences()
+
+	/**
+	 * The id of the stored register object of a schema with a slug.
+	 *
+	 * @param string $schema The schema slug.
+	 * @param string $slug   The object slug.
+	 *
+	 * @return string The id, or '' when it is not stored or cannot be read.
+	 */
+	private function storedId(string $schema, string $slug): string {
+		$objectService = $this->settingsService?->getObjectService();
+		if ($objectService === null) {
+			return '';
+		}
+
+		$register = $this->settingsService->getConfigValue('register', Application::APP_ID);
+
+		try {
+			$row = $this->asSystemWithoutUser(
+				objectService: $objectService,
+				userSession: $this->userSession,
+				operation: fn (): ?array => $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $slug),
+			);
+		} catch (Throwable) {
+			return '';
+		}
+
+		return (string)($row['@self']['id'] ?? $row['id'] ?? '');
+	}//end storedId()
 
 	/**
 	 * The loading user's team: the first of their groups, by id, that is not
@@ -173,7 +253,7 @@ class ExampleDataFragments {
 	 * Fill the tokens in one value, recursively.
 	 *
 	 * @param array<array-key, mixed> $value The object, or a nested object or list.
-	 * @param array<string, string> $who   `@me` and `@myGroup`, '' when unknown.
+	 * @param array<string, string> $who   `@me`, `@myGroup` and stored references, '' when unknown.
 	 * @param DateTimeImmutable     $now   The moment of loading.
 	 *
 	 * @return array<array-key, mixed> The value with tokens filled in.

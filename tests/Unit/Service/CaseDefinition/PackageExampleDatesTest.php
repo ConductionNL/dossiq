@@ -65,4 +65,29 @@ class PackageExampleDatesTest extends TestCase {
 		self::assertSame(expected: 3, actual: $filled[0]['count']);
 		self::assertFalse(condition: $filled[0]['done']);
 	}//end testFillsTokensRelativeToToday()
+
+	/**
+	 * A list-of-records answer stored as JSON text gets its tokens filled inside.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/investigation-steps-in-the-case-type/specs/case-page/spec.md
+	 */
+	public function testFillsTokensInsideAJsonTextAnswer(): void {
+		$today = new DateTimeImmutable('2026-10-18 15:42', new DateTimeZone('Europe/Amsterdam'));
+		$rows = [
+			[
+				'value' => '[{"kind":"gesprek","date":"{{date:-12}}"},{"kind":"anders","date":"2026-01-01"}]',
+				'plain' => '[not json {{date:-1}}',
+			],
+		];
+
+		$filled = (new PackageExampleDates())->fill(rows: $rows, today: $today);
+
+		self::assertSame(
+			expected: [['kind' => 'gesprek', 'date' => '2026-10-06'], ['kind' => 'anders', 'date' => '2026-01-01']],
+			actual: json_decode($filled[0]['value'], true)
+		);
+		self::assertSame(expected: '[not json {{date:-1}}', actual: $filled[0]['plain']);
+	}//end testFillsTokensInsideAJsonTextAnswer()
 }//end class

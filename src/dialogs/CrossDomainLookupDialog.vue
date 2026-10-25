@@ -34,7 +34,7 @@
 				{{
 					t(
 						'dossiq',
-						'This answers whether an open case exists in another domain, which domain it is and who to call. It shows nothing about the case itself.',
+						'Only whether an open case exists elsewhere, and who to call.',
 					)
 				}}
 			</p>

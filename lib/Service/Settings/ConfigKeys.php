@@ -313,13 +313,10 @@ class ConfigKeys {
 		// absent from CONFIG_KEYS is silently dropped on save — the same
 		// silent-discard failure as the dead route these fields used to POST to
 		// (procest#794), just one layer deeper.
-		// ⚠️ MEASURED, not assumed: as of this commit NOTHING reads these four
-		// values. A repo-wide grep finds them only in the Vue tab and in this
-		// list; the n8n consultation workflows (n8n/consultation-deadline-
-		// monitor.json, n8n/consultation-bottleneck-detection.json) do not
-		// reference them either. Registering them makes the admin's save
-		// round-trip honestly instead of vanishing; wiring a consumer is
-		// tracked separately and must not be inferred from their presence here.
+		// Read by Consultation\ConsultationTerms: the default term of a new
+		// advice request, the due-soon list and the bottleneck report (which
+		// the n8n consultation workflows read), and the address an external
+		// advisory body is sent.
 		'consultation_default_deadline_days',
 		'consultation_warning_offset_days',
 		'consultation_external_response_url',

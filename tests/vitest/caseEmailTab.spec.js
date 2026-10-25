@@ -30,3 +30,10 @@ describe('the Email tab', () => {
 		expect(mail.draft.blankButton).toBe(true)
 	})
 })
+
+describe('the notes in the Email tab', () => {
+	it('stand in a card of their own, titled and subtitled as the board draws "Notities"', () => {
+		const notes = simple.configPatch.widgets['case-notes-panel']
+		expect(notes.content.view).toBe('tab')
+	})
+})

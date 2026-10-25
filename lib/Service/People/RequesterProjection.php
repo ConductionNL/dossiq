@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Service\Support\TrustedRevealRead;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Throwable;
@@ -84,11 +85,14 @@ class RequesterProjection {
 
 		foreach (self::SETS as $schema => $type) {
 			try {
-				$rows = $this->searchObjectsAsArrays(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					filters: ['_ids' => [$uuid], '_limit' => 1],
+				// The projection stores the requester's BSN, which OpenRegister shows only on request.
+				$rows = (new TrustedRevealRead())->run(
+					fn () => $this->searchObjectsAsArrays(
+						objectService: $objectService,
+						register: $register,
+						schema: $schema,
+						filters: ['_ids' => [$uuid], '_limit' => 1],
+					)
 				);
 			} catch (Throwable) {
 				continue;

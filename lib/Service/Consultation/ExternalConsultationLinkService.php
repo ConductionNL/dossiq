@@ -96,7 +96,7 @@ class ExternalConsultationLinkService {
 	 * @param string $userId The handler inviting them.
 	 * @param string|null $password An optional password, checked at use.
 	 *
-	 * @return array<string, mixed> The share and the address to send.
+	 * @return array<string, mixed> The share, the address to send (`responseUrl`) and the message that carries it.
 	 *
 	 * @throws RuntimeException When the consultation cannot carry a link.
 	 *
@@ -140,6 +140,11 @@ class ExternalConsultationLinkService {
 			'Dossiq: an external advisory body was invited over a case access link',
 			['consultationId' => $consultationId, 'advisoryBody' => $body]
 		);
+
+		// The address to send: the configured response address, else the link.
+		$terms = $this->consultations->terms();
+		$share['responseUrl'] = $terms->responseAddress(linkUrl: (string)($share['url'] ?? ''));
+		$share['message'] = $terms->invitationMessage(consultation: $consultation, address: $share['responseUrl']);
 
 		return $share;
 	}//end invite()

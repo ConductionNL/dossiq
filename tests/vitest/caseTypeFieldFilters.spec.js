@@ -59,6 +59,19 @@ describe('a case type says which of its fields are worth filtering on', () => {
 })
 
 describe('a whole-result act carries the field filters', () => {
+	it('keeps _element alongside _search', () => {
+		const filters = readListFilters({
+			_page: '2',
+			caseType: 'ct-1',
+			'_element[properties][propertyDefinition]': 'pd-1',
+			'_element[properties][value][gte]': '100000',
+		})
+
+		expect(filters['_element[properties][propertyDefinition]']).toBe('pd-1')
+		expect(filters['_element[properties][value][gte]']).toBe('100000')
+		expect(filters._page).toBeUndefined()
+	})
+
 	it('keeps _related alongside _search and drops only paging', () => {
 		const filters = readListFilters({
 			_page: '3',
@@ -87,10 +100,19 @@ describe('the bar is placed where it can be reached', () => {
 	const registry = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 	const cases = (manifest.pages || []).find((p) => p.id === 'Cases')
 
+	it('reads the case\'s own answers in properties[], which the case schema holds (DQ-REINT 23 Oct)', () => {
+		const register = readJson('lib', 'Settings', 'dossiq_register.json')
+		const answers = register.components.schemas.case.properties.properties
+		const { element, definitionKey, valueKey } = cases.config.relatedFieldFilters.related
+		expect(answers.type).toBe('array')
+		expect(Object.keys(answers.items.properties)).toEqual(expect.arrayContaining([definitionKey, valueKey]))
+		expect(element).toBe('properties')
+	})
+
 	it('is declared on the Cases page, scoped to the case type the route names', () => {
 		expect(cases.config.relatedFieldFilters).toEqual({
 			definitions: { register: 'dossiq', schema: 'propertyDefinition', filter: { caseType: '$route.query.caseType' } },
-			related: { schema: 'caseProperty', backref: 'case', definitionKey: 'propertyDefinition', valueKey: 'value' },
+			related: { element: 'properties', definitionKey: 'propertyDefinition', valueKey: 'value' },
 		})
 	})
 

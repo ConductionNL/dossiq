@@ -252,6 +252,26 @@ class FieldRoleRuleDeclarationTest extends TestCase {
 	}//end testTwoRulesOnOneFieldMergeIntoOneBlock()
 
 	/**
+	 * A rule limited to statuses is enforced per state only: it publishes no
+	 * schema-wide property block, which would hold in every status.
+	 *
+	 * @return void
+	 */
+	public function testARuleLimitedToStatusesPublishesNoPropertyBlock(): void {
+		$declaration = new FieldRoleRuleDeclaration();
+		$caseType    = [
+			'fieldRoleRules' => [
+				['field' => 'bouwkosten', 'rule' => 'readOnly', 'groups' => ['intakers'], 'heldBy' => ['vergunningverleners'], 'statuses' => ['work-uuid']],
+				['field' => 'welstand', 'rule' => 'hidden', 'groups' => ['intakers'], 'heldBy' => ['vergunningverleners'], 'statuses' => []],
+			],
+		];
+
+		$this->assertSame(['welstand'], array_keys($declaration->propertyAuthorization(caseType: $caseType)));
+		$this->assertSame(['hidden'], array_keys($declaration->lifecycleFields(caseType: $caseType)));
+		$this->assertSame(['hidden', 'readOnly'], array_keys($declaration->lifecycleFields(caseType: $caseType, statusId: 'work-uuid')));
+	}//end testARuleLimitedToStatusesPublishesNoPropertyBlock()
+
+	/**
 	 * A case type declaring nothing publishes nothing.
 	 *
 	 * @return void

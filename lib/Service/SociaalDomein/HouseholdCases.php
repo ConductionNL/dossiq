@@ -36,6 +36,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\SociaalDomein;
 
+use OCA\Dossiq\Service\Support\TrustedRevealRead;
+
 /**
  * Builds the household rows of a case.
  *
@@ -145,7 +147,9 @@ class HouseholdCases {
 
 		$rows = [];
 		foreach ($bsns as $bsn) {
-			foreach ($this->store->rows(schema: 'brpPerson', filters: ['citizenServiceNumber' => $bsn]) as $person) {
+			// The BSN is shown only on request in OpenRegister; finding people by it is trusted server work.
+			$people = (new TrustedRevealRead())->run(fn () => $this->store->rows(schema: 'brpPerson', filters: ['citizenServiceNumber' => $bsn]));
+			foreach ($people as $person) {
 				foreach ($this->casesOf(personId: (string)($person['id'] ?? '')) as $other) {
 					$otherId = (string)($other['id'] ?? '');
 					if ($otherId === (string)($case['id'] ?? '') || isset($rows[$otherId]) === true || $canRead($otherId) !== true) {

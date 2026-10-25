@@ -371,3 +371,72 @@ describe('BulkDocumentActionDialog opened from a file row', () => {
 		)
 	})
 })
+
+describe('BulkDocumentActionDialog — copy-to-case (DqDocumentenBeheer "Kopiëren naar andere zaak")', () => {
+	it('finds cases to copy to, leaving out this case', async () => {
+		mockGet.mockImplementation((url) => {
+			if (String(url).includes('/objects/dossiq/case'))
+				return Promise.resolve({
+					data: {
+						results: [
+							{ id: 'case-1', identifier: '2026-0082', title: 'Verlichting fietspad Lindelaan' },
+							{ id: 'case-2', identifier: '2026-0090', title: 'Lantaarnpalen Oost' },
+						],
+					},
+				})
+			return Promise.resolve({ data: {} })
+		})
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'copy-to-case', selectedIds: ['join-1'], caseId: 'case-1' },
+		})
+
+		await wrapper.vm.searchCases('Lantaarn')
+		await flushPromises()
+
+		expect(String(mockGet.mock.calls.at(-1)[0])).toContain('_search=Lantaarn')
+		expect(wrapper.vm.caseOptions).toEqual([{ id: 'case-2', label: '2026-0090 · Lantaarnpalen Oost' }])
+	})
+
+	it('posts the documents and the chosen case to the copy endpoint', async () => {
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'copy-to-case', selectedIds: ['join-1'], caseId: 'case-1' },
+		})
+		await wrapper.setData({ targetCase: { id: 'case-2', label: '2026-0090 · Lantaarnpalen Oost' } })
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockPost).toHaveBeenCalledWith(
+			expect.stringContaining('/apps/dossiq/api/informatieobjecten/bulk/copy'),
+			{ ids: ['doc-1'], targetCaseId: 'case-2' },
+		)
+	})
+})
+
+describe('BulkDocumentActionDialog — merge-pdf (DqDocumentenBeheer "Samenvoegen tot pdf")', () => {
+	it('asks the case to merge the ticked files, in order, into one PDF', async () => {
+		mockPost.mockResolvedValue({ data: { status: 'done', resultFileId: 99 } })
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'merge-pdf', fileIds: [11, 12], caseId: 'case-1' },
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockPost).toHaveBeenCalledWith('/apps/dossiq/api/cases/case-1/dossier/merge', { fileIds: [11, 12] })
+		expect(mockSuccess).toHaveBeenCalled()
+		expect(mockEmit).toHaveBeenCalledWith('cn:page:refresh')
+	})
+
+	it('shows the server\'s sentence when the merge is refused', async () => {
+		mockPost.mockRejectedValue({ response: { data: { message: 'Filinq is not installed, so documents cannot be merged' } } })
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'merge-pdf', fileIds: [11, 12], caseId: 'case-1' },
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(wrapper.vm.error).toBe('Filinq is not installed, so documents cannot be merged')
+	})
+})

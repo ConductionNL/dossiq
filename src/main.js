@@ -39,6 +39,7 @@ import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
 import { installMyTeamNameSource, installMyTeamSource } from './services/myTeamSource.js'
 import { useObjectStore } from './store/modules/object.js'
+import { withConfigLabels } from './utils/configLabels.js'
 import { withConfiguredLenses } from './utils/configLenses.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
 import { installPageTitles } from './utils/pageTitle.js'
@@ -252,7 +253,7 @@ const appConfig = loadState('dossiq', 'config', {})
 const builtManifest = markRaw(
 	translateFieldOverrideLabels(
 		translateBannerCopy(
-			translateLensLabels(withConfiguredLenses(profiledManifest, appConfig), (label) => t('dossiq', label)),
+			translateLensLabels(withConfigLabels(withConfiguredLenses(profiledManifest, appConfig), appConfig), (label) => t('dossiq', label)),
 			(label) => t('dossiq', label),
 		),
 		(label) => t('dossiq', label),

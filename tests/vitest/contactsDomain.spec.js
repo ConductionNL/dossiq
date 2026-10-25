@@ -246,8 +246,8 @@ describe.each([
 		expect(strip.content.tabs[0].widgetIds).toEqual([
 			'contact-card',
 			'contact-open-cases',
-			'contact-latest-moments',
 			'contact-open-tickets',
+			'contact-latest-moments',
 		])
 		expect(strip.content.tabs.map((tab) => tab.widgetId)).toEqual([
 			undefined,
@@ -337,9 +337,10 @@ describe('the contact on a contact moment', () => {
 		// (#2931) the sensitive-field read rules. The two files are asserted
 		// TOGETHER and against one value on purpose: #2907 bumped the live
 		// register and left the mock behind, and a mock one version short
-		// looks exactly like a mock that is up to date.
+		// looks exactly like a mock that is up to date. 1.6.0 added the paper
+		// letter (`brief`) as a channel (contact-channel-letter).
 		for (const register of [kccRegister, mockRegister]) {
-			expect(register.components.schemas.contactmoment.version).toBe('1.5.0')
+			expect(register.components.schemas.contactmoment.version).toBe('1.6.0')
 		}
 	})
 

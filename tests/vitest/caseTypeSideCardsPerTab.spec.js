@@ -42,6 +42,8 @@ describe('case type side column per tab', () => {
 		expect(on('overview')).toEqual(['side-case-type-versions', 'side-case-type-facts', 'side-case-type-check'])
 		expect(on('phases')).toEqual(['side-case-type-versions', 'side-case-type-facts', 'side-case-type-history'])
 		expect(on('fields')).toEqual(['side-case-type-choice-list', 'side-case-type-parent'])
+		// DqZaaktypeRegels: Versions and Details beside the rules, as beside Statuses.
+		expect(on('rules')).toEqual(['side-case-type-versions', 'side-case-type-facts'])
 	})
 
 	it('draws the check beside Overview, not in its body', () => {

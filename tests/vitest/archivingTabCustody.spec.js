@@ -25,4 +25,10 @@ describe('the Archiving tab', () => {
 		expect(tabs.filter((tab) => ids(tab).includes('case-custody-panel'))).toHaveLength(1)
 		expect(tabs.find((tab) => tab.label === 'Custody')).toBeUndefined()
 	})
+
+	it('draws Bewaring as a titled card in the stack, as the board', () => {
+		const registry = fs.readFileSync(path.join(ROOT, 'src/registry.js'), 'utf8')
+		const entry = registry.slice(registry.indexOf("'case-custody-pane': {"), registry.indexOf('DocumentCompareDialog: {'))
+		expect(entry).toMatch(/\n\t\tchrome: 'card',/)
+	})
 })

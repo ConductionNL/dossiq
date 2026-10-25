@@ -44,6 +44,8 @@ class ZuiddrechtBuurtverenigingOostTest extends TestCase {
 		$objects = array_column($set['objects'], null, 'key');
 
 		$this->assertSame(expected: '{{cast:buurtoost.kvk}}', actual: $objects['bedrijf-buurtoost']['data']['kvkNumber']);
+		// Pipelinq's client-buurtoost names the same master entity, so its tickets show on the organisation.
+		$this->assertSame(expected: '0f5e0000-0000-4000-8000-000000000007', actual: $objects['bedrijf-buurtoost']['data']['masterEntityRef']);
 		$this->assertSame(expected: '{{cast:marja.bsn}}', actual: $objects['persoon-marja']['data']['citizenServiceNumber']);
 
 		$cases = [];
