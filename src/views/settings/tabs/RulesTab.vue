@@ -31,6 +31,9 @@
 				:title="editable ? '' : t('dossiq', 'A published version does not change. Make a new version to change its rules.')"
 				data-testid="rules-add"
 				@click="dialog = { rule: null }">
+				<template #icon>
+					<Plus :size="20" />
+				</template>
 				{{ t('dossiq', 'Add rule') }}
 			</NcButton>
 		</div>
@@ -148,6 +151,7 @@
 
 <script>
 import { NcActionButton, NcActions, NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
 import CaseTypeRuleDialog from '../../../modals/CaseTypeRuleDialog.vue'
 import { caseTypeRuleRow, fetchBlueprintCatalogue, newRuleId, ruleFields } from '../../../services/caseTypeRules.js'
 import {
@@ -173,6 +177,7 @@ export default {
 		NcLoadingIcon,
 		NcSelect,
 		NcTextField,
+		Plus,
 	},
 
 	props: {
@@ -601,7 +606,7 @@ export default {
 
 .rules-tab__head {
 	display: flex;
-	justify-content: flex-end;
+	justify-content: flex-start;
 	margin-bottom: 8px;
 }
 
