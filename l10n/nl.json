@@ -9418,6 +9418,7 @@
         "The team this task belongs to. Setting it never clears the personal assignee.": "Het team waar deze taak bij hoort. Dit wist de persoonlijke behandelaar nooit.",
         "The teams a case of this type may be assigned to. Empty means every team.": "De teams waaraan een zaak van dit type toegewezen mag worden. Leeg betekent elk team.",
         "The teams a case of this type may go to, as Nextcloud groups. Empty means every team.": "De teams waar een zaak van dit type naartoe mag, als Nextcloud-groepen. Leeg betekent elk team.",
+        "The template could not be filled in for this case.": "Het sjabloon kon niet voor deze zaak worden ingevuld.",
         "The template it was rendered from.": "Het sjabloon waaruit het is opgemaakt.",
         "The template library has no templates yet.": "De sjablonenbibliotheek heeft nog geen sjablonen.",
         "The template library is unavailable.": "De sjabloonbibliotheek is niet beschikbaar.",
