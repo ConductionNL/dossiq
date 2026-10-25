@@ -3360,6 +3360,7 @@
 			"listNavigation": true,
 			"actionsComponent": "RequesterProjection",
 			"config": {
+				"cardButtons": "regular",
 				"register": "dossiq",
 				"schema": "case",
 				"subtitleField": "identifier",
