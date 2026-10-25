@@ -1668,6 +1668,7 @@ OC.L10N.register(
         "Clerk": "Clerk",
         "Click a bar to see the cases": "Click a bar to see the cases",
         "click a column header to sort": "click a column header to sort",
+        "click a column header to sort · 20 per page": "click a column header to sort · 20 per page",
         "click a column heading to sort · 20 per page": "click a column heading to sort · 20 per page",
         "Click a node to select it, double-click a transition to edit.": "Click a node to select it, double-click a transition to edit.",
         "Click All cases in the menu": "Click All cases in the menu",

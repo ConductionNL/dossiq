@@ -1668,6 +1668,7 @@ OC.L10N.register(
         "Clerk": "Griffier",
         "Click a bar to see the cases": "Klik een balk om de zaken te zien",
         "click a column header to sort": "klik een kolomkop om te sorteren",
+        "click a column header to sort · 20 per page": "klik een kolomkop om te sorteren · 20 per pagina",
         "click a column heading to sort · 20 per page": "klik een kolomkop om te sorteren · 20 per pagina",
         "Click a node to select it, double-click a transition to edit.": "Klik op een knooppunt om het te selecteren, dubbelklik op een overgang om te bewerken.",
         "Click All cases in the menu": "Klik op Alle zaken in het menu",
