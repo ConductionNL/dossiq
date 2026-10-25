@@ -121,6 +121,9 @@ class Application extends App implements IBootstrap {
 			DossiqScannableServices::class
 		);
 
+		// App config keys read with a default, such as the top bar's search words.
+		$context->registerConfigLexicon(ConfigLexicon::class);
+
 		// What this app hands to OpenRegister's lifecycle engine.
 		(new LifecycleRegistrar())->register(context: $context);
 		(new ServiceRegistrar())->register(context: $context);
