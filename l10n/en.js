@@ -11333,6 +11333,8 @@ OC.L10N.register(
         "{count} documents selected": "{count} documents selected",
         "{count} ends today": "{count} ends today",
         "{count} failed": "{count} failed",
+        "{count} files go to case {case}, as a document still to be assessed.": "{count} files go to case {case}, as a document still to be assessed.",
+        "{count} files go to case {case}.": "{count} files go to case {case}.",
         "{count} follower": "{count} follower",
         "{count} followers": "{count} followers",
         "{count} for longer than a week": "{count} for longer than a week",

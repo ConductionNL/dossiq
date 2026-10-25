@@ -11333,6 +11333,8 @@ OC.L10N.register(
         "{count} documents selected": "{count} documenten geselecteerd",
         "{count} ends today": "{count} loopt vandaag af",
         "{count} failed": "{count} mislukt",
+        "{count} files go to case {case}, as a document still to be assessed.": "{count} bestanden komen bij zaak {case}, als nog te beoordelen document.",
+        "{count} files go to case {case}.": "{count} bestanden komen bij zaak {case}.",
         "{count} follower": "{count} volger",
         "{count} followers": "{count} volgers",
         "{count} for longer than a week": "{count} langer dan een week",
