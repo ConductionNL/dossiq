@@ -7329,10 +7329,16 @@
 						"type": "CaseTypeTranslationsWidget",
 						"title": "Translations",
 						"_note": "DqZaaktypeOverzicht Vertalingen: one row per language with its labels and a pill, fully translated or the number missing. The editor stays on the Translations tab, which Edit opens.",
-						"headerLink": {
-							"label": "Edit",
-							"tab": "translations"
-						},
+						"headerActions": [
+							{
+								"label": "Edit",
+								"icon": "Pencil",
+								"action": {
+									"type": "navigate",
+									"target": "/settings/case-types/@objectId#translations"
+								}
+							}
+						],
 						"content": {
 							"mode": "summary"
 						}
