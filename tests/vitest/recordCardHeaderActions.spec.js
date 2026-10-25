@@ -94,6 +94,11 @@ describe('per-card buttons on the record boards', () => {
 		expect(calendar.integrationId).toBe('calendar')
 		expect(calendar.props.headerActions).toEqual(['link', 'create'])
 	})
+	it('links an existing Deck card or makes one from the Kaarten card, not collapsible (DqZaakTaken)', () => {
+		const deck = appended('case-deck-card')
+		expect(deck.integrationId).toBe('deck')
+		expect(deck.props).toMatchObject({ headerActions: ['link', 'create'], collapsible: false })
+	})
 	it('links an existing meeting or makes one from a task\'s Afspraken card, on the task itself: make in the title row, link in the card\'s Actions menu', () => {
 		const task = manifest.pages.find((page) => page.id === 'TaskDetail')
 		const appointments = task.config.widgets.find((widget) => widget.id === 'task-appointments')
