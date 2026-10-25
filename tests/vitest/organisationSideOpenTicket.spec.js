@@ -31,7 +31,8 @@ describe('organisation side open ticket (DqOrganisatie)', () => {
 		expect(card.title).toBe('Open tickets')
 		expect(card.visibleWhen).toEqual({ appInstalled: 'pipelinq' })
 		expect(card.content.requiresApp).toBe('pipelinq')
-		expect(card.content.endpointSource).toEqual(tickets.content.endpointSource)
+		expect(card.content.endpointSource.url).toBe(tickets.content.endpointSource.url)
+		expect(card.content.endpointSource.params).toEqual({ key: tickets.content.endpointSource.params.key })
 		expect(card.content.limit).toBe(1)
 	})
 

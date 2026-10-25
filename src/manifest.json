@@ -13766,23 +13766,39 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/parties/open-tickets/list",
 								"params": {
-									"key": "@object.masterEntityRef"
+									"key": "@object.masterEntityRef",
+									"status": "all"
 								},
 								"responsePath": "results"
 							},
 							"presentation": "rows",
 							"title": "{title}",
-							"meta": "{ticketType}",
+							"meta": {
+								"parts": [
+									"{reference}",
+									"{ticketType}",
+									"handler {assigneeName}"
+								]
+							},
 							"pill": {
 								"field": "status",
 								"variant": "purple",
 								"labels": {
 									"new": "New",
 									"in_progress": "In progress",
-									"awaiting_customer": "Awaiting customer"
+									"awaiting_customer": "Awaiting customer",
+									"resolved": "Handled",
+									"closed": "Handled",
+									"completed": "Handled"
+								},
+								"colorMap": {
+									"resolved": "success",
+									"closed": "success",
+									"completed": "success"
 								}
 							},
 							"trailing": [
+								"Done {resolvedAt|date}",
 								"Term {slaDeadline|date}"
 							],
 							"valueLabels": {
@@ -14518,23 +14534,39 @@
 							"endpointSource": {
 								"url": "/apps/dossiq/api/parties/open-tickets/list",
 								"params": {
-									"key": "@object.masterEntityRef"
+									"key": "@object.masterEntityRef",
+									"status": "all"
 								},
 								"responsePath": "results"
 							},
 							"presentation": "rows",
 							"title": "{title}",
-							"meta": "{ticketType}",
+							"meta": {
+								"parts": [
+									"{reference}",
+									"{ticketType}",
+									"handler {assigneeName}"
+								]
+							},
 							"pill": {
 								"field": "status",
 								"variant": "purple",
 								"labels": {
 									"new": "New",
 									"in_progress": "In progress",
-									"awaiting_customer": "Awaiting customer"
+									"awaiting_customer": "Awaiting customer",
+									"resolved": "Handled",
+									"closed": "Handled",
+									"completed": "Handled"
+								},
+								"colorMap": {
+									"resolved": "success",
+									"closed": "success",
+									"completed": "success"
 								}
 							},
 							"trailing": [
+								"Done {resolvedAt|date}",
 								"Term {slaDeadline|date}"
 							],
 							"valueLabels": {
@@ -14967,17 +14999,31 @@
 							"presentation": "rows",
 							"density": "stacked",
 							"title": "{title}",
-							"meta": "{ticketType}",
+							"meta": {
+								"parts": [
+									"{reference}",
+									"handler {assigneeName}"
+								]
+							},
 							"pill": {
 								"field": "status",
 								"variant": "purple",
 								"labels": {
 									"new": "New",
 									"in_progress": "In progress",
-									"awaiting_customer": "Awaiting customer"
+									"awaiting_customer": "Awaiting customer",
+									"resolved": "Handled",
+									"closed": "Handled",
+									"completed": "Handled"
+								},
+								"colorMap": {
+									"resolved": "success",
+									"closed": "success",
+									"completed": "success"
 								}
 							},
 							"trailing": [
+								"Done {resolvedAt|date}",
 								"Term {slaDeadline|date}"
 							],
 							"valueLabels": {

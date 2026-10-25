@@ -282,6 +282,42 @@ class PipelinqGateway {
 	}//end openTicketsByMasterEntity()
 
 	/**
+	 * The tickets of the pipelinq clients that share each master entity, by
+	 * status: `open` reads as openTicketsByMasterEntity(), `closed` and `all`
+	 * also list the handled ones. Null when pipelinq is absent, predates the
+	 * status filter, or has no ticket surface configured.
+	 *
+	 * @param array<int, string> $refs The master entity references.
+	 * @param string $status `open`, `closed` or `all`.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>>|null Tickets per reference, or null.
+	 *
+	 * @spec openspec/changes/party-tickets-all-with-reference/specs/pipelinq-consumption/spec.md#requirement-a-partys-tickets-card-lists-its-handled-tickets-too
+	 */
+	public function ticketsByMasterEntity(array $refs, string $status): ?array {
+		if ($status === 'open') {
+			return $this->openTicketsByMasterEntity(refs: $refs);
+		}
+
+		$answer = $this->ask(
+			class: self::TICKETS,
+			method: 'byMasterEntity',
+			arguments: ['refs' => array_values($refs), 'status' => $status],
+		);
+		$value = $answer['value'];
+		if ($answer['answered'] === false || is_array($value) === false || ($value['status'] ?? null) !== 200) {
+			return null;
+		}
+
+		$tickets = ($value['tickets'] ?? null);
+		if (is_array($tickets) === false) {
+			return null;
+		}
+
+		return $tickets;
+	}//end ticketsByMasterEntity()
+
+	/**
 	 * Say once per request which capability is unavailable.
 	 *
 	 * Once, because an instance without pipelinq reads these surfaces on every
