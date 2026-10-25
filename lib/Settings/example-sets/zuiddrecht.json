@@ -4591,7 +4591,7 @@
 			"data": {
 				"mailMessageId": "<postvak-07@zuiddrecht.example>",
 				"mailbox": "INBOX",
-				"sender": "{{cast:vandam.email}}",
+				"sender": "{{cast:lumeninfra.email}}",
 				"recipient": "zaken@zuiddrecht.example",
 				"subject": "Factuur onderhoud openbare verlichting",
 				"receivedAt": "{{datetime:0 07:58}}",
