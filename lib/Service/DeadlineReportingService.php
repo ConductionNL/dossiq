@@ -231,7 +231,8 @@ class DeadlineReportingService {
 	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	private function aggregateByType(array $rows, ?string $department, array $types): array {
-		$byType = [];
+		$byType   = [];
+		$accruals = $this->accrualsByInstance();
 		foreach ($rows as $index => $row) {
 			$type = ($types[$index] ?? ['key' => self::UNRESOLVED, 'title' => '']);
 			// $row['department'] is a SCHEMA PROPERTY — OpenRegister materialises
@@ -256,10 +257,77 @@ class DeadlineReportingService {
 			];
 
 			$this->accumulateRow(row: $row, bucket: $byType[$type['key']]);
+			$this->accumulateAccruals(row: $row, bucket: $byType[$type['key']], accruals: $accruals);
 		}
 
 		return $byType;
 	}//end aggregateByType()
+
+	/**
+	 * The notices of default and the penalty amount on each term instance,
+	 * read from the accruing amounts that point at it (`deadlineInstance`):
+	 * the notice each one started from, and its definitive amount, else what
+	 * it has accrued so far, in cents.
+	 *
+	 * @return array<string, array{notices: array<string, true>, cents: int}> Per instance id.
+	 *
+	 * @throws \Throwable When the amounts cannot be read; a report without them would read "no notices, no penalties".
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function accrualsByInstance(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
+
+		$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
+
+		$byInstance = [];
+		foreach ($rows as $row) {
+			$instance = (string)($row['deadlineInstance'] ?? '');
+			if ($instance === '') {
+				continue;
+			}
+
+			$byInstance[$instance] ??= ['notices' => [], 'cents' => 0];
+			$notice = (string)($row['noticeOfDefault'] ?? '');
+			if ($notice !== '') {
+				$byInstance[$instance]['notices'][$notice] = true;
+			}
+
+			$byInstance[$instance]['cents'] += (int)($row['definitiveAmount'] ?? $row['cumulativeAmount'] ?? 0);
+		}
+
+		return $byInstance;
+	}//end accrualsByInstance()
+
+	/**
+	 * Add a term instance's notices of default and penalty amount to its bucket:
+	 * the notice the instance names itself (`relevantIngbrekes`) and those its
+	 * accruing amounts started from, each counted once.
+	 *
+	 * @param array<string, mixed>                                      $row      Instance row.
+	 * @param array<string, mixed>                                      $bucket   Bucket for the row's case type (by reference).
+	 * @param array<string, array{notices: array<string, true>, cents: int}> $accruals Per instance id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function accumulateAccruals(array $row, array &$bucket, array $accruals): void {
+		$accrual = ($accruals[(string)($row['id'] ?? '')] ?? ['notices' => [], 'cents' => 0]);
+		$notices = $accrual['notices'];
+		$own = (string)($row['relevantIngbrekes'] ?? '');
+		if ($own !== '') {
+			$notices[$own] = true;
+		}
+
+		$bucket['ingebrekestellingen'] += count($notices);
+		$bucket['dwangsomTotalCents'] += $accrual['cents'];
+	}//end accumulateAccruals()
 
 	/**
 	 * Fold a single instance row into its zaaktype bucket.

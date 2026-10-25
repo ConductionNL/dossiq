@@ -79,7 +79,7 @@ class ObjectTypeSchemaResolver {
 	/**
 	 * Schemas already read in this request, by register and schema as the URL names them.
 	 *
-	 * @var array<string, array{title: string, properties: int, views: array<int, string>}|array{unreadable: true}|null>
+	 * @var array<string, array{id: string, title: string, properties: int, views: array<int, string>}|array{unreadable: true}|null>
 	 */
 	private array $seen = [];
 
@@ -103,7 +103,7 @@ class ObjectTypeSchemaResolver {
 	 *
 	 * @param string $objectUrl The link's object URL.
 	 *
-	 * @return array{title: string, properties: int, views: array<int, string>}|null The schema, or null.
+	 * @return array{id: string, title: string, properties: int, views: array<int, string>}|null The schema, or null.
 	 *
 	 * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
 	 */
@@ -174,7 +174,7 @@ class ObjectTypeSchemaResolver {
 	 * @param string $register The register id or slug the URL names.
 	 * @param string $schema   The schema id or slug the URL names.
 	 *
-	 * @return array{title: string, properties: int, views: array<int, string>}|array{unreadable: true}|null The schema,
+	 * @return array{id: string, title: string, properties: int, views: array<int, string>}|array{unreadable: true}|null The schema,
 	 *                                                                                                     UNREADABLE, or null without OpenRegister.
 	 */
 	private function read(string $register, string $schema): ?array {
@@ -194,7 +194,13 @@ class ObjectTypeSchemaResolver {
 
 		$properties = (array)$entity->getProperties();
 
+		$schemaId = '';
+		if (method_exists($entity, 'getId') === true) {
+			$schemaId = (string)$entity->getId();
+		}
+
 		return [
+			'id'         => $schemaId,
 			'title'      => (string)($entity->getTitle() ?? $schema),
 			'properties' => count($properties),
 			'views'      => self::viewsOf(properties: $properties),

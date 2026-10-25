@@ -182,7 +182,7 @@ class ObjectTypeCatalogue {
 	 * @param int    $cases     The cases that link one.
 	 * @param string $objectUrl A link URL naming the schema, or ''.
 	 *
-	 * @return array{id: string, title: string, cases: int, schema: string, properties: int|null, views: array<int, string>} The row.
+	 * @return array{id: string, title: string, cases: int, schema: string, properties: int|null, views: array<int, string>, schemaId: string} The row.
 	 */
 	private function rowFor(string $type, int $cases, string $objectUrl): array {
 		$schema = null;
@@ -197,6 +197,7 @@ class ObjectTypeCatalogue {
 			'schema'     => ($schema['title'] ?? ''),
 			'properties' => ($schema['properties'] ?? null),
 			'views'      => ($schema['views'] ?? []),
+			'schemaId'   => ($schema['id'] ?? ''),
 		];
 	}//end rowFor()
 

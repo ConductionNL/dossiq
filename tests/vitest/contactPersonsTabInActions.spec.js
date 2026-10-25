@@ -2,10 +2,10 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Board DqOrganisatie draws five tabs; the contact persons open from the
- * Actions menu and from the Hoofdcontact card.
+ * Board DqOrganisatie draws six tabs, Contactpersonen among them; the
+ * Hoofdcontact card opens that tab too.
  *
- * @spec openspec/changes/contact-persons-tab-in-actions/specs/party-pages/spec.md#requirement-an-organisations-contact-persons-open-from-the-actions-menu-and-the-main-contact-card
+ * @spec openspec/changes/organisation-contact-persons-tab/specs/party-pages/spec.md#requirement-an-organisations-contact-persons-have-their-own-tab
  */
 
 import fs from 'fs'
@@ -18,11 +18,10 @@ const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/manifest.json'), 
 const tabs = config.widgets.find((widget) => widget.id === 'contact-panels').content.tabs
 
 describe('DqOrganisatie tab strip', () => {
-	it('keeps five tabs in the strip and the contact persons in the Actions menu', () => {
-		expect(tabs.filter((tab) => tab.overflow !== true)).toHaveLength(5)
-		const persons = tabs.find((tab) => tab.widgetId === 'org-contact-persons')
-		expect(persons.overflow).toBe(true)
-		expect(persons.countFrom).toBeDefined()
+	it('draws the board\'s six tabs in the strip, contact persons after contact moments', () => {
+		expect(tabs.filter((tab) => tab.overflow !== true).map((tab) => tab.widgetId ?? 'overview'))
+			.toEqual(['overview', 'contact-cases', 'contact-moments', 'org-contact-persons', 'contact-documents', 'contact-history'])
+		expect(tabs.find((tab) => tab.widgetId === 'org-contact-persons').countFrom).toBeDefined()
 	})
 
 	it('lets the main contact card open it', () => {

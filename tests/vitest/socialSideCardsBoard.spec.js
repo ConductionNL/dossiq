@@ -83,4 +83,9 @@ describe('DqSociaalDomein side column', () => {
 		expect(people.title).toBe('{name}, {description}')
 		expect(people.meta).toBeUndefined()
 	})
+
+	/** @spec openspec/changes/social-people-stacked/specs/case-page/spec.md#requirement-the-who-card-is-a-short-unruled-list */
+	it('lists the people as a short stacked list, no rule above them', () => {
+		expect(card('side-social-people').content.density).toBe('stacked')
+	})
 })

@@ -69,8 +69,12 @@ describe('the LHS matrix on the enforcement advice', () => {
 		}
 		const fill = (key) => dutch(key).replace(/\{(\w+)\}/g, (m, name) => words[name])
 		expect(notice.tone).toBe('info')
-		expect(fill(notice.lead)).toBe('Advies: Last onder dwangsom')
+		expect(fill(notice.lead)).toBe('Advies: last onder dwangsom')
 		expect(fill(notice.text)).toBe('Uitkomst van de beslistabel, versie 2, met gedrag 2 en gevolg C.')
+	})
+
+	it('gives the row labels the board\'s 170px column (DqHandhaving)', () => {
+		expect(matrix.content.matrixLabelWidth).toBe(170)
 	})
 
 	it('outlines the cell of the advice and comes first on the page', () => {

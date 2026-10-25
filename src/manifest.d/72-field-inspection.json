@@ -68,6 +68,7 @@
 							},
 							"limit": 8,
 							"presentation": "cards",
+							"density": "compact",
 							"title": ["{location}", "{caseRef.title}"],
 							"meta": "{scheduledAt|time} · {checklistTemplateRef.name}",
 							"pill": {
@@ -180,6 +181,7 @@
 							},
 							"limit": 6,
 							"presentation": "cards",
+							"density": "compact",
 							"title": ["{label}", "{targetEntity}"],
 							"meta": ["{summary}", "{lastError}", "{operationType} · {queuedAt|datetime}"],
 							"pill": {
