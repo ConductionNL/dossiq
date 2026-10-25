@@ -176,12 +176,12 @@
 							},
 							"sort": {
 								"field": "queuedAt",
-								"dir": "desc"
+								"dir": "asc"
 							},
 							"limit": 6,
-							"presentation": "rows",
+							"presentation": "cards",
 							"title": ["{label}", "{targetEntity}"],
-							"meta": "{operationType} · {queuedAt|datetime}",
+							"meta": ["{summary}", "{lastError}", "{operationType} · {queuedAt|datetime}"],
 							"pill": {
 								"field": "status",
 								"labels": {

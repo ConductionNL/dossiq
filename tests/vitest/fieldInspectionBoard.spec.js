@@ -44,6 +44,13 @@ describe('the field inspection board', () => {
 		expect(widget('inspection-sync-queue').content.title).toEqual(['{label}', '{targetEntity}'])
 	})
 
+	it('draws the outbox as cards, oldest first, each saying what it holds', () => {
+		const { content } = widget('inspection-sync-queue')
+		expect(content.presentation).toBe('cards')
+		expect(content.sort).toEqual({ field: 'queuedAt', dir: 'asc' })
+		expect(content.meta).toEqual(['{summary}', '{lastError}', '{operationType} · {queuedAt|datetime}'])
+	})
+
 	it('opens the running checklist at its first open question', () => {
 		expect(widget('checklist-run').content.startAt).toBe('firstOpen')
 	})

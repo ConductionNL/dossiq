@@ -66,6 +66,18 @@ class ZuiddrechtOutboxTest extends TestCase {
 		$schema   = $register['components']['schemas']['syncQueue'];
 		$this->assertSame(expected: 'string', actual: $schema['properties']['label']['type']);
 		$this->assertNotContains(needle: 'label', haystack: $schema['required']);
-		$this->assertSame(expected: '1.1.0', actual: $schema['version']);
+		$this->assertSame(expected: 'string', actual: $schema['properties']['summary']['type']);
+		$this->assertNotContains(needle: 'summary', haystack: $schema['required']);
+		$this->assertSame(expected: '1.2.0', actual: $schema['version']);
 	}//end testTheSchemaDeclaresTheLabel()
+
+	/**
+	 * The pending rows say what they hold, as the board's outbox cards do.
+	 *
+	 * @return void
+	 */
+	public function testThePendingChangesSayWhatTheyHold(): void {
+		$summaries = array_column(array_column($this->outbox(), 'data'), 'summary', 'label');
+		$this->assertSame(expected: ['Molenweg 4, checklist' => "18 antwoorden, 4 foto's", 'Kerkplein 7, foto' => 'Vraag 7'], actual: $summaries);
+	}//end testThePendingChangesSayWhatTheyHold()
 }//end class
