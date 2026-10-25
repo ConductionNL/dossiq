@@ -4882,7 +4882,7 @@
 			"register": "dossiq",
 			"schema": "organisatieRol",
 			"data": {
-				"roleName": "Informatie en Woo",
+				"roleName": "Woo en informatie",
 				"roleType": "ambtelijk",
 				"ncGroupId": "zuiddrecht-woo-en-informatie",
 				"parentRoleId": "{{object:afdeling-gemeente.id}}"
