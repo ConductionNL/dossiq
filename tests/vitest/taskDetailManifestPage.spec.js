@@ -85,17 +85,16 @@ describe('the TaskDetail manifest page', () => {
 		])
 		expect(widget('side-case')).toMatchObject({ type: 'facts', visibleWhen: { field: 'objectUuid', op: 'notEmpty' } })
 		expect(widget('side-case').content.link.route).toEqual({ name: 'CaseDetail', params: { id: '@object.objectUuid' } })
-		// The case a flow run waits on: a library notice linking the case, by
-		// its title, and "Open the case" when the title is not known.
+		// Board DqTaak "Wat deze taak tegenhoudt": the step the case moves to
+		// once this task is done (the case type's next status, server side) and
+		// since when the flow has waited on it.
 		expect(widget('side-waiting')).toMatchObject({
-			type: 'notice',
+			type: 'facts',
 			visibleWhen: { field: 'runUuid', op: 'notEmpty' },
-			content: {
-				title: 'A case is waiting on this task',
-				text: 'Complete the task and the case moves on.',
-				link: { route: 'CaseDetail', params: { id: '@object.objectUuid' }, label: '@object.subjectLabel', fallbackLabel: 'Open the case' },
-			},
+			content: { endpointSource: { url: '/apps/dossiq/api/cases/@object.objectUuid/next-status' } },
 		})
+		expect(widget('side-waiting').content.fields[0].template).toBe('The case only moves to {name} once this task is done.')
+		expect(widget('side-waiting').content.fields[1]).toMatchObject({ from: 'object', suffix: '.' })
 		expect(widget('side-history')).toMatchObject({ type: 'audit-trail', content: { source: { kind: 'flow-task' } } })
 	})
 

@@ -1103,7 +1103,10 @@
 						"target": "CaseLifecycleMenuDialog",
 						"label": "Next step",
 						"icon": "PlayCircleOutline",
-						"id": "stage-next-step"
+						"id": "stage-next-step",
+						"notTabs": [
+							"ai-oversight"
+						]
 					},
 					"pending-info": "case-remind",
 					"in-progress": {
@@ -1111,14 +1114,20 @@
 						"target": "CaseLifecycleMenuDialog",
 						"label": "Next step",
 						"icon": "PlayCircleOutline",
-						"id": "stage-next-step"
+						"id": "stage-next-step",
+						"notTabs": [
+							"ai-oversight"
+						]
 					},
 					"review": {
 						"type": "open-modal",
 						"target": "CaseLifecycleMenuDialog",
 						"label": "Next step",
 						"icon": "PlayCircleOutline",
-						"id": "stage-next-step"
+						"id": "stage-next-step",
+						"notTabs": [
+							"ai-oversight"
+						]
 					},
 					"closed": {
 						"type": "open-modal",
@@ -1147,6 +1156,10 @@
 											{
 												"label": "Archive nomination",
 												"value": "{archiveNomination}"
+											},
+											{
+												"label": "Retention period",
+												"value": "{@self._retention.retentionPeriod|isoDuration}"
 											},
 											{
 												"label": "Destruction date",
@@ -1206,6 +1219,7 @@
 								},
 								"note": {
 									"variant": "info",
+									"icon": "LockOutline",
 									"title": "Read only afterwards",
 									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
 								},
@@ -1447,6 +1461,9 @@
 					},
 					{
 						"id": "side-linked",
+						"notTabs": [
+							"ai-oversight"
+						],
 						"type": "linked",
 						"title": "Linked",
 						"_note": "DqZaak Gekoppeld: what other apps hold for this case, in one card (nextcloud-vue linked-integrations-card). Each app's leaf is mounted out of sight and reports a summary: the linked ones list their rows, the rest share one line \"Documents, fees and payments, contract and projects: nothing linked\" with their actions (planninq's New project and Open in Planninq). It replaces the standalone Projects widget in the grid. The ids are the RENDER leaves the apps register (shillinq's `-panel` ids, not its `shillinq-payment-requests` data leaf). An app that is absent registers no leaf and is left out of the line.",
@@ -6109,6 +6126,7 @@
 						"widget": "avatar",
 						"widgetProps": {
 							"user": true,
+							"size": 28,
 							"groupField": "candidateGroups",
 							"groupLabel": "{group}, unclaimed"
 						}

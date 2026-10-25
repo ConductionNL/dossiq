@@ -45,7 +45,12 @@
 						"adminOnly": true
 					}
 				],
-				"headerMeta": "{total} contracts",
+				"_headerMetaNote": "Board DqContracten: '38 contracten bij 21 leveranciers', every contract and every supplier, not the filtered list's total.",
+				"headerMeta": "{count:contracts} contracts with {count:suppliers} suppliers",
+				"headerMetaCounts": {
+					"contracts": { "register": "dossiq", "schema": "supplierContract" },
+					"suppliers": { "register": "dossiq", "schema": "supplier" }
+				},
 				"addLabel": "New contract",
 				"headerButtons": [
 					{
@@ -131,7 +136,8 @@
 					{
 						"key": "value",
 						"label": "Value",
-						"formatter": "currency"
+						"formatter": "currency",
+						"formatterOptions": { "decimals": 0 }
 					},
 					{
 						"key": "endDate",
@@ -147,7 +153,7 @@
 								"active": "success",
 								"renewal-decision": "warning",
 								"termination-decision": "warning",
-								"ending": "neutral"
+								"ending": "default"
 							}
 						}
 					}

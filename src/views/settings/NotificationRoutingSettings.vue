@@ -418,8 +418,10 @@ export default {
 }
 
 /* Wide enough for the longest domain without squeezing the value. */
+/* DqPersoonlijkeInstellingen: the domain select runs the section's width. */
 .notification-routing__scope :deep(.v-select.select) {
-	min-width: min(100%, 360px);
+	width: 100%;
+	max-width: none;
 }
 
 .notification-routing__explainer {

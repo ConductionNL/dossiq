@@ -5848,6 +5848,10 @@
 												"value": "{archiveNomination}"
 											},
 											{
+												"label": "Retention period",
+												"value": "{@self._retention.retentionPeriod|isoDuration}"
+											},
+											{
 												"label": "Destruction date",
 												"value": "{archiveActionDate}"
 											},
@@ -5905,6 +5909,7 @@
 								},
 								"note": {
 									"variant": "info",
+									"icon": "LockOutline",
 									"title": "Read only afterwards",
 									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
 								},
@@ -7726,25 +7731,40 @@
 					},
 					{
 						"id": "side-waiting",
-						"type": "notice",
+						"type": "facts",
 						"title": "What this task holds up",
 						"visibleWhen": {
 							"field": "runUuid",
 							"op": "notEmpty"
 						},
+						"_note": "Board DqTaak Wat deze taak tegenhoudt: the status the case moves to once this task is done (GET /api/cases/{id}/next-status, the case type's next status, read under the user's rights) and since when the flow has waited on it (the task's created date).",
 						"content": {
-							"variant": "info",
-							"icon": "CheckboxMarkedCircleOutline",
-							"title": "A case is waiting on this task",
-							"text": "Complete the task and the case moves on.",
-							"link": {
-								"route": "CaseDetail",
-								"params": {
-									"id": "@object.objectUuid"
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@object.objectUuid/next-status"
+							},
+							"fields": [
+								{
+									"key": "next",
+									"as": "text",
+									"template": "The case only moves to {name} once this task is done."
 								},
-								"label": "@object.subjectLabel",
-								"fallbackLabel": "Open the case"
-							}
+								{
+									"key": "since",
+									"as": "text",
+									"from": "object",
+									"parts": [
+										{
+											"text": "The flow has been waiting on it since"
+										},
+										{
+											"path": "created",
+											"format": "longdate"
+										}
+									],
+									"separator": " ",
+									"suffix": "."
+								}
+							]
 						}
 					},
 					{
@@ -7752,6 +7772,7 @@
 						"type": "audit-trail",
 						"title": "Task history",
 						"content": {
+							"layout": "stacked",
 							"source": {
 								"kind": "flow-task"
 							},
@@ -10232,15 +10253,16 @@
 								"rowOrderPath": "behaviourAxis",
 								"columnOrderPath": "severityAxis",
 								"rowLabels": {
-									"goedwillend": "Behaviour: well-meaning",
-									"onverschillig": "Behaviour: indifferent",
-									"calculerend": "Behaviour: calculating",
-									"crimineel": "Behaviour: criminal"
+									"goedwillend": "Behaviour 1: well-meaning",
+									"onverschillig": "Behaviour 2: indifferent",
+									"calculerend": "Behaviour 3: calculating",
+									"crimineel": "Behaviour 4: criminal"
 								},
 								"columnLabels": {
-									"gering": "Consequence: minor",
-									"aanzienlijk": "Consequence: considerable",
-									"ernstig": "Consequence: serious"
+									"gering": "Consequence A: minor",
+									"aanzienlijk": "Consequence B: considerable",
+									"ernstig": "Consequence C: serious",
+									"zeer_ernstig": "Consequence D: very serious"
 								},
 								"valueLabels": {
 									"warning": "Warning",
@@ -10262,6 +10284,32 @@
 							"highlight": {
 								"row": "@object.behaviour",
 								"column": "@object.severity"
+							},
+							"notice": {
+								"lead": "Advice: {intervention}",
+								"text": "Outcome of the decision table, version {version}, with {behaviour} and {consequence}.",
+								"tone": "info",
+								"values": {
+									"intervention": "@object.recommendedIntervention",
+									"version": "@object.matrixVersion",
+									"behaviour": "@object.behaviour",
+									"consequence": "@object.severity"
+								},
+								"labels": {
+									"intervention": "values",
+									"behaviour": {
+										"goedwillend": "behaviour 1",
+										"onverschillig": "behaviour 2",
+										"calculerend": "behaviour 3",
+										"crimineel": "behaviour 4"
+									},
+									"consequence": {
+										"gering": "consequence A",
+										"aanzienlijk": "consequence B",
+										"ernstig": "consequence C",
+										"zeer_ernstig": "consequence D"
+									}
+								}
 							}
 						}
 					}
@@ -10273,7 +10321,8 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 7
+						"gridHeight": 7,
+						"sizeToContent": true
 					},
 					{
 						"id": "violation",
@@ -13191,11 +13240,17 @@
 						"label": "Name",
 						"width": "250px",
 						"widget": "avatar",
+						"widgetProps": {
+							"size": 36,
+							"tone": "neutral"
+						},
 						"secondary": "{residence.street} {residence.houseNumber}, {residence.city}"
 					},
 					{
 						"key": "citizenServiceNumber",
 						"label": "BSN",
+						"sortable": false,
+						"filterable": false,
 						"width": "211px",
 						"formatter": "masked",
 						"pills": [
@@ -13251,6 +13306,7 @@
 				"showViewAction": false,
 				"searchPlaceholder": "Search by name, KvK number or place",
 				"rowIcon": "OfficeBuildingOutline",
+				"rowIconTone": "teal",
 				"sortKey": "tradeName",
 				"sortOrder": "asc",
 				"_defaultFiltersNote": "Board DqOrganisaties opens on All with \"Plaats: Zuiddrecht\" on the Active line and a 1 on Filter: the organisations established in the municipality, from the admin setting `municipality_city` (the same one the Contacts lens reads). A removable default filter, not a lens; without the setting it is left out (src/utils/configLenses.js) and the list opens unfiltered. `address.place` is the KvK Zoeken field.",
@@ -13562,6 +13618,7 @@
 						"title": "Cases",
 						"icon": "FolderAccountOutline",
 						"content": {
+							"ruleAbove": true,
 							"register": "dossiq",
 							"schema": "case",
 							"filter": {
@@ -13604,6 +13661,7 @@
 						"title": "Latest contact moments",
 						"icon": "PhoneLogOutline",
 						"content": {
+							"ruleAbove": true,
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
@@ -13666,6 +13724,7 @@
 							"appInstalled": "pipelinq"
 						},
 						"content": {
+							"ruleAbove": true,
 							"requiresApp": "pipelinq",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/parties/open-tickets/list",
@@ -14310,6 +14369,7 @@
 						"title": "Cases",
 						"icon": "FolderAccountOutline",
 						"content": {
+							"ruleAbove": true,
 							"register": "dossiq",
 							"schema": "case",
 							"filter": {
@@ -14352,6 +14412,7 @@
 						"title": "Latest contact moments",
 						"icon": "PhoneLogOutline",
 						"content": {
+							"ruleAbove": true,
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
@@ -14414,6 +14475,7 @@
 							"appInstalled": "pipelinq"
 						},
 						"content": {
+							"ruleAbove": true,
 							"requiresApp": "pipelinq",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/parties/open-tickets/list",

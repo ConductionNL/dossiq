@@ -20,8 +20,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Controller\CaseNextStatusController;
 use OCA\Dossiq\Controller\PersonLookupController;
 use OCA\Dossiq\Controller\PersonReachabilityController;
+use OCA\Dossiq\Service\Cases\CaseNextStatus;
 use OCA\Dossiq\Service\People\PersonNumberLookup;
 use OCA\Dossiq\Service\People\PersonReachability;
 use OCP\AppFramework\Http;
@@ -36,6 +38,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Controller\PersonLookupController
  * @covers \OCA\Dossiq\Controller\PersonReachabilityController
+ * @covers \OCA\Dossiq\Controller\CaseNextStatusController
  *
  * @spec openspec/changes/bsn-exact-lookup/specs/initiator-selection/spec.md#requirement-a-person-is-found-by-bsn-through-a-guarded-recorded-lookup
  */
@@ -70,4 +73,18 @@ final class PersonReadFailureTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
 	}//end testTheReachabilityAnswersAFailedReadWith503()
+
+	/**
+	 * The next status answers 503 when the register read fails.
+	 *
+	 * @return void
+	 */
+	public function testTheNextStatusAnswersAFailedReadWith503(): void {
+		$next = $this->createMock(CaseNextStatus::class);
+		$next->method('forCase')->willThrowException(new RuntimeException('register unreachable'));
+
+		$response = (new CaseNextStatusController(appName: 'dossiq', request: $this->createMock(IRequest::class), nextStatus: $next))->show(caseId: 'case-1');
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+	}//end testTheNextStatusAnswersAFailedReadWith503()
 }//end class
