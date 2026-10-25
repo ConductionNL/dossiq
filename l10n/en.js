@@ -11490,6 +11490,7 @@ OC.L10N.register(
         "{shown} of {total} open cases without a handler · oldest first": "{shown} of {total} open cases without a handler · oldest first",
         "{shown} of {total} open cases without a handler, oldest first": "{shown} of {total} open cases without a handler, oldest first",
         "{shown} of {total} open cases without a handler[ · team {myTeam}] · oldest first": "{shown} of {total} open cases without a handler[ · team {myTeam}] · oldest first",
+        "{shown} of {total} open cases · {view} · sorted by deadline": "{shown} of {total} open cases · {view} · sorted by deadline",
         "{shown} of {total} organisations": "{shown} of {total} organisations",
         "{shown} of {total} organisations in Zuiddrecht, sorted by name": "{shown} of {total} organisations in Zuiddrecht, sorted by name",
         "{shown} of {total} people dossiq knows": "{shown} of {total} people dossiq knows",

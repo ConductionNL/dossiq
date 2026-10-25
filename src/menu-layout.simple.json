@@ -5733,6 +5733,8 @@
 				"countSubtitle": "{total} cases",
 				"defaultOrder": "deadline",
 				"countText": "{shown} of {total} open cases in your teams, sorted by deadline",
+				"_savedViewCountTextNote": "DqFilterInMenu: while a saved view is applied the line names what it holds, \"3 van 48 lopende zaken · termijn binnen 7 dagen, van mij · gesorteerd op termijn\"; {view} is the view's description, else its filters in words (nextcloud-vue savedViewCountText).",
+				"savedViewCountText": "{shown} of {total} open cases · {view} · sorted by deadline",
 				"_countTextByViewNote": "DqWerkbord, DqZakenKaart: the line under the title says what the open view shows. The board view is not sorted by deadline but grouped by status; the map gives only the count, and nextcloud-vue adds how many of them have an address on the map. Other views keep countText (nextcloud-vue countTextByView).",
 				"countTextByView": {
 					"board": "{shown} of {total} open cases in your teams, board view by status",
