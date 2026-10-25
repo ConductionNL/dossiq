@@ -4794,7 +4794,11 @@
 							"columns": [
 								{
 									"key": "objectTitle",
-									"label": "Object"
+									"label": "Object",
+									"widget": "link",
+									"widgetProps": {
+										"href": "{objectUrl}"
+									}
 								},
 								{
 									"key": "objectType",
@@ -4811,10 +4815,6 @@
 								{
 									"key": "description",
 									"label": "Description"
-								},
-								{
-									"key": "objectUrl",
-									"label": "Link"
 								}
 							],
 							"rowActions": [
