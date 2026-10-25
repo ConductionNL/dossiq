@@ -23,7 +23,7 @@ const advice = caseDetail.configAppend.widgets.find((widget) => widget.id === 'c
 describe('DqZaakBesluiten Adviezen as rows', () => {
 	it('is a record list of the case\'s advice requests, drawn as rows with the advisor\'s initials', () => {
 		expect(advice.type).toBe('record-list')
-		expect(advice.content).toMatchObject({ register: 'dossiq', schema: 'adviesAanvraag', filter: { case: '@objectId' }, presentation: 'rows', avatar: '{advisor}', rowRoute: 'AdviceDetail' })
+		expect(advice.content).toMatchObject({ register: 'dossiq', schema: 'adviesAanvraag', filter: { case: '@objectId' }, presentation: 'rows', avatar: { text: '{advisor}', size: 32 }, rowRoute: 'AdviceDetail' })
 	})
 
 	it('keeps the status tones: open amber, received green, expired red', () => {

@@ -5007,7 +5007,10 @@
 								},
 								"limit": 25,
 								"presentation": "rows",
-								"avatar": "{advisor}",
+								"avatar": {
+									"text": "{advisor}",
+									"size": 32
+								},
 								"title": [
 									"{subject}, {advisor}",
 									"{subject}",
