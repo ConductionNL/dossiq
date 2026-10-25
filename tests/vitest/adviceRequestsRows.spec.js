@@ -26,6 +26,10 @@ describe('DqZaakBesluiten Adviezen as rows', () => {
 		expect(advice.content).toMatchObject({ register: 'dossiq', schema: 'adviesAanvraag', filter: { case: '@objectId' }, presentation: 'rows', avatar: { text: '{advisor}', size: 32 }, rowRoute: 'AdviceDetail' })
 	})
 
+	it('rules above the first row too, under the title, as the board draws it', () => {
+		expect(advice.content.ruleAbove).toBe(true)
+	})
+
 	it('keeps the status tones: open amber, received green, expired red', () => {
 		expect(advice.content.pill.field).toBe('status')
 		expect(advice.content.pill.colorMap).toEqual({ requested: 'warning', received: 'success', expired: 'error' })
