@@ -41,7 +41,7 @@ class FamilyPlanStatusTest extends TestCase {
 		$schema   = $register['components']['schemas']['gezinsplan'];
 		$status   = $schema['properties']['status'];
 
-		$this->assertSame(expected: ['in_opbouw', 'vastgesteld', 'geevalueerd'], actual: $status['enum']);
+		$this->assertSame(expected: ['draft', 'determined', 'evaluated'], actual: $status['enum']);
 		$this->assertSame(expected: $status['enum'], actual: array_keys($status['x-enum-labels']));
 		$this->assertNotContains(needle: 'status', haystack: $schema['required']);
 	}//end testThePlanStatusIsAnOptionalLabelledEnum()
@@ -60,6 +60,6 @@ class FamilyPlanStatusTest extends TestCase {
 		$this->assertSame(expected: 'gezinsplan', actual: $file['schema']['slug']);
 		$this->assertSame(expected: $case['id'], actual: $plan['caseId']);
 		$this->assertSame(expected: $case['assignee'], actual: $plan['preparedBy']);
-		$this->assertSame(expected: 'in_opbouw', actual: $plan['status']);
+		$this->assertSame(expected: 'draft', actual: $plan['status']);
 	}//end testTheExampleCasePlanIsBeingDrawnUp()
 }//end class

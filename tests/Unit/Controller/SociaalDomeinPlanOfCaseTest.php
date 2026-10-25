@@ -105,8 +105,8 @@ class SociaalDomeinPlanOfCaseTest extends TestCase {
 	public function testFindsThePlanThatPointsAtTheCase(): void {
 		$response = $this->controller(
 			plans: [
-				['id' => 'plan-old', 'caseId' => self::CASE_ID, 'preparedDate' => '2026-03-01', 'status' => 'geevalueerd'],
-				['id' => 'plan-new', 'caseId' => self::CASE_ID, 'preparedDate' => '2026-10-18', 'status' => 'in_opbouw'],
+				['id' => 'plan-old', 'caseId' => self::CASE_ID, 'preparedDate' => '2026-03-01', 'status' => 'evaluated'],
+				['id' => 'plan-new', 'caseId' => self::CASE_ID, 'preparedDate' => '2026-10-18', 'status' => 'draft'],
 			]
 		)->planOfCase(caseId: self::CASE_ID);
 
@@ -114,7 +114,7 @@ class SociaalDomeinPlanOfCaseTest extends TestCase {
 		self::assertSame(['schema' => 'gezinsplan', 'caseId' => self::CASE_ID], $this->asked);
 		$data = $response->getData();
 		self::assertSame('plan-new', $data['plan']['id']);
-		self::assertSame('in_opbouw', $data['plan']['status']);
+		self::assertSame('draft', $data['plan']['status']);
 		self::assertSame('plan-new', $data['goals'][0]['plan']);
 		self::assertFalse($data['dueForReview']);
 	}//end testFindsThePlanThatPointsAtTheCase()

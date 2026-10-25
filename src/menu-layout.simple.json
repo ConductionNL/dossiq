@@ -3541,9 +3541,9 @@
 									"label": "Family plan",
 									"path": "status",
 									"map": {
-										"in_opbouw": "Being drawn up",
-										"vastgesteld": "Adopted",
-										"geevalueerd": "Evaluated"
+										"draft": "Being drawn up",
+										"determined": "Adopted",
+										"evaluated": "Evaluated"
 									}
 								}
 							],

@@ -48,7 +48,7 @@ describe('the family plan of a case', () => {
 		expect(card.content.source).toEqual({ register: 'dossiq', schema: 'gezinsplan', filter: { caseId: '@objectId' }, sort: { field: 'preparedDate', dir: 'desc' } })
 		const plan = card.content.fields.find((field) => field.label === 'Family plan')
 		expect(plan.from).toBeUndefined()
-		expect(nl[plan.map.in_opbouw]).toBe('In opbouw')
+		expect(nl[plan.map.draft]).toBe('In opbouw')
 		expect(card.content.fields.filter((field) => field !== plan).every((field) => field.from === 'object')).toBe(true)
 	})
 })

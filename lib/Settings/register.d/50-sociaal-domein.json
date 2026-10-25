@@ -554,8 +554,8 @@
                     "status": {
                         "title": "Status",
                         "type": "string",
-                        "enum": ["in_opbouw", "vastgesteld", "geevalueerd"],
-                        "x-enum-labels": {"in_opbouw": "Being drawn up", "vastgesteld": "Adopted", "geevalueerd": "Evaluated"},
+                        "enum": ["draft", "determined", "evaluated"],
+                        "x-enum-labels": {"draft": "Being drawn up", "determined": "Adopted", "evaluated": "Evaluated"},
                         "description": "Where the plan stands: being drawn up with the household, adopted, or evaluated. Optional; a plan without one has not been given a status yet."
                     },
                     "gezinsleden": {
