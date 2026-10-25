@@ -10279,6 +10279,7 @@ OC.L10N.register(
         "Waiting on": "Waiting on",
         "Waiting on someone outside the organisation": "Waiting on someone outside the organisation",
         "Waiting on the applicant": "Waiting on the applicant",
+        "waiting on the applicant": "waiting on the applicant",
         "Waiting on {party} for {days} days": "Waiting on {party} for {days} days",
         "Waiting on {party} for {days} days, chased once": "Waiting on {party} for {days} days, chased once",
         "Waiting on {party} for {days} days, chased {chases} times": "Waiting on {party} for {days} days, chased {chases} times",
