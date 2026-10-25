@@ -5206,6 +5206,7 @@
 								},
 								"limit": 25,
 								"presentation": "rows",
+								"ruleAbove": true,
 								"avatar": {
 									"text": "{advisor}",
 									"size": 32
