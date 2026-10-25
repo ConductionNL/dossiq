@@ -26,7 +26,8 @@
 			"group": "dossiq-coordinators",
 			"displayName": "Dossiq coordinatoren",
 			"members": [
-				"marleen"
+				"marleen",
+				"pieter"
 			]
 		},
 		{
@@ -4559,6 +4560,63 @@
 			}
 		},
 		{
+			"key": "woo-kosten-zwembad",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Kosten zwembad Sportpark Zuid",
+				"description": "Meneer Visser vraagt de stukken over de kosten van het nieuwe zwembad bij Sportpark Zuid: de begroting, de offertes en de besluiten van het college.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henkvisser.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henkvisser.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "intern",
+				"assignee": "{{cast:daan.uid}}",
+				"assignedGroup": "zuiddrecht-kcc",
+				"startDate": "{{date:-1}}",
+				"receivedAt": "{{datetime:-1 10:05}}",
+				"currentStatusEnteredAt": "{{datetime:-1 10:05}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-1 10:05}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Kosten zwembad Sportpark Zuid",
+					"omschrijving": "De begroting, de offertes en de collegebesluiten over het nieuwe zwembad bij Sportpark Zuid.",
+					"periodeVan": "{{date:-730}}",
+					"periodeTot": "{{date:-1}}",
+					"origin": "portal"
+				},
+				"tags": [
+					"woo"
+				]
+			}
+		},
+		{
 			"key": "woo-fietspad-besluitklaar-doc-advies",
 			"register": "dossiq",
 			"schema": "informatieobject",
@@ -6237,6 +6295,18 @@
 			"object": "zaaktype-omgevingsvergunning-regulier-v3",
 			"set": {
 				"supersededBy": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}"
+			}
+		},
+		{
+			"key": "woo-verzoek-v2-dubbel-met-reden",
+			"register": "dossiq",
+			"schema": "caseType",
+			"where": {
+				"identifier": "woo-verzoek",
+				"version": 2
+			},
+			"set": {
+				"duplicatePolicy": "block"
 			}
 		}
 	]
