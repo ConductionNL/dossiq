@@ -3517,7 +3517,8 @@
 								},
 								{
 									"label": "Handler",
-									"path": "assignee"
+									"path": "assignee",
+									"format": "user"
 								}
 							],
 							"emptyText": "No description yet"
