@@ -48,6 +48,12 @@ describe('the contact moments on the Contact tab', () => {
 			}
 		}
 	})
+
+	it('sorts and filters by every column and wraps the summary, as the board draws its head and rows', () => {
+		expect(card.content.sortable).toBe(true)
+		expect(card.content.filterable).toBe(true)
+		expect(column('summary').cellClass).toBe('cn-cell--wrap')
+	})
 })
 
 describe('the answer to the resident', () => {
