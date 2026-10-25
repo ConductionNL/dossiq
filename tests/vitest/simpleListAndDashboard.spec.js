@@ -113,8 +113,8 @@ describe('the cases list', () => {
 	const simple = page(builtSimple, 'Cases').config
 	const before = original('Cases').config
 
-	it('leads with six views that each show a count', () => {
-		expect(simple.quickFilterMaxVisible).toBe(6)
+	it('leads with six views that each show a count, three on the row and the rest behind More (Ruben, 23 Oct)', () => {
+		expect(simple.quickFilterMaxVisible).toBe(3)
 		const lead = simple.quickFilters.slice(0, 6)
 		expect(lead.map((lens) => lens.label)).toEqual([
 			'All',
@@ -307,6 +307,7 @@ describe('the cases list', () => {
 		const rest = ({
 			quickFilters,
 			quickFilterMaxVisible,
+			_quickFilterMaxVisibleNote,
 			columns,
 			folderSidebar,
 			showTitle,
