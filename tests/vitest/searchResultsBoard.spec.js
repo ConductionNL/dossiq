@@ -40,8 +40,8 @@ describe('DqZoekresultaten', () => {
 	it('words the line under a case as the board does, "Zaak 2026-0082" (nextcloud-vue search-subtitle-template)', () => {
 		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
 		const cases = page.config.sourceConfig.kinds.find((kind) => kind.id === 'cases')
-		expect(cases.subtitleTemplate).toBe('Case {identifier}')
-		expect(nl[cases.subtitleTemplate]).toBe('Zaak {identifier}')
+		expect(cases.subtitleTemplate.startsWith('Case {identifier}')).toBe(true)
+		expect(nl[cases.subtitleTemplate].startsWith('Zaak {identifier}')).toBe(true)
 		expect(cases.subtitleField).toBe('identifier')
 	})
 
@@ -49,5 +49,14 @@ describe('DqZoekresultaten', () => {
 		const source = page.config.sourceConfig
 		expect(source.kinds.find((kind) => kind.id === 'cases').linkedUser).toBe(true)
 		expect(source.columnWidths).toEqual({ title: '250px', kindText: '120px', linked: '150px', status: '150px' })
+	})
+
+	it('names the case type under a found case and wraps long titles (r29, nextcloud-vue search-subtitle-resolve-and-wrap)', () => {
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
+		const cases = page.config.sourceConfig.kinds.find((kind) => kind.id === 'cases')
+		expect(cases.subtitleTemplate).toBe('Case {identifier} · {caseTypeTitle}')
+		expect(nl[cases.subtitleTemplate]).toBe('Zaak {identifier} · {caseTypeTitle}')
+		expect(cases.subtitleResolve).toEqual({ field: 'caseType', schema: 'caseType', labelField: 'title', as: 'caseTypeTitle' })
+		expect(page.config.sourceConfig.titleWrap).toBe(true)
 	})
 })

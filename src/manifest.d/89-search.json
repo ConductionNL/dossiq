@@ -24,7 +24,8 @@
 							"register": "dossiq",
 							"schema": "case",
 							"subtitleField": "identifier",
-							"subtitleTemplate": "Case {identifier}",
+							"subtitleTemplate": "Case {identifier} · {caseTypeTitle}",
+							"subtitleResolve": { "field": "caseType", "schema": "caseType", "labelField": "title", "as": "caseTypeTitle" },
 							"statusField": "status",
 							"href": "/apps/dossiq/cases/{id}",
 							"statusResolve": {
@@ -50,6 +51,7 @@
 						}
 					],
 					"linkedLabel": "Linked",
+					"titleWrap": true,
     "_columnWidthsNote": "DqZoekresultaten: Resultaat about 250px so a title reads whole, Soort 120, Gekoppeld and Status 150 (nextcloud-vue columnWidths).",
     "columnWidths": { "title": "250px", "kindText": "120px", "linked": "150px", "status": "150px" }
 				},
