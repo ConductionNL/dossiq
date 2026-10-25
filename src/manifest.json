@@ -10258,6 +10258,7 @@
 						"content": {
 							"chartKind": "matrix",
 							"type": "matrix",
+							"matrixLabelWidth": 170,
 							"cellSource": {
 								"register": "dossiq",
 								"schema": "lhsMatrix",
@@ -10317,7 +10318,14 @@
 									"consequence": "@object.severity"
 								},
 								"labels": {
-									"intervention": "values",
+									"intervention": {
+										"warning": "a warning",
+										"herstelactie": "remedial action",
+										"last_under_penaltypayment": "an order subject to a penalty",
+										"last_plus_pv": "an order and an official report",
+										"bestuursdwang": "administrative enforcement",
+										"pv_plus_bestuursdwang": "an official report and administrative enforcement"
+									},
 									"behaviour": {
 										"goedwillend": "behaviour 1",
 										"onverschillig": "behaviour 2",
