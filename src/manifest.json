@@ -5146,7 +5146,7 @@
 						"id": "goal-plan",
 						"type": "sections",
 						"title": "Family plan",
-						"_note": "the-social-domain-plan-and-its-grounds REQ-CPN-01 and REQ-CPN-03: the goals a household agreed to work on, the interventions under each with their provider and target date, and what is late, read from one endpoint (`gezinsplanId` names the plan; the data field stays frozen). Library config: a review-due banner over the same endpoint and grouped cards that join the interventions to their goal. It FAILS CLOSED with a retry: an unreachable register and a plan without goals must not look alike, or a consulent writes a second plan over the first. It was `family-plan`; RenamedLayoutIds rewrites stored layouts to `goal-plan`.",
+						"_note": "the-social-domain-plan-and-its-grounds REQ-CPN-01 and REQ-CPN-03: the goals a household agreed to work on, the interventions under each with their provider and target date, and what is late, read from one endpoint that finds the plan by the plan's own `caseId` (the case schema holds no plan reference). Library config: a review-due banner over the same endpoint and grouped cards that join the interventions to their goal. It FAILS CLOSED with a retry: an unreachable register and a plan without goals must not look alike, or a consulent writes a second plan over the first. It was `family-plan`; RenamedLayoutIds rewrites stored layouts to `goal-plan`.",
 						"content": {
 							"dividers": false,
 							"sections": [
@@ -5158,7 +5158,7 @@
 											"variant": "warning",
 											"text": "This plan was due for review on {subject.plan.reviewDate|date}. A plan that is not revisited stops describing the household it is about.",
 											"visibleWhen": {
-												"endpoint": "/apps/dossiq/api/family-plans/@object.gezinsplanId",
+												"endpoint": "/apps/dossiq/api/cases/@objectId/family-plan",
 												"field": "dueForReview",
 												"op": "eq",
 												"value": true
@@ -5172,7 +5172,7 @@
 										"type": "grouped-cards",
 										"content": {
 											"endpointSource": {
-												"url": "/apps/dossiq/api/family-plans/@object.gezinsplanId"
+												"url": "/apps/dossiq/api/cases/@objectId/family-plan"
 											},
 											"groupsPath": "goals",
 											"itemsPath": "interventions",

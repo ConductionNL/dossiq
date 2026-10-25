@@ -193,6 +193,7 @@ $extra = [
         // anything; `grounds` exists so the dialog offers the server's own list
         // rather than a second copy that can drift out of it.
     ['name' => 'sociaalDomeinPlan#plan',             'url' => '/api/family-plans/{planId}',                    'verb' => 'GET'],
+    ['name' => 'sociaalDomeinPlan#planOfCase',       'url' => '/api/cases/{caseId}/family-plan',               'verb' => 'GET'],
     ['name' => 'sociaalDomeinPlan#saveGoal',         'url' => '/api/family-plans/{planId}/goals',              'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#saveIntervention', 'url' => '/api/family-plans/{planId}/interventions',      'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#recordReview',     'url' => '/api/family-plans/{planId}/reviews',            'verb' => 'POST'],

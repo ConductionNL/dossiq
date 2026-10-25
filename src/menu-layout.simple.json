@@ -3487,13 +3487,26 @@
 						},
 						"_note": "DqSociaalDomein De melding: what the case is about and its key facts in one card, read off the case itself. The first card of the Overview stack for a case type whose overview lists its own cards (caseType.overviewCards).",
 						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "gezinsplan",
+								"filter": {
+									"caseId": "@objectId"
+								},
+								"sort": {
+									"field": "preparedDate",
+									"dir": "desc"
+								}
+							},
 							"columns": 2,
 							"fields": [
 								{
+									"from": "object",
 									"as": "text",
 									"path": "description"
 								},
 								{
+									"from": "object",
 									"label": "Case type",
 									"path": "caseType",
 									"resolve": {
@@ -3503,22 +3516,35 @@
 									}
 								},
 								{
+									"from": "object",
 									"label": "Legal basis",
 									"path": "legalBasis"
 								},
 								{
+									"from": "object",
 									"label": "Reported by",
 									"path": "initiatorDisplayName"
 								},
 								{
+									"from": "object",
 									"label": "Investigation ready by",
 									"path": "deadline",
 									"format": "date-long"
 								},
 								{
+									"from": "object",
 									"label": "Handler",
 									"path": "assignee",
 									"format": "user"
+								},
+								{
+									"label": "Family plan",
+									"path": "status",
+									"map": {
+										"in_opbouw": "Being drawn up",
+										"vastgesteld": "Adopted",
+										"geevalueerd": "Evaluated"
+									}
 								}
 							],
 							"emptyText": "No description yet"
