@@ -13,31 +13,19 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
-import { loadState } from '@nextcloud/initial-state'
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
 import { formatDuration, parseDuration } from '../utils/durationHelpers.js'
 import { fieldFill, fieldInCaseList, fieldKind, fieldOrigin } from '../utils/fieldDescription.js'
+import { portalName } from '../utils/portalName.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
 import { caseAddress } from './caseAddress.js'
 import { caseAnswerText } from './caseAnswer.js'
 import { coveredForLabel } from './coveredFor.js'
 import { scanVerdictLabel } from './scanVerdict.js'
 
-/**
- * The resident portal's name portaliq holds, from the page's `config` state.
- *
- * @return {string} The name, or '' when none is set.
- */
-function portalName() {
-	try {
-		return String(loadState('dossiq', 'config', {})?.portalName ?? '').trim()
-	} catch {
-		return ''
-	}
-}
 
 // Guard so each lookup collection is fetched at most once per page load.
 const lookupFetchStarted = {}

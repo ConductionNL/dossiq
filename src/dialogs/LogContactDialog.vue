@@ -154,6 +154,7 @@ import {
 	refusalOf,
 	refusalSentence,
 } from '../services/pipelinqCaseApi.js'
+import { portalName } from '../utils/portalName.js'
 
 export default {
 	name: 'LogContactDialog',
@@ -215,7 +216,7 @@ export default {
 				{ value: 'email', label: t('dossiq', 'Email') },
 				{ value: 'balie', label: t('dossiq', 'Desk') },
 				{ value: 'brief', label: t('dossiq', 'Letter') },
-				{ value: 'webformulier', label: t('dossiq', 'Web form') },
+				{ value: 'webformulier', label: portalName() || t('dossiq', 'Web form') },
 				{ value: 'chat', label: t('dossiq', 'Chat') },
 				{ value: 'social_media', label: t('dossiq', 'Social media') },
 			]
