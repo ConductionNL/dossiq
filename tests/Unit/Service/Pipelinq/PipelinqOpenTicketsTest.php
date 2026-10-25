@@ -61,6 +61,13 @@ class PipelinqOpenTicketsTest extends TestCase {
 			public array $asked = [];
 
 			/**
+			 * The status filter the leaf was asked for.
+			 *
+			 * @var string
+			 */
+			public string $status = '';
+
+			/**
 			 * Constructor.
 			 *
 			 * @param array<string, mixed> $result The answer.
@@ -77,6 +84,20 @@ class PipelinqOpenTicketsTest extends TestCase {
 			 */
 			public function openByMasterEntity(array $refs): array {
 				$this->asked = $refs;
+				return $this->result;
+			}
+
+			/**
+			 * Answer the tickets by status.
+			 *
+			 * @param array<int, string> $refs The master entities.
+			 * @param string $status The status filter.
+			 *
+			 * @return array<string, mixed> The answer.
+			 */
+			public function byMasterEntity(array $refs, string $status='open'): array {
+				$this->asked = $refs;
+				$this->status = $status;
 				return $this->result;
 			}
 		};
@@ -115,4 +136,22 @@ class PipelinqOpenTicketsTest extends TestCase {
 
 		$this->assertNull(actual: $this->gateway(leaf: $leaf)->openTicketsByMasterEntity(refs: ['m1']));
 	}//end testAnUnconfiguredTicketSurfaceAnswersNull()
+
+	/**
+	 * `all` asks pipelinq's byMasterEntity with the filter; `open` keeps the
+	 * open read, so an older pipelinq still serves it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/party-tickets-all-with-reference/specs/pipelinq-consumption/spec.md#requirement-a-partys-tickets-card-lists-its-handled-tickets-too
+	 */
+	public function testAllAsksTheStatusFilter(): void {
+		$leaf = $this->leaf(result: ['status' => 200, 'tickets' => ['m1' => [['id' => 't4']]]]);
+
+		$this->assertSame(expected: ['m1' => [['id' => 't4']]], actual: $this->gateway(leaf: $leaf)->ticketsByMasterEntity(refs: ['m1'], status: 'all'));
+		$this->assertSame(expected: 'all', actual: $leaf->status);
+
+		$this->assertSame(expected: ['m1' => [['id' => 't4']]], actual: $this->gateway(leaf: $leaf)->ticketsByMasterEntity(refs: ['m1'], status: 'open'));
+		$this->assertSame(expected: 'all', actual: $leaf->status, message: 'open reads openByMasterEntity');
+	}//end testAllAsksTheStatusFilter()
 }//end class
