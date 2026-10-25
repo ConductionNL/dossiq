@@ -47,7 +47,7 @@
 
 		<template v-else>
 			<section class="case-custody__section">
-				<h4 class="case-custody__heading">
+				<h4 class="case-custody__heading hidden-visually">
 					{{ t('dossiq', 'Who has held this case') }}
 				</h4>
 
@@ -96,7 +96,7 @@
 
 			<section class="case-custody__section">
 				<h4 class="case-custody__heading">
-					{{ t('dossiq', 'Who is asking for it') }}
+					{{ t('dossiq', 'Request for this case') }}
 				</h4>
 
 				<NcEmptyContent
@@ -521,10 +521,13 @@ export default {
 	margin-bottom: calc(var(--default-grid-baseline, 4px) * 4);
 }
 
+/* The card title already names the holdings, so their heading is for
+   screen readers only; the request heading sits as the board's subhead. */
 .case-custody__heading {
-	margin: 0 0 var(--default-grid-baseline, 4px) 0;
+	margin: 6px 0 8px;
 	font-size: 15px;
-	font-weight: 600;
+	font-weight: 700;
+	line-height: 1.2;
 }
 
 .case-custody__chain,
@@ -547,7 +550,7 @@ export default {
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	padding: 10px 0;
+	padding: 12px 0;
 	border-top: 1px solid var(--color-border);
 }
 
