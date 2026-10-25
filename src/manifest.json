@@ -7332,6 +7332,7 @@
 								"responsePath": "tomorrow"
 							},
 							"presentation": "rows",
+							"density": "stacked",
 							"duePlacement": "below",
 							"title": "{title}",
 							"due": {
