@@ -89,19 +89,29 @@
 									"key": "properties",
 									"label": "Schema",
 									"formatter": "propertyCount",
-									"sortable": false
+									"type": "number"
 								},
 								{
 									"key": "views",
 									"label": "Display",
-									"formatter": "objectViews",
-									"sortable": false
+									"formatter": "objectViews"
 								},
 								{
 									"key": "caseTypes",
 									"label": "Used in",
 									"formatter": "caseTypeCount",
-									"sortable": false
+									"type": "number"
+								}
+							],
+							"sortable": true,
+							"filterable": true,
+							"actions": [
+								{
+									"id": "catalogue-object-type-open-schema",
+									"label": "Open schema",
+									"icon": "OpenInNew",
+									"type": "navigate",
+									"target": "/index.php/apps/openregister/schemas/@object.schemaId"
 								}
 							],
 							"emptyText": "Object types appear here once cases link objects.",

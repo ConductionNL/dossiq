@@ -5850,6 +5850,7 @@ OC.L10N.register(
         "Open My work in the menu": "Open My work in the menu",
         "Open now": "Open now",
         "Open onboarding steps": "Open onboarding steps",
+        "Open schema": "Open schema",
         "Open settings": "Open settings",
         "Open source object": "Open source object",
         "Open tasks": "Open tasks",

@@ -56,9 +56,9 @@ final class ObjectTypeCatalogueTest extends TestCase {
 
 		$this->assertSame(
 			[
-				['id' => 'building', 'title' => 'building', 'cases' => 2, 'schema' => '', 'properties' => null, 'views' => [], 'caseTypes' => null],
-				['id' => 'Boom', 'title' => 'Boom', 'cases' => 1, 'schema' => '', 'properties' => null, 'views' => [], 'caseTypes' => null],
-				['id' => 'vehicle', 'title' => 'vehicle', 'cases' => 1, 'schema' => '', 'properties' => null, 'views' => [], 'caseTypes' => null],
+				['id' => 'building', 'title' => 'building', 'cases' => 2, 'schema' => '', 'properties' => null, 'views' => [], 'schemaId' => '', 'caseTypes' => null],
+				['id' => 'Boom', 'title' => 'Boom', 'cases' => 1, 'schema' => '', 'properties' => null, 'views' => [], 'schemaId' => '', 'caseTypes' => null],
+				['id' => 'vehicle', 'title' => 'vehicle', 'cases' => 1, 'schema' => '', 'properties' => null, 'views' => [], 'schemaId' => '', 'caseTypes' => null],
 			],
 			$rows
 		);
@@ -78,12 +78,12 @@ final class ObjectTypeCatalogueTest extends TestCase {
 			['case' => 'c2', 'objectType' => 'Boom', 'objectUrl' => $url],
 			['case' => 'c3', 'objectType' => 'building'],
 		]);
-		$schemas = [$url => ['title' => 'Bomenregister', 'properties' => 9, 'views' => ['map', 'table']]];
+		$schemas = [$url => ['id' => '17', 'title' => 'Bomenregister', 'properties' => 9, 'views' => ['map', 'table']]];
 
 		$rows = $this->catalogue(register: '23', schema: '41', objectService: $service, schemas: $schemas)->list();
 
 		$this->assertSame(
-			['id' => 'Boom', 'title' => 'Boom', 'cases' => 2, 'schema' => 'Bomenregister', 'properties' => 9, 'views' => ['map', 'table'], 'caseTypes' => null],
+			['id' => 'Boom', 'title' => 'Boom', 'cases' => 2, 'schema' => 'Bomenregister', 'properties' => 9, 'views' => ['map', 'table'], 'schemaId' => '17', 'caseTypes' => null],
 			$rows[0]
 		);
 		$this->assertSame(['', null, []], [$rows[1]['schema'], $rows[1]['properties'], $rows[1]['views']]);
