@@ -412,3 +412,31 @@ describe('BulkDocumentActionDialog — copy-to-case (DqDocumentenBeheer "Kopiër
 		)
 	})
 })
+
+describe('BulkDocumentActionDialog — merge-pdf (DqDocumentenBeheer "Samenvoegen tot pdf")', () => {
+	it('asks the case to merge the ticked files, in order, into one PDF', async () => {
+		mockPost.mockResolvedValue({ data: { status: 'done', resultFileId: 99 } })
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'merge-pdf', fileIds: [11, 12], caseId: 'case-1' },
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockPost).toHaveBeenCalledWith('/apps/dossiq/api/cases/case-1/dossier/merge', { fileIds: [11, 12] })
+		expect(mockSuccess).toHaveBeenCalled()
+		expect(mockEmit).toHaveBeenCalledWith('cn:page:refresh')
+	})
+
+	it('shows the server\'s sentence when the merge is refused', async () => {
+		mockPost.mockRejectedValue({ response: { data: { message: 'Filinq is not installed, so documents cannot be merged' } } })
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'merge-pdf', fileIds: [11, 12], caseId: 'case-1' },
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(wrapper.vm.error).toBe('Filinq is not installed, so documents cannot be merged')
+	})
+})

@@ -55,6 +55,14 @@
 				:clearable="false"
 				:disabled="busy"
 				@search="searchCases" />
+			<p v-if="mode === 'merge-pdf'" class="bulk-document-dialog__intro">
+				{{
+					t(
+						'dossiq',
+						'The selected documents are merged into one PDF, in this order, and added to the case.',
+					)
+				}}
+			</p>
 
 			<p v-if="mode === 'zip'" class="bulk-document-dialog__intro">
 				{{
@@ -131,7 +139,7 @@ export default {
 			type: String,
 			default: 'mark-final',
 			validator: (value) =>
-				['mark-final', 'confidentiality', 'zip', 'copy-to-case'].includes(value),
+				['mark-final', 'confidentiality', 'zip', 'copy-to-case', 'merge-pdf'].includes(value),
 		},
 
 		/**
@@ -220,6 +228,7 @@ export default {
 			if (this.mode === 'zip') return this.t('dossiq', 'Download ZIP')
 			if (this.mode === 'copy-to-case')
 				return this.t('dossiq', 'Copy to another case')
+			if (this.mode === 'merge-pdf') return this.t('dossiq', 'Merge into PDF')
 			return this.t('dossiq', 'Mark as final')
 		},
 
@@ -232,6 +241,7 @@ export default {
 		confirmLabel() {
 			if (this.mode === 'zip') return this.t('dossiq', 'Download')
 			if (this.mode === 'copy-to-case') return this.t('dossiq', 'Copy')
+			if (this.mode === 'merge-pdf') return this.t('dossiq', 'Merge')
 			return this.t('dossiq', 'Apply')
 		},
 
@@ -269,6 +279,7 @@ export default {
 					'/apps/dossiq/api/informatieobjecten/bulk/copy',
 					{ targetCaseId: String(this.targetCase?.id ?? '') },
 				)
+			if (this.mode === 'merge-pdf') return this.mergePdf()
 			return this.downloadZip()
 		},
 
@@ -296,6 +307,34 @@ export default {
 					}))
 			} catch {
 				this.caseOptions = []
+			}
+		},
+
+		/**
+		 * Have the case merge the ticked files, in order, into one PDF.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/documents-merge-pdf/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
+		 */
+		async mergePdf() {
+			if (this.resolvedCaseId === '') return
+			this.busy = true
+			this.error = ''
+			try {
+				const url = generateUrl(
+					`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/dossier/merge`,
+				)
+				await axios.post(url, { fileIds: [...this.fileIds] })
+				showSuccess(this.t('dossiq', 'The PDF was added to the case'))
+				emit('cn:page:refresh')
+				this.$emit('close')
+			} catch (failure) {
+				this.error =
+					failure?.response?.data?.message
+					|| this.t('dossiq', 'The documents could not be merged')
+				showError(this.error)
+			} finally {
+				this.busy = false
 			}
 		},
 

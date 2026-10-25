@@ -4055,6 +4055,17 @@
 							"sideCardsPlacement": "page-side",
 							"bulkActions": [
 								{
+									"id": "bulk-merge-pdf",
+									"label": "Merge into PDF",
+									"icon": "FilePdfBox",
+									"type": "open-modal",
+									"target": "BulkDocumentActionDialog",
+									"props": {
+										"mode": "merge-pdf",
+										"caseId": "@objectId"
+									}
+								},
+								{
 									"id": "bulk-copy-to-case",
 									"label": "Copy to another case",
 									"icon": "ContentCopy",

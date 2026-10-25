@@ -42,3 +42,10 @@ describe('the bulk bar over the ticked documents (DqDocumentenBeheer)', () => {
 		expect(props.bulkActions.map((action) => action.id)).toEqual(expect.arrayContaining(['bulk-confidentiality', 'bulk-mark-final']))
 	})
 })
+
+describe('merging the ticked documents (DqDocumentenBeheer "Samenvoegen tot pdf")', () => {
+	it('is the first act in the band, through filinq', () => {
+		const props = panels.caseWidget('case-files').props
+		expect(props.bulkActions[0]).toMatchObject({ id: 'bulk-merge-pdf', target: 'BulkDocumentActionDialog', props: { mode: 'merge-pdf' } })
+	})
+})
