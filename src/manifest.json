@@ -8889,23 +8889,27 @@
 								},
 								{
 									"key": "medianWorkingHours",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Hours, wall clock",
 									"labelPath": "labels.workingHours"
 								},
 								{
 									"key": "medianHours",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Wall-clock hours",
 									"labelPath": "labels.wallHours"
 								},
 								{
 									"key": "visitCount",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Visits"
 								},
 								{
 									"key": "score",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Score"
 								}
@@ -8943,18 +8947,21 @@
 								},
 								{
 									"key": "workingHours",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Hours, wall clock",
 									"labelPath": "labels.workingHours"
 								},
 								{
 									"key": "wallHours",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Wall-clock hours",
 									"labelPath": "labels.wallHours"
 								},
 								{
 									"key": "visitCount",
+									"format": { "style": "number", "decimals": 0 },
 									"class": "cn-table-col--end",
 									"label": "Visits"
 								}
