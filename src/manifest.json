@@ -4143,6 +4143,18 @@
 											"label": "Computed",
 											"formatter": "relativeDate",
 											"formatterOptions": { "time": true }
+										},
+										{
+											"key": "integrity.checkedAt",
+											"label": "Last checked",
+											"formatter": "relativeDate",
+											"formatterOptions": { "time": true }
+										},
+										{
+											"key": "integrity.status",
+											"label": "Outcome",
+											"formatter": "integrityStatus",
+											"colorMap": { "changed": "error", "missing": "error" }
 										}
 									]
 								},

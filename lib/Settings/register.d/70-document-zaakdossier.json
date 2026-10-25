@@ -14,7 +14,7 @@
       "informatieobject": {
         "slug": "informatieobject",
         "icon": "FileDocumentOutline",
-        "version": "1.2.1",
+        "version": "1.3.0",
         "searchable": false,
         "title": "Informatieobject",
         "description": "ZGW DRC document with full metadata, stored as a Nextcloud file plus a register object. schema.org DigitalDocument.",
@@ -82,7 +82,9 @@
             "properties": {
               "algorithm": {"type": "string", "title": "Integrity Algorithm", "default": "sha256", "description": "Hash algorithm (fixed sha256)"},
               "value":    {"type": "string", "title": "Integrity Value", "maxLength": 128, "description": "Hex-encoded SHA-256 hash"},
-              "date":     {"type": "string", "title": "Registration date", "format": "date-time", "description": "Hash computation timestamp"}
+              "date":     {"type": "string", "title": "Registration date", "format": "date-time", "description": "Hash computation timestamp"},
+              "status":   {"type": "string", "title": "Last check", "enum": ["unchanged", "changed", "missing", "unchecked"], "description": "Outcome of the last re-verification of the file against value"},
+              "checkedAt": {"type": "string", "title": "Last checked", "format": "date-time", "description": "When the file was last hashed again and compared with value"}
             }
           },
           "lockedOn":        {"type": "string", "title": "Locked On", "format": "date-time", "description": "Timestamp set when status transitions to definitief"},

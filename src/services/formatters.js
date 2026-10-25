@@ -181,6 +181,25 @@ export default {
 	},
 
 	/**
+	 * The outcome of a document checksum's last check, in words; the code
+	 * itself when it is not one of the four.
+	 *
+	 * @param {unknown} value `unchanged`, `changed`, `missing` or `unchecked`.
+	 * @return {string}
+	 * @spec openspec/changes/document-integrity-check/specs/document-integrity-check/spec.md#requirement-the-checksum-card-says-when-and-how-the-file-was-last-checked
+	 */
+	integrityStatus: (value) => {
+		const labels = {
+			unchanged: t('dossiq', 'Unchanged'),
+			changed: t('dossiq', 'Changed since it was stored'),
+			missing: t('dossiq', 'File not found'),
+			unchecked: t('dossiq', 'Too large to check'),
+		}
+		const code = value === null || value === undefined ? '' : String(value)
+		return labels[code] ?? code
+	},
+
+	/**
 	 * Whom a covered case is covered for, and until when ("For Anouk Bakker,
 	 * until 10 Oct"); '' on the reader's own case.
 	 *
