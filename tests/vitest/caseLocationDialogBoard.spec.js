@@ -41,7 +41,9 @@ describe('the location dialog as the board draws it', () => {
 	it('labels the search field Adres zoeken, above the field', () => {
 		const search = mountDialog().findComponent({ name: 'CnAddressSearch' })
 		expect(nl[search.props('inputLabel')]).toBe('Adres zoeken')
-		expect(search.props('labelOutside')).toBe(true)
+		// NcSelect draws its label above the field only when labelOutside is
+		// false; true means the caller draws one, and nothing did.
+		expect(search.props('labelOutside')).not.toBe(true)
 	})
 
 	it('draws the map as a preview without fit, locate or fullscreen buttons', () => {

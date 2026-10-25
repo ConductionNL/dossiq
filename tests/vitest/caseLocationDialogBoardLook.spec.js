@@ -42,6 +42,20 @@ describe('CaseLocationDialog in the board look', () => {
 		expect(source).not.toContain('case-location-dialog__label')
 	})
 
+	it('draws the layer toggles as plain 14px checkboxes, 8px from their label', () => {
+		const content = ruleFor('.case-location-dialog__layers :deep(.checkbox-content)')
+		expect(content).toContain('gap: 8px')
+		expect(content).toContain('padding: 0')
+		expect(ruleFor('.case-location-dialog__layers :deep(.checkbox-content__text)')).toContain('font-size: 14px')
+	})
+
+	it('sets the address label at 14px/600, 6px above the field', () => {
+		const label = ruleFor('.case-location-dialog :deep(.select__label)')
+		expect(label).toContain('font-size: 14px')
+		expect(label).toContain('font-weight: 600')
+		expect(label).toContain('margin-bottom: 6px')
+	})
+
 	it('puts the map beside a 200px layer list in an 8px rounded frame', () => {
 		expect(ruleFor('.case-location-dialog__map-row')).toContain('grid-template-columns: minmax(0, 1fr) 200px')
 		expect(ruleFor('.case-location-dialog__layers')).toContain('border-radius: 8px')
