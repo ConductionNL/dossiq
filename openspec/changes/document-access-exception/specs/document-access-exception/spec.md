@@ -100,6 +100,15 @@ its own checks. A change of a case's handler MUST refresh `accessUsers` of the c
 - WHEN Anna (dossiq-medewerkers) lists or reads informatieobjecten through OpenRegister
 - THEN the record is not in the list or its total, and a direct read is refused
 
+#### Scenario: a listed outsider reads the record but does not change it
+- GIVEN Anna is listed on the exception but is not a handler of the document's cases
+- WHEN she updates or deletes the record through OpenRegister
+- THEN the write is refused; update and delete of a restricted document are for its cases' handlers (`accessHandlers`)
+
+#### Scenario: a PUT that leaves out the protected fields keeps them
+- WHEN a member of dossiq-medewerkers PUTs the record without `restricted` or the history
+- THEN both are kept (openregister omitted-unwritable-properties-are-kept)
+
 #### Scenario: a raw write of the exception is refused
 - WHEN a member of dossiq-medewerkers writes `accessException`, `restricted`, `accessUsers` or `accessGroups` through OpenRegister
 - THEN the write is refused

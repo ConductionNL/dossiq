@@ -23,9 +23,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use Throwable;
 
 /**
- * Keeps `restricted`, `accessUsers` and `accessGroups` in step with a document's exception, and writes them, with
+ * Keeps `restricted`, `accessUsers`, `accessGroups` and `accessHandlers` in step with a document's exception, and writes them, with
  * the exception itself, as the background service account: no staff group may write those fields.
  *
  * `accessUsers` holds the exception's people plus the handler (`assignee`) of every case the document is on, so the
@@ -58,24 +59,31 @@ class RestrictedDocumentReaders {
 	 *
 	 * @param array<string, mixed> $record The record, with `id` and maybe `accessException`.
 	 *
-	 * @return array<string, mixed> The record with `restricted`, `accessUsers` and `accessGroups`.
+	 * @return array<string, mixed> The record with `restricted`, `accessUsers`, `accessGroups` and `accessHandlers`.
 	 *
 	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-openregisters-own-api-applies-the-same-rule-to-the-record
 	 */
 	public function withReaders(array $record): array {
 		$exception = (new AccessExceptionValue())->exceptionOf(record: $record);
 		if ($exception === null) {
-			return [...$record, 'restricted' => false, 'accessUsers' => [], 'accessGroups' => []];
+			return [...$record, 'restricted' => false, 'accessUsers' => [], 'accessGroups' => [], 'accessHandlers' => []];
 		}
 
+		$handlers = $this->handlersOf(documentId: (string)($record['id'] ?? ''));
 		$users = $exception['users'];
-		foreach ($this->handlersOf(documentId: (string)($record['id'] ?? '')) as $handler) {
+		foreach ($handlers as $handler) {
 			if (in_array($handler, $users, true) === false) {
 				$users[] = $handler;
 			}
 		}
 
-		return [...$record, 'restricted' => true, 'accessUsers' => $users, 'accessGroups' => $exception['groups']];
+		return [
+			...$record,
+			'restricted' => true,
+			'accessUsers' => $users,
+			'accessGroups' => $exception['groups'],
+			'accessHandlers' => $handlers,
+		];
 	}//end withReaders()
 
 	/**
@@ -113,7 +121,9 @@ class RestrictedDocumentReaders {
 					}
 
 					$refreshed = $this->withReaders(record: $record);
-					if (($refreshed['accessUsers'] ?? []) === ($record['accessUsers'] ?? [])) {
+					if (($refreshed['accessUsers'] ?? []) === ($record['accessUsers'] ?? [])
+						&& ($refreshed['accessHandlers'] ?? []) === ($record['accessHandlers'] ?? [])
+					) {
 						continue;
 					}
 
@@ -207,12 +217,17 @@ class RestrictedDocumentReaders {
 			return [];
 		}
 
+		// A handler that cannot be read is left out: a reader too few is visible, a stale one is a leak.
 		$handlers = [];
-		foreach ($this->caseIds->caseIdsOf(recordId: $documentId) as $caseId) {
-			$assignee = trim((string)($this->store->findCase(caseId: $caseId)['assignee'] ?? ''));
-			if ($assignee !== '' && in_array($assignee, $handlers, true) === false) {
-				$handlers[] = $assignee;
+		try {
+			foreach ($this->caseIds->caseIdsOf(recordId: $documentId) as $caseId) {
+				$assignee = trim((string)($this->store->findCase(caseId: $caseId)['assignee'] ?? ''));
+				if ($assignee !== '' && in_array($assignee, $handlers, true) === false) {
+					$handlers[] = $assignee;
+				}
 			}
+		} catch (Throwable $e) {
+			$handlers = [];
 		}
 
 		return $handlers;

@@ -110,11 +110,21 @@ class DocumentAccessExceptionRawAccessTest extends TestCase {
 			'dossiq-background-service',
 		];
 
-		foreach (['read', 'update', 'delete'] as $action) {
-			$this->assertSame($expected, $schema['authorization'][$action], $action);
+		$this->assertSame($expected, $schema['authorization']['read']);
+
+		// A listed outsider reads the document; changing or deleting the record is for staff on an unrestricted
+		// document and for the handlers of its cases.
+		$change = [
+			['group' => 'dossiq-medewerkers', 'match' => ['restricted' => false]],
+			['group' => 'dossiq-medewerkers', 'match' => ['restricted' => ['$exists' => false]]],
+			['group' => 'dossiq-medewerkers', 'match' => ['accessHandlers' => ['$contains' => '$userId']]],
+			'dossiq-background-service',
+		];
+		foreach (['update', 'delete'] as $action) {
+			$this->assertSame($change, $schema['authorization'][$action], $action);
 		}
 
-		foreach (['accessException', 'accessExceptionHistory', 'restricted', 'accessUsers', 'accessGroups'] as $property) {
+		foreach (['accessException', 'accessExceptionHistory', 'restricted', 'accessUsers', 'accessGroups', 'accessHandlers'] as $property) {
 			$this->assertSame(
 				['create' => [['group' => 'dossiq-background-service']], 'update' => [['group' => 'dossiq-background-service']]],
 				$schema['properties'][$property]['authorization'],
@@ -136,6 +146,7 @@ class DocumentAccessExceptionRawAccessTest extends TestCase {
 
 		$this->assertSame(1, $changed);
 		$this->assertSame(['pieter', 'kees'], $this->saved[0][0]['accessUsers']);
+		$this->assertSame(['kees'], $this->saved[0][0]['accessHandlers']);
 		$this->assertTrue($this->saved[0][1], 'saved as the background service account');
 	}//end testAReassignedCasesRestrictedDocumentsNameTheNewHandler()
 
@@ -223,4 +234,15 @@ class DocumentAccessExceptionRawAccessTest extends TestCase {
 
 		$assembler->assembleSignedResult(fileId: 'doc-r', signatory: 'pieter', uuid: 'ls-1', status: ['file' => ['signedFileId' => 5]]);
 	}//end testASignedVersionCarriesTheOriginalsException()
+
+	public function testAHandlerThatCannotBeReadIsDroppedNotKept(): void {
+		$caseIds = $this->createMock(DocumentCaseIds::class);
+		$caseIds->method('caseIdsOf')->willThrowException(new \RuntimeException('OpenRegister down'));
+		$this->caseIds = $caseIds;
+
+		$record = $this->readers()->withReaders(record: ['id' => 'doc-r', 'accessException' => self::EXCEPTION, 'accessUsers' => ['pieter', 'hanna']]);
+
+		$this->assertSame(['pieter'], $record['accessUsers']);
+		$this->assertSame([], $record['accessHandlers']);
+	}//end testAHandlerThatCannotBeReadIsDroppedNotKept()
 }//end class

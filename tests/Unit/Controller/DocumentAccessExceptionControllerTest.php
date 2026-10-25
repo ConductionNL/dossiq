@@ -288,6 +288,7 @@ class DocumentAccessExceptionControllerTest extends TestCase {
 		$this->assertTrue($stored['restricted']);
 		$this->assertSame(['pieter', 'hanna'], $stored['accessUsers'], 'the case handler reads it in OpenRegister too');
 		$this->assertSame(['woo-team'], $stored['accessGroups']);
+		$this->assertSame(['hanna'], $stored['accessHandlers']);
 	}//end testTheExceptionIsSavedAsTheServiceAccountWithTheReadersOpenRegisterTests()
 
 	public function testRemovingClearsTheReadersOpenRegisterTests(): void {

@@ -21,3 +21,6 @@
 - [x] 6.6 Woo publication refused while a disclosable document carries an exception
 - [x] 6.7 Merge development: the rule and writableDocuments read DocumentCaseIds (e6002cb15)
 - [x] 6.8 Tests for 6.2 to 6.6, red on the previous commit
+- [x] 6.9 Update and delete of a restricted record only for its cases' handlers (derived `accessHandlers`), not for a listed outsider; informatieobject 1.7.0
+- [x] 6.10 A handler that cannot be read is dropped from the readers, not kept
+- [x] 6.11 Depends on openregister omitted-unwritable-properties-are-kept (#4862): a PUT without the protected fields keeps them
