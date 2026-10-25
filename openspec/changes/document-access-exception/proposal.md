@@ -38,11 +38,22 @@ document carries only a confidentiality level, which compares a clearance and sa
 - A document without an exception is decided exactly as before.
 - The confidentiality level stays, and still applies to everyone (also to listed people).
 
-## Known limits (follow-ups)
+## Raw OpenRegister access (review, 25 October)
 
-- OpenRegister's raw object API still answers the informatieobject RECORD (title and metadata, not the file) to
-  every member of dossiq-medewerkers, because OpenRegister's per-object rules cannot yet express "only these users
-  and groups" on its list paths. The file is closed; the record needs an OpenRegister per-object read restriction.
-- The ZGW DRC API and the beroep dossier export read the ZGW `document` model, which carries no exception.
-- dossiq has no activity provider and no search provider of its own; document search is OpenRegister's file
-  search, which honours the file restriction.
+- **Reads.** The informatieobject schema carries its own authorization (the SharePrincipalDeriver pattern):
+  dossiq-medewerkers read a document only where `restricted` is false or absent; everyone else reads it only when
+  listed in the derived `accessUsers` (the exception's people plus the handlers of its cases) or `accessGroups`.
+  The same rule applies to update and delete. So OpenRegister's lists, totals and facets agree with dossiq's own
+  rule, and every dossiq read that goes through OpenRegister as the caller (also the beroep export listing) follows.
+- **Writes.** `accessException`, `accessExceptionHistory`, `restricted`, `accessUsers` and `accessGroups` are
+  writable only by dossiq-background-service. The writer saves as that account after its own checks; without a
+  configured account the set is refused (503). OpenRegister administrators bypass property rules, as everywhere.
+- **Handler changes.** When a case's `assignee` changes, its restricted documents' `accessUsers` are recomputed.
+- **Copies.** A redacted copy and a signed version carry the original's exception and their files are restricted.
+- **Woo.** A publication with a document under an exception is refused (`documents_restricted`).
+
+## Known limits
+
+- Native Nextcloud Files/WebDAV: see openregister per-file-read-restriction; object files live in OpenRegister's
+  own account and dossiq shares no case folder natively.
+- The ZGW DRC API reads the ZGW `document` model, which carries no exception.

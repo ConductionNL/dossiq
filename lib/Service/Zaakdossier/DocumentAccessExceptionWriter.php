@@ -46,7 +46,7 @@ class DocumentAccessExceptionWriter {
 	 *
 	 * @param DocumentAccessExceptionRule $rule         Reads the exception a record carries.
 	 * @param FileRestrictionMirror   $files        Restricts the file in OpenRegister.
-	 * @param DocumentRecordStore     $store        Saves the record.
+	 * @param RestrictedDocumentReaders $readers    Derives the readers OpenRegister tests and saves the record as the background service account.
 	 * @param IUserManager            $userManager  Checks a named person exists.
 	 * @param IGroupManager           $groupManager Checks a named group exists.
 	 * @param LoggerInterface         $logger       Where each change is noted.
@@ -56,7 +56,7 @@ class DocumentAccessExceptionWriter {
 	public function __construct(
 		private readonly DocumentAccessExceptionRule $rule,
 		private readonly FileRestrictionMirror $files,
-		private readonly DocumentRecordStore $store,
+		private readonly RestrictedDocumentReaders $readers,
 		private readonly IUserManager $userManager,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
@@ -209,7 +209,7 @@ class DocumentAccessExceptionWriter {
 	 */
 	private function saveOrRestore(array $record, int $fileId, ?array $old): void {
 		try {
-			$this->store->saveRecord(record: $record);
+			$this->readers->save(record: $record);
 		} catch (Throwable $e) {
 			$this->restoreFile(fileId: $fileId, old: $old);
 			throw new RuntimeException('The access exception could not be saved', 0, $e);

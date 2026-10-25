@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
 use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\Publication\PublicationSources;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
@@ -310,9 +311,9 @@ class WooPublicationService {
 
 		$delivery = $this->sources->delivery(objectService: $objectService, register: $register, caseId: $caseId);
 		$disclosable = $delivery['documents'];
-		$unreadable = $this->unreadable(documents: $disclosable);
-		if ($unreadable !== []) {
-			return ['available' => false, 'reason' => 'documents_unreadable', 'documents' => $unreadable];
+		$refusal = $this->documentRefusal(documents: $disclosable);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		if (count($disclosable) === 0
@@ -399,6 +400,52 @@ class WooPublicationService {
 
 		return $names;
 	}//end unreadable()
+
+	/**
+	 * The refusal a set of disclosable documents earns: one whose file cannot be read, or one under an access
+	 * exception. Null when the set may go out.
+	 *
+	 * @param array<int, array<string, mixed>> $documents The disclosable documents.
+	 *
+	 * @return array{available: false, reason: string, documents: list<string>}|null The refusal.
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-never-published
+	 */
+	private function documentRefusal(array $documents): ?array {
+		$unreadable = $this->unreadable(documents: $documents);
+		if ($unreadable !== []) {
+			return ['available' => false, 'reason' => 'documents_unreadable', 'documents' => $unreadable];
+		}
+
+		$restricted = $this->restricted(documents: $documents);
+		if ($restricted !== []) {
+			return ['available' => false, 'reason' => 'documents_restricted', 'documents' => $restricted];
+		}
+
+		return null;
+	}//end documentRefusal()
+
+	/**
+	 * The disclosable documents that name their only readers: an access exception and a publication contradict
+	 * each other, so the publication is refused until the exception is lifted.
+	 *
+	 * @param array<int, array<string, mixed>> $documents The disclosable documents.
+	 *
+	 * @return list<string> Their names.
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-never-published
+	 */
+	private function restricted(array $documents): array {
+		$value = new AccessExceptionValue();
+		$names = [];
+		foreach ($documents as $document) {
+			if ($value->exceptionOf(record: $document) !== null) {
+				$names[] = (string)($document['fileName'] ?? ($document['title'] ?? ($document['id'] ?? '')));
+			}
+		}
+
+		return $names;
+	}//end restricted()
 
 	/**
 	 * The in-scope documents with required pages nobody has seen yet.

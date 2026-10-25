@@ -17,6 +17,8 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCaseIds;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\RestrictedDocumentReaders;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\Zaakdossier\FileRestrictionMirror;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -60,6 +62,15 @@ class DocumentAccessExceptionControllerTest extends TestCase {
 	 */
 	private array $saved = [];
 
+	/**
+	 * How many writes ran as the background service account.
+	 *
+	 * @var integer
+	 */
+	private int $ranAsServiceAccount = 0;
+
+	private BackgroundServiceAccount&MockObject $serviceAccount;
+
 	protected function setUp(): void {
 		parent::setUp();
 		$this->caseWrites = $this->createMock(DocumentCaseWriteGuard::class);
@@ -98,10 +109,20 @@ class DocumentAccessExceptionControllerTest extends TestCase {
 			cases: $this->createMock(CaseAccessGuard::class),
 			groupManager: $groupManager
 		);
+		$caseIds = $this->createMock(DocumentCaseIds::class);
+		$caseIds->method('caseIdsOf')->willReturn(['case-0082']);
+		$this->store->method('findCase')->willReturn(['id' => 'case-0082', 'assignee' => 'hanna']);
+		$this->serviceAccount = $this->createMock(BackgroundServiceAccount::class);
+		$this->serviceAccount->method('runAs')->willReturnCallback(
+			function (callable $operation): mixed {
+				$this->ranAsServiceAccount++;
+				return $operation();
+			}
+		);
 		$writer = new DocumentAccessExceptionWriter(
 			rule: $rule,
 			files: $this->files,
-			store: $this->store,
+			readers: new RestrictedDocumentReaders(caseIds: $caseIds, store: $this->store, serviceAccount: $this->serviceAccount, files: $this->files),
 			userManager: $userManager,
 			groupManager: $groupManager,
 			logger: new NullLogger()
@@ -255,4 +276,28 @@ class DocumentAccessExceptionControllerTest extends TestCase {
 		$this->assertFalse($this->controller()->destroy('doc-offerte')->getData()['removed']);
 		$this->assertSame([], $this->saved);
 	}//end testRemovingWhereThereIsNoneChangesNothing()
+
+	public function testTheExceptionIsSavedAsTheServiceAccountWithTheReadersOpenRegisterTests(): void {
+		$this->reader->method('loadReadable')->willReturn($this->offerte());
+		$this->params = ['users' => ['pieter'], 'groups' => ['woo-team'], 'reason' => 'Prijzen'];
+
+		$this->controller()->update('doc-offerte');
+
+		$this->assertSame(1, $this->ranAsServiceAccount);
+		$stored = $this->saved[0];
+		$this->assertTrue($stored['restricted']);
+		$this->assertSame(['pieter', 'hanna'], $stored['accessUsers'], 'the case handler reads it in OpenRegister too');
+		$this->assertSame(['woo-team'], $stored['accessGroups']);
+	}//end testTheExceptionIsSavedAsTheServiceAccountWithTheReadersOpenRegisterTests()
+
+	public function testRemovingClearsTheReadersOpenRegisterTests(): void {
+		$this->reader->method('loadReadable')->willReturn($this->offerte(withException: true));
+
+		$this->controller()->destroy('doc-offerte');
+
+		$this->assertSame(1, $this->ranAsServiceAccount);
+		$this->assertFalse($this->saved[0]['restricted']);
+		$this->assertSame([], $this->saved[0]['accessUsers']);
+		$this->assertSame([], $this->saved[0]['accessGroups']);
+	}//end testRemovingClearsTheReadersOpenRegisterTests()
 }//end class

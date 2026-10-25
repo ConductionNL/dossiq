@@ -14,4 +14,10 @@
 - [x] 5.1 PHPUnit: rule, paths (listing, detail, download, ZIP, portal, clearance still applies), controller (order, validation, history, 503, failed save restores, remove), listener, names, per-row change right
 - [x] 5.2 Vitest: card fields and action, formatter, dialog load, save, remove, refusal, search
 - [ ] 6.1 Live check on :8080 — not run: the lane brief keeps :8080 read-only, and OpenRegister needs per-file-read-restriction merged first
-- [ ] 6.2 OpenRegister record-level read restriction for the informatieobject record on OpenRegister's raw object API — follow-up, see proposal "Known limits"
+- [x] 6.2 Raw OpenRegister reads: informatieobject authorization on restricted / accessUsers / accessGroups (read, update, delete), RestrictedDocumentReaders derives them, saves as the background service account
+- [x] 6.3 Raw OpenRegister writes: property authorization on the five fields, only dossiq-background-service
+- [x] 6.4 A case's handler change refreshes accessUsers (RestrictedDocumentHandlerListener, DocumentCaseIds::documentIdsOf)
+- [x] 6.5 Redacted copies and signed versions inherit the exception (RedactedCopyRecorder, LibresignResultAssembler)
+- [x] 6.6 Woo publication refused while a disclosable document carries an exception
+- [x] 6.7 Merge development: the rule and writableDocuments read DocumentCaseIds (e6002cb15)
+- [x] 6.8 Tests for 6.2 to 6.6, red on the previous commit

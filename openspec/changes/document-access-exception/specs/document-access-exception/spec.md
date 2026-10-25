@@ -85,3 +85,48 @@ and a reason, saved through the endpoint above.
 #### Scenario: the board's card
 - GIVEN "Offerte verlichting.pdf" carries the exception pieter and woo-team with reason "Commercially sensitive prices"
 - THEN the card reads Default, Exception "Only Pieter Jansen and woo-team" and Reason "Commercially sensitive prices"
+
+### Requirement: OpenRegister's own API applies the same rule to the record
+
+OpenRegister's object API (find, list, totals, facets, update, delete) MUST refuse an informatieobject with an
+exception to everyone the exception does not admit. The informatieobject's own authorization admits
+dossiq-medewerkers only where `restricted` is false or absent, and anyone listed in the derived `accessUsers` (the
+exception's people plus the handlers of the document's cases) or `accessGroups`. The exception fields and the
+derived lists MUST be writable only by the background service account; the writer saves them as that account after
+its own checks. A change of a case's handler MUST refresh `accessUsers` of the case's restricted documents.
+
+#### Scenario: staff who are not listed do not get the record from OpenRegister
+- GIVEN "Offerte verlichting.pdf" carries an exception for pieter and woo-team
+- WHEN Anna (dossiq-medewerkers) lists or reads informatieobjecten through OpenRegister
+- THEN the record is not in the list or its total, and a direct read is refused
+
+#### Scenario: a raw write of the exception is refused
+- WHEN a member of dossiq-medewerkers writes `accessException`, `restricted`, `accessUsers` or `accessGroups` through OpenRegister
+- THEN the write is refused
+
+#### Scenario: the new handler of a reassigned case
+- WHEN the case is reassigned from Hanna to Kees
+- THEN the restricted document's `accessUsers` names Kees instead of Hanna
+
+### Requirement: a copy of a document carries its exception
+
+A redacted copy and a signed version of a document with an exception MUST carry the same exception: the copy's file
+is restricted in OpenRegister to the same people and groups, and the copy's record gets the exception with a history
+entry naming the original.
+
+#### Scenario: the redacted copy
+- WHEN a redacted copy of "Offerte verlichting.pdf" is recorded
+- THEN the copy carries the exception and its file is restricted
+
+#### Scenario: the signed version
+- WHEN a signed version of the document is stored
+- THEN its file is restricted to the same people and groups
+
+### Requirement: a document with an exception is never published
+
+A Woo publication MUST be refused while one of its disclosable documents carries an exception, naming the
+documents, and nothing is sent.
+
+#### Scenario: publishing with a restricted document
+- WHEN the case is published and a disclosable document carries an exception
+- THEN the publication is refused with `documents_restricted` and nothing is attached
