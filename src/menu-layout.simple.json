@@ -6775,6 +6775,26 @@
 						},
 						"content": {
 							"excludeActions": ["read"],
+							"actionLabels": {
+								"create": "Case type created",
+								"update": "Case type changed"
+							},
+							"changeLabels": [
+								{
+									"action": "update",
+									"field": "isDraft",
+									"to": false,
+									"label": "Version {object.version} published"
+								},
+								{
+									"field": "variants",
+									"label": "Variants changed"
+								},
+								{
+									"field": "rules",
+									"label": "Rules changed"
+								}
+							],
 							"footnote": "Reference {identifier}"
 						}
 					}
@@ -7318,7 +7338,29 @@
 						"id": "case-type-history",
 						"type": "audit-trail",
 						"title": "Record history",
-						"icon": "History"
+						"icon": "History",
+						"content": {
+							"actionLabels": {
+								"create": "Case type created",
+								"update": "Case type changed"
+							},
+							"changeLabels": [
+								{
+									"action": "update",
+									"field": "isDraft",
+									"to": false,
+									"label": "Version {object.version} published"
+								},
+								{
+									"field": "variants",
+									"label": "Variants changed"
+								},
+								{
+									"field": "rules",
+									"label": "Rules changed"
+								}
+							]
+						}
 					},
 					{
 						"id": "case-type-privacy-summary",
@@ -7726,6 +7768,8 @@
 								}
 							},
 							"tableLook": "data",
+							"sortable": true,
+							"filterable": true,
 							"footnote": "Anyone who opted out of messages only receives what the law requires. Every e-mail carries an unsubscribe link.",
 							"footnoteVariant": "info",
 							"emptyText": "This case type sends no messages yet"
