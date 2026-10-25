@@ -26,6 +26,13 @@ use PHPUnit\Framework\TestCase;
 class PersonReachabilityTest extends TestCase {
 
 	/**
+	 * The portaliq double the last service was built with.
+	 *
+	 * @var object
+	 */
+	private object $presence;
+
+	/**
 	 * The service over these rows and this portaliq answer.
 	 *
 	 * @param array<string, array<int, array<string, mixed>>> $rows   Rows per schema.
@@ -65,14 +72,24 @@ class PersonReachabilityTest extends TestCase {
 			}
 
 			/**
+			 * The BSNs portaliq was asked about.
+			 *
+			 * @var array<int, string>
+			 */
+			public array $asked = [];
+
+			/**
 			 * @param string $bsn The BSN.
 			 *
 			 * @return array<string, mixed>
 			 */
 			public function forCitizen(string $bsn): array {
+				$this->asked[] = $bsn;
 				return $bsn === '123457609' ? $this->answer : ['allowed' => true, 'hasAccount' => false, 'portalName' => ''];
 			}
 		};
+
+		$this->presence = $presence;
 
 		return new PersonReachability($settings, $l10n, new TrustedRevealRead(), $presence);
 	}//end reachability()
@@ -117,4 +134,19 @@ class PersonReachabilityTest extends TestCase {
 	public function testAnUnreadablePersonGivesNothing(): void {
 		$this->assertNull($this->reachability(rows: [], answer: [])->forPerson(personId: 'p-1'));
 	}//end testAnUnreadablePersonGivesNothing()
+
+	/**
+	 * portaliq answers "has a portal account" for any BSN, so it is asked only
+	 * about a person the user's own read returned: a person the user may not
+	 * read is never put to it, and a readable one is asked about once.
+	 *
+	 * @return void
+	 */
+	public function testPortaliqIsAskedOnlyAboutAPersonTheUserMayRead(): void {
+		$this->reachability(rows: ['contactmoment' => [['startTime' => '2026-10-04T10:52:00+02:00']]], answer: [])->forPerson(personId: 'p-1');
+		$this->assertSame([], $this->presence->asked);
+
+		$this->reachability(rows: ['brpPerson' => [['id' => 'p-1', 'citizenServiceNumber' => '123457609']]], answer: [])->forPerson(personId: 'p-1');
+		$this->assertSame(['123457609'], $this->presence->asked);
+	}//end testPortaliqIsAskedOnlyAboutAPersonTheUserMayRead()
 }//end class
