@@ -14903,6 +14903,7 @@
 							},
 							"limit": 1,
 							"presentation": "rows",
+							"density": "stacked",
 							"title": "{title}",
 							"meta": "{identifier} · {caseType.title}",
 							"pill": {
@@ -14932,6 +14933,7 @@
 							},
 							"limit": 1,
 							"presentation": "rows",
+							"density": "stacked",
 							"title": "{title}",
 							"meta": "{ticketType}",
 							"pill": {
