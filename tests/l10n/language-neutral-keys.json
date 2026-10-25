@@ -130,6 +130,7 @@
         "{moment} via {channel}, {time}",
         "Document {name}",
         "Variant",
+        "via",
         "{summary}"
     ]
 }
