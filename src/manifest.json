@@ -61,7 +61,8 @@
 				"title": "Example data",
 				"required": false,
 				"body": "Want to look around with example cases first? You can delete them afterwards.",
-				"note": "Example data uses fictional people and organisations only."
+				"note": "Example data uses fictional people and organisations only.",
+				"noteStyle": "card"
 			},
 			{
 				"id": "done",
@@ -1934,9 +1935,9 @@
 				"_allowExportNote": "case-list-export-via-or-export-leaf. The library's own Export menu (CSV and Excel) on the actions bar; it shows because the case schema is flagged `exportable` in lib/Settings/dossiq_register.json. A click sends the browser to OpenRegister's export leaf with the query the list itself sends (search, sort, facets, the active lens and the case-type folder, without paging), so the file holds the rows the table is filtered to and OpenRegister enforces access as the reader. dossiq serialises nothing (ADR-022).",
 				"relatedFieldFilters": {
 					"definitions": { "register": "dossiq", "schema": "propertyDefinition", "filter": { "caseType": "$route.query.caseType" } },
-					"related": { "schema": "caseProperty", "backref": "case", "definitionKey": "propertyDefinition", "valueKey": "value" }
+					"related": { "element": "properties", "definitionKey": "propertyDefinition", "valueKey": "value" }
 				},
-				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are NOT on the case: dossiq stores each declared field as a `caseProperty` row pointing back at it, so the query is openregister's `_related[caseProperty][case][\u2026]` (query-related-schema-rows). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. The library's CnRelatedFieldFilters draws it beside the search (`relatedFieldFilters`), names a refused block's field under the bar, and feeds the list's fetch through `sidebarState.onFilterChange`, since the index page drops `_`-prefixed route keys.",
+				"_fieldFiltersNote": "case-type-fields-filter-the-case-list, row 9.2. The values a handler narrows by are the case's own answers in `properties[]` (`{ propertyDefinition, name, value }`, written by the case form), so the query is openregister's `_element[properties][…]` (array-element-filters): one element that is both the definition and passes the value test (DQ-REINT 23 Oct: the earlier `_related[caseProperty]` read rows nothing writes, 0 on :8080 against 14 cases with answers). The bar renders ONLY when the folder sidebar has narrowed to one case type, because the fields belong to one type: offering every type's fields at once offers a list nobody can read and a query that matches nothing, since two definitions from two case types can never both be satisfied by one case. The library's CnRelatedFieldFilters draws it beside the search (`relatedFieldFilters`, `related.element`), names a refused block's field under the bar, and feeds the list's fetch through `sidebarState.onFilterChange`, since the index page drops `_`-prefixed route keys.",
 				"bulkBandAlways": true,
 				"_bulkBandViewsNote": "DqWerkbord: over the board the bulk band counts the selected cards and offers the status move and a way out (\"1 zaak geselecteerd · Status wijzigen · Annuleren\"), only while cards are selected. The other bulk acts stay in the table and card views' band.",
 				"bulkBandViews": {
@@ -2345,7 +2346,16 @@
 									"key": "startDate",
 									"width": "96px",
 									"label": "Waiting",
-									"widget": "age"
+									"widget": "age",
+									"widgetProps": {
+										"variantWhen": [
+											{
+												"op": "gte",
+												"value": 5,
+												"variant": "error"
+											}
+										]
+									}
 								},
 								{
 									"key": "title",
@@ -2420,7 +2430,16 @@
 								"leading": {
 									"key": "startDate",
 									"widget": "age",
-									"width": "96px"
+									"width": "96px",
+									"widgetProps": {
+										"variantWhen": [
+											{
+												"op": "gte",
+												"value": 5,
+												"variant": "error"
+											}
+										]
+									}
 								},
 								"trailing": [
 									{
@@ -2727,6 +2746,26 @@
 				"_listsAsViewsNote": "Lists that were pages of their own are views of this list (Ruben, 19 October 2026): Assigned to me (`my-work`, was /my-work), the team queue (`team-queue`, was /queue; its late window is `unclaimed-overdue`, its week window `unclaimed-due-this-week`) and the data subject requests (`data-subject-requests`, was /privacy/requests). The old addresses redirect here with `?savedView=default:<slug>` (RETIRED_ROUTES). The subsidies (`subsidies`, was /subsidies) are a view too: there are no case-type-specific pages or menu entries (Ruben, 20 October 2026). Complaints is a view per instance, added by the /api/manifest delta, because the complaint case type has no fixed id. The conditions each page applied as a base filter are the view's `overrides.lockedFilters`, which the reader cannot clear, so the view's own `filters` stay empty, except the team queue's `assignedGroup: @myTeam`: the reader's own team as a removable chip (\"Team: Woo en informatie\", board DqTeamwachtrij), dropped for a reader in no team (my-team-queue). Each view carries what its page had as `overrides` (nextcloud-vue saved-view-overrides, openspec/changes/lists-are-views/restore.md): the team queue's counts, case type chips, side cards and columns; Assigned to me's cards, urgency order (`sortOption: urgency`, the server's ranking from GET /api/work-queue) and its two slots; the data subject requests' tabs, notice, chips and columns. The team queue and Assigned to me keep their menu entries `Queue` and `MyWork`, each opening its view, so their pins keep working.",
 				"showSortSelect": true,
 				"sortSelectOptions": [
+					{
+						"value": "deadline",
+						"label": "Deadline",
+						"order": "deadline"
+					},
+					{
+						"value": "title",
+						"label": "Case",
+						"order": "title"
+					},
+					{
+						"value": "assignee",
+						"label": "Handler",
+						"order": "assignee"
+					},
+					{
+						"value": "updated",
+						"label": "Last changed",
+						"order": "-@self.updated"
+					},
 					{
 						"value": "urgency",
 						"label": "Urgency",
@@ -7313,7 +7352,7 @@
 						"urgent": "error"
 					}
 				},
-				"headerMeta": "{dueLabel}",
+				"headerMeta": "at case {subject.identifier}, deadline {dueAt|relative}",
 				"verbEndpoints": {
 					"complete": "/apps/dossiq/api/case-tasks/{id}/complete"
 				},
@@ -13335,6 +13374,9 @@
 								"field": "startTime",
 								"dir": "desc"
 							},
+							"extend": [
+								"case"
+							],
 							"limit": 3,
 							"presentation": "feed",
 							"icon": {
@@ -13348,9 +13390,30 @@
 								},
 								"default": "EmailOutline"
 							},
-							"meta": "{startTime|datetime}",
+							"meta": {
+								"parts": [
+									"{startTime|datetime}",
+									"{notificationChannel}",
+									"{direction}",
+									"case {case.identifier}"
+								]
+							},
+							"valueLabels": {
+								"notificationChannel": {
+									"phone": "phone",
+									"email": "email",
+									"webformulier": "web form",
+									"chat": "chat",
+									"social_media": "social media",
+									"balie": "desk"
+								},
+								"direction": {
+									"inbound": "inbound",
+									"outbound": "outbound"
+								}
+							},
 							"text": "{summary}",
-							"headerSubtitle": "{total} in total",
+							"headerNote": "{total} in total",
 							"emptyText": "No contact moments yet"
 						}
 					},
@@ -13392,7 +13455,13 @@
 									"complaint": "Complaint"
 								}
 							},
-							"headerNote": "{total} open",
+							"headerLink": {
+								"label": "View all {total} tickets",
+								"href": "/apps/pipelinq/tickets/party/{ref}",
+								"params": {
+									"ref": "@object.masterEntityRef"
+								}
+							},
 							"emptyText": "No open tickets"
 						}
 					},
@@ -13554,8 +13623,8 @@
 									"widgetIds": [
 										"contact-card",
 										"contact-open-cases",
-										"contact-latest-moments",
-										"contact-open-tickets"
+										"contact-open-tickets",
+										"contact-latest-moments"
 									],
 									"label": "Overview"
 								},
@@ -13969,6 +14038,9 @@
 								"field": "startTime",
 								"dir": "desc"
 							},
+							"extend": [
+								"case"
+							],
 							"limit": 3,
 							"presentation": "feed",
 							"icon": {
@@ -13982,9 +14054,30 @@
 								},
 								"default": "EmailOutline"
 							},
-							"meta": "{startTime|datetime}",
+							"meta": {
+								"parts": [
+									"{startTime|datetime}",
+									"{notificationChannel}",
+									"{direction}",
+									"case {case.identifier}"
+								]
+							},
+							"valueLabels": {
+								"notificationChannel": {
+									"phone": "phone",
+									"email": "email",
+									"webformulier": "web form",
+									"chat": "chat",
+									"social_media": "social media",
+									"balie": "desk"
+								},
+								"direction": {
+									"inbound": "inbound",
+									"outbound": "outbound"
+								}
+							},
 							"text": "{summary}",
-							"headerSubtitle": "{total} in total",
+							"headerNote": "{total} in total",
 							"emptyText": "No contact moments yet"
 						}
 					},
@@ -14026,7 +14119,13 @@
 									"complaint": "Complaint"
 								}
 							},
-							"headerNote": "{total} open",
+							"headerLink": {
+								"label": "View all {total} tickets",
+								"href": "/apps/pipelinq/tickets/party/{ref}",
+								"params": {
+									"ref": "@object.masterEntityRef"
+								}
+							},
 							"emptyText": "No open tickets"
 						}
 					},
@@ -14188,8 +14287,8 @@
 									"widgetIds": [
 										"contact-card",
 										"contact-open-cases",
-										"contact-latest-moments",
-										"contact-open-tickets"
+										"contact-open-tickets",
+										"contact-latest-moments"
 									],
 									"label": "Overview"
 								},

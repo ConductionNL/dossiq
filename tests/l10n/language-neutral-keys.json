@@ -129,6 +129,7 @@
         "{moment} via {channel}",
         "{moment} via {channel}, {time}",
         "Document {name}",
-        "Variant"
+        "Variant",
+        "{summary}"
     ]
 }

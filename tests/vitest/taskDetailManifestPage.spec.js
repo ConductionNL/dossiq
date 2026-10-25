@@ -47,9 +47,11 @@ describe('the TaskDetail manifest page', () => {
 		expect(config.statusPill).toMatchObject({ field: 'priority', values: ['high', 'urgent'], colorMap: { high: 'warning', urgent: 'error' } })
 	})
 
-	it('has a breadcrumb back to Tasks and the deadline in words beside it', () => {
+	it('has a breadcrumb back to Tasks and its case and deadline beside it (DqTaak "bij zaak 2026-0074, deadline vandaag")', () => {
 		expect(config.breadcrumb).toMatchObject({ label: 'Tasks', route: 'Tasks' })
-		expect(config.headerMeta).toBe('{dueLabel}')
+		expect(config.headerMeta).toBe('at case {subject.identifier}, deadline {dueAt|relative}')
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/nl.json'), 'utf8')).translations
+		expect(nl[config.headerMeta]).toBe('bij zaak {subject.identifier}, deadline {dueAt|relative}')
 	})
 
 	it('completes through dossiq and every other verb through the engine', () => {

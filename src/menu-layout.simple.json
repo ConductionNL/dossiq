@@ -911,11 +911,20 @@
 								"id": "simple-recent-activity",
 								"type": "nc-widget",
 								"title": "Recent activity",
-								"_note": "DqMijnWerk's Recente activiteit under My tasks: what happened on the reader's work, newest first. Nextcloud's own Activity dashboard widget, read through its items API, so dossiq keeps no feed of its own.",
+								"_note": "DqMijnWerk's Recente activiteit under My tasks: what happened on the reader's work, newest first. Nextcloud's own Activity dashboard widget, read through its items API, so dossiq keeps no feed of its own. Tag changes are left out (they are fixture noise, not work), and every item takes the tone of its app: a reaction primary, a file or publication green, a change to a case grey (nextcloud-vue content.itemTones / excludeApps).",
 								"content": {
 									"widgetId": "activity",
 									"displayMode": "list",
-									"limit": 3
+									"limit": 3,
+									"excludeApps": [
+										"systemtags"
+									],
+									"itemTones": {
+										"comments": "info",
+										"files": "success",
+										"openregister": "neutral",
+										"dossiq": "neutral"
+									}
 								}
 							}
 						],
@@ -2076,6 +2085,27 @@
 									}
 								},
 								{
+									"widgetId": "case-investigation-steps",
+									"label": "Investigation",
+									"permission": "sociaal-domein",
+									"visibleWhen": {
+										"field": "@context.caseType.category",
+										"op": "in",
+										"value": [
+											"Sociaal domein",
+											"Jeugd",
+											"Jeugdhulp"
+										]
+									},
+									"countObjectRows": {
+										"path": "sensitiveProperties",
+										"where": {
+											"name": "onderzoeksstappen"
+										},
+										"valuePath": "value"
+									}
+								},
+								{
 									"widgetId": "case-social-indications",
 									"label": "Indication",
 									"permission": "sociaal-domein",
@@ -2475,7 +2505,13 @@
 								}
 							]
 						},
-						"title": "Record hours"
+						"title": "Record hours",
+						"_propsNote": "DqZaak/DqZaakMeer Uren registreren: humaniq's hours leaf in the board look. The week line names the case (objectNoun), the header holds the title, the week and the Actions menu, the timer sits in that menu and under the form (compactHeader), and the card ends with the note that hours come through humaniq (sourceNote). Needs humaniq feat/hours-board-look; an older humaniq ignores the props.",
+						"props": {
+							"objectNoun": "this case",
+							"compactHeader": true,
+							"sourceNote": true
+						}
 					},
 					"case-archival-panel": {
 						"subtitle": "What happens to this case once it is closed",
@@ -3753,6 +3789,36 @@
 								}
 							],
 							"emptyText": "No indication recorded"
+						}
+					},
+					{
+						"id": "case-investigation-steps",
+						"type": "record-list",
+						"title": "Investigation steps",
+						"_note": "DqSociaalDomein Onderzoek: the case type's list-of-records answer onderzoeksstappen (kind, date, by, with whom, summary, consent, follow-up), flagged sensitive, so stored in case.sensitiveProperties and returned by OpenRegister only to dossiq-sensitive. Listed from the case the page read (nextcloud-vue objectRows), no request of its own; edited in the case form's list editor.",
+						"content": {
+							"objectRows": {
+								"path": "sensitiveProperties",
+								"where": {
+									"name": "onderzoeksstappen"
+								},
+								"valuePath": "value"
+							},
+							"presentation": "rows",
+							"title": "{summary}",
+							"meta": ["{date}", "{withWhom}", "{followUp}"],
+							"pill": {
+								"field": "kind",
+								"labels": {
+									"gesprek": "Conversation",
+									"huisbezoek": "Home visit",
+									"informatie-opgevraagd": "Information requested",
+									"dossieronderzoek": "File review",
+									"anders": "Other"
+								}
+							},
+							"headerCount": true,
+							"emptyText": "No investigation steps recorded, or you may not see them"
 						}
 					},
 					{
