@@ -4075,7 +4075,7 @@
 							"showClearSelection": false,
 							"nameSecondary": "{type} · {size} · {modified|date}",
 							"secondLine": [
-								{ "when": "@context.caseType.documentReview.enabled", "fields": ["type", "size", "modified|date"] },
+								{ "when": "@context.caseType.documentReview.enabled", "fields": ["type", "size", "modified|longdate:year"] },
 								{ "fields": ["senderName", "modified|date"] }
 							],
 							"_secondLineNote": "Coordinator 24 Oct: both boards are right. A case that reviews its documents (DqZaakDocumenten) reads type, size and date under each name; any other case (DqDocumentenBeheer) the sender and date. `nameSecondary` stays for a library without `secondLine`.",
