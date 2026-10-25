@@ -1665,6 +1665,7 @@
 							},
 							"limit": 5,
 							"presentation": "rows",
+							"density": "stacked",
 							"avatar": "{name}",
 							"title": "{name}, {description}",
 							"emptyText": "Nobody is involved yet"
