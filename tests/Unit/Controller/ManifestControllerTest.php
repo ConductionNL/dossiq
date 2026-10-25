@@ -235,6 +235,28 @@ class ManifestControllerTest extends TestCase {
 	}//end testManifestAddsTheComplaintsViewWhenTheInstanceHasThatCaseType()
 
 	/**
+	 * manifest: the case-type views sit under "More default views" (Ruben, 23
+	 * October 2026: the board's three default views first, the rest behind
+	 * that disclosure), each with a description of its own so the panel never
+	 * shows the case type's uuid while it resolves the filter.
+	 *
+	 * @return void
+	 */
+	public function testManifestCaseTypeViewsAreSecondaryWithADescription(): void {
+		$this->withCaseTypes(
+			rows: [
+				['id' => 'uuid-k', 'title' => 'Klacht behandeling', 'identifier' => 'klacht-behandeling'],
+				['id' => 'uuid-b', 'title' => 'Bezwaar'],
+			]
+		);
+
+		$views = self::views(data: $this->controller(stored: '["uuid-b"]')->manifest()->getData());
+
+		$this->assertSame(expected: [true, true], actual: array_column($views, 'secondary'));
+		$this->assertSame(expected: ['Case type complaint handling', 'Bezwaar'], actual: array_column($views, 'description'));
+	}//end testManifestCaseTypeViewsAreSecondaryWithADescription()
+
+	/**
 	 * manifest: a pinned case type the user's team does not handle gets no view.
 	 *
 	 * @return void
