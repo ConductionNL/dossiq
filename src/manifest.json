@@ -13687,10 +13687,46 @@
 						"id": "side-reach",
 						"type": "facts",
 						"title": "Reachable via",
+						"_note": "Board DqContact: the newest contact moment says when and through which channel; the registration line reads the person, so it shows without contact moments too.",
 						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "contactmoment",
+								"filter": {
+									"contact": "@objectId"
+								},
+								"sort": {
+									"field": "startTime",
+									"dir": "desc"
+								}
+							},
 							"fields": [
 								{
+									"as": "text",
+									"separator": ", ",
+									"parts": [
+										{
+											"path": "startTime",
+											"format": "date",
+											"label": "Last contact on"
+										},
+										{
+											"path": "notificationChannel",
+											"label": "via",
+											"map": {
+												"phone": "phone",
+												"email": "email",
+												"webformulier": "web form",
+												"chat": "chat",
+												"social_media": "social media",
+												"balie": "desk"
+											}
+										}
+									]
+								},
+								{
 									"as": "line",
+									"from": "object",
 									"text": "Phone and email are not in the base registration."
 								}
 							],
@@ -13710,15 +13746,52 @@
 						"id": "side-identity",
 						"type": "facts",
 						"title": "Identity",
+						"_note": "Board DqContact: the lead says how the person was identified at the newest contact moment (none for an unidentified one); the rows read the person (from object), so they show without contact moments too.",
 						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "contactmoment",
+								"filter": {
+									"contact": "@objectId"
+								},
+								"sort": {
+									"field": "startTime",
+									"dir": "desc"
+								}
+							},
 							"fields": [
 								{
+									"as": "lead",
+									"icon": "ShieldAccountOutline",
+									"tone": "success",
+									"title": [
+										{
+											"path": "identificationMethod",
+											"map": {
+												"digid": "Logged in with DigiD",
+												"bsn_verificatie": "Identified by BSN check",
+												"identificatievragen": "Identified by security questions",
+												"non_geidentificeerd": ""
+											}
+										}
+									],
+									"subtitle": [
+										{
+											"path": "startTime",
+											"format": "date",
+											"label": "at the contact moment of"
+										}
+									]
+								},
+								{
+									"from": "object",
 									"label": "BSN",
 									"path": "citizenServiceNumber",
 									"format": "masked",
 									"reveal": true
 								},
 								{
+									"from": "object",
 									"label": "Data protection",
 									"path": "indicatieGeheim",
 									"map": {
@@ -13727,8 +13800,13 @@
 									}
 								},
 								{
-									"as": "line",
-									"text": "Source: Basisregistratie personen"
+									"from": "object",
+									"label": "Source",
+									"parts": [
+										{
+											"text": "Basisregistratie personen"
+										}
+									]
 								}
 							]
 						}
