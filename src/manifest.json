@@ -2023,6 +2023,14 @@
 							"true": "waiting on the applicant"
 						}
 					},
+					"caseTypeIdentifier": {
+						"label": "Case type",
+						"reference": {
+							"schema": "caseType",
+							"matchField": "identifier",
+							"labelField": "title"
+						}
+					},
 					"statusHiddenInLists": {
 						"hidden": true
 					},
