@@ -203,7 +203,11 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 		$noted = [];
 		foreach (($set['notes'] ?? []) as $row) {
 			$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $row['data']['user'], message: $row['key']);
-			$this->assertMatchesRegularExpression(pattern: '/^\{\{datetime:0 \d\d:\d\d\}\}$/', string: $row['data']['createdAt'], message: $row['key']);
+			// Only a note of the install day is part of Pieter's day.
+			if (preg_match(pattern: '/^\{\{datetime:0 \d\d:\d\d\}\}$/', subject: $row['data']['createdAt']) !== 1) {
+				continue;
+			}
+
 			$this->assertNotSame(expected: '', actual: trim($row['data']['message']), message: $row['key']);
 			$noted[] = $row['data']['objectUuid'];
 		}
@@ -231,4 +235,20 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 			$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $cases[$key]['data']['assignee'], message: $key);
 		}
 	}//end testPieterHasWorkedToday()
+
+	/**
+	 * DqTaak: the hearing task is offered to Woo en informatie and carries
+	 * Pieter's note of the day before about the committee's days.
+	 *
+	 * @return void
+	 */
+	public function testTheHearingTaskHasItsTeamAndNote(): void {
+		$set  = $this->set();
+		$task = array_column($set['tasks'], null, 'key')['hoorzitting-inplannen']['data'];
+		$this->assertSame(expected: ['{{cast:woo-en-informatie.gid}}'], actual: $task['candidateGroups']);
+
+		$note = array_column($set['notes'], null, 'key')['pieter-noteert-commissie-dagen']['data'];
+		$this->assertSame(expected: '{{task:hoorzitting-inplannen.uuid}}', actual: $note['objectUuid']);
+		$this->assertSame(expected: '{{datetime:-1 11:10}}', actual: $note['createdAt']);
+	}//end testTheHearingTaskHasItsTeamAndNote()
 }//end class

@@ -1,0 +1,9 @@
+{
+  "id": "woo-besluit-deels-openbaar",
+  "title": "Woo-besluit deels openbaar",
+  "description": "Besluit op een Woo-verzoek waarin een deel van de stukken openbaar wordt, met de weigeringsgronden per document.",
+  "category": "document",
+  "version": "3.0.0",
+  "documentType": "Besluit",
+  "body": "Geachte heer, mevrouw,\n\nU heeft ons gevraagd om informatie over {{case.title}}. Uw verzoek is geregistreerd onder kenmerk {{case.identifier}}.\n\nBesluit\n\nWij maken een deel van de stukken openbaar. In de inventarislijst bij dit besluit staat per document of het openbaar, deels openbaar of niet openbaar wordt.\n\nGronden\n\nWaar wij informatie niet openbaar maken, staat bij het document welke grond uit de Wet open overheid daarvoor geldt en waarom die zwaarder weegt dan het belang van openbaarheid.\n\nBent u het niet eens met dit besluit, dan kunt u binnen zes weken bezwaar maken.\n\nMet vriendelijke groet,\n\nDe behandelaar"
+}

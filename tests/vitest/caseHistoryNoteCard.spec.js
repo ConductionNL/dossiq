@@ -35,4 +35,10 @@ describe('DqZaakHistorie note card', () => {
 		expect(nl['Add note']).toBe('Notitie toevoegen')
 		expect(nl[widget('case-note-card').subtitle]).toBe('Komt op de tijdlijn hierboven, intern tenzij u hem zichtbaar maakt')
 	})
+
+	it('gives the note card its title in content, where the self-titled form card reads it', () => {
+		const note = widget('case-note-card')
+		expect(note.content.title).toBe(note.title)
+		expect(note.content.subtitle).toBe(note.subtitle)
+	})
 })

@@ -63,10 +63,12 @@ describe('the TaskDetail manifest page', () => {
 		expect(config.layout.map((item) => item.widgetId)).toEqual(['task-panels'])
 		expect(panels.type).toBe('tabs')
 		expect(panels.content.tabs).toEqual([
-			{ label: 'Overview', widgetIds: ['task-description', 'task-checklist', 'task-appointments', 'task-notes'] },
+			{ label: 'Overview', widgetIds: ['task-checklist', 'task-appointments', 'task-notes'] },
 			{ label: 'Task history', widgetId: 'task-history' },
 		])
-		expect(widget('task-description')).toMatchObject({ type: 'facts', visibleWhen: { field: 'description', op: 'notEmpty' } })
+		// Board DqTaak draws no description card: the description is the first line of the side Task card.
+		expect(widget('task-description')).toBeUndefined()
+		expect(config.sideColumn.find((entry) => entry.id === 'side-task').content.fields[0]).toEqual({ key: 'description', as: 'text', path: 'description' })
 		expect(widget('task-checklist')).toMatchObject({ type: 'checklist', content: { path: 'checklist' } })
 		// The leaves are the library cards on the task's engine endpoints
 		// (`source: flow-task`), with dossiq's empty lines kept.
@@ -79,21 +81,20 @@ describe('the TaskDetail manifest page', () => {
 	it('has the task facts, the case card, the waiting-case card and the history beside the body', () => {
 		expect(config.sideColumn.map((entry) => entry.id)).toEqual(['side-task', 'side-case', 'side-waiting', 'side-history'])
 		expect(widget('side-task').content.fields.map((field) => field.path)).toEqual([
-			'assignee', 'candidateGroups', 'dueAt', 'expiresAt', 'priority', 'requester', 'created',
+			'description', 'assignee', 'candidateGroups', 'dueAt', 'expiresAt', 'priority', 'requester', 'created',
 		])
 		expect(widget('side-case')).toMatchObject({ type: 'facts', visibleWhen: { field: 'objectUuid', op: 'notEmpty' } })
 		expect(widget('side-case').content.link.route).toEqual({ name: 'CaseDetail', params: { id: '@object.objectUuid' } })
-		// The case a flow run waits on: a library notice linking the case, by
-		// its title, and "Open the case" when the title is not known.
+		// Board DqTaak "Wat deze taak tegenhoudt": the step the case moves to
+		// once this task is done (the case type's next status, server side) and
+		// since when the flow has waited on it.
 		expect(widget('side-waiting')).toMatchObject({
-			type: 'notice',
+			type: 'facts',
 			visibleWhen: { field: 'runUuid', op: 'notEmpty' },
-			content: {
-				title: 'A case is waiting on this task',
-				text: 'Complete the task and the case moves on.',
-				link: { route: 'CaseDetail', params: { id: '@object.objectUuid' }, label: '@object.subjectLabel', fallbackLabel: 'Open the case' },
-			},
+			content: { endpointSource: { url: '/apps/dossiq/api/cases/@object.objectUuid/next-status' } },
 		})
+		expect(widget('side-waiting').content.fields[0].template).toBe('The case only moves to {name} once this task is done.')
+		expect(widget('side-waiting').content.fields[1]).toMatchObject({ from: 'object', suffix: '.' })
 		expect(widget('side-history')).toMatchObject({ type: 'audit-trail', content: { source: { kind: 'flow-task' } } })
 	})
 

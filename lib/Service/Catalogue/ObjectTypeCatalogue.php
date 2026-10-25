@@ -5,11 +5,12 @@
  *
  * The object types the catalogue page lists: the distinct `objectType`
  * values of the objects cases actually link (`caseObject`), each with the
- * number of cases that link one. Schemas are not listed: a register holds
- * case, task and the other record schemas, which are not object types.
+ * number of cases that link one and the number of distinct case types those
+ * cases are of. Schemas are not listed: a register holds case, task and the
+ * other record schemas, which are not object types.
  *
- * A case type does not reference an object type, so no "used in N case types"
- * count is derived here.
+ * A case type does not declare its object types, so "used in N case types" is
+ * read off the cases that link the type.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Catalogue
@@ -112,9 +113,13 @@ class ObjectTypeCatalogue {
 			}
 		}
 
+		$caseTypeOf = $this->caseTypesOf(objectService: $objectService, register: $register, caseIds: $this->caseIdsIn(casesByType: $casesByType));
+
 		$rows = [];
 		foreach ($casesByType as $type => $cases) {
-			$rows[] = $this->rowFor(type: (string)$type, cases: count($cases), objectUrl: ($urlByType[$type] ?? ''));
+			$row = $this->rowFor(type: (string)$type, cases: count($cases), objectUrl: ($urlByType[$type] ?? ''));
+			$row['caseTypes'] = $this->caseTypeCount(cases: array_keys($cases), caseTypeOf: $caseTypeOf);
+			$rows[] = $row;
 		}
 
 		usort($rows, static fn (array $left, array $right): int => self::compareRows(left: $left, right: $right));
@@ -194,6 +199,93 @@ class ObjectTypeCatalogue {
 			'views'      => ($schema['views'] ?? []),
 		];
 	}//end rowFor()
+
+	/**
+	 * Every case id that links an object, once.
+	 *
+	 * @param array<string, array<string, bool>> $casesByType The cases per type.
+	 *
+	 * @return array<int, string> The case ids.
+	 *
+	 * @spec openspec/changes/object-types-used-in-case-types/specs/catalogue/spec.md
+	 */
+	private function caseIdsIn(array $casesByType): array {
+		$ids = [];
+		foreach ($casesByType as $cases) {
+			foreach (array_keys($cases) as $case) {
+				$ids[(string)$case] = true;
+			}
+		}
+
+		return array_keys($ids);
+	}//end caseIdsIn()
+
+	/**
+	 * The case type of each case, read in batches; null when the case schema
+	 * is not configured, so the count stays unknown rather than zero.
+	 *
+	 * @param object             $objectService The OpenRegister ObjectService.
+	 * @param string             $register      The register id.
+	 * @param array<int, string> $caseIds       The cases to read.
+	 *
+	 * @return array<string, string>|null The case type id per case id.
+	 *
+	 * @spec openspec/changes/object-types-used-in-case-types/specs/catalogue/spec.md
+	 */
+	private function caseTypesOf(object $objectService, string $register, array $caseIds): ?array {
+		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
+		if ($schema === '') {
+			return null;
+		}
+
+		$caseTypeOf = [];
+		foreach (array_chunk($caseIds, self::PAGE_SIZE) as $chunk) {
+			$cases = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['_ids' => $chunk, '_limit' => count($chunk)]
+			);
+			foreach ($cases as $case) {
+				$id = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
+				$type = ($case['caseType'] ?? '');
+				if (is_array($type) === true) {
+					$type = ($type['id'] ?? ($type['uuid'] ?? ''));
+				}
+
+				if ($id !== '' && is_string($type) === true && $type !== '') {
+					$caseTypeOf[$id] = $type;
+				}
+			}
+		}
+
+		return $caseTypeOf;
+	}//end caseTypesOf()
+
+	/**
+	 * How many distinct case types the given cases are of.
+	 *
+	 * @param array<int, int|string>     $cases      The case ids.
+	 * @param array<string, string>|null $caseTypeOf The case type per case, null when unknown.
+	 *
+	 * @return int|null The count, null when the case types could not be read.
+	 *
+	 * @spec openspec/changes/object-types-used-in-case-types/specs/catalogue/spec.md
+	 */
+	private function caseTypeCount(array $cases, ?array $caseTypeOf): ?int {
+		if ($caseTypeOf === null) {
+			return null;
+		}
+
+		$types = [];
+		foreach ($cases as $case) {
+			if (isset($caseTypeOf[(string)$case]) === true) {
+				$types[$caseTypeOf[(string)$case]] = true;
+			}
+		}
+
+		return count($types);
+	}//end caseTypeCount()
 
 	/**
 	 * Order rows by the number of cases, most first, then by name.

@@ -39,6 +39,7 @@ import DocumentReviewPanel from './components/case/DocumentReviewPanel.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
+import CaseTypeFieldRightsWidget from './components/caseType/CaseTypeFieldRightsWidget.vue'
 import CaseTypeMessagesEditorWidget from './components/caseType/CaseTypeMessagesEditorWidget.vue'
 // The party kinds a case type accepts, declared into pipelinq
 // (parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype).
@@ -290,6 +291,8 @@ const registry = {
 	CaseTypeTranslationsWidget: {
 		// @custom-widget-ratchet exclude the library has no translatable-property surface at all: @conduction/nextcloud-vue 3.4.0 contains no reference to translatable, languageMeta or sourceLanguage, so no declared widget can render a language tab or a completeness chip
 		kind: 'widget',
+		// A titled card on the Overview tab (DqZaaktypeOverzicht Vertalingen); the Translations tab draws it bare.
+		chrome: 'card',
 		component: CaseTypeTranslationsWidget,
 		...PANEL_WIDGET_META,
 		_note: "CaseTypeDetail: one chip per language the register declares, and an editor per language for the labels OpenRegister holds as translatable. It counts a stale label as missing, which OpenRegister's own completeness does not: getCompletenessByObject() counts every non-empty row and never reads its status. It writes the WHOLE language map and sends no X-Translation-Target-Language: normalizeTranslationsForSave() refuses a language keyed body that arrives with that header and keeps one that arrives without it.",
@@ -320,6 +323,15 @@ const registry = {
 		component: CaseTypeMessagesEditorWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail Phases and tasks: the messages to the applicant through the email template endpoints, so each change is a new version (EmailTemplateVersionListener keeps that on the object API too).',
+	},
+	// @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+	CaseTypeFieldRightsWidget: {
+		// @custom-widget-ratchet exclude the matrix has one column per status of the case type, read at run time, and its cells combine three stored declarations; a declared table has fixed columns
+		kind: 'widget',
+		chrome: 'card',
+		component: CaseTypeFieldRightsWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail Fields: the field rights as a matrix of fields by status (DqZaaktypeVelden), read from fieldRoleRules, the statuses\' required field rules and requiredAtStatus.',
 	},
 	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
 	CaseTypeRulesWidget: {

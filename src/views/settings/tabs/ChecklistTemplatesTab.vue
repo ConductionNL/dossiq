@@ -405,9 +405,16 @@ export default {
 	margin-bottom: 16px;
 }
 
+/* DqVthInstellingen: the rows start at the card's content edge, under a
+   line that closes the list off from the title. */
 .checklists-tab__list {
 	display: flex;
 	flex-direction: column;
+	border-top: 1px solid var(--color-border);
+}
+
+.checklists-tab__item.checklists-tab__item {
+	padding-inline: 0;
 }
 
 .checklists-tab__item + .checklists-tab__item {

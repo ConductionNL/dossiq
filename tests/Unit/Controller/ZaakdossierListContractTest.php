@@ -121,6 +121,7 @@ class ZaakdossierListContractTest extends TestCase {
 		$this->fileService = $this->createMock(ZaakdossierService::class);
 		$this->reader = $this->createMock(InformatieobjectReader::class);
 		$this->reader->method('withScanVerdicts')->willReturnArgument(0);
+		$this->reader->method('withReviewVerdicts')->willReturnArgument(1);
 		$this->uploadHandler = $this->createMock(DossierUploadHandler::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 
@@ -282,4 +283,48 @@ class ZaakdossierListContractTest extends TestCase {
 		$this->assertSame([], $offered);
 		$this->assertSame([], $response->getData());
 	}//end testListDossierOffersAnEmptyListWhenTheDossierHasNoDocuments()
+
+	/**
+	 * The listing hands its rows, scan verdicts on, to the reader for the
+	 * case's review verdicts, and groups what comes back.
+	 *
+	 * @return void
+	 */
+	public function testListDossierPutsEachDocumentsReviewVerdictOnItsRow(): void {
+		$this->signIn();
+		$this->fileService->method('getDossierForCase')->willReturn(value: ['informatieobjecten' => [['id' => 'doc-1'], ['id' => 'doc-2']]]);
+		$grouped = [];
+		$this->fileService->method('groupByType')->willReturnCallback(
+			callback: static function (array $documents) use (&$grouped): array {
+				$grouped = $documents;
+				return ['overig' => $documents];
+			}
+		);
+		$reader = $this->createMock(originalClassName: InformatieobjectReader::class);
+		$reader->method('filterForUser')->willReturnArgument(argumentIndex: 1);
+		$reader->method('withScanVerdicts')->willReturnArgument(argumentIndex: 0);
+		$reader->expects($this->once())->method('withReviewVerdicts')
+			->with('case-1', [['id' => 'doc-1'], ['id' => 'doc-2']])
+			->willReturn(value: [['id' => 'doc-1', 'reviewVerdict' => 'deels_openbaar'], ['id' => 'doc-2']]);
+
+		$controller = new ZaakdossierController(
+			appName: 'dossiq',
+			request: $this->request,
+			fileService: $this->fileService,
+			reader: $reader,
+			uploadHandler: $this->uploadHandler,
+			userSession: $this->userSession,
+			approvals: $this->approvals,
+			writes: new DocumentWriteGate(
+				caseWrites: $this->createMock(DocumentCaseWriteGuard::class),
+				bulk: new BulkDocumentActions(reader: $reader, fileService: $this->fileService),
+			),
+		);
+		$controller->listDossier(caseId: 'case-1');
+
+		$this->assertSame(
+			expected: [['id' => 'doc-1', 'reviewVerdict' => 'deels_openbaar'], ['id' => 'doc-2']],
+			actual: $grouped
+		);
+	}//end testListDossierPutsEachDocumentsReviewVerdictOnItsRow()
 }//end class

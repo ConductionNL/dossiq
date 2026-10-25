@@ -455,68 +455,6 @@
           "archiveId": "openregister-2026-99231",
           "destructionDate": "2041-04-02"
         }
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "beschikking",
-          "slug": "besch-2026-00156"
-        },
-        "caseId": "@ref:case:case-bp-dormer-lindenstraat",
-        "caseType": "omgevingsvergunning",
-        "decisionType": "toekenning",
-        "reference": "Z/2026/00156/B01",
-        "templateId": "tpl-omgevingsvergunning-reguliere-procedure-v3",
-        "draftVersion": 1,
-        "currentStatus": "signed",
-        "addressee": {
-          "type": "bedrijf",
-          "oin": "00000001234567890000",
-          "name": "Bouwbedrijf de Vries B.V.",
-          "messageBoxChannel": "eherkenning",
-          "messageBoxConfirmed": true
-        },
-        "decision": {
-          "kind": "toekenning",
-          "subject": "bouwactiviteiten Kerkstraat 12",
-          "size": "n.v.t.",
-          "effectiveDate": "2026-05-01"
-        },
-        "rationale": "De aanvrager heeft voldaan aan de eisen van de Omgevingswet.",
-        "signature": {
-          "tspProvider": "kpn-gekwalificeerde-handtekening",
-          "signatory": "afdelingsmanager-bouw-23",
-          "signingMoment": "2026-04-22T10:15:42+02:00",
-          "validationRapportId": "val-2026-99405"
-        }
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "beschikking",
-          "slug": "besch-2026-00489"
-        },
-        "caseId": "@ref:case:case-grant-festival-oranjewijk",
-        "caseType": "subsidieaanvraag",
-        "decisionType": "toekenning",
-        "reference": "Z/2026/00489/B01",
-        "templateId": "tpl-subsidie-v2",
-        "draftVersion": 1,
-        "currentStatus": "draft",
-        "addressee": {
-          "type": "burger",
-          "bsn": "987654321",
-          "name": "J. Pieterse",
-          "messageBoxChannel": "mijnoverheid",
-          "messageBoxConfirmed": false
-        },
-        "decision": {
-          "kind": "toekenning",
-          "subject": "subsidie culturele activiteiten",
-          "size": "2500",
-          "effectiveDate": "2026-06-01",
-          "endDate": "2026-12-31"
-        }
       }
     ]
   }

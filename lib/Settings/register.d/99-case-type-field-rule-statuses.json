@@ -1,0 +1,25 @@
+{
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.41.0",
+        "properties": {
+          "fieldRoleRules": {
+            "items": {
+              "properties": {
+                "statuses": {
+                  "type": "array",
+                  "title": "In statuses",
+                  "description": "The statuses the rule holds in, as status type ids. Leave it empty and the rule holds in every status. A rule limited to statuses is enforced through the case lifecycle state of each of them, so a field read only while the case is with the intake is editable again once it moves on.",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

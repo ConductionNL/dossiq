@@ -23,6 +23,10 @@ describe('the departments page', () => {
 		expect(page.config.folderSidebar).toMatchObject({ source: 'groups', filterField: 'group' })
 	})
 
+	it('draws no selection column, as the board does', () => {
+		expect(page.config.selectable).toBe(false)
+	})
+
 	it('offers no view switch, because the members are only ever a table', () => {
 		expect(page.config.showViewToggle).toBe(false)
 	})

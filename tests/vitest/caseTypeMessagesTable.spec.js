@@ -49,6 +49,11 @@ describe('Messages to the applicant (DqZaaktype)', () => {
 		expect(nl[messages.content.footnote]).toBe('Heeft iemand zich afgemeld voor berichten, dan krijgt die alleen nog wat de wet verplicht. Elke e-mail heeft een afmeldlink.')
 	})
 
+	it('is drawn as the board\'s data table, the opt-out note in an info box', () => {
+		expect(messages.content.tableLook).toBe('data')
+		expect(messages.content.footnoteVariant).toBe('info')
+	})
+
 	it('sits on Phases and tasks, with the editor on an overflow tab that Add a message opens', () => {
 		expect(tab('phases').widgetIds).toContain('case-type-messages')
 		expect(tab('phases').widgetIds).not.toContain('case-type-messages-editor')

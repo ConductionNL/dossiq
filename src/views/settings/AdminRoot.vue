@@ -148,6 +148,7 @@
 					)
 				"
 				docUrl="https://dossiq.conduction.nl/docs/n8n-consultation-workflows"
+				:columns="2"
 				valuesPath="config"
 				:saveLabel="t('dossiq', 'Save')"
 				:fields="consultationFields" />
@@ -164,6 +165,313 @@
 				:loading="!storesReady">
 				<SearchIndexTab v-if="storesReady" />
 			</CnSettingsSection>
+		</template>
+
+		<template #tab-integrations>
+			<CnSettingsSection
+				id="section-connections"
+				:name="t('dossiq', 'Integrations')"
+				:description="
+					t(
+						'dossiq',
+						'A connection stays off until you choose a source. Off means: not one request goes outside.',
+					)
+				">
+				<NcNoteCard v-if="!ownerApps.integriq" type="info">
+					{{
+						t(
+							'dossiq',
+							'The {app} app is not installed, so there is nothing to list here.',
+							{ app: 'integriq' },
+						)
+					}}
+				</NcNoteCard>
+				<CnWidgetObjectTable
+					v-else
+					:hideWrapper="true"
+					:source="connectionsSource"
+					:sortable="true"
+					:filterable="true"
+					:columns="connectionColumns"
+					:emptyText="
+						t(
+							'dossiq',
+							'No connections reported yet. They appear once integriq has read dossiq\'s declaration.',
+						)
+					">
+					<template #row-actions="{ row }">
+						<CnRowActions v-if="row.settingsUrl" :actions="connectionRowActions" :row="row" />
+					</template>
+				</CnWidgetObjectTable>
+			</CnSettingsSection>
+
+			<CnSettingsFieldsSection
+				id="section-kadaster"
+				appId="dossiq"
+				:name="t('dossiq', 'Set up Kadaster (BRK) and WOZ')"
+				:openedFrom="t('dossiq', 'Kadaster (BRK) and WOZ')"
+				:description="
+					t(
+						'dossiq',
+						'Off until you choose a source. Off means: no request goes outside.',
+					)
+				"
+				:columns="3"
+				valuesPath="config"
+				:fields="kadasterFields" />
+		</template>
+
+		<template #tab-mail>
+			<CnSettingsSection
+				id="section-mail-intake"
+				:name="t('dossiq', 'Mail to cases')"
+				:description="
+					t(
+						'dossiq',
+						'Every mail the shared mailbox took in, and the case it went to or why it was skipped. The mailbox itself is set up under General.',
+					)
+				">
+				<NcButton :href="mailIntakeLogUrl" variant="secondary">
+					{{ t('dossiq', 'View the mail intake log') }}
+				</NcButton>
+			</CnSettingsSection>
+		</template>
+
+		<template #tab-map-layers>
+			<CnSettingsSection
+				id="section-map-layers"
+				:name="t('dossiq', 'Map layers')"
+				:description="
+					t(
+						'dossiq',
+						'The WMS and WMTS layers the case map and the location fields offer. Each layer is a record you add, order and switch on in the map layers list.',
+					)
+				">
+				<NcButton :href="mapLayersUrl" variant="secondary">
+					{{ t('dossiq', 'Open the map layers') }}
+				</NcButton>
+			</CnSettingsSection>
+		</template>
+
+		<template #tab-vth>
+			<CnSettingsSection
+				id="section-intake-activities"
+				:actionsInTitle="true"
+				:wide="true"
+				:name="t('dossiq', 'Activities from the Omgevingsloket')"
+				:description="t('dossiq', 'An application from the DSO becomes a case of the linked case type.')"
+				:footerLink="ownerApps.integriq ? { label: t('dossiq', 'Manage the links in integriq'), href: integriqAdminUrl } : null">
+				<template v-if="ownerApps.integriq" #actions>
+					<NcButton :href="integriqAdminUrl" variant="secondary">
+						<template #icon>
+							<Plus :size="20" />
+						</template>
+						{{ t('dossiq', 'Link activity') }}
+					</NcButton>
+				</template>
+				<NcNoteCard v-if="!ownerApps.integriq" type="info">
+					{{
+						t(
+							'dossiq',
+							'The {app} app is not installed, so there is nothing to list here.',
+							{ app: 'integriq' },
+						)
+					}}
+				</NcNoteCard>
+				<CnWidgetObjectTable
+					v-else
+					:hideWrapper="true"
+					:endpointSource="intakeActivitySource"
+					:rowClass="[{ when: { field: 'unmapped', value: true }, class: 'dq-dso-activity--unmapped' }]"
+					:sortable="true"
+					:filterable="true"
+					:columns="intakeActivityColumns"
+					:emptyText="t('dossiq', 'No activities linked yet.')" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
+				id="section-fee-schedules"
+				:actionsInTitle="true"
+				:wide="true"
+				:name="t('dossiq', 'Fee rules')"
+				:description="t('dossiq', 'Loaded at installation; adjusted per year.')"
+				:footerLink="ownerApps.shillinq ? { label: t('dossiq', 'Manage fees in shillinq'), href: feeSchedulesUrl } : null">
+				<template v-if="ownerApps.shillinq" #actions>
+					<NcButton :href="feeSchedulesUrl" variant="secondary">
+						<template #icon>
+							<Plus :size="20" />
+						</template>
+						{{ t('dossiq', 'Add rule') }}
+					</NcButton>
+				</template>
+				<NcNoteCard v-if="!ownerApps.shillinq" type="info">
+					{{
+						t(
+							'dossiq',
+							'The {app} app is not installed, so there is nothing to list here.',
+							{ app: 'shillinq' },
+						)
+					}}
+				</NcNoteCard>
+				<CnWidgetObjectTable
+					v-else
+					:hideWrapper="true"
+					:source="feeScheduleSource"
+					:sortable="true"
+					:filterable="true"
+					:columns="feeScheduleColumns"
+					:emptyText="t('dossiq', 'No fee rules for dossiq yet.')" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
+				:actionsInTitle="true"
+				:name="t('dossiq', 'Inspection checklists')"
+				:loading="!storesReady">
+				<template v-if="storesReady" #actions>
+					<NcButton variant="secondary" @click="$refs.checklists.openEditor(null)">
+						<template #icon>
+							<Plus :size="20" />
+						</template>
+						{{ t('dossiq', 'Add checklist') }}
+					</NcButton>
+				</template>
+				<ChecklistTemplatesTab v-if="storesReady" ref="checklists" :hideAddButton="true" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
+				id="section-enforcement-strategy"
+				:name="t('dossiq', 'Enforcement strategy')">
+				<CnFactsWidget :content="enforcementMatrixFacts" />
+				<p>
+					<a
+						href="#section-enforcement-strategy"
+						role="button"
+						data-testid="enforcement-earlier-versions"
+						:aria-expanded="String(showEarlierMatrices)"
+						@click.prevent="showEarlierMatrices = !showEarlierMatrices">
+						{{ showEarlierMatrices ? t('dossiq', 'Hide earlier versions') : t('dossiq', 'Earlier versions') }}
+					</a>
+				</p>
+				<CnWidgetObjectTable
+					v-if="showEarlierMatrices"
+					:hideWrapper="true"
+					:source="enforcementMatrixSource"
+					:columns="enforcementMatrixColumns"
+					:emptyText="t('dossiq', 'No enforcement matrix yet.')" />
+			</CnSettingsSection>
+		</template>
+
+		<template #tab-substitution>
+			<CnSettingsSection
+				id="section-substitution"
+				:name="t('dossiq', 'Substitution')"
+				:description="
+					t(
+						'dossiq',
+						'Who takes over the cases of an absent handler, and the bulk reassignment of their work.',
+					)
+				">
+				<SubstitutionAdmin />
+			</CnSettingsSection>
+		</template>
+
+		<template #tab-advanced>
+			<CnSettingsSection
+				id="section-zgw"
+				:name="t('dossiq', 'ZGW API mapping')"
+				:description="
+					t(
+						'dossiq',
+						'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields',
+					)
+				"
+				:loading="!storesReady">
+				<ZgwMappingSettings v-if="storesReady" />
+			</CnSettingsSection>
+
+			<CnSettingsFieldsSection
+				id="section-kcc"
+				appId="dossiq"
+				:name="t('dossiq', 'KCC-werkplek integration')"
+				:description="
+					t(
+						'dossiq',
+						'Burger identification, case-voorblad limits, sentiment trigger words, and belplan overflow thresholds for the KCC contact-center bridge.',
+					)
+				"
+				:columns="2"
+				valuesPath="config"
+				:saveLabel="t('dossiq', 'Save KCC settings')"
+				:fields="contactCentreFields" />
+
+			<CnSettingsSection
+				id="section-dmn"
+				:name="t('dossiq', 'Decision tables (DMN)')"
+				:description="
+					t(
+						'dossiq',
+						'Decision tables live in the decision-tables register of OpenRegister. Dossiq stores its own tables there under keys that start with dossiq. and evaluates them from workflow steps and the enforcement recommendation. Open OpenRegister to read or change a table.',
+					)
+				"
+				:loading="!storesReady" />
+
+			<CnSettingsFieldsSection
+				id="section-financial"
+				appId="dossiq"
+				:name="t('dossiq', 'Financial integration: dwangsom callback')"
+				:description="
+					t(
+						'dossiq',
+						'Configure the shared secret used to validate ERP payment-confirmation callbacks for dwangsom (penalty payment) uitbetalingen.',
+					)
+				"
+				:detailedDescription="
+					t(
+						'dossiq',
+						'Configure the shared secret used to validate the X-Procest-Signature HMAC-SHA256 header on the public dwangsom payment-confirmation callback ({endpoint}). Without a configured secret, every callback request is rejected (HTTP 401). An unconfigured secret is never treated as an implicit pass.',
+						{ endpoint: '/apps/dossiq/api/dwangsom/payment-callback' },
+					)
+				"
+				valuesPath="config"
+				:fields="paymentCallbackFields" />
+
+			<CnSettingsSection
+				id="section-stuf"
+				:name="t('dossiq', 'StUF-ZKN endpoints')"
+				:description="
+					t(
+						'dossiq',
+						'Outbound StUF-ZKN/BG zaaksysteem endpoints per gemeente, with per-endpoint circuit-breaker health. Endpoints, WSSE credentials and mTLS certificates are managed by the platform operator.',
+					)
+				"
+				:loading="!storesReady">
+				<StufEndpoints v-if="storesReady" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
+				:name="t('dossiq', 'StUF-ZKN audit log')"
+				:description="
+					t(
+						'dossiq',
+						'Per-call audit log for outbound and inbound StUF SOAP envelopes (full XML, HTTP status, duration, retry history).',
+					)
+				"
+				:loading="!storesReady">
+				<StufAuditLog v-if="storesReady" />
+			</CnSettingsSection>
+
+			<CnSettingsFieldsSection
+				id="section-store"
+				:name="t('dossiq', 'Store registry')"
+				:description="
+					t(
+						'dossiq',
+						'Connect the OpenRegister instance the Store page browses. Without one, dossiq stays offline and shows only its own templates.',
+					)
+				"
+				url="/apps/dossiq/api/store/settings"
+				:saveLabel="t('dossiq', 'Save store settings')"
+				:fields="storeRegistryFields" />
 
 			<CnSettingsSection
 				id="section-first-run"
@@ -270,21 +578,6 @@
 			</CnSettingsSection>
 
 			<CnSettingsFieldsSection
-				id="section-mandate-settings"
-				appId="dossiq"
-				:name="t('dossiq', 'Mandate matrix: system settings')"
-				:description="
-					t(
-						'dossiq',
-						'Awb art. 10:3 mandate administration: Decidiq import, role hierarchy, waarnemer assignments.',
-					)
-				"
-				docUrl="https://dossiq.conduction.nl/docs/user/mandate-matrix-admin"
-				valuesPath="config"
-				:saveLabel="t('dossiq', 'Save mandate matrix settings')"
-				:fields="mandateSettingsFields" />
-
-			<CnSettingsFieldsSection
 				id="section-archival"
 				:name="t('dossiq', 'Archiving')"
 				:description="
@@ -316,307 +609,6 @@
 				valuesPath="config"
 				:fields="reviewReportFields" />
 		</template>
-
-		<template #tab-integrations>
-			<CnSettingsSection
-				id="section-connections"
-				:name="t('dossiq', 'Integrations')"
-				:description="
-					t(
-						'dossiq',
-						'A connection stays off until you choose a source. Off means: not one request goes outside.',
-					)
-				">
-				<NcNoteCard v-if="!ownerApps.integriq" type="info">
-					{{
-						t(
-							'dossiq',
-							'The {app} app is not installed, so there is nothing to list here.',
-							{ app: 'integriq' },
-						)
-					}}
-				</NcNoteCard>
-				<CnWidgetObjectTable
-					v-else
-					:hideWrapper="true"
-					:source="connectionsSource"
-					:sortable="true"
-					:filterable="true"
-					:columns="connectionColumns"
-					:emptyText="
-						t(
-							'dossiq',
-							'No connections reported yet. They appear once integriq has read dossiq\'s declaration.',
-						)
-					" />
-			</CnSettingsSection>
-
-			<CnSettingsFieldsSection
-				id="section-kadaster"
-				appId="dossiq"
-				:name="t('dossiq', 'Set up Kadaster (BRK) and WOZ')"
-				:openedFrom="t('dossiq', 'Kadaster (BRK) and WOZ')"
-				:description="
-					t(
-						'dossiq',
-						'Off until you choose a source. Off means: no request goes outside.',
-					)
-				"
-				:columns="3"
-				valuesPath="config"
-				:fields="kadasterFields" />
-
-			<CnSettingsSection
-				id="section-zgw"
-				:name="t('dossiq', 'ZGW API mapping')"
-				:description="
-					t(
-						'dossiq',
-						'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields',
-					)
-				"
-				:loading="!storesReady">
-				<ZgwMappingSettings v-if="storesReady" />
-			</CnSettingsSection>
-
-			<CnSettingsFieldsSection
-				id="section-kcc"
-				appId="dossiq"
-				:name="t('dossiq', 'KCC-werkplek integration')"
-				:description="
-					t(
-						'dossiq',
-						'Burger identification, case-voorblad limits, sentiment trigger words, and belplan overflow thresholds for the KCC contact-center bridge.',
-					)
-				"
-				:columns="2"
-				valuesPath="config"
-				:saveLabel="t('dossiq', 'Save KCC settings')"
-				:fields="contactCentreFields" />
-
-			<CnSettingsSection
-				id="section-dmn"
-				:name="t('dossiq', 'Decision tables (DMN)')"
-				:description="
-					t(
-						'dossiq',
-						'Decision tables live in the decision-tables register of OpenRegister. Dossiq stores its own tables there under keys that start with dossiq. and evaluates them from workflow steps and the enforcement recommendation. Open OpenRegister to read or change a table.',
-					)
-				"
-				:loading="!storesReady" />
-
-			<CnSettingsFieldsSection
-				id="section-financial"
-				appId="dossiq"
-				:name="t('dossiq', 'Financial integration: dwangsom callback')"
-				:description="
-					t(
-						'dossiq',
-						'Configure the shared secret used to validate ERP payment-confirmation callbacks for dwangsom (penalty payment) uitbetalingen.',
-					)
-				"
-				:detailedDescription="
-					t(
-						'dossiq',
-						'Configure the shared secret used to validate the X-Procest-Signature HMAC-SHA256 header on the public dwangsom payment-confirmation callback ({endpoint}). Without a configured secret, every callback request is rejected (HTTP 401). An unconfigured secret is never treated as an implicit pass.',
-						{ endpoint: '/apps/dossiq/api/dwangsom/payment-callback' },
-					)
-				"
-				valuesPath="config"
-				:fields="paymentCallbackFields" />
-
-			<CnSettingsSection
-				id="section-stuf"
-				:name="t('dossiq', 'StUF-ZKN endpoints')"
-				:description="
-					t(
-						'dossiq',
-						'Outbound StUF-ZKN/BG zaaksysteem endpoints per gemeente, with per-endpoint circuit-breaker health. Endpoints, WSSE credentials and mTLS certificates are managed by the platform operator.',
-					)
-				"
-				:loading="!storesReady">
-				<StufEndpoints v-if="storesReady" />
-			</CnSettingsSection>
-
-			<CnSettingsSection
-				:name="t('dossiq', 'StUF-ZKN audit log')"
-				:description="
-					t(
-						'dossiq',
-						'Per-call audit log for outbound and inbound StUF SOAP envelopes (full XML, HTTP status, duration, retry history).',
-					)
-				"
-				:loading="!storesReady">
-				<StufAuditLog v-if="storesReady" />
-			</CnSettingsSection>
-
-			<CnSettingsFieldsSection
-				id="section-store"
-				:name="t('dossiq', 'Store registry')"
-				:description="
-					t(
-						'dossiq',
-						'Connect the OpenRegister instance the Store page browses. Without one, dossiq stays offline and shows only its own templates.',
-					)
-				"
-				url="/apps/dossiq/api/store/settings"
-				:saveLabel="t('dossiq', 'Save store settings')"
-				:fields="storeRegistryFields" />
-		</template>
-
-		<template #tab-mail>
-			<CnSettingsSection
-				id="section-mail-intake"
-				:name="t('dossiq', 'Mail to cases')"
-				:description="
-					t(
-						'dossiq',
-						'Every mail the shared mailbox took in, and the case it went to or why it was skipped. The mailbox itself is set up under General.',
-					)
-				">
-				<NcButton :href="mailIntakeLogUrl" variant="secondary">
-					{{ t('dossiq', 'View the mail intake log') }}
-				</NcButton>
-			</CnSettingsSection>
-		</template>
-
-		<template #tab-map-layers>
-			<CnSettingsSection
-				id="section-map-layers"
-				:name="t('dossiq', 'Map layers')"
-				:description="
-					t(
-						'dossiq',
-						'The WMS and WMTS layers the case map and the location fields offer. Each layer is a record you add, order and switch on in the map layers list.',
-					)
-				">
-				<NcButton :href="mapLayersUrl" variant="secondary">
-					{{ t('dossiq', 'Open the map layers') }}
-				</NcButton>
-			</CnSettingsSection>
-		</template>
-
-		<template #tab-vth>
-			<CnSettingsSection
-				id="section-intake-activities"
-				:actionsInTitle="true"
-				:wide="true"
-				:name="t('dossiq', 'Activities from the Omgevingsloket')"
-				:description="t('dossiq', 'An application from the DSO becomes a case of the linked case type.')"
-				:footerLink="ownerApps.integriq ? { label: t('dossiq', 'Manage the links in integriq'), href: integriqAdminUrl } : null">
-				<template v-if="ownerApps.integriq" #actions>
-					<NcButton :href="integriqAdminUrl" variant="secondary">
-						<template #icon>
-							<Plus :size="20" />
-						</template>
-						{{ t('dossiq', 'Link activity') }}
-					</NcButton>
-				</template>
-				<NcNoteCard v-if="!ownerApps.integriq" type="info">
-					{{
-						t(
-							'dossiq',
-							'The {app} app is not installed, so there is nothing to list here.',
-							{ app: 'integriq' },
-						)
-					}}
-				</NcNoteCard>
-				<CnWidgetObjectTable
-					v-else
-					:hideWrapper="true"
-					:endpointSource="intakeActivitySource"
-					:sortable="true"
-					:filterable="true"
-					:columns="intakeActivityColumns"
-					:rowClass="[{ when: { field: 'unmapped', value: true }, class: 'dq-dso-activity--unmapped' }]"
-					:emptyText="t('dossiq', 'No activities linked yet.')" />
-			</CnSettingsSection>
-
-			<CnSettingsSection
-				id="section-fee-schedules"
-				:actionsInTitle="true"
-				:wide="true"
-				:name="t('dossiq', 'Fee rules')"
-				:description="t('dossiq', 'Loaded at installation; adjusted per year.')"
-				:footerLink="ownerApps.shillinq ? { label: t('dossiq', 'Manage fees in shillinq'), href: feeSchedulesUrl } : null">
-				<template v-if="ownerApps.shillinq" #actions>
-					<NcButton :href="feeSchedulesUrl" variant="secondary">
-						<template #icon>
-							<Plus :size="20" />
-						</template>
-						{{ t('dossiq', 'Add rule') }}
-					</NcButton>
-				</template>
-				<NcNoteCard v-if="!ownerApps.shillinq" type="info">
-					{{
-						t(
-							'dossiq',
-							'The {app} app is not installed, so there is nothing to list here.',
-							{ app: 'shillinq' },
-						)
-					}}
-				</NcNoteCard>
-				<CnWidgetObjectTable
-					v-else
-					:hideWrapper="true"
-					:source="feeScheduleSource"
-					:sortable="true"
-					:filterable="true"
-					:columns="feeScheduleColumns"
-					:emptyText="t('dossiq', 'No fee rules for dossiq yet.')" />
-			</CnSettingsSection>
-
-			<CnSettingsSection
-				:actionsInTitle="true"
-				:name="t('dossiq', 'Inspection checklists')"
-				:loading="!storesReady">
-				<template v-if="storesReady" #actions>
-					<NcButton variant="secondary" @click="$refs.checklists.openEditor(null)">
-						<template #icon>
-							<Plus :size="20" />
-						</template>
-						{{ t('dossiq', 'Add checklist') }}
-					</NcButton>
-				</template>
-				<ChecklistTemplatesTab v-if="storesReady" ref="checklists" :hideAddButton="true" />
-			</CnSettingsSection>
-
-			<CnSettingsSection
-				id="section-enforcement-strategy"
-				:name="t('dossiq', 'Enforcement strategy')">
-				<CnFactsWidget :content="enforcementMatrixFacts" />
-				<p>
-					<a
-						href="#section-enforcement-strategy"
-						role="button"
-						data-testid="enforcement-earlier-versions"
-						:aria-expanded="String(showEarlierMatrices)"
-						@click.prevent="showEarlierMatrices = !showEarlierMatrices">
-						{{ showEarlierMatrices ? t('dossiq', 'Hide earlier versions') : t('dossiq', 'Earlier versions') }}
-					</a>
-				</p>
-				<CnWidgetObjectTable
-					v-if="showEarlierMatrices"
-					:hideWrapper="true"
-					:source="enforcementMatrixSource"
-					:columns="enforcementMatrixColumns"
-					:emptyText="t('dossiq', 'No enforcement matrix yet.')" />
-			</CnSettingsSection>
-		</template>
-
-		<template #tab-substitution>
-			<CnSettingsSection
-				id="section-substitution"
-				:name="t('dossiq', 'Substitution')"
-				:description="
-					t(
-						'dossiq',
-						'Who takes over the cases of an absent handler, and the bulk reassignment of their work.',
-					)
-				">
-				<SubstitutionAdmin />
-			</CnSettingsSection>
-		</template>
 	</CnAdminSettingsShell>
 </template>
 
@@ -625,6 +617,7 @@ import {
 	CnAdminSettingsShell,
 	CnFactsWidget,
 	CnRegisterMapping,
+	CnRowActions,
 	CnSettingsFieldsSection,
 	CnSettingsSection,
 	CnWidgetObjectTable,
@@ -633,6 +626,7 @@ import {
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { loadState } from '@nextcloud/initial-state'
+import { getCanonicalLocale } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
@@ -651,6 +645,7 @@ import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import manifest from '../../manifest.json'
 import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
+import { feeRuleBasis, feeRuleCalculation, feeRuleName } from '../../utils/feeRules.js'
 import {
 	aiFields,
 	archivalFields,
@@ -660,7 +655,6 @@ import {
 	contactCentreFields,
 	houseStyleFields,
 	kadasterFields,
-	mandateSettingsFields,
 	menuStructureFields,
 	paymentCallbackFields,
 	queueUrgencyFields,
@@ -682,6 +676,7 @@ export default {
 		CnAdminSettingsShell,
 		CnFactsWidget,
 		CnRegisterMapping,
+		CnRowActions,
 		CnSettingsFieldsSection,
 		CnSettingsSection,
 		CnWidgetObjectTable,
@@ -718,6 +713,11 @@ export default {
 					typeof value === 'string' && value !== ''
 						? this.t('dossiq', value)
 						: value,
+
+				// A shillinq fee rule: its name, its basis and its calculation in words.
+				feeRuleName: (value, row) => feeRuleName(row),
+				feeRuleBasis: (value, row) => feeRuleBasis(row),
+				feeRuleCalculation: (value, row) => feeRuleCalculation(row, (text, vars) => this.t('dossiq', text, vars), getCanonicalLocale()),
 			},
 		}
 	},
@@ -761,6 +761,9 @@ export default {
 				{ id: 'map-layers', label: this.t('dossiq', 'Map layers') },
 				{ id: 'vth', label: this.t('dossiq', 'VTH') },
 				{ id: 'substitution', label: this.t('dossiq', 'Substitution') },
+				// The settings set once or by a specialist: ZGW, KCC, StUF, Store,
+				// first run, prerequisites, terms, mandates, archiving, reports.
+				{ id: 'advanced', label: this.t('dossiq', 'Advanced') },
 			])
 		},
 
@@ -856,6 +859,25 @@ export default {
 				order: { order: 'asc' },
 				limit: 50,
 			}
+		},
+
+		/**
+		 * A connection row's menu: what the row itself offers, opening its
+		 * settings card on this page.
+		 *
+		 * @return {Array<object>} The row actions.
+		 * @spec openspec/changes/connection-row-menu/specs/admin-settings/spec.md#requirement-a-connection-row-has-a-menu-with-what-the-row-offers
+		 */
+		connectionRowActions() {
+			return [
+				{
+					id: 'open-settings',
+					label: this.t('dossiq', 'Open settings'),
+					icon: 'CogOutline',
+					href: (row) => row.settingsUrl,
+					linkTarget: '_self',
+				},
+			]
 		},
 
 		/**
@@ -988,12 +1010,13 @@ export default {
 		feeScheduleColumns() {
 			return [
 				{
-					key: 'typeValue',
+					key: 'name',
 					label: this.t('dossiq', 'Rule'),
 					cellClass: 'cn-cell--strong',
+					formatter: 'feeRuleName',
 				},
-				{ key: 'legalBasis.regulation', label: this.t('dossiq', 'Basis') },
-				{ key: 'amount', label: this.t('dossiq', 'Amount') },
+				{ key: 'legalBasis', label: this.t('dossiq', 'Basis'), formatter: 'feeRuleBasis' },
+				{ key: 'calculation', label: this.t('dossiq', 'Amount'), formatter: 'feeRuleCalculation' },
 				{ key: 'validFrom', label: this.t('dossiq', 'Valid from') },
 			]
 		},
@@ -1054,15 +1077,6 @@ export default {
 			return queueUrgencyFields(this.t.bind(this))
 		},
 
-		/**
-		 * The mandate matrix behaviour.
-		 *
-		 * @return {Array<object>} The fields.
-		 * @spec openspec/specs/admin-settings/spec.md
-		 */
-		mandateSettingsFields() {
-			return mandateSettingsFields(this.t.bind(this))
-		},
 
 		/**
 		 * The consultation behaviour.

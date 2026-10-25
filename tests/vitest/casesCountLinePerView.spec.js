@@ -34,6 +34,11 @@ describe('the cases count line per view', () => {
 		expect(nl.translations[config.countTextByView.map]).toBe('{shown} van {total} lopende zaken in uw teams')
 	})
 
+	it('names an applied saved view\'s conditions, as DqFilterInMenu draws them (nextcloud-vue savedViewCountText)', () => {
+		expect(config.savedViewCountText).toBe('{shown} of {total} open cases · {view} · sorted by deadline')
+		expect(nl.translations[config.savedViewCountText]).toBe('{shown} van {total} lopende zaken · {view} · gesorteerd op termijn')
+	})
+
 	it('ends the footer with the page size, as every case list board draws it ("klik een kolomkop om te sorteren · 20 per pagina")', () => {
 		expect(config.footerNote).toBe('click a column header to sort · 20 per page')
 		expect(nl.translations[config.footerNote]).toBe('klik een kolomkop om te sorteren · 20 per pagina')

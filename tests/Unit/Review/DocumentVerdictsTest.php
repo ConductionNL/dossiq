@@ -135,6 +135,28 @@ class DocumentVerdictsTest extends TestCase {
 	}//end testCountsTheVerdictsAndListsTheGroundsWithTheirDocuments()
 
 	/**
+	 * Each document under review with its verdict, `open` while it has none (the Files tab's row pill).
+	 *
+	 * @return void
+	 */
+	public function testNamesEachDocumentsVerdictAndOpenForTheRest(): void {
+		$answer = $this->verdicts(register: $this->lindelaan())->byDocument(caseId: 'case-1');
+
+		self::assertSame(
+			expected: [
+				'd1' => 'openbaar',
+				'd2' => 'deels_openbaar',
+				'd3' => 'openbaar',
+				'd4' => 'niet_openbaar',
+				'd5' => 'open',
+				'd6' => 'open',
+				'd7' => 'open',
+			],
+			actual: $answer
+		);
+	}//end testNamesEachDocumentsVerdictAndOpenForTheRest()
+
+	/**
 	 * A list of grounds that cannot be read leaves the code without a label, not the answer without grounds.
 	 *
 	 * @return void
