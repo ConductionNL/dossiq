@@ -15,10 +15,12 @@ import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
 
-const DIR = path.resolve(__dirname, '../../lib/Settings/register.d')
-const objects = fs.readdirSync(DIR)
+// The register fragments and, since the English demo cases became opt-in
+// example data, the demo fragments the example-data step installs.
+const DIRS = ['register.d', 'demo.d'].map((dir) => path.resolve(__dirname, '../../lib/Settings', dir))
+const objects = DIRS.flatMap((dir) => fs.readdirSync(dir)
 	.filter((name) => name.endsWith('.json'))
-	.flatMap((name) => (JSON.parse(fs.readFileSync(path.join(DIR, name), 'utf8')).components?.objects || []).map((object) => ({ file: name, object })))
+	.flatMap((name) => (JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8')).components?.objects || []).map((object) => ({ file: name, object }))))
 const caseSlugs = new Set(objects.filter(({ object }) => object['@self']?.schema === 'case').map(({ object }) => object['@self'].slug))
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
