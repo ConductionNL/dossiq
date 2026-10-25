@@ -45,7 +45,25 @@ class ZuiddrechtLhsMolenweg4Test extends TestCase {
 		$advice = array_column($set['objects'], null, 'key')['lhs-advies-molenweg-4']['data'];
 
 		$this->assertSame(expected: '{{object:kapvergunning-molenweg.id}}', actual: $advice['case']);
-		$this->assertSame(expected: '{{cast:lars.uid}}', actual: $advice['recommendedBy']);
-		$this->assertSame(expected: [1, 'ernstig', 'last_under_penaltypayment'], actual: [$advice['matrixVersion'], $advice['severity'], $advice['recommendedIntervention']]);
+		$this->assertSame(expected: '{{cast:jamal.uid}}', actual: $advice['recommendedBy']);
+		$this->assertSame(expected: [2, 'ernstig', 'last_under_penaltypayment'], actual: [$advice['matrixVersion'], $advice['severity'], $advice['recommendedIntervention']]);
 	}//end testMolenweg4HasItsRecommendation()
+
+	/**
+	 * The board's cell is behaviour 2 by consequence C, and Anouk, as team
+	 * lead, overrules the advice with a lighter warning letter and a reason.
+	 *
+	 * @return void
+	 */
+	public function testMolenweg4IsOverruledWithAWarning(): void {
+		$set    = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$advice = array_column($set['objects'], null, 'key')['lhs-advies-molenweg-4']['data'];
+
+		$this->assertSame(expected: 'onverschillig', actual: $advice['behaviour']);
+		$this->assertSame(
+			expected: [true, 'warning', 'manager', '{{cast:anouk.uid}}'],
+			actual: [$advice['override'], $advice['finalIntervention'], $advice['overrideAuthority'], $advice['overrideBy']]
+		);
+		$this->assertNotSame(expected: '', actual: $advice['overrideJustification']);
+	}//end testMolenweg4IsOverruledWithAWarning()
 }//end class

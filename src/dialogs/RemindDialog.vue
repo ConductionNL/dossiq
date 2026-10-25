@@ -4,8 +4,9 @@
 
   Remind a colleague about this case on a date.
 
-  Three fields, because a reminder is three things: who it is for, when it is
-  due, and what it says. There is no fourth. A description, a priority and a
+  Three fields, because a reminder is three things: what it says, when it is
+  due, and who it is for (board DqZaakDialogen, in that order; the colleague
+  is optional and means you when left empty). There is no fourth. A description, a priority and a
   checklist all belong to the task the reminder becomes, and every one of them
   offered here would turn a two-second gesture into a form.
 
@@ -38,32 +39,20 @@
 		data-testid="case-remind-dialog"
 		@closing="$emit('close')">
 		<div class="remind">
-			<p class="remind__explainer">
-				{{
-					t(
-						'dossiq',
-						'The reminder becomes a task on this case. The colleague is notified and sees it on their work list.',
-					)
-				}}
-			</p>
-
 			<NcTextField
-				v-model="assignee"
-				data-testid="case-remind-assignee"
-				:label="t('dossiq', 'User id of the colleague')" />
-
+				v-model="title"
+				data-testid="case-remind-title"
+				:label="t('dossiq', 'What to remind about')" />
 			<NcDateTimePicker
 				v-model="date"
 				data-testid="case-remind-date"
 				type="date"
 				:min="earliest"
 				:label="t('dossiq', 'Date')" />
-
 			<NcTextField
-				v-model="title"
-				data-testid="case-remind-title"
-				:label="t('dossiq', 'What to remind about')" />
-
+				v-model="assignee"
+				data-testid="case-remind-assignee"
+				:label="t('dossiq', 'Colleague (optional)')" />
 			<p
 				v-if="error"
 				class="remind__error"
@@ -184,7 +173,8 @@ export default {
 		 */
 		form() {
 			return {
-				assignee: this.assignee,
+				// An empty colleague is you, as the field opens.
+				assignee: this.assignee.trim() || (getCurrentUser()?.uid ?? ''),
 				date: this.isoDate,
 				title: this.title,
 			}
@@ -251,10 +241,6 @@ export default {
 	padding: 8px 0;
 }
 
-.remind__explainer {
-	color: var(--color-text-maxcontrast);
-	margin: 0;
-}
 
 .remind__error {
 	color: var(--color-error);

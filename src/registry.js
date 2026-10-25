@@ -39,6 +39,7 @@ import DocumentReviewPanel from './components/case/DocumentReviewPanel.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
+import CaseTypeFieldRightsWidget from './components/caseType/CaseTypeFieldRightsWidget.vue'
 import CaseTypeMessagesEditorWidget from './components/caseType/CaseTypeMessagesEditorWidget.vue'
 // The party kinds a case type accepts, declared into pipelinq
 // (parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype).
@@ -143,7 +144,8 @@ import PublicFederatedTransferPage from './views/public/PublicFederatedTransferP
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
 import MailPartiesReportWidget from './views/reports/MailPartiesReportWidget.vue'
 import CaseTypeFlowView from './views/settings/CaseTypeFlowView.vue'
-import WorkloadSummaryBar from './views/WorkloadSummaryBar.vue'
+import WorkloadTeamChips from './views/WorkloadTeamChips.vue'
+import WorkloadTeamHeading from './views/WorkloadTeamHeading.vue'
 import { leafTab } from './integrations/leafTabs.js'
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
 import {
@@ -248,12 +250,17 @@ const HEADLESS_WIDGET_META = {
  */
 const registry = {
 	// --- Genuine exceptions: no abstract manifest analogue. ---
-	// The Assigned to me view's below-header slot (Cases `defaultSavedViews`
-	// my-work `overrides.slots`): the list itself is manifest config.
-	WorkloadSummaryBar: {
+	// The Assigned to me view's slots (Cases `defaultSavedViews` my-work
+	// `overrides.slots`): the list itself is manifest config.
+	WorkloadTeamHeading: {
 		kind: 'page',
-		component: WorkloadSummaryBar,
-		_note: "Below-header slot: the coordinator's open cases per colleague, read from /api/work-queue/workload (403, and so nothing, for anyone else). A colleague's chip opens their open cases on the Cases page.",
+		component: WorkloadTeamHeading,
+		_note: "Below-header slot: the team workload's title and hint, drawn only for a coordinator (/api/work-queue/workload answers 403, and so nothing, for anyone else).",
+	},
+	WorkloadTeamChips: {
+		kind: 'page',
+		component: WorkloadTeamChips,
+		_note: "Toolbar-start slot: the coordinator's open cases per colleague as name chips, at the start of the toolbar row (board DqAanMijToegewezen). A colleague's chip opens their open cases on the Cases page.",
 	},
 
 	// --- The case's lifecycle on the case page (case-lifecycle-on-the-page). ---
@@ -273,6 +280,8 @@ const registry = {
 	CaseTypeBlueprintWidget: {
 		// @custom-widget-ratchet exclude the merged statuses/results/attributes of a type and its parent exist only in CaseTypeResolver; an object-list can ask OpenRegister for `caseType = @objectId` and nothing else, so a child type would render three empty tables
 		kind: 'widget',
+		// A titled card in the Statuses tab stack, as the lists above it.
+		chrome: 'card',
 		component: CaseTypeBlueprintWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail: what the type actually offers, over /api/case-types/{id}/blueprint, with an Inherited badge on every row that came from the parent and a Shared badge on every attribute that belongs to no type. In the LAYOUT rather than inside a tab strip on purpose: a type:"custom" widget named as a tab CHILD resolves by registry type, finds nothing and renders an empty panel without logging anything.',
@@ -282,6 +291,8 @@ const registry = {
 	CaseTypeTranslationsWidget: {
 		// @custom-widget-ratchet exclude the library has no translatable-property surface at all: @conduction/nextcloud-vue 3.4.0 contains no reference to translatable, languageMeta or sourceLanguage, so no declared widget can render a language tab or a completeness chip
 		kind: 'widget',
+		// A titled card on the Overview tab (DqZaaktypeOverzicht Vertalingen); the Translations tab draws it bare.
+		chrome: 'card',
 		component: CaseTypeTranslationsWidget,
 		...PANEL_WIDGET_META,
 		_note: "CaseTypeDetail: one chip per language the register declares, and an editor per language for the labels OpenRegister holds as translatable. It counts a stale label as missing, which OpenRegister's own completeness does not: getCompletenessByObject() counts every non-empty row and never reads its status. It writes the WHOLE language map and sends no X-Translation-Target-Language: normalizeTranslationsForSave() refuses a language keyed body that arrives with that header and keeps one that arrives without it.",
@@ -312,6 +323,15 @@ const registry = {
 		component: CaseTypeMessagesEditorWidget,
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail Phases and tasks: the messages to the applicant through the email template endpoints, so each change is a new version (EmailTemplateVersionListener keeps that on the object API too).',
+	},
+	// @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+	CaseTypeFieldRightsWidget: {
+		// @custom-widget-ratchet exclude the matrix has one column per status of the case type, read at run time, and its cells combine three stored declarations; a declared table has fixed columns
+		kind: 'widget',
+		chrome: 'card',
+		component: CaseTypeFieldRightsWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail Fields: the field rights as a matrix of fields by status (DqZaaktypeVelden), read from fieldRoleRules, the statuses\' required field rules and requiredAtStatus.',
 	},
 	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
 	CaseTypeRulesWidget: {
@@ -523,6 +543,8 @@ const registry = {
 	'case-custody-pane': {
 		// @custom-widget-ratchet exclude the panel joins TWO surfaces that no declarative widget spans: the chain of holdings, whose rows are only meaningful as a JOIN between one holding's end and the next one's start, and the takeover requests beside it, whose answer is a POST carrying a required reason. A data widget builds its fields from one schema's properties and would draw each holding as a row of values with no way to show the join. Deleted the day the manifest vocabulary has a chain widget over a dated record
 		kind: 'widget',
+		// A card of its own in the Archiving tab stack, titled from the definition.
+		chrome: 'card',
 		component: CaseCustodyPanel,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Custody tab: every period this case was held, with both ends of each holding, and the takeover requests beside them with accept and refuse. Fails CLOSED on a refusal: a reader who may not open the case is told so, never shown an empty chain, because "this case never changed hands" and "you may not see this" look identical from an empty list. The panel writes no holding: an accept answers a REQUEST and the move opens the holding server-side.',

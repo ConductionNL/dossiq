@@ -314,11 +314,12 @@ describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
 
 	it('carries every widget the custom view mounted', () => {
 		// The notes, appointments and history are the library cards reading
-		// the task's engine endpoints, the waiting case is a library notice;
-		// the case card is the library facts widget reading the case.
+		// the task's engine endpoints, the waiting case is a facts card on the
+		// case's next status (task-holds-up-next-status); the case card is the
+		// library facts widget reading the case.
 		const config = page('TaskDetail').config
 		const types = [...config.widgets, ...config.sideColumn].map((widget) => widget.type)
-		for (const type of ['integration', 'events', 'audit-trail', 'notice', 'checklist']) {
+		for (const type of ['integration', 'events', 'audit-trail', 'facts', 'checklist']) {
 			expect(types, `${type} must be on the page`).toContain(type)
 		}
 		const caseCard = config.sideColumn.find((widget) => widget.id === 'side-case')

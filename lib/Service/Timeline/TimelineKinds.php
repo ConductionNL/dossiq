@@ -189,7 +189,7 @@ final class TimelineKinds {
 			'properties' => [
 				'channel' => [
 					'type' => 'string',
-					'enum' => ['phone', 'email', 'webformulier', 'chat', 'social_media', 'balie'],
+					'enum' => ['phone', 'email', 'webformulier', 'chat', 'social_media', 'balie', 'brief'],
 				],
 				'direction' => [
 					'type' => 'string',

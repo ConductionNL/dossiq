@@ -63,6 +63,13 @@ class="compose-dialog__field"
 				</span>
 			</div>
 
+			<MessageTemplateSelect
+				:caseId="resolvedCaseId"
+				:caseTypeId="caseTypeId"
+				:channels="templateChannels"
+				inputId="berichtenbox-compose-template"
+				@fill="onTemplateFill" />
+
 			<div class="compose-dialog__field">
 				<label class="compose-dialog__label" for="berichtenbox-compose-subject">{{ t('dossiq', 'Subject') }}</label>
 				<NcTextField
@@ -134,6 +141,7 @@ import {
 } from '@nextcloud/vue'
 import EmailFastOutline from 'vue-material-design-icons/EmailFastOutline.vue'
 import SendIcon from 'vue-material-design-icons/Send.vue'
+import MessageTemplateSelect from '../components/case/MessageTemplateSelect.vue'
 import { sendMessage } from '../services/berichtenboxApi.js'
 import { caseEyebrow } from '../services/caseSummary.js'
 
@@ -160,6 +168,7 @@ export default {
 	components: {
 		CnDialog,
 		EmailFastOutline,
+		MessageTemplateSelect,
 		SendIcon,
 		NcButton,
 		NcCheckboxRadioSwitch,
@@ -280,6 +289,26 @@ export default {
 			return caseEyebrow(t('dossiq', 'Message'), this.kase)
 		},
 
+		/**
+		 * The case's case type, whose message templates are offered.
+		 *
+		 * @return {string} Its id, or ''.
+		 * @spec openspec/changes/compose-from-message-template/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
+		 */
+		caseTypeId() {
+			const ref = this.kase?.caseType
+			return String((ref && typeof ref === 'object' ? ref.id : ref) || '')
+		},
+
+		/**
+		 * The channels a Berichtenbox letter goes out on, for the template choice.
+		 *
+		 * @return {Array<string>}
+		 */
+		templateChannels() {
+			return ['mailbox', 'mailbox-then-email']
+		},
+
 		recipientName() {
 			return String(this.kase?.initiatorDisplayName || '')
 		},
@@ -309,6 +338,19 @@ export default {
 
 	methods: {
 		t,
+
+		/**
+		 * Put a chosen template, filled for this case, in the subject and the
+		 * message. Both stay editable.
+		 *
+		 * @param {{subject: string, body: string}} draft The filled template.
+		 * @return {void}
+		 * @spec openspec/changes/compose-from-message-template/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
+		 */
+		onTemplateFill({ subject, body }) {
+			this.form.subject = subject
+			this.form.body = body
+		},
 
 		/**
 		 * Focus on the BSN field: a masked number cannot be edited, so the field

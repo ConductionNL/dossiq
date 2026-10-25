@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour.",
+	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour. Pieter also has his saved view \"Termijn deze week\" in his menu (`pref_cn_saved_view_menu`, the view quoted by `{{view:pieter-termijn-deze-week.uuid}}`, which needs OpenRegister feat/example-set-view-placeholder), as board DqFilterInMenu draws it.",
 	"after": [
 		"opencatalogi"
 	],
@@ -26,7 +26,8 @@
 			"group": "dossiq-coordinators",
 			"displayName": "Dossiq coordinatoren",
 			"members": [
-				"marleen"
+				"marleen",
+				"pieter"
 			]
 		},
 		{
@@ -61,32 +62,50 @@
 		{
 			"group": "zuiddrecht-fysiek-domein",
 			"displayName": "Fysiek domein",
-			"members": []
+			"members": [],
+			"subAdmins": [
+				"pieter"
+			]
 		},
 		{
 			"group": "zuiddrecht-toezicht-en-handhaving",
 			"displayName": "Toezicht en handhaving",
-			"members": []
+			"members": [],
+			"subAdmins": [
+				"pieter"
+			]
 		},
 		{
 			"group": "zuiddrecht-buitenruimte",
 			"displayName": "Buitenruimte",
-			"members": []
+			"members": [],
+			"subAdmins": [
+				"pieter"
+			]
 		},
 		{
 			"group": "zuiddrecht-jeugdteam",
 			"displayName": "Jeugdteam",
-			"members": []
+			"members": [],
+			"subAdmins": [
+				"pieter"
+			]
 		},
 		{
 			"group": "zuiddrecht-werk-en-inkomen",
 			"displayName": "Werk en inkomen",
-			"members": []
+			"members": [],
+			"subAdmins": [
+				"pieter"
+			]
 		},
 		{
 			"group": "zuiddrecht-bedrijfsvoering",
 			"displayName": "Bedrijfsvoering",
-			"members": []
+			"members": [],
+			"subAdmins": [
+				"pieter"
+			]
 		}
 	],
 	"serviceAccounts": [
@@ -111,6 +130,30 @@
 		{
 			"key": "municipality_city",
 			"value": "Zuiddrecht"
+		},
+		{
+			"key": "ai_enabled",
+			"value": "1"
+		},
+		{
+			"key": "ai_model_type",
+			"value": "local"
+		},
+		{
+			"key": "ai_model_url",
+			"value": "http://ollama.intern:11434"
+		},
+		{
+			"key": "ai_model_name",
+			"value": "llama3.1:8b"
+		},
+		{
+			"key": "email_case_matching_enabled",
+			"value": "1"
+		},
+		{
+			"key": "email_transport",
+			"value": "zaken@zuiddrecht.nl"
 		}
 	],
 	"userPreferences": [
@@ -158,6 +201,11 @@
 			"user": "{{cast:noor.uid}}",
 			"key": "pref_walkthrough_completed_version",
 			"value": "1.2.0"
+		},
+		{
+			"user": "{{cast:pieter.uid}}",
+			"key": "pref_cn_saved_view_menu",
+			"value": "[{\"id\":\"{{view:pieter-termijn-deze-week.uuid}}\",\"page\":\"Cases\",\"name\":\"Termijn deze week\"}]"
 		}
 	],
 	"objects": [
@@ -432,7 +480,8 @@
 					"postcode": "{{cast:buurtoost.address.postcode}}",
 					"place": "{{cast:buurtoost.address.city}}"
 				},
-				"description": "Organiseert het buurtfeest en de speeldagen in Oosthaven. Voorbeeldvereniging van de gemeente Zuiddrecht, geen echte vereniging."
+				"description": "Organiseert het buurtfeest en de speeldagen in Oosthaven. Voorbeeldvereniging van de gemeente Zuiddrecht, geen echte vereniging.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000007"
 			}
 		},
 		{
@@ -492,6 +541,295 @@
 						"note": "Meldt vaker over de Lindelaan, ook via de balie."
 					}
 				]
+			}
+		},
+		{
+			"key": "bedrijf-vandam",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:vandam.kvk}}",
+				"tradeName": "{{cast:vandam.name}}",
+				"legalForm": "{{cast:vandam.legalForm}}",
+				"address": {
+					"streetName": "{{cast:vandam.address.street}}",
+					"houseNumber": "{{cast:vandam.address.number}}",
+					"postcode": "{{cast:vandam.address.postcode}}",
+					"place": "{{cast:vandam.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-bakkerijdemolen",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:bakkerijdemolen.kvk}}",
+				"tradeName": "{{cast:bakkerijdemolen.name}}",
+				"legalForm": "{{cast:bakkerijdemolen.legalForm}}",
+				"address": {
+					"streetName": "{{cast:bakkerijdemolen.address.street}}",
+					"houseNumber": "{{cast:bakkerijdemolen.address.number}}",
+					"postcode": "{{cast:bakkerijdemolen.address.postcode}}",
+					"place": "{{cast:bakkerijdemolen.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-dagblad",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:dagblad.kvk}}",
+				"tradeName": "{{cast:dagblad.name}}",
+				"legalForm": "{{cast:dagblad.legalForm}}",
+				"address": {
+					"streetName": "{{cast:dagblad.address.street}}",
+					"houseNumber": "{{cast:dagblad.address.number}}",
+					"postcode": "{{cast:dagblad.address.postcode}}",
+					"place": "{{cast:dagblad.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-lumeninfra",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:lumeninfra.kvk}}",
+				"tradeName": "{{cast:lumeninfra.name}}",
+				"legalForm": "{{cast:lumeninfra.legalForm}}",
+				"address": {
+					"streetName": "{{cast:lumeninfra.address.street}}",
+					"houseNumber": "{{cast:lumeninfra.address.number}}",
+					"postcode": "{{cast:lumeninfra.address.postcode}}",
+					"place": "{{cast:lumeninfra.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-groenenco",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:groenenco.kvk}}",
+				"tradeName": "{{cast:groenenco.name}}",
+				"legalForm": "{{cast:groenenco.legalForm}}",
+				"address": {
+					"streetName": "{{cast:groenenco.address.street}}",
+					"houseNumber": "{{cast:groenenco.address.number}}",
+					"postcode": "{{cast:groenenco.address.postcode}}",
+					"place": "{{cast:groenenco.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-sportclub",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:sportclub.kvk}}",
+				"tradeName": "{{cast:sportclub.name}}",
+				"legalForm": "{{cast:sportclub.legalForm}}",
+				"address": {
+					"streetName": "{{cast:sportclub.address.street}}",
+					"houseNumber": "{{cast:sportclub.address.number}}",
+					"postcode": "{{cast:sportclub.address.postcode}}",
+					"place": "{{cast:sportclub.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-vvekerkplein",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:vvekerkplein.kvk}}",
+				"tradeName": "{{cast:vvekerkplein.name}}",
+				"legalForm": "{{cast:vvekerkplein.legalForm}}",
+				"address": {
+					"streetName": "{{cast:vvekerkplein.address.street}}",
+					"houseNumber": "{{cast:vvekerkplein.address.number}}",
+					"postcode": "{{cast:vvekerkplein.address.postcode}}",
+					"place": "{{cast:vvekerkplein.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-harmonie",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:harmonie.kvk}}",
+				"tradeName": "{{cast:harmonie.name}}",
+				"legalForm": "{{cast:harmonie.legalForm}}",
+				"address": {
+					"streetName": "{{cast:harmonie.address.street}}",
+					"houseNumber": "{{cast:harmonie.address.number}}",
+					"postcode": "{{cast:harmonie.address.postcode}}",
+					"place": "{{cast:harmonie.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-tennisdekade",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:tennisdekade.kvk}}",
+				"tradeName": "{{cast:tennisdekade.name}}",
+				"legalForm": "{{cast:tennisdekade.legalForm}}",
+				"address": {
+					"streetName": "{{cast:tennisdekade.address.street}}",
+					"houseNumber": "{{cast:tennisdekade.address.number}}",
+					"postcode": "{{cast:tennisdekade.address.postcode}}",
+					"place": "{{cast:tennisdekade.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-ondernemers",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:ondernemers.kvk}}",
+				"tradeName": "{{cast:ondernemers.name}}",
+				"legalForm": "{{cast:ondernemers.legalForm}}",
+				"address": {
+					"streetName": "{{cast:ondernemers.address.street}}",
+					"houseNumber": "{{cast:ondernemers.address.number}}",
+					"postcode": "{{cast:ondernemers.address.postcode}}",
+					"place": "{{cast:ondernemers.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-scouting",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:scouting.kvk}}",
+				"tradeName": "{{cast:scouting.name}}",
+				"legalForm": "{{cast:scouting.legalForm}}",
+				"address": {
+					"streetName": "{{cast:scouting.address.street}}",
+					"houseNumber": "{{cast:scouting.address.number}}",
+					"postcode": "{{cast:scouting.address.postcode}}",
+					"place": "{{cast:scouting.address.city}}"
+				},
+				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+			}
+		},
+		{
+			"key": "bedrijf-kindzorg",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:kindzorg.kvk}}",
+				"tradeName": "{{cast:kindzorg.name}}",
+				"legalForm": "{{cast:kindzorg.legalForm}}",
+				"address": {
+					"streetName": "{{cast:kindzorg.address.street}}",
+					"houseNumber": "{{cast:kindzorg.address.number}}",
+					"postcode": "{{cast:kindzorg.address.postcode}}",
+					"place": "{{cast:kindzorg.address.city}}"
+				},
+				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+			}
+		},
+		{
+			"key": "bedrijf-drechthof",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:drechthof.kvk}}",
+				"tradeName": "{{cast:drechthof.name}}",
+				"legalForm": "{{cast:drechthof.legalForm}}",
+				"address": {
+					"streetName": "{{cast:drechthof.address.street}}",
+					"houseNumber": "{{cast:drechthof.address.number}}",
+					"postcode": "{{cast:drechthof.address.postcode}}",
+					"place": "{{cast:drechthof.address.city}}"
+				},
+				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+			}
+		},
+		{
+			"key": "bedrijf-voedselbank",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:voedselbank.kvk}}",
+				"tradeName": "{{cast:voedselbank.name}}",
+				"legalForm": "{{cast:voedselbank.legalForm}}",
+				"address": {
+					"streetName": "{{cast:voedselbank.address.street}}",
+					"houseNumber": "{{cast:voedselbank.address.number}}",
+					"postcode": "{{cast:voedselbank.address.postcode}}",
+					"place": "{{cast:voedselbank.address.city}}"
+				},
+				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+			}
+		},
+		{
+			"key": "bedrijf-dorpshuis",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:dorpshuis.kvk}}",
+				"tradeName": "{{cast:dorpshuis.name}}",
+				"legalForm": "{{cast:dorpshuis.legalForm}}",
+				"address": {
+					"streetName": "{{cast:dorpshuis.address.street}}",
+					"houseNumber": "{{cast:dorpshuis.address.number}}",
+					"postcode": "{{cast:dorpshuis.address.postcode}}",
+					"place": "{{cast:dorpshuis.address.city}}"
+				},
+				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+			}
+		},
+		{
+			"key": "bedrijf-jeugdtheater",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:jeugdtheater.kvk}}",
+				"tradeName": "{{cast:jeugdtheater.name}}",
+				"legalForm": "{{cast:jeugdtheater.legalForm}}",
+				"address": {
+					"streetName": "{{cast:jeugdtheater.address.street}}",
+					"houseNumber": "{{cast:jeugdtheater.address.number}}",
+					"postcode": "{{cast:jeugdtheater.address.postcode}}",
+					"place": "{{cast:jeugdtheater.address.city}}"
+				},
+				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+			}
+		},
+		{
+			"key": "bedrijf-erfgoed",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:erfgoed.kvk}}",
+				"tradeName": "{{cast:erfgoed.name}}",
+				"legalForm": "{{cast:erfgoed.legalForm}}",
+				"address": {
+					"streetName": "{{cast:erfgoed.address.street}}",
+					"houseNumber": "{{cast:erfgoed.address.number}}",
+					"postcode": "{{cast:erfgoed.address.postcode}}",
+					"place": "{{cast:erfgoed.address.city}}"
+				},
+				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
 			}
 		},
 		{
@@ -958,6 +1296,264 @@
 			}
 		},
 		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v1",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 1,
+				"isDraft": false,
+				"versionDate": "{{date:-460}}",
+				"validFrom": "{{date:-460}}",
+				"validUntil": "{{date:-280}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v2",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 2,
+				"isDraft": false,
+				"versionDate": "{{date:-279}}",
+				"validFrom": "{{date:-279}}",
+				"validUntil": "{{date:-149}}",
+				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v1.id}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v3",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 3,
+				"isDraft": false,
+				"versionDate": "{{date:-148}}",
+				"validFrom": "{{date:-148}}",
+				"validUntil": "{{date:-8}}",
+				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v2.id}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v4",
+			"register": "dossiq",
+			"schema": "caseType",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"identifier": "omgevingsvergunning-regulier",
+				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
+				"parentCaseType": "{{lookup:parent}}",
+				"version": 4,
+				"isDraft": false,
+				"versionDate": "{{date:-7}}",
+				"validFrom": "{{date:-7}}",
+				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v3.id}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28
+			}
+		},
+		{
+			"key": "documenttype-regulier-v4-aanvraagformulier",
+			"register": "dossiq",
+			"schema": "documentType",
+			"data": {
+				"name": "Aanvraagformulier",
+				"description": "Het aanvraagformulier uit het Omgevingsloket.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"confidentiality": "zaakvertrouwelijk",
+				"isRequired": true,
+				"validFrom": "{{date:-7}}"
+			}
+		},
+		{
+			"key": "documenttype-regulier-v4-bouwtekening",
+			"register": "dossiq",
+			"schema": "documentType",
+			"data": {
+				"name": "Bouwtekening",
+				"description": "Plattegronden, gevels en doorsneden van het bouwwerk.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"confidentiality": "zaakvertrouwelijk",
+				"isRequired": true,
+				"validFrom": "{{date:-7}}"
+			}
+		},
+		{
+			"key": "documenttype-regulier-v4-welstandsadvies",
+			"register": "dossiq",
+			"schema": "documentType",
+			"data": {
+				"name": "Welstandsadvies",
+				"description": "Het advies van de welstandscommissie, bij een bouwwerk in een welstandsgebied.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"confidentiality": "zaakvertrouwelijk",
+				"isRequired": false,
+				"validFrom": "{{date:-7}}"
+			}
+		},
+		{
+			"key": "documenttype-regulier-v4-besluit",
+			"register": "dossiq",
+			"schema": "documentType",
+			"data": {
+				"name": "Besluit",
+				"description": "De verleende of geweigerde omgevingsvergunning.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"confidentiality": "openbaar",
+				"isRequired": false,
+				"validFrom": "{{date:-7}}"
+			}
+		},
+		{
+			"key": "besluittype-regulier-v4-verleend",
+			"register": "dossiq",
+			"schema": "decisionType",
+			"data": {
+				"name": "Omgevingsvergunning verleend",
+				"description": "De vergunning is verleend, met voorschriften.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"isDraft": false,
+				"publicationRequired": true,
+				"documentTypes": [
+					"{{object:documenttype-regulier-v4-besluit.id}}"
+				],
+				"validFrom": "{{date:-7}}"
+			}
+		},
+		{
+			"key": "besluittype-regulier-v4-geweigerd",
+			"register": "dossiq",
+			"schema": "decisionType",
+			"data": {
+				"name": "Weigering omgevingsvergunning",
+				"description": "De vergunning is geweigerd, met de gronden en een bezwaarclausule.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"isDraft": false,
+				"publicationRequired": true,
+				"documentTypes": [
+					"{{object:documenttype-regulier-v4-besluit.id}}"
+				],
+				"validFrom": "{{date:-7}}"
+			}
+		},
+		{
+			"key": "veld-regulier-v4-bouwkosten",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"data": {
+				"name": "bouwkosten",
+				"definition": "Bouwkosten",
+				"description": "De geschatte bouwkosten in euro, zonder btw.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"propertyType": "number",
+				"minimum": 0,
+				"isRequired": true
+			}
+		},
+		{
+			"key": "veld-regulier-v4-soort-bouwwerk",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"data": {
+				"name": "soortBouwwerk",
+				"definition": "Soort bouwwerk",
+				"description": "Wat er gebouwd wordt.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"propertyType": "enum",
+				"enumValues": [
+					"Woning",
+					"Bijgebouw",
+					"Dakkapel",
+					"Bedrijfspand",
+					"Overig"
+				],
+				"isRequired": true,
+				"filterable": true
+			}
+		},
+		{
+			"key": "veld-regulier-v4-welstandsgebied",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"data": {
+				"name": "welstandsgebied",
+				"definition": "Welstandsgebied",
+				"description": "Of het bouwwerk in een gebied met welstandseisen staat.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"propertyType": "boolean",
+				"defaultValue": "false"
+			}
+		},
+		{
 			"key": "zaaktype-omgevingsvergunning-regulier",
 			"register": "dossiq",
 			"schema": "caseType",
@@ -977,6 +1573,14 @@
 				"version": 5,
 				"isDraft": true,
 				"versionDate": "{{date:-2}}",
+				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"processingDeadline": "P8W",
+				"extensionAllowed": true,
+				"extensionPeriod": "P6W",
+				"maxExtensions": 1,
+				"penaltyOnLateDecision": true,
+				"suspensionAllowed": true,
+				"maxSuspensionDays": 28,
 				"rules": [
 					{
 						"id": "welstandsadvies-bij-grote-bouwkosten",
@@ -1047,6 +1651,7 @@
 				"statusHistory"
 			],
 			"data": {
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6702,51.8183]}",
 				"title": "Kapvergunning Molenweg 4",
 				"description": "Een bewoner wil twee essen in de achtertuin aan de Molenweg laten kappen. De bomen staan te dicht bij de schuur.",
 				"caseType": "{{lookup:caseType}}",
@@ -1117,6 +1722,7 @@
 				"statusHistory"
 			],
 			"data": {
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6719,51.8131]}",
 				"caseType": "{{lookup:caseType}}",
 				"status": "{{lookup:status}}",
 				"requester": "{{object:bedrijf-buurtoost.id}}",
@@ -1130,8 +1736,8 @@
 				"confidentiality": "openbaar",
 				"title": "Subsidie buurtfeest Oosthaven",
 				"description": "Buurtvereniging Oost vraagt een bijdrage voor het buurtfeest op het Oosthavenplein in september.",
-				"assignee": "{{cast:lars.uid}}",
-				"assignedGroup": "zuiddrecht-medewerkers",
+				"assignee": "{{cast:mehmet.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
 				"startDate": "{{date:-40}}",
 				"receivedAt": "{{datetime:-40 10:30}}",
 				"currentStatusEnteredAt": "{{datetime:-3 09:00}}",
@@ -1318,7 +1924,7 @@
 				"durationSeconds": 300,
 				"identificationMethod": "identificatievragen",
 				"geidentificeerdeBurgerId": "{{cast:marja.bsn}}",
-				"kccEmployeeId": "{{cast:lars.uid}}",
+				"kccEmployeeId": "{{cast:mehmet.uid}}",
 				"case": "{{object:subsidie-buurtfeest-oosthaven.id}}",
 				"contact": "{{object:bedrijf-buurtoost.id}}",
 				"nature": "new_request",
@@ -1464,6 +2070,7 @@
 				"statusHistory"
 			],
 			"data": {
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6624,51.8139]}",
 				"title": "Parkeervergunningen binnenstad",
 				"description": "Mevrouw Bakker vraagt alle stukken over het aantal parkeervergunningen in de binnenstad en de wachtlijst, uit 2025 en 2026.",
 				"caseType": "{{lookup:caseType}}",
@@ -1605,6 +2212,7 @@
 				"statusHistory"
 			],
 			"data": {
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6688,51.8092]}",
 				"title": "Kapvergunning essen Parkweg",
 				"description": "Meneer Bakker wil drie essen aan de Parkweg laten kappen. Ze hebben essentaksterfte. De boomdeskundige heeft ernaar gekeken.",
 				"caseType": "{{lookup:caseType}}",
@@ -1636,6 +2244,57 @@
 					"parkweg",
 					"kap"
 				]
+			}
+		},
+		{
+			"key": "mailsjabloon-ontvangst-woo-v1",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				}
+			},
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"name": "Ontvangstbevestiging Woo",
+				"subject": "Uw Woo-verzoek {{zaakNummer}} is ontvangen",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben uw Woo-verzoek ontvangen. Het zaaknummer is {{zaakNummer}}.\n\nMet vriendelijke groet,\n\nTeam Woo en informatie",
+				"messageCategory": "case-update",
+				"version": 1,
+				"isActive": false,
+				"moment": "case-received",
+				"channel": "mailbox-then-email"
+			}
+		},
+		{
+			"key": "mailsjabloon-ontvangst-woo-v2",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				}
+			},
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"name": "Ontvangstbevestiging Woo",
+				"subject": "Uw Woo-verzoek {{zaakNummer}} is ontvangen",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben uw Woo-verzoek op {{startDate}} ontvangen. Het zaaknummer is {{zaakNummer}}; noem dat nummer als u ons schrijft.\n\nWij beslissen uiterlijk op {{deadline}}. Hebben wij meer tijd nodig, dan hoort u dat voor die datum.\n\nMet vriendelijke groet,\n\nTeam Woo en informatie\nGemeente Zuiddrecht",
+				"messageCategory": "case-update",
+				"version": 2,
+				"isActive": true,
+				"previousVersion": "{{object:mailsjabloon-ontvangst-woo-v1.id}}",
+				"moment": "case-received",
+				"channel": "mailbox-then-email"
 			}
 		},
 		{
@@ -1777,6 +2436,7 @@
 				"statusHistory"
 			],
 			"data": {
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6571,51.8102]}",
 				"caseType": "{{lookup:caseType}}",
 				"status": "{{lookup:status}}",
 				"requester": "{{object:persoon-sanne.id}}",
@@ -1807,6 +2467,128 @@
 					"lindelaan",
 					"afval"
 				]
+			}
+		},
+		{
+			"key": "melding-geluidsoverlast-terras-markt",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-marja.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:marja.displayName}}",
+				"intakeChannel": "website",
+				"confidentiality": "openbaar",
+				"title": "Melding geluidsoverlast terras Markt",
+				"description": "Bewoners aan de Markt melden muziek en stemmen op het terras van het café tot na middernacht, drie weekenden achter elkaar.",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-16}}",
+				"receivedAt": "{{datetime:-16 11:20}}",
+				"currentStatusEnteredAt": "{{datetime:-15 09:10}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-16 11:20}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-15 09:10}}"
+					}
+				],
+				"tags": [
+					"markt",
+					"geluid"
+				]
+			}
+		},
+		{
+			"key": "melding-stoeptegels-kerkplein",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"initiatorDisplayName": "Anoniem",
+				"intakeChannel": "website",
+				"confidentiality": "openbaar",
+				"title": "Melding losse stoeptegels Kerkplein",
+				"description": "Iemand meldt zonder naam drie losse stoeptegels voor Kerkplein 7. Een fietser is er bijna over gevallen.",
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6616,51.8151]}",
+				"assignee": "{{cast:anouk.uid}}",
+				"assignedGroup": "zuiddrecht-toezicht-en-handhaving",
+				"startDate": "{{date:0}}",
+				"receivedAt": "{{datetime:0 08:40}}",
+				"deadline": "{{date:12}}",
+				"currentStatusEnteredAt": "{{datetime:0 08:40}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:0 08:40}}"
+					}
+				],
+				"tags": [
+					"kerkplein",
+					"stoep"
+				]
+			}
+		},
+		{
+			"key": "termijn-geluidsoverlast-terras-markt",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:melding-geluidsoverlast-terras-markt.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-16 11:20}}",
+				"endDateCalculated": "{{date:-2}}",
+				"endDateCurrent": "{{date:-2}}",
+				"status": "lopend"
 			}
 		},
 		{
@@ -1912,7 +2694,7 @@
 				"severity": "ernstig",
 				"behaviour": "onverschillig",
 				"actorType": "burger",
-				"matrixVersion": 1,
+				"matrixVersion": 2,
 				"recommendedIntervention": "last_under_penaltypayment",
 				"finalIntervention": "last_under_penaltypayment",
 				"override": false,
@@ -1926,13 +2708,16 @@
 			"data": {
 				"case": "{{object:kapvergunning-molenweg.id}}",
 				"severity": "ernstig",
-				"behaviour": "goedwillend",
+				"behaviour": "onverschillig",
 				"actorType": "burger",
-				"matrixVersion": 1,
+				"matrixVersion": 2,
 				"recommendedIntervention": "last_under_penaltypayment",
-				"finalIntervention": "last_under_penaltypayment",
-				"override": false,
-				"recommendedBy": "{{cast:lars.uid}}"
+				"finalIntervention": "warning",
+				"override": true,
+				"overrideJustification": "Eerste overtreding, eigenaar werkt mee en herstelt binnen twee weken",
+				"overrideBy": "{{cast:anouk.uid}}",
+				"overrideAuthority": "manager",
+				"recommendedBy": "{{cast:jamal.uid}}"
 			}
 		},
 		{
@@ -2317,6 +3102,129 @@
 				"cumulativeAmount": 20700,
 				"status": "lopend",
 				"regime": "awb-default"
+			}
+		},
+		{
+			"key": "kapvergunning-parkstraat",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Kapvergunning Parkstraat",
+				"description": "Meneer Bakker vroeg een vergunning om de kastanje voor zijn huis aan de Parkstraat te kappen. Het besluit kwam te laat: hij stelde de gemeente in gebreke en kreeg een dwangsom.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henk.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henk.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "openbaar",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-100}}",
+				"deadline": "{{date:-80}}",
+				"receivedAt": "{{datetime:-100 09:15}}",
+				"endDate": "{{date:-23}}",
+				"currentStatusEnteredAt": "{{datetime:-23 14:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-100 09:15}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-23 14:00}}"
+					}
+				],
+				"tags": [
+					"kap",
+					"dwangsom"
+				]
+			}
+		},
+		{
+			"key": "termijn-kapvergunning-parkstraat",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:kapvergunning-parkstraat.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-100 09:15}}",
+				"endDateCalculated": "{{date:-80}}",
+				"endDateCurrent": "{{date:-80}}",
+				"status": "exceeded",
+				"voltooiDatum": "{{date:-23}}"
+			}
+		},
+		{
+			"key": "ingebrekestelling-kapvergunning-parkstraat",
+			"register": "dossiq",
+			"schema": "noticeOfDefault",
+			"data": {
+				"deadlineInstance": "{{object:termijn-kapvergunning-parkstraat.id}}",
+				"receiptDate": "{{date:-79}}",
+				"notificationChannel": "email",
+				"gevalideerd": true,
+				"validityStatus": "valid",
+				"decisionRegisteredDate": "{{date:-23}}"
+			}
+		},
+		{
+			"key": "dwangsom-kapvergunning-parkstraat",
+			"register": "dossiq",
+			"schema": "penaltyPaymentCalculation",
+			"data": {
+				"noticeOfDefault": "{{object:ingebrekestelling-kapvergunning-parkstraat.id}}",
+				"deadlineInstance": "{{object:termijn-kapvergunning-parkstraat.id}}",
+				"startDate": "{{date:-65}}",
+				"stoppedOn": "{{date:-23}}",
+				"currentDag": 42,
+				"dailyRate": 4500,
+				"cumulativeAmount": 144200,
+				"definitiveAmount": 144200,
+				"plafondCalculated": 144200,
+				"plafondBereikt": true,
+				"status": "gestopt-wegens-decision",
+				"regime": "awb-default"
+			}
+		},
+		{
+			"key": "uitbetaling-kapvergunning-parkstraat",
+			"register": "dossiq",
+			"schema": "dwangsomUitbetaling",
+			"data": {
+				"penaltyPaymentCalculation": "{{object:dwangsom-kapvergunning-parkstraat.id}}",
+				"amount": 144200,
+				"accountHolderName": "{{cast:henk.displayName}}",
+				"reference": "Dwangsom Kapvergunning Parkstraat",
+				"legalBasis": "Awb 4:17",
+				"paymentDateLatest": "{{date:-17}}",
+				"status": "in-handling"
 			}
 		},
 		{
@@ -3244,8 +4152,8 @@
 				"supplierRef": "{{object:leverancier-kindzorg.id}}",
 				"number": "CT-2023-014",
 				"subject": "Jeugdhulp ambulant 2023-2026",
-				"startDate": "2023-01-01",
-				"endDate": "2026-12-31",
+				"startDate": "{{date:-1393}}",
+				"endDate": "{{date:67}}",
 				"value": 2400000,
 				"status": "renewal-decision",
 				"renewalWarning": true
@@ -3259,8 +4167,8 @@
 				"supplierRef": "{{object:leverancier-groen-en-co.id}}",
 				"number": "CT-2024-003",
 				"subject": "Groenonderhoud oost",
-				"startDate": "2024-05-01",
-				"endDate": "2027-04-30",
+				"startDate": "{{date:-907}}",
+				"endDate": "{{date:187}}",
 				"value": 610000,
 				"status": "active",
 				"renewalWarning": false
@@ -3274,8 +4182,8 @@
 				"supplierRef": "{{object:leverancier-taxi-drechtstad.id}}",
 				"number": "CT-2022-021",
 				"subject": "Leerlingenvervoer",
-				"startDate": "2022-08-01",
-				"endDate": "2026-07-31",
+				"startDate": "{{date:-1546}}",
+				"endDate": "{{date:-86}}",
 				"value": 1850000,
 				"status": "ending",
 				"renewalWarning": false
@@ -3289,8 +4197,8 @@
 				"supplierRef": "{{object:leverancier-lumen-infra.id}}",
 				"number": "CT-2025-002",
 				"subject": "Straatverlichting onderhoud",
-				"startDate": "2025-04-01",
-				"endDate": "2027-03-31",
+				"startDate": "{{date:-572}}",
+				"endDate": "{{date:157}}",
 				"value": 340000,
 				"status": "active",
 				"renewalWarning": false
@@ -3304,8 +4212,8 @@
 				"supplierRef": "{{object:leverancier-schoon-zuid.id}}",
 				"number": "CT-2024-011",
 				"subject": "Schoonmaak stadhuis",
-				"startDate": "2024-03-01",
-				"endDate": "2027-02-28",
+				"startDate": "{{date:-968}}",
+				"endDate": "{{date:126}}",
 				"value": 290000,
 				"status": "termination-decision",
 				"renewalWarning": true
@@ -3319,8 +4227,8 @@
 				"supplierRef": "{{object:leverancier-conduction.id}}",
 				"number": "CT-2025-009",
 				"subject": "Softwarelicenties sociaal domein",
-				"startDate": "2025-01-01",
-				"endDate": "2027-12-31",
+				"startDate": "{{date:-662}}",
+				"endDate": "{{date:432}}",
 				"value": 96000,
 				"status": "active",
 				"renewalWarning": false
@@ -3454,8 +4362,8 @@
 				"supplierRef": "{{object:leverancier-rivierland-installatie.id}}",
 				"number": "CT-2024-007",
 				"subject": "Onderhoud klimaatinstallaties",
-				"startDate": "2024-01-01",
-				"endDate": "2027-12-31",
+				"startDate": "{{date:-1028}}",
+				"endDate": "{{date:432}}",
 				"value": 420000,
 				"status": "active",
 				"renewalWarning": false
@@ -3469,8 +4377,8 @@
 				"supplierRef": "{{object:leverancier-zuidwaard-catering.id}}",
 				"number": "CT-2025-004",
 				"subject": "Catering raadszaal",
-				"startDate": "2025-02-01",
-				"endDate": "2027-01-31",
+				"startDate": "{{date:-631}}",
+				"endDate": "{{date:98}}",
 				"value": 85000,
 				"status": "active",
 				"renewalWarning": true
@@ -3484,8 +4392,8 @@
 				"supplierRef": "{{object:leverancier-kade-advies.id}}",
 				"number": "CT-2023-019",
 				"subject": "Advies omgevingsvisie",
-				"startDate": "2023-09-01",
-				"endDate": "2026-08-31",
+				"startDate": "{{date:-1150}}",
+				"endDate": "{{date:-55}}",
 				"value": 135000,
 				"status": "ending",
 				"renewalWarning": false
@@ -3499,8 +4407,8 @@
 				"supplierRef": "{{object:leverancier-polderlicht.id}}",
 				"number": "CT-2025-011",
 				"subject": "Openbare verlichting buitengebied",
-				"startDate": "2025-06-01",
-				"endDate": "2028-05-31",
+				"startDate": "{{date:-511}}",
+				"endDate": "{{date:584}}",
 				"value": 510000,
 				"status": "active",
 				"renewalWarning": false
@@ -3514,8 +4422,8 @@
 				"supplierRef": "{{object:leverancier-oosthaven-drukwerk.id}}",
 				"number": "CT-2024-015",
 				"subject": "Drukwerk en verzending",
-				"startDate": "2024-04-01",
-				"endDate": "2027-03-31",
+				"startDate": "{{date:-937}}",
+				"endDate": "{{date:157}}",
 				"value": 64000,
 				"status": "active",
 				"renewalWarning": false
@@ -3529,8 +4437,8 @@
 				"supplierRef": "{{object:leverancier-waalmond-ict.id}}",
 				"number": "CT-2025-013",
 				"subject": "Werkplekbeheer",
-				"startDate": "2025-01-01",
-				"endDate": "2027-12-31",
+				"startDate": "{{date:-662}}",
+				"endDate": "{{date:432}}",
 				"value": 780000,
 				"status": "active",
 				"renewalWarning": false
@@ -3544,8 +4452,8 @@
 				"supplierRef": "{{object:leverancier-linde-facilitair.id}}",
 				"number": "CT-2024-022",
 				"subject": "Facilitaire dienstverlening stadskantoor",
-				"startDate": "2024-07-01",
-				"endDate": "2027-06-30",
+				"startDate": "{{date:-846}}",
+				"endDate": "{{date:248}}",
 				"value": 355000,
 				"status": "active",
 				"renewalWarning": false
@@ -3559,8 +4467,8 @@
 				"supplierRef": "{{object:leverancier-molenwerf-bouw.id}}",
 				"number": "CT-2025-016",
 				"subject": "Renovatie sporthal Oosthaven",
-				"startDate": "2025-03-01",
-				"endDate": "2026-12-31",
+				"startDate": "{{date:-603}}",
+				"endDate": "{{date:67}}",
 				"value": 1250000,
 				"status": "active",
 				"renewalWarning": false
@@ -3574,8 +4482,8 @@
 				"supplierRef": "{{object:leverancier-grachtzicht-juridisch.id}}",
 				"number": "CT-2023-008",
 				"subject": "Juridisch advies aanbestedingen",
-				"startDate": "2023-01-01",
-				"endDate": "2026-06-30",
+				"startDate": "{{date:-1393}}",
+				"endDate": "{{date:-117}}",
 				"value": 120000,
 				"status": "ending",
 				"renewalWarning": false
@@ -3589,8 +4497,8 @@
 				"supplierRef": "{{object:leverancier-dijkveld-beveiliging.id}}",
 				"number": "CT-2024-018",
 				"subject": "Beveiliging gemeentelijke gebouwen",
-				"startDate": "2024-05-01",
-				"endDate": "2027-04-30",
+				"startDate": "{{date:-907}}",
+				"endDate": "{{date:187}}",
 				"value": 290000,
 				"status": "active",
 				"renewalWarning": false
@@ -3604,8 +4512,8 @@
 				"supplierRef": "{{object:leverancier-haventoren-archief.id}}",
 				"number": "CT-2025-020",
 				"subject": "Digitalisering bouwarchief",
-				"startDate": "2025-09-01",
-				"endDate": "2027-08-31",
+				"startDate": "{{date:-419}}",
+				"endDate": "{{date:310}}",
 				"value": 175000,
 				"status": "active",
 				"renewalWarning": false
@@ -3619,8 +4527,8 @@
 				"supplierRef": "{{object:leverancier-zandpad-verhuizingen.id}}",
 				"number": "CT-2024-024",
 				"subject": "Verhuizing archief en werkplekken",
-				"startDate": "2024-10-01",
-				"endDate": "2026-09-30",
+				"startDate": "{{date:-754}}",
+				"endDate": "{{date:-25}}",
 				"value": 48000,
 				"status": "ending",
 				"renewalWarning": false
@@ -3634,8 +4542,8 @@
 				"supplierRef": "{{object:leverancier-rivierland-installatie.id}}",
 				"number": "CT-2025-021",
 				"subject": "Onderhoud liften",
-				"startDate": "2025-01-01",
-				"endDate": "2028-12-31",
+				"startDate": "{{date:-662}}",
+				"endDate": "{{date:798}}",
 				"value": 96000,
 				"status": "active",
 				"renewalWarning": false
@@ -3649,8 +4557,8 @@
 				"supplierRef": "{{object:leverancier-zuidwaard-catering.id}}",
 				"number": "CT-2024-026",
 				"subject": "Koffie- en theevoorziening",
-				"startDate": "2024-02-01",
-				"endDate": "2027-01-31",
+				"startDate": "{{date:-997}}",
+				"endDate": "{{date:98}}",
 				"value": 38000,
 				"status": "active",
 				"renewalWarning": true
@@ -3664,8 +4572,8 @@
 				"supplierRef": "{{object:leverancier-polderlicht.id}}",
 				"number": "CT-2025-023",
 				"subject": "Laadpalen gemeentelijk wagenpark",
-				"startDate": "2025-05-01",
-				"endDate": "2028-04-30",
+				"startDate": "{{date:-542}}",
+				"endDate": "{{date:553}}",
 				"value": 260000,
 				"status": "active",
 				"renewalWarning": false
@@ -3679,8 +4587,8 @@
 				"supplierRef": "{{object:leverancier-waalmond-ict.id}}",
 				"number": "CT-2024-029",
 				"subject": "Netwerkbeheer",
-				"startDate": "2024-01-01",
-				"endDate": "2027-12-31",
+				"startDate": "{{date:-1028}}",
+				"endDate": "{{date:432}}",
 				"value": 330000,
 				"status": "active",
 				"renewalWarning": false
@@ -3694,8 +4602,8 @@
 				"supplierRef": "{{object:leverancier-linde-facilitair.id}}",
 				"number": "CT-2025-025",
 				"subject": "Schoonmaak buitenlocaties",
-				"startDate": "2025-04-01",
-				"endDate": "2027-03-31",
+				"startDate": "{{date:-572}}",
+				"endDate": "{{date:157}}",
 				"value": 140000,
 				"status": "active",
 				"renewalWarning": false
@@ -3709,8 +4617,8 @@
 				"supplierRef": "{{object:leverancier-molenwerf-bouw.id}}",
 				"number": "CT-2023-027",
 				"subject": "Onderhoud gemeentelijk vastgoed",
-				"startDate": "2023-05-01",
-				"endDate": "2026-04-30",
+				"startDate": "{{date:-1273}}",
+				"endDate": "{{date:-178}}",
 				"value": 890000,
 				"status": "ending",
 				"renewalWarning": false
@@ -3724,8 +4632,8 @@
 				"supplierRef": "{{object:leverancier-dijkveld-beveiliging.id}}",
 				"number": "CT-2025-027",
 				"subject": "Cameratoezicht centrum",
-				"startDate": "2025-08-01",
-				"endDate": "2028-07-31",
+				"startDate": "{{date:-450}}",
+				"endDate": "{{date:645}}",
 				"value": 215000,
 				"status": "active",
 				"renewalWarning": false
@@ -3739,8 +4647,8 @@
 				"supplierRef": "{{object:leverancier-haventoren-archief.id}}",
 				"number": "CT-2024-031",
 				"subject": "Scannen en indexeren dossiers",
-				"startDate": "2024-03-01",
-				"endDate": "2027-02-28",
+				"startDate": "{{date:-968}}",
+				"endDate": "{{date:126}}",
 				"value": 72000,
 				"status": "active",
 				"renewalWarning": false
@@ -3754,8 +4662,8 @@
 				"supplierRef": "{{object:leverancier-kade-advies.id}}",
 				"number": "CT-2025-029",
 				"subject": "Advies duurzame mobiliteit",
-				"startDate": "2025-10-01",
-				"endDate": "2027-09-30",
+				"startDate": "{{date:-389}}",
+				"endDate": "{{date:340}}",
 				"value": 98000,
 				"status": "active",
 				"renewalWarning": false
@@ -3769,8 +4677,8 @@
 				"supplierRef": "{{object:leverancier-oosthaven-drukwerk.id}}",
 				"number": "CT-2023-031",
 				"subject": "Huisstijlmaterialen",
-				"startDate": "2023-07-01",
-				"endDate": "2026-06-30",
+				"startDate": "{{date:-1212}}",
+				"endDate": "{{date:-117}}",
 				"value": 26000,
 				"status": "ending",
 				"renewalWarning": false
@@ -3784,8 +4692,8 @@
 				"supplierRef": "{{object:leverancier-grachtzicht-juridisch.id}}",
 				"number": "CT-2025-031",
 				"subject": "Juridische ondersteuning bezwaarzaken",
-				"startDate": "2025-01-01",
-				"endDate": "2027-12-31",
+				"startDate": "{{date:-662}}",
+				"endDate": "{{date:432}}",
 				"value": 160000,
 				"status": "active",
 				"renewalWarning": false
@@ -3799,8 +4707,8 @@
 				"supplierRef": "{{object:leverancier-zandpad-verhuizingen.id}}",
 				"number": "CT-2025-033",
 				"subject": "Inzet verhuisteam evenementen",
-				"startDate": "2025-03-01",
-				"endDate": "2027-02-28",
+				"startDate": "{{date:-603}}",
+				"endDate": "{{date:126}}",
 				"value": 22000,
 				"status": "active",
 				"renewalWarning": false
@@ -3814,8 +4722,8 @@
 				"supplierRef": "{{object:leverancier-rivierland-installatie.id}}",
 				"number": "CT-2026-002",
 				"subject": "Onderhoud sanitaire voorzieningen",
-				"startDate": "2026-01-01",
-				"endDate": "2028-12-31",
+				"startDate": "{{date:-297}}",
+				"endDate": "{{date:798}}",
 				"value": 58000,
 				"status": "active",
 				"renewalWarning": false
@@ -3829,8 +4737,8 @@
 				"supplierRef": "{{object:leverancier-polderlicht.id}}",
 				"number": "CT-2026-004",
 				"subject": "Verlichting sportvelden",
-				"startDate": "2026-02-01",
-				"endDate": "2029-01-31",
+				"startDate": "{{date:-266}}",
+				"endDate": "{{date:829}}",
 				"value": 185000,
 				"status": "active",
 				"renewalWarning": false
@@ -3844,8 +4752,8 @@
 				"supplierRef": "{{object:leverancier-waalmond-ict.id}}",
 				"number": "CT-2026-006",
 				"subject": "Cloudopslag archief",
-				"startDate": "2026-03-01",
-				"endDate": "2029-02-28",
+				"startDate": "{{date:-238}}",
+				"endDate": "{{date:857}}",
 				"value": 112000,
 				"status": "active",
 				"renewalWarning": false
@@ -3859,8 +4767,8 @@
 				"supplierRef": "{{object:leverancier-linde-facilitair.id}}",
 				"number": "CT-2026-008",
 				"subject": "Postverwerking",
-				"startDate": "2026-04-01",
-				"endDate": "2028-03-31",
+				"startDate": "{{date:-207}}",
+				"endDate": "{{date:523}}",
 				"value": 67000,
 				"status": "active",
 				"renewalWarning": false
@@ -4087,7 +4995,7 @@
 			"data": {
 				"mailMessageId": "<postvak-07@zuiddrecht.example>",
 				"mailbox": "INBOX",
-				"sender": "{{cast:vandam.email}}",
+				"sender": "{{cast:lumeninfra.email}}",
 				"recipient": "zaken@zuiddrecht.example",
 				"subject": "Factuur onderhoud openbare verlichting",
 				"receivedAt": "{{datetime:0 07:58}}",
@@ -4340,6 +5248,180 @@
 				"tags": [
 					"woo",
 					"verlichting"
+				]
+			}
+		},
+		{
+			"key": "woo-afvalinzameling-oosthaven",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Afvalinzameling Oosthaven 2025",
+				"description": "Mevrouw Verbeek vraagt de afspraken met de inzamelaar en de klachten over de afvalinzameling in Oosthaven in 2025.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-marja.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:marja.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "intern",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"startDate": "{{date:-1}}",
+				"receivedAt": "{{datetime:-1 09:15}}",
+				"deadline": "{{date:6}}",
+				"currentStatusEnteredAt": "{{datetime:-1 09:15}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-1 09:15}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Afvalinzameling Oosthaven 2025",
+					"omschrijving": "Mevrouw Verbeek vraagt de afspraken met de inzamelaar en de klachten over de afvalinzameling in Oosthaven in 2025.",
+					"periodeVan": "{{date:-365}}",
+					"periodeTot": "{{date:-1}}",
+					"origin": "portal"
+				},
+				"tags": [
+					"woo",
+					"afval"
+				]
+			}
+		},
+		{
+			"key": "woo-dakkapellen-beukenlaan",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Vergunningen dakkapellen Beukenlaan",
+				"description": "Meneer Visser vraagt de verleende vergunningen en de welstandsadviezen voor de dakkapellen aan de Beukenlaan sinds 2020.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henkvisser.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henkvisser.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "intern",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"startDate": "{{date:-2}}",
+				"receivedAt": "{{datetime:-2 14:40}}",
+				"deadline": "{{date:8}}",
+				"currentStatusEnteredAt": "{{datetime:-2 14:40}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 14:40}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Vergunningen dakkapellen Beukenlaan",
+					"omschrijving": "Meneer Visser vraagt de verleende vergunningen en de welstandsadviezen voor de dakkapellen aan de Beukenlaan sinds 2020.",
+					"periodeVan": "{{date:-365}}",
+					"periodeTot": "{{date:-2}}",
+					"origin": "portal"
+				},
+				"tags": [
+					"woo",
+					"beukenlaan"
+				]
+			}
+		},
+		{
+			"key": "woo-afgewezen-parkeervergunningen",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Afgewezen parkeervergunningen 2025",
+				"description": "Mevrouw Bakker vraagt hoeveel parkeervergunningen in 2025 zijn afgewezen, met de redenen en de beleidsregels.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-linda.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:linda.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "intern",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"startDate": "{{date:-2}}",
+				"receivedAt": "{{datetime:-2 10:05}}",
+				"deadline": "{{date:8}}",
+				"currentStatusEnteredAt": "{{datetime:-2 10:05}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 10:05}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Afgewezen parkeervergunningen 2025",
+					"omschrijving": "Mevrouw Bakker vraagt hoeveel parkeervergunningen in 2025 zijn afgewezen, met de redenen en de beleidsregels.",
+					"periodeVan": "{{date:-365}}",
+					"periodeTot": "{{date:-2}}",
+					"origin": "portal"
+				},
+				"tags": [
+					"woo",
+					"parkeren"
 				]
 			}
 		},
@@ -4747,6 +5829,1287 @@
 				"markedBy": "{{cast:pieter.uid}}",
 				"markedAt": "{{datetime:-1 15:31}}"
 			}
+		},
+		{
+			"key": "besloten-woo-camerabeelden-markt",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluit"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Woo-verzoek camerabeelden Markt",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-21}}",
+				"deadline": "{{date:7}}",
+				"endDate": "{{date:-2}}",
+				"receivedAt": "{{datetime:-21 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-2 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-21 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-15 10:30}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-9 14:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 15:20}}"
+					}
+				],
+				"tags": [
+					"woo",
+					"markt"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-woo-camerabeelden-markt",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-woo-camerabeelden-markt.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-21 09:10}}",
+				"endDateCalculated": "{{date:7}}",
+				"endDateCurrent": "{{date:7}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-2}}"
+			}
+		},
+		{
+			"key": "besloten-woo-subsidieregister-sport",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluit"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Woo-verzoek subsidieregister sportverenigingen",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-18}}",
+				"deadline": "{{date:10}}",
+				"endDate": "{{date:-5}}",
+				"receivedAt": "{{datetime:-18 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-5 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-18 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-14 10:30}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-10 14:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-5 15:20}}"
+					}
+				],
+				"tags": [
+					"woo",
+					"sport"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-woo-subsidieregister-sport",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-woo-subsidieregister-sport.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-18 09:10}}",
+				"endDateCalculated": "{{date:10}}",
+				"endDateCurrent": "{{date:10}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-5}}"
+			}
+		},
+		{
+			"key": "besloten-dakkapel-lindelaan",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluitvorming"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Dakkapel Lindelaan 12",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-20}}",
+				"deadline": "{{date:36}}",
+				"endDate": "{{date:-4}}",
+				"receivedAt": "{{datetime:-20 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-4 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-20 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-15 10:30}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-10 14:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-4 15:20}}"
+					}
+				],
+				"tags": [
+					"lindelaan",
+					"bouwen"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-dakkapel-lindelaan",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-dakkapel-lindelaan.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-20 09:10}}",
+				"endDateCalculated": "{{date:36}}",
+				"endDateCurrent": "{{date:36}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-4}}"
+			}
+		},
+		{
+			"key": "besloten-schutting-parkweg",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluitvorming"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Schutting achtertuin Parkweg 8",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-19}}",
+				"deadline": "{{date:37}}",
+				"endDate": "{{date:-6}}",
+				"receivedAt": "{{datetime:-19 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-6 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-19 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-15 10:30}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-11 14:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-6 15:20}}"
+					}
+				],
+				"tags": [
+					"parkweg",
+					"bouwen"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-schutting-parkweg",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-schutting-parkweg.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-19 09:10}}",
+				"endDateCalculated": "{{date:37}}",
+				"endDateCurrent": "{{date:37}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-6}}"
+			}
+		},
+		{
+			"key": "besloten-bezwaar-standplaats-markt",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "bezwaar",
+						"icon": "Gavel"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Beslissing op bezwaar"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Bezwaar afwijzing standplaats Markt",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-juridische-zaken",
+				"startDate": "{{date:-22}}",
+				"deadline": "{{date:20}}",
+				"endDate": "{{date:-2}}",
+				"receivedAt": "{{datetime:-22 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-2 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-22 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-16 10:30}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-9 14:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 15:20}}"
+					}
+				],
+				"tags": [
+					"markt",
+					"bezwaar"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-bezwaar-standplaats-markt",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-bezwaar-standplaats-markt.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-22 09:10}}",
+				"endDateCalculated": "{{date:20}}",
+				"endDateCurrent": "{{date:20}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-2}}"
+			}
+		},
+		{
+			"key": "besloten-lantaarn-kerkstraat",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Lantaarnpaal kapot Kerkstraat",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:daan.uid}}",
+				"assignedGroup": "zuiddrecht-kcc",
+				"startDate": "{{date:-15}}",
+				"deadline": "{{date:-1}}",
+				"endDate": "{{date:-8}}",
+				"receivedAt": "{{datetime:-15 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-8 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-15 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-12 10:30}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-8 15:20}}"
+					}
+				],
+				"tags": [
+					"kerkstraat",
+					"verlichting"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-lantaarn-kerkstraat",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-lantaarn-kerkstraat.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-15 09:10}}",
+				"endDateCalculated": "{{date:-1}}",
+				"endDateCurrent": "{{date:-1}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-8}}"
+			}
+		},
+		{
+			"key": "besloten-stoeptegels-havenstraat",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Losse stoeptegels Havenstraat",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:daan.uid}}",
+				"assignedGroup": "zuiddrecht-kcc",
+				"startDate": "{{date:-21}}",
+				"deadline": "{{date:-7}}",
+				"endDate": "{{date:-3}}",
+				"receivedAt": "{{datetime:-21 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-3 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-21 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-12 10:30}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-3 15:20}}"
+					}
+				],
+				"tags": [
+					"havenstraat",
+					"bestrating"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-stoeptegels-havenstraat",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-stoeptegels-havenstraat.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-21 09:10}}",
+				"endDateCalculated": "{{date:-7}}",
+				"endDateCurrent": "{{date:-7}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-3}}"
+			}
+		},
+		{
+			"key": "besloten-subsidie-jeugdtheater",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "subsidieaanvraag"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Beoordeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluitvorming"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Subsidie jeugdtheater De Kade",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:mehmet.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-20}}",
+				"deadline": "{{date:36}}",
+				"endDate": "{{date:-6}}",
+				"receivedAt": "{{datetime:-20 09:10}}",
+				"currentStatusEnteredAt": "{{datetime:-6 15:20}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-20 09:10}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-16 10:30}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-11 14:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-6 15:20}}"
+					}
+				],
+				"tags": [
+					"subsidie",
+					"cultuur"
+				]
+			}
+		},
+		{
+			"key": "termijn-besloten-subsidie-jeugdtheater",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:besloten-subsidie-jeugdtheater.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-20 09:10}}",
+				"endDateCalculated": "{{date:36}}",
+				"endDateCurrent": "{{date:36}}",
+				"status": "completed",
+				"voltooiDatum": "{{date:-6}}"
+			}
+		},
+		{
+			"key": "kaartlaag-luchtfoto",
+			"register": "dossiq",
+			"schema": "wmsLayer",
+			"data": {
+				"title": "Luchtfoto (PDOK)",
+				"type": "WMS",
+				"url": "https://service.pdok.nl/hwh/luchtfotorgb/wms/v1_0",
+				"layerName": "Actueel_orthoHR",
+				"format": "image/png",
+				"attribution": "Beeldmateriaal.nl, PDOK",
+				"isDefault": true,
+				"active": true
+			}
+		},
+		{
+			"key": "kaartlaag-ruimtelijke-plannen",
+			"register": "dossiq",
+			"schema": "wmsLayer",
+			"data": {
+				"title": "Omgevingsplan (WMS)",
+				"type": "WMS",
+				"url": "https://service.pdok.nl/kadaster/plu/wms/v1_0",
+				"layerName": "enkelbestemming",
+				"format": "image/png",
+				"opacity": 0.6,
+				"attribution": "Kadaster, PDOK",
+				"isDefault": true,
+				"active": true
+			}
+		},
+		{
+			"key": "woo-kosten-zwembad",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Kosten zwembad Sportpark Zuid",
+				"description": "Meneer Visser vraagt de stukken over de kosten van het nieuwe zwembad bij Sportpark Zuid: de begroting, de offertes en de besluiten van het college.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henkvisser.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henkvisser.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "intern",
+				"assignee": "{{cast:daan.uid}}",
+				"assignedGroup": "zuiddrecht-kcc",
+				"startDate": "{{date:-1}}",
+				"receivedAt": "{{datetime:-1 10:05}}",
+				"currentStatusEnteredAt": "{{datetime:-1 10:05}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-1 10:05}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Kosten zwembad Sportpark Zuid",
+					"omschrijving": "De begroting, de offertes en de collegebesluiten over het nieuwe zwembad bij Sportpark Zuid.",
+					"periodeVan": "{{date:-730}}",
+					"periodeTot": "{{date:-1}}",
+					"origin": "portal"
+				},
+				"tags": [
+					"woo"
+				]
+			}
+		},
+		{
+			"key": "handhavingsmatrix-zuiddrecht-v2",
+			"register": "dossiq",
+			"schema": "lhsMatrix",
+			"data": {
+				"name": "Handhavingsmatrix Zuiddrecht",
+				"version": 2,
+				"active": true,
+				"severityAxis": [
+					"gering",
+					"aanzienlijk",
+					"ernstig",
+					"zeer_ernstig"
+				],
+				"behaviourAxis": [
+					"goedwillend",
+					"onverschillig",
+					"calculerend",
+					"crimineel"
+				],
+				"actorTypeAxis": [
+					"burger",
+					"bedrijf",
+					"overheid",
+					"recidivist"
+				],
+				"cells": [
+					{
+						"severity": "gering",
+						"behaviour": "goedwillend",
+						"actorType": "burger",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "goedwillend",
+						"actorType": "burger",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "burger",
+						"intervention": "warning"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "burger",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "onverschillig",
+						"actorType": "burger",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "onverschillig",
+						"actorType": "burger",
+						"intervention": "warning"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "burger",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "burger",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "calculerend",
+						"actorType": "burger",
+						"intervention": "warning"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "calculerend",
+						"actorType": "burger",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "calculerend",
+						"actorType": "burger",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "calculerend",
+						"actorType": "burger",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "crimineel",
+						"actorType": "burger",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "crimineel",
+						"actorType": "burger",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "crimineel",
+						"actorType": "burger",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "crimineel",
+						"actorType": "burger",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "goedwillend",
+						"actorType": "bedrijf",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "goedwillend",
+						"actorType": "bedrijf",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "bedrijf",
+						"intervention": "warning"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "bedrijf",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "onverschillig",
+						"actorType": "bedrijf",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "onverschillig",
+						"actorType": "bedrijf",
+						"intervention": "warning"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "bedrijf",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "bedrijf",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "calculerend",
+						"actorType": "bedrijf",
+						"intervention": "warning"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "calculerend",
+						"actorType": "bedrijf",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "calculerend",
+						"actorType": "bedrijf",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "calculerend",
+						"actorType": "bedrijf",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "crimineel",
+						"actorType": "bedrijf",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "crimineel",
+						"actorType": "bedrijf",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "crimineel",
+						"actorType": "bedrijf",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "crimineel",
+						"actorType": "bedrijf",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "goedwillend",
+						"actorType": "overheid",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "goedwillend",
+						"actorType": "overheid",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "overheid",
+						"intervention": "warning"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "overheid",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "onverschillig",
+						"actorType": "overheid",
+						"intervention": "herstelactie"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "onverschillig",
+						"actorType": "overheid",
+						"intervention": "warning"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "overheid",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "overheid",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "calculerend",
+						"actorType": "overheid",
+						"intervention": "warning"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "calculerend",
+						"actorType": "overheid",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "calculerend",
+						"actorType": "overheid",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "calculerend",
+						"actorType": "overheid",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "crimineel",
+						"actorType": "overheid",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "crimineel",
+						"actorType": "overheid",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "crimineel",
+						"actorType": "overheid",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "crimineel",
+						"actorType": "overheid",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "goedwillend",
+						"actorType": "recidivist",
+						"intervention": "warning"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "goedwillend",
+						"actorType": "recidivist",
+						"intervention": "warning"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "recidivist",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "goedwillend",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "onverschillig",
+						"actorType": "recidivist",
+						"intervention": "warning"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "onverschillig",
+						"actorType": "recidivist",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "onverschillig",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "calculerend",
+						"actorType": "recidivist",
+						"intervention": "last_under_penaltypayment"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "calculerend",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "calculerend",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "calculerend",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "gering",
+						"behaviour": "crimineel",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "aanzienlijk",
+						"behaviour": "crimineel",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "ernstig",
+						"behaviour": "crimineel",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					},
+					{
+						"severity": "zeer_ernstig",
+						"behaviour": "crimineel",
+						"actorType": "recidivist",
+						"intervention": "pv_plus_bestuursdwang"
+					}
+				]
+			}
+		},
+		{
+			"key": "inspectie-checklist-asbest",
+			"register": "dossiq",
+			"schema": "inspectionChecklistTemplate",
+			"data": {
+				"name": "Asbest",
+				"version": 1,
+				"status": "draft",
+				"active": false,
+				"sections": [
+					{
+						"order": 1,
+						"name": "Asbestinventarisatie",
+						"items": [
+							{
+								"order": 1,
+								"label": "Is er een asbestinventarisatierapport?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Vraag het rapport op bij de eigenaar",
+								"id": "asbest-1"
+							},
+							{
+								"order": 2,
+								"label": "Is de sanering gemeld bij de gemeente?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "nooit",
+								"helpText": "Controleer de sloopmelding",
+								"id": "asbest-2"
+							},
+							{
+								"order": 3,
+								"label": "Is het werkgebied afgeschermd en gemarkeerd?",
+								"responseType": "yes_no_na",
+								"required": true,
+								"photoRequired": "if_no",
+								"helpText": "Let op folie, onderdruk en waarschuwingsborden",
+								"id": "asbest-3"
+							}
+						]
+					}
+				]
+			}
 		}
 	],
 	"parties": [
@@ -4941,6 +7304,33 @@
 	],
 	"notes": [
 		{
+			"key": "pieter-noteert-commissie-dagen",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{task:hoorzitting-inplannen.uuid}}",
+				"message": "Commissie kan alleen op dinsdag of woensdag.",
+				"createdAt": "{{datetime:-1 11:10}}"
+			}
+		},
+		{
+			"key": "pieter-noteert-fietspad-lindelaan",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:woo-fietspad-besluitklaar.id}}",
+				"message": "Drie documenten beoordeeld, offerte lantaarnpalen deels openbaar.",
+				"createdAt": "{{datetime:0 15:40}}"
+			}
+		},
+		{
+			"key": "pieter-noteert-hoorzitting",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{task:hoorzitting-inplannen.uuid}}",
+				"message": "Zaal en commissie vastgelegd voor 21 oktober.",
+				"createdAt": "{{datetime:0 11:15}}"
+			}
+		},
+		{
 			"key": "pieter-noteert-parkeervergunningen",
 			"data": {
 				"user": "{{cast:pieter.uid}}",
@@ -4951,6 +7341,16 @@
 		}
 	],
 	"readStates": [
+		{
+			"key": "pieter-opende-geluidsoverlast-markt",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:melding-geluidsoverlast-terras-markt.id}}",
+				"register": "dossiq",
+				"schema": "case",
+				"seenAt": "{{datetime:0 13:05}}"
+			}
+		},
 		{
 			"key": "pieter-opende-bezwaar-parkeerboete",
 			"data": {
@@ -4981,6 +7381,9 @@
 				"objectUuid": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
 				"state": "active",
 				"assignee": "{{cast:pieter.uid}}",
+				"candidateGroups": [
+					"{{cast:woo-en-informatie.gid}}"
+				],
 				"priority": "high",
 				"dueAt": "{{date:0}}",
 				"checklist": [
@@ -5203,6 +7606,304 @@
 			"set": {
 				"ncGroupId": "zuiddrecht-toezicht-en-handhaving",
 				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v1-opgevolgd",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v1",
+			"set": {
+				"supersededBy": "{{object:zaaktype-omgevingsvergunning-regulier-v2.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v2-opgevolgd",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v2",
+			"set": {
+				"supersededBy": "{{object:zaaktype-omgevingsvergunning-regulier-v3.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v3-opgevolgd",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v3",
+			"set": {
+				"supersededBy": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v4-besluiten-en-regels",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v4",
+			"set": {
+				"decisionTypes": [
+					"{{object:besluittype-regulier-v4-verleend.id}}",
+					"{{object:besluittype-regulier-v4-geweigerd.id}}"
+				],
+				"rules": [
+					{
+						"id": "constructeur-bij-hoge-bouwkosten",
+						"name": "Toets door constructeur",
+						"enabled": true,
+						"when": {
+							"event": "saved"
+						},
+						"conditions": [
+							{
+								"kind": "fieldCompare",
+								"field": "bouwkosten",
+								"op": "gt",
+								"value": 100000
+							}
+						],
+						"actions": [
+							{
+								"action": "addTask",
+								"title": "Toets door constructeur"
+							}
+						]
+					},
+					{
+						"id": "welstand-in-welstandsgebied",
+						"name": "Met welstand",
+						"enabled": true,
+						"when": {
+							"event": "saved"
+						},
+						"conditions": [
+							{
+								"kind": "fieldEquals",
+								"field": "welstandsgebied",
+								"value": true
+							}
+						],
+						"actions": [
+							{
+								"action": "chooseVariant",
+								"variant": "met-welstand"
+							},
+							{
+								"action": "requireDocument",
+								"documentType": "{{object:documenttype-regulier-v4-welstandsadvies.id}}"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"key": "woo-verzoek-v2-dubbel-met-reden",
+			"register": "dossiq",
+			"schema": "caseType",
+			"where": {
+				"identifier": "woo-verzoek",
+				"version": 2
+			},
+			"set": {
+				"duplicatePolicy": "block"
+			}
+		},
+		{
+			"key": "landelijke-handhavingsmatrix-niet-actief",
+			"register": "dossiq",
+			"schema": "lhsMatrix",
+			"where": {
+				"name": "Landelijke Handhavingsstrategie 2024",
+				"version": 1
+			},
+			"set": {
+				"active": false
+			}
+		},
+		{
+			"key": "woo-verzoek-startbare-flows",
+			"register": "dossiq",
+			"schema": "caseType",
+			"where": {
+				"identifier": "woo-verzoek",
+				"version": 2
+			},
+			"set": {
+				"startableFlows": [
+					"{{flow:flow-zienswijze-derde.uuid}}",
+					"{{flow:flow-documenten-opvragen.uuid}}",
+					"{{flow:flow-verdaging-aankondigen.uuid}}"
+				]
+			}
+		},
+		{
+			"key": "checklist-oplevering-versie-2",
+			"register": "dossiq",
+			"schema": "inspectionChecklistTemplate",
+			"where": {
+				"seedKey": "bouwtoezicht-fase-3-oplevering"
+			},
+			"set": {
+				"name": "Bouwtoezicht oplevering",
+				"version": 2
+			}
+		}
+	],
+	"flows": [
+		{
+			"key": "flow-zienswijze-derde",
+			"data": {
+				"name": "Zienswijze derde vragen",
+				"description": "Een derde wiens belang de openbaarmaking raakt krijgt de kans een zienswijze te geven (Woo artikel 4.4).",
+				"trigger": "manual",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-manual",
+						"name": "Gestart vanaf de zaak",
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "vraag",
+						"type": "dossiq.askPerson",
+						"name": "Zienswijze derde belanghebbende vragen",
+						"config": {
+							"question": "Zienswijze derde belanghebbende vragen",
+							"details": "Stuur de derde de stukken die hem raken en vraag binnen twee weken om een zienswijze.",
+							"assignee": "{{cast:woo-en-informatie.gid}}",
+							"dueInDays": "10"
+						},
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "vraag"
+					},
+					{
+						"from": "vraag",
+						"to": "end"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-documenten-opvragen",
+			"data": {
+				"name": "Documenten opvragen bij een afdeling",
+				"description": "Een afdeling levert de documenten aan die onder het verzoek vallen.",
+				"trigger": "manual",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-manual",
+						"name": "Gestart vanaf de zaak",
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "vraag",
+						"type": "dossiq.askPerson",
+						"name": "Documenten aanleveren voor het Woo-verzoek",
+						"config": {
+							"question": "Documenten aanleveren voor het Woo-verzoek",
+							"details": "Zoek de documenten over het onderwerp van het verzoek en lever ze aan in het dossier van de zaak.",
+							"assignee": "{{cast:woo-en-informatie.gid}}",
+							"dueInDays": "10"
+						},
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "vraag"
+					},
+					{
+						"from": "vraag",
+						"to": "end"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-verdaging-aankondigen",
+			"data": {
+				"name": "Verdaging aankondigen",
+				"description": "De beslistermijn wordt met ten hoogste twee weken verdaagd en de verzoeker hoort dat voor het einde van de termijn (Woo artikel 4.4).",
+				"trigger": "manual",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-manual",
+						"name": "Gestart vanaf de zaak",
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "vraag",
+						"type": "dossiq.askPerson",
+						"name": "Verdagingsbrief versturen",
+						"config": {
+							"question": "Verdagingsbrief versturen",
+							"details": "Stuur de verzoeker de verdagingsbrief met de reden en de nieuwe uiterste datum.",
+							"assignee": "{{cast:woo-en-informatie.gid}}",
+							"dueInDays": "10"
+						},
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "vraag"
+					},
+					{
+						"from": "vraag",
+						"to": "end"
+					}
+				]
 			}
 		}
 	]

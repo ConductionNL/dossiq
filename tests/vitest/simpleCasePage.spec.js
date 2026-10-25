@@ -543,8 +543,8 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		// The banner stack is titled Status, as the side card DqZaak draws.
-		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-status-declaration', 'case-banner-stack', 'case-attention', 'case-archival-panel', 'case-files', 'case-timeline-panel']
-		const added = ['case-note-card', 'case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card', 'case-document-verdicts-card', 'case-refusal-grounds-card']
+		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-status-declaration', 'case-banner-stack', 'case-attention', 'case-archival-panel', 'case-files', 'case-timeline-panel', 'case-notes-panel']
+		const added = ['case-note-card', 'case-investigation-steps', 'case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card', 'case-document-verdicts-card', 'case-refusal-grounds-card']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
@@ -765,7 +765,8 @@ describe('the header and the side column', () => {
 		const find = (config, id) => config.widgets.find((widget) => widget.id === id)
 		const tabs = find(simple, 'case-panels').content.tabs
 		// Proposals is gated on waiting proposals, not on a case type domain.
-		const gated = tabs.filter((tab) => tab.visibleWhen && tab.widgetId !== 'case-change-proposals')
+		// Investigation lists the case's own answer (investigationStepsTab.spec.js), not linked records.
+		const gated = tabs.filter((tab) => tab.visibleWhen && tab.widgetId !== 'case-change-proposals' && tab.widgetId !== 'case-investigation-steps')
 		expect(gated.map((tab) => tab.widgetId)).toEqual([
 			'case-objection-hearings',
 			'case-objection-advice',
@@ -873,7 +874,7 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 
 	it('stands the four generic side cards aside on that tab, so the chat is alone as the board draws it', () => {
 		const side = page.config.sideColumn.filter((entry) => typeof entry === 'object')
-		for (const id of ['side-requester', 'side-handling', 'side-work-instruction']) {
+		for (const id of ['side-requester', 'side-handling', 'side-linked', 'side-work-instruction']) {
 			expect(side.find((entry) => entry.id === id).notTabs).toEqual(['ai-oversight'])
 		}
 		expect(page.configPatch.widgets['case-tile-deadline'].notTabs).toEqual(['ai-oversight'])

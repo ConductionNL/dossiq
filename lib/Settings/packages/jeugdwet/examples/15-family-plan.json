@@ -1,0 +1,18 @@
+{
+  "schema": {
+    "app": "dossiq",
+    "register": "dossiq",
+    "slug": "gezinsplan"
+  },
+  "rows": [
+    {
+      "id": "fc4316d9-a068-5466-9ebc-04fa4ee81693",
+      "caseId": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+      "preparedBy": "fatma.kaya",
+      "preparedDate": "{{date:-6}}",
+      "status": "draft",
+      "goals": [],
+      "reviewDate": "{{date:50}}"
+    }
+  ]
+}

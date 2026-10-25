@@ -128,6 +128,7 @@ import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.v
 import FileDocumentPlusOutline from 'vue-material-design-icons/FileDocumentPlusOutline.vue'
 import FileEditOutline from 'vue-material-design-icons/FileEditOutline.vue'
 import FileEyeOutline from 'vue-material-design-icons/FileEyeOutline.vue'
+import FilePdfBox from 'vue-material-design-icons/FilePdfBox.vue'
 import FileQuestionOutline from 'vue-material-design-icons/FileQuestionOutline.vue'
 import FileSign from 'vue-material-design-icons/FileSign.vue'
 import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
@@ -182,6 +183,7 @@ import PaperclipCheck from 'vue-material-design-icons/PaperclipCheck.vue'
 import PauseCircleOutline from 'vue-material-design-icons/PauseCircleOutline.vue'
 import Pencil from 'vue-material-design-icons/Pencil.vue'
 import PercentOutline from 'vue-material-design-icons/PercentOutline.vue'
+import Phone from 'vue-material-design-icons/Phone.vue'
 import PhoneForward from 'vue-material-design-icons/PhoneForward.vue'
 import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
 import PhoneLogOutline from 'vue-material-design-icons/PhoneLogOutline.vue'
@@ -356,6 +358,7 @@ export default {
 	FileDocumentPlusOutline,
 	FileEditOutline,
 	FileEyeOutline,
+	FilePdfBox,
 	FileQuestionOutline,
 	FileSign,
 	FileTreeOutline,
@@ -412,6 +415,7 @@ export default {
 	PauseCircleOutline,
 	Pencil,
 	PercentOutline,
+	Phone,
 	PhoneForward,
 	PhoneInTalk,
 	PhoneLogOutline,

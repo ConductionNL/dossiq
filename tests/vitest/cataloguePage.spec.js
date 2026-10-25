@@ -34,8 +34,8 @@ describe('the Object types page', () => {
 			url: '/apps/dossiq/api/catalogue/object-types',
 			responsePath: 'results',
 		})
-		expect(objectTypes.content.columns.map((column) => column.key)).toEqual(['title', 'properties', 'views', 'cases'])
-		expect(objectTypes.content.columns.find((column) => column.key === 'cases')).toMatchObject({ label: 'Used in', formatter: 'caseCount' })
+		expect(objectTypes.content.columns.map((column) => column.key)).toEqual(['title', 'properties', 'views', 'caseTypes'])
+		expect(objectTypes.content.columns.find((column) => column.key === 'caseTypes')).toMatchObject({ label: 'Used in', formatter: 'caseTypeCount' })
 		expect(objectTypes.content.emptyText).toBe('Object types appear here once cases link objects.')
 	})
 

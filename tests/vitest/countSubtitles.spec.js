@@ -38,18 +38,19 @@ function widgets(node, id) {
 }
 
 describe('the count subtitles', () => {
-	it('the latest contact moments say their total under the title, on contacts and organisations', () => {
+	it('the latest contact moments say their total at the right of the title, on contacts and organisations', () => {
 		const lists = widgets(full, 'contact-latest-moments')
 		expect(lists).toHaveLength(2)
 		for (const list of lists) {
-			expect(nl[list.content.headerSubtitle]).toBe('{total} in totaal')
-			expect(list.content.headerNote).toBeUndefined()
+			expect(nl[list.content.headerNote]).toBe('{total} in totaal')
+			expect(list.content.headerSubtitle).toBeUndefined()
 		}
 	})
 
-	it('the case\'s contact moments say how many are recorded', () => {
+	it('the case\'s contact moments say how many are recorded, beside the title as the board draws it', () => {
 		const [list] = widgets(simple, 'case-contact-moments-card')
-		expect(nl[list.content.headerSubtitle]).toBe('{total} vastgelegd')
+		expect(nl[list.content.headerNote]).toBe('{total} vastgelegd')
+		expect(list.content.headerSubtitle).toBeUndefined()
 	})
 
 	it('the set-up steps say how many are done', () => {

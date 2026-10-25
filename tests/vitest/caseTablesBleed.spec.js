@@ -21,6 +21,11 @@ describe('the case tab tables', () => {
 		expect(card(id).content.tableBleed).toBe(true)
 	})
 
+	it.each(['case-sub-cases-card', 'case-objects-card'])('%s sorts and filters from its column heads, as DqZaakGerelateerd draws them', (id) => {
+		expect(card(id).content.sortable).toBe(true)
+		expect(card(id).content.filterable).toBe(true)
+	})
+
 	it('keeps the assistant\'s table inside the card', () => {
 		expect(card('case-ai-activity').content.tableBleed).toBeUndefined()
 	})

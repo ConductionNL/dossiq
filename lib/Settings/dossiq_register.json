@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.69"
+        "version": "0.20.70"
     },
     "x-openregister": {
         "type": "application",
@@ -13335,82 +13335,6 @@
                 "description": "Melding is afgehandeld",
                 "archivalAction": "vernietigen",
                 "archivalPeriod": "P1Y"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "adviesAanvraag",
-                    "slug": "advies-welstand-2026-0042"
-                },
-                "case": "@ref:case:case-bp-dormer-lindenlaan",
-                "advisor": "welstandscommissie",
-                "type": "intern",
-                "subject": "Welstandstoets gevelwijziging Keizersgracht 123",
-                "deadline": "2026-04-30",
-                "status": "requested",
-                "requestedAt": "2026-04-16T09:00:00+02:00",
-                "questions": "Voldoet de voorgestelde gevelwijziging aan het welstandsbeleid voor de historische binnenstad?"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "adviesAanvraag",
-                    "slug": "advies-veiligheidsregio-2026-0038"
-                },
-                "case": "@ref:case:case-grant-festival-oranjewijk",
-                "advisor": "Veiligheidsregio Amsterdam-Amstelland",
-                "type": "extern",
-                "subject": "Veiligheidsadvies evenement Museumplein 500+ bezoekers",
-                "deadline": "2026-04-25",
-                "status": "requested",
-                "requestedAt": "2026-04-10T14:30:00+02:00",
-                "questions": "Is de nooduitgang-capaciteit voldoende voor 500 bezoekers? Zijn er aanvullende EHBO-posten vereist?"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "adviesAanvraag",
-                    "slug": "advies-rud-2026-0031"
-                },
-                "case": "@ref:case:case-complaint-noise-marktplein",
-                "advisor": "Regionale Uitvoeringsdienst Noord-Holland",
-                "type": "extern",
-                "subject": "Milieukundig advies lozing grondwater bouwproject",
-                "deadline": "2026-03-28",
-                "status": "expired",
-                "requestedAt": "2026-03-07T10:00:00+01:00",
-                "questions": "Is lozing van het opgepompte grondwater toelaatbaar gezien de nabijgelegen watergang?"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "adviesAanvraag",
-                    "slug": "advies-juridisch-2026-0055"
-                },
-                "case": "@ref:case:case-complaint-slow-permit",
-                "advisor": "juridische-dienst",
-                "type": "intern",
-                "subject": "Juridische toets ontvankelijkheid bezwaarschrift",
-                "deadline": "2026-05-02",
-                "status": "received",
-                "requestedAt": "2026-04-11T08:45:00+02:00",
-                "receivedAt": "2026-04-15T16:20:00+02:00",
-                "questions": "Is het bezwaar tijdig ingediend en is de bezwaarmaker ontvankelijk?"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "adviesAanvraag",
-                    "slug": "advies-brandweer-2026-0047"
-                },
-                "case": "@ref:case:case-bp-extension-2025",
-                "advisor": "Brandweer Amsterdam-Amstelland",
-                "type": "extern",
-                "subject": "Brandveiligheidsadvies transformatie kantoorpand naar woningen",
-                "deadline": "2026-05-14",
-                "status": "requested",
-                "requestedAt": "2026-04-14T11:00:00+02:00",
-                "questions": "Voldoet het vluchtrouteplan aan de eisen uit het Bouwbesluit 2012, art. 2.113 e.v.?"
             },
             {
                 "@self": {

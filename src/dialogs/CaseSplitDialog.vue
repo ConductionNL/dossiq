@@ -36,7 +36,7 @@
 				{{
 					t(
 						'dossiq',
-						'What you tick moves to the new case. This case keeps a reference to it, so the file still reads as a whole.',
+						'What you tick moves to the new case.',
 					)
 				}}
 			</p>

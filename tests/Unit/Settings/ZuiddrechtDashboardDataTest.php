@@ -103,6 +103,22 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 	}//end testPieterHasACaseWhoseTermEndsToday()
 
 	/**
+	 * Close out your day lists Melding geluidsoverlast terras Markt, opened
+	 * today and still without a note, two days past its term.
+	 *
+	 * @return void
+	 */
+	public function testPieterHasACaseTwoDaysLate(): void {
+		$case = $this->objectsOf(schema: 'case')['melding-geluidsoverlast-terras-markt']['data'];
+		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $case['assignee']);
+
+		$term = $this->objectsOf(schema: 'deadlineInstance')['termijn-geluidsoverlast-terras-markt']['data'];
+		$this->assertSame(expected: '{{object:melding-geluidsoverlast-terras-markt.id}}', actual: $term['case']);
+		$this->assertSame(expected: 'lopend', actual: $term['status']);
+		$this->assertSame(expected: -2, actual: $this->dayOf(token: $term['endDateCurrent']));
+	}//end testPieterHasACaseTwoDaysLate()
+
+	/**
 	 * Pieter covers for Esra Demir this week, for all her work, so "Inclusief
 	 * werk waarvoor u waarneemt" adds her open cases.
 	 *
@@ -166,9 +182,9 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 		$this->assertSame(expected: $ids, actual: array_values(array_unique($ids)));
 	}//end testTheInboxHoldsSeventeenUnroutedMessages()
 	/**
-	 * Close out your day has Pieter's day to show: he opened two of his cases
-	 * this morning and wrote a note on a third this afternoon, all on the
-	 * install day.
+	 * Close out your day has Pieter's day to show: he opened three of his
+	 * cases today and wrote notes on two others and on his hearing task, all
+	 * on the install day.
 	 *
 	 * @return void
 	 *
@@ -187,19 +203,52 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 		$noted = [];
 		foreach (($set['notes'] ?? []) as $row) {
 			$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $row['data']['user'], message: $row['key']);
-			$this->assertMatchesRegularExpression(pattern: '/^\{\{datetime:0 \d\d:\d\d\}\}$/', string: $row['data']['createdAt'], message: $row['key']);
+			// Only a note of the install day is part of Pieter's day.
+			if (preg_match(pattern: '/^\{\{datetime:0 \d\d:\d\d\}\}$/', subject: $row['data']['createdAt']) !== 1) {
+				continue;
+			}
+
 			$this->assertNotSame(expected: '', actual: trim($row['data']['message']), message: $row['key']);
 			$noted[] = $row['data']['objectUuid'];
 		}
 
 		$this->assertSame(
-			expected: ['{{object:bezwaar-parkeerboete-havenstraat.id}}', '{{object:kapvergunning-essen-parkweg.id}}'],
+			expected: [
+				'{{object:melding-geluidsoverlast-terras-markt.id}}',
+				'{{object:bezwaar-parkeerboete-havenstraat.id}}',
+				'{{object:kapvergunning-essen-parkweg.id}}',
+			],
 			actual: $opened
 		);
-		$this->assertSame(expected: ['{{object:woo-parkeervergunningen-binnenstad.id}}'], actual: $noted);
-		foreach ([...$opened, ...$noted] as $reference) {
+		$this->assertSame(
+			expected: [
+				'{{object:woo-fietspad-besluitklaar.id}}',
+				'{{task:hoorzitting-inplannen.uuid}}',
+				'{{object:woo-parkeervergunningen-binnenstad.id}}',
+			],
+			actual: $noted
+		);
+		$tasks = array_column($set['tasks'], null, 'key');
+		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $tasks['hoorzitting-inplannen']['data']['assignee']);
+		foreach ([...$opened, $noted[0], $noted[2]] as $reference) {
 			$key = (string)preg_replace(pattern: '/^\{\{object:([a-z0-9-]+)\.id\}\}$/', replacement: '$1', subject: $reference);
 			$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $cases[$key]['data']['assignee'], message: $key);
 		}
 	}//end testPieterHasWorkedToday()
+
+	/**
+	 * DqTaak: the hearing task is offered to Woo en informatie and carries
+	 * Pieter's note of the day before about the committee's days.
+	 *
+	 * @return void
+	 */
+	public function testTheHearingTaskHasItsTeamAndNote(): void {
+		$set  = $this->set();
+		$task = array_column($set['tasks'], null, 'key')['hoorzitting-inplannen']['data'];
+		$this->assertSame(expected: ['{{cast:woo-en-informatie.gid}}'], actual: $task['candidateGroups']);
+
+		$note = array_column($set['notes'], null, 'key')['pieter-noteert-commissie-dagen']['data'];
+		$this->assertSame(expected: '{{task:hoorzitting-inplannen.uuid}}', actual: $note['objectUuid']);
+		$this->assertSame(expected: '{{datetime:-1 11:10}}', actual: $note['createdAt']);
+	}//end testTheHearingTaskHasItsTeamAndNote()
 }//end class

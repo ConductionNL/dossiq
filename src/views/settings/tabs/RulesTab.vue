@@ -25,7 +25,7 @@
 			{{ error }}
 		</p>
 
-		<div v-if="!loading && caseTypeId" class="rules-tab__head">
+		<div v-if="!loading && caseTypeId && !summary" class="rules-tab__head">
 			<NcButton
 				:disabled="!editable"
 				:title="editable ? '' : t('dossiq', 'A published version does not change. Make a new version to change its rules.')"
@@ -46,7 +46,7 @@
 						class="rules-tab__pill cn-status-badge"
 						:class="row.pill === 'on' ? 'cn-status-badge--success' : 'cn-status-badge--default'"
 						data-testid="case-rule-pill">{{ pillLabel(row.pill) }}</span>
-					<NcActions v-if="editable" :aria-label="t('dossiq', 'Actions for {rule}', { rule: row.title })">
+					<NcActions v-if="editable && !summary" :aria-label="t('dossiq', 'Actions for {rule}', { rule: row.title })">
 						<NcActionButton data-testid="case-rule-edit" @click="dialog = { rule: caseRules[i] }">
 							{{ t('dossiq', 'Edit') }}
 						</NcActionButton>
@@ -61,7 +61,14 @@
 			</li>
 		</ul>
 
-		<p v-if="!loading && !error && rules.length === 0 && caseRuleRows.length === 0" class="rules-tab__empty">
+		<p
+			v-if="summary && !loading && caseRuleRows.length === 0"
+			class="rules-tab__empty"
+			data-testid="case-rules-empty">
+			{{ t('dossiq', 'No rules for cases yet') }}
+		</p>
+
+		<p v-if="!summary && !loading && !error && rules.length === 0 && caseRuleRows.length === 0" class="rules-tab__empty">
 			{{
 				t(
 					'dossiq',
@@ -70,7 +77,7 @@
 			}}
 		</p>
 
-		<ul v-if="!loading && !error && rows.length > 0" class="rules-tab__rows" data-testid="rules-list">
+		<ul v-if="!summary && !loading && !error && rows.length > 0" class="rules-tab__rows" data-testid="rules-list">
 			<li v-for="row in rows" :key="row.id" class="rules-tab__row" data-testid="rules-row">
 				<span class="rules-tab__text">
 					<span class="rules-tab__title">{{ row.title }}</span>
@@ -92,7 +99,7 @@
 			@close="dialog = null"
 			@save="saveRule" />
 
-		<details v-if="rules.length > 0" class="rules-tab__trial">
+		<details v-if="!summary && rules.length > 0" class="rules-tab__trial">
 			<summary>{{ t('dossiq', 'Try a rule against a case') }}</summary>
 			<NcSelect
 				v-model="picked"
@@ -191,6 +198,16 @@ export default {
 		caseTypeId: {
 			type: String,
 			default: '',
+		},
+
+		/**
+		 * Only the case type's own rules, without menus, the Add button, the
+		 * inventory or the trial: the Overview tab's Regels card
+		 * (DqZaaktypeOverzicht).
+		 */
+		summary: {
+			type: Boolean,
+			default: false,
 		},
 	},
 
@@ -334,6 +351,9 @@ export default {
 		/**
 		 * Read the vocabulary and the inventory.
 		 *
+		 * The reads run side by side: one after the other they took about 17
+		 * seconds on :8080, longer than anyone waits for a spinner.
+		 *
 		 * The inventory is an admin read, so a handler who opened this page is
 		 * refused and told so in one sentence rather than shown an empty table
 		 * that reads as "this case checks nothing".
@@ -345,12 +365,25 @@ export default {
 		async load() {
 			this.loading = true
 			this.error = ''
-			this.kinds = kindsByName(await fetchRuleVocabulary())
-			this.properties = await fetchSchemaProperties(this.schemaSlug())
-			await this.loadCaseType()
+			if (this.summary) {
+				await this.loadCaseType()
+				this.loading = false
+				return
+			}
+			const [vocabulary, properties, rules] = await Promise.all([
+				fetchRuleVocabulary(),
+				fetchSchemaProperties(this.schemaSlug()),
+				fetchSchemaRules(this.schemaSlug(), this.caseTypeId ? { caseType: this.caseTypeId } : {}).then((list) => ({ list }), (e) => ({ e })),
+				this.loadCaseType(),
+			])
+			this.kinds = kindsByName(vocabulary)
+			this.properties = properties
 
 			try {
-				this.rules = await fetchSchemaRules(this.schemaSlug(), this.caseTypeId ? { caseType: this.caseTypeId } : {})
+				if (rules.e) {
+					throw rules.e
+				}
+				this.rules = rules.list
 			} catch (e) {
 				this.rules = []
 				this.error =
@@ -380,15 +413,18 @@ export default {
 			}
 			const store = useObjectStore()
 			const list = async (type) => (await store.fetchCollection(type, { caseType: this.caseTypeId, _limit: 200 }).catch(() => [])) || []
-			this.caseType = (await store.fetchObject('caseType', this.caseTypeId).catch(() => null)) || null
-			const blueprint = await fetchBlueprintCatalogue(this.caseTypeId)
-			this.catalogue = {
-				propertyDefinitions: blueprint ? blueprint.propertyDefinitions : await list('propertyDefinition'),
-				statusTypes: blueprint ? blueprint.statusTypes : await list('statusType'),
-				documentTypes: await list('documentType'),
-				emailTemplates: await list('emailTemplate'),
-				roleTypes: await list('roleType'),
-			}
+			const [caseType, blueprint, documentTypes, emailTemplates, roleTypes] = await Promise.all([
+				store.fetchObject('caseType', this.caseTypeId).catch(() => null),
+				fetchBlueprintCatalogue(this.caseTypeId),
+				list('documentType'),
+				list('emailTemplate'),
+				list('roleType'),
+			])
+			this.caseType = caseType || null
+			const [propertyDefinitions, statusTypes] = blueprint
+				? [blueprint.propertyDefinitions, blueprint.statusTypes]
+				: await Promise.all([list('propertyDefinition'), list('statusType')])
+			this.catalogue = { propertyDefinitions, statusTypes, documentTypes, emailTemplates, roleTypes }
 		},
 
 		/**

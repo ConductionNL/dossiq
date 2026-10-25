@@ -62,8 +62,10 @@ describe('the Files tab keeps the documents list\'s metadata', () => {
 		expect(files.facets).toEqual(['keywords'])
 	})
 
-	it('offers Generate document in the New menu, for this case', () => {
-		const entry = files.newActions.find((action) => action.id === 'generate-document')
+	it('leaves Generate document to the case header, which opens the same dialog for this case', () => {
+		expect((files.newActions ?? []).some((action) => action.id === 'generate-document')).toBe(false)
+		const header = manifest.pages.find((page) => page.id === 'CaseDetail').config.headerActions
+		const entry = header.find((action) => action.id === 'generate-document')
 		expect(entry).toMatchObject({ type: 'open-modal', target: 'BeschikkingComposerDialog', props: { caseId: '@objectId' } })
 	})
 
