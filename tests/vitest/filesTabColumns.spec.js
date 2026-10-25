@@ -26,16 +26,35 @@ function filesProps() {
 	return panels.caseWidget('case-files').props
 }
 
+/**
+ * The declared columns on an instance with the virus scanner: a column that
+ * requires files_antivirus applies (the test runs with no app enabled).
+ *
+ * @param {Array<object>} columns The declared columns.
+ * @return {Array<object>} The same columns without `requiredApp`.
+ */
+function withScanner(columns) {
+	return columns.map((column) => {
+		if (column === null || typeof column !== 'object' || column.requiredApp === undefined) {
+			return column
+		}
+		const { requiredApp, ...rest } = column
+		return rest
+	})
+}
+
 describe('the Files tab columns as the library reads them', () => {
 	it('renders the name, then the board columns, and keeps the rest in the side cards', () => {
-		const columns = normaliseFileColumns(filesProps().columns)
+		const columns = normaliseFileColumns(withScanner(filesProps().columns))
+		// Without the virus scanner the library leaves the Scan column out.
+		expect(normaliseFileColumns(filesProps().columns).map((column) => column.key)).not.toContain('scanVerdict')
 		// A column with `when` (the review verdict) is drawn only on a case type that reviews its documents.
 		const keys = columns.filter((column) => column.hidden !== true && column.when === undefined).map((column) => column.key)
 
 		expect(keys).toEqual(['name', 'scanVerdict', 'vertrouwelijkheidaanduiding'])
 		// The library keeps a `when` column only once the page resolved its condition to true.
 		expect(columns.map((column) => column.key)).not.toContain('reviewVerdict')
-		const resolved = filesProps().columns.map((column) => (column?.when !== undefined ? { ...column, when: true } : column))
+		const resolved = withScanner(filesProps().columns).map((column) => (column?.when !== undefined ? { ...column, when: true } : column))
 		expect(normaliseFileColumns(resolved).map((column) => column.key)).toContain('reviewVerdict')
 		// The documents list's Direction and Keywords start hidden, a tick away in Columns.
 		expect(columns.filter((column) => column.hidden === true).map((column) => column.key)).toEqual(['direction', 'keywords'])
@@ -63,7 +82,7 @@ describe('the Files tab columns as the library reads them', () => {
 	 */
 	function columnsFor(reviews) {
 		const token = '@context.caseType.documentReview.enabled'
-		const declared = filesProps().columns.map((column) => (column.hidden === token ? { ...column, hidden: reviews } : column))
+		const declared = withScanner(filesProps().columns).map((column) => (column.hidden === token ? { ...column, hidden: reviews } : column))
 		return normaliseFileColumns(declared)
 	}
 
