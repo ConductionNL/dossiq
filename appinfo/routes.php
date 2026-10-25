@@ -752,8 +752,8 @@ $extra = [
     ['name' => 'consultation#index',               'url' => '/api/consultations/case/{caseId}',                'verb' => 'GET'],
     ['name' => 'consultation#create',              'url' => '/api/consultations',                              'verb' => 'POST'],
     // Before {id}, so the router does not read these words as an id.
-    ['name' => 'consultation#dueSoon',             'url' => '/api/consultations/due-soon',                     'verb' => 'GET'],
-    ['name' => 'consultation#bottlenecks',         'url' => '/api/consultations/bottlenecks',                  'verb' => 'GET'],
+    ['name' => 'consultationReport#dueSoon',             'url' => '/api/consultations/due-soon',                     'verb' => 'GET'],
+    ['name' => 'consultationReport#bottlenecks',         'url' => '/api/consultations/bottlenecks',                  'verb' => 'GET'],
     ['name' => 'consultation#show',                'url' => '/api/consultations/{id}',                         'verb' => 'GET'],
     ['name' => 'consultation#delete',              'url' => '/api/consultations/{id}',                         'verb' => 'DELETE'],
     ['name' => 'consultation#updateStatus',        'url' => '/api/consultations/{id}/status',                  'verb' => 'POST'],

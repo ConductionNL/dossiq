@@ -83,11 +83,11 @@ class ConsultationAccessGuard {
 	public function readableFilter(): callable {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return static fn (array $consultation): bool => false;
+			return static fn (): bool => false;
 		}
 
 		if ($this->isServiceAccount(user: $user) === true) {
-			return static fn (array $consultation): bool => true;
+			return static fn (): bool => true;
 		}
 
 		$known = [];

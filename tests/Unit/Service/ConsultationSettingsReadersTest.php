@@ -27,9 +27,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Controller\ConsultationController;
+use OCA\Dossiq\Controller\ConsultationReportController;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph;
+use OCA\Dossiq\Service\Consultation\ConsultationReports;
 use OCA\Dossiq\Service\Consultation\ConsultationRepository;
 use OCA\Dossiq\Service\Consultation\ConsultationTerms;
 use OCA\Dossiq\Service\ConsultationService;
@@ -141,6 +142,28 @@ class ConsultationSettingsReadersTest extends TestCase {
 	}//end service()
 
 	/**
+	 * The two reports over the given store.
+	 *
+	 * @param SettingsReadersObjectStore $store  The store.
+	 * @param array<string, string>      $config The app config.
+	 *
+	 * @return ConsultationReports
+	 */
+	private function reports(SettingsReadersObjectStore $store, array $config = []): ConsultationReports {
+		$config += ['register' => 'dossiq', 'consultation_schema' => 'consultation'];
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
+		);
+
+		return new ConsultationReports(
+			repository: new ConsultationRepository($settings, $this->createMock(LoggerInterface::class)),
+			terms: new ConsultationTerms(settingsService: $settings, today: new DateTimeImmutable('2026-10-24')),
+		);
+	}//end reports()
+
+	/**
 	 * An advice request created without a deadline gets the default term.
 	 *
 	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-an-advice-request-without-a-deadline-gets-the-default-term
@@ -169,7 +192,7 @@ class ConsultationSettingsReadersTest extends TestCase {
 			['id' => 'a', 'status' => 'open', 'latestResponseDate' => '2026-10-26', 'adviceAuthority' => 'Brandweer', 'createdAt' => date('Y-m-d') . 'T09:00:00+00:00'],
 			['id' => 'b', 'status' => 'in_handling', 'latestResponseDate' => '2026-11-30', 'adviceAuthority' => 'Brandweer', 'createdAt' => date('Y-m-d') . 'T09:00:00+00:00'],
 		];
-		$service = $this->service($store);
+		$service = $this->reports($store);
 
 		$due = $service->getDueSoonConsultations();
 		self::assertSame(['a'], array_column($due['results'], 'id'));
@@ -189,11 +212,11 @@ class ConsultationSettingsReadersTest extends TestCase {
 		$routes = (string)file_get_contents(__DIR__ . '/../../../appinfo/routes.php');
 		$show = strpos($routes, "'consultation#show'");
 		foreach (['dueSoon' => '/api/consultations/due-soon', 'bottlenecks' => '/api/consultations/bottlenecks'] as $method => $url) {
-			$at = strpos($routes, "'consultation#" . $method . "'");
+			$at = strpos($routes, "'consultationReport#" . $method . "'");
 			self::assertNotFalse($at);
 			self::assertLessThan($show, $at);
 			self::assertStringContainsString($url, substr($routes, $at, 120));
-			self::assertTrue(method_exists(ConsultationController::class, $method));
+			self::assertTrue(method_exists(ConsultationReportController::class, $method));
 		}
 	}//end testTheEndpointsAreRoutedBeforeTheIdRoute()
 }//end class

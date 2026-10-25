@@ -29,9 +29,11 @@ namespace OCA\Dossiq\Tests\Unit\Service\Consultation;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Controller\ConsultationController;
+use OCA\Dossiq\Controller\ConsultationReportController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
+use OCA\Dossiq\Service\Consultation\ConsultationReports;
 use OCA\Dossiq\Service\ConsultationService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\AppFramework\Http;
@@ -171,22 +173,30 @@ class ConsultationListAccessTest extends TestCase {
 	 */
 	public function testTheControllerChecksBeforeItBuildsAnything(): void {
 		$service = $this->createMock(ConsultationService::class);
-		$service->expects($this->never())->method('getBottlenecks');
-		$service->expects($this->once())->method('getDueSoonConsultations')
-			->with($this->callback(static fn ($filter): bool => is_callable($filter) === true && $filter(self::REQUESTS[1]) === false))
-			->willReturn(['results' => [], 'warningOffsetDays' => 5]);
 		$service->expects($this->once())->method('getOverdueConsultations')
 			->with($this->callback(static fn ($filter): bool => is_callable($filter) === true && $filter(self::REQUESTS[0]) === true && $filter(self::REQUESTS[1]) === false))
 			->willReturn([]);
+		$reports = $this->createMock(ConsultationReports::class);
+		$reports->expects($this->never())->method('getBottlenecks');
+		$reports->expects($this->once())->method('getDueSoonConsultations')
+			->with($this->callback(static fn ($filter): bool => is_callable($filter) === true && $filter(self::REQUESTS[1]) === false))
+			->willReturn(['results' => [], 'warningOffsetDays' => 5]);
+		$guard = $this->guard('lars', ['case-mine' => true], [], false, 'svc-dossiq', $service);
 		$controller = new ConsultationController(
 			appName: Application::APP_ID,
 			request: $this->createMock(IRequest::class),
 			consultationService: $service,
-			accessGuard: $this->guard('lars', ['case-mine' => true], [], false, 'svc-dossiq', $service),
+			accessGuard: $guard,
+		);
+		$reportController = new ConsultationReportController(
+			appName: Application::APP_ID,
+			request: $this->createMock(IRequest::class),
+			reports: $reports,
+			accessGuard: $guard,
 		);
 
-		self::assertSame(Http::STATUS_FORBIDDEN, $controller->bottlenecks()->getStatus());
-		self::assertSame(Http::STATUS_OK, $controller->dueSoon()->getStatus());
+		self::assertSame(Http::STATUS_FORBIDDEN, $reportController->bottlenecks()->getStatus());
+		self::assertSame(Http::STATUS_OK, $reportController->dueSoon()->getStatus());
 		self::assertSame(Http::STATUS_OK, $controller->overdue()->getStatus());
 	}//end testTheControllerChecksBeforeItBuildsAnything()
 }//end class
