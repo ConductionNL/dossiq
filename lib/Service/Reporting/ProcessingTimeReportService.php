@@ -100,11 +100,12 @@ class ProcessingTimeReportService {
 		$types   = $this->prepareTypes(rows: $this->loader->loadCaseTypes());
 		$finals  = $this->finalStatusIds(rows: $this->loader->loadStatusTypes());
 
-		$typeId = $this->resolveType(types: $types, key: $caseType);
-		$scoped = [];
+		$typeId  = $this->resolveType(types: $types, key: $caseType);
+		$typeIds = $this->resolveTypes(types: $types, key: $caseType);
+		$scoped  = [];
 		foreach ($records as $row) {
 			$record = $this->prepareRecord(row: $row, types: $types, finals: $finals);
-			if ($caseType === null || $record['caseType'] === $typeId) {
+			if ($caseType === null || in_array($record['caseType'], $typeIds, true) === true) {
 				$scoped[] = $record;
 			}
 		}
@@ -305,6 +306,7 @@ class ProcessingTimeReportService {
 			$types[$typeId] = [
 				'id'         => $typeId,
 				'slug'       => (string)($row['slug'] ?? ''),
+				'keys'       => $this->typeKeys(row: $row),
 				'name'       => $name,
 				'targetDays' => $this->calculator->durationToDays(duration: ($row['processingDeadline'] ?? null)),
 			];
@@ -334,6 +336,64 @@ class ProcessingTimeReportService {
 
 		return $key;
 	}//end resolveType()
+
+	/**
+	 * Every record type a filter names: the type with that id, or every type
+	 * that answers to it as slug or identifier, so a filter by identifier
+	 * covers each version of the type (Woo-verzoek v1 and v2 share one).
+	 *
+	 * @param array<string, array<string, mixed>> $types Prepared types.
+	 * @param string|null                         $key   The filter.
+	 *
+	 * @return list<string> The type ids; the filter itself when no type answers to it.
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function resolveTypes(array $types, ?string $key): array {
+		if ($key === null) {
+			return [];
+		}
+
+		if (isset($types[$key]) === true) {
+			return [$key];
+		}
+
+		$ids = [];
+		foreach ($types as $typeId => $type) {
+			if (in_array($key, $type['keys'], true) === true) {
+				$ids[] = (string)$typeId;
+			}
+		}
+
+		if ($ids === []) {
+			return [$key];
+		}
+
+		return $ids;
+	}//end resolveTypes()
+
+	/**
+	 * The names a record type answers to besides its id: its slug, its
+	 * OpenRegister slug and its identifier.
+	 *
+	 * @param array<string, mixed> $row The stored type.
+	 *
+	 * @return list<string> The names.
+	 */
+	private function typeKeys(array $row): array {
+		$selfSlug = '';
+		if (is_array($row['@self'] ?? null) === true) {
+			$selfSlug = (string)($row['@self']['slug'] ?? '');
+		}
+
+		$keys = [
+			(string)($row['slug'] ?? ''),
+			$selfSlug,
+			(string)($row['identifier'] ?? ''),
+		];
+
+		return array_values(array_unique(array_filter($keys, static fn (string $key): bool => $key !== '')));
+	}//end typeKeys()
 
 	/**
 	 * One stored record reduced to what the calculator reads.
