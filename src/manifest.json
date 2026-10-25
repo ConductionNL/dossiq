@@ -3868,6 +3868,8 @@
 						"_dropNote": "files-dropped-on-the-list (boards DqZaakDocumenten and DqZaakDocumentenSlepen, design-system#148): `uploadButton` puts Add files beside the New menu as the primary button, `dropOverlay` draws Drop to add over the list while files are dragged onto it and announces it in a polite live region, `dropHint` puts Or drag files onto this list. under it. All three are nextcloud-vue CnFilesBrowser opt-ins (nextcloud-vue#1419) whose words, and their Dutch, come from the library: a label declared here would reach the component untranslated. The drop is never the only way in: the button stays, and the New menu keeps its upload entry. Carried since nextcloud-vue 2.77.0: the tabs widget renders this leaf bare, so the props reach CnFilesTab, which hands them to CnFilesBrowser.",
 						"props": {
 							"uploadButton": true,
+							"newMenu": false,
+							"folderButton": true,
 							"dropOverlay": true,
 							"dropHint": true,
 							"rowActions": [
@@ -3918,24 +3920,13 @@
 									"handler": "readFileAsMessage"
 								}
 							],
-							"newActions": [
+							"headerActions": [
 								{
 									"id": "request-file",
 									"label": "Request a file from a party",
 									"icon": "EmailOutline",
 									"type": "open-modal",
 									"target": "FileRequestDialog"
-								},
-								{
-									"id": "generate-document",
-									"label": "Generate document",
-									"icon": "FileDocumentPlusOutline",
-									"type": "open-modal",
-									"target": "BeschikkingComposerDialog",
-									"props": {
-										"caseId": "@objectId",
-										"open": true
-									}
 								}
 							],
 							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
@@ -3999,6 +3990,7 @@
 							"selectionLabel": "{count} documents selected",
 							"selectionLabelOne": "{count} document selected",
 							"showClearSelection": false,
+							"nameSecondary": "{type} · {size} · {modified|date}",
 							"sideCardsPlacement": "page-side",
 							"bulkActions": [
 								{
