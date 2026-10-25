@@ -146,3 +146,13 @@ describe('CaseShareOrganisationDialog mode picker', () => {
 		expect(wrapper.vm.mode).toBe('handover')
 	})
 })
+
+describe('the message field label (DqZaakSamenwerken)', () => {
+	it('names the field and writes "(optional)" beside it in the muted ink', async () => {
+		const wrapper = await mountDialog()
+		const label = wrapper.find('label[for="case-share-message"]')
+		expect(label.exists()).toBe(true)
+		expect(label.text()).toContain('Message')
+		expect(label.find('.case-share-org__optional').text()).toBe('(optional)')
+	})
+})

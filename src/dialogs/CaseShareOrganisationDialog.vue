@@ -48,10 +48,18 @@
 				:inputLabel="t('dossiq', 'What they may do')"
 				data-testid="case-share-permission" />
 
-			<NcTextField
-				v-model="message"
-				:label="t('dossiq', 'Message (optional)')"
-				data-testid="case-share-message" />
+			<div class="case-share-org__field">
+				<label class="case-share-org__label" for="case-share-message">
+					{{ t('dossiq', 'Message') }}
+					<span class="case-share-org__optional">{{ t('dossiq', '(optional)') }}</span>
+				</label>
+				<NcTextField
+					id="case-share-message"
+					v-model="message"
+					:label="t('dossiq', 'Message')"
+					:labelOutside="true"
+					data-testid="case-share-message" />
+			</div>
 
 			<template v-if="mode === 'share'">
 				<NcCheckboxRadioSwitch
@@ -353,6 +361,21 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
+}
+
+.case-share-org__field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.case-share-org__label {
+	font-weight: 600;
+}
+
+.case-share-org__optional {
+	font-weight: 400;
+	color: var(--color-text-maxcontrast);
 }
 
 .case-share-org__fields {
