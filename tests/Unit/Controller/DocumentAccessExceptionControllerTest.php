@@ -15,6 +15,7 @@ use OCA\Dossiq\Controller\DocumentAccessExceptionController;
 use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCaseIds;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\FileRestrictionMirror;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
@@ -93,7 +94,7 @@ class DocumentAccessExceptionControllerTest extends TestCase {
 		$groupManager->method('groupExists')->willReturnCallback(static fn (string $gid): bool => $gid !== 'nogroup');
 
 		$rule = new DocumentAccessExceptionRule(
-			store: $this->store,
+			caseIds: $this->createMock(DocumentCaseIds::class),
 			cases: $this->createMock(CaseAccessGuard::class),
 			groupManager: $groupManager
 		);

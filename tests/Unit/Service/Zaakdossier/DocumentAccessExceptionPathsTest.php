@@ -16,7 +16,7 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCaseIds;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
@@ -84,7 +84,7 @@ class DocumentAccessExceptionPathsTest extends TestCase {
 			static fn (IUser $user): array => ($groups[$user->getUID()] ?? [])
 		);
 
-		$store = $this->createMock(DocumentRecordStore::class);
+		$store = $this->createMock(DocumentCaseIds::class);
 		$store->method('caseIdsOf')->willReturn([self::CASE_ID]);
 		$cases = $this->createMock(CaseAccessGuard::class);
 		$cases->method('hasCaseMutationAccess')->willReturnCallback(
@@ -101,7 +101,7 @@ class DocumentAccessExceptionPathsTest extends TestCase {
 			settingsService: $settings,
 			groupManager: $groupManager,
 			logger: new NullLogger(),
-			exceptions: new DocumentAccessExceptionRule(store: $store, cases: $cases, groupManager: $groupManager),
+			exceptions: new DocumentAccessExceptionRule(caseIds: $store, cases: $cases, groupManager: $groupManager),
 		);
 	}//end setUp()
 

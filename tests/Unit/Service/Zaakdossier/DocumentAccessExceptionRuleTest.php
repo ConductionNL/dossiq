@@ -19,7 +19,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\FileDocumentLookup;
 use OCP\IGroup;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCaseIds;
 use OCP\EventDispatcher\Event;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -35,7 +35,7 @@ use RuntimeException;
  */
 class DocumentAccessExceptionRuleTest extends TestCase {
 
-	private DocumentRecordStore&MockObject $store;
+	private DocumentCaseIds&MockObject $store;
 
 	private DocumentAccessExceptionRule $rule;
 
@@ -51,7 +51,7 @@ class DocumentAccessExceptionRuleTest extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->store = $this->createMock(DocumentRecordStore::class);
+		$this->store = $this->createMock(DocumentCaseIds::class);
 		$this->store->method('caseIdsOf')->willReturn(['case-1']);
 		$cases = $this->createMock(CaseAccessGuard::class);
 		$cases->method('hasCaseMutationAccess')->willReturnCallback(
@@ -61,7 +61,7 @@ class DocumentAccessExceptionRuleTest extends TestCase {
 		$groupManager->method('getUserGroupIds')->willReturnCallback(
 			static fn (IUser $user): array => $user->getUID() === 'kees' ? ['woo-team'] : ['dossiq-medewerkers']
 		);
-		$this->rule = new DocumentAccessExceptionRule(store: $this->store, cases: $cases, groupManager: $groupManager);
+		$this->rule = new DocumentAccessExceptionRule(caseIds: $this->store, cases: $cases, groupManager: $groupManager);
 	}//end setUp()
 
 	/**
@@ -100,10 +100,10 @@ class DocumentAccessExceptionRuleTest extends TestCase {
 	}//end testAListedPersonAGroupMemberTheHandlerAndAnAdministratorAreAdmitted()
 
 	public function testAFailingCaseLookupRefuses(): void {
-		$store = $this->createMock(DocumentRecordStore::class);
+		$store = $this->createMock(DocumentCaseIds::class);
 		$store->method('caseIdsOf')->willThrowException(new RuntimeException('OpenRegister down'));
 		$rule = new DocumentAccessExceptionRule(
-			store: $store,
+			caseIds: $store,
 			cases: $this->createMock(CaseAccessGuard::class),
 			groupManager: $this->createMock(IGroupManager::class)
 		);
@@ -168,7 +168,7 @@ class DocumentAccessExceptionRuleTest extends TestCase {
 	}//end testTheCardGetsTheDisplayNamesOfTheExceptionAndNothingForOtherRows()
 
 	public function testTheListingSaysPerDocumentWhetherTheCallerMayChangeItAskingEachCaseOnce(): void {
-		$store = $this->createMock(DocumentRecordStore::class);
+		$store = $this->createMock(DocumentCaseIds::class);
 		$store->method('caseIdsOf')->willReturnCallback(
 			static fn (string $id): array => ['doc-a' => ['case-1'], 'doc-b' => ['case-1', 'case-2'], 'doc-c' => []][$id]
 		);
@@ -177,7 +177,7 @@ class DocumentAccessExceptionRuleTest extends TestCase {
 			static fn (IUser $user, string $caseId): bool => $caseId === 'case-1'
 		);
 
-		$verdicts = (new DocumentCaseWriteGuard(store: $store, uploads: $uploads))
+		$verdicts = (new DocumentCaseWriteGuard(caseIds: $store, uploads: $uploads))
 			->writableDocuments(user: $this->user('hanna'), documentIds: ['doc-a', 'doc-b', 'doc-c']);
 
 		$this->assertSame(['doc-a' => true, 'doc-b' => false, 'doc-c' => true], $verdicts);

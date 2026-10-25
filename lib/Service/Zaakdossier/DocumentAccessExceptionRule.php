@@ -62,14 +62,14 @@ class DocumentAccessExceptionRule {
 	/**
 	 * Constructor.
 	 *
-	 * @param DocumentRecordStore $store        The cases a document is on.
+	 * @param DocumentCaseIds     $caseIds      The cases a document is on, read regardless of the caller.
 	 * @param CaseAccessGuard     $cases        Who may change a case: its handler and administrators.
 	 * @param IGroupManager       $groupManager The caller's groups.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly DocumentRecordStore $store,
+		private readonly DocumentCaseIds $caseIds,
 		private readonly CaseAccessGuard $cases,
 		private readonly IGroupManager $groupManager,
 	) {
@@ -154,7 +154,7 @@ class DocumentAccessExceptionRule {
 
 		$verdict = false;
 		try {
-			foreach ($this->store->caseIdsOf(recordId: $documentId) as $caseId) {
+			foreach ($this->caseIds->caseIdsOf(recordId: $documentId) as $caseId) {
 				if ($this->cases->hasCaseMutationAccess(caseId: $caseId, user: $user) === true) {
 					$verdict = true;
 					break;

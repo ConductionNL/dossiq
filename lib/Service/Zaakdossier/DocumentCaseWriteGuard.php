@@ -111,7 +111,7 @@ class DocumentCaseWriteGuard {
 		foreach ($documentIds as $documentId) {
 			$documentId = (string)$documentId;
 			$writable = true;
-			foreach ($this->store->caseIdsOf(recordId: $documentId) as $caseId) {
+			foreach ($this->caseIds->caseIdsOf(recordId: $documentId) as $caseId) {
 				$cases[$caseId] ??= $this->uploads->hasCaseUploadAccess(user: $user, caseId: $caseId);
 				if ($cases[$caseId] === false) {
 					$writable = false;
