@@ -119,6 +119,42 @@ class DeadlineReportingServiceTest extends TestCase {
 	}//end testQuarterlyReportSummarisesTheDecidedTerms()
 
 	/**
+	 * The quarterly report counts the notices of default and the penalty
+	 * amount of each term from the accruing amounts that point at it
+	 * (DqTermijnen Kwartaalrapport: Parkstraat's € 1.442 under its case type).
+	 *
+	 * @return void
+	 */
+	public function testQuarterlyReportCountsNoticesAndPenaltiesFromAccruals(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'termijn_instance_schema' => 'deadlineInstance',
+				'case_type_schema' => 'caseType',
+				'case_schema' => 'case',
+				'accruing_amount_schema' => 'penaltyPaymentCalculation',
+				default => '',
+			},
+		);
+		$this->objects->seed(
+			'penaltyPaymentCalculation',
+			['id' => 'pp-1', 'deadlineInstance' => 'ti-q2-4', 'noticeOfDefault' => 'nd-1', 'definitiveAmount' => 144200, 'cumulativeAmount' => 144200]
+		);
+		$this->objects->seed(
+			'penaltyPaymentCalculation',
+			['id' => 'pp-2', 'deadlineInstance' => 'ti-q2-5', 'noticeOfDefault' => 'nd-2', 'cumulativeAmount' => 20700]
+		);
+
+		$report = (new DeadlineReportingService(settingsService: $settings))->generateQuarterlyReport(period: '2026-Q2');
+		$row    = $report['perType']['omgevingsvergunning-regulier'];
+
+		self::assertSame(expected: 2, actual: $row['ingebrekestellingen']);
+		self::assertSame(expected: 164900, actual: $row['dwangsomTotalCents']);
+	}//end testQuarterlyReportCountsNoticesAndPenaltiesFromAccruals()
+
+	/**
 	 * A quarter without a decided term has no summary line.
 	 *
 	 * @return void
