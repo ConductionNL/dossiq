@@ -59,6 +59,10 @@ class PersonNumberLookupTest extends TestCase {
 			 * @return array<int, array<string, mixed>>
 			 */
 			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				if (($filters['citizenServiceNumber'] ?? '') === '999990639') {
+					throw new \RuntimeException('register unreachable');
+				}
+
 				if (($filters['citizenServiceNumber'] ?? '') !== '999990627') {
 					return [];
 				}
@@ -117,4 +121,19 @@ class PersonNumberLookupTest extends TestCase {
 		$this->assertSame([], $this->recorded);
 		$this->assertTrue(PersonNumberLookup::isBsn(value: self::BSN));
 	}//end testAnInvalidNumberIsNotLookedUp()
+
+	/**
+	 * A register that cannot be read is not "nobody has this BSN": the read
+	 * failure reaches the caller and no answer is recorded.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableRegisterIsNotAnEmptyAnswer(): void {
+		$this->expectException(\RuntimeException::class);
+		try {
+			$this->lookup(allowed: true)->find(user: $this->user(), bsn: '999990639');
+		} finally {
+			$this->assertSame([], $this->recorded);
+		}
+	}//end testAnUnreadableRegisterIsNotAnEmptyAnswer()
 }//end class

@@ -149,4 +149,34 @@ class PersonReachabilityTest extends TestCase {
 		$this->reachability(rows: ['brpPerson' => [['id' => 'p-1', 'citizenServiceNumber' => '123457609']]], answer: [])->forPerson(personId: 'p-1');
 		$this->assertSame(['123457609'], $this->presence->asked);
 	}//end testPortaliqIsAskedOnlyAboutAPersonTheUserMayRead()
+
+	/**
+	 * A register that cannot be read is not "not found": the failure reaches
+	 * the controller, and portaliq is not asked.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableRegisterIsNotNotFound(): void {
+		$service = $this->reachability(rows: ['brpPerson' => [['id' => 'p-1', 'citizenServiceNumber' => '123457609']]], answer: []);
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(new class {
+			/**
+			 * @param mixed ...$arguments Ignored.
+			 *
+			 * @return never
+			 */
+			public function searchObjectsBySlug(mixed ...$arguments): never {
+				throw new \RuntimeException('register unreachable');
+			}
+		});
+		$settings->method('getConfigValue')->willReturn('dossiq');
+		$service = new PersonReachability($settings, $this->createMock(IL10N::class), new TrustedRevealRead(), $this->presence);
+
+		$this->expectException(\RuntimeException::class);
+		try {
+			$service->forPerson(personId: 'p-1');
+		} finally {
+			$this->assertSame([], $this->presence->asked);
+		}
+	}//end testAnUnreadableRegisterIsNotNotFound()
 }//end class

@@ -28,6 +28,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use Throwable;
 
 /**
  * The person's portal mailbox and newest contact, for a user who may read the person.
@@ -62,7 +63,12 @@ class PersonReachabilityController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function show(string $id): JSONResponse {
-		$answer = $this->reachability->forPerson(personId: trim($id));
+		try {
+			$answer = $this->reachability->forPerson(personId: trim($id));
+		} catch (Throwable) {
+			return new JSONResponse(['error' => 'The person could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
 		if ($answer === null) {
 			return new JSONResponse(['error' => 'Person not found'], Http::STATUS_NOT_FOUND);
 		}

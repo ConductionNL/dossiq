@@ -75,6 +75,8 @@ class PersonNumberLookup {
 	 *
 	 * @return array<int, array<string, mixed>>|null
 	 *
+	 * @throws Throwable When the register cannot be read.
+	 *
 	 * @spec openspec/changes/bsn-exact-lookup/specs/initiator-selection/spec.md#requirement-a-person-is-found-by-bsn-through-a-guarded-recorded-lookup
 	 */
 	public function find(IUser $user, string $bsn): ?array {
@@ -122,6 +124,8 @@ class PersonNumberLookup {
 	 * @param string $bsn The BSN.
 	 *
 	 * @return array<int, array<string, mixed>>
+	 *
+	 * @throws Throwable When the register cannot be read; the caller answers that, not "nobody".
 	 */
 	private function people(string $bsn): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -130,17 +134,13 @@ class PersonNumberLookup {
 			return [];
 		}
 
-		try {
-			return (array)$this->trusted->run(
-				fn (): array => $this->searchObjectsAsArrays(
-					objectService: $objectService,
-					register: $register,
-					schema: 'brpPerson',
-					filters: ['citizenServiceNumber' => $bsn, '_limit' => 5]
-				)
-			);
-		} catch (Throwable) {
-			return [];
-		}
+		return (array)$this->trusted->run(
+			fn (): array => $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: 'brpPerson',
+				filters: ['citizenServiceNumber' => $bsn, '_limit' => 5]
+			)
+		);
 	}//end people()
 }//end class

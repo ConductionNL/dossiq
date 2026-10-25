@@ -30,6 +30,7 @@ use OCP\AppFramework\Http\Attribute\UserRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
+use Throwable;
 
 /**
  * POST `{ term }`: the people with that BSN, for a caller allowed to look citizens up.
@@ -75,7 +76,12 @@ class PersonLookupController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$people = $this->lookup->find(user: $user, bsn: (string)$this->request->getParam('term', ''));
+		try {
+			$people = $this->lookup->find(user: $user, bsn: (string)$this->request->getParam('term', ''));
+		} catch (Throwable) {
+			return new JSONResponse(['message' => 'The lookup could not be completed. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
 		if ($people === null) {
 			return new JSONResponse(['message' => 'You may not look a citizen up by BSN.'], Http::STATUS_FORBIDDEN);
 		}

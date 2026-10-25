@@ -68,6 +68,8 @@ class PersonReachability {
 	 *
 	 * @return array{portal: string, lastContactAt: string, lastContactChannel: string}|null
 	 *
+	 * @throws Throwable When the register cannot be read; the caller answers that, not "not found".
+	 *
 	 * @spec openspec/changes/contact-reachability/specs/party-pages/spec.md#requirement-a-contact-says-how-the-person-can-be-reached
 	 */
 	public function forPerson(string $personId): ?array {
@@ -126,12 +128,16 @@ class PersonReachability {
 	 * @return string
 	 */
 	private function portalLine(string $bsn): string {
-		$presence = $this->presenceService();
-		if ($bsn === '' || $presence === null || method_exists($presence, 'forCitizen') === false) {
+		if ($bsn === '') {
 			return '';
 		}
 
 		try {
+			$presence = $this->presenceService();
+			if ($presence === null || method_exists($presence, 'forCitizen') === false) {
+				return '';
+			}
+
 			$answer = (array)$presence->forCitizen($bsn);
 		} catch (Throwable) {
 			return '';
@@ -150,6 +156,8 @@ class PersonReachability {
 	 *
 	 * @return object|null
 	 *
+	 * @throws Throwable When the container cannot build it.
+	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) `\OCP\Server::get()` is the public container lookup for another app's service.
 	 */
 	private function presenceService(): ?object {
@@ -161,11 +169,7 @@ class PersonReachability {
 			return null;
 		}
 
-		try {
-			return \OCP\Server::get(self::PRESENCE_CLASS);
-		} catch (Throwable) {
-			return null;
-		}
+		return \OCP\Server::get(self::PRESENCE_CLASS);
 	}//end presenceService()
 
 	/**
@@ -177,6 +181,8 @@ class PersonReachability {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
+	 * @throws Throwable When the register cannot be read.
+	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Whether the read needs the BSN is the one thing that differs.
 	 */
 	private function rows(string $schema, array $filters, bool $trusted): array {
@@ -187,14 +193,10 @@ class PersonReachability {
 		}
 
 		$read = fn (): array => $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
-		try {
-			if ($trusted === true) {
-				return (array)$this->trusted->run($read);
-			}
-
-			return $read();
-		} catch (Throwable) {
-			return [];
+		if ($trusted === true) {
+			return (array)$this->trusted->run($read);
 		}
+
+		return $read();
 	}//end rows()
 }//end class
