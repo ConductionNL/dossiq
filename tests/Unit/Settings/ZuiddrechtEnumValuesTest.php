@@ -32,8 +32,9 @@ use PHPUnit\Framework\TestCase;
 class ZuiddrechtEnumValuesTest extends TestCase {
 
 	/**
-	 * The enum of every schema property, the last register file declaring it
-	 * winning, as register.d files are applied in name order.
+	 * The enum of every schema property, as RegisterFragmentMerger builds it:
+	 * register.d files apply in name order and a list (an enum) concatenates,
+	 * so a fragment can append a value.
 	 *
 	 * @return array<string, array<string, array<int, mixed>>> Schema slug => property => allowed values.
 	 */
@@ -49,7 +50,7 @@ class ZuiddrechtEnumValuesTest extends TestCase {
 			foreach (($register['components']['schemas'] ?? []) as $slug => $schema) {
 				foreach (($schema['properties'] ?? []) as $name => $property) {
 					if (is_array($property) === true && isset($property['enum']) === true) {
-						$enums[$slug][$name] = $property['enum'];
+						$enums[$slug][$name] = array_merge(($enums[$slug][$name] ?? []), $property['enum']);
 					}
 				}
 			}
