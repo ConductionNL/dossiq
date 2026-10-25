@@ -29,6 +29,12 @@ describe('the closed stage', () => {
 		expect(config.fields.map((field) => field.field)).toContain('notifyRequester')
 	})
 
+	it('names the retention period between the nomination and the destruction date', () => {
+		const items = simple.config.primaryActionByStage.closed.props.config.facts[0].items
+		expect(items.map((item) => item.label)).toEqual(['Archive nomination', 'Retention period', 'Destruction date', 'Archive status afterwards'])
+		expect(items[1].value).toBe('{@self._retention.retentionPeriod|isoDuration}')
+	})
+
 	it('locks the read-only note, as the board draws it', () => {
 		expect(simple.config.primaryActionByStage.closed.props.config.note.icon).toBe('LockOutline')
 	})
