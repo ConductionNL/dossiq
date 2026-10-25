@@ -67,8 +67,8 @@
 								"dir": "asc"
 							},
 							"limit": 8,
-							"presentation": "rows",
-							"title": "{caseRef.title}",
+							"presentation": "cards",
+							"title": ["{location}", "{caseRef.title}"],
 							"meta": "{scheduledAt|time} · {checklistTemplateRef.name}",
 							"pill": {
 								"field": "status",
