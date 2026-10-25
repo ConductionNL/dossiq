@@ -7207,6 +7207,15 @@
 	],
 	"notes": [
 		{
+			"key": "pieter-noteert-commissie-dagen",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{task:hoorzitting-inplannen.uuid}}",
+				"message": "Commissie kan alleen op dinsdag of woensdag.",
+				"createdAt": "{{datetime:-1 11:10}}"
+			}
+		},
+		{
 			"key": "pieter-noteert-fietspad-lindelaan",
 			"data": {
 				"user": "{{cast:pieter.uid}}",
@@ -7275,6 +7284,9 @@
 				"objectUuid": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
 				"state": "active",
 				"assignee": "{{cast:pieter.uid}}",
+				"candidateGroups": [
+					"{{cast:woo-en-informatie.gid}}"
+				],
 				"priority": "high",
 				"dueAt": "{{date:0}}",
 				"checklist": [
