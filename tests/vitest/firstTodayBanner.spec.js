@@ -57,7 +57,7 @@ describe('First today and the library banner', () => {
 	it('offers the board\'s ways on: all cases past their term, the board, and the case itself last', () => {
 		// DqMijnWerk "Vandaag eerst": Alle zaken over termijn, Naar het
 		// werkbord, Termijn opschorten, Zaak openen (primary).
-		expect(card.content.actions.map((action) => action.label)).toEqual(['Open these cases', 'Go to the board', 'Suspend the term', 'Open case'])
+		expect(card.content.actions.map((action) => action.label)).toEqual(['All cases past their deadline', 'Go to the board', 'Suspend the term', 'Open case'])
 		// Suspending opens the case's lifecycle menu on that act, for the case the card names.
 		expect(card.content.actions[2]).toEqual({
 			label: 'Suspend the term',

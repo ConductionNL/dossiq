@@ -659,6 +659,9 @@ describe('the landing page', () => {
 		expect(widget('stalled-cases').content.ruleAbove).toBe(true)
 		// DqMijnWerk Verder werken too (design-system #393).
 		expect(widget('simple-continue').content.ruleAbove).toBe(true)
+		// The status pills take their status type's colour (DqMijnWerk "In behandeling" purple).
+		expect(widget('simple-continue').content.pill.colorField).toBe('status.colour')
+		expect(widget('followed-cases').content.pill.colorField).toBe('status.colour')
 		// DqMijnTeam Wachtrij van uw team too.
 		expect(widget('your-teams-queue').content.ruleAbove).toBe(true)
 		// DqMijnTeam "Oppakken" is the outlined row action (nextcloud-vue 24t1o opt-in).
