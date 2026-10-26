@@ -104,6 +104,7 @@ class ObjectListenerRegistrar {
 		(new CaseLinkListenerRegistrar())->register(context: $context);
 		(new ForfeitInvoiceListenerRegistrar())->register(context: $context);
 		(new OnboardingListenerRegistrar())->register(context: $context);
+		(new CaseActivityListenerRegistrar())->register(context: $context);
 	}//end register()
 
 	/**
