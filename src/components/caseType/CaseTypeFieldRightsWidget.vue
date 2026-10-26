@@ -243,7 +243,8 @@ export default {
 
 .case-type-field-rights__table thead th {
 	border-top: 0;
-	background: var(--color-background-hover);
+	/* The boards' near-white table head (#fafbfc), as CnDataTable's in the board look. */
+	background: var(--cn-board-table-head-bg, color-mix(in srgb, var(--color-background-hover) 40%, var(--color-main-background)));
 	color: var(--color-text-maxcontrast);
 	font-weight: 600;
 }
