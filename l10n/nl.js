@@ -11504,6 +11504,7 @@ OC.L10N.register(
         "{caseRef.title}": "{caseRef.title}",
         "{caseType}, phase {phase}": "{caseType}, fase {phase}",
         "{case}, location": "{case}, locatie",
+        "{checklistTemplateRef.sections|count:items} questions": "{checklistTemplateRef.sections|count:items} vragen",
         "{code}, {name}": "{code}, {name}",
         "{competentCourt}": "{competentCourt}",
         "{count:contracts} contracts with {count:suppliers} suppliers": "{count:contracts} contracten bij {count:suppliers} leveranciers",
