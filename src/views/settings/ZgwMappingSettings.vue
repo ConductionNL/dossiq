@@ -180,16 +180,37 @@ export default {
 	align-items: center;
 }
 
+/* The state reads as a pill and the row's buttons are 34px, as board
+   DqBeheerGeavanceerd "ZGW-API-koppeling" draws them. */
+.zgw-mapping-settings__actions :deep(.button-vue) {
+	min-height: 34px;
+	height: 34px;
+}
+
+.status-enabled,
+.status-disabled,
+.status-unconfigured {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
 .status-enabled {
+	background: var(--color-success);
 	color: var(--color-success-text);
 }
 
 .status-disabled {
+	background: var(--color-warning);
 	color: var(--color-warning-text);
 }
 
 .status-unconfigured {
-	color: var(--color-text-maxcontrast);
+	background: var(--color-background-dark);
+	color: var(--color-main-text);
 }
 
 .success-message {
