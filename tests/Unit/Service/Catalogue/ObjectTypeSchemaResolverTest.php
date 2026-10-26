@@ -68,7 +68,7 @@ class ObjectTypeSchemaResolverTest extends TestCase {
 		$openRegister = $this->openRegister();
 		$resolver     = $this->resolverOver(openRegister: $openRegister);
 
-		$expected = ['id' => '17', 'title' => 'Bomenregister', 'properties' => 2, 'views' => ['map', 'table']];
+		$expected = ['id' => '17', 'title' => 'Bomenregister', 'properties' => 2, 'views' => ['map', 'table'], 'objects' => 5];
 		$this->assertSame($expected, $resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/a'));
 		$this->assertSame($expected, $resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/b'));
 		$this->assertSame([['7', 'trees']], $openRegister->asked);
@@ -111,10 +111,16 @@ class ObjectTypeSchemaResolverTest extends TestCase {
 	 *
 	 * @return ObjectTypeSchemaResolver The resolver.
 	 */
-	private function resolverOver(object $openRegister): ObjectTypeSchemaResolver {
+	private function resolverOver(object $openRegister, ?object $objects = null): ObjectTypeSchemaResolver {
+		$objects ??= $this->objectCounter(count: 5);
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('has')->willReturn(true);
-		$container->method('get')->willReturn($openRegister);
+		$container->method('get')->willReturnCallback(
+			static fn (string $id): object => match ($id) {
+				'OCA\\OpenRegister\\Service\\ObjectService' => $objects,
+				default => $openRegister,
+			}
+		);
 
 		return new ObjectTypeSchemaResolver(container: $container, logger: $this->createMock(LoggerInterface::class));
 	}//end resolverOver()
@@ -148,7 +154,7 @@ class ObjectTypeSchemaResolverTest extends TestCase {
 					$title = 'Parkbomen';
 				}
 
-				return ['schema' => new class($title) {
+				return ['register' => (object)['id' => $registerRef], 'schema' => new class($title) {
 					/**
 					 * @param string $title The title.
 					 */
@@ -179,6 +185,87 @@ class ObjectTypeSchemaResolverTest extends TestCase {
 			}
 		};
 	}//end openRegister()
+
+	/**
+	 * The count is asked within the register and schema the URL resolved to.
+	 *
+	 * @return void
+	 */
+	public function testCountsTheObjectsOfTheSchemaWithinItsRegister(): void {
+		$objects  = $this->objectCounter(count: 4);
+		$resolver = $this->resolverOver(openRegister: $this->openRegister(), objects: $objects);
+
+		$this->assertSame(expected: 4, actual: $resolver->describe(objectUrl: '/apps/openregister/api/objects/9/trees/a')['objects']);
+		$this->assertSame(expected: ['9', 'Parkbomen'], actual: [$objects->register->id, $objects->schema->getTitle()]);
+	}//end testCountsTheObjectsOfTheSchemaWithinItsRegister()
+
+	/**
+	 * A count OpenRegister refuses leaves the number out, not zero, and the
+	 * schema is still described.
+	 *
+	 * @return void
+	 */
+	public function testAFailedCountLeavesTheNumberOut(): void {
+		$resolver = $this->resolverOver(openRegister: $this->openRegister(), objects: $this->objectCounter(count: null));
+
+		$described = $resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/a');
+		$this->assertSame(expected: ['Bomenregister', null], actual: [$described['title'], $described['objects']]);
+	}//end testAFailedCountLeavesTheNumberOut()
+
+	/**
+	 * A double of OpenRegister's ObjectService that counts the given number,
+	 * or throws when the count is null.
+	 *
+	 * @param int|null $count The count to answer.
+	 *
+	 * @return object The double; `register` and `schema` hold the context it was given.
+	 */
+	private function objectCounter(?int $count): object {
+		return new class($count) {
+			/** @var object|null */
+			public ?object $register = null;
+
+			/** @var object|null */
+			public ?object $schema = null;
+
+			/**
+			 * @param int|null $count The count.
+			 */
+			public function __construct(private ?int $count) {
+			}
+
+			/**
+			 * @param object $register The register.
+			 *
+			 * @return void
+			 */
+			public function setRegister(object $register): void {
+				$this->register = $register;
+			}
+
+			/**
+			 * @param object $schema The schema.
+			 *
+			 * @return void
+			 */
+			public function setSchema(object $schema): void {
+				$this->schema = $schema;
+			}
+
+			/**
+			 * @param array<string, mixed> $config The count config.
+			 *
+			 * @return int The count.
+			 */
+			public function count(array $config): int {
+				if ($this->count === null) {
+					throw new \RuntimeException('count refused');
+				}
+
+				return $this->count;
+			}
+		};
+	}//end objectCounter()
 
 	/**
 	 * Without OpenRegister nothing is read and every link stays empty.
