@@ -243,7 +243,7 @@ export default {
 }
 
 .prerequisites .prerequisites__mark--present {
-	background: var(--color-success);
+	background: color-mix(in srgb, var(--color-success) 15%, var(--color-main-background));
 	--cn-status-badge-ink: var(--color-success-text);
 	color: var(--cn-status-badge-ink);
 }
