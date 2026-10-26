@@ -8137,5 +8137,35 @@
 				]
 			}
 		}
+	],
+	"exportRuns": [
+		{
+			"key": "export-zaken-verlichting",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"fileName": "zaken-verlichting.xlsx",
+				"format": "xlsx",
+				"contentBase64": "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",
+				"rowCount": 2,
+				"registerName": "dossiq",
+				"schemaName": "case",
+				"producedAt": "{{datetime:-1 16:20}}",
+				"downloadCount": 1
+			}
+		},
+		{
+			"key": "export-woo-2026-q3",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"fileName": "woo-2026-q3.csv",
+				"format": "csv",
+				"content": "Zaaktype;Titel;Status;Ontvangen\nWoo-verzoek;Verlichting fietspad Lindelaan;In behandeling;3 oktober\nWoo-verzoek;Afvalinzameling Oosthaven 2025;Ontvangen;gisteren\n",
+				"rowCount": 2,
+				"registerName": "dossiq",
+				"schemaName": "case",
+				"producedAt": "{{datetime:-6 10:05}}",
+				"downloadCount": 3
+			}
+		}
 	]
 }
