@@ -4279,6 +4279,138 @@
 			}
 		},
 		{
+			"key": "jeugdwet-doc-melding-huisarts",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/jeugdwet-gezin-oosthaven/Melding huisarts.pdf",
+					"title": "Melding huisarts"
+				}
+			],
+			"data": {
+				"title": "Melding huisarts",
+				"fileName": "Melding huisarts.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "vertrouwelijk",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"creatiedatum": "{{date:-15}}",
+				"taal": "nld",
+				"sender": "Huisarts"
+			}
+		},
+		{
+			"key": "jeugdwet-zio-melding-huisarts",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+				"informatieobject": "{{object:jeugdwet-doc-melding-huisarts.id}}",
+				"registrationDate": "{{datetime:-15 10:25}}"
+			}
+		},
+		{
+			"key": "jeugdwet-doc-medisch-verslag",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/jeugdwet-gezin-oosthaven/Medisch verslag.pdf",
+					"title": "Medisch verslag"
+				}
+			],
+			"data": {
+				"title": "Medisch verslag",
+				"fileName": "Medisch verslag.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "vertrouwelijk",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"creatiedatum": "{{date:-13}}",
+				"taal": "nld",
+				"sender": "Huisarts"
+			}
+		},
+		{
+			"key": "jeugdwet-zio-medisch-verslag",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+				"informatieobject": "{{object:jeugdwet-doc-medisch-verslag.id}}",
+				"registrationDate": "{{datetime:-13 14:00}}"
+			}
+		},
+		{
+			"key": "jeugdwet-doc-toestemming",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/jeugdwet-gezin-oosthaven/Toestemmingsverklaring ouders.pdf",
+					"title": "Toestemmingsverklaring ouders"
+				}
+			],
+			"data": {
+				"title": "Toestemmingsverklaring ouders",
+				"fileName": "Toestemmingsverklaring ouders.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "vertrouwelijk",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "incoming",
+				"creatiedatum": "{{date:-15}}",
+				"taal": "nld",
+				"sender": "Beide ouders"
+			}
+		},
+		{
+			"key": "jeugdwet-zio-toestemming",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+				"informatieobject": "{{object:jeugdwet-doc-toestemming.id}}",
+				"registrationDate": "{{datetime:-15 10:40}}"
+			}
+		},
+		{
+			"key": "jeugdwet-doc-gesprek-ouders",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/jeugdwet-gezin-oosthaven/Verslag gesprek ouders.pdf",
+					"title": "Verslag gesprek ouders"
+				}
+			],
+			"data": {
+				"title": "Verslag gesprek ouders",
+				"fileName": "Verslag gesprek ouders.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "vertrouwelijk",
+				"status": "final",
+				"informatieobjecttype": "{{object:iot-woo-document.id}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-12}}",
+				"taal": "nld",
+				"sender": "{{cast:fatma.displayName}}"
+			}
+		},
+		{
+			"key": "jeugdwet-zio-gesprek-ouders",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+				"informatieobject": "{{object:jeugdwet-doc-gesprek-ouders.id}}",
+				"registrationDate": "{{datetime:-12 16:00}}"
+			}
+		},
+		{
 			"key": "parkweg-doc-aanvraag",
 			"register": "dossiq",
 			"schema": "informatieobject",
@@ -9522,6 +9654,17 @@
 	],
 	"changes": [
 		{
+			"key": "jeugdwet-zaak-behandelaar",
+			"register": "dossiq",
+			"schema": "case",
+			"where": {
+				"title": "Melding Jeugdwet gezin Oosthaven"
+			},
+			"set": {
+				"assignee": "{{cast:fatma.uid}}"
+			}
+		},
+		{
 			"key": "parkeren-henk-uitkomst",
 			"register": "dossiq",
 			"schema": "case",
@@ -10299,6 +10442,27 @@
 						"fileName": "medisch verslag"
 					}
 				}
+			}
+		}
+	],
+	"appointments": [
+		{
+			"key": "hoorzitting-bezwaar-parkeerboete",
+			"data": {
+				"object": "{{task:hoorzitting-inplannen.uuid}}",
+				"owner": "{{cast:pieter.uid}}",
+				"summary": "Hoorzitting bezwaar parkeerboete",
+				"start": "{{datetime:4 14:00}}",
+				"end": "{{datetime:4 15:00}}",
+				"location": "Stadskantoor, zaal 2.04",
+				"description": "Hoorzitting met de indiener en de bezwaarcommissie.",
+				"attendees": [
+					{
+						"name": "{{cast:fatima.displayName}}",
+						"email": "{{cast:fatima.email}}",
+						"status": "invited"
+					}
+				]
 			}
 		}
 	]

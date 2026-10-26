@@ -60,9 +60,10 @@ describe('the LHS matrix on the enforcement advice', () => {
 		const notice = matrix.content.notice
 		const dutch = (key) => nl.translations[key] || key
 		const record = { recommendedIntervention: 'last_under_penaltypayment', matrixVersion: 2, behaviour: 'onverschillig', severity: 'ernstig' }
+		const matrixRecord = { name: 'Handhavingsmatrix Zuiddrecht', version: 2 }
 		const words = {}
 		for (const [name, token] of Object.entries(notice.values)) {
-			const raw = record[token.replace('@object.', '')]
+			const raw = token.startsWith('@source.') ? matrixRecord[token.replace('@source.', '')] : record[token.replace('@object.', '')]
 			const ref = notice.labels[name]
 			const map = ref === 'values' ? matrix.content.cellSource.valueLabels : ref
 			words[name] = map && map[raw] ? dutch(map[raw]) : String(raw)
@@ -70,7 +71,7 @@ describe('the LHS matrix on the enforcement advice', () => {
 		const fill = (key) => dutch(key).replace(/\{(\w+)\}/g, (m, name) => words[name])
 		expect(notice.tone).toBe('info')
 		expect(fill(notice.lead)).toBe('Advies: last onder dwangsom')
-		expect(fill(notice.text)).toBe('Uitkomst van de beslistabel, versie 2, met gedrag 2 en gevolg C.')
+		expect(fill(notice.text)).toBe('Uitkomst van de beslistabel Handhavingsmatrix Zuiddrecht versie 2 met gedrag 2 en gevolg C.')
 	})
 
 	it('gives the row labels the board\'s 170px column (DqHandhaving)', () => {

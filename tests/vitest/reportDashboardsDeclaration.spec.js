@@ -368,6 +368,9 @@ describe('processing time table heads', () => {
 		expect(risk.limit).toBe(3)
 		expect(risk.viewAllRoute.name).toBe('Cases')
 		expect(widget('Doorlooptijd', 'processing-time-breakdown').content.pageSize).toBe(4)
+		// "Kritiek" in the breakdown is the board's amber, as in the risk table.
+		const status = widget('Doorlooptijd', 'processing-time-breakdown').content.columns.find((c) => c.key === 'status')
+		expect(status.colorMap.critical).toBe('warning')
 		const riskCols = Object.fromEntries(widget('Doorlooptijd', 'processing-time-at-risk').content.columns.map((c) => [c.key, c]))
 		for (const key of ['title', 'caseTypeName', 'remainingLabel']) {
 			expect(riskCols[key].cellClass, key).toBe('cn-cell--wrap')
