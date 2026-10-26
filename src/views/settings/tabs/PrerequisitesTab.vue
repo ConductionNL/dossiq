@@ -242,13 +242,13 @@ export default {
 	text-transform: uppercase;
 }
 
-.prerequisites__mark--present {
+.prerequisites .prerequisites__mark--present {
 	background: var(--color-success);
 	--cn-status-badge-ink: var(--color-success-text);
 	color: var(--cn-status-badge-ink);
 }
 
-.prerequisites__mark--missing {
+.prerequisites .prerequisites__mark--missing {
 	background: var(--color-error);
 	--cn-status-badge-ink: var(--color-error-text);
 	color: var(--cn-status-badge-ink);
