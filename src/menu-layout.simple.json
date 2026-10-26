@@ -6619,13 +6619,13 @@
 							"limit": 5,
 							"presentation": "rows",
 							"title": "Version {version}",
+							"_metaNote": "A draft has no running cases (cases start on a published version), so its line is only when it changed, as DqZaaktypeOverzicht draws it; a published version reads its date and its running cases. A template with an empty token empties itself, so the first alternative only fills for a published version.",
 							"meta": {
 								"parts": [
 									[
-										"{validFrom|date}",
+										"{validFrom|date} · {runningCases}",
 										"Draft, changed {versionDate|date}"
-									],
-									"{runningCases}"
+									]
 								]
 							},
 							"aggregates": {
