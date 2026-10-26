@@ -27,3 +27,11 @@ describe('the shipped configuration state', () => {
 		expect(nl['Shipped, changed here']).toBe('Door u gewijzigd')
 	})
 })
+
+describe('the background service account card', () => {
+	it('draws its "Dit account gebruiken" as a secondary button, as the board does', () => {
+		const root = fs.readFileSync(path.join(ROOT, 'src/views/settings/AdminRoot.vue'), 'utf8')
+		const at = root.indexOf('id="section-background-service-account"')
+		expect(root.slice(at, root.indexOf('/>', at))).toContain('saveVariant="secondary"')
+	})
+})
