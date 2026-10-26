@@ -103,6 +103,8 @@
             "templateNamespace": "dossiq",
             "format": "docx",
             "documentType": "Besluit",
+            "signing": { "nl": "Via LibreSign, na de paraaf", "en": "Through LibreSign, after the initials" },
+            "delivery": { "nl": "Berichtenbox van MijnOverheid", "en": "MijnOverheid message box" },
             "title": "Woo-besluit",
             "dataKey": "wooDecision",
             "fields": [
