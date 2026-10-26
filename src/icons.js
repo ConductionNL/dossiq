@@ -54,6 +54,7 @@ import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantO
 import Calculator from 'vue-material-design-icons/Calculator.vue'
 import Calendar from 'vue-material-design-icons/Calendar.vue'
 import CalendarArrowRight from 'vue-material-design-icons/CalendarArrowRight.vue'
+import CalendarBlankOutline from 'vue-material-design-icons/CalendarBlankOutline.vue'
 import CalendarClock from 'vue-material-design-icons/CalendarClock.vue'
 import CalendarClockOutline from 'vue-material-design-icons/CalendarClockOutline.vue'
 import CalendarPlus from 'vue-material-design-icons/CalendarPlus.vue'
@@ -286,6 +287,7 @@ export default {
 	Calculator,
 	Calendar,
 	CalendarArrowRight,
+	CalendarBlankOutline,
 	CalendarClock,
 	CalendarClockOutline,
 	CalendarPlus,

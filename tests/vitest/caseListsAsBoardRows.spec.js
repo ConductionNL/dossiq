@@ -39,6 +39,13 @@ describe('the case lists as board rows', () => {
 		expect(plannedBy.map((key) => nl[key])).toEqual(['gepland door {plannedBy|user}', 'gepland door {plannedByRule}'])
 	})
 
+	it('registers the calendar tile\'s icon, so the row does not draw the unknown-icon glyph (r32: a question mark)', () => {
+		const icons = fs.readFileSync(path.resolve(__dirname, '../../src/icons.js'), 'utf8')
+		const name = widget('case-planned-actions-card').content.icon
+		expect(icons).toContain(`import ${name} from 'vue-material-design-icons/${name}.vue'`)
+		expect(icons).toMatch(new RegExp(`\\n\\t${name},\\n`))
+	})
+
 	it('keeps adding a planned action, as the table offered', () => {
 		const add = widget('case-planned-actions-card').headerActions.find((action) => action.label === 'Add')
 		expect(add.action).toMatchObject({ type: 'open-form', schema: 'plannedAction', props: { case: '@objectId', state: 'planned', plannedBy: '@me' } })
