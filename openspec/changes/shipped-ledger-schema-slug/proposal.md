@@ -13,3 +13,4 @@ r31 DqBeheerGeavanceerd "Wat dossiq meelevert" read "Het register bevat er 44. G
 - A ledger row is recorded under the schema's slug: a configured schema id is mapped back to its slug (SchemaSlugMap) when stamping.
 - Reading (the overview, a row's state, adopt, refresh) looks under the slug and under the configured id, so the rows already recorded by id show without a reinstall; the next stamp of such a row rewrites it under the slug.
 - `ShippedLedgerTargets` holds the mapping and the two-way read; `StarterStore::schemaIdOf()` names a config key's schema id.
+- The state reads as the board's pill ("Ongewijzigd", "Door u gewijzigd").
