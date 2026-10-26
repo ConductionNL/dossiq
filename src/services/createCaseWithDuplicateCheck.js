@@ -30,7 +30,6 @@
 
 import { candidateWithoutBlanks, duplicateAffordances, openDuplicateWarning, useObjectStore } from '@conduction/nextcloud-vue'
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
-import { normaliseDeclaration } from '../utils/intakeRequirements.js'
 import { checkForDuplicates, fetchMatchedCases } from './duplicateCheckApi.js'
 import { fetchIntakeRequirements } from './intakeTriageApi.js'
 
@@ -61,6 +60,15 @@ export function askAboutDuplicates(state) {
 		policy: state.policy,
 		mayOverride: state.mayOverride,
 		recordUrl: '/apps/dossiq/cases/{uuid}',
+		rowMeta: [
+			t('dossiq', '{identifier} · {caseType.title} · {initiatorDisplayName} · received {receivedAt|date}'),
+			'{identifier} · {caseType.title}',
+			'{identifier}',
+		],
+		matchedText: t('dossiq', 'Found on {fields} ({percentage}%)'),
+		eyebrow: t('dossiq', 'New case · possible duplicate'),
+		reasonHint: t('dossiq', 'The case type asks for a reason. The reason is written on the new case.'),
+		footnote: t('dossiq', 'If the case type does not allow a second case, File it anyway is not offered: open the case it matches or ask a coordinator. Cancel takes you back to the form, with everything you filled in still there.'),
 		fieldLabels: {
 			requester: t('dossiq', 'Requester'),
 			title: t('dossiq', 'Subject'),
@@ -89,9 +97,10 @@ export function askAboutDuplicates(state) {
  * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
  */
 export async function duplicatePolicyFor(caseTypeId) {
-	const declaration = normaliseDeclaration(
-		await fetchIntakeRequirements(caseTypeId),
-	)
+	// fetchIntakeRequirements answers the normalised declaration already. A
+	// second normalisation reads `duplicatePolicy` (now the string 'block') as
+	// the raw `{ policy }` block and turned every block into warn.
+	const declaration = await fetchIntakeRequirements(caseTypeId)
 
 	return {
 		policy: declaration.duplicatePolicy,
