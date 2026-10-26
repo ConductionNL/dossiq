@@ -494,7 +494,7 @@
 									},
 									"actions": [
 										{
-											"label": "Open these cases",
+											"label": "All cases past their deadline",
 											"route": {
 												"name": "Cases",
 												"query": {
@@ -824,7 +824,8 @@
 										]
 									},
 									"pill": {
-										"field": "status.name"
+										"field": "status.name",
+										"colorField": "status.colour"
 									},
 									"trailing": [
 										"{@self.viewedAt|ago}"
@@ -858,7 +859,8 @@
 									"title": "{title}",
 									"meta": "{identifier}",
 									"pill": {
-										"field": "status.name"
+										"field": "status.name",
+										"colorField": "status.colour"
 									},
 									"rowRoute": "CaseDetail",
 									"emptyText": "Follow a case to keep an eye on it here"
