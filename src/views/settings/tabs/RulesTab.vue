@@ -165,6 +165,7 @@ import {
 } from '../../../services/schemaRules.js'
 import { useObjectStore } from '../../../store/modules/object.js'
 import { useSettingsStore } from '../../../store/modules/settings.js'
+import { resolveTranslatable } from '../../../utils/i18nResolver.js'
 
 export default {
 	name: 'RulesTab',
@@ -267,7 +268,8 @@ export default {
 
 		/** @return {object} The choices the rule dialog offers, as `[{ id, label }]` lists. */
 		choices() {
-			const options = (list, name = 'name') => list.map((o) => ({ id: o.id, label: o[name] || o.title || o.id }))
+			// A name or title can be a language map; the label is its text in the reader's language.
+			const options = (list, name = 'name') => list.map((o) => ({ id: o.id, label: resolveTranslatable(o[name] || o.title || o.id).text }))
 			return {
 				statuses: options(this.catalogue.statusTypes),
 				documentTypes: options(this.catalogue.documentTypes),
@@ -661,5 +663,15 @@ export default {
 
 .rules-tab__empty {
 	color: var(--color-text-maxcontrast);
+}
+</style>
+
+<style>
+/* A board card that opens on the rule rows starts 12px under its title: the
+   rows set their own padding, so no first line carries the half-leading the
+   card content takes off for text (r31 DqZaaktypeOverzicht Regels sat 2.3px
+   high). */
+.cn-look-board .cn-detail-page .cn-widget-wrapper__content:has(> .rules-tab > .rules-tab__rows:first-child):not(.cn-look-nextcloud *) {
+	padding-top: 12px;
 }
 </style>

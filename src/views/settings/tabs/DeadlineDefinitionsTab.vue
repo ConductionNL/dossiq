@@ -5,14 +5,6 @@
 <template>
 	<div class="deadline-definitions-tab">
 		<div class="deadline-definitions-tab__header">
-			<p class="deadline-definitions-tab__description">
-				{{
-					t(
-						'dossiq',
-						'Configure statutory term definitions per zaaktype (legal basis, duration, validity). Saving a new version automatically sets validFrom=tomorrow on the new version and validUntil=today on the prior version. New cases use the latest version; running cases keep the version they were bound to.',
-					)
-				}}
-			</p>
 			<p
 				v-if="timezone"
 				class="deadline-definitions-tab__calendar"
@@ -31,10 +23,7 @@
 					}}
 				</span>
 			</p>
-			<NcButton variant="primary" @click="openNew">
-				<template #icon>
-					<Plus :size="18" />
-				</template>
+			<NcButton variant="secondary" @click="openNew">
 				{{ t('dossiq', 'New term definition') }}
 			</NcButton>
 		</div>
@@ -62,64 +51,88 @@
 			</NcEmptyContent>
 		</div>
 
-		<div
+		<table
 			v-if="!loading && definitions.length > 0"
-			class="deadline-definitions-tab__list">
-			<div
-				v-for="def in definitions"
-				:key="def.id"
-				class="deadline-definitions-tab__row"
-				:class="{ 'deadline-definitions-tab__row--inactive': !isActive(def) }">
-				<div class="deadline-definitions-tab__row-info">
-					<strong class="deadline-definitions-tab__row-name">
-						{{ def.case_type }}
-					</strong>
-					<span class="deadline-definitions-tab__pill">
-						{{ def.basis || t('dossiq', '(no grondslag)') }}
-					</span>
-					<span
-						class="deadline-definitions-tab__pill deadline-definitions-tab__pill--alt">
-						{{ formatDuur(def) }}
-					</span>
-					<span
-						class="deadline-definitions-tab__pill deadline-definitions-tab__pill--alt">
-						v{{ def.version || 1 }}
-					</span>
-					<span
-						class="deadline-definitions-tab__pill deadline-definitions-tab__pill--alt"
-						data-testid="deadline-counting-mode-pill">
+			class="deadline-definitions-tab__table"
+			data-testid="deadline-definitions-table">
+			<thead>
+				<tr>
+					<th v-if="showCaseType" scope="col">
+						{{ t('dossiq', 'Case type') }}
+					</th>
+					<th scope="col">
+						{{ t('dossiq', 'Basis') }}
+					</th>
+					<th scope="col">
+						{{ t('dossiq', 'Duration') }}
+					</th>
+					<th scope="col">
+						{{ t('dossiq', 'Version') }}
+					</th>
+					<th scope="col">
+						{{ t('dossiq', 'Counting') }}
+					</th>
+					<th scope="col">
+						{{ t('dossiq', 'Closed day') }}
+					</th>
+					<th scope="col">
+						{{ t('dossiq', 'Valid') }}
+					</th>
+					<th scope="col">
+						{{ t('dossiq', 'State') }}
+					</th>
+					<th scope="col">
+						<span class="hidden-visually">{{ t('dossiq', 'Actions') }}</span>
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr
+					v-for="def in definitions"
+					:key="def.id"
+					class="deadline-definitions-tab__row"
+					:class="{ 'deadline-definitions-tab__row--inactive': !isActive(def) }">
+					<td v-if="showCaseType" class="deadline-definitions-tab__row-name">
+						{{ caseTypeOf(def) }}
+					</td>
+					<td>{{ basisOf(def) || t('dossiq', '(no grondslag)') }}</td>
+					<td>{{ formatDuur(def) }}</td>
+					<td>v{{ def.version || 1 }}</td>
+					<td data-testid="deadline-counting-mode-pill">
 						{{ countingModeLabel(def) }}
-					</span>
-					<span
-						v-if="rollsToWorkingDay(def)"
-						class="deadline-definitions-tab__pill deadline-definitions-tab__pill--alt"
-						data-testid="deadline-roll-pill">
-						{{ t('dossiq', 'Moves off a closed day') }}
-					</span>
-					<span class="deadline-definitions-tab__validity">
+					</td>
+					<td>
+						<span v-if="rollsToWorkingDay(def)" data-testid="deadline-roll-pill">
+							{{ t('dossiq', 'Moves off a closed day') }}
+						</span>
+						<span v-else>—</span>
+					</td>
+					<td class="deadline-definitions-tab__validity">
 						{{ def.validFrom || '?' }} → {{ def.validUntil || '∞' }}
-					</span>
-					<span
-						class="deadline-definitions-tab__badge"
-						:class="
-							isActive(def)
-								? 'deadline-definitions-tab__badge--active'
-								: 'deadline-definitions-tab__badge--inactive'
-						">
-						{{
-							isActive(def)
-								? t('dossiq', 'Active')
-								: t('dossiq', 'Inactive')
-						}}
-					</span>
-				</div>
-				<div class="deadline-definitions-tab__row-actions">
-					<NcButton size="small" @click="openEdit(def)">
-						{{ t('dossiq', 'New version') }}
-					</NcButton>
-				</div>
-			</div>
-		</div>
+					</td>
+					<td>
+						<span
+							class="deadline-definitions-tab__badge"
+							:class="
+								isActive(def)
+									? 'deadline-definitions-tab__badge--active'
+									: 'deadline-definitions-tab__badge--inactive'
+							">
+							{{
+								isActive(def)
+									? t('dossiq', 'Active')
+									: t('dossiq', 'Inactive')
+							}}
+						</span>
+					</td>
+					<td class="deadline-definitions-tab__row-actions">
+						<NcButton variant="secondary" @click="openEdit(def)">
+							{{ t('dossiq', 'New version') }}
+						</NcButton>
+					</td>
+				</tr>
+			</tbody>
+		</table>
 
 		<!-- Editor modal (own file under src/modals/ per ADR-004) -->
 		<DeadlineDefinitionEditor
@@ -136,7 +149,6 @@ import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
-import Plus from 'vue-material-design-icons/Plus.vue'
 import TimerSand from 'vue-material-design-icons/TimerSand.vue'
 import DeadlineDefinitionEditor from '../../../modals/DeadlineDefinitionEditor.vue'
 
@@ -147,7 +159,6 @@ export default {
 		NcEmptyContent,
 		NcLoadingIcon,
 		NcNoteCard,
-		Plus,
 		TimerSand,
 		DeadlineDefinitionEditor,
 	},
@@ -167,12 +178,22 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * Whether any definition names its case type, so the column is worth drawing.
+		 *
+		 * @return {boolean} TRUE when one does.
+		 * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+		 */
+		showCaseType() {
+			return this.definitions.some((def) => Boolean(this.caseTypeOf(def)))
+		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		zaaktypeOptions() {
 			const seen = new Set()
 			const opts = []
 			for (const d of this.definitions) {
-				const z = d.case_type || ''
+				const z = this.caseTypeOf(d)
 				if (z && !seen.has(z)) {
 					seen.add(z)
 					opts.push({ id: z, label: z })
@@ -290,8 +311,34 @@ export default {
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		formatDuur(def) {
-			const v = def.duurDagen || def.duur || 0
-			return v ? t('dossiq', '{n} days', { n: v }) : '—'
+			const weeks = Number(def.standardDurationWeeks || 0)
+			if (weeks > 0) {
+				return t('dossiq', '{n} weeks', { n: weeks })
+			}
+			const days = Number(def.standardDurationDays || def.duurDagen || def.duur || 0)
+			return days ? t('dossiq', '{n} days', { n: days }) : '—'
+		},
+
+		/**
+		 * A definition's legal basis, as the register stores it (`legalBasis`).
+		 *
+		 * @param {object} def The definition.
+		 * @return {string} The basis, or the empty string.
+		 * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+		 */
+		basisOf(def) {
+			return String(def?.legalBasis || def?.basis || '')
+		},
+
+		/**
+		 * The case type a definition binds to, by slug (`caseType`).
+		 *
+		 * @param {object} def The definition.
+		 * @return {string} The slug, or the empty string.
+		 * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+		 */
+		caseTypeOf(def) {
+			return String(def?.caseType || def?.case_type || '')
 		},
 
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
@@ -377,64 +424,37 @@ export default {
 	margin: 0 0 8px;
 }
 
-.deadline-definitions-tab__description {
-	color: var(--color-text-maxcontrast);
-	margin: 4px 0 12px 0;
-}
-
-.deadline-definitions-tab__list {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-.deadline-definitions-tab__row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	padding: 10px 12px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
-	background: var(--color-main-background);
+/* One table, a definition per row, as board DqBeheerGeavanceerd
+   "AWB-termijndefinities" draws it. The board look styles the plain table. */
+.deadline-definitions-tab__table {
+	width: 100%;
+	border-collapse: collapse;
+	white-space: normal;
 }
 
 .deadline-definitions-tab__row--inactive {
 	opacity: 0.65;
 }
 
-.deadline-definitions-tab__row-info {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	flex-wrap: wrap;
-}
-
-.deadline-definitions-tab__pill {
-	font-size: 12px;
-	padding: 2px 8px;
-	border-radius: 8px;
-	background: var(--color-background-dark);
-}
-
-.deadline-definitions-tab__pill--alt {
-	background: var(--color-background-darker);
+.deadline-definitions-tab__row-name {
+	font-weight: 600;
 }
 
 .deadline-definitions-tab__validity {
-	font-size: 12px;
-	color: var(--color-text-maxcontrast);
+	white-space: nowrap;
 }
 
 .deadline-definitions-tab__badge {
-	font-size: 11px;
+	display: inline-block;
 	padding: 2px 8px;
-	border-radius: 8px;
-	font-weight: 500;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 600;
+	white-space: nowrap;
 }
 
 .deadline-definitions-tab__badge--active {
-	background: var(--color-success);
+	background: color-mix(in srgb, var(--color-success) 15%, var(--color-main-background));
 	color: var(--color-success-text);
 }
 
@@ -444,8 +464,7 @@ export default {
 }
 
 .deadline-definitions-tab__row-actions {
-	display: flex;
-	gap: 6px;
+	text-align: end;
 }
 
 .deadline-definitions-tab__empty {

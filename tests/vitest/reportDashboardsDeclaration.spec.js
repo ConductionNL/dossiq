@@ -264,6 +264,8 @@ describe('deadline reports', () => {
 		expect(quarterly.averageProcessingDays.format).toMatchObject({ style: 'decimal', decimals: 1 })
 		const payments = Object.fromEntries(widget('TermijnDashboard', 'deadline-report-annual-payments-list').content.columns.map((c) => [c.key, c]))
 		expect(payments.amountEuros.class).toBe('cn-table-col--end')
+		// The case number is a link to the case, as DqTermijnen draws it ("2026-0018").
+		expect(payments.caseIdentifier).toMatchObject({ widget: 'link', widgetProps: { route: 'CaseDetail', params: { id: 'caseId' } } })
 	})
 
 	it('draws each report card with its own form, as board DqTermijnen does', () => {
@@ -360,6 +362,12 @@ describe('processing time table heads', () => {
 		expect(atRisk.class).toContain('cn-cell--wrap')
 		// The case type and the remaining time wrap too, so the title column
 		// keeps its width in the half-width card.
+		// The board draws three cases at risk and four case types; the rest stays
+		// reachable: the cases behind View all, the case types on the pager.
+		const risk = widget('Doorlooptijd', 'processing-time-at-risk').content
+		expect(risk.limit).toBe(3)
+		expect(risk.viewAllRoute.name).toBe('Cases')
+		expect(widget('Doorlooptijd', 'processing-time-breakdown').content.pageSize).toBe(4)
 		const riskCols = Object.fromEntries(widget('Doorlooptijd', 'processing-time-at-risk').content.columns.map((c) => [c.key, c]))
 		for (const key of ['title', 'caseTypeName', 'remainingLabel']) {
 			expect(riskCols[key].cellClass, key).toBe('cn-cell--wrap')

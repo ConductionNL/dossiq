@@ -122,6 +122,7 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import Send from 'vue-material-design-icons/Send.vue'
 import { FEDERATION_ALLOWED_FIELDS } from '../utils/federatedShareHelpers.js'
+import { loadPartnerOrganisations } from '../utils/partnerOrganisations.js'
 
 export default {
 	name: 'CaseShareOrganisationDialog',
@@ -245,12 +246,11 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+		 * @spec openspec/changes/share-dialog-lists-every-partner/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
 		 */
 		async loadPartners() {
 			try {
-				const { data } = await axios.get(generateUrl('/apps/openregister/api/organisations'))
-				this.partners = (data?.results || [])
-					.filter((organisation) => organisation.type === 'partner')
+				this.partners = (await loadPartnerOrganisations())
 					.map((organisation) => ({
 						...organisation,
 						label: organisation.domain ? `${organisation.name} (${organisation.domain})` : organisation.name,

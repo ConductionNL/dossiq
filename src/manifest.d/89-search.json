@@ -54,8 +54,8 @@
 					"_statusColorMapNote": "DqZoekresultaten r29: the status pill in the tone the case list gives it (statusType colour): In behandeling purple, Ontvangen blue, Afgehandeld green, Besluit teal, Wacht op inwoner amber.",
 					"statusColorMap": { "In behandeling": "purple", "Ontvangen": "info", "Afgehandeld": "success", "Besluit": "teal", "Wacht op inwoner": "warning" },
 					"titleWrap": true,
-    "_columnWidthsNote": "DqZoekresultaten: Resultaat about 250px so a title reads whole, Soort 120, Gekoppeld and Status 150 (nextcloud-vue columnWidths).",
-    "columnWidths": { "title": "250px", "kindText": "120px", "linked": "150px", "status": "150px" }
+    "_columnWidthsNote": "DqZoekresultaten: Resultaat about 250px so a title reads whole, Soort 120, Gekoppeld 150; Status takes the rest, so the checkbox column keeps its 60px (r31: a fixed Status width spread the spare width over the checkbox column, text 81.6 vs 76; nextcloud-vue columnWidths).",
+    "columnWidths": { "title": "250px", "kindText": "120px", "linked": "150px" }
 				},
 				"showTitle": true,
 				"countText": "{total} results in cases, objects and documents, only what you may see",

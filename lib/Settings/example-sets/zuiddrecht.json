@@ -1785,7 +1785,7 @@
 				"description": "De vergunning is geweigerd, met de gronden en een bezwaarclausule.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"isDraft": false,
-				"publicationRequired": true,
+				"publicationRequired": false,
 				"documentTypes": [
 					"{{object:documenttype-regulier-v4-besluit.id}}"
 				],
@@ -4223,11 +4223,36 @@
 			}
 		},
 		{
+			"key": "inspectierapport-molenweg-4",
+			"register": "dossiq",
+			"schema": "inspectieRapport",
+			"lookups": {
+				"template": {
+					"schema": "inspectionChecklistTemplate",
+					"where": {
+						"seedKey": "bouwtoezicht-fase-3-oplevering"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:kapvergunning-molenweg.id}}",
+				"checklist": "{{lookup:template}}",
+				"inspector": "{{cast:jamal.uid}}",
+				"inspectionDate": "{{datetime:-14 14:30}}",
+				"location": "Molenweg 4, 3312 KL Zuiddrecht",
+				"result": "non_conform",
+				"failedItems": 1,
+				"remarks": "Bouwen van een bijgebouw zonder vergunning",
+				"followUpRequired": true
+			}
+		},
+		{
 			"key": "lhs-advies-molenweg-4",
 			"register": "dossiq",
 			"schema": "lhsRecommendation",
 			"data": {
 				"case": "{{object:kapvergunning-molenweg.id}}",
+				"inspection": "{{object:inspectierapport-molenweg-4.id}}",
 				"severity": "ernstig",
 				"behaviour": "onverschillig",
 				"actorType": "burger",
@@ -6538,6 +6563,7 @@
 				"roleName": "Woo en informatie",
 				"roleType": "ambtelijk",
 				"ncGroupId": "zuiddrecht-woo-en-informatie",
+				"teamLead": "{{cast:anouk.uid}}",
 				"parentRoleId": "{{object:afdeling-gemeente.id}}"
 			}
 		},
@@ -9528,7 +9554,8 @@
 			},
 			"set": {
 				"ncGroupId": "zuiddrecht-vergunningen",
-				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}",
+				"teamLead": "{{cast:marleen.uid}}"
 			}
 		},
 		{
@@ -10206,6 +10233,20 @@
 			}
 		}
 	],
+	"collectivesPages": [
+		{
+			"key": "werkinstructie-woo-verzoeken",
+			"data": {
+				"collective": "Woo en informatie",
+				"title": "Hoe we Woo-verzoeken behandelen",
+				"content": "# Hoe we Woo-verzoeken behandelen\n\nJe beslist binnen vier weken. Je mag één keer twee weken verdagen (Wet open overheid, artikel 4.4).\n\n## Ontvangst\n\nJe registreert het verzoek. Je stuurt binnen een week de ontvangstbevestiging.\n\n## Beoordeling\n\nJe zoekt de documenten in het dossier en bij de afdelingen. Je beoordeelt elk document: openbaar, deels openbaar of niet openbaar. Je noemt bij elke weigering de grond.\n\n## Zienswijze\n\nRaakt een document een derde? Dan vraag je die om een zienswijze. De derde krijgt twee weken.\n\n## Besluit\n\nJe stelt het besluit op met het sjabloon Woo-besluit. De teamleider parafeert. Daarna onderteken je via LibreSign.\n\n## Publiceren\n\nJe publiceert het besluit en de openbare documenten. De verzoeker krijgt het besluit in de Berichtenbox van MijnOverheid.\n\nVragen? Stel ze in het team Woo en informatie.\n",
+				"owner": "{{cast:pieter.uid}}",
+				"shareWith": [
+					"{{cast:woo-en-informatie.gid}}"
+				]
+			}
+		}
+	],
 	"exportRuns": [
 		{
 			"key": "export-zaken-verlichting",
@@ -10233,6 +10274,31 @@
 				"schemaName": "case",
 				"producedAt": "{{datetime:-6 10:05}}",
 				"downloadCount": 3
+			}
+		}
+	],
+	"auditEntries": [
+		{
+			"key": "jeugdwet-toestemming-vastgelegd",
+			"data": {
+				"object": "3d903a5f-7066-50c8-a952-7e1c775055bb",
+				"action": "create",
+				"user": "{{cast:fatma.uid}}",
+				"at": "{{datetime:-15 10:40}}"
+			}
+		},
+		{
+			"key": "jeugdwet-inzage-medisch-verslag",
+			"data": {
+				"object": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+				"action": "file.downloaded",
+				"user": "{{cast:fatma.uid}}",
+				"at": "{{datetime:-12 11:05}}",
+				"changed": {
+					"data": {
+						"fileName": "medisch verslag"
+					}
+				}
 			}
 		}
 	]

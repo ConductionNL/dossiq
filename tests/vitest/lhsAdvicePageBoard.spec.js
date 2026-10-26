@@ -63,10 +63,12 @@ describe('enforcement advice page (DqHandhaving)', () => {
 	})
 
 	it('has a Dutch string for every label and line on the side cards', () => {
+		// A one-character map value is a matrix code (2, C), the same in every language.
+		const words = (map) => Object.values(map || {}).filter((value) => value.length > 1)
 		for (const card of page.config.sideColumn) {
 			expect(nl[card.title], card.title).toBeTruthy()
 			for (const field of card.content?.fields || []) {
-				for (const text of [field.label, field.text, ...Object.values(field.map || {})].filter(Boolean)) {
+				for (const text of [field.label, field.text, ...words(field.map)].filter(Boolean)) {
 					expect(nl[text], text).toBeTruthy()
 				}
 			}
@@ -89,5 +91,18 @@ describe('the Wat nu? button on the enforcement advice (DqHandhaving)', () => {
 			expect(action.label, stage).toBe(preAnnouncement ? 'Draft the pre-announcement' : 'Draft the warning')
 		}
 		expect(nl['Draft the pre-announcement']).toBe('Vooraankondiging opstellen')
+	})
+})
+
+describe('the Historie card on the enforcement advice (DqHandhaving)', () => {
+	const history = page.config.sideColumn.find((card) => card.id === 'side-history')
+
+	it('lists what happened, not who opened the advice', () => {
+		expect(history.content.excludeActions).toEqual(['read'])
+	})
+
+	it('puts who and when under the action, in words', () => {
+		expect(history.content.layout).toBe('stacked')
+		expect(nl[history.content.actionLabels.create]).toBe('Advies berekend')
 	})
 })

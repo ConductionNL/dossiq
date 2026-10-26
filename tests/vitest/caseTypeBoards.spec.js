@@ -176,7 +176,7 @@ describe('the choice list beside Fields (DqZaaktypeVelden, nextcloud-vue side-ca
 
 	it('follows the selected field that has a choice list, beside the Fields tab', () => {
 		expect(card.tabs).toEqual(['fields'])
-		expect(card.title).toBe('Choice list: {name}')
+		expect(card.title).toBe('Choice list: {name|fieldTitle}')
 		expect(card.follows).toEqual({
 			widget: 'case-type-fields-editor',
 			register: 'dossiq',

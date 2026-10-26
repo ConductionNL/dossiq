@@ -65,4 +65,9 @@ describe('the field inspection board', () => {
 	it('opens the running checklist at its first open question', () => {
 		expect(widget('checklist-run').content.startAt).toBe('firstOpen')
 	})
+
+	it('asks for a note only under an answer of no, as the board draws it', () => {
+		const run = widget('checklist-run').content
+		expect(run.noteWhen).toEqual({ answers: [run.choiceValues.no] })
+	})
 })
