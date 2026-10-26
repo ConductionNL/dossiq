@@ -15,7 +15,7 @@ The VTH checklists read as the board's list, with an accessible status pill.
 ### Requirement: The VTH checklists are library rows with a status pill
 
 The VTH admin tab SHALL list each inspection checklist as a library list row: its name, its version and number of items,
-and its state as a status pill (success when active, warning when not). Edit and Delete SHALL be in the row's menu. The
+and its state as a status pill (success when active, neutral when not). Edit and Delete SHALL be in the row's menu. The
 pill's text SHALL meet WCAG AA contrast against its ground.
 
 #### Scenario: An active checklist
