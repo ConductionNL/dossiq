@@ -1,0 +1,25 @@
+{
+  "_note": "The payment state reads as words on the case page (DqZaak Termijn en betaling: \"Geen leges voor dit zaaktype\"), not as the stored code. case moves to 1.54.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "version": "1.54.0",
+        "properties": {
+          "paymentState": {
+            "x-enum-labels": {
+              "notRequired": "No fees for this case type",
+              "outstanding": "Outstanding",
+              "paid": "Paid",
+              "waived": "Waived",
+              "stale": "Could not be checked"
+            }
+          }
+        }
+      }
+    }
+  }
+}

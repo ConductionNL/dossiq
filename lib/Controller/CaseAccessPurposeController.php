@@ -100,4 +100,34 @@ class CaseAccessPurposeController extends Controller {
 
 		return new JSONResponse($result, $status);
 	}//end record()
+
+	/**
+	 * Whether the reader must state a purpose to open this case. The case's
+	 * own handler need not: the purpose is recorded for them and the answer
+	 * is `required: false`.
+	 *
+	 * @param string $id The case uuid.
+	 *
+	 * @return JSONResponse `{ required, recorded }`, or the refusal.
+	 *
+	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
+	 */
+	#[NoAdminRequired]
+	public function check(string $id): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$result = $this->purposes->check(caseId: $id, readerId: $user->getUID());
+		} catch (RefusedException $e) {
+			return new JSONResponse(
+				['error' => $e->getRule(), 'message' => $this->l10n->t($e->getSentence())],
+				$e->getStatus()
+			);
+		}
+
+		return new JSONResponse($result);
+	}//end check()
 }//end class

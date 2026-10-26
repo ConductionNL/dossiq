@@ -209,6 +209,10 @@
             "matchType": "exact",
             "inputControl": "text"
           },
+          "statutoryExtension": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
           "archiveNomination": {
             "matchType": "exact",
             "inputControl": "select"

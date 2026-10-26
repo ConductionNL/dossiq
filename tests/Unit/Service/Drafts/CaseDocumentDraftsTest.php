@@ -187,6 +187,20 @@ class CaseDocumentDraftsTest extends TestCase {
 		self::assertSame('woo-inventarislijst', ($this->request?->getRequest() ?? [])['templateSlug']);
 	}//end testTheInventoryIsDraftedFromItsOwnTemplate()
 
+	/**
+	 * The Woo case type drafts its decision and its inventory; a case type that drafts nothing has none.
+	 *
+	 * @return void
+	 */
+	public function testTheDraftedDocumentTypesAreEveryPurposesType(): void {
+		$this->wooCaseType();
+		$types = $this->drafts->documentTypesForCase(caseId: self::CASE_ID);
+		self::assertContains(needle: 'Besluit', haystack: $types);
+
+		$this->caseType = [];
+		self::assertSame(expected: [], actual: $this->drafts->documentTypesForCase(caseId: self::CASE_ID));
+	}//end testTheDraftedDocumentTypesAreEveryPurposesType()
+
 	public function testAnUndeclaredPurposeAsksNothing(): void {
 		$this->wooCaseType();
 

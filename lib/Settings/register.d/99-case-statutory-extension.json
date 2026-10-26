@@ -1,0 +1,34 @@
+{
+  "_note": "The extension period of the case's type, copied onto the case beside statutoryTerm, so Termijn en betaling reads \"4 weken, te verdagen met 2\" (nextcloud-vue data widget format duration + extendBy). Materialised for the same reason as statutoryTerm: a cross-object @ref resolves only in OpenRegister's save-time listener. case moves to 1.55.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "version": "1.55.0",
+        "properties": {
+          "statutoryExtension": {
+            "type": "string",
+            "readOnly": true,
+            "title": "Statutory extension",
+            "description": "The extension period of this case's type, as an ISO 8601 duration. Copied from caseType.extensionPeriod by x-openregister-calculations.statutoryExtension."
+          }
+        },
+        "configuration": {
+          "x-openregister-calculations": {
+            "statutoryExtension": {
+              "type": "string",
+              "materialise": true,
+              "description": "The case type's extension period, copied onto the case so the term row can say by how much the term may be extended. A case type whose extension period changes later needs occ openregister:rematerialise-calculations, as statutoryTerm does.",
+              "expression": {
+                "prop": "@ref.caseType.extensionPeriod"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

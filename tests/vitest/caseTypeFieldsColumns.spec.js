@@ -25,7 +25,7 @@ const nl = readJson('l10n', 'nl.json').translations
 describe('the Velden table (DqZaaktypeVelden)', () => {
 	it('reads Field, Kind, Fill in', () => {
 		expect(editor.content.columns).toEqual([
-			{ key: 'name', label: 'Field' },
+			{ key: 'name', label: 'Field', cellClass: 'cn-cell--wrap' },
 			{ key: 'propertyType', label: 'Kind', formatter: 'fieldKind' },
 			{ key: 'isRequired', label: 'Fill in', formatter: 'fieldFill' },
 			{ key: 'origin', label: 'Origin', formatter: 'fieldOrigin', widget: 'badge', emptyValue: 'own', widgetProps: { colorMap: { own: 'default', shared: 'info', inherited: 'purple' } } },

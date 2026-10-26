@@ -690,6 +690,8 @@ $extra = [
         // CRUD of routing rules themselves lives on workflowTemplate (manifest).
     // The purpose a reader states before a case with special categories of personal data opens (case-access-purpose).
     ['name' => 'caseAccessPurpose#record', 'url' => '/api/cases/{id}/access-purpose', 'verb' => 'POST'],
+    // Whether the reader must state a purpose: the case's own handler opens it without one (access-purpose-handler).
+    ['name' => 'caseAccessPurpose#check', 'url' => '/api/cases/{id}/access-purpose', 'verb' => 'GET'],
     ['name' => 'routing#reroute', 'url' => '/api/cases/{id}/reroute', 'verb' => 'POST'],
         // Route a case to one person by a rule; arms the rule's take-back window.
     ['name' => 'routing#route', 'url' => '/api/cases/{id}/route', 'verb' => 'POST'],

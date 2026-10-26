@@ -83,7 +83,7 @@
 									"key": "title",
 									"label": "Object type",
 									"cellClass": "cn-cell--strong",
-									"secondary": "{schema}"
+									"secondary": "{schemaLine}"
 								},
 								{
 									"key": "properties",

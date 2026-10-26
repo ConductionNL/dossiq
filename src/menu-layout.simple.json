@@ -1686,6 +1686,7 @@
 							"excludeActions": ["read"],
 							"actionLabels": {
 								"dossiq.case.access-purpose": "Case opened, purpose {changed.purpose}",
+								"dossiq.case.access-role": "Added as {changed.role} on opening",
 								"create": "Case created",
 								"update": "Case changed",
 								"consent.create": "Consent recorded",
@@ -1710,6 +1711,11 @@
 									"legal-obligation": "legal obligation",
 									"data-subject-request": "request of the person concerned",
 									"other": "other"
+								},
+								"role": {
+									"handler": "handler",
+									"advisor": "advisor",
+									"coordinator": "coordinator"
 								}
 							},
 							"emptyText": "Nothing has happened on this case yet",
@@ -2486,10 +2492,17 @@
 								"lastPaymentDate"
 							],
 							"hideEmpty": true,
+							"_overridesNote": "DqZaak Termijn en betaling: \"Wettelijke termijn: 4 weken, te verdagen met 2\" and \"Laatst gecontroleerd\", as the board draws them (nextcloud-vue format duration + extendBy).",
 							"overrides": {
 								"statutoryTerm": {
 									"readOnly": false,
-									"editable": false
+									"editable": false,
+									"label": "Statutory term",
+									"format": "duration",
+									"extendBy": "statutoryExtension"
+								},
+								"paymentStateCheckedAt": {
+									"label": "Last checked"
 								}
 							}
 						}
@@ -4431,6 +4444,44 @@
 						"subtitle": "From OpenRegister's party model, also for those without an account",
 						"_note": "The party model OpenRegister shipped in #3761 (`/parties` of this case), by role with the primary party first. A gemachtigde names whom they act for (role rows, `representedParty`). The accepted kinds and the writing language come from pipelinq through dossiq's endpoints; a kind is marked not accepted only when pipelinq answered the kinds. Every indicator carries its verdict, and a blocking one is also a note above the list. A failed read says so and is never \"no parties\".",
 						"content": {
+							"manage": {
+								"add": {
+									"label": "Add party",
+									"dialogTitle": "Add party",
+									"confirmLabel": "Add",
+									"sources": [
+										{
+											"id": "person",
+											"register": "dossiq",
+											"schema": "brpPerson",
+											"lookup": {
+												"url": "/apps/dossiq/api/people/lookup",
+												"when": "^[0-9]{9}$"
+											},
+											"label": "Resident",
+											"title": "{displayName}",
+											"secondary": "{residence.street} {residence.houseNumber}"
+										},
+										{
+											"id": "company",
+											"register": "dossiq",
+											"schema": "kvkCompany",
+											"label": "Organisation",
+											"title": "{tradeName}",
+											"secondary": "CoC {kvkNumber}"
+										},
+										{
+											"id": "colleague",
+											"register": "dossiq",
+											"schema": "colleague",
+											"label": "Colleague",
+											"title": "{displayName}",
+											"secondary": "{jobTitle}"
+										}
+									]
+								}
+							},
+							"_manageNote": "Board DqZaakBetrokkenen draws \"Partij toevoegen\" on this card. The picker searches residents (BSN lookup), organisations and colleagues (the colleague party schema, kind colleague, tied to a Nextcloud user); the role is one the case declares.",
 							"rolesObjects": {
 								"register": "dossiq",
 								"schema": "role",
@@ -4846,7 +4897,7 @@
 								"case": "@objectId"
 							},
 							"sort": {
-								"field": "objectType",
+								"field": "objectIdentification",
 								"dir": "asc"
 							},
 							"limit": 25,
@@ -5071,6 +5122,7 @@
 								}
 							],
 							"emptyText": "No decision letter written yet",
+							"footnote": "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced.",
 							"headerAction": {
 								"label": "Generate document",
 								"icon": "FileDocumentPlusOutline",

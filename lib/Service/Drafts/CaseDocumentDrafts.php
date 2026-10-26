@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver;
 use OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler;
 use OCA\Filinq\Event\DocumentGenerationRequestedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -147,6 +148,40 @@ class CaseDocumentDrafts {
 
 		return $declared;
 	}//end declarationFor()
+
+	/**
+	 * Every document type a case's case type drafts itself, under any purpose.
+	 *
+	 * Each type is named as declared and as its catalogue id, because a
+	 * drafted document is filed under the id and older ones carry the name.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return list<string> The type names and ids, or [] when the case type drafts nothing.
+	 */
+	public function documentTypesForCase(string $caseId): array {
+		$case = $this->caseRow(caseId: $caseId);
+		$reference = $this->caseTypes->referenceId(value: ($case['caseType'] ?? ''));
+		if ($reference === '') {
+			return [];
+		}
+
+		$resolver = new DocumentTypeResolver(settingsService: $this->settingsService);
+		$types = [];
+		foreach ((array)($this->resolver->effectiveCaseType(caseTypeId: $reference)['documentDrafts'] ?? []) as $declared) {
+			if (is_array($declared) === false) {
+				continue;
+			}
+
+			$name = trim((string)($declared['documentType'] ?? ''));
+			if ($name !== '') {
+				$types[] = $name;
+				$types[] = $resolver->resolve(name: $name);
+			}
+		}
+
+		return array_values(array_unique(array_filter($types)));
+	}//end documentTypesForCase()
 
 	/**
 	 * The declaration for one purpose on a case's case type, read by case id.
