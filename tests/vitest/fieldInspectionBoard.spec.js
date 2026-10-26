@@ -69,6 +69,11 @@ describe('the field inspection board', () => {
 		expect(nl[meta.parts[2]]).toBe('{checklistTemplateRef.sections|count:items} vragen')
 	})
 
+	it('draws three 700px phones and the outbox cards with the pill beside the text', () => {
+		expect(widget('inspection-frames').content.height).toBe(700)
+		expect(widget('inspection-sync-queue').content.cardPillAside).toBe(true)
+	})
+
 	it('opens the running checklist at its first open question', () => {
 		expect(widget('checklist-run').content.startAt).toBe('firstOpen')
 	})
