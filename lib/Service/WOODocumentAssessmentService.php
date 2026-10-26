@@ -30,7 +30,6 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
-use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Review\DisclosureAssessmentValidator;
@@ -86,7 +85,8 @@ class WOODocumentAssessmentService {
 	 * @param CaseReviewerAccess|null $reviewerAccess Who may change an assessment and who reads it,
 	 *        when the case type keeps its assessments private to the case (case-reviewer-access).
 	 * @param DocumentRelevance|null $reviews Each document's relevance and pages seen (woo-review-triage); null keeps every document needing a verdict.
-	 * @param CaseDocumentDrafts|null $drafts The document types the case type drafts itself, left out of the review.
+	 * @param OutstandingDocuments|null $outstanding The review's outstanding documents, as the container builds them
+	 *        (with the case type's drafted document types left out); null builds one from the collaborators above.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -96,16 +96,15 @@ class WOODocumentAssessmentService {
 		?WooRefusalGrounds $refusalGrounds = null,
 		private readonly ?CaseReviewerAccess $reviewerAccess = null,
 		private readonly ?DocumentRelevance $reviews = null,
-		?CaseDocumentDrafts $drafts = null,
+		?OutstandingDocuments $outstanding = null,
 	) {
 		$this->refusalGrounds       = ($refusalGrounds ?? new WooRefusalGrounds(settingsService: $settingsService, logger: $logger));
 		$this->validator            = new DisclosureAssessmentValidator(refusalGrounds: $this->refusalGrounds);
-		$this->outstandingDocuments = new OutstandingDocuments(
+		$this->outstandingDocuments = ($outstanding ?? new OutstandingDocuments(
 			settingsService: $settingsService,
 			caseDocuments: $caseDocuments,
-			reviews: $reviews,
-			drafts: $drafts
-		);
+			reviews: $reviews
+		));
 	}//end __construct()
 
 	/**

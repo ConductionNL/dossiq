@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Assessment;
 
 use OCA\Dossiq\Service\Assessment\OutstandingDocuments;
+use OCA\Dossiq\Review\OutstandingDocuments as ReviewOutstandingDocuments;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
@@ -92,17 +93,19 @@ class OutstandingDocumentsTest extends TestCase {
 			][$key] ?? $default)
 		);
 
+		$caseDocuments = new WooCaseDocuments(
+			settingsService: $settings,
+			rootFolder: $this->createMock(originalClassName: IRootFolder::class),
+			logger: new NullLogger(),
+		);
+
 		return new OutstandingDocuments(
 			assessments: new WOODocumentAssessmentService(
 				settingsService: $settings,
 				userSession: $this->createMock(IUserSession::class),
 				logger: new NullLogger(),
-				caseDocuments: new WooCaseDocuments(
-					settingsService: $settings,
-					rootFolder: $this->createMock(IRootFolder::class),
-					logger: new NullLogger(),
-				),
-				drafts: $drafts,
+				caseDocuments: $caseDocuments,
+				outstanding: new ReviewOutstandingDocuments(settingsService: $settings, caseDocuments: $caseDocuments, drafts: $drafts),
 			),
 			records: new DocumentRecordStore(settingsService: $settings),
 			settings: $settings,
