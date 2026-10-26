@@ -3468,7 +3468,7 @@
 									"schema": "plannedAction",
 									"includeFields": ["label", "owner", "plannedFor"],
 									"successMessage": "Action planned.",
-									"props": {"case": "@objectId", "state": "planned"}
+									"props": {"case": "@objectId", "state": "planned", "plannedBy": "@me"}
 								},
 								"visibleWhen": {"field": "@self.archived", "op": "empty"}
 							}
@@ -3490,14 +3490,17 @@
 							"icon": "CalendarBlankOutline",
 							"iconTile": true,
 							"title": "{label}",
-							"meta": [
-								"Owner {owner|user}"
-							],
+							"meta": {
+								"parts": [
+									["Owner {owner|user}", "Owner team {ownerGroup|group}"],
+									["planned by {plannedBy|user}", "planned by {plannedByRule}"]
+								]
+							},
 							"trailing": "{plannedFor|date}",
 							"headerNote": "{total} planned",
 							"emptyText": "No next action is planned on this case"
 						},
-						"_rowsNote": "DqZaakTaken Wat hierna komt: the planned actions as the board's rows under a rule (calendar tile, the action, its owner, the planned date at the end) and '{total} gepland' in the title row, instead of a table. Same filter and order: the first row is still the answer to what comes next."
+						"_rowsNote": "DqZaakTaken Wat hierna komt: the planned actions as the board's rows under a rule (calendar tile, the action, its owner (a person, else the team by its name: {ownerGroup|group}, nextcloud-vue feat/r32-template-group-format) and who planned it (the person who added it, else what planned it: plannedByRule, the steps of the case type, which a successor carries over), the planned date at the end) and '{total} gepland' in the title row, instead of a table. Same filter and order: the first row is still the answer to what comes next."
 					},
 					{
 						"id": "case-incidents-card",

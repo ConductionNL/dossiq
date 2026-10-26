@@ -31,11 +31,16 @@ describe('the case lists as board rows', () => {
 		expect(planned.content.filter).toEqual({ case: '@objectId', state: 'planned' })
 		expect(planned.content.sort).toEqual({ field: 'plannedFor', dir: 'asc' })
 		expect(nl[planned.content.headerNote]).toBe('{total} gepland')
-		expect(nl[planned.content.meta[0]]).toBe('Eigenaar {owner|user}')
+	})
+
+	it('says who owns it, a person or a team by name, and who or what planned it', () => {
+		const [owner, plannedBy] = widget('case-planned-actions-card').content.meta.parts
+		expect(owner.map((key) => nl[key])).toEqual(['Eigenaar {owner|user}', 'Eigenaar team {ownerGroup|group}'])
+		expect(plannedBy.map((key) => nl[key])).toEqual(['gepland door {plannedBy|user}', 'gepland door {plannedByRule}'])
 	})
 
 	it('keeps adding a planned action, as the table offered', () => {
 		const add = widget('case-planned-actions-card').headerActions.find((action) => action.label === 'Add')
-		expect(add.action).toMatchObject({ type: 'open-form', schema: 'plannedAction', props: { case: '@objectId', state: 'planned' } })
+		expect(add.action).toMatchObject({ type: 'open-form', schema: 'plannedAction', props: { case: '@objectId', state: 'planned', plannedBy: '@me' } })
 	})
 })
