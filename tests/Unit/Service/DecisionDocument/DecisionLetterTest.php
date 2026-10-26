@@ -81,12 +81,32 @@ class DecisionLetterTest extends TestCase {
 	public function testTheLetterIsTheNewestDocumentOfTheDeclaredTypeOnTheCase(): void {
 		$found = $this->letters->forCase(caseId: self::CASE_ID, purpose: 'decision');
 
-		$this->assertSame(['title' => 'Woo-besluit', 'documentType' => 'Besluit'], $found['declaration']);
+		$this->assertSame(
+			expected: ['title' => 'Woo-besluit', 'documentType' => 'Besluit', 'templateSlug' => 'woo-besluit', 'format' => ''],
+			actual: $found['declaration']
+		);
+		$this->assertFalse(condition: $found['empty']);
 		$this->assertSame('io-by-id', $found['document']['id'], 'matched by id, newer than the one matched by name; another case\'s letter is not seen');
 	}//end testTheLetterIsTheNewestDocumentOfTheDeclaredTypeOnTheCase()
 
+	/**
+	 * A letter the case type declares but the case does not hold yet reads empty.
+	 *
+	 * @return void
+	 */
+	public function testADeclaredLetterNotYetDraftedReadsEmpty(): void {
+		$found = $this->letters->forCase(caseId: 'case-without-documents', purpose: 'decision');
+
+		$this->assertNull(actual: $found['document']);
+		$this->assertTrue(condition: $found['empty']);
+		$this->assertSame(expected: 'woo-besluit', actual: $found['declaration']['templateSlug']);
+	}//end testADeclaredLetterNotYetDraftedReadsEmpty()
+
 	public function testAPurposeTheCaseTypeDoesNotDeclareHasNoLetter(): void {
-		$this->assertSame(['declaration' => null, 'document' => null], $this->letters->forCase(caseId: self::CASE_ID, purpose: 'inventory'));
+		$this->assertSame(
+			expected: ['declaration' => null, 'document' => null, 'empty' => true],
+			actual: $this->letters->forCase(caseId: self::CASE_ID, purpose: 'inventory')
+		);
 	}//end testAPurposeTheCaseTypeDoesNotDeclareHasNoLetter()
 
 	public function testADocumentOfAnotherCaseIsRefused(): void {

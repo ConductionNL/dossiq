@@ -70,8 +70,13 @@ class DecisionLetter {
 	 * @param string $caseId  The case uuid.
 	 * @param string $purpose The declared purpose, for example `decision`.
 	 *
-	 * @return array{declaration: array{title: string, documentType: string}|null, document: array<string, mixed>|null}
-	 *         `declaration` is null when the case type declares no letter for the purpose.
+	 * @return array{
+	 *     declaration: array{title: string, documentType: string, templateSlug: string, format: string}|null,
+	 *     document: array<string, mixed>|null,
+	 *     empty: bool
+	 * }
+	 *         `declaration` is null when the case type declares no letter for the purpose; `empty` is true
+	 *         while the case holds no such letter, so a facts card can show its empty text (`emptyWhen`).
 	 *
 	 * @spec openspec/specs/decision-document/spec.md
 	 */
@@ -79,7 +84,7 @@ class DecisionLetter {
 		$declared = $this->drafts->declarationForCase(caseId: $caseId, purpose: $purpose);
 		$typeName = trim((string)($declared['documentType'] ?? ''));
 		if ($declared === [] || $typeName === '') {
-			return ['declaration' => null, 'document' => null];
+			return ['declaration' => null, 'document' => null, 'empty' => true];
 		}
 
 		$types = array_unique([$typeName, (new DocumentTypeResolver(settingsService: $this->settingsService))->resolve(name: $typeName)]);
@@ -109,8 +114,11 @@ class DecisionLetter {
 			'declaration' => [
 				'title' => trim((string)($declared['title'] ?? '')),
 				'documentType' => $typeName,
+				'templateSlug' => trim((string)($declared['templateSlug'] ?? '')),
+				'format' => trim((string)($declared['format'] ?? '')),
 			],
 			'document' => $document,
+			'empty' => $document === null,
 		];
 	}//end forCase()
 

@@ -5041,12 +5041,33 @@
 						"title": "Decision letter",
 						"subtitle": "The document that goes to the requester",
 						"icon": "FileDocumentOutline",
-						"_note": "DqZaakBesluiten Beschikking: the decision document the case's document step writes, with Document genereren as the card's action.",
+						"_note": "DqZaakBesluiten Beschikking: the case's decision letter, the newest dossier document of the type the case type declares under documentDrafts.decision, read through dossiq's letters route (the one the decide dialog reads), with Document genereren as the card's action. The card is empty while the case holds no such letter (the route answers empty: true).",
 						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/letters/decision"
+							},
+							"emptyWhen": "empty",
 							"fields": [
 								{
-									"as": "text",
-									"path": "besluitDocument"
+									"label": "Letter",
+									"path": "document.title"
+								},
+								{
+									"label": "Status",
+									"path": "document.status",
+									"map": {
+										"draft": "Draft, not signed yet",
+										"final": "Final"
+									}
+								},
+								{
+									"label": "Template",
+									"path": "declaration.title"
+								},
+								{
+									"label": "Made on",
+									"path": "document.creatiedatum",
+									"format": "longdate"
 								}
 							],
 							"emptyText": "No decision letter written yet",
