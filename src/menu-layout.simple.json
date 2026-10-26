@@ -4726,7 +4726,8 @@
 								"responsePath": "results"
 							},
 							"presentation": "rows",
-							"avatar": "{title}",
+							"avatar": { "text": "{caseTypeTitle}", "size": 32, "tone": "primary" },
+							"ruleAbove": true,
 							"title": "{title}",
 							"meta": [
 								"{identifier} · {caseTypeTitle} · {assigneeName}",
@@ -4741,7 +4742,7 @@
 									"pending-info": "Waiting for information",
 									"in-progress": "In progress",
 									"review": "In review",
-									"closed": "Closed",
+									"closed": "Handled",
 									"stranded": "Stranded",
 									"planned": "Planned"
 								},
