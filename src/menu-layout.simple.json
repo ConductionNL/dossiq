@@ -2869,15 +2869,18 @@
 								"receivedAt": {
 									"label": "Registration date",
 									"editable": false,
-									"order": 6
+									"order": 6,
+									"format": "date-long"
 								},
 								"startDate": {
 									"label": "Start date",
-									"order": 7
+									"order": 7,
+									"format": "date-long"
 								},
 								"deadline": {
 									"label": "Decide by",
-									"order": 8
+									"order": 8,
+									"format": "date-long"
 								},
 								"assignee": {
 									"label": "Handler",
@@ -2894,19 +2897,23 @@
 								"archiveStatus": {
 									"label": "Archive status",
 									"editable": false,
-									"order": 14
+									"order": 14,
+									"enumLabels": {"nog_te_archiveren": "Not archived yet", "archived": "Archived", "archived_retention_period_unknown": "Archived, retention period unknown", "overgedragen": "Transferred"}
 								},
 								"parentCase": {
 									"label": "Parent case",
-									"order": 15
+									"order": 15,
+									"emptyValue": "None"
 								},
 								"externalApplication": {
 									"label": "Handled elsewhere",
 									"editable": false,
-									"order": 18
+									"order": 18,
+									"emptyValue": "No"
 								},
 								"result": {
-									"order": 12
+									"order": 12,
+									"emptyValue": "No result yet"
 								},
 								"impact": {
 									"order": 16
@@ -3478,6 +3485,7 @@
 							"presentation": "rows",
 							"ruleAbove": true,
 							"icon": "CalendarBlankOutline",
+							"iconTile": true,
 							"title": "{label}",
 							"meta": [
 								"Owner {owner|user}"
