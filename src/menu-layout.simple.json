@@ -6559,8 +6559,10 @@
 						"route": "CaseTypes"
 					}
 				],
+				"_typePillNote": "DqZaaktype boards: the case type's domain (VTH) is a teal pill, as the boards draw it.",
 				"typePill": {
-					"field": "category"
+					"field": "category",
+					"variant": "teal"
 				},
 				"statusPill": {
 					"field": "isDraft",
