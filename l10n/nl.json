@@ -8858,6 +8858,7 @@
         "The Dashboard tracks progress as cases move through it. The documentation covers the rest.": "Het dashboard volgt de voortgang terwijl zaken erdoorheen bewegen. De documentatie behandelt de rest.",
         "The dashboard tracks progress as cases move through it. The documentation covers the rest.": "Het dashboard volgt de voortgang terwijl zaken erdoorheen bewegen. De documentatie behandelt de rest.",
         "The data schema of this case type.": "Het gegevensschema van dit zaaktype.",
+        "The data schema of this case type. Drag to change the order. Fields of the parent type are purple.": "Het gegevensschema van dit zaaktype. Sleep om de volgorde te wijzigen. Velden van het moedertype zijn paars.",
         "The date a held case returns to the working queue. A hold is a deliberate pause in the WORK and never stops a statutory term: only an opschorting under Awb 4:5 does that, and it has its own act.": "De datum waarop een aangehouden zaak terugkeert in de werkvoorraad. Aanhouden is een bewuste pauze in het WERK en stopt nooit een wettelijke termijn: alleen een opschorting onder Awb 4:5 doet dat, en die heeft haar eigen handeling.",
         "The date and time of the incident": "Datum/tijd van het incident",
         "The date and time the data protection authority was notified": "Datum/tijd van de AP-melding",

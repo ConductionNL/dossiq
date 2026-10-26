@@ -7856,7 +7856,7 @@
 						"type": "CaseTypeRulesWidget"
 					},
 					"case-type-fields-editor": {
-						"subtitle": "The data schema of this case type."
+						"subtitle": "The data schema of this case type. Drag to change the order. Fields of the parent type are purple."
 					}
 				}
 			}
