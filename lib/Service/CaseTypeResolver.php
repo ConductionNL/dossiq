@@ -448,18 +448,30 @@ class CaseTypeResolver {
 		}
 
 		if ($includeShared === true) {
-			foreach ($this->store->sharedRows(schemaKey: $schemaKey) as $row) {
-				$key = $this->mergeKey(row: $row);
-				if (isset($merged[$key]) === true) {
-					continue;
-				}
-
-				$merged[$key] = $this->tag(row: $row, origin: self::ORIGIN_SHARED, ancestor: []);
-			}
+			$merged = $this->withSharedRows(merged: $merged, schemaKey: $schemaKey);
 		}
 
 		return $this->sortByOrder(rows: array_values($merged));
 	}//end inheritedRows()
+
+	/**
+	 * Add the rows that belong to no case type, where no type row of the same name stands.
+	 *
+	 * @param array<string, array<string, mixed>> $merged    The merged rows by key.
+	 * @param string                              $schemaKey The settings key naming the schema.
+	 *
+	 * @return array<string, array<string, mixed>> The rows with the shared ones added.
+	 */
+	private function withSharedRows(array $merged, string $schemaKey): array {
+		foreach ($this->store->sharedRows(schemaKey: $schemaKey) as $row) {
+			$key = $this->mergeKey(row: $row);
+			if (isset($merged[$key]) === false) {
+				$merged[$key] = $this->tag(row: $row, origin: self::ORIGIN_SHARED, ancestor: []);
+			}
+		}
+
+		return $merged;
+	}//end withSharedRows()
 
 	/**
 	 * Stamp a row with where it came from.
