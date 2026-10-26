@@ -417,7 +417,7 @@
 										"isFinalStatus": "false",
 										"statusHiddenInLists": "false",
 										"isDraft": "false",
-										"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
+										"_order": "[{\"key\":\"lastActivityAt\",\"order\":\"asc\"}]"
 									}
 								},
 								"content": {
@@ -432,7 +432,7 @@
 										"calculations"
 									],
 									"sort": {
-										"field": "@self.updated",
+										"field": "lastActivityAt",
 										"dir": "asc"
 									},
 									"limit": 3,
@@ -5531,7 +5531,7 @@
 								"isFinalStatus": "false",
 								"statusHiddenInLists": "false",
 								"isDraft": "false",
-								"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
+								"_order": "[{\"key\":\"lastActivityAt\",\"order\":\"asc\"}]"
 							},
 							"placement": "title"
 						}
@@ -5587,7 +5587,7 @@
 				"widgets": {
 					"stalled-cases": {
 						"type": "record-list",
-						"_note": "DqDashboard draws Vastgelopen zaken as rows: the title, the case number and how long it has been idle, without a chevron. The same query as the full structure's table (open cases, least recently changed first); View all is the layout entry's headerLink, to the same list.",
+						"_note": "DqDashboard draws Vastgelopen zaken as rows: the title, the case number and how long it has been idle, without a chevron. The same query as the full structure's table (open cases, least recently worked on first); View all is the layout entry's headerLink, to the same list.",
 						"content": {
 							"register": "dossiq",
 							"schema": "case",
@@ -5600,7 +5600,7 @@
 								"calculations"
 							],
 							"sort": {
-								"field": "@self.updated",
+								"field": "lastActivityAt",
 								"dir": "asc"
 							},
 							"limit": 3,

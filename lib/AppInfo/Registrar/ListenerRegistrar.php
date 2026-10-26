@@ -67,5 +67,6 @@ class ListenerRegistrar {
 		(new CaseMergeRegistrar())->register(context: $context);
 		(new BulkActionRegistrar())->register(context: $context);
 		(new CrossAppListenerRegistrar())->register(context: $context);
+		(new CaseActivityListenerRegistrar())->register(context: $context);
 	}//end register()
 }//end class
