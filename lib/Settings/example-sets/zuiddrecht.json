@@ -1785,7 +1785,7 @@
 				"description": "De vergunning is geweigerd, met de gronden en een bezwaarclausule.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"isDraft": false,
-				"publicationRequired": true,
+				"publicationRequired": false,
 				"documentTypes": [
 					"{{object:documenttype-regulier-v4-besluit.id}}"
 				],
