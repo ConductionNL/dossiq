@@ -35,3 +35,18 @@ describe('the advanced settings, r31', () => {
 		expect(read('src', 'views', 'settings', 'tabs', 'PrerequisitesTab.vue')).toMatch(/__mark--present \{\s*background: color-mix\(/)
 	})
 })
+
+describe('the mandate matrix, r31', () => {
+	it('picks its section with a labelled field, not a caption and chips', () => {
+		const tab = read('src', 'views', 'settings', 'tabs', 'DelegationMatrixTab.vue')
+		expect(tab).toContain('data-testid="mandaat-matrix-sections"')
+		expect(tab).not.toContain('NcAppNavigationCaption')
+		expect(tab).not.toContain('mandaat-matrix-tab__description')
+	})
+
+	it('names a mandate status in words', () => {
+		const table = read('src', 'views', 'settings', 'components', 'DelegationMatrixTable.vue')
+		expect(table).toContain("determined: t('dossiq', 'Adopted')")
+		expect(table).not.toContain('variant="primary"')
+	})
+})

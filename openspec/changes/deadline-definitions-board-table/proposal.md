@@ -11,3 +11,5 @@ r31 DqBeheerGeavanceerd: AWB-termijndefinities drew a row of pills per definitio
 ## Scope
 
 - DeadlineDefinitionsTab.vue, FirstRunTab.vue, PrerequisitesTab.vue, l10n, a vitest.
+
+Also (r31 follow-up): the mandate matrix picks its section with a labelled 560px field (was a caption and four chips under a duplicate description), its buttons are secondary as the board's, and a mandate status reads in words ("determined" -> Vastgesteld).
