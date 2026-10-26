@@ -2015,7 +2015,12 @@
 						"label": "Team"
 					},
 					"assignee": {
-						"label": "Handler"
+						"label": "Handler",
+						"_valuesNote": "Board DqPersoonlijkeInstellingen: a view on my own cases reads \"Mijn zaken\" in its summary, not \"Behandelaar jij\" (nc-vue valuesAlone).",
+						"values": {
+							"@me": "My cases"
+						},
+						"valuesAlone": true
 					},
 					"waitingOnApplicant": {
 						"label": "Status",
