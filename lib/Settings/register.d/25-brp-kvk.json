@@ -175,7 +175,7 @@
             "kvkCompany": {
                 "slug": "kvkCompany",
                 "icon": "Domain",
-                "version": "1.6.0",
+                "version": "1.5.0",
                 "x-schema-org": "schema:Organization",
                 "x-zgw-equivalent": "Rol betrokkene niet_natuurlijk_persoon",
                 "x-openregister-registry": { "registry": "kvk", "identity": "kvkNumber", "owned": ["tradeName", "legalForm", "address"] },
@@ -270,8 +270,7 @@
                             "key": "person",
                             "label": "Contact person",
                             "description": "A person who speaks for the organisation. A municipality adds a role by adding it here and to linkRoles.",
-                            "roles": ["chair", "secretary", "treasurer", "contact"],
-                            "identityShapes": ["naturalPerson"]
+                            "roles": ["chair", "secretary", "treasurer", "contact"]
                         }
                     ],
                     "linkRoles": [

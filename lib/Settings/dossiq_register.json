@@ -1854,7 +1854,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.53.0",
+                "version": "1.52.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -2898,26 +2898,12 @@
                         {
                             "key": "person",
                             "label": "Person",
-                            "description": "A natural person, with or without an account on this instance.",
-                            "identityShapes": [
-                                "naturalPerson"
-                            ]
+                            "description": "A natural person, with or without an account on this instance."
                         },
                         {
                             "key": "organisation",
                             "label": "Organisation",
-                            "description": "A company, authority or other body acting on the case.",
-                            "identityShapes": [
-                                "organization"
-                            ]
-                        },
-                        {
-                            "key": "colleague",
-                            "label": "Colleague",
-                            "description": "A colleague of the municipality who takes part in the case, such as an adviser.",
-                            "identityShapes": [
-                                "naturalPerson"
-                            ]
+                            "description": "A company, authority or other body acting on the case."
                         },
                         {
                             "key": "address",
