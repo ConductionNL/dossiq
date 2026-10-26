@@ -1152,7 +1152,8 @@
 									},
 									"title": "{title}",
 									"meta": "{identifier} · {initiatorDisplayName}",
-									"badge": "{resultPublicLabel}"
+									"badge": "{resultPublicLabel}",
+									"badgeVariant": "teal"
 								},
 								"facts": [
 									{
