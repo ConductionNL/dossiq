@@ -2486,10 +2486,17 @@
 								"lastPaymentDate"
 							],
 							"hideEmpty": true,
+							"_overridesNote": "DqZaak Termijn en betaling: \"Wettelijke termijn: 4 weken, te verdagen met 2\" and \"Laatst gecontroleerd\", as the board draws them (nextcloud-vue format duration + extendBy).",
 							"overrides": {
 								"statutoryTerm": {
 									"readOnly": false,
-									"editable": false
+									"editable": false,
+									"label": "Statutory term",
+									"format": "duration",
+									"extendBy": "statutoryExtension"
+								},
+								"paymentStateCheckedAt": {
+									"label": "Last checked"
 								}
 							}
 						}

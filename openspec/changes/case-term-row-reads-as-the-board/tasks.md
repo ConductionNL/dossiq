@@ -1,0 +1,3 @@
+- [x] 1.1 statutoryExtension on the case (register.d/99-case-statutory-extension.json)
+- [x] 1.2 case-terms overrides (menu-layout.simple.json); needs nextcloud-vue feat/data-widget-duration-format
+- [x] 1.3 test (CaseTermRowReadsAsTheBoardTest)
