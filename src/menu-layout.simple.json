@@ -6626,11 +6626,13 @@
 									"label": "Handling teams",
 									"parts": [
 										{
-											"path": "handling.defaultGroup"
+											"path": "handling.defaultGroup",
+											"format": "group"
 										},
 										{
 											"path": "handling.teams",
-											"format": "list"
+											"format": "list",
+											"itemFormat": "group"
 										}
 									],
 									"separator": ", "
