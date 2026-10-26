@@ -1342,6 +1342,10 @@
 			},
 			"data": {
 				"name": "locatie",
+				"title": {
+					"nl": "Locatie",
+					"en": "Location"
+				},
 				"definition": "Locatie",
 				"description": "Het adres van het bouwwerk of de plek, uit de BAG.",
 				"propertyType": "string",
@@ -1365,6 +1369,10 @@
 			},
 			"data": {
 				"name": "aanvrager",
+				"title": {
+					"nl": "Aanvrager",
+					"en": "Applicant"
+				},
 				"definition": "Aanvrager",
 				"description": "De persoon of organisatie die de vergunning aanvraagt.",
 				"propertyType": "string",
@@ -1387,6 +1395,10 @@
 			},
 			"data": {
 				"name": "datumIndieningDso",
+				"title": {
+					"nl": "Datum indiening DSO",
+					"en": "DSO submission date"
+				},
 				"definition": "Datum indiening DSO",
 				"description": "De dag waarop de aanvraag via het Omgevingsloket is ingediend.",
 				"propertyType": "date",
@@ -1410,6 +1422,10 @@
 			},
 			"data": {
 				"name": "omschrijvingProject",
+				"title": {
+					"nl": "Omschrijving project",
+					"en": "Project description"
+				},
 				"definition": "Omschrijving van het project",
 				"description": "Wat de aanvrager wil doen, in zijn eigen woorden uit het Omgevingsloket.",
 				"propertyType": "string",
@@ -1432,6 +1448,10 @@
 			},
 			"data": {
 				"name": "dsoVerzoeknummer",
+				"title": {
+					"nl": "DSO-verzoeknummer",
+					"en": "DSO request number"
+				},
 				"definition": "DSO-verzoeknummer",
 				"description": "Het nummer dat het Omgevingsloket aan de aanvraag gaf.",
 				"propertyType": "string",
@@ -1455,6 +1475,10 @@
 			},
 			"data": {
 				"name": "kadastraalPerceel",
+				"title": {
+					"nl": "Kadastraal perceel",
+					"en": "Cadastral parcel"
+				},
 				"definition": "Kadastraal perceel",
 				"description": "De kadastrale aanduiding van het perceel, zoals ZDR00 K 1234.",
 				"propertyType": "string",
@@ -1800,6 +1824,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "bouwkosten",
+				"title": {
+					"nl": "Bouwkosten",
+					"en": "Building costs"
+				},
 				"definition": "Bouwkosten",
 				"description": "De geschatte bouwkosten in euro, zonder btw.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
@@ -1815,6 +1843,11 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "soortBouwwerk",
+				"title": {
+					"nl": "Soort bouwwerk",
+					"en": "Type of structure"
+				},
+				"enumCodes": {"Woning": "WON", "Bijgebouw": "BIJ", "Dakkapel": "DAK", "Bedrijfspand": "BED", "Erfafscheiding": "ERF", "Overig": "OVR"},
 				"definition": "Soort bouwwerk",
 				"description": "Wat er gebouwd wordt.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
@@ -1838,6 +1871,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "welstandsgebied",
+				"title": {
+					"nl": "Welstandsgebied",
+					"en": "Aesthetics zone"
+				},
 				"definition": "Welstandsgebied",
 				"description": "Of het bouwwerk in een gebied met welstandseisen staat.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
@@ -1853,6 +1890,7 @@
 			"data": {
 				"phase": "Ontvangst",
 				"name": "Ontvangen",
+				"phase": "Ontvangst",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"order": 1,
 				"colour": "blue",
@@ -1880,6 +1918,7 @@
 			"data": {
 				"phase": "Ontvangst",
 				"name": "Aanvullende gegevens gevraagd",
+				"phase": "Ontvangst",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"order": 2,
 				"colour": "orange",
@@ -1897,6 +1936,7 @@
 			"data": {
 				"phase": "Beoordeling",
 				"name": "In behandeling",
+				"phase": "Beoordeling",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"order": 3,
 				"colour": "purple",
@@ -1914,6 +1954,7 @@
 			"data": {
 				"phase": "Besluit",
 				"name": "Besluit",
+				"phase": "Besluit",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"order": 4,
 				"colour": "teal",
@@ -2444,6 +2485,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "bouwkosten",
+				"title": {
+					"nl": "Bouwkosten",
+					"en": "Building costs"
+				},
 				"definition": "Bouwkosten",
 				"description": "De geschatte bouwkosten in euro, zonder btw.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
@@ -2459,6 +2504,11 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "soortBouwwerk",
+				"title": {
+					"nl": "Soort bouwwerk",
+					"en": "Type of structure"
+				},
+				"enumCodes": {"Woning": "WON", "Bijgebouw": "BIJ", "Dakkapel": "DAK", "Bedrijfspand": "BED", "Erfafscheiding": "ERF", "Overig": "OVR"},
 				"definition": "Soort bouwwerk",
 				"description": "Wat er gebouwd wordt.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
@@ -2482,6 +2532,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "welstandsgebied",
+				"title": {
+					"nl": "Welstandsgebied",
+					"en": "Aesthetics zone"
+				},
 				"definition": "Welstandsgebied",
 				"description": "Of het bouwwerk in een gebied met welstandseisen staat.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
@@ -2496,6 +2550,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "situatietekening",
+				"title": {
+					"nl": "Situatietekening",
+					"en": "Site plan"
+				},
 				"definition": "Situatietekening",
 				"description": "Tekening van de situatie na de verbouwing, met maten.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
@@ -2594,6 +2652,7 @@
 			"data": {
 				"phase": "Ontvangst",
 				"name": "Ontvangen",
+				"phase": "Ontvangst",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"order": 1,
 				"colour": "blue",
@@ -2621,6 +2680,7 @@
 			"data": {
 				"phase": "Ontvangst",
 				"name": "Aanvullende gegevens gevraagd",
+				"phase": "Ontvangst",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"order": 2,
 				"colour": "orange",
@@ -2638,6 +2698,7 @@
 			"data": {
 				"phase": "Beoordeling",
 				"name": "In behandeling",
+				"phase": "Beoordeling",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"order": 3,
 				"colour": "purple",
@@ -2655,6 +2716,7 @@
 			"data": {
 				"phase": "Besluit",
 				"name": "Besluit",
+				"phase": "Besluit",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"order": 4,
 				"colour": "teal",
