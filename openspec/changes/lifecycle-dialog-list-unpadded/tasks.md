@@ -1,0 +1,1 @@
+- [x] 1.1 drop the list padding (tests/vitest/lifecycleDialogListUnpadded.spec.js)
