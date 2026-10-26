@@ -264,6 +264,8 @@ describe('deadline reports', () => {
 		expect(quarterly.averageProcessingDays.format).toMatchObject({ style: 'decimal', decimals: 1 })
 		const payments = Object.fromEntries(widget('TermijnDashboard', 'deadline-report-annual-payments-list').content.columns.map((c) => [c.key, c]))
 		expect(payments.amountEuros.class).toBe('cn-table-col--end')
+		// The case number is a link to the case, as DqTermijnen draws it ("2026-0018").
+		expect(payments.caseIdentifier).toMatchObject({ widget: 'link', widgetProps: { route: 'CaseDetail', params: { id: 'caseId' } } })
 	})
 
 	it('draws each report card with its own form, as board DqTermijnen does', () => {

@@ -11650,7 +11650,7 @@
 								"responsePath": "rows"
 							},
 							"columns": [
-								{ "key": "caseIdentifier", "label": "Case" },
+								{ "key": "caseIdentifier", "label": "Case", "widget": "link", "widgetProps": { "route": "CaseDetail", "params": { "id": "caseId" } } },
 								{ "key": "caseTypeTitle", "label": "Case type" },
 								{ "key": "requester", "label": "Requester" },
 								{ "key": "forfeitDate", "label": "Forfeited on", "format": "date" },
