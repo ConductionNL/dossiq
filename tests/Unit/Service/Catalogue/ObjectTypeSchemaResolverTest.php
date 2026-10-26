@@ -60,6 +60,25 @@ class ObjectTypeSchemaResolverTest extends TestCase {
 	}//end testAGeoPropertyAddsTheMapView()
 
 	/**
+	 * A geo format on an object property, the spelling a JSON Schema validator
+	 * accepts, and the `geo:` kinds count as geo too; a format that only starts
+	 * with the letters does not.
+	 *
+	 * @return void
+	 */
+	public function testAGeoFormatAddsTheMapView(): void {
+		$this->assertSame(
+			expected: ['map', 'table'],
+			actual: ObjectTypeSchemaResolver::viewsOf(properties: ['location' => ['type' => 'object', 'format' => 'geo:point']])
+		);
+		$this->assertSame(expected: ['map', 'table'], actual: ObjectTypeSchemaResolver::viewsOf(properties: ['area' => ['type' => 'geo:polygon']]));
+		$this->assertSame(
+			expected: ['table'],
+			actual: ObjectTypeSchemaResolver::viewsOf(properties: ['code' => ['type' => 'string', 'format' => 'geography']])
+		);
+	}//end testAGeoFormatAddsTheMapView()
+
+	/**
 	 * The schema is read once per register and schema, and shaped.
 	 *
 	 * @return void
