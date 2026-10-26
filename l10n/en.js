@@ -1638,6 +1638,7 @@ OC.L10N.register(
         "choice from a list": "choice from a list",
         "Choice list": "Choice list",
         "Choice list, {options}": "Choice list, {options}",
+        "Choice list: {name|fieldTitle}": "Choice list: {name|fieldTitle}",
         "Choice list: {name}": "Choice list: {name}",
         "Choices": "Choices",
         "Choose a category": "Choose a category",

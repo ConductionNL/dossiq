@@ -1355,6 +1355,10 @@
         "version": "1.8.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/69-field-title-and-option-codes.json::propertyDefinition": {
+        "version": "1.9.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/70-cmmn-case-model.json::caseModel": {
         "version": "1.0.1",
         "digest": "4b8c3b0310eaae7f6ffb7fd86ee383eb70130dc0b8a3e2714d54579cd9432dca"

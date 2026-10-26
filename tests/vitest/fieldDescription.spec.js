@@ -16,7 +16,7 @@ vi.mock('@nextcloud/l10n', () => ({
 	translatePlural: (app, one, other, count) => (count === 1 ? one : other).replace('%n', String(count)),
 }))
 
-const { fieldFill, fieldKind } = await import('../../src/utils/fieldDescription.js')
+const { fieldFill, fieldKind, fieldTitle } = await import('../../src/utils/fieldDescription.js')
 
 describe('fieldKind', () => {
 	it('names the kind of answer', () => {
@@ -70,5 +70,14 @@ describe('fieldInCaseList', () => {
 		expect(fieldInCaseList({ name: 'welstandsgebied' }, caseType)).toBe('No')
 		expect(fieldInCaseList({ name: 'bouwkosten' }, {})).toBe('No')
 		expect(fieldInCaseList({ name: 'bouwkosten' }, null)).toBe('No')
+	})
+})
+
+describe('fieldTitle', () => {
+	it('reads the title in the reader\'s language, else the name', () => {
+		expect(fieldTitle({ name: 'bouwkosten', title: { nl: 'Bouwkosten', en: 'Building costs' } })).toBe('Bouwkosten')
+		expect(fieldTitle({ name: 'bouwkosten', title: 'Bouwkosten' })).toBe('Bouwkosten')
+		expect(fieldTitle({ name: 'bouwkosten' })).toBe('bouwkosten')
+		expect(fieldTitle({ name: 'bouwkosten', title: '  ' })).toBe('bouwkosten')
 	})
 })
