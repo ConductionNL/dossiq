@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour. Pieter also has his saved view \"Termijn deze week\" in his menu (`pref_cn_saved_view_menu`, the view quoted by `{{view:pieter-termijn-deze-week.uuid}}`, which needs OpenRegister feat/example-set-view-placeholder), as board DqFilterInMenu draws it.",
+	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour. Pieter also has his saved view \"Termijn deze week\" in his menu (`pref_cn_saved_view_menu`, the view quoted by `{{view:pieter-termijn-deze-week.uuid}}`, which needs OpenRegister feat/example-set-view-placeholder), as board DqFilterInMenu draws it. The cases about a tree, a play item or a market pitch link that object in OpenRegister's public-space register (openbare ruimte), found by its identification, so the object type catalogue shows its schema.",
 	"after": [
 		"opencatalogi"
 	],
@@ -8852,6 +8852,195 @@
 						]
 					}
 				]
+			}
+		},
+		{
+			"key": "kapvergunning-parkstraat-object-kastanje",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "tree",
+					"where": {
+						"identification": "BM-0412"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:kapvergunning-parkstraat.id}}",
+				"objectType": "Boom",
+				"objectIdentification": "BM-0412",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/tree/{{lookup:object}}",
+				"description": "De kastanje voor het huis"
+			}
+		},
+		{
+			"key": "kapvergunning-essen-parkweg-object-es-1",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "tree",
+					"where": {
+						"identification": "BM-1031"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:kapvergunning-essen-parkweg.id}}",
+				"objectType": "Boom",
+				"objectIdentification": "BM-1031",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/tree/{{lookup:object}}",
+				"description": "Es met essentaksterfte"
+			}
+		},
+		{
+			"key": "kapvergunning-essen-parkweg-object-es-2",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "tree",
+					"where": {
+						"identification": "BM-1032"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:kapvergunning-essen-parkweg.id}}",
+				"objectType": "Boom",
+				"objectIdentification": "BM-1032",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/tree/{{lookup:object}}",
+				"description": "Es met essentaksterfte"
+			}
+		},
+		{
+			"key": "kapvergunning-essen-parkweg-object-es-3",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "tree",
+					"where": {
+						"identification": "BM-1033"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:kapvergunning-essen-parkweg.id}}",
+				"objectType": "Boom",
+				"objectIdentification": "BM-1033",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/tree/{{lookup:object}}",
+				"description": "Es met essentaksterfte"
+			}
+		},
+		{
+			"key": "evenement-buurtfeest-2026-object-linde",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "tree",
+					"where": {
+						"identification": "BM-0207"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:evenement-buurtfeest-2026.id}}",
+				"objectType": "Boom",
+				"objectIdentification": "BM-0207",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/tree/{{lookup:object}}",
+				"description": "Monumentale linde; het podium blijft buiten de kroon"
+			}
+		},
+		{
+			"key": "evenement-buurtfeest-2026-object-wipkip",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "play-equipment",
+					"where": {
+						"identification": "SP-0117"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:evenement-buurtfeest-2026.id}}",
+				"objectType": "Speeltoestel",
+				"objectIdentification": "SP-0117",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/play-equipment/{{lookup:object}}",
+				"description": "Wordt tijdens het feest afgezet"
+			}
+		},
+		{
+			"key": "evenement-buurtfeest-2026-object-standplaats",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "market-pitch",
+					"where": {
+						"identification": "ST-0031"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:evenement-buurtfeest-2026.id}}",
+				"objectType": "Standplaats",
+				"objectIdentification": "ST-0031",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/market-pitch/{{lookup:object}}",
+				"description": "Kraam van de buurtvereniging"
+			}
+		},
+		{
+			"key": "melding-speeltoestel-oosthavenplein-object-wipkip",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "play-equipment",
+					"where": {
+						"identification": "SP-0117"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:melding-speeltoestel-oosthavenplein.id}}",
+				"objectType": "Speeltoestel",
+				"objectIdentification": "SP-0117",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/play-equipment/{{lookup:object}}",
+				"description": "De wipkip die los zit"
+			}
+		},
+		{
+			"key": "besloten-bezwaar-standplaats-markt-object",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "market-pitch",
+					"where": {
+						"identification": "ST-0007"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:besloten-bezwaar-standplaats-markt.id}}",
+				"objectType": "Standplaats",
+				"objectIdentification": "ST-0007",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/market-pitch/{{lookup:object}}",
+				"description": "De standplaats die is afgewezen"
 			}
 		}
 	],
