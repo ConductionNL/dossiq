@@ -10398,6 +10398,7 @@ OC.L10N.register(
         "View task": "View task",
         "View the mail intake log": "View the mail intake log",
         "View usage": "View usage",
+        "Viewed {changed.data.fileName}": "Viewed {changed.data.fileName}",
         "Viewing version {version}. Active version is {active}.": "Viewing version {version}. Active version is {active}.",
         "Violation class": "Violation class",
         "Violation established and classified": "Violation established and classified",

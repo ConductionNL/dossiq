@@ -67,6 +67,14 @@ describe('DqSociaalDomein side column', () => {
 		expect(nl['Reference {identifier}']).toBe('Kenmerk {identifier}')
 	})
 
+	/** @spec openspec/changes/social-history-people-and-files/specs/case-page/spec.md#requirement-the-social-history-shows-what-people-did-and-which-documents-they-viewed */
+	it('shows what people did, leaving System jobs out, and names a viewed document', () => {
+		const history = card('side-social-history').content
+		expect(history.excludeActors).toEqual(['System'])
+		expect(history.actionLabels['file.downloaded']).toBe('Viewed {changed.data.fileName}')
+		expect(nl['Viewed {changed.data.fileName}']).toBe('Inzage {changed.data.fileName}')
+	})
+
 	it('puts "Overleg plannen" above a Melding Jeugdwet case, filing the meeting on the case', () => {
 		const caseType = readJson('lib', 'Settings', 'packages', 'jeugdwet', 'case-type.json').caseType
 		expect(caseType.quickActions).toEqual(['plan-case-meeting'])

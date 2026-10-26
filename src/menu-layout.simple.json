@@ -1685,12 +1685,16 @@
 						"content": {
 							"layout": "stacked",
 							"maxDisplay": 3,
+							"excludeActors": [
+								"System"
+							],
 							"excludeActions": ["read"],
 							"actionLabels": {
 								"dossiq.case.access-purpose": "Case opened, purpose {changed.purpose}",
 								"dossiq.case.access-role": "Added as {changed.role} on opening",
 								"create": "Case created",
 								"update": "Case changed",
+								"file.downloaded": "Viewed {changed.data.fileName}",
 								"consent.create": "Consent recorded",
 								"consent.update": "Consent changed"
 							},
