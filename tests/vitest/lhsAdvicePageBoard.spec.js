@@ -44,6 +44,14 @@ describe('enforcement advice page (DqHandhaving)', () => {
 		expect(paths('side-override')).toEqual(expect.arrayContaining(['finalIntervention', 'override', 'overrideJustification', 'overrideBy', 'overrideAuthority']))
 	})
 
+	it('stacks each override label above its value in the narrow side card', () => {
+		expect(page.config.sideColumn.find((card) => card.id === 'side-override').content.columns).toBe(1)
+	})
+
+	it('names the advice in the header pill, not the intervention applied after a deviation', () => {
+		expect(page.config.typePill.field).toBe('recommendedIntervention')
+	})
+
 	it('leaves only the matrix and the violation in the main column', () => {
 		expect(page.config.widgets.map((widget) => widget.id).sort()).toEqual(['lhs-matrix', 'lhs-violation'])
 		expect(page.config.layout.map((cell) => cell.widgetId).sort()).toEqual(['lhs-matrix', 'lhs-violation'])

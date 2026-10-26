@@ -334,6 +334,7 @@
   "statusTypes": [
     {
       "id": "bcfc8608-2b50-51c5-b7de-a4ef55d45f90",
+      "phase": "Ontvangst",
       "name": "Aangemeld",
       "description": "Het traject is aangemeld, bijvoorbeeld nadat bijstand is toegekend.",
       "order": 1,
@@ -344,6 +345,7 @@
     },
     {
       "id": "aa9bc9b1-5d4b-5311-bdf2-ad36b3dfc681",
+      "phase": "Beoordeling",
       "name": "Plan van aanpak",
       "description": "De klantmanager legt met de deelnemer vast welk traject past en hoe ver de arbeidsmarkt is.",
       "order": 2,
@@ -363,6 +365,7 @@
     },
     {
       "id": "576f334f-9157-569e-8f9a-4cf66f23ae8c",
+      "phase": "Beoordeling",
       "name": "Evaluatie",
       "description": "Het traject wordt geëvalueerd: werkt het, of is iets anders nodig?",
       "order": 4,

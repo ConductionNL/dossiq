@@ -128,6 +128,7 @@
   "statusTypes": [
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a01",
+      "phase": "Ontvangst",
       "name": "Ontvangen",
       "description": "Bezwaarschrift is ontvangen",
       "order": 1,
@@ -138,6 +139,7 @@
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a02",
+      "phase": "Ontvangst",
       "name": "Ontvankelijkheidstoets",
       "description": "Toetsing op ontvankelijkheid (termijn, belanghebbendheid, besluit-karakter)",
       "order": 2,
@@ -147,6 +149,7 @@
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a03",
+      "phase": "Beoordeling",
       "name": "In behandeling",
       "description": "Inhoudelijke behandeling gestart",
       "order": 3,
@@ -157,6 +160,7 @@
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a04",
+      "phase": "Beoordeling",
       "name": "Hoorzitting gepland",
       "description": "Hoorzitting is ingepland (Awb art. 7:2)",
       "order": 4,
@@ -166,6 +170,7 @@
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a05",
+      "phase": "Beoordeling",
       "name": "Hoorzitting afgerond",
       "description": "Hoorzitting heeft plaatsgevonden",
       "order": 5,
@@ -175,6 +180,7 @@
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a06",
+      "phase": "Advies",
       "name": "Advies uitgebracht",
       "description": "Bezwaarschriftencommissie heeft advies uitgebracht (Awb art. 7:13)",
       "order": 6,
@@ -185,6 +191,7 @@
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a07",
+      "phase": "Besluit",
       "name": "Beslissing op bezwaar",
       "description": "Besluit op bezwaar is genomen (Awb art. 7:11, 7:12)",
       "order": 7,
@@ -222,6 +229,7 @@
     },
     {
       "id": "fbe0b51c-3931-5428-9386-5c2a4ce266e2",
+      "phase": "Ontvangst",
       "name": "Beroep ontvangen",
       "description": "Beroepschrift ontvangen van rechtbank",
       "order": 1,
@@ -232,6 +240,7 @@
     },
     {
       "id": "650ef378-4aa7-53c5-8993-739c79903ca6",
+      "phase": "Beoordeling",
       "name": "Verweerschrift in voorbereiding",
       "description": "Gemeente bereidt verweer voor",
       "order": 2,
@@ -242,6 +251,7 @@
     },
     {
       "id": "faf41ada-73c9-5ae6-b0ad-f264696660ec",
+      "phase": "Beoordeling",
       "name": "Verweerschrift ingediend",
       "description": "Verweer ingediend bij de rechtbank",
       "order": 3,
@@ -251,6 +261,7 @@
     },
     {
       "id": "dbe7c45e-6e02-57e7-a079-457cf16379f3",
+      "phase": "Beoordeling",
       "name": "Zitting gepland",
       "description": "Zitting bij de rechtbank is gepland",
       "order": 4,
@@ -260,6 +271,7 @@
     },
     {
       "id": "02af49df-7838-5a57-9684-9a4d3088cf51",
+      "phase": "Beoordeling",
       "name": "Zitting afgerond",
       "description": "Zitting bij de rechtbank heeft plaatsgevonden",
       "order": 5,
@@ -269,6 +281,7 @@
     },
     {
       "id": "fb11fb9b-d2b4-5828-8725-d23655f9909d",
+      "phase": "Besluit",
       "name": "Uitspraak ontvangen",
       "description": "Uitspraak van de rechtbank ontvangen",
       "order": 6,

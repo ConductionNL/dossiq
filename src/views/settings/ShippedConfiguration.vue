@@ -14,15 +14,6 @@
 -->
 <template>
 	<div class="shipped-configuration">
-		<p class="shipped-configuration__intro">
-			{{
-				t(
-					'dossiq',
-					'Dossiq ships case types, statuses, results and roles. This is what arrived, and what you changed since.',
-				)
-			}}
-		</p>
-
 		<label class="shipped-configuration__picker" for="shipped-schema">
 			{{ t('dossiq', 'Show') }}
 		</label>
@@ -53,7 +44,7 @@
 			</thead>
 			<tbody>
 				<tr v-for="row in rows" :key="row.targetObject">
-					<td>{{ row.title || row.targetObject }}</td>
+					<td class="shipped-configuration__name">{{ row.title || row.targetObject }}</td>
 					<td :data-testid="'shipped-state-' + row.targetObject">
 						{{ label(row) }}
 					</td>
@@ -241,7 +232,7 @@ export default {
 .shipped-configuration__table {
 	width: 100%;
 	border-collapse: collapse;
-	margin-top: 12px;
+	margin-top: 16px;
 	/* Nextcloud's own stylesheet sets `table { white-space: nowrap }`. Under
 	   it the one-cell "the register holds 47, none of them shipped" sentence
 	   ran 818px wide in a 779px section at a 1100px window and pushed the
@@ -256,13 +247,30 @@ export default {
 	text-align: left;
 }
 
-.shipped-configuration__intro {
-	color: var(--color-text-maxcontrast);
-	margin-bottom: 12px;
+/* The picker reads as a settings field, label above and at most 560px wide,
+   as board DqBeheerGeavanceerd "Wat dossiq meelevert" draws it. */
+.shipped-configuration__picker {
+	display: block;
+	margin-block-end: 6px;
+	font-size: 14px;
+	font-weight: 600;
 }
 
-.shipped-configuration__picker {
-	margin-inline-end: 8px;
+.shipped-configuration #shipped-schema {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 560px;
+	height: 40px;
+	margin: 0 0 4px;
+	padding: 0 12px;
+	border: 1px solid var(--color-border-maxcontrast);
+	border-radius: var(--border-radius-element, 8px);
+	font-size: 15px;
+}
+
+.shipped-configuration__name {
+	font-weight: 600;
 }
 
 .shipped-configuration__empty,

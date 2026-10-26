@@ -133,6 +133,10 @@
             "%n day left",
             "%n days left"
         ],
+        "_%n day remaining_::_%n days remaining_": [
+            "%n day remaining",
+            "%n days remaining"
+        ],
         "_%n day_::_%n days_": [
             "%n day",
             "%n days"
@@ -987,6 +991,7 @@
         "Area resolved at": "Area resolved at",
         "Area source": "Area source",
         "Article": "Article",
+        "As a push message": "As a push message",
         "As long as an advice is open, the case cannot be closed.": "As long as an advice is open, the case cannot be closed.",
         "Ascending or descending.": "Ascending or descending.",
         "Ask": "Ask",
@@ -1388,6 +1393,7 @@
         "By": "By",
         "by": "by",
         "By category": "By category",
+        "By e-mail": "By e-mail",
         "by {actor}": "by {actor}",
         "By {date}": "By {date}",
         "By {targetDate}": "By {targetDate}",
@@ -4143,12 +4149,14 @@
         "In execution": "In execution",
         "In hand since {date}": "In hand since {date}",
         "In handling": "In handling",
+        "In Nextcloud": "In Nextcloud",
         "In person (balie)": "In person (balie)",
         "In progress": "In progress",
         "In review": "In review",
         "In seven steps you register your first case and see where it goes. The case you save is a real record, not a demo.": "In seven steps you register your first case and see where it goes. The case you save is a real record, not a demo.",
         "In status": "In status",
         "In statuses": "In statuses",
+        "In the activity stream": "In the activity stream",
         "In the list": "In the list",
         "In werkingtreding": "In werkingtreding",
         "In which register Dossiq keeps cases, and with which schemas.": "In which register Dossiq keeps cases, and with which schemas.",
@@ -8858,6 +8866,7 @@
         "The Dashboard tracks progress as cases move through it. The documentation covers the rest.": "The Dashboard tracks progress as cases move through it. The documentation covers the rest.",
         "The dashboard tracks progress as cases move through it. The documentation covers the rest.": "The dashboard tracks progress as cases move through it. The documentation covers the rest.",
         "The data schema of this case type.": "The data schema of this case type.",
+        "The data schema of this case type. Drag to change the order. Fields of the parent type are purple.": "The data schema of this case type. Drag to change the order. Fields of the parent type are purple.",
         "The date a held case returns to the working queue. A hold is a deliberate pause in the WORK and never stops a statutory term: only an opschorting under Awb 4:5 does that, and it has its own act.": "The date a held case returns to the working queue. A hold is a deliberate pause in the WORK and never stops a statutory term: only an opschorting under Awb 4:5 does that, and it has its own act.",
         "The date and time of the incident": "The date and time of the incident",
         "The date and time the data protection authority was notified": "The date and time the data protection authority was notified",
@@ -9037,6 +9046,7 @@
         "The follow-up could not be planned.": "The follow-up could not be planned.",
         "The followers of this case could not be read": "The followers of this case could not be read",
         "The form the investigation took": "The form the investigation took",
+        "The generic phase this status belongs to (for example Ontvangst, Beoordeling, Advies, Besluit, Verzending). Process analysis groups statuses by it, so case types with different statuses read side by side; a status without one keeps its own name there.": "The generic phase this status belongs to (for example Ontvangst, Beoordeling, Advies, Besluit, Verzending). Process analysis groups statuses by it, so case types with different statuses read side by side; a status without one keeps its own name there.",
         "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.",
         "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data. `gemachtigde` is the authorised representative of Awb 2:1: the row carrying it has no caseType, so every case type offers it, and SeedGemachtigdeRoleType keeps exactly one of it.": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data. `gemachtigde` is the authorised representative of Awb 2:1: the row carrying it has no caseType, so every case type offers it, and SeedGemachtigdeRoleType keeps exactly one of it.",
         "The goal, in the family's own words where that is possible": "The goal, in the family's own words where that is possible",

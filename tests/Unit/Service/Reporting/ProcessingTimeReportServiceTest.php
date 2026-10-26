@@ -84,6 +84,16 @@ class ProcessingTimeReportServiceTest extends TestCase {
 
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
+		$l10n->method('n')->willReturnCallback(
+			static function (string $singular, string $plural, int $count): string {
+				$text = $plural;
+				if ($count === 1) {
+					$text = $singular;
+				}
+
+				return str_replace(search: '%n', replace: (string)$count, subject: $text);
+			}
+		);
 
 		return new ProcessingTimeReportService(
 			loader: $this->loader,
@@ -141,7 +151,7 @@ class ProcessingTimeReportServiceTest extends TestCase {
 
 		self::assertSame(['ended-not-final', 'late'], array_column($report['atRisk'], 'id'));
 		self::assertSame('Overdue', $report['atRisk'][1]['severityLabel']);
-		self::assertSame('4 days overdue', $report['atRisk'][1]['remainingLabel']);
+		self::assertSame(expected: '4 days late', actual: $report['atRisk'][1]['remainingLabel']);
 		self::assertSame('P-1', $report['atRisk'][1]['identifier']);
 		self::assertSame(['Permit', 'Other'], array_column($report['breakdown'], 'name'));
 		self::assertSame('critical', $report['breakdown'][0]['status']);
@@ -241,6 +251,20 @@ class ProcessingTimeReportServiceTest extends TestCase {
 		sort(array: $ids);
 		self::assertSame(expected: ['woo-old', 'woo-open'], actual: $ids);
 	}//end testCaseTypeFilterByIdentifierCoversEveryVersion()
+
+	/**
+	 * One day is singular: "1 day late", not "1 days late" (DqDoorlooptijd
+	 * Wettelijke Woo-termijnen read "1 dagen te laat").
+	 *
+	 * @return void
+	 */
+	public function testOneDayIsSingular(): void {
+		$report = $this->service(
+			records: [['id' => 'one-late', 'caseType' => 'type-permit', 'status' => 'st-open', 'startDate' => '2026-06-04']]
+		)->getReport(period: '12m', caseType: null, view: 'atRisk', threshold: 1.0);
+
+		self::assertSame(expected: '1 day late', actual: $report['atRisk'][0]['remainingLabel']);
+	}//end testOneDayIsSingular()
 
 	/**
 	 * The unfiltered report is handed to the publisher.

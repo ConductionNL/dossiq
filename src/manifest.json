@@ -9975,8 +9975,9 @@
 					}
 				},
 				"_note": "ASSESSMENT-RECORD archetype (a per-case LHS intervention recommendation derived from an lhsMatrix), ADR-062 round 2. No comms/documents, no child schemas. The 13-field schema splits into two genuinely distinct groups: 'Recommendation' (the matrix inputs and outcome — case, inspection, ernst, gedrag, actorType, matrixVersion, recommendedInterventie, recommendedBy) and 'Override & final' (the accountability-bearing deviation fields — finalIntervention, override, overrideJustification, overrideBy, overrideAuthority), both side cards as board DqHandhaving draws them, under the Case and Violation class cards; the main column holds the matrix and the violation. No status lifecycle field and no content leaves. Audit history is a sidebar tab.",
+				"_typePillNote": "DqHandhaving: the header pill names the advice the matrix gives (\"Last onder dwangsom\"); the intervention applied after a deviation is in the Wat nu? card and the Override & final card.",
 				"typePill": {
-					"field": "finalIntervention",
+					"field": "recommendedIntervention",
 					"labels": {
 						"warning": "Warning",
 						"herstelactie": "Remedial action",
@@ -10149,8 +10150,9 @@
 						"id": "side-override",
 						"type": "facts",
 						"title": "Override & final",
-						"_note": "DqHandhaving Afwijking en definitief: the intervention actually applied and, when it deviates, who decided it under which authority and why.",
+						"_note": "DqHandhaving Afwijking en definitief: the intervention actually applied and, when it deviates, who decided it under which authority and why. The labels are long for a side card, so each stands above its value (`columns: 1`).",
 						"content": {
+							"columns": 1,
 							"fields": [
 								{
 									"label": "Final Intervention",
@@ -10343,6 +10345,8 @@
 						}
 					}
 				],
+				"_gridFloatNote": "DqHandhaving: both cards end at their content and the violation card sits the card gap under the matrix, so the grid packs upward.",
+				"gridFloat": false,
 				"layout": [
 					{
 						"id": "0",
@@ -10350,16 +10354,17 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 7,
+						"gridHeight": 6,
 						"sizeToContent": true
 					},
 					{
 						"id": "violation",
 						"widgetId": "lhs-violation",
 						"gridX": 0,
-						"gridY": 7,
+						"gridY": 6,
 						"gridWidth": 12,
-						"gridHeight": 5
+						"gridHeight": 3,
+						"sizeToContent": true
 					}
 				],
 				"sidebar": {
@@ -12593,9 +12598,18 @@
 									"formatter": "fieldFill"
 								},
 								{
-									"key": "id",
+									"key": "origin",
 									"label": "Origin",
-									"formatter": "fieldOrigin"
+									"formatter": "fieldOrigin",
+									"widget": "badge",
+									"emptyValue": "own",
+									"widgetProps": {
+										"colorMap": {
+											"own": "default",
+											"shared": "info",
+											"inherited": "purple"
+										}
+									}
 								},
 								{
 									"key": "caseType",
@@ -13619,7 +13633,7 @@
 								{
 									"path": "birth.date",
 									"label": "Date of birth",
-									"format": "date-long"
+									"format": "longdate"
 								},
 								{
 									"key": "address",

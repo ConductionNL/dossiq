@@ -38,3 +38,11 @@ describe('the blueprint summary card against DqZaaktypeStatussen', () => {
 		expect(rule('.case-type-blueprint')).toContain('padding: 0;')
 	})
 })
+
+describe('the blueprint facts on their own leading', () => {
+	it('drops the 12px Nextcloud pads every dt and dd, so the facts sit 8px apart', () => {
+		const body = (style.match(/\.case-type-blueprint__fact dt,\s*\.case-type-blueprint__fact dd\s*\{([^}]*)\}/) || [])[1] || ''
+		expect(body).toContain('padding: 0;')
+		expect(body).toContain('line-height: normal;')
+	})
+})

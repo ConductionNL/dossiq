@@ -286,6 +286,14 @@ export default {
 	font-weight: 500;
 }
 
+/* Nextcloud pads every dt and dd 12px; the board's facts sit 8px apart on
+   their natural leading. */
+.case-type-blueprint__fact dt,
+.case-type-blueprint__fact dd {
+	padding: 0;
+	line-height: normal;
+}
+
 .case-type-blueprint__all > summary {
 	cursor: pointer;
 	font-size: 14px;

@@ -22,7 +22,7 @@ const nl = read('l10n/nl.json').translations
 
 describe('case type Fields tab texts (DqZaaktypeVelden)', () => {
 	it('subtitles the Fields card', () => {
-		expect(nl[widget('case-type-fields-editor').subtitle]).toBe('Het gegevensschema van dit zaaktype.')
+		expect(nl[widget('case-type-fields-editor').subtitle]).toBe('Het gegevensschema van dit zaaktype. Sleep om de volgorde te wijzigen. Velden van het moedertype zijn paars.')
 	})
 
 	it('titles the field rights card per role and status and draws its line as a subtitle (field-rights-matrix-by-status)', () => {
