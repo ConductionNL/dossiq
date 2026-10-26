@@ -23,6 +23,13 @@ describe('the AI oversight card', () => {
 		expect(list.content.endpointSource.params.subjectId).toBe('@objectId')
 	})
 
+	it('draws the log as the board does: plain cells, names, sort and filter in the head', () => {
+		expect(list.content.rowTitle).toBe('text')
+		expect(list.content.sortable).toBe(true)
+		expect(list.content.filterable).toBe(true)
+		expect(list.content.columns.find((column) => column.key === 'decidedBy').formatter).toBe('userName')
+	})
+
 	it('offers no Add', () => {
 		expect(list.content.allowCreate).toBe(false)
 	})

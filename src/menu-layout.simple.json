@@ -5189,7 +5189,7 @@
 								{
 									"key": "decidedBy",
 									"label": "User",
-									"format": "user"
+									"formatter": "userName"
 								},
 								{
 									"key": "prompt",
@@ -5217,6 +5217,9 @@
 									"label": "Model"
 								}
 							],
+							"rowTitle": "text",
+							"sortable": true,
+							"filterable": true,
 							"emptyText": "The assistant has made no suggestions on this case yet",
 							"allowCreate": false,
 							"export": {
