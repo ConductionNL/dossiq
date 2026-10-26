@@ -42,7 +42,7 @@
 								{
 									"key": "sync",
 									"title": "Synchronise",
-									"widgetIds": ["inspection-sync-queue"]
+									"widgetIds": ["inspection-outbox-offline-note", "inspection-sync-queue"]
 								}
 							]
 						}
@@ -86,6 +86,28 @@
 								}
 							},
 							"emptyText": "No inspections planned for today"
+						}
+					},
+					{
+						"id": "inspection-outbox-offline-note",
+						"type": "banner",
+						"title": "Waiting for a connection",
+						"_note": "DqInspectie outbox frame: while the device is offline, how many changes wait in the outbox (the same statuses the list shows). Shown only offline (banner connection, nextcloud-vue feat/banner-when-offline); the count is read when the page opens.",
+						"content": {
+							"variant": "warning",
+							"connection": "offline",
+							"text": "{value} changes wait for a connection. They go along on their own once you are online.",
+							"visibleWhen": {
+								"source": {
+									"register": "dossiq",
+									"schema": "syncQueue",
+									"filter": {
+										"status": ["pending", "conflict", "failed"]
+									}
+								},
+								"op": "gt",
+								"value": 0
+							}
 						}
 					},
 					{
