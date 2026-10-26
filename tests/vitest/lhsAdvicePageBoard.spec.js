@@ -63,10 +63,12 @@ describe('enforcement advice page (DqHandhaving)', () => {
 	})
 
 	it('has a Dutch string for every label and line on the side cards', () => {
+		// A one-character map value is a matrix code (2, C), the same in every language.
+		const words = (map) => Object.values(map || {}).filter((value) => value.length > 1)
 		for (const card of page.config.sideColumn) {
 			expect(nl[card.title], card.title).toBeTruthy()
 			for (const field of card.content?.fields || []) {
-				for (const text of [field.label, field.text, ...Object.values(field.map || {})].filter(Boolean)) {
+				for (const text of [field.label, field.text, ...words(field.map)].filter(Boolean)) {
 					expect(nl[text], text).toBeTruthy()
 				}
 			}
