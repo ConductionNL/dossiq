@@ -439,4 +439,27 @@ class DwellTimeAnalyzerTest extends TestCase {
 
 		self::assertSame('Publicatie', $stats[0]['statusName']);
 	}//end testATranslatableStatusNameIsReadAsText()
+
+	/**
+	 * A status carries the phase its type names (translated), or '' without one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/status-type-phase/specs/process-mining/spec.md#requirement-days-per-phase-groups-statuses-by-their-phase
+	 */
+	public function testAStatusCarriesItsPhase(): void {
+		$stats = $this->analyzer->aggregateDwellStats(
+			intervals: [
+				['caseId' => 'c1', 'statusId' => 'st-search', 'hours' => 8.0],
+				['caseId' => 'c1', 'statusId' => 'st-done', 'hours' => 1.0],
+			],
+			statusTypeIndex: [
+				'st-search' => ['name' => 'Zoeken documenten', 'phase' => ['nl' => 'Beoordeling']],
+				'st-done' => ['name' => 'Afgehandeld', 'isFinal' => true],
+			]
+		);
+
+		self::assertSame(expected: ['Beoordeling', ''], actual: array_column(array: $stats, column_key: 'statusPhase'));
+		self::assertSame(expected: [false, true], actual: array_column(array: $stats, column_key: 'statusFinal'));
+	}//end testAStatusCarriesItsPhase()
 }//end class
