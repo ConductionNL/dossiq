@@ -3561,6 +3561,7 @@ OC.L10N.register(
         "From 0 to 120. Default 7.": "Van 0 tot 120. Standaard 7.",
         "From 0 to 60. Default 3.": "Van 0 tot 60. Standaard 3.",
         "From Collectives, team {knowledgeBasePage:first-segment}.": "Uit Collectives, team {knowledgeBasePage:first-segment}.",
+        "From Collectives, team {knowledgeBasePage:first-segment}. More pages under More, Knowledge.": "Uit Collectives, team {knowledgeBasePage:first-segment}. Meer pagina's onder Meer, Kennis.",
         "From decidiq's decision-making, shown on the case": "Uit de besluitvorming van decidiq, op de zaak getoond",
         "From Employee ID": "Van medewerker-id",
         "From handler (user id)": "Van behandelaar (gebruikers-id)",

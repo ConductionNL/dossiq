@@ -1496,7 +1496,7 @@
 							"_linkNote": "DqZaak Werkinstructie: the page's own title and where it lives (\"Hoe we Woo-verzoeken behandelen\", \"Uit Collectives, team Woo en informatie.\"), from the case type's knowledgeBasePage (nextcloud-vue facts link label/note placeholders).",
 							"link": {
 								"label": "{knowledgeBasePage:last-segment}",
-								"note": "From Collectives, team {knowledgeBasePage:first-segment}.",
+								"note": "From Collectives, team {knowledgeBasePage:first-segment}. More pages under More, Knowledge.",
 								"icon": "BookOpenPageVariant",
 								"href": "{knowledgeBasePage}",
 								"hrefBase": "/apps/collectives/",
