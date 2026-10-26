@@ -6575,7 +6575,8 @@
 					}
 				],
 				"typePill": {
-					"field": "category"
+					"field": "category",
+					"variant": "teal"
 				},
 				"statusPill": {
 					"field": "isDraft",
