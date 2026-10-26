@@ -6762,6 +6762,10 @@
 						},
 						"content": {
 							"field": "enumValues",
+							"variant": "options",
+							"code": {
+								"field": "enumCodes"
+							},
 							"add": {
 								"label": "Add option",
 								"trigger": "button",

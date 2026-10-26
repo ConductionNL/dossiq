@@ -9,6 +9,7 @@
  */
 
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
+import { resolveTranslatable } from './i18nResolver.js'
 
 /**
  * The words for each property type. A type not named here is shown as stored.
@@ -74,6 +75,19 @@ export function fieldFill(field) {
 		return t('dossiq', 'Read only')
 	}
 	return row.isRequired === true ? t('dossiq', 'Required') : t('dossiq', 'Optional')
+}
+
+/**
+ * What a person reads for a field: its title in the reader's language, else
+ * its name.
+ *
+ * @param {object} field The field.
+ * @return {string} The words.
+ */
+export function fieldTitle(field) {
+	const row = field && typeof field === 'object' ? field : {}
+	const title = resolveTranslatable(row.title ?? '').text.trim()
+	return title !== '' ? title : String(row.name ?? '')
 }
 
 /**
