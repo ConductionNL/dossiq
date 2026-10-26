@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
+use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
@@ -48,11 +49,13 @@ class OutstandingDocuments {
 	 * @param SettingsService        $settingsService The register and the document, assessment and exclusion schemas.
 	 * @param WooCaseDocuments|null  $caseDocuments   Where a case's documents are: its informatieobjecten.
 	 * @param DocumentRelevance|null $reviews         Each document's relevance; null keeps every document needing a verdict.
+	 * @param CaseDocumentDrafts|null $drafts         The document types the case type drafts itself; null reviews every document.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ?WooCaseDocuments $caseDocuments = null,
 		private readonly ?DocumentRelevance $reviews = null,
+		private readonly ?CaseDocumentDrafts $drafts = null,
 	) {
 	}//end __construct()
 
@@ -196,7 +199,7 @@ class OutstandingDocuments {
 		// Where the case upload writes documents: informatieobjecten joined to
 		// the case (found by the e2e Woo journey, portaliq#1001).
 		if ($this->caseDocuments !== null) {
-			return array_fill_keys($this->caseDocuments->idsFor(caseId: $caseId), true);
+			return array_fill_keys($this->withoutDraftedDocuments(caseId: $caseId, ids: $this->caseDocuments->idsFor(caseId: $caseId)), true);
 		}
 
 		if (empty($docSchema) === true) {
@@ -221,6 +224,36 @@ class OutstandingDocuments {
 
 		return $allDocs;
 	}//end collectCaseDocumentIds()
+
+	/**
+	 * The case's documents without the ones the case drafts itself.
+	 *
+	 * A letter drafted from the case type's template (`documentDrafts`, the
+	 * decision letter) is the case's own answer, not a document to assess, so
+	 * a document of a drafted type is left out of the review.
+	 *
+	 * @param string       $caseId The case UUID.
+	 * @param list<string> $ids    The case's document identifiers.
+	 *
+	 * @return list<string> The identifiers under review.
+	 */
+	private function withoutDraftedDocuments(string $caseId, array $ids): array {
+		if ($this->drafts === null || $this->caseDocuments === null || $ids === []) {
+			return $ids;
+		}
+
+		$drafted = $this->drafts->documentTypesForCase(caseId: $caseId);
+		if ($drafted === []) {
+			return $ids;
+		}
+
+		return array_values(
+			array_filter(
+				$ids,
+				fn (string $id): bool => in_array((string)($this->caseDocuments->meta(documentId: $id)['informatieobjecttype'] ?? ''), $drafted, true) === false
+			)
+		);
+	}//end withoutDraftedDocuments()
 
 	/**
 	 * Every assessment of a case.
