@@ -6748,7 +6748,7 @@
 					{
 						"id": "side-case-type-choice-list",
 						"type": "field-list",
-						"title": "Choice list: {name}",
+						"title": "Choice list: {name|fieldTitle}",
 						"_note": "DqZaaktypeVelden Keuzelijst: the options of the field selected in the Fields table, or of its first field with a choice list (nextcloud-vue side-card-follows-row). The options live on that field's own propertyDefinition record, so the card follows the table's selected row and saves to it.",
 						"tabs": ["fields"],
 						"follows": {
