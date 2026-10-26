@@ -43,9 +43,10 @@ describe('CaseLocationDialog in the board look', () => {
 	})
 
 	it('draws the layer toggles as plain 14px checkboxes, 8px from their label', () => {
-		const content = ruleFor('.case-location-dialog__layers :deep(.checkbox-content)')
+		const content = ruleFor('.case-location-dialog .case-location-dialog__layers :deep(.checkbox-radio-switch-checkbox .checkbox-content)')
 		expect(content).toContain('gap: 8px')
 		expect(content).toContain('padding: 0')
+		expect(content).toContain('padding-inline-start: 4px')
 		expect(ruleFor('.case-location-dialog__layers :deep(.checkbox-content__text)')).toContain('font-size: 14px')
 	})
 
