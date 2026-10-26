@@ -4891,7 +4891,7 @@
 								"case": "@objectId"
 							},
 							"sort": {
-								"field": "objectType",
+								"field": "objectIdentification",
 								"dir": "asc"
 							},
 							"limit": 25,
