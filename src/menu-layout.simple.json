@@ -3449,6 +3449,7 @@
 							"presentation": "rows",
 							"ruleAbove": true,
 							"icon": "CalendarBlankOutline",
+							"iconTile": true,
 							"title": "{label}",
 							"meta": [
 								"Owner {owner|user}"
