@@ -2,9 +2,9 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case type's field rights as a matrix of fields by status: per cell what
- * the field is in that status, for whom (DqZaaktypeVelden "Wie wat ziet en
- * invult, per rol en status"). A view over the stored rules, which stay the
+ * The case type's field rights as a matrix of fields by role: per cell what
+ * the field is for that role, in the statuses its rules name (DqZaaktypeVelden
+ * "Wie wat ziet en invult, per rol en status"). A view over the stored rules, which stay the
  * truth: fieldRoleRules (per role, a Nextcloud group, optionally limited to
  * statuses), the statuses' required field rules and a property's
  * requiredAtStatus.
@@ -55,24 +55,24 @@ function requiredIn(status) {
 }
 
 /**
- * The matrix of fields by status.
+ * The matrix of fields by role, as the board draws it: a column per role a
+ * rule names, labelled with the statuses its rules are limited to
+ * ("Intaker, ontvangen"), and per cell what the field is for that role.
  *
  * A row is a field that a role rule names or a status requires, in the order
- * the fields are declared. A cell holds `required` when the status requires
- * the field, and one entry `{ state, roles }` per role rule that holds there
- * (a rule without statuses holds in every status). An empty cell means
- * everyone may change the field.
+ * the fields are declared. A cell is `hidden` or `readOnly` when a rule of
+ * that role says so, else `required` when one of the column's statuses (every
+ * status, for a role without a limit) requires the field, else `edit`.
  *
  * @param {object} input The case type's parts.
  * @param {Array<object>} [input.rules] Its fieldRoleRules.
  * @param {Array<object>} [input.statuses] Its status types, in order.
  * @param {Array<object>} [input.properties] Its property definitions.
- * @return {{columns: Array<{id: string, label: string}>, rows: Array<{field: string, label: string, cells: Array<{required: boolean, roles: Array<{state: string, roles: Array<string>}>}>}>}} The matrix.
+ * @return {{columns: Array<{id: string, label: string, statuses: Array<string>}>, rows: Array<{field: string, label: string, cells: Array<{state: string}>}>}} The matrix.
  */
 export function fieldRightsMatrix({ rules = [], statuses = [], properties = [] } = {}) {
-	const columns = statuses
-		.map((status) => ({ id: idOf(status), label: String(status?.name ?? '') }))
-		.filter((column) => column.id !== '')
+	const statusOrder = statuses.map((status) => idOf(status)).filter((id) => id !== '')
+	const statusName = new Map(statuses.map((status) => [idOf(status), String(status?.name ?? '')]))
 	const labels = new Map()
 	const order = []
 	for (const property of properties) {
@@ -88,7 +88,21 @@ export function fieldRightsMatrix({ rules = [], statuses = [], properties = [] }
 		.map((rule) => ({ field: rule.field.trim(), state: ROLE_STATES[rule.rule], roles: names(rule.groups), statuses: names(rule.statuses) }))
 		.filter((rule) => rule.roles.length > 0)
 
-	const requiredBy = new Map(columns.map((column) => [column.id, new Set()]))
+	const roleStatuses = new Map()
+	for (const rule of declared) {
+		for (const role of rule.roles) {
+			const limit = roleStatuses.get(role) || new Set()
+			rule.statuses.forEach((status) => limit.add(status))
+			roleStatuses.set(role, limit)
+		}
+	}
+	const columns = [...roleStatuses].map(([role, limit]) => {
+		const limited = statusOrder.filter((id) => limit.has(id))
+		const words = limited.map((id) => statusName.get(id)).filter(Boolean).map((name) => name.charAt(0).toLowerCase() + name.slice(1))
+		return { id: role, label: words.length > 0 ? `${role}, ${words.join(', ')}` : role, statuses: limited }
+	})
+
+	const requiredBy = new Map(statusOrder.map((id) => [id, new Set()]))
 	statuses.forEach((status) => {
 		const id = idOf(status)
 		requiredIn(status).forEach((field) => requiredBy.get(id)?.add(field))
@@ -104,15 +118,22 @@ export function fieldRightsMatrix({ rules = [], statuses = [], properties = [] }
 	requiredBy.forEach((fields) => fields.forEach((field) => named.add(field)))
 	const fields = [...order.filter((field) => named.has(field)), ...[...named].filter((field) => !labels.has(field))]
 
+	const stateOf = (field, column) => {
+		const own = declared.filter((rule) => rule.field === field && rule.roles.includes(column.id))
+		if (own.some((rule) => rule.state === 'hidden')) {
+			return 'hidden'
+		}
+		if (own.some((rule) => rule.state === 'readOnly')) {
+			return 'readOnly'
+		}
+		const scope = column.statuses.length > 0 ? column.statuses : statusOrder
+		return scope.some((id) => requiredBy.get(id)?.has(field)) ? 'required' : 'edit'
+	}
+
 	const rows = fields.map((field) => ({
 		field,
 		label: labels.get(field) || field,
-		cells: columns.map((column) => ({
-			required: requiredBy.get(column.id).has(field),
-			roles: declared
-				.filter((rule) => rule.field === field && (rule.statuses.length === 0 || rule.statuses.includes(column.id)))
-				.map((rule) => ({ state: rule.state, roles: rule.roles })),
-		})),
+		cells: columns.map((column) => ({ state: stateOf(field, column) })),
 	}))
 
 	return { columns, rows }
