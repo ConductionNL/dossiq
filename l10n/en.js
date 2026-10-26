@@ -4415,6 +4415,7 @@ OC.L10N.register(
         "Keep what is already here": "Keep what is already here",
         "Kenmerk": "Reference",
         "Kept by the holder": "Kept by the holder",
+        "Kept permanently": "Kept permanently",
         "Key": "Key",
         "Key (used to invoke the decision)": "Key (used to invoke the decision)",
         "Key figures": "Key figures",
