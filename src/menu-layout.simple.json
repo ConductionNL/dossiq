@@ -2499,10 +2499,19 @@
 									"editable": false,
 									"label": "Statutory term",
 									"format": "duration",
-									"extendBy": "statutoryExtension"
+									"extendBy": "statutoryExtension",
+									"order": 1
+								},
+								"legalBasis": {
+									"label": "Legal ground",
+									"order": 2
+								},
+								"paymentState": {
+									"order": 3
 								},
 								"paymentStateCheckedAt": {
-									"label": "Last checked"
+									"label": "Last checked",
+									"order": 4
 								}
 							}
 						}
