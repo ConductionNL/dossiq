@@ -5321,7 +5321,13 @@
 								"ruleAbove": true,
 								"avatar": {
 									"text": "{advisor}",
-									"size": 32
+									"size": 32,
+									"tone": {
+										"field": "status",
+										"map": {
+											"requested": "warning"
+										}
+									}
 								},
 								"title": [
 									"{subject}, {advisor}",
@@ -5348,6 +5354,7 @@
 								},
 								"rowAction": {
 									"label": "Remind",
+									"icon": "BellOutline",
 									"variant": "outlined",
 									"endpoint": "/apps/dossiq/api/advice/{id}/remind",
 									"method": "POST",
