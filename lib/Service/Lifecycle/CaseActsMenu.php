@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service\Lifecycle;
 
 use OCA\Dossiq\Service\CaseType\AlwaysAvailableActs;
 use OCA\Dossiq\Service\Cases\ApprovalGate;
+use OCP\IL10N;
 use OCP\IUserSession;
 
 /**
@@ -57,12 +58,14 @@ class CaseActsMenu {
 	 *                                       decided for.
 	 * @param ApprovalGate|null $approvals What the case is waiting for, and on whom. Optional
 	 *                                     for the same reason `alwaysAvailable` is.
+	 * @param IL10N|null        $l10n      Translates the menu's own refusals; without it they read in English.
 	 */
 	public function __construct(
 		private readonly LifecycleActorGate $gate,
 		private readonly ?AlwaysAvailableActs $alwaysAvailable = null,
 		private readonly ?IUserSession $userSession = null,
 		private readonly ?ApprovalGate $approvals = null,
+		private readonly ?IL10N $l10n = null,
 	) {
 	}//end __construct()
 
@@ -125,6 +128,11 @@ class CaseActsMenu {
 			$reason = '';
 			if ($allowed === false) {
 				$reason = $this->gate->refusalSentence(act: $act, case: $case);
+			} else if ($act === 'archive' && $this->isEnded(case: $case) === false) {
+				// The act refuses an open case (CaseEndingActs::archive), so
+				// the menu greys it with that reason instead of offering it.
+				$allowed = false;
+				$reason = $this->sentence(text: 'Only once the case is finished.');
 			}
 
 			$acts[] = [
@@ -137,6 +145,36 @@ class CaseActsMenu {
 
 		return $acts;
 	}//end verdicts()
+
+	/**
+	 * Whether an act has ended the case.
+	 *
+	 * @param array<string, mixed> $case The loaded case.
+	 *
+	 * @return bool True when it has.
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	private function isEnded(array $case): bool {
+		return (trim((string)($case[CaseEndingActs::ENDING_FIELD] ?? '')) !== '');
+	}//end isEnded()
+
+	/**
+	 * A sentence in the caller's language, as written without a translator.
+	 *
+	 * @param string $text The English sentence.
+	 *
+	 * @return string The sentence.
+	 *
+	 * @spec exclude a translation wrapper behind verdicts(), which carries the requirement
+	 */
+	private function sentence(string $text): string {
+		if ($this->l10n === null) {
+			return $text;
+		}
+
+		return $this->l10n->t($text);
+	}//end sentence()
 
 	/**
 	 * The acts this case type allows in every phase, decided for this caller.
