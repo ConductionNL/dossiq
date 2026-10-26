@@ -1327,6 +1327,141 @@
 			}
 		},
 		{
+			"key": "veld-omgevingsvergunning-locatie",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"name": "locatie",
+				"definition": "Locatie",
+				"description": "Het adres van het bouwwerk of de plek, uit de BAG.",
+				"propertyType": "string",
+				"propertySource": "bag",
+				"isRequired": true,
+				"order": 3,
+				"caseType": "{{lookup:parent}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-aanvrager",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"name": "aanvrager",
+				"definition": "Aanvrager",
+				"description": "De persoon of organisatie die de vergunning aanvraagt.",
+				"propertyType": "string",
+				"isRequired": true,
+				"order": 4,
+				"caseType": "{{lookup:parent}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-datum-indiening-dso",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"name": "datumIndieningDso",
+				"definition": "Datum indiening DSO",
+				"description": "De dag waarop de aanvraag via het Omgevingsloket is ingediend.",
+				"propertyType": "date",
+				"isRequired": false,
+				"hideOnCreate": true,
+				"order": 6,
+				"caseType": "{{lookup:parent}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-omschrijving-project",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"name": "omschrijvingProject",
+				"definition": "Omschrijving van het project",
+				"description": "Wat de aanvrager wil doen, in zijn eigen woorden uit het Omgevingsloket.",
+				"propertyType": "string",
+				"isRequired": false,
+				"order": 7,
+				"caseType": "{{lookup:parent}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-dso-verzoeknummer",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"name": "dsoVerzoeknummer",
+				"definition": "DSO-verzoeknummer",
+				"description": "Het nummer dat het Omgevingsloket aan de aanvraag gaf.",
+				"propertyType": "string",
+				"isRequired": false,
+				"hideOnCreate": true,
+				"order": 8,
+				"caseType": "{{lookup:parent}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-kadastraal-perceel",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"name": "kadastraalPerceel",
+				"definition": "Kadastraal perceel",
+				"description": "De kadastrale aanduiding van het perceel, zoals ZDR00 K 1234.",
+				"propertyType": "string",
+				"isRequired": false,
+				"order": 9,
+				"caseType": "{{lookup:parent}}"
+			}
+		},
+		{
 			"key": "terras-slagerij",
 			"register": "dossiq",
 			"schema": "case",
@@ -1389,6 +1524,23 @@
 					"dorpsstraat",
 					"terras",
 					"ondernemer"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Dorpsstraat 39, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-aanvrager.id}}",
+						"name": "aanvrager",
+						"value": "{{cast:slagerij.name}}"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-datum-indiening-dso.id}}",
+						"name": "datumIndieningDso",
+						"value": "{{date:-9}}"
+					}
 				]
 			}
 		},
@@ -1651,7 +1803,8 @@
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"propertyType": "number",
 				"minimum": 0,
-				"isRequired": true
+				"isRequired": true,
+				"order": 1
 			}
 		},
 		{
@@ -1673,7 +1826,8 @@
 					"Overig"
 				],
 				"isRequired": true,
-				"filterable": true
+				"filterable": true,
+				"order": 2
 			}
 		},
 		{
@@ -1686,7 +1840,8 @@
 				"description": "Of het bouwwerk in een gebied met welstandseisen staat.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"propertyType": "boolean",
-				"defaultValue": "false"
+				"defaultValue": "false",
+				"order": 5
 			}
 		},
 		{
@@ -2288,7 +2443,8 @@
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"propertyType": "number",
 				"minimum": 0,
-				"isRequired": true
+				"isRequired": true,
+				"order": 1
 			}
 		},
 		{
@@ -2310,7 +2466,8 @@
 					"Overig"
 				],
 				"isRequired": true,
-				"filterable": true
+				"filterable": true,
+				"order": 2
 			}
 		},
 		{
@@ -2323,7 +2480,8 @@
 				"description": "Of het bouwwerk in een gebied met welstandseisen staat.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"propertyType": "boolean",
-				"defaultValue": "false"
+				"defaultValue": "false",
+				"order": 5
 			}
 		},
 		{
@@ -2337,7 +2495,8 @@
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"propertyType": "file",
 				"isRequired": true,
-				"hideOnCreate": true
+				"hideOnCreate": true,
+				"order": 10
 			}
 		},
 		{
@@ -2963,6 +3122,23 @@
 				"tags": [
 					"molenweg",
 					"kap"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Molenweg 4, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-aanvrager.id}}",
+						"name": "aanvrager",
+						"value": "{{cast:henk.displayName}}"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-datum-indiening-dso.id}}",
+						"name": "datumIndieningDso",
+						"value": "{{date:-19}}"
+					}
 				]
 			}
 		},
@@ -3550,6 +3726,23 @@
 				"tags": [
 					"parkweg",
 					"kap"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Parkweg, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-aanvrager.id}}",
+						"name": "aanvrager",
+						"value": "{{cast:henk.displayName}}"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-datum-indiening-dso.id}}",
+						"name": "datumIndieningDso",
+						"value": "{{date:-11}}"
+					}
 				]
 			}
 		},
@@ -4628,6 +4821,23 @@
 				"tags": [
 					"kap",
 					"dwangsom"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Parkstraat, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-aanvrager.id}}",
+						"name": "aanvrager",
+						"value": "{{cast:henk.displayName}}"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-datum-indiening-dso.id}}",
+						"name": "datumIndieningDso",
+						"value": "{{date:-100}}"
+					}
 				]
 			}
 		},
@@ -7606,6 +7816,18 @@
 				"tags": [
 					"lindelaan",
 					"bouwen"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Lindelaan 12, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-datum-indiening-dso.id}}",
+						"name": "datumIndieningDso",
+						"value": "{{date:-20}}"
+					}
 				]
 			}
 		},
@@ -7700,6 +7922,18 @@
 				"tags": [
 					"parkweg",
 					"bouwen"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Parkweg 8, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-datum-indiening-dso.id}}",
+						"name": "datumIndieningDso",
+						"value": "{{date:-19}}"
+					}
 				]
 			}
 		},
