@@ -247,6 +247,11 @@ class DemoCaseloadSeedDataService {
 			$data['endDate'] = $this->offset(now: $now, days: (int)$caseSeed['endInDays'])->format('Y-m-d');
 		}
 
+		if (isset($caseSeed['lastActivityInDays']) === true) {
+			$data['lastActivityAt'] = $this->offset(now: $now, days: (int)$caseSeed['lastActivityInDays'])
+				->format(DateTimeImmutable::ATOM);
+		}
+
 		return $data;
 	}//end casePayload()
 
