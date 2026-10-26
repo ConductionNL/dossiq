@@ -1490,8 +1490,10 @@
 								"schema": "caseType",
 								"id": "@object.caseType"
 							},
+							"_linkNote": "DqZaak Werkinstructie: the page's own title and where it lives (\"Hoe we Woo-verzoeken behandelen\", \"Uit Collectives, team Woo en informatie.\"), from the case type's knowledgeBasePage (nextcloud-vue facts link label/note placeholders).",
 							"link": {
-								"label": "Read how we handle this kind of case",
+								"label": "{knowledgeBasePage:last-segment}",
+								"note": "From Collectives, team {knowledgeBasePage:first-segment}.",
 								"icon": "BookOpenPageVariant",
 								"href": "{knowledgeBasePage}",
 								"hrefBase": "/apps/collectives/",

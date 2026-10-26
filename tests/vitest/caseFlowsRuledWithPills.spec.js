@@ -4,7 +4,8 @@
  *
  * The case page's Flows card as DqZaak draws it: the runs only, ruled, each
  * with its trigger in words, a status pill and when it started (nextcloud-vue
- * CnFlowRunsWidget statusPill). Read from the layout and the catalogue.
+ * CnFlowRunsWidget statusPill); and its Werkinstructie card, the page's title
+ * and where it lives. Read from the layout and the catalogue.
  *
  * @spec openspec/changes/flow-runs-ruled-with-pills/specs/cn-flow-runs-widget/spec.md
  */
@@ -55,5 +56,14 @@ describe('the case Flows card', () => {
 		expect(nl[content.statusLabels.failed]).toBe('Mislukt')
 		expect(nl[content.triggerLabels['object.created']]).toBe('Gestart bij het aanmaken van de zaak')
 		expect(nl[content.triggerLabels['object.updated']]).toBeTruthy()
+	})
+})
+
+describe('the Werkinstructie card', () => {
+	it('names the page and where it lives, from the case type', () => {
+		const text = JSON.stringify(layout)
+		expect(text).toContain('"label":"{knowledgeBasePage:last-segment}"')
+		expect(text).toContain('"note":"From Collectives, team {knowledgeBasePage:first-segment}."')
+		expect(nl['From Collectives, team {knowledgeBasePage:first-segment}.']).toBe('Uit Collectives, team {knowledgeBasePage:first-segment}.')
 	})
 })
