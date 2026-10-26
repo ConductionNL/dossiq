@@ -10206,6 +10206,20 @@
 			}
 		}
 	],
+	"collectivesPages": [
+		{
+			"key": "werkinstructie-woo-verzoeken",
+			"data": {
+				"collective": "Woo en informatie",
+				"title": "Hoe we Woo-verzoeken behandelen",
+				"content": "# Hoe we Woo-verzoeken behandelen\n\nJe beslist binnen vier weken. Je mag één keer twee weken verdagen (Wet open overheid, artikel 4.4).\n\n## Ontvangst\n\nJe registreert het verzoek. Je stuurt binnen een week de ontvangstbevestiging.\n\n## Beoordeling\n\nJe zoekt de documenten in het dossier en bij de afdelingen. Je beoordeelt elk document: openbaar, deels openbaar of niet openbaar. Je noemt bij elke weigering de grond.\n\n## Zienswijze\n\nRaakt een document een derde? Dan vraag je die om een zienswijze. De derde krijgt twee weken.\n\n## Besluit\n\nJe stelt het besluit op met het sjabloon Woo-besluit. De teamleider parafeert. Daarna onderteken je via LibreSign.\n\n## Publiceren\n\nJe publiceert het besluit en de openbare documenten. De verzoeker krijgt het besluit in de Berichtenbox van MijnOverheid.\n\nVragen? Stel ze in het team Woo en informatie.\n",
+				"owner": "{{cast:pieter.uid}}",
+				"shareWith": [
+					"{{cast:woo-en-informatie.gid}}"
+				]
+			}
+		}
+	],
 	"exportRuns": [
 		{
 			"key": "export-zaken-verlichting",
