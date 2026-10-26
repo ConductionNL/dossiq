@@ -5070,6 +5070,7 @@
 								}
 							],
 							"emptyText": "No decision letter written yet",
+							"footnote": "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced.",
 							"headerAction": {
 								"label": "Generate document",
 								"icon": "FileDocumentPlusOutline",
