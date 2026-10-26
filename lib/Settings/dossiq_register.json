@@ -1990,25 +1990,25 @@
                             {
                                 "field": "requester",
                                 "method": "exact",
-                                "weight": 0.35
+                                "weight": 0.2
                             },
                             {
                                 "field": "permitApplicationRef",
                                 "method": "exact",
-                                "weight": 0.35
+                                "weight": 0.6
                             },
                             {
                                 "field": "title",
                                 "method": "normalized",
-                                "weight": 0.2
+                                "weight": 0.05
                             },
                             {
                                 "field": "title",
                                 "method": "levenshtein",
-                                "weight": 0.1
+                                "weight": 0.15
                             }
                         ],
-                        "threshold": 0.3,
+                        "threshold": 0.6,
                         "onCreate": "warn",
                         "overrideGroups": [
                             "dossiq-coordinators"

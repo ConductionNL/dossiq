@@ -613,7 +613,7 @@
     },
     "lib/Settings/dossiq_register.json::case": {
         "version": "1.53.0",
-        "digest": "15788d538ea2e72b7ddcc4f6b7def38c991fef639ba41e2393e13a3d762abb91"
+        "digest": "b04fd6d5a0db524911f95bd043820b6d9b65a2f019f9b3520028ed07d803bbb5"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -1726,6 +1726,10 @@
     "lib/Settings/register.d/99-case-deadline-is-a-fallback.json::case": {
         "version": "1.56.0",
         "digest": "bccdde205e895600b8476004174994acce1a763354399f45ccd957709e43bd4c"
+    },
+    "lib/Settings/register.d/99-case-dedup-threshold.json::case": {
+        "version": "1.57.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-macro-rights.json::case": {
         "version": "",
