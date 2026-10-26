@@ -13619,7 +13619,7 @@
 								{
 									"path": "birth.date",
 									"label": "Date of birth",
-									"format": "date-long"
+									"format": "longdate"
 								},
 								{
 									"key": "address",
