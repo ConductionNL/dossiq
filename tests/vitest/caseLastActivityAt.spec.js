@@ -10,6 +10,7 @@
 
 import { describe, expect, it } from 'vitest'
 import register from '../../lib/Settings/dossiq_register.json'
+import fragment from '../../lib/Settings/register.d/99-case-last-activity-at.json'
 import manifest from '../../src/manifest.json'
 import simple from '../../src/menu-layout.simple.json'
 
@@ -40,7 +41,7 @@ function widgetsWithId(root, id) {
 
 describe('a case\'s last activity', () => {
 	it('is a date-time on the case', () => {
-		expect(caseSchema.properties.lastActivityAt).toMatchObject({ type: 'string', format: 'date-time' })
+		expect(fragment.components.schemas.case.properties.lastActivityAt).toMatchObject({ type: 'string', format: 'date-time' })
 	})
 
 	it('is what days idle counts from, falling back to the creation date', () => {
