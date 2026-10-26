@@ -1686,6 +1686,7 @@
 							"excludeActions": ["read"],
 							"actionLabels": {
 								"dossiq.case.access-purpose": "Case opened, purpose {changed.purpose}",
+								"dossiq.case.access-role": "Added as {changed.role} on opening",
 								"create": "Case created",
 								"update": "Case changed",
 								"consent.create": "Consent recorded",
@@ -1710,6 +1711,11 @@
 									"legal-obligation": "legal obligation",
 									"data-subject-request": "request of the person concerned",
 									"other": "other"
+								},
+								"role": {
+									"handler": "handler",
+									"advisor": "advisor",
+									"coordinator": "coordinator"
 								}
 							},
 							"emptyText": "Nothing has happened on this case yet",
