@@ -11685,7 +11685,8 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "_%n day remaining_::_%n days remaining_": ["%n dag resterend","%n dagen resterend"]
     },
     "nplurals=2; plural=(n != 1);"
 )
