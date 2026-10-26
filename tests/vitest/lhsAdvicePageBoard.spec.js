@@ -93,3 +93,16 @@ describe('the Wat nu? button on the enforcement advice (DqHandhaving)', () => {
 		expect(nl['Draft the pre-announcement']).toBe('Vooraankondiging opstellen')
 	})
 })
+
+describe('the Historie card on the enforcement advice (DqHandhaving)', () => {
+	const history = page.config.sideColumn.find((card) => card.id === 'side-history')
+
+	it('lists what happened, not who opened the advice', () => {
+		expect(history.content.excludeActions).toEqual(['read'])
+	})
+
+	it('puts who and when under the action, in words', () => {
+		expect(history.content.layout).toBe('stacked')
+		expect(nl[history.content.actionLabels.create]).toBe('Advies berekend')
+	})
+})
