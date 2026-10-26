@@ -85,5 +85,11 @@ class CaseTermRowReadsAsTheBoardTest extends TestCase {
 		$nl = self::json(path: 'l10n/nl.json')['translations'];
 		$this->assertSame(expected: 'Wettelijke termijn', actual: $nl[$overrides['statutoryTerm']['label']]);
 		$this->assertSame(expected: 'Laatst gecontroleerd', actual: $nl[$overrides['paymentStateCheckedAt']['label']]);
+		$this->assertSame(expected: 'Rechtsgrond', actual: $nl[$overrides['legalBasis']['label']]);
+
+		$order = array_map(static fn (array $override): int => (int)($override['order'] ?? 99), $overrides);
+		asort($order);
+		$board = ['statutoryTerm', 'legalBasis', 'paymentState', 'paymentStateCheckedAt'];
+		$this->assertSame(expected: $board, actual: array_keys($order), message: 'the board order');
 	}//end testTheTermCardUsesTheBoardsLabelsAndWords()
 }//end class
