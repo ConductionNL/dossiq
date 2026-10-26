@@ -267,6 +267,38 @@ class ProcessingTimeReportServiceTest extends TestCase {
 	}//end testOneDayIsSingular()
 
 	/**
+	 * The breakdown has one row per case type, not per version: Woo-verzoek
+	 * v1 and v2 share an identifier and read as one row with their records
+	 * together.
+	 *
+	 * @return void
+	 */
+	public function testBreakdownHasOneRowPerCaseTypeNotPerVersion(): void {
+		$this->loader = $this->createMock(originalClassName: ProcessMiningDataLoader::class);
+		$this->loader->method('loadCaseTypes')->willReturn(
+			[
+				['id' => 'woo-1', 'identifier' => 'woo-verzoek', 'title' => 'Woo-verzoek', 'processingDeadline' => 'P28D'],
+				['id' => 'woo-2', 'identifier' => 'woo-verzoek', 'title' => 'Woo-verzoek', 'processingDeadline' => 'P28D'],
+				['id' => 'type-other', 'identifier' => 'other', 'title' => 'Other', 'processingDeadline' => 'P30D'],
+			]
+		);
+		$this->loader->method('loadStatusTypes')->willReturn([['id' => 'st-done', 'isFinal' => true]]);
+
+		$report = $this->service(
+			records: [
+				['id' => 'w1', 'caseType' => 'woo-1', 'status' => 'st-done', 'startDate' => '2026-06-01', 'endDate' => '2026-06-05'],
+				['id' => 'w2', 'caseType' => 'woo-2', 'status' => 'st-done', 'startDate' => '2026-06-01', 'endDate' => '2026-06-11'],
+				['id' => 'w3', 'caseType' => 'woo-2', 'status' => 'st-done', 'startDate' => '2026-06-01', 'endDate' => '2026-06-09'],
+			]
+		)->getReport(period: '12m', caseType: null, view: 'breakdown', threshold: 1.0);
+
+		$rows = $report['breakdown'];
+		self::assertSame(expected: ['Woo-verzoek', 'Other'], actual: array_column(array: $rows, column_key: 'name'));
+		self::assertSame(expected: 3, actual: $rows[0]['total']);
+		self::assertSame(expected: 'woo-2', actual: $rows[0]['id']);
+	}//end testBreakdownHasOneRowPerCaseTypeNotPerVersion()
+
+	/**
 	 * The unfiltered report is handed to the publisher.
 	 *
 	 * @return void
