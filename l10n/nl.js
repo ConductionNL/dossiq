@@ -5865,6 +5865,7 @@ OC.L10N.register(
         "Only in some cases": "Alleen in sommige zaken",
         "Only in {areas}": "Alleen in {areas}",
         "only members of the sensitive data group see the citizen service number": "het BSN ziet alleen wie in de groep voor gevoelige gegevens zit",
+        "Only once the case is finished.": "Kan pas als de zaak is afgerond.",
         "Only somebody who may open this case sees who has held it": "Alleen wie deze zaak mag openen, ziet wie hem heeft gehad",
         "Only someone who works with the social domain's sensitive data on this case can see its household.": "Alleen wie met de bijzondere persoonsgegevens van deze zaak werkt, ziet het huishouden.",
         "Only that it exists": "Alleen dat hij bestaat",

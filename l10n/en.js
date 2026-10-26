@@ -5865,6 +5865,7 @@ OC.L10N.register(
         "Only in some cases": "Only in some cases",
         "Only in {areas}": "Only in {areas}",
         "only members of the sensitive data group see the citizen service number": "only members of the sensitive data group see the citizen service number",
+        "Only once the case is finished.": "Only once the case is finished.",
         "Only somebody who may open this case sees who has held it": "Only somebody who may open this case sees who has held it",
         "Only someone who works with the social domain's sensitive data on this case can see its household.": "Only someone who works with the social domain's sensitive data on this case can see its household.",
         "Only that it exists": "Only that it exists",
