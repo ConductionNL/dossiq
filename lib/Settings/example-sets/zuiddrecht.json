@@ -9496,6 +9496,17 @@
 	],
 	"changes": [
 		{
+			"key": "jeugdwet-zaak-behandelaar",
+			"register": "dossiq",
+			"schema": "case",
+			"where": {
+				"title": "Melding Jeugdwet gezin Oosthaven"
+			},
+			"set": {
+				"assignee": "{{cast:fatma.uid}}"
+			}
+		},
+		{
 			"key": "parkeren-henk-uitkomst",
 			"register": "dossiq",
 			"schema": "case",
