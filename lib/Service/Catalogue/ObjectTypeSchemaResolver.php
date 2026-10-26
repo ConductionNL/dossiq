@@ -54,7 +54,8 @@ class ObjectTypeSchemaResolver {
 	private const OBJECTS_PATH = '#/apps/openregister/api/objects/([^/?\#]+)/([^/?\#]+)(?:/|$)#';
 
 	/**
-	 * The OpenRegister property type of a point or shape on the map.
+	 * How OpenRegister names a point or shape on the map: `geo`, or `geo:` and
+	 * a kind (`geo:point`), as a property's `type` or its `format`.
 	 *
 	 * @var string
 	 */
@@ -244,7 +245,8 @@ class ObjectTypeSchemaResolver {
 
 	/**
 	 * The views a schema's objects support: `map` when a property is a geo
-	 * type, then `table`, which every object list is.
+	 * type or format (`{"type": "object", "format": "geo:point"}`), then
+	 * `table`, which every object list is.
 	 *
 	 * @param array<string, mixed> $properties The schema's properties.
 	 *
@@ -252,11 +254,29 @@ class ObjectTypeSchemaResolver {
 	 */
 	public static function viewsOf(array $properties): array {
 		foreach ($properties as $property) {
-			if (is_array($property) === true && ($property['type'] ?? '') === self::GEO_TYPE) {
+			if (is_array($property) === true && self::isGeo(property: $property) === true) {
 				return ['map', 'table'];
 			}
 		}
 
 		return ['table'];
 	}//end viewsOf()
+
+	/**
+	 * Whether a property holds a point or shape on the map.
+	 *
+	 * @param array<string, mixed> $property The property definition.
+	 *
+	 * @return bool True for a geo type or format.
+	 */
+	private static function isGeo(array $property): bool {
+		foreach (['format', 'type'] as $key) {
+			$declared = strtolower((string)($property[$key] ?? ''));
+			if ($declared === self::GEO_TYPE || str_starts_with($declared, self::GEO_TYPE.':') === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isGeo()
 }//end class
