@@ -3485,6 +3485,7 @@
         "Filter by status": "Filteren op status",
         "Filter by type": "Filter op type",
         "Filter by zaaktype": "Filteren op zaaktype",
+        "Filter by {column}": "Filteren op {column}",
         "Filter cases by status: {status}": "Filter zaken op status: {status}",
         "Filter cases by type: {type}": "Zaken filteren op type: {type}",
         "Filter outcome": "Filteruitkomst",
