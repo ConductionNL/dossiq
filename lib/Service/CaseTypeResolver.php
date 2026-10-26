@@ -201,7 +201,8 @@ class CaseTypeResolver {
 		return $this->inheritedRows(
 			caseTypeId: $caseTypeId,
 			schemaKey: 'status_type_schema',
-			includeShared: false
+			includeShared: false,
+			ownReplaces: true
 		);
 	}//end statusTypesFor()
 
@@ -384,18 +385,34 @@ class CaseTypeResolver {
 	 * is the only key both ends can be authored with: ids are minted per
 	 * install, so a child could not name the parent row it is overriding.
 	 *
+	 * With `ownReplaces`, a type that declares a whole lifecycle of its own
+	 * (a start and an end: at least one status that is final and one that is
+	 * not) takes only those rows, because a parent's Besluitvorming merged in
+	 * would add a step the type does not have. A type that declares less (one
+	 * status recoloured or renamed) still merges by name, as the schema says.
+	 *
 	 * @param string  $caseTypeId    CaseType UUID.
 	 * @param string  $schemaKey     The settings key naming the schema.
 	 * @param boolean $includeShared Whether rows with no case type count.
+	 * @param boolean $ownReplaces   Whether the type's own rows, when it has any, replace the ancestors'.
 	 *
 	 * @return array<int, array<string, mixed>> The merged rows.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	private function inheritedRows(string $caseTypeId, string $schemaKey, bool $includeShared): array {
+	private function inheritedRows(string $caseTypeId, string $schemaKey, bool $includeShared, bool $ownReplaces=false): array {
 		$chain = $this->chainFor(caseTypeId: $caseTypeId);
 		if ($chain === []) {
 			return [];
+		}
+
+		if ($ownReplaces === true && count($chain) > 1) {
+			$own  = $chain[0];
+			$rows = $this->store->rowsOfType(schemaKey: $schemaKey, caseTypeId: $this->store->rowId(row: $own));
+			if ($this->isWholeLifecycle(rows: $rows) === true) {
+				$origin = (new RowOrigins())->originFor(isOwn: true);
+				return $this->sortByOrder(rows: array_map(fn (array $row): array => $this->tag(row: $row, origin: $origin, ancestor: $own), array_values($rows)));
+			}
 		}
 
 		// Furthest ancestor first, so a nearer declaration overwrites it.
@@ -429,6 +446,20 @@ class CaseTypeResolver {
 
 		return $this->sortByOrder(rows: array_values($merged));
 	}//end inheritedRows()
+
+	/**
+	 * Whether status rows make a lifecycle on their own: a start (a status that
+	 * is not final) and an end (one that is).
+	 *
+	 * @param array<int, array<string, mixed>> $rows The rows a type declares.
+	 *
+	 * @return bool True when the rows hold both.
+	 */
+	private function isWholeLifecycle(array $rows): bool {
+		$final = array_filter($rows, static fn (array $row): bool => (($row['isFinal'] ?? false) === true));
+
+		return $final !== [] && count($final) < count($rows);
+	}//end isWholeLifecycle()
 
 	/**
 	 * Stamp a row with where it came from.

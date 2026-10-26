@@ -178,36 +178,38 @@ class CaseTypeResolverTest extends TestCase {
 	}//end testAParentsRowsAreMarkedOwn()
 
 	/**
-	 * A row the child declares with the SAME NAME replaces the parent's.
-	 *
-	 * Name, not id: ids are minted per install, so a child could not name the
-	 * parent row it is overriding by anything else.
+	 * A child that declares a whole lifecycle (a start and an end) takes only
+	 * its own statuses; one that declares less merges by name, so a child that
+	 * recolours one status keeps its parent's others.
 	 */
-	public function testAChildsRowWithTheSameNameReplacesTheParents(): void {
-		$resolver = $this->resolver(
-			[
-				'parent' => ['id' => 'parent', 'title' => 'Bezwaar'],
-				'child' => ['id' => 'child', 'title' => 'Kort', 'parentCaseType' => 'parent'],
-			],
-			[
-				'status_type_schema' => [
-					['id' => 's1', 'name' => 'Ontvangen', 'order' => 1, 'caseType' => 'parent'],
-					['id' => 's2', 'name' => 'Afgehandeld', 'order' => 9, 'caseType' => 'parent'],
-					['id' => 'c1', 'name' => 'ontvangen', 'order' => 1, 'colour' => 'red', 'caseType' => 'child'],
-				],
-			]
-		);
+	public function testAChildsWholeLifecycleReplacesTheParentsAndAPartialOneMerges(): void {
+		$types = [
+			'parent' => ['id' => 'parent', 'title' => 'Bezwaar'],
+			'child' => ['id' => 'child', 'title' => 'Kort', 'parentCaseType' => 'parent'],
+		];
+		$parent = [
+			['id' => 's1', 'name' => 'Ontvangen', 'order' => 1, 'caseType' => 'parent'],
+			['id' => 's2', 'name' => 'Besluitvorming', 'order' => 5, 'caseType' => 'parent'],
+			['id' => 's9', 'name' => 'Afgehandeld', 'order' => 9, 'isFinal' => true, 'caseType' => 'parent'],
+		];
 
-		$statuses = $resolver->statusTypesFor(caseTypeId: 'child');
+		$whole = $this->resolver($types, ['status_type_schema' => array_merge($parent, [
+			['id' => 'c1', 'name' => 'Ontvangen', 'order' => 1, 'caseType' => 'child'],
+			['id' => 'c2', 'name' => 'Verleend', 'order' => 8, 'isFinal' => true, 'caseType' => 'child'],
+		])]);
+		self::assertSame(['c1', 'c2'], array_column($whole->statusTypesFor(caseTypeId: 'child'), 'id'));
+		self::assertSame(CaseTypeResolver::ORIGIN_OWN, $whole->statusTypesFor(caseTypeId: 'child')[0]['origin']);
 
-		self::assertCount(2, $statuses);
-		self::assertSame('c1', $statuses[0]['id']);
+		$partial = $this->resolver($types, ['status_type_schema' => array_merge($parent, [
+			['id' => 'c1', 'name' => 'ontvangen', 'order' => 1, 'colour' => 'red', 'caseType' => 'child'],
+		])]);
+		$statuses = $partial->statusTypesFor(caseTypeId: 'child');
+		self::assertSame(['c1', 's2', 's9'], array_column($statuses, 'id'));
 		self::assertSame('red', $statuses[0]['colour']);
-		self::assertSame(CaseTypeResolver::ORIGIN_OWN, $statuses[0]['origin']);
-	}//end testAChildsRowWithTheSameNameReplacesTheParents()
+	}//end testAChildsWholeLifecycleReplacesTheParentsAndAPartialOneMerges()
 
 	/**
-	 * 🔴 Statuses whose names are language maps stay separate rows.
+	 * 🔴 Rows whose names are language maps stay separate rows (result types, which merge by name).
 	 *
 	 * `statusType.name` is `translatable`, so a row from `searchObjects()`
 	 * carries `{"nl": "..."}`. The merge key used to cast that map to the
@@ -222,7 +224,7 @@ class CaseTypeResolverTest extends TestCase {
 				'child' => ['id' => 'child', 'title' => ['nl' => 'Kort'], 'parentCaseType' => 'parent'],
 			],
 			[
-				'status_type_schema' => [
+				'result_type_schema' => [
 					['id' => 's1', 'name' => ['nl' => 'Ontvangen'], 'order' => 1, 'caseType' => 'parent'],
 					['id' => 's2', 'name' => ['nl' => 'In behandeling'], 'order' => 2, 'caseType' => 'parent'],
 					['id' => 's9', 'name' => ['nl' => 'Afgehandeld'], 'order' => 9, 'caseType' => 'parent'],
@@ -231,14 +233,14 @@ class CaseTypeResolverTest extends TestCase {
 			]
 		);
 
-		$statuses = $resolver->statusTypesFor(caseTypeId: 'child');
+		$statuses = $resolver->resultTypesFor(caseTypeId: 'child');
 
 		self::assertSame(['c1', 's2', 's9'], array_column($statuses, 'id'));
 		self::assertSame('Bezwaar', $statuses[1]['originCaseTypeTitle']);
 	}//end testLanguageMapNamesKeepTheirOwnRows()
 
 	/**
-	 * The merged list is ordered the way a lifecycle is read.
+	 * The merged list is ordered the way a lifecycle is read (result types, which merge).
 	 */
 	public function testTheMergedListIsOrderedByOrder(): void {
 		$resolver = $this->resolver(
@@ -247,7 +249,7 @@ class CaseTypeResolverTest extends TestCase {
 				'child' => ['id' => 'child', 'title' => 'Kort', 'parentCaseType' => 'parent'],
 			],
 			[
-				'status_type_schema' => [
+				'result_type_schema' => [
 					['id' => 's9', 'name' => 'Afgehandeld', 'order' => 9, 'caseType' => 'parent'],
 					['id' => 'c2', 'name' => 'Spoed', 'order' => 2, 'caseType' => 'child'],
 					['id' => 's1', 'name' => 'Ontvangen', 'order' => 1, 'caseType' => 'parent'],
@@ -257,7 +259,7 @@ class CaseTypeResolverTest extends TestCase {
 
 		self::assertSame(
 			['Ontvangen', 'Spoed', 'Afgehandeld'],
-			array_column($resolver->statusTypesFor(caseTypeId: 'child'), 'name')
+			array_column($resolver->resultTypesFor(caseTypeId: 'child'), 'name')
 		);
 	}//end testTheMergedListIsOrderedByOrder()
 
