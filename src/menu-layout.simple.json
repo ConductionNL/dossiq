@@ -7592,7 +7592,14 @@
 								{
 									"key": "archivalPeriod",
 									"label": "Archival period",
-									"formatter": "isoDuration"
+									"formatter": "isoDuration",
+									"emptyValueBy": {
+										"field": "archivalAction",
+										"values": {
+											"bewaren": "Kept permanently",
+											"blijvend_bewaren": "Kept permanently"
+										}
+									}
 								}
 							],
 							"emptyText": "This case type has no results yet",

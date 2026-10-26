@@ -64,6 +64,14 @@ describe('the Statuses tab against DqZaaktypeStatussen', () => {
 		expect(period.formatter).toBe('isoDuration')
 	})
 
+	it('reads a kept result without a period as Permanent, and leaves a destroyed one empty', () => {
+		const period = widget('case-type-results').content.columns.find((c) => c.key === 'archivalPeriod')
+		expect(period.emptyValueBy.field).toBe('archivalAction')
+		expect(dutch(period.emptyValueBy.values.bewaren)).toBe('Permanent')
+		expect(dutch(period.emptyValueBy.values.blijvend_bewaren)).toBe('Permanent')
+		expect(period.emptyValueBy.values.vernietigen).toBeUndefined()
+	})
+
 	it('writes Eindstatus as Nee, with only the final ones as an Eind pill, and the archival action as a word', () => {
 		const final = widget('case-type-statuses-editor').content.columns.find((c) => c.key === 'isFinal')
 		expect(final.widgetProps).toEqual({ trueLabel: 'End status', falseLabel: 'No', pill: true })
