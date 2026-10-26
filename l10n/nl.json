@@ -133,6 +133,10 @@
             "nog %n dag",
             "nog %n dagen"
         ],
+        "_%n day remaining_::_%n days remaining_": [
+            "%n dag resterend",
+            "%n dagen resterend"
+        ],
         "_%n day_::_%n days_": [
             "%n dag",
             "%n dagen"

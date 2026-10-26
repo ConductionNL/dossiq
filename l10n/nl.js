@@ -122,6 +122,7 @@ OC.L10N.register(
         "_%n case_::_%n cases_": ["%n zaak","%n zaken"],
         "_%n day late_::_%n days late_": ["%n dag te laat","%n dagen te laat"],
         "_%n day left_::_%n days left_": ["nog %n dag","nog %n dagen"],
+        "_%n day remaining_::_%n days remaining_": ["%n dag resterend","%n dagen resterend"],
         "_%n day_::_%n days_": ["%n dag","%n dagen"],
         "_%n item_::_%n items_": ["%n onderdeel","%n onderdelen"],
         "_%n month_::_%n months_": ["%n maand","%n maanden"],

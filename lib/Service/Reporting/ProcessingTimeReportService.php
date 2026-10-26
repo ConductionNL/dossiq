@@ -244,17 +244,17 @@ class ProcessingTimeReportService {
 
 		foreach ($rows as $index => $row) {
 			$remaining = (int)$row['remainingDays'];
-			$template  = $this->l10n->t('{days} days remaining');
+			$label     = $this->l10n->n('%n day remaining', '%n days remaining', $remaining);
 			if ($remaining < 0) {
-				$template = $this->l10n->t('{days} days overdue');
+				$label = $this->l10n->n('%n day late', '%n days late', abs($remaining));
 			}
 
 			if ($remaining === 0) {
-				$template = $this->l10n->t('Due today');
+				$label = $this->l10n->t('Due today');
 			}
 
 			$rows[$index]['severityLabel']  = $severities[$row['severity']];
-			$rows[$index]['remainingLabel'] = str_replace('{days}', (string)abs($remaining), $template);
+			$rows[$index]['remainingLabel'] = $label;
 		}
 
 		return $rows;

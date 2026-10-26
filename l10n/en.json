@@ -133,6 +133,10 @@
             "%n day left",
             "%n days left"
         ],
+        "_%n day remaining_::_%n days remaining_": [
+            "%n day remaining",
+            "%n days remaining"
+        ],
         "_%n day_::_%n days_": [
             "%n day",
             "%n days"
