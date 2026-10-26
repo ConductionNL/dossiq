@@ -868,11 +868,12 @@ export default {
 </script>
 
 <style scoped>
+/* The dialog body already pads the list; the board starts the first act
+   22px under the subtitle and ends the body 22px under the last one. */
 .case-acts {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	padding: 8px 0 16px;
 }
 
 .case-acts__reason,
