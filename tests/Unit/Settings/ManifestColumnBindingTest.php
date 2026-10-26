@@ -168,11 +168,22 @@ class ManifestColumnBindingTest extends TestCase {
 					continue;
 				}
 
+				// `readOnlyRows` (nextcloud-vue) adds rows read from an endpoint
+				// beside the schema's own; a key its `where` filters on is a value
+				// those rows carry (the blueprint's `origin`), and an own row shows
+				// the column's `emptyValue`. Such a column binds the endpoint's
+				// rows, not the schema.
+				$endpointKeys = array_keys((array)(((array)($content['readOnlyRows'] ?? []))['where'] ?? []));
 				$this->collect(
 					bindings: $bindings,
 					where: $widgetLabel . '.content.columns',
 					schema: $schema,
-					keys: (array)($content['columns'] ?? []),
+					keys: array_values(
+						array_filter(
+							(array)($content['columns'] ?? []),
+							static fn ($column): bool => in_array((is_array($column) === true ? ($column['key'] ?? null) : $column), $endpointKeys, true) === false
+						)
+					),
 				);
 				$this->collect(
 					bindings: $bindings,
