@@ -112,4 +112,28 @@ class CaseAccessPurposeControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 	}//end testAnAnonymousCallerIsRefused()
+
+	/**
+	 * The check answers whether a purpose is required, as the reader, and
+	 * refuses an anonymous caller before it asks.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
+	 */
+	public function testTheCheckAnswersForTheReader(): void {
+		$service = $this->createMock(CaseAccessPurposeService::class);
+		$service->expects($this->once())->method('check')
+			->with('case-1', 'pieter')
+			->willReturn(['required' => false, 'recorded' => true]);
+
+		$response = $this->controller(service: $service)->check(id: 'case-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['required' => false, 'recorded' => true], $response->getData());
+
+		$anonymous = $this->createMock(CaseAccessPurposeService::class);
+		$anonymous->expects($this->never())->method('check');
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $this->controller(service: $anonymous, signedIn: false)->check(id: 'case-1')->getStatus());
+	}//end testTheCheckAnswersForTheReader()
 }//end class

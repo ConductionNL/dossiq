@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessPurposeService;
+use OCA\Dossiq\Service\People\CaseRoleHolder;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -53,13 +54,28 @@ class CaseAccessPurposeServiceTest extends TestCase {
 	private bool $writeFails = false;
 
 	/**
+	 * The readers who hold a skip role on every case, for the role holder double.
+	 *
+	 * @var list<string>
+	 */
+	private array $holders = [];
+
+	/**
+	 * The bindings the role holder double was asked to add, as [uid, genericRole].
+	 *
+	 * @var list<array{0: string, 1: string}>
+	 */
+	private array $bound = [];
+
+	/**
 	 * The service over a register holding the given objects, by uuid.
 	 *
 	 * @param array<string, array<string, mixed>> $objects The objects the reader may read.
+	 * @param string                              $rules   The app configuration of the purpose and role rules.
 	 *
 	 * @return CaseAccessPurposeService The service.
 	 */
-	private function service(array $objects): CaseAccessPurposeService {
+	private function service(array $objects, string $rules=''): CaseAccessPurposeService {
 		$objectService = new class($objects) {
 			/**
 			 * @param array<string, array<string, mixed>> $objects Readable objects.
@@ -127,9 +143,17 @@ class CaseAccessPurposeServiceTest extends TestCase {
 			['register', '', 'dossiq'],
 			['case_schema', '', 'case'],
 			['case_type_schema', '', 'caseType'],
+			[CaseAccessPurposeService::ROLES_KEY, '', $rules],
 		]);
 
-		return new CaseAccessPurposeService(settingsService: $settings, logger: new NullLogger());
+		$roles = $this->createMock(CaseRoleHolder::class);
+		$roles->method('holdsAny')->willReturnCallback(fn (array $case, string $uid, array $genericRoles): bool => in_array($uid, $this->holders, true) && $genericRoles !== []);
+		$roles->method('bind')->willReturnCallback(function (array $case, string $uid, string $genericRole, string $displayName): bool {
+			$this->bound[] = [$uid, $genericRole];
+			return true;
+		});
+
+		return new CaseAccessPurposeService(settingsService: $settings, logger: new NullLogger(), roles: $roles);
 	}//end service()
 
 	/**
@@ -172,8 +196,8 @@ class CaseAccessPurposeServiceTest extends TestCase {
 	public function testRecordsThePurposeInTheCasesAuditTrail(): void {
 		$result = $this->service(objects: $this->jeugdwet())->record(caseId: 'case-1', readerId: 'pieter', purpose: 'handling', note: 'ignored');
 
-		$this->assertSame(['recorded' => true, 'required' => true], $result);
-		$this->assertCount(1, $this->written);
+		$this->assertSame(['recorded' => true, 'required' => true, 'roleAdded' => true], $result);
+		$this->assertCount(2, $this->written);
 		[$object, $action, $context, $actorId] = $this->written[0];
 		$this->assertSame('case-1', $object->uuid);
 		$this->assertSame(CaseAccessPurposeService::ACTION, $action);
@@ -292,4 +316,68 @@ class CaseAccessPurposeServiceTest extends TestCase {
 
 		$this->assertSame(array_values(array_diff(CaseAccessPurposeService::PURPOSES, ['other'])), $offered);
 	}//end testThePageOffersTheAcceptedPurposes()
+
+	/**
+	 * The case's own handler need not state a purpose: handling is recorded for
+	 * them, marked automatic, and the dialog stays shut. Anyone else is asked.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
+	 */
+	public function testTheHandlerOpensWithoutAPurposeAndAnotherReaderIsAsked(): void {
+		$this->holders = ['pieter'];
+		$service = $this->service(objects: $this->jeugdwet());
+
+		$this->assertSame(['required' => false, 'recorded' => true], $service->check(caseId: 'case-1', readerId: 'pieter'));
+		$this->assertCount(1, $this->written);
+		$this->assertSame(CaseAccessPurposeService::ACTION, $this->written[0][1]);
+		$this->assertSame('handling', $this->written[0][2]['purpose']);
+		$this->assertTrue($this->written[0][2]['automatic']);
+
+		$this->assertSame(['required' => true, 'recorded' => false], $service->check(caseId: 'case-1', readerId: 'fatma'));
+		$this->assertSame(['required' => false, 'recorded' => false], $service->check(caseId: 'case-2', readerId: 'fatma'));
+		$this->assertCount(1, $this->written);
+	}//end testTheHandlerOpensWithoutAPurposeAndAnotherReaderIsAsked()
+
+	/**
+	 * Handling binds the reader as handler and says so in the trail; another
+	 * purpose binds nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	public function testHandlingMakesTheReaderTheHandlerAndAdviceDoesNot(): void {
+		$service = $this->service(objects: $this->jeugdwet());
+		$result = $service->record(caseId: 'case-1', readerId: 'fatma', purpose: 'handling', note: '');
+
+		$this->assertTrue($result['roleAdded']);
+		$this->assertSame([['fatma', 'handler']], $this->bound);
+		$this->assertSame([CaseAccessPurposeService::ACTION, CaseAccessPurposeService::ACTION_ROLE], array_column($this->written, 1));
+		$this->assertSame('handler', $this->written[1][2]['role']);
+		$this->assertSame('user:fatma', $this->written[1][2]['participant']);
+
+		$this->written = [];
+		$this->bound = [];
+		$advice = $service->record(caseId: 'case-1', readerId: 'fatma', purpose: 'advice', note: '');
+		$this->assertFalse($advice['roleAdded']);
+		$this->assertSame([], $this->bound);
+		$this->assertSame([CaseAccessPurposeService::ACTION], array_column($this->written, 1));
+	}//end testHandlingMakesTheReaderTheHandlerAndAdviceDoesNot()
+
+	/**
+	 * The rules are configuration: an app that maps advice to advisor binds that.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md
+	 */
+	public function testTheRulesAreConfiguration(): void {
+		$service = $this->service(objects: $this->jeugdwet(), rules: '{"assign": {"advice": "advisor"}}');
+		$service->record(caseId: 'case-1', readerId: 'fatma', purpose: 'advice', note: '');
+		$service->record(caseId: 'case-1', readerId: 'fatma', purpose: 'handling', note: '');
+
+		$this->assertSame([['fatma', 'advisor']], $this->bound);
+	}//end testTheRulesAreConfiguration()
 }//end class
