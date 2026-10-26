@@ -31,6 +31,14 @@ describe('withConfigLabels', () => {
 	})
 })
 
+describe('the conversation channels (DqZaakContact)', () => {
+	// @spec openspec/changes/conversation-channel-icons/specs/conversation-channel-icons/spec.md#requirement-the-conversation-chips-carry-the-channel-icons
+	it('carry the same icon as the contact-moments Kanaal column', () => {
+		const column = widget('case-contact-moments-card').content.columns.find((entry) => entry.key === 'notificationChannel')
+		expect(widget('case-resident-thread').content.channelIcons).toEqual(column.widgetProps.icons)
+	})
+})
+
 describe('the portal channel on the case page (DqZaakContact)', () => {
 	it('is named after the portal in the chips and the contact-moments table', () => {
 		expect(widget('case-resident-thread').content.channelMap.webformulier).toBe('config:portalName|Web form')

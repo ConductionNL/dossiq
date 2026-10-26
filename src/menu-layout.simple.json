@@ -4246,6 +4246,7 @@
 								"balie": "Desk",
 								"brief": "Letter"
 							},
+							"channelIcons": { "phone": "Phone", "email": "EmailOutline", "webformulier": "Earth", "chat": "MessageTextOutline", "social_media": "ShareVariant", "balie": "OfficeBuildingOutline", "brief": "EmailOpenOutline" },
 							"senderField": "callerIdentification",
 							"usAuthorField": "kccEmployeeId",
 							"usAuthorFormat": "user",
