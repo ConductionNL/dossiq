@@ -133,6 +133,7 @@
         "Document {name}",
         "Variant",
         "via",
-        "{summary}"
+        "{summary}",
+        "{knowledgeBasePage:last-segment}"
     ]
 }

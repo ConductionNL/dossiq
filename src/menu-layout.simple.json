@@ -1490,8 +1490,10 @@
 								"schema": "caseType",
 								"id": "@object.caseType"
 							},
+							"_linkNote": "DqZaak Werkinstructie: the page's own title and where it lives (\"Hoe we Woo-verzoeken behandelen\", \"Uit Collectives, team Woo en informatie.\"), from the case type's knowledgeBasePage (nextcloud-vue facts link label/note placeholders).",
 							"link": {
-								"label": "Read how we handle this kind of case",
+								"label": "{knowledgeBasePage:last-segment}",
+								"note": "From Collectives, team {knowledgeBasePage:first-segment}.",
 								"icon": "BookOpenPageVariant",
 								"href": "{knowledgeBasePage}",
 								"hrefBase": "/apps/collectives/",
@@ -2535,7 +2537,21 @@
 						"_headerActionsNote": "DqZaak/DqZaakMeer Flows: \"Flow uitvoeren\" in the card's title row, the case's own start-flow dialog, shown while the case has a flow it may start (as the header action of the same name).",
 						"headerActions": [
 							{ "label": "Run flow", "icon": "Play", "visibleWhen": { "field": "hasStartableFlows", "op": "eq", "value": true }, "action": { "type": "open-modal", "target": "CaseStartFlowDialog" } }
-						]
+						],
+						"_contentNote": "DqZaak/DqZaakMeer Flows: the runs only, ruled, each with its trigger in words, a status pill and when it started (nextcloud-vue CnFlowRunsWidget statusPill). The other keys repeat the manifest's placement.",
+						"content": {
+							"subject": "@objectId",
+							"limit": 5,
+							"pollSeconds": 0,
+							"rowRoute": "FlowDetail",
+							"emptyText": "No flow is running for this case",
+							"statusPill": true,
+							"historyTitle": false,
+							"quietLineWithHistory": false,
+							"age": "datetime",
+							"statusLabels": { "completed": "Succeeded", "failed": "Failed", "dead_letter": "Failed" },
+							"triggerLabels": { "object.created": "Started when the case was created", "object.updated": "Started at a status change", "manual": "Started by hand" }
+						}
 					},
 					"case-kpis-hours": {
 						"visibleWhen": {
