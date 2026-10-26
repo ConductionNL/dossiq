@@ -7,8 +7,8 @@
  * own `objectUrl`. A case-object link names its object by URL; when that URL
  * is OpenRegister's objects endpoint (`/apps/openregister/api/objects/<register>/
  * <schema>/<id>`) the schema is named in it, so the catalogue can show the
- * schema's title, how many properties it has and whether its objects go on a
- * map. The schema is resolved within the register the URL names, never
+ * schema's title, how many properties it has, whether its objects go on a
+ * map and how many objects the register holds in it. The schema is resolved within the register the URL names, never
  * across registers, because a slug is only unique inside its register. A
  * free-text object type, a URL of another system, or a schema that cannot be
  * read is answered with null: nothing is guessed, and one unreadable schema
@@ -54,7 +54,8 @@ class ObjectTypeSchemaResolver {
 	private const OBJECTS_PATH = '#/apps/openregister/api/objects/([^/?\#]+)/([^/?\#]+)(?:/|$)#';
 
 	/**
-	 * The OpenRegister property type of a point or shape on the map.
+	 * How OpenRegister names a point or shape on the map: `geo`, or `geo:` and
+	 * a kind (`geo:point`), as a property's `type` or its `format`.
 	 *
 	 * @var string
 	 */
@@ -68,6 +69,13 @@ class ObjectTypeSchemaResolver {
 	private const RESOLVER = 'OCA\\OpenRegister\\Service\\RegisterScopedSchemaResolver';
 
 	/**
+	 * The OpenRegister service that counts the objects of a schema.
+	 *
+	 * @var string
+	 */
+	private const OBJECTS = 'OCA\\OpenRegister\\Service\\ObjectService';
+
+	/**
 	 * What {@see self::read()} answers for a schema OpenRegister would not
 	 * give: a register that does not resolve, a schema the register does not
 	 * carry, or a read that was refused.
@@ -79,7 +87,7 @@ class ObjectTypeSchemaResolver {
 	/**
 	 * Schemas already read in this request, by register and schema as the URL names them.
 	 *
-	 * @var array<string, array{id: string, title: string, properties: int, views: array<int, string>}|array{unreadable: true}|null>
+	 * @var array<string, array{id: string, title: string, properties: int, views: array<int, string>, objects: int|null}|array{unreadable: true}|null>
 	 */
 	private array $seen = [];
 
@@ -96,14 +104,16 @@ class ObjectTypeSchemaResolver {
 	}//end __construct()
 
 	/**
-	 * The schema an object URL names: its title, its number of properties and
+	 * The schema an object URL names: its title, its number of properties,
 	 * the views its objects support (`map` when a property is a geo type,
-	 * `table` always), or null when the URL names no OpenRegister schema or
-	 * the schema cannot be read.
+	 * `table` always) and the number of objects the register holds in it
+	 * (null without OpenRegister's ObjectService), or null when the URL names
+	 * no OpenRegister schema or the schema cannot be read. A count OpenRegister
+	 * refuses throws.
 	 *
 	 * @param string $objectUrl The link's object URL.
 	 *
-	 * @return array{id: string, title: string, properties: int, views: array<int, string>}|null The schema, or null.
+	 * @return array{id: string, title: string, properties: int, views: array<int, string>, objects: int|null}|null The schema, or null.
 	 *
 	 * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
 	 */
@@ -174,7 +184,7 @@ class ObjectTypeSchemaResolver {
 	 * @param string $register The register id or slug the URL names.
 	 * @param string $schema   The schema id or slug the URL names.
 	 *
-	 * @return array{id: string, title: string, properties: int, views: array<int, string>}|array{unreadable: true}|null The schema,
+	 * @return array{id: string, title: string, properties: int, views: array<int, string>, objects: int|null}|array{unreadable: true}|null The schema,
 	 *                                                                                                     UNREADABLE, or null without OpenRegister.
 	 */
 	private function read(string $register, string $schema): ?array {
@@ -183,7 +193,8 @@ class ObjectTypeSchemaResolver {
 		}
 
 		try {
-			$entity = $this->container->get(self::RESOLVER)->resolvePair(registerRef: $register, schemaRef: $schema)['schema'];
+			$pair   = $this->container->get(self::RESOLVER)->resolvePair(registerRef: $register, schemaRef: $schema);
+			$entity = $pair['schema'];
 		} catch (Exception $e) {
 			$this->logger->info(
 				'Dossiq: the schema a linked object names could not be read',
@@ -204,12 +215,38 @@ class ObjectTypeSchemaResolver {
 			'title'      => (string)($entity->getTitle() ?? $schema),
 			'properties' => count($properties),
 			'views'      => self::viewsOf(properties: $properties),
+			'objects'    => $this->objectCount(register: ($pair['register'] ?? null), schema: $entity),
 		];
 	}//end read()
 
 	/**
+	 * How many objects the register holds in the schema, or null without
+	 * OpenRegister's ObjectService. A count OpenRegister refuses throws, like
+	 * the catalogue's own reads, so a failed read is not shown as a number.
+	 *
+	 * @param object|null $register The resolved register.
+	 * @param object      $schema   The resolved schema.
+	 *
+	 * @return int|null The count.
+	 *
+	 * @spec openspec/changes/catalogue-object-count/specs/catalogue/spec.md
+	 */
+	private function objectCount(?object $register, object $schema): ?int {
+		if ($register === null || $this->container->has(self::OBJECTS) === false) {
+			return null;
+		}
+
+		$objects = $this->container->get(self::OBJECTS);
+		$objects->setRegister($register);
+		$objects->setSchema($schema);
+
+		return (int)$objects->count(['filters' => []]);
+	}//end objectCount()
+
+	/**
 	 * The views a schema's objects support: `map` when a property is a geo
-	 * type, then `table`, which every object list is.
+	 * type or format (`{"type": "object", "format": "geo:point"}`), then
+	 * `table`, which every object list is.
 	 *
 	 * @param array<string, mixed> $properties The schema's properties.
 	 *
@@ -217,11 +254,29 @@ class ObjectTypeSchemaResolver {
 	 */
 	public static function viewsOf(array $properties): array {
 		foreach ($properties as $property) {
-			if (is_array($property) === true && ($property['type'] ?? '') === self::GEO_TYPE) {
+			if (is_array($property) === true && self::isGeo(property: $property) === true) {
 				return ['map', 'table'];
 			}
 		}
 
 		return ['table'];
 	}//end viewsOf()
+
+	/**
+	 * Whether a property holds a point or shape on the map.
+	 *
+	 * @param array<string, mixed> $property The property definition.
+	 *
+	 * @return bool True for a geo type or format.
+	 */
+	private static function isGeo(array $property): bool {
+		foreach (['format', 'type'] as $key) {
+			$declared = strtolower((string)($property[$key] ?? ''));
+			if ($declared === self::GEO_TYPE || str_starts_with($declared, self::GEO_TYPE.':') === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isGeo()
 }//end class

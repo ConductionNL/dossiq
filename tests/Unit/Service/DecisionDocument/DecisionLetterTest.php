@@ -28,7 +28,9 @@ use InvalidArgumentException;
 use OCA\Dossiq\Service\DecisionDocument\DecisionLetter;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -43,6 +45,20 @@ class DecisionLetterTest extends TestCase {
 	private InMemoryRegister $register;
 
 	private DecisionLetter $letters;
+
+	/**
+	 * The settings the letters read the register through.
+	 *
+	 * @var SettingsService
+	 */
+	private SettingsService $settings;
+
+	/**
+	 * The case type's draft declarations.
+	 *
+	 * @var CaseDocumentDrafts
+	 */
+	private CaseDocumentDrafts $drafts;
 
 	protected function setUp(): void {
 		$this->register = new InMemoryRegister();
@@ -60,9 +76,19 @@ class DecisionLetterTest extends TestCase {
 
 		$drafts = $this->createMock(CaseDocumentDrafts::class);
 		$drafts->method('declarationForCase')->willReturnCallback(
-			static fn (string $caseId, string $purpose): array => $purpose === 'decision'
-				? ['templateSlug' => 'woo-besluit', 'documentType' => 'Besluit', 'title' => 'Woo-besluit']
-				: []
+			static function (string $caseId, string $purpose): array {
+				if ($purpose !== 'decision') {
+					return [];
+				}
+
+				return [
+					'templateSlug' => 'woo-besluit',
+					'documentType' => 'Besluit',
+					'title' => 'Woo-besluit',
+					'signing' => ['nl' => 'Via LibreSign, na de paraaf', 'en' => 'Through LibreSign, after the initials'],
+					'delivery' => 'Berichtenbox van MijnOverheid',
+				];
+			}
 		);
 
 		$this->register->seed('informatieobjecttype', 'iot-besluit', ['description' => 'Besluit']);
@@ -75,18 +101,67 @@ class DecisionLetterTest extends TestCase {
 		$this->register->seed('zaakinformatieobject', 'j-3', ['case' => self::CASE_ID, 'informatieobject' => 'io-other-type']);
 		$this->register->seed('zaakinformatieobject', 'j-4', ['case' => 'case-b', 'informatieobject' => 'io-foreign']);
 
+		$this->settings = $settings;
+		$this->drafts = $drafts;
 		$this->letters = new DecisionLetter(settingsService: $settings, drafts: $drafts);
 	}//end setUp()
 
 	public function testTheLetterIsTheNewestDocumentOfTheDeclaredTypeOnTheCase(): void {
 		$found = $this->letters->forCase(caseId: self::CASE_ID, purpose: 'decision');
 
-		$this->assertSame(['title' => 'Woo-besluit', 'documentType' => 'Besluit'], $found['declaration']);
+		$this->assertSame(
+			expected: [
+				'title' => 'Woo-besluit',
+				'documentType' => 'Besluit',
+				'templateSlug' => 'woo-besluit',
+				'format' => '',
+				'signing' => 'Via LibreSign, na de paraaf',
+				'delivery' => 'Berichtenbox van MijnOverheid',
+			],
+			actual: $found['declaration']
+		);
+		$this->assertFalse(condition: $found['empty']);
 		$this->assertSame('io-by-id', $found['document']['id'], 'matched by id, newer than the one matched by name; another case\'s letter is not seen');
 	}//end testTheLetterIsTheNewestDocumentOfTheDeclaredTypeOnTheCase()
 
+	/**
+	 * The declared signing route reads in the reader's language.
+	 *
+	 * @return void
+	 */
+	public function testTheSigningRouteReadsInTheReadersLanguage(): void {
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn('en');
+		$english = new DecisionLetter(
+			settingsService: $this->settings,
+			drafts: $this->drafts,
+			text: new TranslatedText(l10n: $l10n)
+		);
+
+		$declaration = $english->forCase(caseId: self::CASE_ID, purpose: 'decision')['declaration'];
+
+		$this->assertSame(expected: 'Through LibreSign, after the initials', actual: $declaration['signing']);
+		$this->assertSame(expected: 'Berichtenbox van MijnOverheid', actual: $declaration['delivery'], message: 'a plain string stays as declared');
+	}//end testTheSigningRouteReadsInTheReadersLanguage()
+
+	/**
+	 * A letter the case type declares but the case does not hold yet reads empty.
+	 *
+	 * @return void
+	 */
+	public function testADeclaredLetterNotYetDraftedReadsEmpty(): void {
+		$found = $this->letters->forCase(caseId: 'case-without-documents', purpose: 'decision');
+
+		$this->assertNull(actual: $found['document']);
+		$this->assertTrue(condition: $found['empty']);
+		$this->assertSame(expected: 'woo-besluit', actual: $found['declaration']['templateSlug']);
+	}//end testADeclaredLetterNotYetDraftedReadsEmpty()
+
 	public function testAPurposeTheCaseTypeDoesNotDeclareHasNoLetter(): void {
-		$this->assertSame(['declaration' => null, 'document' => null], $this->letters->forCase(caseId: self::CASE_ID, purpose: 'inventory'));
+		$this->assertSame(
+			expected: ['declaration' => null, 'document' => null, 'empty' => true],
+			actual: $this->letters->forCase(caseId: self::CASE_ID, purpose: 'inventory')
+		);
 	}//end testAPurposeTheCaseTypeDoesNotDeclareHasNoLetter()
 
 	public function testADocumentOfAnotherCaseIsRefused(): void {

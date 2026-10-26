@@ -586,17 +586,20 @@ export default {
 .rules-tab__text {
 	display: flex;
 	flex-direction: column;
+	gap: 2px;
 	min-width: 0;
 }
 
 .rules-tab__title {
-	font-size: 14px;
-	font-weight: 600;
+	font-size: 15px;
+	font-weight: 500;
+	line-height: normal;
 	overflow-wrap: anywhere;
 }
 
 .rules-tab__line {
 	font-size: 13px;
+	line-height: normal;
 	color: var(--color-text-maxcontrast);
 }
 
@@ -604,10 +607,12 @@ export default {
 	flex: none;
 }
 
+/* The board wraps the add button into the tab's heading row, 8px under the
+   subtitle where the panel heading leaves 12px, and 12px above the rows. */
 .rules-tab__head {
 	display: flex;
 	justify-content: flex-start;
-	margin-bottom: 8px;
+	margin: -4px 0 12px;
 }
 
 .rules-tab__end {

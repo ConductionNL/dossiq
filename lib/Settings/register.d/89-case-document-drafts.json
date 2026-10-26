@@ -67,6 +67,18 @@
                   },
                   "default": []
                 },
+                "signing": {
+                  "type": "object",
+                  "additionalProperties": { "type": "string", "maxLength": 255 },
+                  "title": "Signing",
+                  "description": "How the document is signed before it goes out, per language ({\"nl\": ..., \"en\": ...}). The letters route returns it in the reader's language for the case's letter card."
+                },
+                "delivery": {
+                  "type": "object",
+                  "additionalProperties": { "type": "string", "maxLength": 255 },
+                  "title": "Delivery",
+                  "description": "How the document reaches the addressee, per language ({\"nl\": ..., \"en\": ...}). The letters route returns it in the reader's language for the case's letter card."
+                },
                 "summaries": {
                   "type": "array",
                   "title": "Summaries",

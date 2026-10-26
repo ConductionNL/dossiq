@@ -93,6 +93,41 @@ class PhaseSummaryTest extends TestCase {
 	}//end testUnnamedStatusesAreLeftOut()
 
 	/**
+	 * A case type whose statuses name a phase is read by phase: the days of
+	 * the statuses of one phase add up, a final status is no column, a status
+	 * without a phase keeps its own name; a case type without phases keeps
+	 * its status names.
+	 *
+	 * @return void
+	 */
+	public function testStatusesGroupByTheirPhase(): void {
+		$reports = [
+			[
+				'id' => 'woo',
+				'title' => 'Woo-verzoek',
+				'dwellTime' => [
+					['statusId' => 's1', 'statusName' => 'Ontvangst', 'statusPhase' => 'Ontvangst', 'meanHours' => 24.0, 'medianHours' => 24.0],
+					['statusId' => 's2', 'statusName' => 'Zoeken documenten', 'statusPhase' => 'Beoordeling', 'meanHours' => 96.0, 'medianHours' => 96.0],
+					['statusId' => 's3', 'statusName' => 'Lakken', 'statusPhase' => 'Beoordeling', 'meanHours' => 120.0, 'medianHours' => 96.0],
+					['statusId' => 's5', 'statusName' => 'Hercontrole', 'statusPhase' => '', 'meanHours' => 72.0, 'medianHours' => 72.0],
+					['statusId' => 's4', 'statusName' => 'Afgehandeld', 'statusPhase' => '', 'statusFinal' => true, 'meanHours' => 2.0, 'medianHours' => 2.0],
+				],
+			],
+			[
+				'id' => 'klacht',
+				'title' => 'Klacht',
+				'dwellTime' => [['statusId' => 'k1', 'statusName' => 'Onderzoek', 'meanHours' => 48.0, 'medianHours' => 48.0]],
+			],
+		];
+
+		$matrix = (new PhaseSummary())->matrix(caseTypes: $reports, measure: 'meanHours');
+
+		self::assertSame(expected: ['Ontvangst', 'Beoordeling', 'Hercontrole', 'Onderzoek'], actual: $matrix['columns']);
+		self::assertSame(expected: ['label' => 'Woo-verzoek', 'values' => [1, 9, 3, 'none']], actual: $matrix['rows'][0]);
+		self::assertSame(expected: ['label' => 'Klacht', 'values' => ['none', 'none', 'none', 2]], actual: $matrix['rows'][1]);
+	}//end testStatusesGroupByTheirPhase()
+
+	/**
 	 * The worst case type's bottleneck leads and is the only one marked as such.
 	 *
 	 * @return void

@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.72"
+        "version": "0.20.75"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.23.0",
+                "version": "1.24.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -949,7 +949,7 @@
                     }
                 },
                 "icon": "ListStatus",
-                "version": "1.7.4",
+                "version": "1.8.0",
                 "searchable": false,
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
@@ -1148,6 +1148,14 @@
                                 }
                             }
                         }
+                    },
+                    "phase": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
+                        "title": "Phase",
+                        "description": "The generic phase this status belongs to (for example Ontvangst, Beoordeling, Advies, Besluit, Verzending). Process analysis groups statuses by it, so case types with different statuses read side by side; a status without one keeps its own name there."
                     },
                     "waitingOn": {
                         "type": "string",
@@ -1747,6 +1755,9 @@
                         "channels": [
                             "nc-notification"
                         ],
+                        "optInChannels": [
+                            "email"
+                        ],
                         "recipients": [
                             {
                                 "kind": "field",
@@ -1771,6 +1782,9 @@
                         "enabled": true,
                         "channels": [
                             "nc-notification"
+                        ],
+                        "optInChannels": [
+                            "email"
                         ],
                         "recipients": [
                             {
@@ -1802,6 +1816,9 @@
                         "channels": [
                             "nc-notification"
                         ],
+                        "optInChannels": [
+                            "email"
+                        ],
                         "recipients": [
                             {
                                 "kind": "field",
@@ -1821,6 +1838,9 @@
                         "channels": [
                             "nc-notification"
                         ],
+                        "optInChannels": [
+                            "email"
+                        ],
                         "recipients": [
                             {
                                 "watchers": true
@@ -1834,7 +1854,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.48.0",
+                "version": "1.53.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -2878,12 +2898,26 @@
                         {
                             "key": "person",
                             "label": "Person",
-                            "description": "A natural person, with or without an account on this instance."
+                            "description": "A natural person, with or without an account on this instance.",
+                            "identityShapes": [
+                                "naturalPerson"
+                            ]
                         },
                         {
                             "key": "organisation",
                             "label": "Organisation",
-                            "description": "A company, authority or other body acting on the case."
+                            "description": "A company, authority or other body acting on the case.",
+                            "identityShapes": [
+                                "organization"
+                            ]
+                        },
+                        {
+                            "key": "colleague",
+                            "label": "Colleague",
+                            "description": "A colleague of the municipality who takes part in the case, such as an adviser.",
+                            "identityShapes": [
+                                "naturalPerson"
+                            ]
                         },
                         {
                             "key": "address",
@@ -12981,6 +13015,7 @@
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-ontvangen"
                 },
+                "phase": "Ontvangst",
                 "name": "Ontvangen",
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Aanvraag is ontvangen en geregistreerd",
@@ -12997,6 +13032,7 @@
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-in-behandeling"
                 },
+                "phase": "Beoordeling",
                 "name": "In behandeling",
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Aanvraag wordt inhoudelijk getoetst",
@@ -13013,6 +13049,7 @@
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-besluitvorming"
                 },
+                "phase": "Besluit",
                 "name": "Besluitvorming",
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Besluit wordt voorbereid en genomen",
@@ -13046,6 +13083,7 @@
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-ontvangen"
                 },
+                "phase": "Ontvangst",
                 "name": "Ontvangen",
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidieaanvraag is ontvangen",
@@ -13062,6 +13100,7 @@
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-beoordeling"
                 },
+                "phase": "Beoordeling",
                 "name": "Beoordeling",
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Aanvraag wordt getoetst aan subsidiekader",
@@ -13078,6 +13117,7 @@
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-besluitvorming"
                 },
+                "phase": "Besluit",
                 "name": "Besluitvorming",
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidiebesluit wordt voorbereid en genomen",
@@ -13111,6 +13151,7 @@
                     "schema": "statusType",
                     "slug": "klacht-ontvangen"
                 },
+                "phase": "Ontvangst",
                 "name": "Ontvangen",
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht is ontvangen en geregistreerd",
@@ -13127,6 +13168,7 @@
                     "schema": "statusType",
                     "slug": "klacht-onderzoek"
                 },
+                "phase": "Beoordeling",
                 "name": "Onderzoek",
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht wordt onderzocht (hoor en wederhoor)",
@@ -13160,6 +13202,7 @@
                     "schema": "statusType",
                     "slug": "melding-ontvangen"
                 },
+                "phase": "Ontvangst",
                 "name": "Ontvangen",
                 "caseType": "@ref:melding-openbare-ruimte",
                 "description": "Melding is ontvangen en doorgezet",
@@ -13176,6 +13219,7 @@
                     "schema": "statusType",
                     "slug": "melding-in-behandeling"
                 },
+                "phase": "Beoordeling",
                 "name": "In behandeling",
                 "caseType": "@ref:melding-openbare-ruimte",
                 "description": "Melding wordt afgehandeld door beheerdienst",

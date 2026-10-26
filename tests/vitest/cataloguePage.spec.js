@@ -51,6 +51,11 @@ describe('the Object types page', () => {
 		expect(actions[1]).toMatchObject({ label: 'New object type', variant: 'primary', href: '/apps/openregister/schemas' })
 	})
 
+	it('writes the schema and its object count under each type, as the server words it', () => {
+		const title = widget('catalogue-object-types').content.columns.find((column) => column.key === 'title')
+		expect(title.secondary).toBe('{schemaLine}')
+	})
+
 	it('offers Add object type in the object types card, opening OpenRegister\'s schemas', () => {
 		expect(widget('catalogue-object-types').headerActions).toEqual([
 			{ label: 'Add object type', icon: 'Plus', action: { type: 'navigate', target: '/index.php/apps/openregister/schemas' } },

@@ -85,6 +85,11 @@ describe('the LHS matrix on the enforcement advice', () => {
 	it('shows the violation from the inspection behind the advice', () => {
 		const violation = page.config.widgets.find((w) => w.id === 'lhs-violation')
 		expect(violation.content.source).toEqual({ register: 'dossiq', schema: 'inspectieRapport', id: '@object.inspection' })
-		expect(page.config.layout.find((l) => l.widgetId === 'lhs-violation').gridY).toBe(7)
+		expect(page.config.layout.find((l) => l.widgetId === 'lhs-violation').gridY).toBe(6)
+	})
+
+	it('closes the violation card up under the matrix, both ending at their content', () => {
+		expect(page.config.gridFloat).toBe(false)
+		expect(page.config.layout.every((l) => l.sizeToContent === true)).toBe(true)
 	})
 })

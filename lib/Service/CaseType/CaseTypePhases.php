@@ -84,7 +84,8 @@ class CaseTypePhases {
 			return null;
 		}
 
-		$phases   = $this->phasesOf(caseTypeId: $caseTypeId);
+		$grouped  = $this->phasesOf(caseTypeId: $caseTypeId);
+		$phases   = $grouped['phases'];
 		$unplaced = [];
 		$count    = 0;
 		foreach ($this->stepsOf(caseTypeId: $caseTypeId) as $step) {
@@ -95,8 +96,9 @@ class CaseTypePhases {
 
 			$count++;
 			$status = $this->declarations->statusOf(step: $step);
-			if (isset($phases[$status]) === true) {
-				$phases[$status]['tasks'][] = $task;
+			$key    = ($grouped['phaseOfStatus'][$status] ?? null);
+			if ($key !== null && isset($phases[$key]) === true) {
+				$phases[$key]['tasks'][] = $task;
 				continue;
 			}
 
@@ -105,7 +107,7 @@ class CaseTypePhases {
 
 		return [
 			'caseTypeId'      => $caseTypeId,
-			'phases'          => $this->ordered(phases: $phases),
+			'phases'          => $this->ordered(phases: $this->withoutBareFinals(phases: $phases, phased: $grouped['phased'])),
 			'unplaced'        => $unplaced,
 			'alwaysAvailable' => $this->alwaysAvailable(caseType: $caseType),
 			'taskCount'       => $count,
@@ -113,32 +115,79 @@ class CaseTypePhases {
 	}//end phasesFor()
 
 	/**
-	 * The case type's statuses as empty phases, keyed by status id.
+	 * The case type's phases, empty, and which phase each status falls under.
+	 *
+	 * A status names its phase with the optional `phase`; the statuses that
+	 * name one phase share it, named by that phase and ordered by the first
+	 * of them. A status without one is a phase of its own, named after it.
 	 *
 	 * @param string $caseTypeId The case type id.
 	 *
-	 * @return array<string, array<string, mixed>> The phases.
+	 * @return array{phases: array<string, array<string, mixed>>, phaseOfStatus: array<string, string>, phased: bool}
+	 *         The phases keyed by phase key, the phase key per status id, and whether any status names a phase.
 	 */
 	private function phasesOf(string $caseTypeId): array {
-		$phases = [];
+		$phases  = [];
+		$ofStatus = [];
+		$phased  = false;
 		foreach ($this->resolver->statusTypesFor(caseTypeId: $caseTypeId) as $statusType) {
 			$id = (string) ($statusType['id'] ?? ($statusType['@self']['id'] ?? ''));
 			if ($id === '') {
 				continue;
 			}
 
-			$phases[$id] = [
+			$phase = trim($this->text->forReader(value: ($statusType['phase'] ?? '')));
+			$order = (int) ($statusType['order'] ?? 0);
+			$key   = 'status:'.$id;
+			$name  = $this->text->forReader(value: ($statusType['name'] ?? ''));
+			if ($phase !== '') {
+				$phased = true;
+				$key    = 'phase:'.mb_strtolower($phase);
+				$name   = $phase;
+			}
+
+			$ofStatus[$id] = $key;
+			if (isset($phases[$key]) === true) {
+				$phases[$key]['statusIds'][] = $id;
+				if ($order < $phases[$key]['order']) {
+					$phases[$key]['order'] = $order;
+					$phases[$key]['id']    = $id;
+				}
+
+				continue;
+			}
+
+			$phases[$key] = [
 				'id'         => $id,
 				'caseTypeId' => $caseTypeId,
-				'name'       => $this->text->forReader(value: ($statusType['name'] ?? '')),
-				'order'      => (int) ($statusType['order'] ?? 0),
-				'isFinal'    => (($statusType['isFinal'] ?? false) === true),
+				'name'       => $name,
+				'order'      => $order,
+				'isFinal'    => (($statusType['isFinal'] ?? false) === true && $phase === ''),
+				'statusIds'  => [$id],
 				'tasks'      => [],
 			];
+		}//end foreach
+
+		return ['phases' => $phases, 'phaseOfStatus' => $ofStatus, 'phased' => $phased];
+	}//end phasesOf()
+
+	/**
+	 * The phases without a final status of its own that runs no task, once
+	 * the statuses are grouped in phases: the end of a case is not a phase
+	 * the case type's work happens in.
+	 *
+	 * @param array<string, array<string, mixed>> $phases The phases.
+	 * @param bool                                $phased Whether any status names a phase.
+	 *
+	 * @return array<string, array<string, mixed>> The phases to show.
+	 */
+	private function withoutBareFinals(array $phases, bool $phased): array {
+		if ($phased === false) {
+			return $phases;
 		}
 
-		return $phases;
-	}//end phasesOf()
+		return array_filter($phases, static fn (array $phase): bool => ($phase['isFinal'] === false || $phase['tasks'] !== []));
+	}//end withoutBareFinals()
 
 	/**
 	 * The decoded steps of the case type's active workflow definition.

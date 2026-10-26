@@ -1681,10 +1681,12 @@
 						},
 						"_note": "DqSociaalDomein Historie: the case's latest events from its audit trail, reads left out, with who opened the case for which purpose (the access purpose dossiq records on the trail, dossiq.case.access-purpose, its purpose in the entry's changed). Only on a case type that holds special categories of personal data, where every opening asks a purpose.",
 						"content": {
+							"layout": "stacked",
 							"maxDisplay": 3,
 							"excludeActions": ["read"],
 							"actionLabels": {
 								"dossiq.case.access-purpose": "Case opened, purpose {changed.purpose}",
+								"dossiq.case.access-role": "Added as {changed.role} on opening",
 								"create": "Case created",
 								"update": "Case changed",
 								"consent.create": "Consent recorded",
@@ -1709,6 +1711,11 @@
 									"legal-obligation": "legal obligation",
 									"data-subject-request": "request of the person concerned",
 									"other": "other"
+								},
+								"role": {
+									"handler": "handler",
+									"advisor": "advisor",
+									"coordinator": "coordinator"
 								}
 							},
 							"emptyText": "Nothing has happened on this case yet",
@@ -2485,10 +2492,17 @@
 								"lastPaymentDate"
 							],
 							"hideEmpty": true,
+							"_overridesNote": "DqZaak Termijn en betaling: \"Wettelijke termijn: 4 weken, te verdagen met 2\" and \"Laatst gecontroleerd\", as the board draws them (nextcloud-vue format duration + extendBy).",
 							"overrides": {
 								"statutoryTerm": {
 									"readOnly": false,
-									"editable": false
+									"editable": false,
+									"label": "Statutory term",
+									"format": "duration",
+									"extendBy": "statutoryExtension"
+								},
+								"paymentStateCheckedAt": {
+									"label": "Last checked"
 								}
 							}
 						}
@@ -2728,8 +2742,9 @@
 							]
 						},
 						"title": "The request",
-						"_note": "DqZaak: the card that opens the Overview tab, what the case is about in the requester's words. Read only: the description is edited in the Edit dialog.",
+						"_note": "DqZaak: the card that opens the Overview tab, what the case is about in the requester's words. Read only: the description is edited in the Edit dialog. A case type's requestFields replace the description (Woo: the request's scope, period and kinds of document; nextcloud-vue facts fieldsFrom).",
 						"content": {
+							"fieldsFrom": "@context.caseType.requestFields",
 							"fields": [
 								{
 									"as": "text",
@@ -4429,6 +4444,44 @@
 						"subtitle": "From OpenRegister's party model, also for those without an account",
 						"_note": "The party model OpenRegister shipped in #3761 (`/parties` of this case), by role with the primary party first. A gemachtigde names whom they act for (role rows, `representedParty`). The accepted kinds and the writing language come from pipelinq through dossiq's endpoints; a kind is marked not accepted only when pipelinq answered the kinds. Every indicator carries its verdict, and a blocking one is also a note above the list. A failed read says so and is never \"no parties\".",
 						"content": {
+							"manage": {
+								"add": {
+									"label": "Add party",
+									"dialogTitle": "Add party",
+									"confirmLabel": "Add",
+									"sources": [
+										{
+											"id": "person",
+											"register": "dossiq",
+											"schema": "brpPerson",
+											"lookup": {
+												"url": "/apps/dossiq/api/people/lookup",
+												"when": "^[0-9]{9}$"
+											},
+											"label": "Resident",
+											"title": "{displayName}",
+											"secondary": "{residence.street} {residence.houseNumber}"
+										},
+										{
+											"id": "company",
+											"register": "dossiq",
+											"schema": "kvkCompany",
+											"label": "Organisation",
+											"title": "{tradeName}",
+											"secondary": "CoC {kvkNumber}"
+										},
+										{
+											"id": "colleague",
+											"register": "dossiq",
+											"schema": "colleague",
+											"label": "Colleague",
+											"title": "{displayName}",
+											"secondary": "{jobTitle}"
+										}
+									]
+								}
+							},
+							"_manageNote": "Board DqZaakBetrokkenen draws \"Partij toevoegen\" on this card. The picker searches residents (BSN lookup), organisations and colleagues (the colleague party schema, kind colleague, tied to a Nextcloud user); the role is one the case declares.",
 							"rolesObjects": {
 								"register": "dossiq",
 								"schema": "role",
@@ -4844,7 +4897,7 @@
 								"case": "@objectId"
 							},
 							"sort": {
-								"field": "objectType",
+								"field": "objectIdentification",
 								"dir": "asc"
 							},
 							"limit": 25,
@@ -5040,15 +5093,36 @@
 						"title": "Decision letter",
 						"subtitle": "The document that goes to the requester",
 						"icon": "FileDocumentOutline",
-						"_note": "DqZaakBesluiten Beschikking: the decision document the case's document step writes, with Document genereren as the card's action.",
+						"_note": "DqZaakBesluiten Beschikking: the case's decision letter, the newest dossier document of the type the case type declares under documentDrafts.decision, read through dossiq's letters route (the one the decide dialog reads): its status, the template, and the signing route and delivery the case type declares beside the letter (documentDrafts.decision signing / delivery), with Document genereren as the card's action. The card is empty while the case holds no such letter (the route answers empty: true).",
 						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/letters/decision"
+							},
+							"emptyWhen": "empty",
 							"fields": [
 								{
-									"as": "text",
-									"path": "besluitDocument"
+									"label": "Status",
+									"path": "document.status",
+									"map": {
+										"draft": "Draft, not signed yet",
+										"final": "Final"
+									}
+								},
+								{
+									"label": "Template",
+									"path": "declaration.title"
+								},
+								{
+									"label": "Signing",
+									"path": "declaration.signing"
+								},
+								{
+									"label": "Delivery",
+									"path": "declaration.delivery"
 								}
 							],
 							"emptyText": "No decision letter written yet",
+							"footnote": "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced.",
 							"headerAction": {
 								"label": "Generate document",
 								"icon": "FileDocumentPlusOutline",
@@ -6492,7 +6566,10 @@
 							"title": "Version {version}",
 							"meta": {
 								"parts": [
-									"{validFrom|date}",
+									[
+										"{validFrom|date}",
+										"Draft, changed {versionDate|date}"
+									],
 									"{runningCases}"
 								]
 							},
@@ -6625,11 +6702,13 @@
 									"label": "Handling teams",
 									"parts": [
 										{
-											"path": "handling.defaultGroup"
+											"path": "handling.defaultGroup",
+											"format": "group"
 										},
 										{
 											"path": "handling.teams",
-											"format": "list"
+											"format": "list",
+											"itemFormat": "group"
 										}
 									],
 									"separator": ", "
@@ -7389,15 +7468,9 @@
 								},
 								{
 									"label": "Retention period",
-									"parts": [
-										{
-											"path": "lawfulPurposeRetention"
-										},
-										{
-											"text": "months"
-										}
-									],
-									"separator": " "
+									"path": "lawfulPurposeRetention",
+									"format": "months",
+									"suffix": " after closing"
 								},
 								{
 									"as": "line",
@@ -7856,7 +7929,7 @@
 						"type": "CaseTypeRulesWidget"
 					},
 					"case-type-fields-editor": {
-						"subtitle": "The data schema of this case type."
+						"subtitle": "The data schema of this case type. Drag to change the order. Fields of the parent type are purple."
 					}
 				}
 			}

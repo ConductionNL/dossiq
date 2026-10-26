@@ -3365,8 +3365,8 @@
 				"schema": "case",
 				"subtitleField": "identifier",
 				"visibilityContext": {"caseType": {"field": "caseType", "register": "dossiq", "schema": "caseType"}},
-				"_accessPurposeNote": "Purpose logging (Ruben, 20 October 2026): a case whose case type lists special categories of personal data (caseType.specialDataCategories) opens only after the reader states why, and the purpose goes to the case's audit trail with the reader and the time (POST /api/cases/{id}/access-purpose, CaseAccessPurposeService). The options are CaseAccessPurposeService::PURPOSES minus other, which the library adds. Asked once per case per browser session. Needs nextcloud-vue detail-access-purpose; on an older release the key is ignored and the case opens as before.",
-				"accessPurpose": {"when": {"field": "@context.caseType.specialDataCategories", "op": "notEmpty"}, "title": "Why are you opening this case?", "description": "This case holds special categories of personal data. Your purpose is recorded with your name and the time, in the case's audit trail.", "options": [{"value": "handling", "label": "Handling the case"}, {"value": "advice", "label": "Advice or consultation on the case"}, {"value": "quality-check", "label": "Supervision or a quality check"}, {"value": "legal-obligation", "label": "A legal obligation"}, {"value": "data-subject-request", "label": "A request from the person concerned"}], "url": "/apps/dossiq/api/cases/{objectId}/access-purpose"},
+				"_accessPurposeNote": "The case's own handler opens it without the dialog and handling makes the reader the handler (Ruben, 26 October 2026, access-purpose-handler): checkUrl asks GET /api/cases/{id}/access-purpose first, the roles are app config access_purpose_roles. Purpose logging (Ruben, 20 October 2026): a case whose case type lists special categories of personal data (caseType.specialDataCategories) opens only after the reader states why, and the purpose goes to the case's audit trail with the reader and the time (POST /api/cases/{id}/access-purpose, CaseAccessPurposeService). The options are CaseAccessPurposeService::PURPOSES minus other, which the library adds. Asked once per case per browser session. Needs nextcloud-vue detail-access-purpose; on an older release the key is ignored and the case opens as before.",
+				"accessPurpose": {"when": {"field": "@context.caseType.specialDataCategories", "op": "notEmpty"}, "title": "Why are you opening this case?", "description": "You are not this case's handler, so we ask why you open it. This case holds special categories of personal data. Your purpose is recorded with your name and the time, in the case's history.", "options": [{"value": "handling", "label": "Handling the case", "hint": "This makes you the case's handler."}, {"value": "advice", "label": "Advice or consultation on the case"}, {"value": "quality-check", "label": "Supervision or a quality check"}, {"value": "legal-obligation", "label": "A legal obligation"}, {"value": "data-subject-request", "label": "A request from the person concerned"}], "url": "/apps/dossiq/api/cases/{objectId}/access-purpose", "checkUrl": "/apps/dossiq/api/cases/{objectId}/access-purpose"},
 				"_visibilityContextNote": "Panels per case type (Ruben, 14 October 2026): which widget a case shows is configuration in this manifest, never code. The page reads the case type of the case beside it, and a widget's `visibleWhen` asks about it as `@context.caseType.<field>`. The condition reads the case type's `category`, the folder an organisation files its case types under, so a new case type in an existing folder needs no manifest change. A widget without `visibleWhen` shows on every case, as before. Needs the nextcloud-vue release that evaluates a detail widget's `visibleWhen` against the record (nextcloud-vue detail-widgets-visible-when); on an older release the key is ignored and every widget shows, as today.",
 				"_editFormNote": "The same form the index pages open, so editing a case asks what filing one asks wherever it is done. It was the raw schema-driven default here \u2014 one column, normal width, every property the schema declares \u2014 because CnDetailPage took `formSize` and `formColumns` and forwarded neither `includeFields`, `excludeFields` nor `fieldOverrides` to its dialogs. nextcloud-vue now does. `excludeFields` keeps `status` off for the reason the Cases page gives: a status is the OUTPUT of a transition, and a raw dropdown writes it through without a statusRecord, a guard or the transition's automaticActions. The priority trio goes with it, being derived from impact and urgency.",
 				"formSize": "large",
@@ -4306,6 +4306,44 @@
 										"title": "Roles",
 										"_note": "The party model OpenRegister shipped in #3761 (`/parties` of this case), by role with the primary party first. A gemachtigde names whom they act for (role rows, `representedParty`). The accepted kinds and the writing language come from pipelinq through dossiq's endpoints; a kind is marked not accepted only when pipelinq answered the kinds. Every indicator carries its verdict, and a blocking one is also a note above the list. A failed read says so and is never \"no parties\".",
 										"content": {
+											"manage": {
+												"add": {
+													"label": "Add party",
+													"dialogTitle": "Add party",
+													"confirmLabel": "Add",
+													"sources": [
+														{
+															"id": "person",
+															"register": "dossiq",
+															"schema": "brpPerson",
+															"lookup": {
+																"url": "/apps/dossiq/api/people/lookup",
+																"when": "^[0-9]{9}$"
+															},
+															"label": "Resident",
+															"title": "{displayName}",
+															"secondary": "{residence.street} {residence.houseNumber}"
+														},
+														{
+															"id": "company",
+															"register": "dossiq",
+															"schema": "kvkCompany",
+															"label": "Organisation",
+															"title": "{tradeName}",
+															"secondary": "CoC {kvkNumber}"
+														},
+														{
+															"id": "colleague",
+															"register": "dossiq",
+															"schema": "colleague",
+															"label": "Colleague",
+															"title": "{displayName}",
+															"secondary": "{jobTitle}"
+														}
+													]
+												}
+											},
+											"_manageNote": "Board DqZaakBetrokkenen draws \"Partij toevoegen\" on this card. The picker searches residents (BSN lookup), organisations and colleagues (the colleague party schema, kind colleague, tied to a Nextcloud user); the role is one the case declares.",
 											"rolesObjects": {
 												"register": "dossiq",
 												"schema": "role",
@@ -5120,7 +5158,7 @@
 												"case": "@objectId"
 											},
 											"sort": {
-												"field": "objectType",
+												"field": "objectIdentification",
 												"dir": "asc"
 											},
 											"limit": 25,
@@ -9975,8 +10013,9 @@
 					}
 				},
 				"_note": "ASSESSMENT-RECORD archetype (a per-case LHS intervention recommendation derived from an lhsMatrix), ADR-062 round 2. No comms/documents, no child schemas. The 13-field schema splits into two genuinely distinct groups: 'Recommendation' (the matrix inputs and outcome — case, inspection, ernst, gedrag, actorType, matrixVersion, recommendedInterventie, recommendedBy) and 'Override & final' (the accountability-bearing deviation fields — finalIntervention, override, overrideJustification, overrideBy, overrideAuthority), both side cards as board DqHandhaving draws them, under the Case and Violation class cards; the main column holds the matrix and the violation. No status lifecycle field and no content leaves. Audit history is a sidebar tab.",
+				"_typePillNote": "DqHandhaving: the header pill names the advice the matrix gives (\"Last onder dwangsom\"); the intervention applied after a deviation is in the Wat nu? card and the Override & final card.",
 				"typePill": {
-					"field": "finalIntervention",
+					"field": "recommendedIntervention",
 					"labels": {
 						"warning": "Warning",
 						"herstelactie": "Remedial action",
@@ -10189,8 +10228,9 @@
 						"id": "side-override",
 						"type": "facts",
 						"title": "Override & final",
-						"_note": "DqHandhaving Afwijking en definitief: the intervention actually applied and, when it deviates, who decided it under which authority and why.",
+						"_note": "DqHandhaving Afwijking en definitief: the intervention actually applied and, when it deviates, who decided it under which authority and why. The labels are long for a side card, so each stands above its value (`columns: 1`).",
 						"content": {
+							"columns": 1,
 							"fields": [
 								{
 									"label": "Final Intervention",
@@ -10383,6 +10423,8 @@
 						}
 					}
 				],
+				"_gridFloatNote": "DqHandhaving: both cards end at their content and the violation card sits the card gap under the matrix, so the grid packs upward.",
+				"gridFloat": false,
 				"layout": [
 					{
 						"id": "0",
@@ -10390,16 +10432,17 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 7,
+						"gridHeight": 6,
 						"sizeToContent": true
 					},
 					{
 						"id": "violation",
 						"widgetId": "lhs-violation",
 						"gridX": 0,
-						"gridY": 7,
+						"gridY": 6,
 						"gridWidth": 12,
-						"gridHeight": 5
+						"gridHeight": 3,
+						"sizeToContent": true
 					}
 				],
 				"sidebar": {
@@ -12616,11 +12659,13 @@
 							},
 							"sortable": true,
 							"filterable": true,
+							"fitWidth": true,
 							"limit": 100,
 							"columns": [
 								{
 									"key": "name",
-									"label": "Field"
+									"label": "Field",
+									"cellClass": "cn-cell--wrap"
 								},
 								{
 									"key": "propertyType",
@@ -12633,9 +12678,18 @@
 									"formatter": "fieldFill"
 								},
 								{
-									"key": "id",
+									"key": "origin",
 									"label": "Origin",
-									"formatter": "fieldOrigin"
+									"formatter": "fieldOrigin",
+									"widget": "badge",
+									"emptyValue": "own",
+									"widgetProps": {
+										"colorMap": {
+											"own": "default",
+											"shared": "info",
+											"inherited": "purple"
+										}
+									}
 								},
 								{
 									"key": "caseType",
@@ -13659,7 +13713,7 @@
 								{
 									"path": "birth.date",
 									"label": "Date of birth",
-									"format": "date-long"
+									"format": "longdate"
 								},
 								{
 									"key": "address",

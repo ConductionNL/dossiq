@@ -84,8 +84,8 @@
         "digest": "7f4d46785ced125954d2a0d0cc29021458aa6056b5f594a814f375934f92b55d"
     },
     "lib/Settings/dossiq_mock_register.json::case": {
-        "version": "1.12.0",
-        "digest": "b3307a986d1c5611318e51bbdab8626fedff3020f613d55cd26c3dda0f8f31ab"
+        "version": "1.13.0",
+        "digest": "f96b0b14875d02dd2b315b0fb64e2e116446b3fa5e157607998d18bfd930a76c"
     },
     "lib/Settings/dossiq_mock_register.json::case-location": {
         "version": "1.0.0",
@@ -468,8 +468,8 @@
         "digest": "3feaddfad6bf5dea61f249e45c19c73193f357b100e09c244cad9b02fd888965"
     },
     "lib/Settings/dossiq_mock_register.json::substitution": {
-        "version": "1.0.0",
-        "digest": "f9f08f80d8f50d5b696aacb64af1cf94758b7568f2e5738eaf1e277511baf2e7"
+        "version": "1.1.0",
+        "digest": "60af540565c37b388746b5b395fb5f3afac615ffd3bf89a7f3d4553617bd6a30"
     },
     "lib/Settings/dossiq_mock_register.json::supplier": {
         "version": "1.1.0",
@@ -612,8 +612,8 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.48.0",
-        "digest": "802db164e78a21d4e8ed2019d52648f7ee4915fe7ef78caec8ae112610a2ca00"
+        "version": "1.53.0",
+        "digest": "15788d538ea2e72b7ddcc4f6b7def38c991fef639ba41e2393e13a3d762abb91"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -664,7 +664,7 @@
         "digest": "edf99e78dccf60f40528c7ec7906bda9a92c691e0142906b9d649af2120ac14a"
     },
     "lib/Settings/dossiq_register.json::caseType": {
-        "version": "1.23.0",
+        "version": "1.24.0",
         "digest": "dbbfd52696a00662451f8e487669d62c5b96851e3e68cff4350fa5cdf5983038"
     },
     "lib/Settings/dossiq_register.json::casetransfer": {
@@ -828,7 +828,7 @@
         "digest": "7cb7dc7e787418460a092158c4a9ee6dcfb59cb97b1c0811cfab2497bb676497"
     },
     "lib/Settings/dossiq_register.json::statusType": {
-        "version": "1.7.4",
+        "version": "1.8.0",
         "digest": "ca4565a41c50db0fa2318923f1452c2a4443e1911cda441cb907f200ea98d70b"
     },
     "lib/Settings/dossiq_register.json::supplier": {
@@ -908,8 +908,8 @@
         "digest": "ea0271480e01c47e60831c6b03cebcd84393c5d6b1d8463ee2127600260c74dc"
     },
     "lib/Settings/register.d/25-brp-kvk.json::kvkCompany": {
-        "version": "1.5.0",
-        "digest": "bb350b622520c9a5477658e7742412560574a404f49ae555a1c1f67759993bad"
+        "version": "1.6.0",
+        "digest": "37037a79164866402611a7fde656e53659f9c7ef950599be682aaada89cfa8be"
     },
     "lib/Settings/register.d/30-beschikking.json::beschikking": {
         "version": "1.1.0",
@@ -1086,6 +1086,10 @@
     "lib/Settings/register.d/44-case-report-group.json::case": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/47-colleague-party.json::colleague": {
+        "version": "1.0.0",
+        "digest": "88d0c742e3cdfd1a6f6dcca1b1f7dac8798ca1a889319a4e26e3a229556697b6"
     },
     "lib/Settings/register.d/48-starter-content.json::case": {
         "version": "",
@@ -1719,6 +1723,14 @@
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-case-payment-state-labels.json::case": {
+        "version": "1.54.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-statutory-extension.json::case": {
+        "version": "1.55.0",
+        "digest": "bc8d855756851a962ff59a34ac7430362f735d04c334f1a97f91528a713a11a5"
+    },
     "lib/Settings/register.d/99-case-subject-and-sensitive-answers.json::case": {
         "version": "1.49.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1769,6 +1781,10 @@
     },
     "lib/Settings/register.d/99-case-type-record-import-references.json::caseType": {
         "version": "1.37.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-type-request-fields.json::caseType": {
+        "version": "1.43.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-type-rights-enforced.json::case": {

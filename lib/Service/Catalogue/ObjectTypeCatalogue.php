@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Service\Catalogue;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\IL10N;
 use RuntimeException;
 
 /**
@@ -65,10 +66,12 @@ class ObjectTypeCatalogue {
 	 *
 	 * @param SettingsService          $settingsService Config and OpenRegister's ObjectService.
 	 * @param ObjectTypeSchemaResolver $schemas         The schema a linked object's URL names.
+	 * @param IL10N                    $l10n            Words the schema line is written in.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ObjectTypeSchemaResolver $schemas,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -79,7 +82,10 @@ class ObjectTypeCatalogue {
 	 * configured, or when no case links an object. A read OpenRegister refuses
 	 * throws, so the caller can tell a failed read from an empty catalogue.
 	 *
-	 * @return array<int, array{id: string, title: string, cases: int, schema: string, properties: int|null, views: array<int, string>}> The rows.
+	 * @return array<int, array{
+	 *     id: string, title: string, cases: int, schema: string, schemaLine: string,
+	 *     properties: int|null, objects: int|null, views: array<int, string>
+	 * }> The rows.
 	 *
 	 * @throws RuntimeException When OpenRegister is not available.
 	 *
@@ -175,14 +181,18 @@ class ObjectTypeCatalogue {
 
 	/**
 	 * One catalogue row: the type, its case count and, when a link names an
-	 * OpenRegister schema, that schema's title, property count and views. A
-	 * free-text type leaves the schema columns empty.
+	 * OpenRegister schema, that schema's title, property count, views and
+	 * object count, with the line under the type ("Bomenregister · 5
+	 * objecten"). A free-text type leaves the schema columns empty.
 	 *
 	 * @param string $type      The object type.
 	 * @param int    $cases     The cases that link one.
 	 * @param string $objectUrl A link URL naming the schema, or ''.
 	 *
-	 * @return array{id: string, title: string, cases: int, schema: string, properties: int|null, views: array<int, string>, schemaId: string} The row.
+	 * @return array{
+	 *     id: string, title: string, cases: int, schema: string, schemaLine: string,
+	 *     properties: int|null, objects: int|null, views: array<int, string>, schemaId: string
+	 * } The row.
 	 */
 	private function rowFor(string $type, int $cases, string $objectUrl): array {
 		$schema = null;
@@ -195,11 +205,32 @@ class ObjectTypeCatalogue {
 			'title'      => $type,
 			'cases'      => $cases,
 			'schema'     => ($schema['title'] ?? ''),
+			'schemaLine' => $this->schemaLine(title: ($schema['title'] ?? ''), objects: ($schema['objects'] ?? null)),
 			'properties' => ($schema['properties'] ?? null),
+			'objects'    => ($schema['objects'] ?? null),
 			'views'      => ($schema['views'] ?? []),
 			'schemaId'   => ($schema['id'] ?? ''),
 		];
 	}//end rowFor()
+
+	/**
+	 * The line under an object type: the schema title and, when it could be
+	 * counted, how many objects it holds ("Bomenregister · 5 objecten").
+	 *
+	 * @param string   $title   The schema title, '' for a free-text type.
+	 * @param int|null $objects The object count, null when unknown.
+	 *
+	 * @return string The line, '' without a schema.
+	 *
+	 * @spec openspec/changes/catalogue-object-count/specs/catalogue/spec.md
+	 */
+	private function schemaLine(string $title, ?int $objects): string {
+		if ($title === '' || $objects === null) {
+			return $title;
+		}
+
+		return $title.' · '.$this->l10n->n('%n object', '%n objects', $objects);
+	}//end schemaLine()
 
 	/**
 	 * Every case id that links an object, once.

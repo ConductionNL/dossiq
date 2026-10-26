@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.155.0",
+	"version": "2.157.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -5533,7 +5533,7 @@
 						"gridFloat": {
 							"type": "boolean",
 							"default": true,
-							"description": "type='dashboard': `false` packs widgets upward (GridStack `float: false`), so a size-to-content widget that shrinks closes the gap under it instead of leaving an empty band (zuiddrecht-pixel-gaps-3). Maps to CnDashboardPage `gridFloat`."
+							"description": "type='dashboard' and type='detail': `false` packs widgets upward (GridStack `float: false`), so a size-to-content widget that shrinks closes the gap under it instead of leaving an empty band (zuiddrecht-pixel-gaps-3). Maps to CnDashboardPage and CnDetailPage `gridFloat`."
 						},
 						"showTitle": {
 							"type": "boolean",
@@ -5811,11 +5811,13 @@
 										"additionalProperties": false,
 										"properties": {
 											"value": { "type": "string", "minLength": 1 },
-											"label": { "type": "string", "minLength": 1, "description": "i18n key." }
+											"label": { "type": "string", "minLength": 1, "description": "i18n key." },
+											"hint": { "type": "string", "description": "i18n key of a line under the option: what choosing it does besides recording it." }
 										}
 									}
 								},
 								"url": { "type": "string", "minLength": 1, "description": "App endpoint that records the purpose; {objectId} is filled in." },
+								"checkUrl": { "type": "string", "minLength": 1, "description": "App endpoint asked first (GET, {objectId} filled in): an answer { required: false } opens the record without the dialog, because the app recorded the purpose itself." },
 								"title": { "type": "string", "description": "i18n key of the dialog's title." },
 								"description": { "type": "string", "description": "i18n key of the sentence under the title." }
 							}

@@ -130,6 +130,7 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import {
+	channelsOnFor,
 	keyFor,
 	propsFor,
 	writeFor,
@@ -189,6 +190,7 @@ export default {
 				// gets it in their language.
 				groupLabel: (title) => t('dossiq', title),
 				singleChannelLabel: t('dossiq', 'Notifications'),
+				channelLabel: (id) => this.channelLabel(id),
 			})
 		},
 
@@ -317,6 +319,24 @@ export default {
 		},
 
 		/**
+		 * What to call a channel column, as board DqPersoonlijkeInstellingen
+		 * does: "In Nextcloud" and "Per e-mail".
+		 *
+		 * @param {string} id The channel id.
+		 * @return {string} The label.
+		 * @spec openspec/changes/notification-email-opt-in/specs/case-management/spec.md
+		 */
+		channelLabel(id) {
+			const known = {
+				'nc-notification': t('dossiq', 'In Nextcloud'),
+				email: t('dossiq', 'By e-mail'),
+				activity: t('dossiq', 'In the activity stream'),
+				'web-push': t('dossiq', 'As a push message'),
+			}
+			return known[id] || id
+		},
+
+		/**
 		 * Show the preferences as they apply in one domain.
 		 *
 		 * @param {?{id: string}} option The chosen domain.
@@ -339,12 +359,20 @@ export default {
 		 * @param {object} change What was set.
 		 * @param {string} change.eventId The row's id.
 		 * @param {string} [change.scope] The scope the row was on.
+		 * @param {string} [change.channelId] The column the cell is in.
 		 * @param {boolean} change.value The new value.
 		 * @return {Promise<void>} When the write has finished.
 		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
 		 */
-		async onChange({ eventId, scope = '', value }) {
-			const write = writeFor({ eventId, scope: scope || this.domain, value })
+		async onChange({ eventId, channelId, scope = '', value }) {
+			const entry = this.entries.find((candidate) => keyFor(candidate) === eventId)
+			const write = writeFor({
+				eventId,
+				scope: scope || this.domain,
+				value,
+				channelId,
+				current: entry ? channelsOnFor(entry) : null,
+			})
 			if (write === null) {
 				return
 			}
@@ -355,6 +383,7 @@ export default {
 					schema: write.schema,
 					notification: write.notification,
 					enabled: write.enabled,
+					...(write.channels ? { channels: write.channels } : {}),
 					scope: write.scope || null,
 				})
 			} catch (error) {

@@ -332,6 +332,7 @@
   "statusTypes": [
     {
       "id": "cadefeea-c887-56e7-826f-b72507a42c5c",
+      "phase": "Ontvangst",
       "name": "Aanvraag ontvangen",
       "description": "De bijstandsaanvraag is binnen en geregistreerd.",
       "order": 1,
@@ -342,6 +343,7 @@
     },
     {
       "id": "64375a79-983a-5932-9c0b-0172fc898a3d",
+      "phase": "Beoordeling",
       "name": "Toetsing",
       "description": "De vermogens- en inkomenstoets lopen.",
       "order": 2,
@@ -352,6 +354,7 @@
     },
     {
       "id": "9ef42ab0-8e41-5ba8-b71f-c335f1691b4e",
+      "phase": "Beoordeling",
       "name": "Toetsing afgerond",
       "description": "Beide toetsen zijn uitgevoerd.",
       "order": 3,
@@ -361,6 +364,7 @@
     },
     {
       "id": "62765dda-a2e5-5afa-9129-5807e466e104",
+      "phase": "Besluit",
       "name": "Besluit in voorbereiding",
       "description": "Het besluit over de bijstand wordt voorbereid.",
       "order": 4,
@@ -370,6 +374,7 @@
     },
     {
       "id": "f6384980-07a9-5c82-bc94-2a13fe8cb610",
+      "phase": "Besluit",
       "name": "Besluit genomen",
       "description": "Het besluit is genomen en verzonden.",
       "order": 5,

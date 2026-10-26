@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour. Pieter also has his saved view \"Termijn deze week\" in his menu (`pref_cn_saved_view_menu`, the view quoted by `{{view:pieter-termijn-deze-week.uuid}}`, which needs OpenRegister feat/example-set-view-placeholder), as board DqFilterInMenu draws it.",
+	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, names Zuiddrecht as the municipality's city (the default lens of the contacts and organisations lists), and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour. Pieter also has his saved view \"Termijn deze week\" in his menu (`pref_cn_saved_view_menu`, the view quoted by `{{view:pieter-termijn-deze-week.uuid}}`, which needs OpenRegister feat/example-set-view-placeholder), as board DqFilterInMenu draws it. The cases about a tree, a play item or a market pitch link that object in OpenRegister's public-space register (openbare ruimte), found by its identification, so the object type catalogue shows its schema.",
 	"after": [
 		"opencatalogi"
 	],
@@ -872,6 +872,103 @@
 			}
 		},
 		{
+			"key": "actietype-besluit-opstellen",
+			"register": "dossiq",
+			"schema": "plannedActionType",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				}
+			},
+			"data": {
+				"identifier": "besluit-opstellen",
+				"label": "Besluit opstellen",
+				"caseType": "{{lookup:caseType}}",
+				"ownerRole": "behandelaar"
+			}
+		},
+		{
+			"key": "actietype-termijn-controleren",
+			"register": "dossiq",
+			"schema": "plannedActionType",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				}
+			},
+			"data": {
+				"identifier": "termijn-controleren",
+				"label": "Termijn controleren",
+				"caseType": "{{lookup:caseType}}"
+			}
+		},
+		{
+			"key": "zaaktype-adviesaanvraag",
+			"register": "dossiq",
+			"schema": "caseType",
+			"data": {
+				"title": "Adviesaanvraag",
+				"identifier": "adviesaanvraag",
+				"description": "Een afdeling of adviseur geeft advies op een vraag uit een andere zaak; die zaak wacht op het advies.",
+				"category": "Advies",
+				"version": 1,
+				"isDraft": false,
+				"versionDate": "{{date:-400}}",
+				"validFrom": "{{date:-400}}",
+				"processingDeadline": "P14D",
+				"handlingModel": "bpmn",
+				"confidentiality": "intern",
+				"internalOrExternal": "intern"
+			}
+		},
+		{
+			"key": "status-adviesaanvraag-ontvangen",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Ontvangen",
+				"description": "De adviesvraag is binnen bij de adviseur.",
+				"caseType": "{{object:zaaktype-adviesaanvraag.id}}",
+				"order": 1,
+				"isFinal": false,
+				"role": "intake"
+			}
+		},
+		{
+			"key": "status-adviesaanvraag-in-behandeling",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "In behandeling",
+				"description": "De adviseur werkt aan het advies.",
+				"caseType": "{{object:zaaktype-adviesaanvraag.id}}",
+				"order": 2,
+				"isFinal": false,
+				"role": "in-progress"
+			}
+		},
+		{
+			"key": "status-adviesaanvraag-afgehandeld",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Afgehandeld",
+				"description": "Het advies is gegeven.",
+				"caseType": "{{object:zaaktype-adviesaanvraag.id}}",
+				"order": 3,
+				"isFinal": true,
+				"role": "closed"
+			}
+		},
+		{
 			"key": "parkeren-henk",
 			"register": "dossiq",
 			"schema": "case",
@@ -1230,6 +1327,141 @@
 			}
 		},
 		{
+			"key": "veld-omgevingsvergunning-locatie",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"name": "locatie",
+				"definition": "Locatie",
+				"description": "Het adres van het bouwwerk of de plek, uit de BAG.",
+				"propertyType": "string",
+				"propertySource": "bag",
+				"isRequired": true,
+				"order": 3,
+				"caseType": "{{lookup:parent}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-aanvrager",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"name": "aanvrager",
+				"definition": "Aanvrager",
+				"description": "De persoon of organisatie die de vergunning aanvraagt.",
+				"propertyType": "string",
+				"isRequired": true,
+				"order": 4,
+				"caseType": "{{lookup:parent}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-datum-indiening-dso",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"name": "datumIndieningDso",
+				"definition": "Datum indiening DSO",
+				"description": "De dag waarop de aanvraag via het Omgevingsloket is ingediend.",
+				"propertyType": "date",
+				"isRequired": false,
+				"hideOnCreate": true,
+				"order": 6,
+				"caseType": "{{lookup:parent}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-omschrijving-project",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"name": "omschrijvingProject",
+				"definition": "Omschrijving van het project",
+				"description": "Wat de aanvrager wil doen, in zijn eigen woorden uit het Omgevingsloket.",
+				"propertyType": "string",
+				"isRequired": false,
+				"order": 7,
+				"caseType": "{{lookup:parent}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-dso-verzoeknummer",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"name": "dsoVerzoeknummer",
+				"definition": "DSO-verzoeknummer",
+				"description": "Het nummer dat het Omgevingsloket aan de aanvraag gaf.",
+				"propertyType": "string",
+				"isRequired": false,
+				"hideOnCreate": true,
+				"order": 8,
+				"caseType": "{{lookup:parent}}"
+			}
+		},
+		{
+			"key": "veld-omgevingsvergunning-kadastraal-perceel",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"lookups": {
+				"parent": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				}
+			},
+			"data": {
+				"name": "kadastraalPerceel",
+				"definition": "Kadastraal perceel",
+				"description": "De kadastrale aanduiding van het perceel, zoals ZDR00 K 1234.",
+				"propertyType": "string",
+				"isRequired": false,
+				"order": 9,
+				"caseType": "{{lookup:parent}}"
+			}
+		},
+		{
 			"key": "terras-slagerij",
 			"register": "dossiq",
 			"schema": "case",
@@ -1292,6 +1524,23 @@
 					"dorpsstraat",
 					"terras",
 					"ondernemer"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Dorpsstraat 39, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-aanvrager.id}}",
+						"name": "aanvrager",
+						"value": "{{cast:slagerij.name}}"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-datum-indiening-dso.id}}",
+						"name": "datumIndieningDso",
+						"value": "{{date:-9}}"
+					}
 				]
 			}
 		},
@@ -1314,8 +1563,8 @@
 				"parentCaseType": "{{lookup:parent}}",
 				"version": 1,
 				"isDraft": false,
-				"versionDate": "{{date:-460}}",
-				"validFrom": "{{date:-460}}",
+				"versionDate": "{{date:-444}}",
+				"validFrom": "{{date:-444}}",
 				"validUntil": "{{date:-280}}",
 				"processingDeadline": "P8W",
 				"extensionAllowed": true,
@@ -1323,7 +1572,8 @@
 				"maxExtensions": 1,
 				"penaltyOnLateDecision": true,
 				"suspensionAllowed": true,
-				"maxSuspensionDays": 28
+				"maxSuspensionDays": 28,
+				"category": "VTH"
 			}
 		},
 		{
@@ -1355,7 +1605,8 @@
 				"maxExtensions": 1,
 				"penaltyOnLateDecision": true,
 				"suspensionAllowed": true,
-				"maxSuspensionDays": 28
+				"maxSuspensionDays": 28,
+				"category": "VTH"
 			}
 		},
 		{
@@ -1387,7 +1638,8 @@
 				"maxExtensions": 1,
 				"penaltyOnLateDecision": true,
 				"suspensionAllowed": true,
-				"maxSuspensionDays": 28
+				"maxSuspensionDays": 28,
+				"category": "VTH"
 			}
 		},
 		{
@@ -1408,7 +1660,6 @@
 				"description": "De reguliere procedure voor een omgevingsvergunning, afgeleid van Omgevingsvergunning: dezelfde statussen en resultaten.",
 				"parentCaseType": "{{lookup:parent}}",
 				"version": 4,
-				"isDraft": false,
 				"versionDate": "{{date:-7}}",
 				"validFrom": "{{date:-7}}",
 				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v3.id}}",
@@ -1418,7 +1669,39 @@
 				"maxExtensions": 1,
 				"penaltyOnLateDecision": true,
 				"suspensionAllowed": true,
-				"maxSuspensionDays": 28
+				"maxSuspensionDays": 28,
+				"category": "VTH",
+				"handling": {
+					"defaultGroup": "zuiddrecht-vergunningen",
+					"teams": [
+						"zuiddrecht-toezicht-en-handhaving"
+					]
+				},
+				"alwaysAvailableActs": [
+					{
+						"id": "termijn-opschorten",
+						"label": "Termijn opschorten",
+						"description": "De beslistermijn staat stil zolang de aanvrager aanvult, ten hoogste 28 dagen."
+					},
+					{
+						"id": "aanvullende-gegevens-vragen",
+						"label": "Aanvullende gegevens vragen",
+						"description": "De aanvrager vragen wat er ontbreekt en tot wanneer."
+					},
+					{
+						"id": "zaak-overdragen",
+						"label": "Zaak overdragen",
+						"description": "De zaak aan een collega of een ander team geven."
+					}
+				],
+				"processesPersonalData": true,
+				"purpose": "Beslissen op een aanvraag omgevingsvergunning",
+				"legalBasis": "legal_obligation",
+				"personalDataCategories": [
+					"naw",
+					"bsn"
+				],
+				"lawfulPurposeRetention": 240
 			}
 		},
 		{
@@ -1431,7 +1714,8 @@
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"confidentiality": "zaakvertrouwelijk",
 				"isRequired": true,
-				"validFrom": "{{date:-7}}"
+				"validFrom": "{{date:-7}}",
+				"category": "Aanvraag"
 			}
 		},
 		{
@@ -1444,7 +1728,8 @@
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"confidentiality": "zaakvertrouwelijk",
 				"isRequired": true,
-				"validFrom": "{{date:-7}}"
+				"validFrom": "{{date:-7}}",
+				"category": "Bijlage"
 			}
 		},
 		{
@@ -1457,7 +1742,8 @@
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"confidentiality": "zaakvertrouwelijk",
 				"isRequired": false,
-				"validFrom": "{{date:-7}}"
+				"validFrom": "{{date:-7}}",
+				"category": "Advies"
 			}
 		},
 		{
@@ -1470,7 +1756,8 @@
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"confidentiality": "openbaar",
 				"isRequired": false,
-				"validFrom": "{{date:-7}}"
+				"validFrom": "{{date:-7}}",
+				"category": "Besluit"
 			}
 		},
 		{
@@ -1516,7 +1803,8 @@
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"propertyType": "number",
 				"minimum": 0,
-				"isRequired": true
+				"isRequired": true,
+				"order": 1
 			}
 		},
 		{
@@ -1534,10 +1822,12 @@
 					"Bijgebouw",
 					"Dakkapel",
 					"Bedrijfspand",
+					"Erfafscheiding",
 					"Overig"
 				],
 				"isRequired": true,
-				"filterable": true
+				"filterable": true,
+				"order": 2
 			}
 		},
 		{
@@ -1550,7 +1840,522 @@
 				"description": "Of het bouwwerk in een gebied met welstandseisen staat.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"propertyType": "boolean",
-				"defaultValue": "false"
+				"defaultValue": "false",
+				"order": 5
+			}
+		},
+		{
+			"key": "statustype-regulier-v4-ontvangen",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Ontvangen",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"order": 1,
+				"colour": "blue",
+				"role": "intake",
+				"waitingOn": "us",
+				"isFinal": false,
+				"publicLabel": "Ontvangen",
+				"publicDescription": "Wij hebben uw aanvraag ontvangen en kijken of die compleet is.",
+				"fieldRules": [
+					{
+						"rule": "required",
+						"field": "bouwkosten"
+					},
+					{
+						"rule": "required",
+						"field": "soortBouwwerk"
+					}
+				]
+			}
+		},
+		{
+			"key": "statustype-regulier-v4-aanvullende-gegevens-gevraagd",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Aanvullende gegevens gevraagd",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"order": 2,
+				"colour": "orange",
+				"role": "pending-info",
+				"waitingOn": "applicant",
+				"isFinal": false,
+				"publicLabel": "Wacht op u",
+				"publicDescription": "Wij hebben u om aanvullende gegevens gevraagd. De termijn staat stil tot wij die hebben."
+			}
+		},
+		{
+			"key": "statustype-regulier-v4-in-behandeling",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "In behandeling",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"order": 3,
+				"colour": "purple",
+				"role": "in-progress",
+				"waitingOn": "us",
+				"isFinal": false,
+				"publicLabel": "In behandeling",
+				"publicDescription": "Wij toetsen uw aanvraag aan het omgevingsplan."
+			}
+		},
+		{
+			"key": "statustype-regulier-v4-besluit",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Besluit",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"order": 4,
+				"colour": "teal",
+				"role": "review",
+				"waitingOn": "us",
+				"isFinal": false,
+				"publicLabel": "Besluit in voorbereiding",
+				"publicDescription": "Wij bereiden het besluit op uw aanvraag voor."
+			}
+		},
+		{
+			"key": "statustype-regulier-v4-verleend",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Verleend",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"order": 5,
+				"colour": "green",
+				"role": "closed",
+				"isFinal": true,
+				"publicLabel": "Verleend",
+				"publicDescription": "U heeft de omgevingsvergunning gekregen."
+			}
+		},
+		{
+			"key": "statustype-regulier-v4-geweigerd",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Geweigerd",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"order": 6,
+				"colour": "red",
+				"role": "closed",
+				"isFinal": true,
+				"publicLabel": "Geweigerd",
+				"publicDescription": "Wij hebben de omgevingsvergunning geweigerd. In het besluit leest u waarom en hoe u bezwaar maakt."
+			}
+		},
+		{
+			"key": "roltype-regulier-v4-intaker",
+			"register": "dossiq",
+			"schema": "roleType",
+			"data": {
+				"name": "Intaker",
+				"description": "Toetst of een aanvraag compleet is en bevestigt de ontvangst.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"genericRole": "handler",
+				"ncGroupId": "zuiddrecht-vergunningen"
+			}
+		},
+		{
+			"key": "roltype-regulier-v4-vergunningverlener",
+			"register": "dossiq",
+			"schema": "roleType",
+			"data": {
+				"name": "Vergunningverlener",
+				"description": "Toetst de aanvraag aan het omgevingsplan en stelt het besluit op.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"genericRole": "decision_maker",
+				"ncGroupId": "zuiddrecht-vergunningen"
+			}
+		},
+		{
+			"key": "roltype-regulier-v4-toezichthouder",
+			"register": "dossiq",
+			"schema": "roleType",
+			"data": {
+				"name": "Toezichthouder",
+				"description": "Leest mee met de vergunning voor het toezicht op de bouw.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"genericRole": "advisor",
+				"ncGroupId": "zuiddrecht-toezicht-en-handhaving"
+			}
+		},
+		{
+			"key": "resultaattype-regulier-v4-verleend",
+			"register": "dossiq",
+			"schema": "resultType",
+			"data": {
+				"name": "Verleend",
+				"description": "De omgevingsvergunning is verleend.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"archivalAction": "bewaren"
+			}
+		},
+		{
+			"key": "resultaattype-regulier-v4-geweigerd",
+			"register": "dossiq",
+			"schema": "resultType",
+			"data": {
+				"name": "Geweigerd",
+				"description": "De omgevingsvergunning is geweigerd.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"archivalAction": "vernietigen",
+				"archivalPeriod": "P10Y"
+			}
+		},
+		{
+			"key": "resultaattype-regulier-v4-ingetrokken",
+			"register": "dossiq",
+			"schema": "resultType",
+			"data": {
+				"name": "Ingetrokken",
+				"description": "De aanvrager heeft de aanvraag ingetrokken.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"archivalAction": "vernietigen",
+				"archivalPeriod": "P5Y"
+			}
+		},
+		{
+			"key": "mailsjabloon-regulier-v4-ontvangen",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"verbatimFields": [
+				"subject",
+				"body"
+			],
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"name": "Ontvangstbevestiging met zaaknummer",
+				"subject": "Uw aanvraag omgevingsvergunning {{zaakNummer}} is ontvangen",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben uw aanvraag omgevingsvergunning ontvangen. Het zaaknummer is {{zaakNummer}}; noem dat nummer als u ons schrijft.\n\nWij beslissen uiterlijk op {{deadline}}.\n\nMet vriendelijke groet,\n\nTeam Vergunningen\nGemeente Zuiddrecht",
+				"messageCategory": "case-update",
+				"version": 1,
+				"isActive": true,
+				"moment": "case-received",
+				"channel": "mailbox-then-email"
+			}
+		},
+		{
+			"key": "mailsjabloon-regulier-v4-termijn-verlengd",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"verbatimFields": [
+				"subject",
+				"body"
+			],
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"name": "Nieuwe uiterste datum en reden",
+				"subject": "Wij beslissen later op uw aanvraag {{zaakNummer}}",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben meer tijd nodig om op uw aanvraag {{zaakNummer}} te beslissen. Wij beslissen nu uiterlijk op {{deadline}}.\n\nMet vriendelijke groet,\n\nTeam Vergunningen\nGemeente Zuiddrecht",
+				"messageCategory": "statutory",
+				"version": 1,
+				"isActive": true,
+				"moment": "term-extended",
+				"channel": "mailbox-then-email"
+			}
+		},
+		{
+			"key": "mailsjabloon-regulier-v4-aanvullende-gegevens",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"verbatimFields": [
+				"subject",
+				"body"
+			],
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"name": "Wat er ontbreekt en tot wanneer",
+				"subject": "Wij missen gegevens bij uw aanvraag {{zaakNummer}}",
+				"body": "Geachte {{contactNaam}},\n\nUw aanvraag {{zaakNummer}} is nog niet compleet. In de bijlage leest u wat er ontbreekt en tot wanneer u het kunt aanvullen. Tot dan staat de termijn stil.\n\nMet vriendelijke groet,\n\nTeam Vergunningen\nGemeente Zuiddrecht",
+				"messageCategory": "statutory",
+				"version": 1,
+				"isActive": true,
+				"moment": "information-requested",
+				"channel": "mailbox-then-email"
+			}
+		},
+		{
+			"key": "mailsjabloon-regulier-v4-besluit",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"verbatimFields": [
+				"subject",
+				"body"
+			],
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"name": "Het besluit als bijlage",
+				"subject": "Besluit op uw aanvraag {{zaakNummer}}",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben besloten op uw aanvraag {{zaakNummer}}. Het besluit vindt u in de bijlage.\n\nMet vriendelijke groet,\n\nTeam Vergunningen\nGemeente Zuiddrecht",
+				"messageCategory": "besluit",
+				"version": 1,
+				"isActive": true,
+				"moment": "decision-made",
+				"channel": "mailbox"
+			}
+		},
+		{
+			"key": "mailsjabloon-regulier-v4-weigering",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"verbatimFields": [
+				"subject",
+				"body"
+			],
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"name": "Weigering met bezwaarclausule",
+				"subject": "Wij weigeren de omgevingsvergunning {{zaakNummer}}",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben de omgevingsvergunning voor uw aanvraag {{zaakNummer}} geweigerd. In het besluit in de bijlage leest u waarom.\n\nBent u het niet eens met dit besluit? Dan kunt u binnen zes weken na de datum van het besluit bezwaar maken bij het college van burgemeester en wethouders.\n\nMet vriendelijke groet,\n\nTeam Vergunningen\nGemeente Zuiddrecht",
+				"messageCategory": "besluit",
+				"version": 1,
+				"isActive": true,
+				"moment": "decision-made",
+				"channel": "mailbox"
+			}
+		},
+		{
+			"key": "werkproces-regulier-v4",
+			"register": "dossiq",
+			"schema": "workflowTemplate",
+			"jsonFields": [
+				"steps",
+				"transitions"
+			],
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"description": "Ontvangst, beoordeling en besluit op een reguliere aanvraag omgevingsvergunning, twee taken per fase.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"version": 1,
+				"isActive": true,
+				"isDraft": false,
+				"lifecycleStatus": "published",
+				"steps": [
+					{
+						"id": "ad617c30-b9c4-57ff-b21b-ef03f3d07486",
+						"slug": "volledigheid-toetsen",
+						"title": "Volledigheid toetsen",
+						"status": "{{object:statustype-regulier-v4-ontvangen.id}}",
+						"statusName": "Ontvangen",
+						"order": 1,
+						"isInitial": true,
+						"isFinal": false,
+						"isRequired": true,
+						"description": "Nagaan of de aanvraag compleet is en de stukken leesbaar zijn.",
+						"routingRule": {
+							"strategy": "single-role",
+							"roleType": "{{object:roltype-regulier-v4-intaker.id}}"
+						},
+						"task": {
+							"leadTimeDays": 5,
+							"candidateGroups": [
+								"zuiddrecht-vergunningen"
+							]
+						}
+					},
+					{
+						"id": "8263405a-2259-5e9f-8434-f8aca09ad574",
+						"slug": "ontvangstbevestiging",
+						"title": "Ontvangstbevestiging",
+						"status": "{{object:statustype-regulier-v4-ontvangen.id}}",
+						"statusName": "Ontvangen",
+						"order": 2,
+						"isInitial": false,
+						"isFinal": false,
+						"isRequired": true,
+						"description": "Automatisch, bericht aan de aanvrager"
+					},
+					{
+						"id": "214063eb-a6cf-507a-af8b-9996560bbc12",
+						"slug": "toets-omgevingsplan",
+						"title": "Toets aan het omgevingsplan",
+						"status": "{{object:statustype-regulier-v4-in-behandeling.id}}",
+						"statusName": "In behandeling",
+						"order": 3,
+						"isInitial": false,
+						"isFinal": false,
+						"isRequired": true,
+						"description": "Het bouwwerk toetsen aan de regels van het omgevingsplan.",
+						"routingRule": {
+							"strategy": "single-role",
+							"roleType": "{{object:roltype-regulier-v4-vergunningverlener.id}}"
+						},
+						"task": {
+							"leadTimeDays": 15,
+							"candidateGroups": [
+								"zuiddrecht-vergunningen"
+							]
+						}
+					},
+					{
+						"id": "3cc5d170-a0d6-5d3b-a7e7-7ad55514108d",
+						"slug": "welstandsadvies-vragen",
+						"title": "Welstandsadvies vragen",
+						"status": "{{object:statustype-regulier-v4-in-behandeling.id}}",
+						"statusName": "In behandeling",
+						"order": 4,
+						"isInitial": false,
+						"isFinal": false,
+						"isRequired": true,
+						"description": "Alleen in de variant Met welstand",
+						"routingRule": {
+							"strategy": "single-role",
+							"roleType": "{{object:roltype-regulier-v4-vergunningverlener.id}}"
+						}
+					},
+					{
+						"id": "a29e60a9-1587-5a11-9271-2e10e3653ec4",
+						"slug": "besluit-opstellen",
+						"title": "Besluit opstellen",
+						"status": "{{object:statustype-regulier-v4-besluit.id}}",
+						"statusName": "Besluit",
+						"order": 5,
+						"isInitial": false,
+						"isFinal": false,
+						"isRequired": true,
+						"description": "Vergunningverlener, mandaat teamleider VTH",
+						"routingRule": {
+							"strategy": "single-role",
+							"roleType": "{{object:roltype-regulier-v4-vergunningverlener.id}}"
+						},
+						"task": {
+							"candidateGroups": [
+								"zuiddrecht-vergunningen"
+							]
+						}
+					},
+					{
+						"id": "eb1194d3-9b5e-5b36-af40-e9a2231c46d6",
+						"slug": "besluit-verzenden",
+						"title": "Besluit verzenden",
+						"status": "{{object:statustype-regulier-v4-besluit.id}}",
+						"statusName": "Besluit",
+						"order": 6,
+						"isInitial": false,
+						"isFinal": false,
+						"isRequired": true,
+						"description": "Automatisch, Berichtenbox"
+					}
+				],
+				"transitions": [
+					{
+						"id": "2b98dffe-9f76-56b2-b684-9d9939ce864c",
+						"slug": "aanvullende-gegevens-vragen",
+						"label": "Aanvullende gegevens vragen",
+						"fromStatus": "{{object:statustype-regulier-v4-ontvangen.id}}",
+						"fromStatusName": "Ontvangen",
+						"toStatus": "{{object:statustype-regulier-v4-aanvullende-gegevens-gevraagd.id}}",
+						"toStatusName": "Aanvullende gegevens gevraagd",
+						"allowedRoles": [],
+						"guards": [],
+						"automaticActions": [],
+						"deadline": null
+					},
+					{
+						"id": "9e722b6d-38be-5a56-9064-a28a42a91e44",
+						"slug": "aanvraag-compleet",
+						"label": "Aanvraag compleet",
+						"fromStatus": "{{object:statustype-regulier-v4-ontvangen.id}}",
+						"fromStatusName": "Ontvangen",
+						"toStatus": "{{object:statustype-regulier-v4-in-behandeling.id}}",
+						"toStatusName": "In behandeling",
+						"allowedRoles": [],
+						"guards": [],
+						"automaticActions": [],
+						"deadline": null
+					},
+					{
+						"id": "80fba3a1-2111-5555-9cdc-bcd95eee6d0c",
+						"slug": "gegevens-ontvangen",
+						"label": "Gegevens ontvangen",
+						"fromStatus": "{{object:statustype-regulier-v4-aanvullende-gegevens-gevraagd.id}}",
+						"fromStatusName": "Aanvullende gegevens gevraagd",
+						"toStatus": "{{object:statustype-regulier-v4-in-behandeling.id}}",
+						"toStatusName": "In behandeling",
+						"allowedRoles": [],
+						"guards": [],
+						"automaticActions": [],
+						"deadline": null
+					},
+					{
+						"id": "73263024-892c-5ab8-b0be-f50870f22447",
+						"slug": "besluit-voorbereiden",
+						"label": "Besluit voorbereiden",
+						"fromStatus": "{{object:statustype-regulier-v4-in-behandeling.id}}",
+						"fromStatusName": "In behandeling",
+						"toStatus": "{{object:statustype-regulier-v4-besluit.id}}",
+						"toStatusName": "Besluit",
+						"allowedRoles": [],
+						"guards": [],
+						"automaticActions": [],
+						"deadline": null
+					},
+					{
+						"id": "e15525d6-9e90-56d5-8a41-cef8a672f4d2",
+						"slug": "verlenen",
+						"label": "Vergunning verlenen",
+						"fromStatus": "{{object:statustype-regulier-v4-besluit.id}}",
+						"fromStatusName": "Besluit",
+						"toStatus": "{{object:statustype-regulier-v4-verleend.id}}",
+						"toStatusName": "Verleend",
+						"allowedRoles": [],
+						"guards": [],
+						"automaticActions": [],
+						"deadline": null
+					},
+					{
+						"id": "7d85cd81-da1d-56e7-81f1-60a0aa80fba9",
+						"slug": "weigeren",
+						"label": "Vergunning weigeren",
+						"fromStatus": "{{object:statustype-regulier-v4-besluit.id}}",
+						"fromStatusName": "Besluit",
+						"toStatus": "{{object:statustype-regulier-v4-geweigerd.id}}",
+						"toStatusName": "Geweigerd",
+						"allowedRoles": [],
+						"guards": [],
+						"automaticActions": [],
+						"deadline": null
+					}
+				]
+			}
+		},
+		{
+			"key": "mandaatbesluit-vth-vergunningverlening",
+			"register": "dossiq",
+			"schema": "mandateDecision",
+			"data": {
+				"decisionNumber": "ZDR-MB-2026-04",
+				"decisionName": "Mandaatbesluit vergunningverlening VTH 2026",
+				"status": "determined",
+				"effectiveFrom": "{{date:-300}}",
+				"legalBasis": "Artikel 10:3 Algemene wet bestuursrecht"
+			}
+		},
+		{
+			"key": "mandaat-vergunningverlener-omgevingsvergunning-regulier",
+			"register": "dossiq",
+			"schema": "mandate",
+			"data": {
+				"mandateNumber": "ZDR-M-VTH-012",
+				"mandateDecision": "{{object:mandaatbesluit-vth-vergunningverlening.id}}",
+				"description": "De vergunningverlener besluit op een reguliere omgevingsvergunning tot een bouwsom van 50.000 euro; daarboven de teamleider VTH.",
+				"competenceType": "mandate",
+				"mandateeRole": "Vergunningverlener",
+				"legalBasis": "Artikel 10:3 Algemene wet bestuursrecht",
+				"terms": {
+					"plafondCents": 5000000,
+					"subdelegatie": false,
+					"caseTypes": [
+						"omgevingsvergunning-regulier"
+					]
+				},
+				"validFrom": "{{date:-300}}",
+				"status": "active"
 			}
 		},
 		{
@@ -1581,30 +2386,102 @@
 				"penaltyOnLateDecision": true,
 				"suspensionAllowed": true,
 				"maxSuspensionDays": 28,
-				"rules": [
+				"category": "VTH",
+				"handling": {
+					"defaultGroup": "zuiddrecht-vergunningen",
+					"teams": [
+						"zuiddrecht-toezicht-en-handhaving"
+					]
+				},
+				"alwaysAvailableActs": [
 					{
-						"id": "welstandsadvies-bij-grote-bouwkosten",
-						"name": "Welstandsadvies bij grote bouwkosten",
-						"enabled": true,
-						"when": {
-							"event": "saved"
-						},
-						"conditions": [
-							{
-								"kind": "fieldCompare",
-								"field": "bouwkosten",
-								"op": "gt",
-								"value": 100000
-							}
-						],
-						"actions": [
-							{
-								"action": "addTask",
-								"title": "Welstandsadvies vragen"
-							}
-						]
+						"id": "termijn-opschorten",
+						"label": "Termijn opschorten",
+						"description": "De beslistermijn staat stil zolang de aanvrager aanvult, ten hoogste 28 dagen."
+					},
+					{
+						"id": "aanvullende-gegevens-vragen",
+						"label": "Aanvullende gegevens vragen",
+						"description": "De aanvrager vragen wat er ontbreekt en tot wanneer."
+					},
+					{
+						"id": "zaak-overdragen",
+						"label": "Zaak overdragen",
+						"description": "De zaak aan een collega of een ander team geven."
 					}
-				]
+				],
+				"variants": [
+					{
+						"name": "Regulier",
+						"description": "De standaardroute, 8 weken",
+						"isDefault": true
+					},
+					{
+						"name": "Met welstand",
+						"description": "Extra taak Welstandsadvies vragen in fase 2; kiest zichzelf als het bouwwerk in het welstandsgebied ligt",
+						"isDefault": false
+					}
+				],
+				"processesPersonalData": true,
+				"purpose": "Beslissen op een aanvraag omgevingsvergunning",
+				"legalBasis": "legal_obligation",
+				"personalDataCategories": [
+					"naw",
+					"bsn"
+				],
+				"lawfulPurposeRetention": 240
+			}
+		},
+		{
+			"key": "veld-regulier-v5-bouwkosten",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"data": {
+				"name": "bouwkosten",
+				"definition": "Bouwkosten",
+				"description": "De geschatte bouwkosten in euro, zonder btw.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"propertyType": "number",
+				"minimum": 0,
+				"isRequired": true,
+				"order": 1
+			}
+		},
+		{
+			"key": "veld-regulier-v5-soort-bouwwerk",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"data": {
+				"name": "soortBouwwerk",
+				"definition": "Soort bouwwerk",
+				"description": "Wat er gebouwd wordt.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"propertyType": "enum",
+				"enumValues": [
+					"Woning",
+					"Bijgebouw",
+					"Dakkapel",
+					"Bedrijfspand",
+					"Erfafscheiding",
+					"Overig"
+				],
+				"isRequired": true,
+				"filterable": true,
+				"order": 2
+			}
+		},
+		{
+			"key": "veld-regulier-v5-welstandsgebied",
+			"register": "dossiq",
+			"schema": "propertyDefinition",
+			"data": {
+				"name": "welstandsgebied",
+				"definition": "Welstandsgebied",
+				"description": "Of het bouwwerk in een gebied met welstandseisen staat.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"propertyType": "boolean",
+				"defaultValue": "false",
+				"order": 5
 			}
 		},
 		{
@@ -1618,7 +2495,570 @@
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"propertyType": "file",
 				"isRequired": true,
-				"hideOnCreate": true
+				"hideOnCreate": true,
+				"order": 10
+			}
+		},
+		{
+			"key": "documenttype-regulier-v5-aanvraagformulier",
+			"register": "dossiq",
+			"schema": "documentType",
+			"data": {
+				"name": "Aanvraagformulier",
+				"description": "Het aanvraagformulier uit het Omgevingsloket.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"category": "Aanvraag",
+				"confidentiality": "zaakvertrouwelijk",
+				"isRequired": true
+			}
+		},
+		{
+			"key": "documenttype-regulier-v5-bouwtekening",
+			"register": "dossiq",
+			"schema": "documentType",
+			"data": {
+				"name": "Bouwtekening",
+				"description": "Plattegronden, gevels en doorsneden van het bouwwerk.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"category": "Bijlage",
+				"confidentiality": "openbaar",
+				"isRequired": true
+			}
+		},
+		{
+			"key": "documenttype-regulier-v5-welstandsadvies",
+			"register": "dossiq",
+			"schema": "documentType",
+			"data": {
+				"name": "Welstandsadvies",
+				"description": "Het advies van de welstandscommissie, bij een bouwwerk in een welstandsgebied.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"category": "Advies",
+				"confidentiality": "intern",
+				"isRequired": false
+			}
+		},
+		{
+			"key": "documenttype-regulier-v5-besluit",
+			"register": "dossiq",
+			"schema": "documentType",
+			"data": {
+				"name": "Besluit",
+				"description": "De verleende of geweigerde omgevingsvergunning.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"category": "Besluit",
+				"confidentiality": "openbaar",
+				"isRequired": true
+			}
+		},
+		{
+			"key": "besluittype-regulier-v5-verleend",
+			"register": "dossiq",
+			"schema": "decisionType",
+			"data": {
+				"name": "Omgevingsvergunning verleend",
+				"description": "De vergunning is verleend, met voorschriften.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"isDraft": true,
+				"publicationRequired": true,
+				"documentTypes": [
+					"{{object:documenttype-regulier-v5-besluit.id}}"
+				]
+			}
+		},
+		{
+			"key": "besluittype-regulier-v5-geweigerd",
+			"register": "dossiq",
+			"schema": "decisionType",
+			"data": {
+				"name": "Weigering omgevingsvergunning",
+				"description": "De vergunning is geweigerd, met de gronden en een bezwaarclausule.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"isDraft": true,
+				"publicationRequired": false,
+				"documentTypes": [
+					"{{object:documenttype-regulier-v5-besluit.id}}"
+				]
+			}
+		},
+		{
+			"key": "statustype-regulier-v5-ontvangen",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Ontvangen",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"order": 1,
+				"colour": "blue",
+				"role": "intake",
+				"waitingOn": "us",
+				"isFinal": false,
+				"publicLabel": "Ontvangen",
+				"publicDescription": "Wij hebben uw aanvraag ontvangen en kijken of die compleet is.",
+				"fieldRules": [
+					{
+						"rule": "required",
+						"field": "bouwkosten"
+					},
+					{
+						"rule": "required",
+						"field": "soortBouwwerk"
+					}
+				]
+			}
+		},
+		{
+			"key": "statustype-regulier-v5-aanvullende-gegevens-gevraagd",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Aanvullende gegevens gevraagd",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"order": 2,
+				"colour": "orange",
+				"role": "pending-info",
+				"waitingOn": "applicant",
+				"isFinal": false,
+				"publicLabel": "Wacht op u",
+				"publicDescription": "Wij hebben u om aanvullende gegevens gevraagd. De termijn staat stil tot wij die hebben."
+			}
+		},
+		{
+			"key": "statustype-regulier-v5-in-behandeling",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "In behandeling",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"order": 3,
+				"colour": "purple",
+				"role": "in-progress",
+				"waitingOn": "us",
+				"isFinal": false,
+				"publicLabel": "In behandeling",
+				"publicDescription": "Wij toetsen uw aanvraag aan het omgevingsplan."
+			}
+		},
+		{
+			"key": "statustype-regulier-v5-besluit",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Besluit",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"order": 4,
+				"colour": "teal",
+				"role": "review",
+				"waitingOn": "us",
+				"isFinal": false,
+				"publicLabel": "Besluit in voorbereiding",
+				"publicDescription": "Wij bereiden het besluit op uw aanvraag voor."
+			}
+		},
+		{
+			"key": "statustype-regulier-v5-verleend",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Verleend",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"order": 5,
+				"colour": "green",
+				"role": "closed",
+				"isFinal": true,
+				"publicLabel": "Verleend",
+				"publicDescription": "U heeft de omgevingsvergunning gekregen."
+			}
+		},
+		{
+			"key": "statustype-regulier-v5-geweigerd",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Geweigerd",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"order": 6,
+				"colour": "red",
+				"role": "closed",
+				"isFinal": true,
+				"publicLabel": "Geweigerd",
+				"publicDescription": "Wij hebben de omgevingsvergunning geweigerd. In het besluit leest u waarom en hoe u bezwaar maakt."
+			}
+		},
+		{
+			"key": "roltype-regulier-v5-intaker",
+			"register": "dossiq",
+			"schema": "roleType",
+			"data": {
+				"name": "Intaker",
+				"description": "Toetst of een aanvraag compleet is en bevestigt de ontvangst.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"genericRole": "handler",
+				"ncGroupId": "zuiddrecht-vergunningen"
+			}
+		},
+		{
+			"key": "roltype-regulier-v5-vergunningverlener",
+			"register": "dossiq",
+			"schema": "roleType",
+			"data": {
+				"name": "Vergunningverlener",
+				"description": "Toetst de aanvraag aan het omgevingsplan en stelt het besluit op.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"genericRole": "decision_maker",
+				"ncGroupId": "zuiddrecht-vergunningen"
+			}
+		},
+		{
+			"key": "roltype-regulier-v5-toezichthouder",
+			"register": "dossiq",
+			"schema": "roleType",
+			"data": {
+				"name": "Toezichthouder",
+				"description": "Leest mee met de vergunning voor het toezicht op de bouw.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"genericRole": "advisor",
+				"ncGroupId": "zuiddrecht-toezicht-en-handhaving"
+			}
+		},
+		{
+			"key": "resultaattype-regulier-v5-verleend",
+			"register": "dossiq",
+			"schema": "resultType",
+			"data": {
+				"name": "Verleend",
+				"description": "De omgevingsvergunning is verleend.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"archivalAction": "bewaren"
+			}
+		},
+		{
+			"key": "resultaattype-regulier-v5-geweigerd",
+			"register": "dossiq",
+			"schema": "resultType",
+			"data": {
+				"name": "Geweigerd",
+				"description": "De omgevingsvergunning is geweigerd.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"archivalAction": "vernietigen",
+				"archivalPeriod": "P10Y"
+			}
+		},
+		{
+			"key": "resultaattype-regulier-v5-ingetrokken",
+			"register": "dossiq",
+			"schema": "resultType",
+			"data": {
+				"name": "Ingetrokken",
+				"description": "De aanvrager heeft de aanvraag ingetrokken.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"archivalAction": "vernietigen",
+				"archivalPeriod": "P5Y"
+			}
+		},
+		{
+			"key": "mailsjabloon-regulier-v5-ontvangen",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"verbatimFields": [
+				"subject",
+				"body"
+			],
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"name": "Ontvangstbevestiging met zaaknummer",
+				"subject": "Uw aanvraag omgevingsvergunning {{zaakNummer}} is ontvangen",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben uw aanvraag omgevingsvergunning ontvangen. Het zaaknummer is {{zaakNummer}}; noem dat nummer als u ons schrijft.\n\nWij beslissen uiterlijk op {{deadline}}.\n\nMet vriendelijke groet,\n\nTeam Vergunningen\nGemeente Zuiddrecht",
+				"messageCategory": "case-update",
+				"version": 1,
+				"isActive": true,
+				"moment": "case-received",
+				"channel": "mailbox-then-email"
+			}
+		},
+		{
+			"key": "mailsjabloon-regulier-v5-termijn-verlengd",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"verbatimFields": [
+				"subject",
+				"body"
+			],
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"name": "Nieuwe uiterste datum en reden",
+				"subject": "Wij beslissen later op uw aanvraag {{zaakNummer}}",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben meer tijd nodig om op uw aanvraag {{zaakNummer}} te beslissen. Wij beslissen nu uiterlijk op {{deadline}}.\n\nMet vriendelijke groet,\n\nTeam Vergunningen\nGemeente Zuiddrecht",
+				"messageCategory": "statutory",
+				"version": 1,
+				"isActive": true,
+				"moment": "term-extended",
+				"channel": "mailbox-then-email"
+			}
+		},
+		{
+			"key": "mailsjabloon-regulier-v5-aanvullende-gegevens",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"verbatimFields": [
+				"subject",
+				"body"
+			],
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"name": "Wat er ontbreekt en tot wanneer",
+				"subject": "Wij missen gegevens bij uw aanvraag {{zaakNummer}}",
+				"body": "Geachte {{contactNaam}},\n\nUw aanvraag {{zaakNummer}} is nog niet compleet. In de bijlage leest u wat er ontbreekt en tot wanneer u het kunt aanvullen. Tot dan staat de termijn stil.\n\nMet vriendelijke groet,\n\nTeam Vergunningen\nGemeente Zuiddrecht",
+				"messageCategory": "statutory",
+				"version": 1,
+				"isActive": true,
+				"moment": "information-requested",
+				"channel": "mailbox-then-email"
+			}
+		},
+		{
+			"key": "mailsjabloon-regulier-v5-besluit",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"verbatimFields": [
+				"subject",
+				"body"
+			],
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"name": "Het besluit als bijlage",
+				"subject": "Besluit op uw aanvraag {{zaakNummer}}",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben besloten op uw aanvraag {{zaakNummer}}. Het besluit vindt u in de bijlage.\n\nMet vriendelijke groet,\n\nTeam Vergunningen\nGemeente Zuiddrecht",
+				"messageCategory": "besluit",
+				"version": 1,
+				"isActive": true,
+				"moment": "decision-made",
+				"channel": "mailbox"
+			}
+		},
+		{
+			"key": "mailsjabloon-regulier-v5-weigering",
+			"register": "dossiq",
+			"schema": "emailTemplate",
+			"verbatimFields": [
+				"subject",
+				"body"
+			],
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"name": "Weigering met bezwaarclausule",
+				"subject": "Wij weigeren de omgevingsvergunning {{zaakNummer}}",
+				"body": "Geachte {{contactNaam}},\n\nWij hebben de omgevingsvergunning voor uw aanvraag {{zaakNummer}} geweigerd. In het besluit in de bijlage leest u waarom.\n\nBent u het niet eens met dit besluit? Dan kunt u binnen zes weken na de datum van het besluit bezwaar maken bij het college van burgemeester en wethouders.\n\nMet vriendelijke groet,\n\nTeam Vergunningen\nGemeente Zuiddrecht",
+				"messageCategory": "besluit",
+				"version": 1,
+				"isActive": true,
+				"moment": "decision-made",
+				"channel": "mailbox"
+			}
+		},
+		{
+			"key": "werkproces-regulier-v5",
+			"register": "dossiq",
+			"schema": "workflowTemplate",
+			"jsonFields": [
+				"steps",
+				"transitions"
+			],
+			"data": {
+				"title": "Omgevingsvergunning regulier",
+				"description": "Ontvangst, beoordeling en besluit op een reguliere aanvraag omgevingsvergunning, twee taken per fase.",
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
+				"version": 1,
+				"isActive": true,
+				"isDraft": true,
+				"lifecycleStatus": "draft",
+				"steps": [
+					{
+						"id": "b9d3357f-3bf3-51c3-ac6c-76dde2ce7fa0",
+						"slug": "volledigheid-toetsen",
+						"title": "Volledigheid toetsen",
+						"status": "{{object:statustype-regulier-v5-ontvangen.id}}",
+						"statusName": "Ontvangen",
+						"order": 1,
+						"isInitial": true,
+						"isFinal": false,
+						"isRequired": true,
+						"description": "Nagaan of de aanvraag compleet is en de stukken leesbaar zijn.",
+						"routingRule": {
+							"strategy": "single-role",
+							"roleType": "{{object:roltype-regulier-v5-intaker.id}}"
+						},
+						"task": {
+							"leadTimeDays": 5,
+							"candidateGroups": [
+								"zuiddrecht-vergunningen"
+							]
+						}
+					},
+					{
+						"id": "848abb86-fd3d-5dd0-836d-40367eb661f0",
+						"slug": "ontvangstbevestiging",
+						"title": "Ontvangstbevestiging",
+						"status": "{{object:statustype-regulier-v5-ontvangen.id}}",
+						"statusName": "Ontvangen",
+						"order": 2,
+						"isInitial": false,
+						"isFinal": false,
+						"isRequired": true,
+						"description": "Automatisch, bericht aan de aanvrager"
+					},
+					{
+						"id": "0dafc656-b227-5f4f-87ae-a27e6bba8fcf",
+						"slug": "toets-omgevingsplan",
+						"title": "Toets aan het omgevingsplan",
+						"status": "{{object:statustype-regulier-v5-in-behandeling.id}}",
+						"statusName": "In behandeling",
+						"order": 3,
+						"isInitial": false,
+						"isFinal": false,
+						"isRequired": true,
+						"description": "Het bouwwerk toetsen aan de regels van het omgevingsplan.",
+						"routingRule": {
+							"strategy": "single-role",
+							"roleType": "{{object:roltype-regulier-v5-vergunningverlener.id}}"
+						},
+						"task": {
+							"leadTimeDays": 15,
+							"candidateGroups": [
+								"zuiddrecht-vergunningen"
+							]
+						}
+					},
+					{
+						"id": "13904149-3704-575c-8eac-7737119716e2",
+						"slug": "welstandsadvies-vragen",
+						"title": "Welstandsadvies vragen",
+						"status": "{{object:statustype-regulier-v5-in-behandeling.id}}",
+						"statusName": "In behandeling",
+						"order": 4,
+						"isInitial": false,
+						"isFinal": false,
+						"isRequired": true,
+						"description": "Alleen in de variant Met welstand",
+						"routingRule": {
+							"strategy": "single-role",
+							"roleType": "{{object:roltype-regulier-v5-vergunningverlener.id}}"
+						}
+					},
+					{
+						"id": "f4b0ea2c-3598-5329-bde1-430dc4a2505c",
+						"slug": "besluit-opstellen",
+						"title": "Besluit opstellen",
+						"status": "{{object:statustype-regulier-v5-besluit.id}}",
+						"statusName": "Besluit",
+						"order": 5,
+						"isInitial": false,
+						"isFinal": false,
+						"isRequired": true,
+						"description": "Vergunningverlener, mandaat teamleider VTH",
+						"routingRule": {
+							"strategy": "single-role",
+							"roleType": "{{object:roltype-regulier-v5-vergunningverlener.id}}"
+						},
+						"task": {
+							"candidateGroups": [
+								"zuiddrecht-vergunningen"
+							]
+						}
+					},
+					{
+						"id": "fb7780de-4db1-542b-8eaf-cd061d6a215e",
+						"slug": "besluit-verzenden",
+						"title": "Besluit verzenden",
+						"status": "{{object:statustype-regulier-v5-besluit.id}}",
+						"statusName": "Besluit",
+						"order": 6,
+						"isInitial": false,
+						"isFinal": false,
+						"isRequired": true,
+						"description": "Automatisch, Berichtenbox"
+					}
+				],
+				"transitions": [
+					{
+						"id": "974277ce-7397-50ac-89ce-7a0343531dc7",
+						"slug": "aanvullende-gegevens-vragen",
+						"label": "Aanvullende gegevens vragen",
+						"fromStatus": "{{object:statustype-regulier-v5-ontvangen.id}}",
+						"fromStatusName": "Ontvangen",
+						"toStatus": "{{object:statustype-regulier-v5-aanvullende-gegevens-gevraagd.id}}",
+						"toStatusName": "Aanvullende gegevens gevraagd",
+						"allowedRoles": [],
+						"guards": [],
+						"automaticActions": [],
+						"deadline": null
+					},
+					{
+						"id": "61e851c9-6f9c-50f6-b273-64aba2f188e9",
+						"slug": "aanvraag-compleet",
+						"label": "Aanvraag compleet",
+						"fromStatus": "{{object:statustype-regulier-v5-ontvangen.id}}",
+						"fromStatusName": "Ontvangen",
+						"toStatus": "{{object:statustype-regulier-v5-in-behandeling.id}}",
+						"toStatusName": "In behandeling",
+						"allowedRoles": [],
+						"guards": [],
+						"automaticActions": [],
+						"deadline": null
+					},
+					{
+						"id": "0fbfbd1f-c475-5f60-b16f-defd58238856",
+						"slug": "gegevens-ontvangen",
+						"label": "Gegevens ontvangen",
+						"fromStatus": "{{object:statustype-regulier-v5-aanvullende-gegevens-gevraagd.id}}",
+						"fromStatusName": "Aanvullende gegevens gevraagd",
+						"toStatus": "{{object:statustype-regulier-v5-in-behandeling.id}}",
+						"toStatusName": "In behandeling",
+						"allowedRoles": [],
+						"guards": [],
+						"automaticActions": [],
+						"deadline": null
+					},
+					{
+						"id": "14ad02b5-aa61-557a-a4be-a1752fb342e2",
+						"slug": "besluit-voorbereiden",
+						"label": "Besluit voorbereiden",
+						"fromStatus": "{{object:statustype-regulier-v5-in-behandeling.id}}",
+						"fromStatusName": "In behandeling",
+						"toStatus": "{{object:statustype-regulier-v5-besluit.id}}",
+						"toStatusName": "Besluit",
+						"allowedRoles": [],
+						"guards": [],
+						"automaticActions": [],
+						"deadline": null
+					},
+					{
+						"id": "4efa1005-f332-5463-a56e-a0fc100d3766",
+						"slug": "verlenen",
+						"label": "Vergunning verlenen",
+						"fromStatus": "{{object:statustype-regulier-v5-besluit.id}}",
+						"fromStatusName": "Besluit",
+						"toStatus": "{{object:statustype-regulier-v5-verleend.id}}",
+						"toStatusName": "Verleend",
+						"allowedRoles": [],
+						"guards": [],
+						"automaticActions": [],
+						"deadline": null
+					},
+					{
+						"id": "75a43f40-e78c-5d90-aab5-90f5e71d7bf4",
+						"slug": "weigeren",
+						"label": "Vergunning weigeren",
+						"fromStatus": "{{object:statustype-regulier-v5-besluit.id}}",
+						"fromStatusName": "Besluit",
+						"toStatus": "{{object:statustype-regulier-v5-geweigerd.id}}",
+						"toStatusName": "Geweigerd",
+						"allowedRoles": [],
+						"guards": [],
+						"automaticActions": [],
+						"deadline": null
+					}
+				]
 			}
 		},
 		{
@@ -1682,6 +3122,23 @@
 				"tags": [
 					"molenweg",
 					"kap"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Molenweg 4, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-aanvrager.id}}",
+						"name": "aanvrager",
+						"value": "{{cast:henk.displayName}}"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-datum-indiening-dso.id}}",
+						"name": "datumIndieningDso",
+						"value": "{{date:-19}}"
+					}
 				]
 			}
 		},
@@ -2269,6 +3726,23 @@
 				"tags": [
 					"parkweg",
 					"kap"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Parkweg, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-aanvrager.id}}",
+						"name": "aanvrager",
+						"value": "{{cast:henk.displayName}}"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-datum-indiening-dso.id}}",
+						"name": "datumIndieningDso",
+						"value": "{{date:-11}}"
+					}
 				]
 			}
 		},
@@ -3347,6 +4821,23 @@
 				"tags": [
 					"kap",
 					"dwangsom"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Parkstraat, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-aanvrager.id}}",
+						"name": "aanvrager",
+						"value": "{{cast:henk.displayName}}"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-datum-indiening-dso.id}}",
+						"name": "datumIndieningDso",
+						"value": "{{date:-100}}"
+					}
 				]
 			}
 		},
@@ -6325,6 +7816,18 @@
 				"tags": [
 					"lindelaan",
 					"bouwen"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Lindelaan 12, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-datum-indiening-dso.id}}",
+						"name": "datumIndieningDso",
+						"value": "{{date:-20}}"
+					}
 				]
 			}
 		},
@@ -6419,6 +7922,18 @@
 				"tags": [
 					"parkweg",
 					"bouwen"
+				],
+				"properties": [
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-locatie.id}}",
+						"name": "locatie",
+						"value": "Parkweg 8, Zuiddrecht"
+					},
+					{
+						"propertyDefinition": "{{object:veld-omgevingsvergunning-datum-indiening-dso.id}}",
+						"name": "datumIndieningDso",
+						"value": "{{date:-19}}"
+					}
 				]
 			}
 		},
@@ -7338,6 +8853,195 @@
 					}
 				]
 			}
+		},
+		{
+			"key": "kapvergunning-parkstraat-object-kastanje",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "tree",
+					"where": {
+						"identification": "BM-0412"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:kapvergunning-parkstraat.id}}",
+				"objectType": "Boom",
+				"objectIdentification": "BM-0412",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/tree/{{lookup:object}}",
+				"description": "De kastanje voor het huis"
+			}
+		},
+		{
+			"key": "kapvergunning-essen-parkweg-object-es-1",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "tree",
+					"where": {
+						"identification": "BM-1031"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:kapvergunning-essen-parkweg.id}}",
+				"objectType": "Boom",
+				"objectIdentification": "BM-1031",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/tree/{{lookup:object}}",
+				"description": "Es met essentaksterfte"
+			}
+		},
+		{
+			"key": "kapvergunning-essen-parkweg-object-es-2",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "tree",
+					"where": {
+						"identification": "BM-1032"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:kapvergunning-essen-parkweg.id}}",
+				"objectType": "Boom",
+				"objectIdentification": "BM-1032",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/tree/{{lookup:object}}",
+				"description": "Es met essentaksterfte"
+			}
+		},
+		{
+			"key": "kapvergunning-essen-parkweg-object-es-3",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "tree",
+					"where": {
+						"identification": "BM-1033"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:kapvergunning-essen-parkweg.id}}",
+				"objectType": "Boom",
+				"objectIdentification": "BM-1033",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/tree/{{lookup:object}}",
+				"description": "Es met essentaksterfte"
+			}
+		},
+		{
+			"key": "evenement-buurtfeest-2026-object-linde",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "tree",
+					"where": {
+						"identification": "BM-0207"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:evenement-buurtfeest-2026.id}}",
+				"objectType": "Boom",
+				"objectIdentification": "BM-0207",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/tree/{{lookup:object}}",
+				"description": "Monumentale linde; het podium blijft buiten de kroon"
+			}
+		},
+		{
+			"key": "evenement-buurtfeest-2026-object-wipkip",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "play-equipment",
+					"where": {
+						"identification": "SP-0117"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:evenement-buurtfeest-2026.id}}",
+				"objectType": "Speeltoestel",
+				"objectIdentification": "SP-0117",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/play-equipment/{{lookup:object}}",
+				"description": "Wordt tijdens het feest afgezet"
+			}
+		},
+		{
+			"key": "evenement-buurtfeest-2026-object-standplaats",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "market-pitch",
+					"where": {
+						"identification": "ST-0031"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:evenement-buurtfeest-2026.id}}",
+				"objectType": "Standplaats",
+				"objectIdentification": "ST-0031",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/market-pitch/{{lookup:object}}",
+				"description": "Kraam van de buurtvereniging"
+			}
+		},
+		{
+			"key": "melding-speeltoestel-oosthavenplein-object-wipkip",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "play-equipment",
+					"where": {
+						"identification": "SP-0117"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:melding-speeltoestel-oosthavenplein.id}}",
+				"objectType": "Speeltoestel",
+				"objectIdentification": "SP-0117",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/play-equipment/{{lookup:object}}",
+				"description": "De wipkip die los zit"
+			}
+		},
+		{
+			"key": "besloten-bezwaar-standplaats-markt-object",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "market-pitch",
+					"where": {
+						"identification": "ST-0007"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:besloten-bezwaar-standplaats-markt.id}}",
+				"objectType": "Standplaats",
+				"objectIdentification": "ST-0007",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/market-pitch/{{lookup:object}}",
+				"description": "De standplaats die is afgewezen"
+			}
 		}
 	],
 	"parties": [
@@ -7916,13 +9620,323 @@
 						"actions": [
 							{
 								"action": "chooseVariant",
-								"variant": "met-welstand"
-							},
-							{
-								"action": "requireDocument",
-								"documentType": "{{object:documenttype-regulier-v4-welstandsadvies.id}}"
+								"variant": "Met welstand"
 							}
 						]
+					},
+					{
+						"id": "bezwaarclausule-bij-weigering",
+						"name": "Weigering met bezwaarclausule",
+						"enabled": true,
+						"when": {
+							"event": "statusEntered",
+							"status": "{{object:statustype-regulier-v4-geweigerd.id}}"
+						},
+						"conditions": [],
+						"actions": [
+							{
+								"action": "sendMessage",
+								"emailTemplate": "{{object:mailsjabloon-regulier-v4-weigering.id}}"
+							}
+						]
+					}
+				],
+				"rightsMatrix": [
+					{
+						"role": "Intaker",
+						"department": "$ownTeam",
+						"confidentiality": "zaakvertrouwelijk",
+						"actions": [
+							"read",
+							"update"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v4-ontvangen.id}}"
+						],
+						"documentActions": [
+							"read",
+							"add"
+						]
+					},
+					{
+						"role": "Vergunningverlener",
+						"department": "*",
+						"confidentiality": "zaakvertrouwelijk",
+						"actions": [
+							"read",
+							"update",
+							"handle"
+						],
+						"documentActions": [
+							"read",
+							"add",
+							"delete"
+						]
+					},
+					{
+						"role": "Toezichthouder",
+						"department": "*",
+						"confidentiality": "zaakvertrouwelijk",
+						"actions": [
+							"read"
+						],
+						"documentActions": [
+							"read"
+						]
+					}
+				],
+				"fieldRoleRules": [
+					{
+						"field": "welstandsgebied",
+						"rule": "hidden",
+						"groups": [
+							"zuiddrecht-vergunningen"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v4-ontvangen.id}}"
+						],
+						"reason": "De intaker beoordeelt de volledigheid; of het bouwwerk in een welstandsgebied ligt, beoordeelt de vergunningverlener."
+					},
+					{
+						"field": "welstandsgebied",
+						"rule": "readOnly",
+						"groups": [
+							"zuiddrecht-vergunningen",
+							"zuiddrecht-toezicht-en-handhaving"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v4-in-behandeling.id}}",
+							"{{object:statustype-regulier-v4-besluit.id}}",
+							"{{object:statustype-regulier-v4-verleend.id}}",
+							"{{object:statustype-regulier-v4-geweigerd.id}}"
+						],
+						"reason": "Volgt uit de locatie van het bouwwerk."
+					},
+					{
+						"field": "bouwkosten",
+						"rule": "readOnly",
+						"groups": [
+							"zuiddrecht-vergunningen",
+							"zuiddrecht-toezicht-en-handhaving"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v4-verleend.id}}",
+							"{{object:statustype-regulier-v4-geweigerd.id}}"
+						],
+						"reason": "Een afgehandelde aanvraag verandert niet meer."
+					},
+					{
+						"field": "soortBouwwerk",
+						"rule": "readOnly",
+						"groups": [
+							"zuiddrecht-vergunningen",
+							"zuiddrecht-toezicht-en-handhaving"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v4-verleend.id}}",
+							"{{object:statustype-regulier-v4-geweigerd.id}}"
+						],
+						"reason": "Een afgehandelde aanvraag verandert niet meer."
+					}
+				]
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v4-variant-met-welstand",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v4",
+			"set": {
+				"variants": [
+					{
+						"name": "Regulier",
+						"description": "De standaardroute, 8 weken",
+						"isDefault": true
+					},
+					{
+						"name": "Met welstand",
+						"description": "Extra taak Welstandsadvies vragen in fase 2; kiest zichzelf als het bouwwerk in het welstandsgebied ligt",
+						"isDefault": false
+					}
+				]
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v4-gepubliceerd",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v4",
+			"set": {
+				"isDraft": false
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v5-regels-en-rechten",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier",
+			"set": {
+				"decisionTypes": [
+					"{{object:besluittype-regulier-v5-verleend.id}}",
+					"{{object:besluittype-regulier-v5-geweigerd.id}}"
+				],
+				"rules": [
+					{
+						"id": "constructeur-bij-hoge-bouwkosten",
+						"name": "Toets door constructeur",
+						"enabled": true,
+						"when": {
+							"event": "saved"
+						},
+						"conditions": [
+							{
+								"kind": "fieldCompare",
+								"field": "bouwkosten",
+								"op": "gt",
+								"value": 100000
+							}
+						],
+						"actions": [
+							{
+								"action": "addTask",
+								"title": "Toets door constructeur"
+							}
+						]
+					},
+					{
+						"id": "welstand-in-welstandsgebied",
+						"name": "Met welstand",
+						"enabled": true,
+						"when": {
+							"event": "saved"
+						},
+						"conditions": [
+							{
+								"kind": "fieldEquals",
+								"field": "welstandsgebied",
+								"value": true
+							}
+						],
+						"actions": [
+							{
+								"action": "chooseVariant",
+								"variant": "Met welstand"
+							}
+						]
+					},
+					{
+						"id": "bezwaarclausule-bij-weigering",
+						"name": "Weigering met bezwaarclausule",
+						"enabled": true,
+						"when": {
+							"event": "statusEntered",
+							"status": "{{object:statustype-regulier-v5-geweigerd.id}}"
+						},
+						"conditions": [],
+						"actions": [
+							{
+								"action": "sendMessage",
+								"emailTemplate": "{{object:mailsjabloon-regulier-v5-weigering.id}}"
+							}
+						]
+					}
+				],
+				"rightsMatrix": [
+					{
+						"role": "Intaker",
+						"department": "$ownTeam",
+						"confidentiality": "zaakvertrouwelijk",
+						"actions": [
+							"read",
+							"update"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v5-ontvangen.id}}"
+						],
+						"documentActions": [
+							"read",
+							"add"
+						]
+					},
+					{
+						"role": "Vergunningverlener",
+						"department": "*",
+						"confidentiality": "zaakvertrouwelijk",
+						"actions": [
+							"read",
+							"update",
+							"handle"
+						],
+						"documentActions": [
+							"read",
+							"add",
+							"delete"
+						]
+					},
+					{
+						"role": "Toezichthouder",
+						"department": "*",
+						"confidentiality": "zaakvertrouwelijk",
+						"actions": [
+							"read"
+						],
+						"documentActions": [
+							"read"
+						]
+					}
+				],
+				"fieldRoleRules": [
+					{
+						"field": "welstandsgebied",
+						"rule": "hidden",
+						"groups": [
+							"zuiddrecht-vergunningen"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v5-ontvangen.id}}"
+						],
+						"reason": "De intaker beoordeelt de volledigheid; of het bouwwerk in een welstandsgebied ligt, beoordeelt de vergunningverlener."
+					},
+					{
+						"field": "welstandsgebied",
+						"rule": "readOnly",
+						"groups": [
+							"zuiddrecht-vergunningen",
+							"zuiddrecht-toezicht-en-handhaving"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v5-in-behandeling.id}}",
+							"{{object:statustype-regulier-v5-besluit.id}}",
+							"{{object:statustype-regulier-v5-verleend.id}}",
+							"{{object:statustype-regulier-v5-geweigerd.id}}"
+						],
+						"reason": "Volgt uit de locatie van het bouwwerk."
+					},
+					{
+						"field": "bouwkosten",
+						"rule": "readOnly",
+						"groups": [
+							"zuiddrecht-vergunningen",
+							"zuiddrecht-toezicht-en-handhaving"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v5-verleend.id}}",
+							"{{object:statustype-regulier-v5-geweigerd.id}}"
+						],
+						"reason": "Een afgehandelde aanvraag verandert niet meer."
+					},
+					{
+						"field": "soortBouwwerk",
+						"rule": "readOnly",
+						"groups": [
+							"zuiddrecht-vergunningen",
+							"zuiddrecht-toezicht-en-handhaving"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v5-verleend.id}}",
+							"{{object:statustype-regulier-v5-geweigerd.id}}"
+						],
+						"reason": "Een afgehandelde aanvraag verandert niet meer."
 					}
 				]
 			}
@@ -7968,6 +9982,27 @@
 			}
 		},
 		{
+			"key": "woo-verzoek-werkinstructie",
+			"register": "dossiq",
+			"schema": "caseType",
+			"where": {
+				"identifier": "woo-verzoek",
+				"version": 2
+			},
+			"set": {
+				"knowledgeBasePage": "Woo en informatie/Hoe we Woo-verzoeken behandelen"
+			}
+		},
+		{
+			"key": "zaaktype-adviesaanvraag-begint-bij-ontvangen",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-adviesaanvraag",
+			"set": {
+				"initialStatus": "{{object:status-adviesaanvraag-ontvangen.id}}"
+			}
+		},
+		{
 			"key": "checklist-oplevering-versie-2",
 			"register": "dossiq",
 			"schema": "inspectionChecklistTemplate",
@@ -7977,6 +10012,39 @@
 			"set": {
 				"name": "Bouwtoezicht oplevering",
 				"version": 2
+			}
+		},
+		{
+			"key": "woo-verzoek-request-fields",
+			"register": "dossiq",
+			"schema": "caseType",
+			"where": {
+				"identifier": "woo-verzoek",
+				"version": 2
+			},
+			"set": {
+				"requestFields": [
+					{
+						"as": "text",
+						"path": "wooRequest.omschrijving"
+					},
+					{
+						"as": "pill",
+						"key": "request-period",
+						"template": "Periode {wooRequest.periodeVan:year} tot en met {wooRequest.periodeTot:year}"
+					},
+					{
+						"as": "pill",
+						"key": "request-kinds",
+						"path": "wooRequest.documentSoorten",
+						"map": {
+							"besluiten": "Besluiten",
+							"rapporten": "Rapporten",
+							"correspondentie": "Correspondentie",
+							"alles": "Alle documenten"
+						}
+					}
+				]
 			}
 		}
 	],
@@ -8135,6 +10203,36 @@
 						"to": "end"
 					}
 				]
+			}
+		}
+	],
+	"exportRuns": [
+		{
+			"key": "export-zaken-verlichting",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"fileName": "zaken-verlichting.xlsx",
+				"format": "xlsx",
+				"contentBase64": "UEsDBBQAAAAIAAAAQV1uYbgN/gAAAC0CAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbK2RzU7DMBCEX8XytYqdckAIJe2BnyNwKA+w2JvEiv/kdUv69jhp4YAKXDit7JnZb2Q328lZdsBEJviWr0XNGXoVtPF9y193j9UNZ5TBa7DBY8uPSHy7aXbHiMRK1lPLh5zjrZSkBnRAIkT0RelCcpDLMfUyghqhR3lV19dSBZ/R5yrPO/imuccO9jazh6lcn3oktMTZ3ck4s1oOMVqjIBddHrz+RqnOBFGSi4cGE2lVDFxeJMzKz4Bz7rk8TDIa2Quk/ASuuORk5XtI41sIo/h9yYWWoeuMQh3U3pWIoJgQNA2I2VmxTOHA+NXf/MVMchnrfy7ytf+zh1y+e/MBUEsDBBQAAAAIAAAAQV2Y2uuLrgAAACcBAAALAAAAX3JlbHMvLnJlbHONz8EOgjAMBuBXWXqXgQdjDIOLMeFq8AHmVgYB1mWbCm/vjmI8eGz69/vTsl7miT3Rh4GsgCLLgaFVpAdrBNzay+4ILERptZzIooAVA9RVecVJxnQS+sEFlgwbBPQxuhPnQfU4y5CRQ5s2HflZxjR6w51UozTI93l+4P7TgK3JGi3AN7oA1q4O/7Gp6waFZ1KPGW38UfGVSLL0BqOAZeIv8uOdaMwSCrwq+ebB6g1QSwMEFAAAAAgAAABBXVwN3eO5AAAAGgEAAA8AAAB4bC93b3JrYm9vay54bWyNT7luwzAM/RWBeyMnQ1AYtrMUBbInSzfGomPBFmmQytG/r5Bj70TyEe9qdvc0uyupReEW1qsKHHEvIfK5hePh++MTnGXkgLMwtfBLBruuuYlOJ5HJFTpbC2POS+299SMltJUsxOUziCbM5dSzt0UJg41EOc1+U1VbnzAyPBVq/Y+GDEPs6Uv6SyLOTxGlGXMJb2NcDLrm4WCv6RhTCf2DExWnB7QPpSY4rWNZdB/W4LvGv1n+Xaz7A1BLAwQUAAAACAAAAEFdWv2Ca7EAAAAoAQAAGgAAAHhsL19yZWxzL3dvcmtib29rLnhtbC5yZWxzjc/JCsJADAbgVxlyt2k9iEinXkToVeoDDNN0oZ2Fybj07R08iAUPnkLyky+kPD7NLO4UeHRWQpHlIMhq1462l3Btzps9CI7Ktmp2liQsxHCsygvNKqYVHkbPIhmWJQwx+gMi64GM4sx5sinpXDAqpjb06JWeVE+4zfMdhm8D1qaoWwmhbgsQzeLpH9t13ajp5PTNkI0/TuDDhYkHophQFXqKEj4jxncpsqQCViWuPqxeUEsDBBQAAAAIAAAAQV0hT1TyUQEAAJADAAAYAAAAeGwvd29ya3NoZWV0cy9zaGVldDEueG1sfZNRa8IwEMe/Ssi7plYRGW3FTQZj25Nug72d7WmDaVKSc859+qUiZYOkb8mF3939/7nLlt+NYl9onTQ655Nxwhnq0lRSH3L+tn0cLThzBLoCZTTm/IKOL4vsbOzR1YjEPK9dzmui9k4IV9bYgBubFrV/2RvbAPmrPQjXWoTqCjVKpEkyFw1IzYvsGlsDQZFZc2bW9+GjZXdYTTijnEutpMYNWR+Xrsio+AQ46lPToM0EFZnooqK8UfcxaisJVQB4GCpDlxYDzDrGbAjo5P4Twgvr1aW9ujSSIk3S+SiZTJKQuBj0jlbJsib/dWwvkVwLFXuRukIFoEOqY5k+jBn5mfgxeAwJj2FPmu2whq6g72HAgGlvwHTIgNliNg0ZEIOeoTVEyBRoArC6BVDDBsQyvaLqNoB1Y7wDi8yeZEPBKYilWO0PNy+qkBPiz9CLfpuKX1BLAQIUAxQAAAAIAAAAQV1uYbgN/gAAAC0CAAATAAAAAAAAAAAAAACAAQAAAABbQ29udGVudF9UeXBlc10ueG1sUEsBAhQDFAAAAAgAAABBXZja64uuAAAAJwEAAAsAAAAAAAAAAAAAAIABLwEAAF9yZWxzLy5yZWxzUEsBAhQDFAAAAAgAAABBXVwN3eO5AAAAGgEAAA8AAAAAAAAAAAAAAIABBgIAAHhsL3dvcmtib29rLnhtbFBLAQIUAxQAAAAIAAAAQV1a/YJrsQAAACgBAAAaAAAAAAAAAAAAAACAAewCAAB4bC9fcmVscy93b3JrYm9vay54bWwucmVsc1BLAQIUAxQAAAAIAAAAQV0hT1TyUQEAAJADAAAYAAAAAAAAAAAAAACAAdUDAAB4bC93b3Jrc2hlZXRzL3NoZWV0MS54bWxQSwUGAAAAAAUABQBFAQAAXAUAAAAA",
+				"rowCount": 2,
+				"registerName": "dossiq",
+				"schemaName": "case",
+				"producedAt": "{{datetime:-1 16:20}}",
+				"downloadCount": 1
+			}
+		},
+		{
+			"key": "export-woo-2026-q3",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"fileName": "woo-2026-q3.csv",
+				"format": "csv",
+				"content": "Zaaktype;Titel;Status;Ontvangen\nWoo-verzoek;Verlichting fietspad Lindelaan;In behandeling;3 oktober\nWoo-verzoek;Afvalinzameling Oosthaven 2025;Ontvangen;gisteren\n",
+				"rowCount": 2,
+				"registerName": "dossiq",
+				"schemaName": "case",
+				"producedAt": "{{datetime:-6 10:05}}",
+				"downloadCount": 3
 			}
 		}
 	]
