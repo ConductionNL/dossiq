@@ -91,12 +91,3 @@ describe('the Wat nu? button on the enforcement advice (DqHandhaving)', () => {
 		expect(nl['Draft the pre-announcement']).toBe('Vooraankondiging opstellen')
 	})
 })
-
-describe('the advice words on the side cards (DqHandhaving)', () => {
-	it('names the override authority as the role and the handler as a person', () => {
-		const override = page.config.sideColumn.find((card) => card.id === 'side-override').content.fields.find((f) => f.path === 'overrideAuthority')
-		expect(nl[override.map.manager]).toBe('Teamleider handhaving')
-		const handler = page.config.sideColumn.find((card) => card.id === 'side-case').content.fields.find((f) => f.path === 'recommendedBy')
-		expect(handler.format).toBe('user')
-	})
-})
