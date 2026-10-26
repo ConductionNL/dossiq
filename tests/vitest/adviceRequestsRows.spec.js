@@ -30,6 +30,11 @@ describe('DqZaakBesluiten Adviezen as rows', () => {
 		expect(advice.content.ruleAbove).toBe(true)
 	})
 
+	it('tints an open request\'s initials amber and gives Herinneren its bell, as the board', () => {
+		expect(advice.content.avatar.tone).toEqual({ field: 'status', map: { requested: 'warning' } })
+		expect(advice.content.rowAction.icon).toBe('BellOutline')
+	})
+
 	it('keeps the status tones: open amber, received green, expired red', () => {
 		expect(advice.content.pill.field).toBe('status')
 		expect(advice.content.pill.colorMap).toEqual({ requested: 'warning', received: 'success', expired: 'error' })
