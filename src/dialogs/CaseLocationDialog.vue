@@ -413,8 +413,10 @@ export default {
 }
 
 /* The board's layer toggles are plain 14px checkboxes, 8px from their
-   label and without NcCheckboxRadioSwitch's row padding. */
-.case-location-dialog__layers :deep(.checkbox-content) {
+   label and without NcCheckboxRadioSwitch's row padding. The dialog
+   sheet's own checkbox rule (padding-inline 0, gap 10px) is more
+   specific than a single class, hence the longer selector. */
+.case-location-dialog .case-location-dialog__layers :deep(.checkbox-radio-switch-checkbox .checkbox-content) {
 	gap: 8px;
 	min-height: 0;
 	padding: 0;
