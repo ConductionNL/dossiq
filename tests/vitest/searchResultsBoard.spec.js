@@ -48,7 +48,7 @@ describe('DqZoekresultaten', () => {
 	it('names the handler and gives Resultaat room, as the board does (nextcloud-vue search-linked-user-and-widths)', () => {
 		const source = page.config.sourceConfig
 		expect(source.kinds.find((kind) => kind.id === 'cases').linkedUser).toBe(true)
-		expect(source.columnWidths).toEqual({ title: '250px', kindText: '120px', linked: '150px' })
+		expect(source.columnWidths).toEqual({ title: '275px', kindText: '111px', linked: '145px' })
 	})
 
 	it('colours the status pill as the case list does (r29: In behandeling purple, Ontvangen blue, Afgehandeld green)', () => {
