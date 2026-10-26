@@ -17,9 +17,11 @@ niet geaccepteerd". It compared these schema kinds with pipelinq's role kinds, a
   fix/parties-accepted-kinds-by-shape), and OpenRegister keeps the key (feat/party-kind-identity-shapes; an older
   OpenRegister drops it, and the widget then cannot judge, so it passes the party).
 
+The colleague's surface is the case parties card. Board DqZaakBetrokkenen draws "Partij toevoegen" there. Its picker (`manage.add.sources`) offers residents, organisations and colleagues, so a colleague can be added to a case in a role the case declares.
+
 Procedures stay configuration: the colleague's role on a case is the case type's role (Adviseur, Collega); only the kind
 is generic.
 
 ## Scope
 
-`lib/Settings`, the schema digests, and translations. DQ-DATA seeds Lars de Koning as a colleague.
+`lib/Settings`, the schema digests, translations, and the parties cards in `src/manifest.json` and `src/menu-layout.simple.json`. DQ-DATA seeds Lars de Koning as a colleague.

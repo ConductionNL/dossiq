@@ -4430,6 +4430,44 @@
 						"subtitle": "From OpenRegister's party model, also for those without an account",
 						"_note": "The party model OpenRegister shipped in #3761 (`/parties` of this case), by role with the primary party first. A gemachtigde names whom they act for (role rows, `representedParty`). The accepted kinds and the writing language come from pipelinq through dossiq's endpoints; a kind is marked not accepted only when pipelinq answered the kinds. Every indicator carries its verdict, and a blocking one is also a note above the list. A failed read says so and is never \"no parties\".",
 						"content": {
+							"manage": {
+								"add": {
+									"label": "Add party",
+									"dialogTitle": "Add party",
+									"confirmLabel": "Add",
+									"sources": [
+										{
+											"id": "person",
+											"register": "dossiq",
+											"schema": "brpPerson",
+											"lookup": {
+												"url": "/apps/dossiq/api/people/lookup",
+												"when": "^[0-9]{9}$"
+											},
+											"label": "Resident",
+											"title": "{displayName}",
+											"secondary": "{residence.street} {residence.houseNumber}"
+										},
+										{
+											"id": "company",
+											"register": "dossiq",
+											"schema": "kvkCompany",
+											"label": "Organisation",
+											"title": "{tradeName}",
+											"secondary": "CoC {kvkNumber}"
+										},
+										{
+											"id": "colleague",
+											"register": "dossiq",
+											"schema": "colleague",
+											"label": "Colleague",
+											"title": "{displayName}",
+											"secondary": "{jobTitle}"
+										}
+									]
+								}
+							},
+							"_manageNote": "Board DqZaakBetrokkenen draws \"Partij toevoegen\" on this card. The picker searches residents (BSN lookup), organisations and colleagues (the colleague party schema, kind colleague, tied to a Nextcloud user); the role is one the case declares.",
 							"rolesObjects": {
 								"register": "dossiq",
 								"schema": "role",
