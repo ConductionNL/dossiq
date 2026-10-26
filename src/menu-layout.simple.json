@@ -3066,7 +3066,8 @@
 						"id": "case-plan-card",
 						"type": "plan",
 						"content": {
-							"emptyText": "This case type has no adaptive plan"
+							"emptyText": "This case type has no adaptive plan",
+							"stateLabels": {"active": "Active"}
 						},
 						"visibleWhen": {
 							"any": [
