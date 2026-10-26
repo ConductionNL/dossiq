@@ -12593,9 +12593,18 @@
 									"formatter": "fieldFill"
 								},
 								{
-									"key": "id",
+									"key": "origin",
 									"label": "Origin",
-									"formatter": "fieldOrigin"
+									"formatter": "fieldOrigin",
+									"widget": "badge",
+									"emptyValue": "own",
+									"widgetProps": {
+										"colorMap": {
+											"own": "default",
+											"shared": "info",
+											"inherited": "purple"
+										}
+									}
 								},
 								{
 									"key": "caseType",

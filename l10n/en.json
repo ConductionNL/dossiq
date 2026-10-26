@@ -8862,6 +8862,7 @@
         "The Dashboard tracks progress as cases move through it. The documentation covers the rest.": "The Dashboard tracks progress as cases move through it. The documentation covers the rest.",
         "The dashboard tracks progress as cases move through it. The documentation covers the rest.": "The dashboard tracks progress as cases move through it. The documentation covers the rest.",
         "The data schema of this case type.": "The data schema of this case type.",
+        "The data schema of this case type. Drag to change the order. Fields of the parent type are purple.": "The data schema of this case type. Drag to change the order. Fields of the parent type are purple.",
         "The date a held case returns to the working queue. A hold is a deliberate pause in the WORK and never stops a statutory term: only an opschorting under Awb 4:5 does that, and it has its own act.": "The date a held case returns to the working queue. A hold is a deliberate pause in the WORK and never stops a statutory term: only an opschorting under Awb 4:5 does that, and it has its own act.",
         "The date and time of the incident": "The date and time of the incident",
         "The date and time the data protection authority was notified": "The date and time the data protection authority was notified",
