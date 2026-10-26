@@ -60,6 +60,10 @@ describe('the pause reason choice', () => {
 		expect(input(SUSPEND, 'days').helperFrom).toEqual({ input: 'pauseReason', key: 'legalBasis' })
 	})
 
+	it('names Awb 4:5 under the days when no reason is picked (DqVolgendeStap "Awb 4:5, hersteltermijn")', () => {
+		expect(input(SUSPEND, 'days').description).toBe('Awb 4:5, recovery period')
+	})
+
 	it('fills the days with the picked reason\'s default (4.1)', () => {
 		expect(input(SUSPEND, 'days').prefillFrom).toEqual({ input: 'pauseReason', key: 'defaultDays' })
 	})

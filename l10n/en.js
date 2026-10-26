@@ -1125,6 +1125,7 @@ OC.L10N.register(
         "BAC Advice Request": "BAC Advice Request",
         "BAC-advies": "Committee advice",
         "BAC-adviezen": "BAC-adviezen",
+        "Awb 4:5, recovery period": "Awb 4:5, recovery period",
         "Back": "Back",
         "Back to list": "Back to list",
         "Back to my cases": "Back to my cases",
