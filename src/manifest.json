@@ -10060,7 +10060,8 @@
 								},
 								{
 									"label": "Handler",
-									"path": "recommendedBy"
+									"path": "recommendedBy",
+									"format": "user"
 								}
 							]
 						}
@@ -10217,7 +10218,7 @@
 									"path": "overrideAuthority",
 									"map": {
 										"inspector": "Inspector",
-										"manager": "Manager"
+										"manager": "Enforcement team lead"
 									}
 								},
 								{
@@ -10349,9 +10350,10 @@
 							},
 							"notice": {
 								"lead": "Advice: {intervention}",
-								"text": "Outcome of the decision table, version {version}, with {behaviour} and {consequence}.",
+								"text": "Outcome of the decision table {matrix} version {version}, with {behaviour} and {consequence}.",
 								"tone": "info",
 								"values": {
+									"matrix": "@source.name",
 									"intervention": "@object.recommendedIntervention",
 									"version": "@object.matrixVersion",
 									"behaviour": "@object.behaviour",
