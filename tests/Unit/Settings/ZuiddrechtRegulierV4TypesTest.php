@@ -42,7 +42,7 @@ class ZuiddrechtRegulierV4TypesTest extends TestCase {
 		$names = [];
 		foreach ($set['objects'] as $object) {
 			if (($object['data']['caseType'] ?? null) === $v4) {
-				$names[$object['schema']][] = $object['data']['name'];
+				$names[$object['schema']][] = ($object['data']['name'] ?? $object['data']['title']);
 			}
 		}
 
