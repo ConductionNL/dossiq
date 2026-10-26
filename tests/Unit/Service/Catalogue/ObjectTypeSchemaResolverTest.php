@@ -200,17 +200,17 @@ class ObjectTypeSchemaResolverTest extends TestCase {
 	}//end testCountsTheObjectsOfTheSchemaWithinItsRegister()
 
 	/**
-	 * A count OpenRegister refuses leaves the number out, not zero, and the
-	 * schema is still described.
+	 * A count OpenRegister refuses is not shown as a number: it throws, so the
+	 * catalogue reports a failed read.
 	 *
 	 * @return void
 	 */
-	public function testAFailedCountLeavesTheNumberOut(): void {
+	public function testARefusedCountThrows(): void {
 		$resolver = $this->resolverOver(openRegister: $this->openRegister(), objects: $this->objectCounter(count: null));
 
-		$described = $resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/a');
-		$this->assertSame(expected: ['Bomenregister', null], actual: [$described['title'], $described['objects']]);
-	}//end testAFailedCountLeavesTheNumberOut()
+		$this->expectException(exception: \RuntimeException::class);
+		$resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/a');
+	}//end testARefusedCountThrows()
 
 	/**
 	 * A double of OpenRegister's ObjectService that counts the given number,

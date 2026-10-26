@@ -38,7 +38,6 @@ namespace OCA\Dossiq\Service\Catalogue;
 use Exception;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Resolves the schema an OpenRegister object URL names.
@@ -107,8 +106,9 @@ class ObjectTypeSchemaResolver {
 	 * The schema an object URL names: its title, its number of properties,
 	 * the views its objects support (`map` when a property is a geo type,
 	 * `table` always) and the number of objects the register holds in it
-	 * (null when that count cannot be read), or null when the URL names no
-	 * OpenRegister schema or the schema cannot be read.
+	 * (null without OpenRegister's ObjectService), or null when the URL names
+	 * no OpenRegister schema or the schema cannot be read. A count OpenRegister
+	 * refuses throws.
 	 *
 	 * @param string $objectUrl The link's object URL.
 	 *
@@ -219,9 +219,9 @@ class ObjectTypeSchemaResolver {
 	}//end read()
 
 	/**
-	 * How many objects the register holds in the schema, or null when
-	 * OpenRegister cannot count them. A count that fails leaves the number
-	 * out rather than showing zero.
+	 * How many objects the register holds in the schema, or null without
+	 * OpenRegister's ObjectService. A count OpenRegister refuses throws, like
+	 * the catalogue's own reads, so a failed read is not shown as a number.
 	 *
 	 * @param object|null $register The resolved register.
 	 * @param object      $schema   The resolved schema.
@@ -235,19 +235,11 @@ class ObjectTypeSchemaResolver {
 			return null;
 		}
 
-		try {
-			$objects = $this->container->get(self::OBJECTS);
-			$objects->setRegister($register);
-			$objects->setSchema($schema);
+		$objects = $this->container->get(self::OBJECTS);
+		$objects->setRegister($register);
+		$objects->setSchema($schema);
 
-			return (int)$objects->count(['filters' => []]);
-		} catch (Throwable $e) {
-			$this->logger->info(
-				'Dossiq: the objects of a linked schema could not be counted',
-				['reason' => $e->getMessage()]
-			);
-			return null;
-		}
+		return (int)$objects->count(['filters' => []]);
 	}//end objectCount()
 
 	/**
