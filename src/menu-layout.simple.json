@@ -6197,7 +6197,7 @@
 					},
 					{
 						"key": "subjectLabel",
-						"width": "170px",
+						"width": "168px",
 						"filterField": "objectUuid",
 						"label": "Subject",
 						"cellClass": "cn-cell--wrap",
@@ -6216,6 +6216,7 @@
 					},
 					{
 						"key": "state",
+						"width": "185px",
 						"label": "Status",
 						"_note": "Board DqTaken: the state in the task page's words (\"In uitvoering\", the TaskDetail pill), not the library's \"In progress\". The tones are keyed on the state, so they hold in every language.",
 						"enum": ["available", "enabled", "active", "completed", "terminated", "disabled"],
@@ -6239,6 +6240,7 @@
 					},
 					{
 						"key": "priorityLabel",
+						"width": "133px",
 						"label": "Priority",
 						"filterField": "priority",
 						"sortable": true,
@@ -6253,6 +6255,7 @@
 					},
 					{
 						"key": "dueAt",
+						"width": "133px",
 						"label": "Task deadline",
 						"sortable": true,
 						"widget": "date",
