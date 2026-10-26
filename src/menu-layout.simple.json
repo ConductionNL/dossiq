@@ -2729,8 +2729,9 @@
 							]
 						},
 						"title": "The request",
-						"_note": "DqZaak: the card that opens the Overview tab, what the case is about in the requester's words. Read only: the description is edited in the Edit dialog.",
+						"_note": "DqZaak: the card that opens the Overview tab, what the case is about in the requester's words. Read only: the description is edited in the Edit dialog. A case type's requestFields replace the description (Woo: the request's scope, period and kinds of document; nextcloud-vue facts fieldsFrom).",
 						"content": {
+							"fieldsFrom": "@context.caseType.requestFields",
 							"fields": [
 								{
 									"as": "text",
