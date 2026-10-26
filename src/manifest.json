@@ -13366,6 +13366,9 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "brpPerson",
+				"pagination": {
+					"limit": 8
+				},
 				"sortKey": "displayName",
 				"sortOrder": "asc",
 				"allowSavedViews": true,
@@ -13463,6 +13466,9 @@
 				"quickFilterPlacement": "toolbar",
 				"register": "dossiq",
 				"schema": "kvkCompany",
+				"pagination": {
+					"limit": 8
+				},
 				"allowSavedViews": true,
 				"_savedViewSaveNote": "The board draws no Weergave opslaan in the toolbar; the saved views stay in the side panel.",
 				"savedViewSave": false,
