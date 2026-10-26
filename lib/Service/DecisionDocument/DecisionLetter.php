@@ -41,6 +41,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver;
 
 /**
@@ -57,10 +58,12 @@ class DecisionLetter {
 	 *
 	 * @param SettingsService    $settingsService Bridge to OpenRegister + config.
 	 * @param CaseDocumentDrafts $drafts          The case type's draft declarations.
+	 * @param TranslatedText     $text            Reads a declared language map in the reader's language.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseDocumentDrafts $drafts,
+		private readonly TranslatedText $text = new TranslatedText(),
 	) {
 	}//end __construct()
 
@@ -71,7 +74,9 @@ class DecisionLetter {
 	 * @param string $purpose The declared purpose, for example `decision`.
 	 *
 	 * @return array{
-	 *     declaration: array{title: string, documentType: string, templateSlug: string, format: string}|null,
+	 *     declaration: array{
+	 *         title: string, documentType: string, templateSlug: string, format: string, signing: string, delivery: string
+	 *     }|null,
 	 *     document: array<string, mixed>|null,
 	 *     empty: bool
 	 * }
@@ -116,6 +121,8 @@ class DecisionLetter {
 				'documentType' => $typeName,
 				'templateSlug' => trim((string)($declared['templateSlug'] ?? '')),
 				'format' => trim((string)($declared['format'] ?? '')),
+				'signing' => $this->text->forReader(value: ($declared['signing'] ?? '')),
+				'delivery' => $this->text->forReader(value: ($declared['delivery'] ?? '')),
 			],
 			'document' => $document,
 			'empty' => $document === null,

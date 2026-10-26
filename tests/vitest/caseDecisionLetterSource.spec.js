@@ -4,8 +4,9 @@
  *
  * DqZaakBesluiten Beschikking: the letter card reads the case's decision
  * letter through dossiq's letters route, the newest dossier document of the
- * type the case type declares under documentDrafts.decision, and is empty
- * while there is none. It no longer reads the flow's besluitDocument text.
+ * type the case type declares under documentDrafts.decision, with the
+ * signing route and delivery declared beside it, and is empty while there
+ * is none. It no longer reads the flow's besluitDocument text.
  */
 import fs from 'fs'
 import path from 'path'
@@ -54,10 +55,17 @@ describe('the decision letter card', () => {
 		expect(JSON.stringify(letter.content.fields)).not.toContain('besluitDocument')
 	})
 
-	it('shows the letter, its status as the board words it, the template and the date', () => {
-		expect(letter.content.fields.map((field) => field.path)).toEqual(['document.title', 'document.status', 'declaration.title', 'document.creatiedatum'])
-		const status = letter.content.fields[1]
-		expect(nl[status.map.draft]).toBe('Concept, nog niet ondertekend')
-		expect(nl[letter.content.fields[2].label]).toBe('Sjabloon')
+	it('draws the board\'s rows: status, template, signing and delivery', () => {
+		expect(letter.content.fields.map((field) => field.path)).toEqual(['document.status', 'declaration.title', 'declaration.signing', 'declaration.delivery'])
+		expect(letter.content.fields.map((field) => nl[field.label])).toEqual(['Status', 'Sjabloon', 'Ondertekenen', 'Verzenden'])
+		expect(nl[letter.content.fields[0].map.draft]).toBe('Concept, nog niet ondertekend')
+	})
+
+	it('declares the Woo letter\'s signing route and delivery as the board words them', () => {
+		for (const file of ['81-woo-verzoek.json', '81-woo-verzoek-version-2.json']) {
+			const source = fs.readFileSync(path.join(ROOT, 'lib', 'Settings', 'register.d', file), 'utf8')
+			expect(source).toContain('"signing": { "nl": "Via LibreSign, na de paraaf"')
+			expect(source).toContain('"delivery": { "nl": "Berichtenbox van MijnOverheid"')
+		}
 	})
 })
