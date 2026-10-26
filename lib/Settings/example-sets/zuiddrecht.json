@@ -10349,6 +10349,27 @@
 			}
 		}
 	],
+	"appointments": [
+		{
+			"key": "hoorzitting-bezwaar-parkeerboete",
+			"data": {
+				"object": "{{task:hoorzitting-inplannen.uuid}}",
+				"owner": "{{cast:pieter.uid}}",
+				"summary": "Hoorzitting bezwaar parkeerboete",
+				"start": "{{datetime:4 14:00}}",
+				"end": "{{datetime:4 15:00}}",
+				"location": "Stadskantoor, zaal 2.04",
+				"description": "Hoorzitting met de indiener en de bezwaarcommissie.",
+				"attendees": [
+					{
+						"name": "{{cast:fatima.displayName}}",
+						"email": "{{cast:fatima.email}}",
+						"status": "invited"
+					}
+				]
+			}
+		}
+	],
 	"exportRuns": [
 		{
 			"key": "export-zaken-verlichting",
