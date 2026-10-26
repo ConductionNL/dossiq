@@ -62,16 +62,25 @@ class ZuiddrechtCaseTypeVersionsTest extends TestCase {
 
 	/**
 	 * Five versions share the identifier, each made from the one before, and
-	 * only the fifth is a draft.
+	 * only the fifth is a draft. Version 4 starts as one (the schema default)
+	 * and a change publishes it, so its record history shows the publication.
 	 *
 	 * @return void
 	 */
 	public function testFiveVersionsInOneChain(): void {
-		$versions = $this->versions(set: $this->set());
+		$set       = $this->set();
+		$versions  = $this->versions(set: $set);
+		$published = [];
+		foreach ($set['changes'] as $change) {
+			if (array_key_exists('isDraft', $change['set']) === true) {
+				$published[$change['object']] = $change['set']['isDraft'];
+			}
+		}
 
 		$this->assertSame(expected: [1, 2, 3, 4, 5], actual: array_keys($versions));
 		foreach ($versions as $number => $version) {
-			$this->assertSame(expected: $number === 5, actual: $version['data']['isDraft']);
+			$isDraft = ($published[$version['key']] ?? $version['data']['isDraft']);
+			$this->assertSame(expected: $number === 5, actual: $isDraft);
 			if ($number > 1) {
 				$this->assertSame(
 					expected: '{{object:'.$versions[$number - 1]['key'].'.id}}',
