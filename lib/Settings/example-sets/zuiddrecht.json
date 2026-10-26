@@ -6563,6 +6563,7 @@
 				"roleName": "Woo en informatie",
 				"roleType": "ambtelijk",
 				"ncGroupId": "zuiddrecht-woo-en-informatie",
+				"teamLead": "{{cast:anouk.uid}}",
 				"parentRoleId": "{{object:afdeling-gemeente.id}}"
 			}
 		},
@@ -9553,7 +9554,8 @@
 			},
 			"set": {
 				"ncGroupId": "zuiddrecht-vergunningen",
-				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}",
+				"teamLead": "{{cast:marleen.uid}}"
 			}
 		},
 		{
