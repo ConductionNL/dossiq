@@ -78,6 +78,11 @@ describe('the field inspection board', () => {
 		expect(nl[note.content.text]).toBe('{value} wijzigingen wachten op bereik. Ze gaan vanzelf mee zodra u online bent.')
 	})
 
+	it('draws three 700px phones and the outbox cards with the pill beside the text', () => {
+		expect(widget('inspection-frames').content.height).toBe(700)
+		expect(widget('inspection-sync-queue').content.cardPillAside).toBe(true)
+	})
+
 	it('opens the running checklist at its first open question', () => {
 		expect(widget('checklist-run').content.startAt).toBe('firstOpen')
 	})

@@ -23,6 +23,7 @@
 						"title": "Inspection in the field",
 						"content": {
 							"width": 350,
+							"height": 700,
 							"status": {
 								"followConnection": true,
 								"offlineText": "Offline · synchronised earlier",
@@ -213,6 +214,7 @@
 							"limit": 6,
 							"presentation": "cards",
 							"density": "compact",
+							"cardPillAside": true,
 							"title": ["{label}", "{targetEntity}"],
 							"meta": ["{summary}", "{lastError}", "{operationType} · {queuedAt|datetime}"],
 							"pill": {
