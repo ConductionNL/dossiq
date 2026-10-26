@@ -564,7 +564,7 @@ export default {
 	border-radius: 50%;
 	background: var(--color-background-dark);
 	font-size: 12px;
-	font-weight: 600;
+	font-weight: 700;
 }
 
 .case-custody__text {
