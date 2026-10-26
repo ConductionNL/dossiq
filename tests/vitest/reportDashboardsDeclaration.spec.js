@@ -385,6 +385,10 @@ describe('process mining figures', () => {
 		expect(dwell.barValueAtEnd).toBe(true)
 	})
 
+	it('ranks the four worst bottlenecks, as DqProcesanalyse draws Knelpuntenranglijst', () => {
+		expect(widget('ProcessMiningDashboard', 'pm-bottlenecks').content.limit).toBe(4)
+	})
+
 	it('aligns the figures to the end and rules above the first stuck phase, as DqProcesanalyse draws them', () => {
 		const cols = (id) => Object.fromEntries(widget('ProcessMiningDashboard', id).content.columns.map((c) => [c.key, c]))
 		const ranking = cols('pm-bottlenecks')
