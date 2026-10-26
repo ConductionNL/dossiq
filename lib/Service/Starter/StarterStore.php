@@ -62,6 +62,19 @@ class StarterStore {
 	}//end __construct()
 
 	/**
+	 * The schema id the app config key names here, or the empty string.
+	 *
+	 * @param string $configKey The app config key naming the schema.
+	 *
+	 * @return string The schema id.
+	 *
+	 * @spec openspec/changes/shipped-ledger-schema-slug/specs/case-type-seed-data/spec.md
+	 */
+	public function schemaIdOf(string $configKey): string {
+		return (string)$this->settings->getConfigValue(key: $configKey);
+	}//end schemaIdOf()
+
+	/**
 	 * Whether the store can be reached and the schema is configured.
 	 *
 	 * @param string $configKey The app config key naming the schema.

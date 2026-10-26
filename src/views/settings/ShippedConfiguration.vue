@@ -46,7 +46,9 @@
 				<tr v-for="row in rows" :key="row.targetObject">
 					<td class="shipped-configuration__name">{{ row.title || row.targetObject }}</td>
 					<td :data-testid="'shipped-state-' + row.targetObject">
-						{{ label(row) }}
+						<span class="shipped-configuration__state" :class="'shipped-configuration__state--' + (row.state || 'local')">
+							{{ label(row) }}
+						</span>
 					</td>
 					<td>{{ row.set }}</td>
 					<td>{{ row.setVersion }}</td>
@@ -271,6 +273,31 @@ export default {
 
 .shipped-configuration__name {
 	font-weight: 600;
+}
+
+/* The state reads as a pill, as board DqBeheerGeavanceerd draws it:
+   unchanged on a light success fill, changed or removed on a light warning
+   fill, an object of this instance on a neutral one. */
+.shipped-configuration__state {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 10px;
+	background: var(--color-background-dark);
+	color: var(--color-main-text);
+	font-size: 13px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.shipped-configuration__state--shipped {
+	background: color-mix(in srgb, var(--color-success) 15%, var(--color-main-background));
+	color: var(--color-success-text);
+}
+
+.shipped-configuration__state--changed,
+.shipped-configuration__state--removed {
+	background: color-mix(in srgb, var(--color-warning) 15%, var(--color-main-background));
+	color: var(--color-warning-text);
 }
 
 .shipped-configuration__empty,
