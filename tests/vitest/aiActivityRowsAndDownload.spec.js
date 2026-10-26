@@ -30,6 +30,11 @@ describe('the AI oversight card', () => {
 		expect(list.content.columns.find((column) => column.key === 'decidedBy').formatter).toBe('userName')
 	})
 
+	it('tones the outcome as the board does: used green, adapted blue, rejected red', () => {
+		const status = list.content.columns.find((column) => column.key === 'status')
+		expect(status.colorMap).toEqual({ approved: 'success', overridden: 'info', unused: 'default', denied: 'error' })
+	})
+
 	it('offers no Add', () => {
 		expect(list.content.allowCreate).toBe(false)
 	})

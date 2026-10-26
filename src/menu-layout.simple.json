@@ -5210,6 +5210,12 @@
 										"overridden": "Adapted",
 										"unused": "Not used",
 										"denied": "Rejected"
+									},
+									"colorMap": {
+										"approved": "success",
+										"overridden": "info",
+										"unused": "default",
+										"denied": "error"
 									}
 								},
 								{
@@ -5342,6 +5348,7 @@
 								},
 								"rowAction": {
 									"label": "Remind",
+									"variant": "outlined",
 									"endpoint": "/apps/dossiq/api/advice/{id}/remind",
 									"method": "POST",
 									"labels": {
