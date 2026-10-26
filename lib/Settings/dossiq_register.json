@@ -1155,7 +1155,7 @@
                         "translatable": true,
                         "sourceLanguage": "nl",
                         "title": "Phase",
-                        "description": "The generic phase this status belongs to (for example Ontvangst, Beoordeling, Advies, Besluit, Verzending). Process analysis groups statuses by it, so case types with different statuses read side by side; a status without one keeps its own name there."
+                        "description": "The generic phase this status belongs to (for example Ontvangst, Beoordeling, Advies, Besluit, Verzending, Uitvoering for carrying out a decision). Process analysis groups statuses by it, so case types with different statuses read side by side; a status without one keeps its own name there."
                     },
                     "waitingOn": {
                         "type": "string",

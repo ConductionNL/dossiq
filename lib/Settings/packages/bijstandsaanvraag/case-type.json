@@ -389,7 +389,8 @@
       "order": 6,
       "isFinal": false,
       "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
-      "colour": "purple"
+      "colour": "purple",
+      "phase": "Uitvoering"
     },
     {
       "id": "6865b91e-0f65-5b50-876c-3b043fd1f570",
@@ -398,7 +399,8 @@
       "order": 7,
       "isFinal": false,
       "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
-      "colour": "purple"
+      "colour": "purple",
+      "phase": "Uitvoering"
     },
     {
       "id": "ab4e8bee-d1b1-5dd7-8447-d92c47ace21f",
