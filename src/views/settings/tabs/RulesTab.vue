@@ -663,3 +663,13 @@ export default {
 	color: var(--color-text-maxcontrast);
 }
 </style>
+
+<style>
+/* A board card that opens on the rule rows starts 12px under its title: the
+   rows set their own padding, so no first line carries the half-leading the
+   card content takes off for text (r31 DqZaaktypeOverzicht Regels sat 2.3px
+   high). */
+.cn-look-board .cn-detail-page .cn-widget-wrapper__content:has(> .rules-tab > .rules-tab__rows:first-child):not(.cn-look-nextcloud *) {
+	padding-top: 12px;
+}
+</style>
