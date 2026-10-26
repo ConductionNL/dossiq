@@ -36,7 +36,8 @@ describe('the related cases card (DqZaakGerelateerd)', () => {
 	})
 
 	it('reads the number, case type and handler the endpoint adds', () => {
-		expect(card.content.avatar).toBe('{title}')
+		// related-cases-as-board: the avatar names the case type, 32px, in the primary tone.
+		expect(card.content.avatar).toEqual({ text: '{caseTypeTitle}', size: 32, tone: 'primary' })
 		expect(card.content.meta[0]).toBe('{identifier} · {caseTypeTitle} · {assigneeName}')
 	})
 
