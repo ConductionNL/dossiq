@@ -25,3 +25,13 @@ describe('the advice words on the side cards (DqHandhaving)', () => {
 		expect(matrix.content.notice.values.matrix).toBe('@source.name')
 	})
 })
+
+describe('the inspection on the advice cards (DqHandhaving)', () => {
+	it('names the inspection by where it took place, its report having no title', () => {
+		const labels = page.config.sideColumn
+			.flatMap((entry) => (entry.content && entry.content.fields) || [])
+			.filter((field) => field.path === 'inspection')
+			.map((field) => field.resolve.labelField)
+		expect(labels).toEqual(['location', 'location'])
+	})
+})
