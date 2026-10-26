@@ -339,9 +339,10 @@ describe('the contact on a contact moment', () => {
 		// register and left the mock behind, and a mock one version short
 		// looks exactly like a mock that is up to date. 1.6.0 added the paper
 		// letter (`brief`) as a channel (contact-channel-letter). 1.7.0 added
-		// subject, note and attachmentCount (contact-message-subject-note).
+		// subject, note and attachmentCount (contact-message-subject-note);
+		// 1.8.0 the full message (contact-message-text).
 		for (const register of [kccRegister, mockRegister]) {
-			expect(register.components.schemas.contactmoment.version).toBe('1.7.0')
+			expect(register.components.schemas.contactmoment.version).toBe('1.8.0')
 		}
 	})
 

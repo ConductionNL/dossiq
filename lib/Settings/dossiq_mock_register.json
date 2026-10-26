@@ -5016,7 +5016,7 @@
       "contactmoment": {
         "slug": "contactmoment",
         "icon": "PhoneInTalk",
-        "version": "1.7.0",
+        "version": "1.8.0",
         "configuration": {
           "x-openregister-processing": {
             "logReads": true,
@@ -5182,6 +5182,18 @@
             "type": "string",
             "title": "Summary",
             "description": "Summary of the contact"
+          },
+          "message": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
+            "type": "string",
+            "title": "Message",
+            "description": "The full text of the message the contact was, where the summary is a short line about it"
           },
           "subject": {
             "authorization": {
