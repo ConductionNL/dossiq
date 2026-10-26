@@ -9824,6 +9824,39 @@
 				"name": "Bouwtoezicht oplevering",
 				"version": 2
 			}
+		},
+		{
+			"key": "woo-verzoek-request-fields",
+			"register": "dossiq",
+			"schema": "caseType",
+			"where": {
+				"identifier": "woo-verzoek",
+				"version": 2
+			},
+			"set": {
+				"requestFields": [
+					{
+						"as": "text",
+						"path": "wooRequest.omschrijving"
+					},
+					{
+						"as": "pill",
+						"key": "request-period",
+						"template": "Periode {wooRequest.periodeVan:year} tot en met {wooRequest.periodeTot:year}"
+					},
+					{
+						"as": "pill",
+						"key": "request-kinds",
+						"path": "wooRequest.documentSoorten",
+						"map": {
+							"besluiten": "Besluiten",
+							"rapporten": "Rapporten",
+							"correspondentie": "Correspondentie",
+							"alles": "Alle documenten"
+						}
+					}
+				]
+			}
 		}
 	],
 	"flows": [

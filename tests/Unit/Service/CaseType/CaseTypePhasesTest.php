@@ -131,6 +131,41 @@ class CaseTypePhasesTest extends TestCase {
 		$this->assertNull($this->phases(caseType: [], statuses: [], template: null)->phasesFor(caseTypeId: 'missing'));
 	}//end testAlwaysAvailableActsAndAnUnreadableType()
 	/**
+	 * Statuses that name one phase share it: named by the phase, ordered by the
+	 * first of them, holding the tasks of all of them. A final status with no
+	 * phase and no task is not a phase once the type is phased; without any
+	 * phase every status stays its own phase.
+	 *
+	 * @return void
+	 */
+	public function testStatusesThatNameOnePhaseShareIt(): void {
+		$statuses = [
+			['id' => 'ontv', 'name' => 'Ontvangen', 'order' => 1, 'phase' => 'Ontvangst'],
+			['id' => 'aanv', 'name' => 'Aanvullende gegevens gevraagd', 'order' => 2, 'phase' => 'Ontvangst'],
+			['id' => 'beh', 'name' => 'In behandeling', 'order' => 3, 'phase' => 'Beoordeling'],
+			['id' => 'bes', 'name' => 'Besluit', 'order' => 4, 'phase' => ['nl' => 'Besluit', 'en' => 'Decision']],
+			['id' => 'verl', 'name' => 'Verleend', 'order' => 5, 'isFinal' => true],
+			['id' => 'weig', 'name' => 'Geweigerd', 'order' => 6, 'isFinal' => true],
+		];
+		$template = ['steps' => [
+			['id' => 't1', 'title' => 'Volledigheid toetsen', 'status' => 'ontv', 'order' => 1],
+			['id' => 't2', 'title' => 'Ontvangstbevestiging', 'status' => 'aanv', 'order' => 2],
+			['id' => 't3', 'title' => 'Toets aan het omgevingsplan', 'status' => 'beh', 'order' => 1],
+			['id' => 't4', 'title' => 'Besluit opstellen', 'status' => 'bes', 'order' => 1],
+		]];
+		$result = $this->phases(caseType: ['id' => 'ct'], statuses: $statuses, template: $template)->phasesFor(caseTypeId: 'ct');
+
+		$this->assertSame(['Ontvangst', 'Beoordeling', 'Besluit'], array_column($result['phases'], 'name'));
+		$this->assertSame(['ontv', 'aanv'], $result['phases'][0]['statusIds']);
+		$this->assertSame(['Volledigheid toetsen', 'Ontvangstbevestiging'], array_column($result['phases'][0]['tasks'], 'title'));
+		$this->assertSame(['Besluit opstellen'], array_column($result['phases'][2]['tasks'], 'title'));
+		$this->assertSame([], $result['unplaced']);
+
+		$plain = $this->phases(caseType: ['id' => 'ct'], statuses: $this->statuses(), template: null)->phasesFor(caseTypeId: 'ct');
+		$this->assertSame(['Ontvangst', 'Beoordeling'], array_column($plain['phases'], 'name'));
+	}//end testStatusesThatNameOnePhaseShareIt()
+
+	/**
 	 * A status name is translatable, so the store answers a language map; the
 	 * endpoint answers it as text in the reader's language.
 	 *
