@@ -302,6 +302,11 @@ describe('the work instruction', () => {
 		expect(instruction.content.link).toMatchObject({ href: '{knowledgeBasePage}', hrefBase: '/apps/collectives/', target: '_blank' })
 		expect(instruction.content.fields).toBeUndefined()
 	})
+
+	it('says under the simple page\'s link where the page lives, as DqZaakBesluiten draws it', () => {
+		const nl = JSON.parse(fs.readFileSync(path.join(__dirname, '../../l10n/nl.json'), 'utf8')).translations
+		expect(nl[find(simpleCase, 'side-work-instruction').content.footnote]).toBe('Uit Collectives. Meer pagina\'s onder Meer, Kennis.')
+	})
 })
 
 describe('the Notes tab', () => {

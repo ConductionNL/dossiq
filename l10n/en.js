@@ -3547,6 +3547,7 @@ OC.L10N.register(
         "From": "From",
         "From 0 to 120. Default 7.": "From 0 to 120. Default 7.",
         "From 0 to 60. Default 3.": "From 0 to 60. Default 3.",
+        "From Collectives. More pages under More, Knowledge.": "From Collectives. More pages under More, Knowledge.",
         "From decidiq's decision-making, shown on the case": "From decidiq's decision-making, shown on the case",
         "From Employee ID": "From Employee ID",
         "From handler (user id)": "From handler (user id)",

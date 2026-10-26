@@ -1497,6 +1497,7 @@
 								"hrefBase": "/apps/collectives/",
 								"target": "_blank"
 							},
+							"footnote": "From Collectives. More pages under More, Knowledge.",
 							"errorText": "The work instruction for this case type could not be looked up."
 						}
 					},
