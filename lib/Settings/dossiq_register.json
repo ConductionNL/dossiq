@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.77"
+        "version": "0.20.78"
     },
     "x-openregister": {
         "type": "application",
@@ -2427,7 +2427,7 @@
                         "daysSinceActivity": {
                             "type": "integer",
                             "materialise": false,
-                            "description": "Whole days since the object was last modified (falls back to creation date). V1 sources @self.updated: the case.activity log is a JSON-encoded string and OpenRegister's calculation engine has no JSON/array operators to read it. Virtual (materialise:false): a save-time value would always be 0 at the moment of saving; computed fresh at read time via _extend=calculations.",
+                            "description": "Whole days since someone last worked on the case (lastActivityAt, falling back to the creation date). Not @self.updated: every system save moves that, so no case would ever look stalled. Virtual (materialise:false): computed fresh at read time via _extend=calculations.",
                             "expression": {
                                 "dateDiff": {
                                     "from": {
@@ -2435,7 +2435,7 @@
                                             {
                                                 "coalesce": [
                                                     {
-                                                        "prop": "@self.updated"
+                                                        "prop": "lastActivityAt"
                                                     },
                                                     {
                                                         "prop": "@self.created"

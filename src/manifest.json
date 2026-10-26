@@ -986,7 +986,7 @@
 								},
 								"extend": ["calculations"],
 								"order": {
-									"@self.updated": "asc"
+									"lastActivityAt": "asc"
 								},
 								"limit": 5
 							},
@@ -1011,7 +1011,7 @@
 									"isFinalStatus": "false",
 									"statusHiddenInLists": "false",
 									"isDraft": "false",
-									"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
+									"_order": "[{\"key\":\"lastActivityAt\",\"order\":\"asc\"}]"
 								}
 							},
 							"viewAllLabel": "View all",
@@ -1659,7 +1659,7 @@
 											"calculations"
 										],
 										"order": {
-											"@self.updated": "asc"
+											"lastActivityAt": "asc"
 										},
 										"limit": 5
 									},
@@ -2015,7 +2015,12 @@
 						"label": "Team"
 					},
 					"assignee": {
-						"label": "Handler"
+						"label": "Handler",
+						"_valuesNote": "Board DqPersoonlijkeInstellingen: a view on my own cases reads \"Mijn zaken\" in its summary, not \"Behandelaar jij\" (nc-vue valuesAlone).",
+						"values": {
+							"@me": "My cases"
+						},
+						"valuesAlone": true
 					},
 					"waitingOnApplicant": {
 						"label": "Status",

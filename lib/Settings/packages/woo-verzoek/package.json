@@ -1,7 +1,7 @@
 {
   "id": "woo-verzoek",
   "title": "Woo-verzoek",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "requires": [],
   "parts": [
     "flows"

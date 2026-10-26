@@ -409,6 +409,7 @@
           "enabled": true
         },
         "maxExtensions": 1,
+        "suspensionAllowed": true,
         "x-index": {
           "title": "Woo requests",
           "countText": "{shown} of {total} Woo requests · sorted by legal term",
@@ -685,7 +686,8 @@
         "name": "verzoekerType",
         "definition": "Type verzoeker",
         "description": "Categorie: burger, journalist of organisatie",
-        "propertyType": "string",
+        "propertyType": "enum",
+        "enumValues": ["burger", "journalist", "organisatie"],
         "isRequired": false
       },
       {
@@ -764,7 +766,8 @@
         "name": "gewensteVorm",
         "definition": "Gewenste vorm van verstrekking",
         "description": "Hoe de verzoeker de documenten wil ontvangen: papier, digitaal of inzage",
-        "propertyType": "string",
+        "propertyType": "enum",
+        "enumValues": ["papier", "digitaal", "inzage"],
         "isRequired": false,
         "defaultValue": "digitaal"
       }

@@ -146,6 +146,31 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 	}
 
 	/**
+	 * A case giving a last-activity offset carries that moment as lastActivityAt.
+	 *
+	 * @return void
+	 */
+	public function testLastActivityOffsetIsWritten(): void {
+		$now = new DateTimeImmutable('2026-09-02T10:00:00+02:00');
+		$cases = $this->savedOfSchema(saved: $this->runSeed(now: $now), schema: 'case-schema');
+
+		$seen = 0;
+		foreach (($this->seedFile['cases'] ?? []) as $seedCase) {
+			$written = $cases[$seedCase['title']];
+			if (isset($seedCase['lastActivityInDays']) === false) {
+				$this->assertArrayNotHasKey(key: 'lastActivityAt', array: $written);
+				continue;
+			}
+
+			$expected = $now->modify(sprintf('%+d days', (int)$seedCase['lastActivityInDays']))->format(DateTimeImmutable::ATOM);
+			$this->assertSame(expected: $expected, actual: $written['lastActivityAt']);
+			$seen++;
+		}
+
+		$this->assertGreaterThan(expected: 0, actual: $seen);
+	}
+
+	/**
 	 * Each task is attached to the case it was seeded under, by that case's id.
 	 *
 	 * @return void

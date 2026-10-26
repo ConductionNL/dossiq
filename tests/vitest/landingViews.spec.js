@@ -163,7 +163,7 @@ describe('My team in the simple structure', () => {
 			schema: table.content.source.schema,
 			filter: table.content.source.filter,
 			extend: ['calculations'],
-			sort: { field: '@self.updated', dir: 'asc' },
+			sort: { field: 'lastActivityAt', dir: 'asc' },
 			limit: 3,
 			presentation: 'rows',
 			title: '{title}',

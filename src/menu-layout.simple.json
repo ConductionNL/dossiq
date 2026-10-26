@@ -417,7 +417,7 @@
 										"isFinalStatus": "false",
 										"statusHiddenInLists": "false",
 										"isDraft": "false",
-										"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
+										"_order": "[{\"key\":\"lastActivityAt\",\"order\":\"asc\"}]"
 									}
 								},
 								"content": {
@@ -432,7 +432,7 @@
 										"calculations"
 									],
 									"sort": {
-										"field": "@self.updated",
+										"field": "lastActivityAt",
 										"dir": "asc"
 									},
 									"limit": 3,
@@ -3076,7 +3076,8 @@
 						"id": "case-plan-card",
 						"type": "plan",
 						"content": {
-							"emptyText": "This case type has no adaptive plan"
+							"emptyText": "This case type has no adaptive plan",
+							"stateLabels": {"active": "Active"}
 						},
 						"visibleWhen": {
 							"any": [
@@ -3468,7 +3469,7 @@
 									"schema": "plannedAction",
 									"includeFields": ["label", "owner", "plannedFor"],
 									"successMessage": "Action planned.",
-									"props": {"case": "@objectId", "state": "planned"}
+									"props": {"case": "@objectId", "state": "planned", "plannedBy": "@me"}
 								},
 								"visibleWhen": {"field": "@self.archived", "op": "empty"}
 							}
@@ -3490,14 +3491,17 @@
 							"icon": "CalendarBlankOutline",
 							"iconTile": true,
 							"title": "{label}",
-							"meta": [
-								"Owner {owner|user}"
-							],
+							"meta": {
+								"parts": [
+									["Owner {owner|user}", "Owner team {ownerGroup|group}"],
+									["planned by {plannedBy|user}", "planned by {plannedByRule}"]
+								]
+							},
 							"trailing": "{plannedFor|date}",
 							"headerNote": "{total} planned",
 							"emptyText": "No next action is planned on this case"
 						},
-						"_rowsNote": "DqZaakTaken Wat hierna komt: the planned actions as the board's rows under a rule (calendar tile, the action, its owner, the planned date at the end) and '{total} gepland' in the title row, instead of a table. Same filter and order: the first row is still the answer to what comes next."
+						"_rowsNote": "DqZaakTaken Wat hierna komt: the planned actions as the board's rows under a rule (calendar tile, the action, its owner (a person, else the team by its name: {ownerGroup|group}, nextcloud-vue feat/r32-template-group-format) and who planned it (the person who added it, else what planned it: plannedByRule, the steps of the case type, which a successor carries over), the planned date at the end) and '{total} gepland' in the title row, instead of a table. Same filter and order: the first row is still the answer to what comes next."
 					},
 					{
 						"id": "case-incidents-card",
@@ -4264,6 +4268,9 @@
 							"themAuthorField": "@object.initiatorDisplayName",
 							"timestampField": "startTime",
 							"bodyField": "summary",
+							"subjectField": "subject",
+							"noteField": "note",
+							"attachmentCountField": "attachmentCount",
 							"subtitle": "Oldest first, with the channel of each message",
 							"showDirection": true,
 							"channelChips": true,
@@ -4738,7 +4745,8 @@
 								"responsePath": "results"
 							},
 							"presentation": "rows",
-							"avatar": "{title}",
+							"avatar": { "text": "{caseTypeTitle}", "size": 32, "tone": "primary" },
+							"ruleAbove": true,
 							"title": "{title}",
 							"meta": [
 								"{identifier} · {caseTypeTitle} · {assigneeName}",
@@ -4753,7 +4761,7 @@
 									"pending-info": "Waiting for information",
 									"in-progress": "In progress",
 									"review": "In review",
-									"closed": "Closed",
+									"closed": "Handled",
 									"stranded": "Stranded",
 									"planned": "Planned"
 								},
@@ -5333,7 +5341,13 @@
 								"ruleAbove": true,
 								"avatar": {
 									"text": "{advisor}",
-									"size": 32
+									"size": 32,
+									"tone": {
+										"field": "status",
+										"map": {
+											"requested": "warning"
+										}
+									}
 								},
 								"title": [
 									"{subject}, {advisor}",
@@ -5360,6 +5374,7 @@
 								},
 								"rowAction": {
 									"label": "Remind",
+									"icon": "BellOutline",
 									"variant": "outlined",
 									"endpoint": "/apps/dossiq/api/advice/{id}/remind",
 									"method": "POST",
@@ -5523,7 +5538,7 @@
 								"isFinalStatus": "false",
 								"statusHiddenInLists": "false",
 								"isDraft": "false",
-								"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
+								"_order": "[{\"key\":\"lastActivityAt\",\"order\":\"asc\"}]"
 							},
 							"placement": "title"
 						}
@@ -5579,7 +5594,7 @@
 				"widgets": {
 					"stalled-cases": {
 						"type": "record-list",
-						"_note": "DqDashboard draws Vastgelopen zaken as rows: the title, the case number and how long it has been idle, without a chevron. The same query as the full structure's table (open cases, least recently changed first); View all is the layout entry's headerLink, to the same list.",
+						"_note": "DqDashboard draws Vastgelopen zaken as rows: the title, the case number and how long it has been idle, without a chevron. The same query as the full structure's table (open cases, least recently worked on first); View all is the layout entry's headerLink, to the same list.",
 						"content": {
 							"register": "dossiq",
 							"schema": "case",
@@ -5592,7 +5607,7 @@
 								"calculations"
 							],
 							"sort": {
-								"field": "@self.updated",
+								"field": "lastActivityAt",
 								"dir": "asc"
 							},
 							"limit": 3,
@@ -6574,6 +6589,7 @@
 						"route": "CaseTypes"
 					}
 				],
+				"_typePillNote": "DqZaaktype boards: the case type's domain (VTH) is a teal pill, as the boards draw it.",
 				"typePill": {
 					"field": "category",
 					"variant": "teal"

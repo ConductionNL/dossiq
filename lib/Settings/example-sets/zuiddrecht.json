@@ -1203,6 +1203,7 @@
 				"confidentiality": "intern",
 				"assignedGroup": "zuiddrecht-vergunningen",
 				"startDate": "{{date:-3}}",
+				"lastActivityAt": "{{datetime:-1 16:40}}",
 				"receivedAt": "{{datetime:-3 20:41}}",
 				"currentStatusEnteredAt": "{{datetime:-3 20:41}}",
 				"statusHistory": [
@@ -1285,6 +1286,7 @@
 				"assignee": "{{cast:daan.uid}}",
 				"assignedGroup": "zuiddrecht-kcc",
 				"startDate": "{{date:-5}}",
+				"lastActivityAt": "{{datetime:-2 11:20}}",
 				"receivedAt": "{{datetime:-5 11:32}}",
 				"currentStatusEnteredAt": "{{datetime:-4 08:50}}",
 				"statusHistory": [
@@ -1542,6 +1544,7 @@
 				"assignee": "{{cast:esra.uid}}",
 				"assignedGroup": "zuiddrecht-vergunningen",
 				"startDate": "{{date:-9}}",
+				"lastActivityAt": "{{datetime:-1 14:05}}",
 				"receivedAt": "{{datetime:-9 07:58}}",
 				"currentStatusEnteredAt": "{{datetime:-6 13:15}}",
 				"statusHistory": [
@@ -2384,7 +2387,7 @@
 			"schema": "mandateDecision",
 			"data": {
 				"decisionNumber": "ZDR-MB-2026-04",
-				"decisionName": "Mandaatbesluit vergunningverlening VTH 2026",
+				"decisionName": "Mandaatbesluit Zuiddrecht 2026",
 				"status": "determined",
 				"effectiveFrom": "{{date:-300}}",
 				"legalBasis": "Artikel 10:3 Algemene wet bestuursrecht"
@@ -3185,6 +3188,7 @@
 				"assignee": "{{cast:esra.uid}}",
 				"assignedGroup": "zuiddrecht-vergunningen",
 				"startDate": "{{date:-19}}",
+				"lastActivityAt": "{{datetime:-2 16:40}}",
 				"receivedAt": "{{datetime:-19 09:00}}",
 				"currentStatusEnteredAt": "{{datetime:-17 10:30}}",
 				"statusHistory": [
@@ -3274,6 +3278,7 @@
 				"assignee": "{{cast:mehmet.uid}}",
 				"assignedGroup": "zuiddrecht-vergunningen",
 				"startDate": "{{date:-40}}",
+				"lastActivityAt": "{{datetime:-1 11:20}}",
 				"receivedAt": "{{datetime:-40 10:30}}",
 				"currentStatusEnteredAt": "{{datetime:-3 09:00}}",
 				"statusHistory": [
@@ -3293,6 +3298,64 @@
 				"tags": [
 					"oosthaven",
 					"buurtfeest"
+				]
+			}
+		},
+		{
+			"key": "subsidies-sportverenigingen",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "subsidieaanvraag"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Beoordeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Subsidies sportverenigingen",
+				"description": "De jaarlijkse ronde: vijf sportverenigingen vragen een bijdrage voor hun jeugdteams. De beoordeling wacht op de ledenlijsten.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "openbaar",
+				"assignee": "{{cast:mehmet.uid}}",
+				"assignedGroup": "zuiddrecht-medewerkers",
+				"startDate": "{{date:-26}}",
+				"lastActivityAt": "{{datetime:-12 10:15}}",
+				"receivedAt": "{{datetime:-26 09:40}}",
+				"currentStatusEnteredAt": "{{datetime:-19 14:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-26 09:40}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-19 14:00}}"
+					}
+				],
+				"tags": [
+					"subsidie",
+					"sport"
 				]
 			}
 		},
@@ -3581,6 +3644,7 @@
 				"assignee": "{{cast:pieter.uid}}",
 				"assignedGroup": "zuiddrecht-juridische-zaken",
 				"startDate": "{{date:-16}}",
+				"lastActivityAt": "{{datetime:-2 14:05}}",
 				"receivedAt": "{{datetime:-16 11:20}}",
 				"currentStatusEnteredAt": "{{datetime:-12 09:00}}",
 				"statusHistory": [
@@ -3646,6 +3710,7 @@
 				"assignee": "{{cast:pieter.uid}}",
 				"assignedGroup": "zuiddrecht-woo-en-informatie",
 				"startDate": "{{date:-28}}",
+				"lastActivityAt": "{{datetime:-1 16:40}}",
 				"receivedAt": "{{datetime:-28 10:05}}",
 				"currentStatusEnteredAt": "{{datetime:-9 14:00}}",
 				"statusHistory": [
@@ -3718,6 +3783,7 @@
 				"assignee": "{{cast:hannabos.uid}}",
 				"assignedGroup": "zuiddrecht-woo-en-informatie",
 				"startDate": "{{date:-3}}",
+				"lastActivityAt": "{{datetime:-2 11:20}}",
 				"receivedAt": "{{datetime:-3 16:40}}",
 				"currentStatusEnteredAt": "{{datetime:-2 09:10}}",
 				"statusHistory": [
@@ -3789,6 +3855,7 @@
 				"assignee": "{{cast:pieter.uid}}",
 				"assignedGroup": "zuiddrecht-vergunningen",
 				"startDate": "{{date:-11}}",
+				"lastActivityAt": "{{datetime:-8 08:45}}",
 				"receivedAt": "{{datetime:-11 13:15}}",
 				"currentStatusEnteredAt": "{{datetime:-8 08:45}}",
 				"statusHistory": [
@@ -4037,6 +4104,7 @@
 				"assignee": "{{cast:pieter.uid}}",
 				"assignedGroup": "zuiddrecht-medewerkers",
 				"startDate": "{{date:-15}}",
+				"lastActivityAt": "{{datetime:-2 16:40}}",
 				"receivedAt": "{{datetime:-15 10:15}}",
 				"currentStatusEnteredAt": "{{datetime:-14 09:00}}",
 				"statusHistory": [
@@ -4097,6 +4165,7 @@
 				"assignee": "{{cast:pieter.uid}}",
 				"assignedGroup": "zuiddrecht-medewerkers",
 				"startDate": "{{date:-16}}",
+				"lastActivityAt": "{{datetime:-1 11:20}}",
 				"receivedAt": "{{datetime:-16 11:20}}",
 				"currentStatusEnteredAt": "{{datetime:-15 09:10}}",
 				"statusHistory": [
@@ -4149,6 +4218,7 @@
 				"assignee": "{{cast:anouk.uid}}",
 				"assignedGroup": "zuiddrecht-toezicht-en-handhaving",
 				"startDate": "{{date:0}}",
+				"lastActivityAt": "{{datetime:-2 14:05}}",
 				"receivedAt": "{{datetime:0 08:40}}",
 				"deadline": "{{date:12}}",
 				"currentStatusEnteredAt": "{{datetime:0 08:40}}",
@@ -7142,6 +7212,7 @@
 				"assignee": "{{cast:pieter.uid}}",
 				"assignedGroup": "zuiddrecht-woo-en-informatie",
 				"startDate": "{{date:-24}}",
+				"lastActivityAt": "{{datetime:-1 16:40}}",
 				"receivedAt": "{{datetime:-24 09:40}}",
 				"currentStatusEnteredAt": "{{datetime:-2 11:00}}",
 				"statusHistory": [
@@ -7203,6 +7274,7 @@
 				"confidentiality": "intern",
 				"assignedGroup": "zuiddrecht-woo-en-informatie",
 				"startDate": "{{date:-1}}",
+				"lastActivityAt": "{{datetime:-2 11:20}}",
 				"receivedAt": "{{datetime:-1 09:15}}",
 				"deadline": "{{date:6}}",
 				"currentStatusEnteredAt": "{{datetime:-1 09:15}}",
@@ -7274,6 +7346,7 @@
 				"confidentiality": "intern",
 				"assignedGroup": "zuiddrecht-woo-en-informatie",
 				"startDate": "{{date:-2}}",
+				"lastActivityAt": "{{datetime:-1 14:05}}",
 				"receivedAt": "{{datetime:-2 14:40}}",
 				"deadline": "{{date:8}}",
 				"currentStatusEnteredAt": "{{datetime:-2 14:40}}",
@@ -7345,6 +7418,7 @@
 				"confidentiality": "intern",
 				"assignedGroup": "zuiddrecht-woo-en-informatie",
 				"startDate": "{{date:-2}}",
+				"lastActivityAt": "{{datetime:-2 16:40}}",
 				"receivedAt": "{{datetime:-2 10:05}}",
 				"deadline": "{{date:8}}",
 				"currentStatusEnteredAt": "{{datetime:-2 10:05}}",
@@ -8610,6 +8684,7 @@
 				"assignee": "{{cast:daan.uid}}",
 				"assignedGroup": "zuiddrecht-kcc",
 				"startDate": "{{date:-1}}",
+				"lastActivityAt": "{{datetime:-1 11:20}}",
 				"receivedAt": "{{datetime:-1 10:05}}",
 				"currentStatusEnteredAt": "{{datetime:-1 10:05}}",
 				"statusHistory": [

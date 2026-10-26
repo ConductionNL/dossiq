@@ -39,6 +39,24 @@ describe('the conversation channels (DqZaakContact)', () => {
 	})
 })
 
+describe('the conversation message lines (DqZaakContact)', () => {
+	// @spec openspec/changes/contact-message-subject-note/specs/contact-message-subject-note/spec.md#requirement-a-contact-moment-carries-its-subject-note-and-attachment-count
+	it('reads the subject above the summary and the note with the attachment count under it', () => {
+		const content = widget('case-resident-thread').content
+		expect(content.bodyField).toBe('summary')
+		expect(content.subjectField).toBe('subject')
+		expect(content.noteField).toBe('note')
+		expect(content.attachmentCountField).toBe('attachmentCount')
+	})
+
+	it('declares those fields on the contact moment', () => {
+		const schema = require('../../lib/Settings/register.d/40-kcc-werkplek.json').components.schemas.contactmoment
+		expect(schema.properties.subject.type).toBe('string')
+		expect(schema.properties.note.type).toBe('string')
+		expect(schema.properties.attachmentCount).toMatchObject({ type: 'integer', minimum: 0 })
+	})
+})
+
 describe('the portal channel on the case page (DqZaakContact)', () => {
 	it('is named after the portal in the chips and the contact-moments table', () => {
 		expect(widget('case-resident-thread').content.channelMap.webformulier).toBe('config:portalName|Web form')

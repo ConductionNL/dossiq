@@ -1,0 +1,23 @@
+{
+  "_note": "case-last-activity-at: when someone last worked on the case (a status move, a note, a document or contact created on it, a completed task). CaseLastActivityListener stamps it; a save that leaves the status alone does not, unlike @self.updated, which the nightly rematerialisation and an example-set refresh move on every case. daysSinceActivity (base file) counts from it and the stalled lists sort on it. case 1.58.0.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "version": "1.58.0",
+        "properties": {
+          "lastActivityAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last activity at",
+            "description": "When someone last worked on the case: a status move, a note, a document or a contact created on it, or a task completed. A save that changes none of these leaves it.",
+            "visible": false
+          }
+        }
+      }
+    }
+  }
+}
