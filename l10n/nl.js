@@ -607,6 +607,7 @@ OC.L10N.register(
         "Afgerond": "Afgerond",
         "Afgewezen": "Afgewezen",
         "After a number of cases": "Na een aantal zaken",
+        "after closing": "na afhandeling",
         "After the court ruling, an appeal (hoger beroep) can be filed at the Council of State (ABRvS) or the Central Appeals Tribunal (CRvB).": "Na de gerechtelijke uitspraak kan hoger beroep worden ingesteld bij de Raad van State (ABRvS) of de Centrale Raad van Beroep (CRvB).",
         "Afwijzing": "Afwijzing",
         "Against": "Tegen",

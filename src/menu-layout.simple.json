@@ -7389,15 +7389,9 @@
 								},
 								{
 									"label": "Retention period",
-									"parts": [
-										{
-											"path": "lawfulPurposeRetention"
-										},
-										{
-											"text": "months"
-										}
-									],
-									"separator": " "
+									"path": "lawfulPurposeRetention",
+									"format": "months",
+									"suffix": " after closing"
 								},
 								{
 									"as": "line",
