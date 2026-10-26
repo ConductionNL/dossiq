@@ -25,7 +25,7 @@
 	@spec openspec/specs/case-management/spec.md
 -->
 <template>
-	<div class="case-custody" data-testid="case-custody">
+	<div class="case-custody cn-rule-above" data-testid="case-custody">
 		<NcLoadingIcon v-if="loading" :size="24" />
 
 		<NcEmptyContent
@@ -577,6 +577,7 @@ export default {
 
 .case-custody__unit {
 	font-weight: 600;
+	line-height: 1.2;
 }
 
 .case-custody__meta {
