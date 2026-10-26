@@ -230,6 +230,7 @@ export default {
 .case-type-field-rights__table {
 	width: 100%;
 	border-collapse: collapse;
+	font-size: 14px;
 }
 
 .case-type-field-rights__table th,
@@ -261,9 +262,11 @@ export default {
 	margin: 0;
 	padding: 0;
 	border: 0;
+	border-radius: 0;
 	background: transparent;
 	color: inherit;
 	font: inherit;
+	line-height: normal;
 	cursor: pointer;
 }
 
@@ -274,6 +277,7 @@ export default {
 	min-width: 22px;
 	height: 22px;
 	min-height: 22px;
+	border-radius: 4px;
 }
 
 .case-type-field-rights__field {
