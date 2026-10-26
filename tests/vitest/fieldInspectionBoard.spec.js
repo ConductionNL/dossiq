@@ -69,6 +69,15 @@ describe('the field inspection board', () => {
 		expect(nl[meta.parts[2]]).toBe('{checklistTemplateRef.sections|count:items} vragen')
 	})
 
+	it('warns in the outbox frame, while offline, how many changes wait', () => {
+		const note = widget('inspection-outbox-offline-note')
+		expect(note.content.connection).toBe('offline')
+		expect(note.content.visibleWhen.source).toMatchObject({ register: 'dossiq', schema: 'syncQueue' })
+		expect(note.content.visibleWhen.source.filter.status).toEqual(widget('inspection-sync-queue').content.filter.status)
+		const nl = JSON.parse(fs.readFileSync(path.join(__dirname, '../../l10n/nl.json'), 'utf8')).translations
+		expect(nl[note.content.text]).toBe('{value} wijzigingen wachten op bereik. Ze gaan vanzelf mee zodra u online bent.')
+	})
+
 	it('opens the running checklist at its first open question', () => {
 		expect(widget('checklist-run').content.startAt).toBe('firstOpen')
 	})
