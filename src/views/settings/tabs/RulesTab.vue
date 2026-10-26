@@ -165,6 +165,7 @@ import {
 } from '../../../services/schemaRules.js'
 import { useObjectStore } from '../../../store/modules/object.js'
 import { useSettingsStore } from '../../../store/modules/settings.js'
+import { resolveTranslatable } from '../../../utils/i18nResolver.js'
 
 export default {
 	name: 'RulesTab',
@@ -267,7 +268,8 @@ export default {
 
 		/** @return {object} The choices the rule dialog offers, as `[{ id, label }]` lists. */
 		choices() {
-			const options = (list, name = 'name') => list.map((o) => ({ id: o.id, label: o[name] || o.title || o.id }))
+			// A name or title can be a language map; the label is its text in the reader's language.
+			const options = (list, name = 'name') => list.map((o) => ({ id: o.id, label: resolveTranslatable(o[name] || o.title || o.id).text }))
 			return {
 				statuses: options(this.catalogue.statusTypes),
 				documentTypes: options(this.catalogue.documentTypes),
