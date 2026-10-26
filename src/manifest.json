@@ -10030,30 +10030,70 @@
 						"id": "side-classification",
 						"type": "facts",
 						"title": "Violation class",
+						"_note": "DqHandhaving Classificatie: the classification as matrix codes, the behaviour row (1-4) and the consequence column (A-D) of the LHS matrix, and the cell they meet in out of the matrix's 16. The matrix version follows as a muted line.",
 						"content": {
 							"fields": [
 								{
 									"label": "Behaviour",
 									"path": "behaviour",
 									"map": {
-										"goedwillend": "well-meaning",
-										"onverschillig": "indifferent",
-										"calculerend": "calculating",
-										"crimineel": "criminal"
+										"goedwillend": "1",
+										"onverschillig": "2",
+										"calculerend": "3",
+										"crimineel": "4"
 									}
 								},
 								{
 									"label": "Consequence",
 									"path": "severity",
 									"map": {
-										"gering": "minor",
-										"aanzienlijk": "considerable",
-										"ernstig": "serious"
+										"gering": "A",
+										"aanzienlijk": "B",
+										"ernstig": "C",
+										"zeer_ernstig": "D"
 									}
 								},
 								{
-									"label": "Matrix version",
-									"path": "matrixVersion"
+									"key": "matrix-cell",
+									"label": "Cell",
+									"separator": " ",
+									"parts": [
+										{
+											"separator": "",
+											"parts": [
+												{
+													"path": "severity",
+													"map": {
+													"gering": "A",
+													"aanzienlijk": "B",
+													"ernstig": "C",
+													"zeer_ernstig": "D"
+												}
+												},
+												{
+													"path": "behaviour",
+													"map": {
+													"goedwillend": "1",
+													"onverschillig": "2",
+													"calculerend": "3",
+													"crimineel": "4"
+												}
+												}
+											]
+										},
+										{
+											"text": "of 16"
+										}
+									]
+								},
+								{
+									"as": "line",
+									"parts": [
+										{
+											"path": "matrixVersion",
+											"label": "Matrix version"
+										}
+									]
 								},
 								{
 									"as": "line",
