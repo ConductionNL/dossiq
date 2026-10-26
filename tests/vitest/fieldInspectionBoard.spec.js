@@ -24,7 +24,7 @@ const widget = (id) => page.config.widgets.find((entry) => entry.id === id)
 describe('the field inspection board', () => {
 	it('reads each inspection of today as its time and checklist', () => {
 		const today = widget('inspections-today').content
-		expect(today.meta).toBe('{scheduledAt|time} · {checklistTemplateRef.name}')
+		expect(today.meta.parts.slice(0, 2)).toEqual(['{scheduledAt|time}', '{checklistTemplateRef.name}'])
 		expect(today.extend).toEqual(['caseRef', 'checklistTemplateRef'])
 	})
 
@@ -62,7 +62,19 @@ describe('the field inspection board', () => {
 		expect(widget('inspection-sync-queue').content.density).toBe('compact')
 	})
 
+	it('says each day card\'s time, checklist and question count, dropping what is empty', () => {
+		const meta = widget('inspections-today').content.meta
+		expect(meta.parts).toEqual(['{scheduledAt|time}', '{checklistTemplateRef.name}', '{checklistTemplateRef.sections|count:items} questions'])
+		const nl = JSON.parse(fs.readFileSync(path.join(__dirname, '../../l10n/nl.json'), 'utf8')).translations
+		expect(nl[meta.parts[2]]).toBe('{checklistTemplateRef.sections|count:items} vragen')
+	})
+
 	it('opens the running checklist at its first open question', () => {
 		expect(widget('checklist-run').content.startAt).toBe('firstOpen')
+	})
+
+	it('asks for a note only under an answer of no, as the board draws it', () => {
+		const run = widget('checklist-run').content
+		expect(run.noteWhen).toEqual({ answers: [run.choiceValues.no] })
 	})
 })

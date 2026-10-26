@@ -89,6 +89,32 @@ export async function fetchBlueprintCatalogue(caseTypeId) {
 }
 
 /**
+ * The case type's role type names per Nextcloud group (`ncGroupId`), so a
+ * rule that names a group can be labelled with the roles it stands for. An
+ * empty map when the role types cannot be read.
+ *
+ * @param {string} caseTypeId The case type.
+ * @return {Promise<Object<string, Array<string>>>} The names per group.
+ * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+ */
+export async function fetchRoleNamesByGroup(caseTypeId) {
+	try {
+		const { data } = await axios.get(generateUrl('/apps/openregister/api/objects/dossiq/roleType'), { params: { caseType: caseTypeId, _limit: 100 } })
+		const names = {}
+		for (const roleType of Array.isArray(data?.results) ? data.results : []) {
+			const group = typeof roleType?.ncGroupId === 'string' ? roleType.ncGroupId : ''
+			const name = typeof roleType?.name === 'string' ? roleType.name.trim() : ''
+			if (group !== '' && name !== '') {
+				names[group] = [...(names[group] || []), name]
+			}
+		}
+		return names
+	} catch {
+		return {}
+	}
+}
+
+/**
  * A stored condition as an editor row.
  *
  * @param {object} condition `{ kind, field?, op?, value?, status?, documentType? }`.

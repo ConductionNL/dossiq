@@ -17,16 +17,37 @@
 		<table v-else class="case-type-field-rights__table">
 			<thead>
 				<tr>
-					<th scope="col">
-						{{ t('dossiq', 'Field') }}
+					<th scope="col" :aria-sort="sortDir === 'asc' ? 'ascending' : (sortDir === 'desc' ? 'descending' : undefined)">
+						<span class="case-type-field-rights__head">
+							<button type="button" class="case-type-field-rights__sort" data-testid="case-type-field-rights-sort" @click="toggleSort">
+								{{ t('dossiq', 'Field') }}
+								<ChevronUp v-if="sortDir === 'asc'" :size="14" />
+								<ChevronDown v-else :size="14" />
+							</button>
+						</span>
 					</th>
-					<th v-for="column in matrix.columns" :key="column.id" scope="col">
-						{{ column.label }}
+					<th v-for="(column, index) in matrix.columns" :key="column.id" scope="col">
+						<span class="case-type-field-rights__head">
+							{{ column.label }}
+							<NcActions class="case-type-field-rights__filter"
+								:aria-label="t('dossiq', 'Filter by {column}', { column: column.label })"
+								:data-testid="`case-type-field-rights-filter-${index}`">
+								<template #icon>
+									<FilterOutline :size="14" />
+								</template>
+								<NcActionCheckbox v-for="state in statesIn(index)"
+									:key="state"
+									:modelValue="(filters[index] || []).includes(state)"
+									@update:modelValue="toggleFilter(index, state)">
+									{{ labelOf(state) }}
+								</NcActionCheckbox>
+							</NcActions>
+						</span>
 					</th>
 				</tr>
 			</thead>
 			<tbody>
-				<tr v-for="row in matrix.rows" :key="row.field" data-testid="case-type-field-rights-row">
+				<tr v-for="row in shownRows" :key="row.field" data-testid="case-type-field-rights-row">
 					<th scope="row" class="case-type-field-rights__field">
 						{{ row.label }}
 					</th>
@@ -43,8 +64,13 @@
 import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import { subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
+import NcActionCheckbox from '@nextcloud/vue/components/NcActionCheckbox'
+import NcActions from '@nextcloud/vue/components/NcActions'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import { fetchBlueprintCatalogue } from '../../services/caseTypeRules.js'
+import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
+import ChevronUp from 'vue-material-design-icons/ChevronUp.vue'
+import FilterOutline from 'vue-material-design-icons/FilterOutline.vue'
+import { fetchBlueprintCatalogue, fetchRoleNamesByGroup } from '../../services/caseTypeRules.js'
 import { useObjectStore } from '../../store/modules/object.js'
 import { fieldRightsMatrix } from '../../utils/fieldRightsMatrix.js'
 
@@ -53,7 +79,7 @@ const PAGE_REFRESH = 'cn:page:refresh'
 export default {
 	name: 'CaseTypeFieldRightsWidget',
 
-	components: { CnStatusBadge, NcLoadingIcon },
+	components: { ChevronDown, ChevronUp, CnStatusBadge, FilterOutline, NcActionCheckbox, NcActions, NcLoadingIcon },
 
 	data() {
 		return {
@@ -61,10 +87,32 @@ export default {
 			rules: [],
 			statuses: [],
 			properties: [],
+			roleNames: {},
+			/** The Field head's sort: '' (as declared), 'asc' or 'desc'. */
+			sortDir: '',
+			/** The role heads' filters: the states each keeps, by column index. */
+			filters: {},
 		}
 	},
 
 	computed: {
+		/**
+		 * The rows the heads leave: those whose cells pass every role filter, in
+		 * the Field head's order.
+		 *
+		 * @return {Array<object>} The rows.
+		 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+		 */
+		shownRows() {
+			const kept = this.matrix.rows.filter((row) => Object.entries(this.filters)
+				.every(([index, states]) => states.length === 0 || states.includes(row.cells[Number(index)]?.state)))
+			if (this.sortDir === '') {
+				return kept
+			}
+			const sign = this.sortDir === 'desc' ? -1 : 1
+			return [...kept].sort((a, b) => sign * a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }))
+		},
+
 		/**
 		 * The case type this page is bound to.
 		 *
@@ -82,7 +130,7 @@ export default {
 		 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
 		 */
 		matrix() {
-			return fieldRightsMatrix({ rules: this.rules, statuses: this.statuses, properties: this.properties })
+			return fieldRightsMatrix({ rules: this.rules, statuses: this.statuses, properties: this.properties, roleNames: this.roleNames })
 		},
 	},
 
@@ -97,6 +145,33 @@ export default {
 
 	methods: {
 		t,
+
+		/** Sort by field: ascending first, then descending. */
+		toggleSort() {
+			this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'
+		},
+
+		/**
+		 * The states a role column holds, once each, in the matrix's order of states.
+		 *
+		 * @param {number} index The column.
+		 * @return {Array<string>} The states.
+		 */
+		statesIn(index) {
+			const present = new Set(this.matrix.rows.map((row) => row.cells[index]?.state).filter(Boolean))
+			return ['required', 'edit', 'readOnly', 'hidden'].filter((state) => present.has(state))
+		},
+
+		/**
+		 * Keep or drop one state in a role column's filter.
+		 *
+		 * @param {number} index The column.
+		 * @param {string} state The state.
+		 */
+		toggleFilter(index, state) {
+			const current = this.filters[index] || []
+			this.filters = { ...this.filters, [index]: current.includes(state) ? current.filter((s) => s !== state) : [...current, state] }
+		},
 
 		/**
 		 * What one cell says, in words.
@@ -144,6 +219,7 @@ export default {
 			this.rules = Array.isArray(caseType?.fieldRoleRules) ? caseType.fieldRoleRules : []
 			this.statuses = blueprint ? blueprint.statusTypes : []
 			this.properties = blueprint ? blueprint.propertyDefinitions : []
+			this.roleNames = await fetchRoleNamesByGroup(this.caseTypeId)
 			this.loading = false
 		},
 	},
@@ -154,6 +230,7 @@ export default {
 .case-type-field-rights__table {
 	width: 100%;
 	border-collapse: collapse;
+	font-size: 14px;
 }
 
 .case-type-field-rights__table th,
@@ -169,6 +246,38 @@ export default {
 	background: var(--color-background-hover);
 	color: var(--color-text-maxcontrast);
 	font-weight: 600;
+}
+
+.case-type-field-rights__head {
+	display: inline-flex;
+	gap: 4px;
+	align-items: center;
+}
+
+.case-type-field-rights__sort {
+	display: inline-flex;
+	gap: 4px;
+	align-items: center;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	line-height: normal;
+	cursor: pointer;
+}
+
+/* The funnel is the boards' 22px control beside a head. */
+.case-type-field-rights__filter :deep(.button-vue) {
+	--button-size: 22px;
+	width: 22px;
+	min-width: 22px;
+	height: 22px;
+	min-height: 22px;
+	border-radius: 4px;
 }
 
 .case-type-field-rights__field {

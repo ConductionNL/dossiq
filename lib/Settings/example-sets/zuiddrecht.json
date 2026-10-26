@@ -1350,6 +1350,10 @@
 			},
 			"data": {
 				"name": "locatie",
+				"title": {
+					"nl": "Locatie",
+					"en": "Location"
+				},
 				"definition": "Locatie",
 				"description": "Het adres van het bouwwerk of de plek, uit de BAG.",
 				"propertyType": "string",
@@ -1373,6 +1377,10 @@
 			},
 			"data": {
 				"name": "aanvrager",
+				"title": {
+					"nl": "Aanvrager",
+					"en": "Applicant"
+				},
 				"definition": "Aanvrager",
 				"description": "De persoon of organisatie die de vergunning aanvraagt.",
 				"propertyType": "string",
@@ -1395,6 +1403,10 @@
 			},
 			"data": {
 				"name": "datumIndieningDso",
+				"title": {
+					"nl": "Datum indiening DSO",
+					"en": "DSO submission date"
+				},
 				"definition": "Datum indiening DSO",
 				"description": "De dag waarop de aanvraag via het Omgevingsloket is ingediend.",
 				"propertyType": "date",
@@ -1418,6 +1430,10 @@
 			},
 			"data": {
 				"name": "omschrijvingProject",
+				"title": {
+					"nl": "Omschrijving project",
+					"en": "Project description"
+				},
 				"definition": "Omschrijving van het project",
 				"description": "Wat de aanvrager wil doen, in zijn eigen woorden uit het Omgevingsloket.",
 				"propertyType": "string",
@@ -1440,6 +1456,10 @@
 			},
 			"data": {
 				"name": "dsoVerzoeknummer",
+				"title": {
+					"nl": "DSO-verzoeknummer",
+					"en": "DSO request number"
+				},
 				"definition": "DSO-verzoeknummer",
 				"description": "Het nummer dat het Omgevingsloket aan de aanvraag gaf.",
 				"propertyType": "string",
@@ -1463,6 +1483,10 @@
 			},
 			"data": {
 				"name": "kadastraalPerceel",
+				"title": {
+					"nl": "Kadastraal perceel",
+					"en": "Cadastral parcel"
+				},
 				"definition": "Kadastraal perceel",
 				"description": "De kadastrale aanduiding van het perceel, zoals ZDR00 K 1234.",
 				"propertyType": "string",
@@ -1795,7 +1819,7 @@
 				"description": "De vergunning is geweigerd, met de gronden en een bezwaarclausule.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"isDraft": false,
-				"publicationRequired": true,
+				"publicationRequired": false,
 				"documentTypes": [
 					"{{object:documenttype-regulier-v4-besluit.id}}"
 				],
@@ -1808,6 +1832,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "bouwkosten",
+				"title": {
+					"nl": "Bouwkosten",
+					"en": "Building costs"
+				},
 				"definition": "Bouwkosten",
 				"description": "De geschatte bouwkosten in euro, zonder btw.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
@@ -1823,6 +1851,18 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "soortBouwwerk",
+				"title": {
+					"nl": "Soort bouwwerk",
+					"en": "Type of structure"
+				},
+				"enumCodes": {
+					"Woning": "WON",
+					"Bijgebouw": "BIJ",
+					"Dakkapel": "DAK",
+					"Bedrijfspand": "BED",
+					"Erfafscheiding": "ERF",
+					"Overig": "OVR"
+				},
 				"definition": "Soort bouwwerk",
 				"description": "Wat er gebouwd wordt.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
@@ -1846,6 +1886,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "welstandsgebied",
+				"title": {
+					"nl": "Welstandsgebied",
+					"en": "Aesthetics zone"
+				},
 				"definition": "Welstandsgebied",
 				"description": "Of het bouwwerk in een gebied met welstandseisen staat.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
@@ -2448,6 +2492,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "bouwkosten",
+				"title": {
+					"nl": "Bouwkosten",
+					"en": "Building costs"
+				},
 				"definition": "Bouwkosten",
 				"description": "De geschatte bouwkosten in euro, zonder btw.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
@@ -2463,6 +2511,18 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "soortBouwwerk",
+				"title": {
+					"nl": "Soort bouwwerk",
+					"en": "Type of structure"
+				},
+				"enumCodes": {
+					"Woning": "WON",
+					"Bijgebouw": "BIJ",
+					"Dakkapel": "DAK",
+					"Bedrijfspand": "BED",
+					"Erfafscheiding": "ERF",
+					"Overig": "OVR"
+				},
 				"definition": "Soort bouwwerk",
 				"description": "Wat er gebouwd wordt.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
@@ -2486,6 +2546,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "welstandsgebied",
+				"title": {
+					"nl": "Welstandsgebied",
+					"en": "Aesthetics zone"
+				},
 				"definition": "Welstandsgebied",
 				"description": "Of het bouwwerk in een gebied met welstandseisen staat.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
@@ -2500,6 +2564,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "situatietekening",
+				"title": {
+					"nl": "Situatietekening",
+					"en": "Site plan"
+				},
 				"definition": "Situatietekening",
 				"description": "Tekening van de situatie na de verbouwing, met maten.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
@@ -4233,11 +4301,36 @@
 			}
 		},
 		{
+			"key": "inspectierapport-molenweg-4",
+			"register": "dossiq",
+			"schema": "inspectieRapport",
+			"lookups": {
+				"template": {
+					"schema": "inspectionChecklistTemplate",
+					"where": {
+						"seedKey": "bouwtoezicht-fase-3-oplevering"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:kapvergunning-molenweg.id}}",
+				"checklist": "{{lookup:template}}",
+				"inspector": "{{cast:jamal.uid}}",
+				"inspectionDate": "{{datetime:-14 14:30}}",
+				"location": "Molenweg 4, 3312 KL Zuiddrecht",
+				"result": "non_conform",
+				"failedItems": 1,
+				"remarks": "Bouwen van een bijgebouw zonder vergunning",
+				"followUpRequired": true
+			}
+		},
+		{
 			"key": "lhs-advies-molenweg-4",
 			"register": "dossiq",
 			"schema": "lhsRecommendation",
 			"data": {
 				"case": "{{object:kapvergunning-molenweg.id}}",
+				"inspection": "{{object:inspectierapport-molenweg-4.id}}",
 				"severity": "ernstig",
 				"behaviour": "onverschillig",
 				"actorType": "burger",
@@ -6680,6 +6773,7 @@
 				"roleName": "Woo en informatie",
 				"roleType": "ambtelijk",
 				"ncGroupId": "zuiddrecht-woo-en-informatie",
+				"teamLead": "{{cast:anouk.uid}}",
 				"parentRoleId": "{{object:afdeling-bedrijfsvoering.id}}"
 			}
 		},
@@ -9682,7 +9776,8 @@
 			},
 			"set": {
 				"ncGroupId": "zuiddrecht-vergunningen",
-				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}"
+				"parentRoleId": "{{object:afdeling-fysiek-domein.id}}",
+				"teamLead": "{{cast:marleen.uid}}"
 			}
 		},
 		{
@@ -10360,23 +10455,16 @@
 			}
 		}
 	],
-	"appointments": [
+	"collectivesPages": [
 		{
-			"key": "hoorzitting-bezwaar-parkeerboete",
+			"key": "werkinstructie-woo-verzoeken",
 			"data": {
-				"object": "{{task:hoorzitting-inplannen.uuid}}",
+				"collective": "Woo en informatie",
+				"title": "Hoe we Woo-verzoeken behandelen",
+				"content": "# Hoe we Woo-verzoeken behandelen\n\nJe beslist binnen vier weken. Je mag één keer twee weken verdagen (Wet open overheid, artikel 4.4).\n\n## Ontvangst\n\nJe registreert het verzoek. Je stuurt binnen een week de ontvangstbevestiging.\n\n## Beoordeling\n\nJe zoekt de documenten in het dossier en bij de afdelingen. Je beoordeelt elk document: openbaar, deels openbaar of niet openbaar. Je noemt bij elke weigering de grond.\n\n## Zienswijze\n\nRaakt een document een derde? Dan vraag je die om een zienswijze. De derde krijgt twee weken.\n\n## Besluit\n\nJe stelt het besluit op met het sjabloon Woo-besluit. De teamleider parafeert. Daarna onderteken je via LibreSign.\n\n## Publiceren\n\nJe publiceert het besluit en de openbare documenten. De verzoeker krijgt het besluit in de Berichtenbox van MijnOverheid.\n\nVragen? Stel ze in het team Woo en informatie.\n",
 				"owner": "{{cast:pieter.uid}}",
-				"summary": "Hoorzitting bezwaar parkeerboete",
-				"start": "{{datetime:4 14:00}}",
-				"end": "{{datetime:4 15:00}}",
-				"location": "Stadskantoor, zaal 2.04",
-				"description": "Hoorzitting met de indiener en de bezwaarcommissie.",
-				"attendees": [
-					{
-						"name": "{{cast:fatima.displayName}}",
-						"email": "{{cast:fatima.email}}",
-						"status": "invited"
-					}
+				"shareWith": [
+					"{{cast:woo-en-informatie.gid}}"
 				]
 			}
 		}
@@ -10408,6 +10496,52 @@
 				"schemaName": "case",
 				"producedAt": "{{datetime:-7 23:30}}",
 				"downloadCount": 1
+			}
+		}
+	],
+	"auditEntries": [
+		{
+			"key": "jeugdwet-toestemming-vastgelegd",
+			"data": {
+				"object": "3d903a5f-7066-50c8-a952-7e1c775055bb",
+				"action": "create",
+				"user": "{{cast:fatma.uid}}",
+				"at": "{{datetime:-15 10:40}}"
+			}
+		},
+		{
+			"key": "jeugdwet-inzage-medisch-verslag",
+			"data": {
+				"object": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+				"action": "file.downloaded",
+				"user": "{{cast:fatma.uid}}",
+				"at": "{{datetime:-12 11:05}}",
+				"changed": {
+					"data": {
+						"fileName": "medisch verslag"
+					}
+				}
+			}
+		}
+	],
+	"appointments": [
+		{
+			"key": "hoorzitting-bezwaar-parkeerboete",
+			"data": {
+				"object": "{{task:hoorzitting-inplannen.uuid}}",
+				"owner": "{{cast:pieter.uid}}",
+				"summary": "Hoorzitting bezwaar parkeerboete",
+				"start": "{{datetime:4 14:00}}",
+				"end": "{{datetime:4 15:00}}",
+				"location": "Stadskantoor, zaal 2.04",
+				"description": "Hoorzitting met de indiener en de bezwaarcommissie.",
+				"attendees": [
+					{
+						"name": "{{cast:fatima.displayName}}",
+						"email": "{{cast:fatima.email}}",
+						"status": "invited"
+					}
+				]
 			}
 		}
 	]

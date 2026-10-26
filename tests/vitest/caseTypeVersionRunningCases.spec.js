@@ -28,8 +28,9 @@ describe('case type versions with their running cases (DqZaaktype)', () => {
 	})
 
 	it('reads date · n lopende zaken, and geen lopende zaken at zero', () => {
-		// A draft has no validFrom yet and reads its last change (draft-version-date).
-		expect(versions.meta.parts).toEqual([['{validFrom|date}', 'Draft, changed {versionDate|date}'], '{runningCases}'])
+		// A draft has no validFrom yet and reads only its last change (draft-version-date): it has no running cases,
+		// so DqZaaktypeOverzicht's "Concept, gewijzigd 7 okt" carries no count.
+		expect(versions.meta.parts).toEqual([['{validFrom|date} · {runningCases}', 'Draft, changed {versionDate|date}']])
 		const text = versions.aggregates.runningCases.text
 		expect([nl[text.zero], nl[text.one], nl[text.other]]).toEqual(['geen lopende zaken', '{count} lopende zaak', '{count} lopende zaken'])
 	})

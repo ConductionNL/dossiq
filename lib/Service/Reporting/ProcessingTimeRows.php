@@ -142,11 +142,11 @@ class ProcessingTimeRows {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function performance(array $completed, array $types): array {
-		$tallies = $this->tally(completed: $completed, types: $types);
+		$tallies = $this->familyTallies(tallies: $this->tally(completed: $completed, types: $types), types: $types);
 
 		$rows = [];
-		foreach ($types as $typeId => $type) {
-			$tally  = $tallies[$typeId];
+		foreach ($tallies as $typeId => $tally) {
+			$type   = $types[$typeId];
 			$target = $type['targetDays'];
 			$avg    = null;
 			$rate   = null;
@@ -172,6 +172,38 @@ class ProcessingTimeRows {
 
 		return $rows;
 	}//end performance()
+
+	/**
+	 * The tallies of every version of one case type added together, under the
+	 * version that holds the most completed records (its name and target are
+	 * the row's). A type without a family is its own.
+	 *
+	 * @param array<string, array{total: int, totalDays: int, withinSla: int}> $tallies One tally per type id.
+	 * @param array<string, array<string, mixed>>                              $types   Prepared types keyed by id.
+	 *
+	 * @return array<string, array{total: int, totalDays: int, withinSla: int}> One tally per family, keyed by its leading type id.
+	 */
+	private function familyTallies(array $tallies, array $types): array {
+		$lead = [];
+		foreach ($tallies as $typeId => $tally) {
+			$family = (string)($types[$typeId]['family'] ?? $typeId);
+			$current = ($lead[$family] ?? null);
+			if ($current === null || $tally['total'] > $tallies[$current]['total']) {
+				$lead[$family] = (string)$typeId;
+			}
+		}
+
+		$out = [];
+		foreach ($tallies as $typeId => $tally) {
+			$key = $lead[(string)($types[$typeId]['family'] ?? $typeId)];
+			$out[$key] ??= ['total' => 0, 'totalDays' => 0, 'withinSla' => 0];
+			$out[$key]['total']     += $tally['total'];
+			$out[$key]['totalDays'] += $tally['totalDays'];
+			$out[$key]['withinSla'] += $tally['withinSla'];
+		}
+
+		return $out;
+	}//end familyTallies()
 
 	/**
 	 * Completed-record counts, day totals and within-target counts per type.

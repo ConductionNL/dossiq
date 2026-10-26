@@ -5,16 +5,10 @@
 <template>
 	<div class="mandaat-matrix-table">
 		<div class="mandaat-matrix-table__toolbar">
-			<NcButton variant="primary" @click="$emit('edit', null)">
-				<template #icon>
-					<Plus :size="18" />
-				</template>
+			<NcButton variant="secondary" @click="$emit('edit', null)">
 				{{ t('dossiq', 'New mandaat') }}
 			</NcButton>
 			<NcButton variant="secondary" @click="$emit('import')">
-				<template #icon>
-					<Import :size="18" />
-				</template>
 				{{ t('dossiq', 'Import from Decidiq') }}
 			</NcButton>
 		</div>
@@ -56,7 +50,7 @@
 						<span
 							class="mandaat-matrix-table__badge"
 							:class="badgeClass(b.status)"
-							>{{ b.status || '—' }}</span
+							>{{ statusLabel(b.status) }}</span
 						>
 					</td>
 					<td>{{ b.inWerkingtreding || '—' }}</td>
@@ -76,8 +70,6 @@
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import FileDocumentMultiple from 'vue-material-design-icons/FileDocumentMultiple.vue'
-import Import from 'vue-material-design-icons/Import.vue'
-import Plus from 'vue-material-design-icons/Plus.vue'
 
 export default {
 	name: 'DelegationMatrixTable',
@@ -85,8 +77,6 @@ export default {
 		NcButton,
 		NcEmptyContent,
 		NcLoadingIcon,
-		Plus,
-		Import,
 		FileDocumentMultiple,
 	},
 
@@ -98,6 +88,24 @@ export default {
 	emits: ['edit', 'import'],
 	methods: {
 		t,
+		/**
+		 * A mandate's status in words; an unknown status as it is stored.
+		 *
+		 * @param {string} status The stored status.
+		 * @return {string} The label.
+		 * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+		 */
+		statusLabel(status) {
+			const labels = {
+				active: t('dossiq', 'Active'),
+				determined: t('dossiq', 'Adopted'),
+				draft: t('dossiq', 'Draft'),
+				expired: t('dossiq', 'Expired'),
+				lapsed: t('dossiq', 'Lapsed'),
+			}
+			return labels[String(status || '').toLowerCase()] || status || '—'
+		},
+
 		/**
 		 * @param {string} status The status.
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md

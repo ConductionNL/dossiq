@@ -18,7 +18,7 @@ import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
 import { formatDuration, parseDuration } from '../utils/durationHelpers.js'
-import { fieldFill, fieldInCaseList, fieldKind, fieldOrigin } from '../utils/fieldDescription.js'
+import { fieldFill, fieldInCaseList, fieldKind, fieldOrigin, fieldTitle } from '../utils/fieldDescription.js'
 import { portalName } from '../utils/portalName.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
 import { caseAddress } from './caseAddress.js'
@@ -270,6 +270,16 @@ export default {
 	 * @spec openspec/changes/case-type-fields-origin-and-list/specs/case-types/spec.md
 	 */
 	fieldOrigin: (value, row) => fieldOrigin(row),
+
+	/**
+	 * What a person reads for a case type field: its title, else its name.
+	 *
+	 * @param {unknown} value The cell value (unused).
+	 * @param {object} row The field.
+	 * @return {string} The words.
+	 * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
+	 */
+	fieldTitle: (value, row) => fieldTitle(row),
 
 	/**
 	 * Whether the case type on the page shows the field as a case list column.

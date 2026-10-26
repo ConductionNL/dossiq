@@ -70,7 +70,13 @@
 							"presentation": "cards",
 							"density": "compact",
 							"title": ["{location}", "{caseRef.title}"],
-							"meta": "{scheduledAt|time} · {checklistTemplateRef.name}",
+							"meta": {
+								"parts": [
+									"{scheduledAt|time}",
+									"{checklistTemplateRef.name}",
+									"{checklistTemplateRef.sections|count:items} questions"
+								]
+							},
 							"pill": {
 								"field": "status",
 								"labels": {
@@ -141,6 +147,9 @@
 								"yes": "ja",
 								"no": "nee",
 								"na": "nvt"
+							},
+							"noteWhen": {
+								"answers": ["nee"]
 							},
 							"photoRequiredValues": {
 								"nooit": "never",

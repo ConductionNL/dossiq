@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\Access\CaseTypeRightsMatrixRows;
 use OCA\Dossiq\Service\Access\OrganisationRoles;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\MandaatCheckService;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCP\IL10N;
 
 /**
@@ -67,12 +68,14 @@ class CaseTypeRightsByRole {
 	 * @param IL10N               $l10n      Words the cells.
 	 * @param MandaatCheckService $mandates  Reads the mandates that apply to the case type.
 	 * @param OrganisationRoles   $roles     Knows a role by id and by name.
+	 * @param TranslatedText|null $text      Reads a status name, a language map, in the reader's language.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $resolver,
 		private readonly IL10N $l10n,
 		private readonly MandaatCheckService $mandates,
 		private readonly OrganisationRoles $roles,
+		private readonly ?TranslatedText $text=null,
 	) {
 	}//end __construct()
 
@@ -231,12 +234,29 @@ class CaseTypeRightsByRole {
 		foreach ($this->resolver->statusTypesFor(caseTypeId: $caseTypeId) as $status) {
 			$id = (string)($status['id'] ?? ($status['@self']['id'] ?? ''));
 			if ($id !== '') {
-				$names[$id] = (string)($status['name'] ?? $id);
+				$names[$id] = $this->nameOf(name: ($status['name'] ?? null), fallback: $id);
 			}
 		}
 
 		return $names;
 	}//end statusNames()
+
+	/**
+	 * A status name as text: a language map in the reader's language.
+	 *
+	 * @param mixed  $name     The stored name, a string or a language map.
+	 * @param string $fallback What to say when it has no text.
+	 *
+	 * @return string The name.
+	 */
+	private function nameOf(mixed $name, string $fallback): string {
+		$text = trim(($this->text ?? new TranslatedText(l10n: $this->l10n))->forReader(value: $name));
+		if ($text === '') {
+			return $fallback;
+		}
+
+		return $text;
+	}//end nameOf()
 
 	/**
 	 * The Decide cell per role, from the mandate register.

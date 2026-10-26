@@ -53,7 +53,7 @@ class CaseTypeRightsByRoleTest extends TestCase {
 	private function service(?array $matrix, array $mandates = [], bool $registerUnreadable = false): CaseTypeRightsByRole {
 		$resolver = $this->createMock(CaseTypeResolver::class);
 		$resolver->method('effectiveCaseType')->willReturn($matrix === null ? [] : ['id' => 'ct-1', 'slug' => 'omgevingsvergunning', 'rightsMatrix' => $matrix]);
-		$resolver->method('statusTypesFor')->willReturn([['id' => 'st-1', 'name' => 'Fase 1'], ['id' => 'st-2', 'name' => 'Fase 2']]);
+		$resolver->method('statusTypesFor')->willReturn([['id' => 'st-1', 'name' => 'Fase 1'], ['id' => 'st-2', 'name' => ['nl' => 'Fase 2', 'en' => 'Phase 2']]]);
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
 
@@ -123,6 +123,20 @@ class CaseTypeRightsByRoleTest extends TestCase {
 			$rows[3]
 		);
 	}//end testColumnsFromTheVerbs()
+
+	/**
+	 * A role limited to statuses names them, a language-map name read as text
+	 * (r31 DqZaaktypeOverzicht printed "Array").
+	 *
+	 * @return void
+	 */
+	public function testHandleNamesItsStatusesAsText(): void {
+		$rows = $this->service(
+			[['department' => 'Vergunningen', 'role' => 'Intaker', 'confidentiality' => 'openbaar', 'actions' => ['read', 'update'], 'statuses' => ['st-1', 'st-2']]]
+		)->rowsFor(caseTypeId: 'ct-1');
+
+		$this->assertSame('Fase 1, Fase 2', $rows[0]['handle']);
+	}//end testHandleNamesItsStatusesAsText()
 
 	/**
 	 * A row past its end date grants nothing any more.

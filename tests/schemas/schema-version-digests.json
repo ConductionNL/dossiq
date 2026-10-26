@@ -613,7 +613,7 @@
     },
     "lib/Settings/dossiq_register.json::case": {
         "version": "1.53.0",
-        "digest": "15788d538ea2e72b7ddcc4f6b7def38c991fef639ba41e2393e13a3d762abb91"
+        "digest": "b04fd6d5a0db524911f95bd043820b6d9b65a2f019f9b3520028ed07d803bbb5"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -664,7 +664,7 @@
         "digest": "edf99e78dccf60f40528c7ec7906bda9a92c691e0142906b9d649af2120ac14a"
     },
     "lib/Settings/dossiq_register.json::caseType": {
-        "version": "1.24.0",
+        "version": "1.44.0",
         "digest": "dbbfd52696a00662451f8e487669d62c5b96851e3e68cff4350fa5cdf5983038"
     },
     "lib/Settings/dossiq_register.json::casetransfer": {
@@ -1355,6 +1355,10 @@
         "version": "1.8.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/69-field-title-and-option-codes.json::propertyDefinition": {
+        "version": "1.9.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/70-cmmn-case-model.json::caseModel": {
         "version": "1.0.1",
         "digest": "4b8c3b0310eaae7f6ffb7fd86ee383eb70130dc0b8a3e2714d54579cd9432dca"
@@ -1715,8 +1719,20 @@
         "version": "1.24.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/98-lhs-override-authority-words.json::lhsRecommendation": {
+        "version": "1.3.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/98-shipped-row-fingerprint.json::shippedOrigin": {
         "version": "1.1.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-deadline-is-a-fallback.json::case": {
+        "version": "1.56.0",
+        "digest": "bccdde205e895600b8476004174994acce1a763354399f45ccd957709e43bd4c"
+    },
+    "lib/Settings/register.d/99-case-dedup-threshold.json::case": {
+        "version": "1.57.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-macro-rights.json::case": {

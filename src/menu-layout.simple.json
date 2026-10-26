@@ -494,7 +494,7 @@
 									},
 									"actions": [
 										{
-											"label": "Open these cases",
+											"label": "All cases past their deadline",
 											"route": {
 												"name": "Cases",
 												"query": {
@@ -824,7 +824,8 @@
 										]
 									},
 									"pill": {
-										"field": "status.name"
+										"field": "status.name",
+										"colorField": "status.colour"
 									},
 									"trailing": [
 										"{@self.viewedAt|ago}"
@@ -858,7 +859,8 @@
 									"title": "{title}",
 									"meta": "{identifier}",
 									"pill": {
-										"field": "status.name"
+										"field": "status.name",
+										"colorField": "status.colour"
 									},
 									"rowRoute": "CaseDetail",
 									"emptyText": "Follow a case to keep an eye on it here"
@@ -1152,7 +1154,8 @@
 									},
 									"title": "{title}",
 									"meta": "{identifier} · {initiatorDisplayName}",
-									"badge": "{resultPublicLabel}"
+									"badge": "{resultPublicLabel}",
+									"badgeVariant": "teal"
 								},
 								"facts": [
 									{
@@ -1490,8 +1493,10 @@
 								"schema": "caseType",
 								"id": "@object.caseType"
 							},
+							"_linkNote": "DqZaak Werkinstructie: the page's own title and where it lives (\"Hoe we Woo-verzoeken behandelen\", \"Uit Collectives, team Woo en informatie.\"), from the case type's knowledgeBasePage (nextcloud-vue facts link label/note placeholders).",
 							"link": {
-								"label": "Read how we handle this kind of case",
+								"label": "{knowledgeBasePage:last-segment}",
+								"note": "From Collectives, team {knowledgeBasePage:first-segment}.",
 								"icon": "BookOpenPageVariant",
 								"href": "{knowledgeBasePage}",
 								"hrefBase": "/apps/collectives/",
@@ -1683,12 +1688,16 @@
 						"content": {
 							"layout": "stacked",
 							"maxDisplay": 3,
+							"excludeActors": [
+								"System"
+							],
 							"excludeActions": ["read"],
 							"actionLabels": {
 								"dossiq.case.access-purpose": "Case opened, purpose {changed.purpose}",
 								"dossiq.case.access-role": "Added as {changed.role} on opening",
 								"create": "Case created",
 								"update": "Case changed",
+								"file.downloaded": "Viewed {changed.data.fileName}",
 								"consent.create": "Consent recorded",
 								"consent.update": "Consent changed"
 							},
@@ -2499,10 +2508,19 @@
 									"editable": false,
 									"label": "Statutory term",
 									"format": "duration",
-									"extendBy": "statutoryExtension"
+									"extendBy": "statutoryExtension",
+									"order": 1
+								},
+								"legalBasis": {
+									"label": "Legal ground",
+									"order": 2
+								},
+								"paymentState": {
+									"order": 3
 								},
 								"paymentStateCheckedAt": {
-									"label": "Last checked"
+									"label": "Last checked",
+									"order": 4
 								}
 							}
 						}
@@ -2526,7 +2544,21 @@
 						"_headerActionsNote": "DqZaak/DqZaakMeer Flows: \"Flow uitvoeren\" in the card's title row, the case's own start-flow dialog, shown while the case has a flow it may start (as the header action of the same name).",
 						"headerActions": [
 							{ "label": "Run flow", "icon": "Play", "visibleWhen": { "field": "hasStartableFlows", "op": "eq", "value": true }, "action": { "type": "open-modal", "target": "CaseStartFlowDialog" } }
-						]
+						],
+						"_contentNote": "DqZaak/DqZaakMeer Flows: the runs only, ruled, each with its trigger in words, a status pill and when it started (nextcloud-vue CnFlowRunsWidget statusPill). The other keys repeat the manifest's placement.",
+						"content": {
+							"subject": "@objectId",
+							"limit": 5,
+							"pollSeconds": 0,
+							"rowRoute": "FlowDetail",
+							"emptyText": "No flow is running for this case",
+							"statusPill": true,
+							"historyTitle": false,
+							"quietLineWithHistory": false,
+							"age": "datetime",
+							"statusLabels": { "completed": "Succeeded", "failed": "Failed", "dead_letter": "Failed" },
+							"triggerLabels": { "object.created": "Started when the case was created", "object.updated": "Started at a status change", "manual": "Started by hand" }
+						}
 					},
 					"case-kpis-hours": {
 						"visibleWhen": {
@@ -2840,15 +2872,18 @@
 								"receivedAt": {
 									"label": "Registration date",
 									"editable": false,
-									"order": 6
+									"order": 6,
+									"format": "date-long"
 								},
 								"startDate": {
 									"label": "Start date",
-									"order": 7
+									"order": 7,
+									"format": "date-long"
 								},
 								"deadline": {
 									"label": "Decide by",
-									"order": 8
+									"order": 8,
+									"format": "date-long"
 								},
 								"assignee": {
 									"label": "Handler",
@@ -2865,19 +2900,23 @@
 								"archiveStatus": {
 									"label": "Archive status",
 									"editable": false,
-									"order": 14
+									"order": 14,
+									"enumLabels": {"nog_te_archiveren": "Not archived yet", "archived": "Archived", "archived_retention_period_unknown": "Archived, retention period unknown", "overgedragen": "Transferred"}
 								},
 								"parentCase": {
 									"label": "Parent case",
-									"order": 15
+									"order": 15,
+									"emptyValue": "None"
 								},
 								"externalApplication": {
 									"label": "Handled elsewhere",
 									"editable": false,
-									"order": 18
+									"order": 18,
+									"emptyValue": "No"
 								},
 								"result": {
-									"order": 12
+									"order": 12,
+									"emptyValue": "No result yet"
 								},
 								"impact": {
 									"order": 16
@@ -3449,6 +3488,7 @@
 							"presentation": "rows",
 							"ruleAbove": true,
 							"icon": "CalendarBlankOutline",
+							"iconTile": true,
 							"title": "{label}",
 							"meta": [
 								"Owner {owner|user}"
@@ -4217,6 +4257,7 @@
 								"balie": "Desk",
 								"brief": "Letter"
 							},
+							"channelIcons": { "phone": "Phone", "email": "EmailOutline", "webformulier": "Earth", "chat": "MessageTextOutline", "social_media": "ShareVariant", "balie": "OfficeBuildingOutline", "brief": "EmailOpenOutline" },
 							"senderField": "callerIdentification",
 							"usAuthorField": "kccEmployeeId",
 							"usAuthorFormat": "user",
@@ -5160,7 +5201,7 @@
 								{
 									"key": "decidedBy",
 									"label": "User",
-									"format": "user"
+									"formatter": "userName"
 								},
 								{
 									"key": "prompt",
@@ -5181,6 +5222,12 @@
 										"overridden": "Adapted",
 										"unused": "Not used",
 										"denied": "Rejected"
+									},
+									"colorMap": {
+										"approved": "success",
+										"overridden": "info",
+										"unused": "default",
+										"denied": "error"
 									}
 								},
 								{
@@ -5188,6 +5235,9 @@
 									"label": "Model"
 								}
 							],
+							"rowTitle": "text",
+							"sortable": true,
+							"filterable": true,
 							"emptyText": "The assistant has made no suggestions on this case yet",
 							"allowCreate": false,
 							"export": {
@@ -5310,6 +5360,7 @@
 								},
 								"rowAction": {
 									"label": "Remind",
+									"variant": "outlined",
 									"endpoint": "/apps/dossiq/api/advice/{id}/remind",
 									"method": "POST",
 									"labels": {
@@ -6165,7 +6216,7 @@
 					},
 					{
 						"key": "subjectLabel",
-						"width": "170px",
+						"width": "168px",
 						"filterField": "objectUuid",
 						"label": "Subject",
 						"cellClass": "cn-cell--wrap",
@@ -6184,6 +6235,7 @@
 					},
 					{
 						"key": "state",
+						"width": "185px",
 						"label": "Status",
 						"_note": "Board DqTaken: the state in the task page's words (\"In uitvoering\", the TaskDetail pill), not the library's \"In progress\". The tones are keyed on the state, so they hold in every language.",
 						"enum": ["available", "enabled", "active", "completed", "terminated", "disabled"],
@@ -6207,6 +6259,7 @@
 					},
 					{
 						"key": "priorityLabel",
+						"width": "133px",
 						"label": "Priority",
 						"filterField": "priority",
 						"sortable": true,
@@ -6221,6 +6274,7 @@
 					},
 					{
 						"key": "dueAt",
+						"width": "133px",
 						"label": "Task deadline",
 						"sortable": true,
 						"widget": "date",
@@ -6521,7 +6575,8 @@
 					}
 				],
 				"typePill": {
-					"field": "category"
+					"field": "category",
+					"variant": "teal"
 				},
 				"statusPill": {
 					"field": "isDraft",
@@ -6564,13 +6619,13 @@
 							"limit": 5,
 							"presentation": "rows",
 							"title": "Version {version}",
+							"_metaNote": "A draft has no running cases (cases start on a published version), so its line is only when it changed, as DqZaaktypeOverzicht draws it; a published version reads its date and its running cases. A template with an empty token empties itself, so the first alternative only fills for a published version.",
 							"meta": {
 								"parts": [
 									[
-										"{validFrom|date}",
+										"{validFrom|date} · {runningCases}",
 										"Draft, changed {versionDate|date}"
-									],
-									"{runningCases}"
+									]
 								]
 							},
 							"aggregates": {
@@ -6748,7 +6803,7 @@
 					{
 						"id": "side-case-type-choice-list",
 						"type": "field-list",
-						"title": "Choice list: {name}",
+						"title": "Choice list: {name|fieldTitle}",
 						"_note": "DqZaaktypeVelden Keuzelijst: the options of the field selected in the Fields table, or of its first field with a choice list (nextcloud-vue side-card-follows-row). The options live on that field's own propertyDefinition record, so the card follows the table's selected row and saves to it.",
 						"tabs": ["fields"],
 						"follows": {
@@ -6762,6 +6817,10 @@
 						},
 						"content": {
 							"field": "enumValues",
+							"variant": "options",
+							"code": {
+								"field": "enumCodes"
+							},
 							"add": {
 								"label": "Add option",
 								"trigger": "button",
@@ -6854,6 +6913,7 @@
 							"tab": "history"
 						},
 						"content": {
+							"layout": "stacked",
 							"excludeActions": ["read"],
 							"actionLabels": {
 								"create": "Case type created",
@@ -7159,6 +7219,9 @@
 								"responsePath": "rows"
 							},
 							"presentation": "table",
+							"tableLook": "data",
+							"sortable": true,
+							"filterable": true,
 							"columns": [
 								{
 									"label": "Role",
@@ -7592,7 +7655,14 @@
 								{
 									"key": "archivalPeriod",
 									"label": "Archival period",
-									"formatter": "isoDuration"
+									"formatter": "isoDuration",
+									"emptyValueBy": {
+										"field": "archivalAction",
+										"values": {
+											"bewaren": "Kept permanently",
+											"blijvend_bewaren": "Kept permanently"
+										}
+									}
 								}
 							],
 							"emptyText": "This case type has no results yet",

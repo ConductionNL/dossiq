@@ -5892,7 +5892,8 @@
 									},
 									"title": "{title}",
 									"meta": "{identifier} · {initiatorDisplayName}",
-									"badge": "{resultPublicLabel}"
+									"badge": "{resultPublicLabel}",
+									"badgeVariant": "teal"
 								},
 								"facts": [
 									{
@@ -8566,6 +8567,17 @@
 									"format": { "style": "number", "decimals": 0 }
 								}
 							],
+							"limit": 3,
+							"viewAllRoute": {
+								"name": "Cases",
+								"query": {
+									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
+									"isDraft": "false",
+									"_order": "[{\"key\":\"deadline\",\"order\":\"asc\"}]"
+								}
+							},
+							"viewAllLabel": "View all",
 							"rowRoute": "CaseDetail",
 							"emptyText": "No cases at risk"
 						}
@@ -8645,11 +8657,12 @@
 									"colorMap": {
 										"good": "success",
 										"warning": "warning",
-										"critical": "error",
+										"critical": "warning",
 										"no-target": "default"
 									}
 								}
-							]
+							],
+							"pageSize": 4
 						}
 					}
 				],
@@ -10060,7 +10073,8 @@
 								},
 								{
 									"label": "Handler",
-									"path": "recommendedBy"
+									"path": "recommendedBy",
+									"format": "user"
 								}
 							]
 						}
@@ -10069,30 +10083,70 @@
 						"id": "side-classification",
 						"type": "facts",
 						"title": "Violation class",
+						"_note": "DqHandhaving Classificatie: the classification as matrix codes, the behaviour row (1-4) and the consequence column (A-D) of the LHS matrix, and the cell they meet in out of the matrix's 16. The matrix version follows as a muted line.",
 						"content": {
 							"fields": [
 								{
 									"label": "Behaviour",
 									"path": "behaviour",
 									"map": {
-										"goedwillend": "well-meaning",
-										"onverschillig": "indifferent",
-										"calculerend": "calculating",
-										"crimineel": "criminal"
+										"goedwillend": "1",
+										"onverschillig": "2",
+										"calculerend": "3",
+										"crimineel": "4"
 									}
 								},
 								{
 									"label": "Consequence",
 									"path": "severity",
 									"map": {
-										"gering": "minor",
-										"aanzienlijk": "considerable",
-										"ernstig": "serious"
+										"gering": "A",
+										"aanzienlijk": "B",
+										"ernstig": "C",
+										"zeer_ernstig": "D"
 									}
 								},
 								{
-									"label": "Matrix version",
-									"path": "matrixVersion"
+									"key": "matrix-cell",
+									"label": "Cell",
+									"separator": " ",
+									"parts": [
+										{
+											"separator": "",
+											"parts": [
+												{
+													"path": "severity",
+													"map": {
+													"gering": "A",
+													"aanzienlijk": "B",
+													"ernstig": "C",
+													"zeer_ernstig": "D"
+												}
+												},
+												{
+													"path": "behaviour",
+													"map": {
+													"goedwillend": "1",
+													"onverschillig": "2",
+													"calculerend": "3",
+													"crimineel": "4"
+												}
+												}
+											]
+										},
+										{
+											"text": "of 16"
+										}
+									]
+								},
+								{
+									"as": "line",
+									"parts": [
+										{
+											"path": "matrixVersion",
+											"label": "Matrix version"
+										}
+									]
 								},
 								{
 									"as": "line",
@@ -10217,7 +10271,7 @@
 									"path": "overrideAuthority",
 									"map": {
 										"inspector": "Inspector",
-										"manager": "Manager"
+										"manager": "Enforcement team lead"
 									}
 								},
 								{
@@ -10240,7 +10294,18 @@
 						"id": "side-history",
 						"type": "audit-trail",
 						"title": "Record history",
-						"icon": "History"
+						"icon": "History",
+						"_note": "DqHandhaving Historie: what happened to the advice, the action on one line and who and when under it. Opening the advice is not an event.",
+						"content": {
+							"layout": "stacked",
+							"excludeActions": [
+								"read"
+							],
+							"actionLabels": {
+								"create": "Advice calculated",
+								"update": "Advice updated"
+							}
+						}
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
@@ -10349,9 +10414,10 @@
 							},
 							"notice": {
 								"lead": "Advice: {intervention}",
-								"text": "Outcome of the decision table, version {version}, with {behaviour} and {consequence}.",
+								"text": "Outcome of the decision table {matrix} version {version}, with {behaviour} and {consequence}.",
 								"tone": "info",
 								"values": {
+									"matrix": "@source.name",
 									"intervention": "@object.recommendedIntervention",
 									"version": "@object.matrixVersion",
 									"behaviour": "@object.behaviour",
@@ -11650,7 +11716,7 @@
 								"responsePath": "rows"
 							},
 							"columns": [
-								{ "key": "caseIdentifier", "label": "Case" },
+								{ "key": "caseIdentifier", "label": "Case", "widget": "link", "widgetProps": { "route": "CaseDetail", "params": { "id": "caseId" } } },
 								{ "key": "caseTypeTitle", "label": "Case type" },
 								{ "key": "requester", "label": "Requester" },
 								{ "key": "forfeitDate", "label": "Forfeited on", "format": "date" },
@@ -12625,6 +12691,7 @@
 								{
 									"key": "name",
 									"label": "Field",
+									"formatter": "fieldTitle",
 									"cellClass": "cn-cell--wrap"
 								},
 								{
@@ -13729,7 +13796,17 @@
 							"meta": "{identifier} · {caseType.title}",
 							"pill": {
 								"field": "status.name",
-								"variant": "purple"
+								"variant": "purple",
+								"variantWhen": [
+									{
+										"when": {
+											"field": "isFinalStatus",
+											"op": "eq",
+											"value": true
+										},
+										"variant": "success"
+									}
+								]
 							},
 							"trailing": [
 								"Done {endDate|date}",
@@ -14497,7 +14574,17 @@
 							"meta": "{identifier} · {caseType.title}",
 							"pill": {
 								"field": "status.name",
-								"variant": "purple"
+								"variant": "purple",
+								"variantWhen": [
+									{
+										"when": {
+											"field": "isFinalStatus",
+											"op": "eq",
+											"value": true
+										},
+										"variant": "success"
+									}
+								]
 							},
 							"trailing": [
 								"Done {endDate|date}",

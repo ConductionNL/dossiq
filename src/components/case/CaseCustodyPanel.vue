@@ -592,6 +592,7 @@ export default {
 	background: var(--color-background-dark);
 	font-size: 13px;
 	font-weight: 600;
+	line-height: normal;
 	white-space: nowrap;
 }
 
