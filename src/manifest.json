@@ -8656,7 +8656,7 @@
 									"colorMap": {
 										"good": "success",
 										"warning": "warning",
-										"critical": "error",
+										"critical": "warning",
 										"no-target": "default"
 									}
 								}
