@@ -4223,6 +4223,30 @@
 			}
 		},
 		{
+			"key": "inspectierapport-molenweg-4",
+			"register": "dossiq",
+			"schema": "inspectieRapport",
+			"lookups": {
+				"template": {
+					"schema": "inspectionChecklistTemplate",
+					"where": {
+						"seedKey": "bouwtoezicht-fase-3-oplevering"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:kapvergunning-molenweg.id}}",
+				"checklist": "{{lookup:template}}",
+				"inspector": "{{cast:jamal.uid}}",
+				"inspectionDate": "{{datetime:-14 14:30}}",
+				"location": "Molenweg 4, 3312 KL Zuiddrecht",
+				"result": "non_conform",
+				"failedItems": 1,
+				"remarks": "Bouwen van een bijgebouw zonder vergunning",
+				"followUpRequired": true
+			}
+		},
+		{
 			"key": "lhs-advies-molenweg-4",
 			"register": "dossiq",
 			"schema": "lhsRecommendation",
@@ -9043,30 +9067,6 @@
 				"objectIdentification": "ST-0007",
 				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/market-pitch/{{lookup:object}}",
 				"description": "De standplaats die is afgewezen"
-			}
-		},
-		{
-			"key": "inspectierapport-molenweg-4",
-			"register": "dossiq",
-			"schema": "inspectieRapport",
-			"lookups": {
-				"template": {
-					"schema": "inspectionChecklistTemplate",
-					"where": {
-						"seedKey": "bouwtoezicht-fase-3-oplevering"
-					}
-				}
-			},
-			"data": {
-				"case": "{{object:kapvergunning-molenweg.id}}",
-				"checklist": "{{lookup:template}}",
-				"inspector": "{{cast:jamal.uid}}",
-				"inspectionDate": "{{datetime:-14 14:30}}",
-				"location": "Molenweg 4, 3312 KL Zuiddrecht",
-				"result": "non_conform",
-				"failedItems": 1,
-				"remarks": "Bouwen van een bijgebouw zonder vergunning",
-				"followUpRequired": true
 			}
 		}
 	],
