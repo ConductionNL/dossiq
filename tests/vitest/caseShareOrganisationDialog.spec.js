@@ -33,10 +33,14 @@ vi.mock('@nextcloud/router', () => ({ generateUrl: (url) => url }))
  */
 async function mountDialog() {
 	const axios = (await import('@nextcloud/axios')).default
+	// The organisations index lists only the user's own memberships; every
+	// organisation, partners included, comes from the search endpoint.
 	axios.get.mockImplementation((url) => Promise.resolve({
-		data: String(url).includes('organisations')
-			? { results: [{ id: 'org-1', name: 'Omgevingsdienst', domain: 'odzhz.nl', type: 'partner' }, { id: 'own', name: 'Gemeente', type: 'tenant' }] }
-			: { title: 'Verlichting fietspad Lindelaan', identifier: '2026-0082' },
+		data: String(url).includes('organisations/search')
+			? { organisations: [{ id: 'org-1', name: 'Omgevingsdienst', domain: 'odzhz.nl', type: 'partner' }, { id: 'own', name: 'Gemeente', type: 'tenant' }] }
+			: String(url).includes('organisations')
+				? { results: [{ id: 'own', name: 'Gemeente', type: 'tenant' }] }
+				: { title: 'Verlichting fietspad Lindelaan', identifier: '2026-0082' },
 	}))
 	axios.post.mockResolvedValue({ data: { success: true } })
 	const wrapper = mount(CaseShareOrganisationDialog, {
@@ -59,6 +63,7 @@ async function mountDialog() {
 }
 
 describe('CaseShareOrganisationDialog', () => {
+	// @spec openspec/changes/share-dialog-lists-every-partner/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
 	it('offers partner organisations only, named with their domain, and heads with the case', async () => {
 		const wrapper = await mountDialog()
 		expect(wrapper.vm.partners.map((p) => p.label)).toEqual(['Omgevingsdienst (odzhz.nl)'])
