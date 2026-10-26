@@ -12581,11 +12581,13 @@
 							},
 							"sortable": true,
 							"filterable": true,
+							"fitWidth": true,
 							"limit": 100,
 							"columns": [
 								{
 									"key": "name",
-									"label": "Field"
+									"label": "Field",
+									"cellClass": "cn-cell--wrap"
 								},
 								{
 									"key": "propertyType",
