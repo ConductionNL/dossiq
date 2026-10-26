@@ -1747,6 +1747,9 @@
                         "channels": [
                             "nc-notification"
                         ],
+                        "optInChannels": [
+                            "email"
+                        ],
                         "recipients": [
                             {
                                 "kind": "field",
@@ -1771,6 +1774,9 @@
                         "enabled": true,
                         "channels": [
                             "nc-notification"
+                        ],
+                        "optInChannels": [
+                            "email"
                         ],
                         "recipients": [
                             {
@@ -1802,6 +1808,9 @@
                         "channels": [
                             "nc-notification"
                         ],
+                        "optInChannels": [
+                            "email"
+                        ],
                         "recipients": [
                             {
                                 "kind": "field",
@@ -1820,6 +1829,9 @@
                         "enabled": true,
                         "channels": [
                             "nc-notification"
+                        ],
+                        "optInChannels": [
+                            "email"
                         ],
                         "recipients": [
                             {

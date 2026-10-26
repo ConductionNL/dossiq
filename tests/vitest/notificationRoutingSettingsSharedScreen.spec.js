@@ -201,6 +201,37 @@ describe('a change goes back to the platform', () => {
 		})
 	})
 
+	it('switches e-mail on for one notification and keeps its Nextcloud channel', async () => {
+		fetchPreferences.mockResolvedValue([
+			{
+				schema: 'case',
+				notification: 'caseAssigned',
+				enabled: true,
+				channels: ['nc-notification'],
+				availableChannels: ['nc-notification', 'email'],
+				optInChannels: ['email'],
+				source: 'schema-default',
+			},
+		])
+		const wrapper = await mountSettings()
+
+		wrapper.findComponent(SharedScreenStub).vm.$emit('change', {
+			eventId: 'case-caseAssigned',
+			channelId: 'email',
+			scope: '',
+			value: true,
+		})
+		await flushPromises()
+
+		expect(savePreference).toHaveBeenCalledWith({
+			schema: 'case',
+			notification: 'caseAssigned',
+			enabled: true,
+			channels: ['nc-notification', 'email'],
+			scope: null,
+		})
+	})
+
 	it("re-reads afterwards, so the layer that decided is the platform's answer", async () => {
 		// A screen that kept the click's value would show a setting the
 		// platform may have overruled a moment later.
