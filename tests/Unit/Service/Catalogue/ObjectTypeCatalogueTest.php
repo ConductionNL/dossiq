@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Catalogue;
 use OCA\Dossiq\Service\Catalogue\ObjectTypeCatalogue;
 use OCA\Dossiq\Service\Catalogue\ObjectTypeSchemaResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -56,9 +57,9 @@ final class ObjectTypeCatalogueTest extends TestCase {
 
 		$this->assertSame(
 			[
-				['id' => 'building', 'title' => 'building', 'cases' => 2, 'schema' => '', 'properties' => null, 'views' => [], 'schemaId' => '', 'caseTypes' => null],
-				['id' => 'Boom', 'title' => 'Boom', 'cases' => 1, 'schema' => '', 'properties' => null, 'views' => [], 'schemaId' => '', 'caseTypes' => null],
-				['id' => 'vehicle', 'title' => 'vehicle', 'cases' => 1, 'schema' => '', 'properties' => null, 'views' => [], 'schemaId' => '', 'caseTypes' => null],
+				$this->freeTextRow(type: 'building', cases: 2),
+				$this->freeTextRow(type: 'Boom', cases: 1),
+				$this->freeTextRow(type: 'vehicle', cases: 1),
 			],
 			$rows
 		);
@@ -78,16 +79,51 @@ final class ObjectTypeCatalogueTest extends TestCase {
 			['case' => 'c2', 'objectType' => 'Boom', 'objectUrl' => $url],
 			['case' => 'c3', 'objectType' => 'building'],
 		]);
-		$schemas = [$url => ['id' => '17', 'title' => 'Bomenregister', 'properties' => 9, 'views' => ['map', 'table']]];
+		$schemas = [$url => ['id' => '17', 'title' => 'Bomenregister', 'properties' => 9, 'views' => ['map', 'table'], 'objects' => 5]];
 
 		$rows = $this->catalogue(register: '23', schema: '41', objectService: $service, schemas: $schemas)->list();
 
 		$this->assertSame(
-			['id' => 'Boom', 'title' => 'Boom', 'cases' => 2, 'schema' => 'Bomenregister', 'properties' => 9, 'views' => ['map', 'table'], 'schemaId' => '17', 'caseTypes' => null],
+			[
+				'id'         => 'Boom',
+				'title'      => 'Boom',
+				'cases'      => 2,
+				'schema'     => 'Bomenregister',
+				'schemaLine' => 'Bomenregister · 5 objects',
+				'properties' => 9,
+				'objects'    => 5,
+				'views'      => ['map', 'table'],
+				'schemaId'   => '17',
+				'caseTypes'  => null,
+			],
 			$rows[0]
 		);
 		$this->assertSame(['', null, []], [$rows[1]['schema'], $rows[1]['properties'], $rows[1]['views']]);
 	}//end testShowsTheSchemaAnObjectUrlNames()
+
+	/**
+	 * A schema whose objects could not be counted shows its title alone; one
+	 * object reads in the singular.
+	 *
+	 * @return void
+	 */
+	public function testTheSchemaLineLeavesOutACountItCannotRead(): void {
+		$counted   = 'https://cloud.example/index.php/apps/openregister/api/objects/7/pitches/a';
+		$uncounted = 'https://cloud.example/index.php/apps/openregister/api/objects/7/paths/b';
+		$service   = $this->objectService(links: [
+			['case' => 'c1', 'objectType' => 'Standplaats', 'objectUrl' => $counted],
+			['case' => 'c2', 'objectType' => 'Wegdeel', 'objectUrl' => $uncounted],
+		]);
+		$schemas = [
+			$counted   => ['id' => '3', 'title' => 'Markt', 'properties' => 6, 'views' => ['table'], 'objects' => 1],
+			$uncounted => ['id' => '4', 'title' => 'Wegen en paden', 'properties' => 6, 'views' => ['map', 'table'], 'objects' => null],
+		];
+
+		$rows = $this->catalogue(register: '23', schema: '41', objectService: $service, schemas: $schemas)->list();
+
+		$this->assertSame(expected: ['Markt · 1 object', 'Wegen en paden'], actual: array_column($rows, 'schemaLine'));
+		$this->assertSame(expected: [1, null], actual: array_column($rows, 'objects'));
+	}//end testTheSchemaLineLeavesOutACountItCannotRead()
 
 	/**
 	 * With the case schema configured, each type says in how many distinct
@@ -172,6 +208,29 @@ final class ObjectTypeCatalogueTest extends TestCase {
 	}
 
 	/**
+	 * The row of a free-text object type: no schema, so every schema column empty.
+	 *
+	 * @param string $type  The object type.
+	 * @param int    $cases The cases that link one.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private function freeTextRow(string $type, int $cases): array {
+		return [
+			'id'         => $type,
+			'title'      => $type,
+			'cases'      => $cases,
+			'schema'     => '',
+			'schemaLine' => '',
+			'properties' => null,
+			'objects'    => null,
+			'views'      => [],
+			'schemaId'   => '',
+			'caseTypes'  => null,
+		];
+	}//end freeTextRow()
+
+	/**
 	 * Build the catalogue over a fake configuration.
 	 *
 	 * @param string      $register      The register id.
@@ -201,7 +260,19 @@ final class ObjectTypeCatalogueTest extends TestCase {
 		$resolver->method('describe')->willReturnCallback(static fn (string $objectUrl): ?array => ($schemas[$objectUrl] ?? null));
 		$resolver->method('namesSchema')->willReturnCallback(static fn (string $objectUrl): bool => ObjectTypeSchemaResolver::schemaNamedIn(objectUrl: $objectUrl) !== '');
 
-		return new ObjectTypeCatalogue(settingsService: $settings, schemas: $resolver);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('n')->willReturnCallback(
+			static function (string $singular, string $plural, int $count): string {
+				$text = $plural;
+				if ($count === 1) {
+					$text = $singular;
+				}
+
+				return str_replace('%n', (string)$count, $text);
+			}
+		);
+
+		return new ObjectTypeCatalogue(settingsService: $settings, schemas: $resolver, l10n: $l10n);
 	}
 
 	/**

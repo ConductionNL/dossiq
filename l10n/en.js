@@ -127,6 +127,7 @@ OC.L10N.register(
         "_%n item_::_%n items_": ["%n item","%n items"],
         "_%n month_::_%n months_": ["%n month","%n months"],
         "_%n more in My work_::_%n more in My work_": ["%n more in My work","%n more in My work"],
+        "_%n object_::_%n objects_": ["%n object","%n objects"],
         "_%n option_::_%n options_": ["%n option","%n options"],
         "_%n property_::_%n properties_": ["%n property","%n properties"],
         "_%n week_::_%n weeks_": ["%n week","%n weeks"],

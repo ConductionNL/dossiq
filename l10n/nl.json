@@ -153,6 +153,10 @@
             "%n meer in Mijn werk",
             "%n meer in Mijn werk"
         ],
+        "_%n object_::_%n objects_": [
+            "%n object",
+            "%n objecten"
+        ],
         "_%n option_::_%n options_": [
             "%n optie",
             "%n opties"
