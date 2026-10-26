@@ -612,8 +612,8 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.52.0",
-        "digest": "77dcd50f0038cf51d882ac01e8f4a6fe99a1bce33124faf07a2519e35046c938"
+        "version": "1.53.0",
+        "digest": "15788d538ea2e72b7ddcc4f6b7def38c991fef639ba41e2393e13a3d762abb91"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -664,7 +664,7 @@
         "digest": "edf99e78dccf60f40528c7ec7906bda9a92c691e0142906b9d649af2120ac14a"
     },
     "lib/Settings/dossiq_register.json::caseType": {
-        "version": "1.23.0",
+        "version": "1.24.0",
         "digest": "dbbfd52696a00662451f8e487669d62c5b96851e3e68cff4350fa5cdf5983038"
     },
     "lib/Settings/dossiq_register.json::casetransfer": {
@@ -908,8 +908,8 @@
         "digest": "ea0271480e01c47e60831c6b03cebcd84393c5d6b1d8463ee2127600260c74dc"
     },
     "lib/Settings/register.d/25-brp-kvk.json::kvkCompany": {
-        "version": "1.5.0",
-        "digest": "bb350b622520c9a5477658e7742412560574a404f49ae555a1c1f67759993bad"
+        "version": "1.6.0",
+        "digest": "37037a79164866402611a7fde656e53659f9c7ef950599be682aaada89cfa8be"
     },
     "lib/Settings/register.d/30-beschikking.json::beschikking": {
         "version": "1.1.0",
@@ -1086,6 +1086,10 @@
     "lib/Settings/register.d/44-case-report-group.json::case": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/47-colleague-party.json::colleague": {
+        "version": "1.0.0",
+        "digest": "88d0c742e3cdfd1a6f6dcca1b1f7dac8798ca1a889319a4e26e3a229556697b6"
     },
     "lib/Settings/register.d/48-starter-content.json::case": {
         "version": "",
