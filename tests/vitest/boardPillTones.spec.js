@@ -38,8 +38,13 @@ function columnsWithKey(node, key, out = []) {
 }
 
 describe('board pill tones', () => {
-	it('colours a working connection green and a failing one red', () => {
-		expect(CONNECTION_STATUS_TONES).toEqual({ configured: 'success', error: 'error' })
+	it('colours each connection status as the board draws it', () => {
+		expect(CONNECTION_STATUS_TONES).toEqual({
+			configured: 'success',
+			error: 'error',
+			simulated: 'primary',
+			unavailable: 'warning',
+		})
 	})
 
 	it('wires the tones into the integrations table', () => {
