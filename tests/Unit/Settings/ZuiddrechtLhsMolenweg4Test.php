@@ -66,4 +66,26 @@ class ZuiddrechtLhsMolenweg4Test extends TestCase {
 		);
 		$this->assertNotSame(expected: '', actual: $advice['overrideJustification']);
 	}//end testMolenweg4IsOverruledWithAWarning()
+
+	/**
+	 * The advice names the inspection it came from: Jamal's report on Molenweg 4, a building put up without a
+	 * permit, written before the advice so the reference resolves.
+	 *
+	 * @return void
+	 */
+	public function testMolenweg4NamesItsInspection(): void {
+		$set     = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$objects = array_column($set['objects'], null, 'key');
+		$keys    = array_column($set['objects'], 'key');
+
+		$this->assertSame(expected: '{{object:inspectierapport-molenweg-4.id}}', actual: $objects['lhs-advies-molenweg-4']['data']['inspection']);
+		$report = $objects['inspectierapport-molenweg-4'];
+		$this->assertSame(expected: 'inspectieRapport', actual: $report['schema']);
+		$this->assertSame(expected: '{{object:kapvergunning-molenweg.id}}', actual: $report['data']['case']);
+		$this->assertSame(expected: '{{cast:jamal.uid}}', actual: $report['data']['inspector']);
+		$this->assertSame(expected: 'Bouwen van een bijgebouw zonder vergunning', actual: $report['data']['remarks']);
+		$this->assertSame(expected: 'Molenweg 4, 3312 KL Zuiddrecht', actual: $report['data']['location']);
+		$this->assertSame(expected: 'non_conform', actual: $report['data']['result']);
+		$this->assertLessThan(array_search('lhs-advies-molenweg-4', $keys, true), array_search('inspectierapport-molenweg-4', $keys, true));
+	}//end testMolenweg4NamesItsInspection()
 }//end class

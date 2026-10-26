@@ -4223,11 +4223,36 @@
 			}
 		},
 		{
+			"key": "inspectierapport-molenweg-4",
+			"register": "dossiq",
+			"schema": "inspectieRapport",
+			"lookups": {
+				"template": {
+					"schema": "inspectionChecklistTemplate",
+					"where": {
+						"seedKey": "bouwtoezicht-fase-3-oplevering"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:kapvergunning-molenweg.id}}",
+				"checklist": "{{lookup:template}}",
+				"inspector": "{{cast:jamal.uid}}",
+				"inspectionDate": "{{datetime:-14 14:30}}",
+				"location": "Molenweg 4, 3312 KL Zuiddrecht",
+				"result": "non_conform",
+				"failedItems": 1,
+				"remarks": "Bouwen van een bijgebouw zonder vergunning",
+				"followUpRequired": true
+			}
+		},
+		{
 			"key": "lhs-advies-molenweg-4",
 			"register": "dossiq",
 			"schema": "lhsRecommendation",
 			"data": {
 				"case": "{{object:kapvergunning-molenweg.id}}",
+				"inspection": "{{object:inspectierapport-molenweg-4.id}}",
 				"severity": "ernstig",
 				"behaviour": "onverschillig",
 				"actorType": "burger",
