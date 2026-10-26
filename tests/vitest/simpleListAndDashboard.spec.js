@@ -624,7 +624,7 @@ describe('the landing page', () => {
 		expect(tile(dashboard.config.widgets, 'stalled-cases').content.footerLink).toBeUndefined()
 		const stalled = tile(dashboard.config.widgets, 'stalled-cases').content
 		expect(stalled.extend).toEqual(['calculations'])
-		expect(stalled.sort).toEqual({ field: '@self.updated', dir: 'asc' })
+		expect(stalled.sort).toEqual({ field: 'lastActivityAt', dir: 'asc' })
 		// The info line under the grid is a line, not a card (DqDashboard).
 		const note = dashboard.config.layout.find((entry) => entry.widgetId === 'layout-note')
 		expect(note).toMatchObject({ borderless: true, sizeToContent: true })
