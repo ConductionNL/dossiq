@@ -70,7 +70,13 @@
 							"presentation": "cards",
 							"density": "compact",
 							"title": ["{location}", "{caseRef.title}"],
-							"meta": "{scheduledAt|time} · {checklistTemplateRef.name}",
+							"meta": {
+								"parts": [
+									"{scheduledAt|time}",
+									"{checklistTemplateRef.name}",
+									"{checklistTemplateRef.sections|count:items} questions"
+								]
+							},
 							"pill": {
 								"field": "status",
 								"labels": {
