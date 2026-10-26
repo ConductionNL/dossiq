@@ -2785,6 +2785,7 @@ OC.L10N.register(
         "Draft the warning": "Waarschuwing opstellen",
         "Draft until publish() validates required fields and sets publishedAt": "Concept totdat publish() de verplichte velden controleert en publishedAt zet",
         "Draft Version": "Conceptversie",
+        "Draft, changed {versionDate|date}": "Concept, gewijzigd {versionDate|date}",
         "Drafter": "Steller",
         "Drag a node onto the canvas": "Sleep een knooppunt op het canvas",
         "Drag a status node onto the canvas to add it, or use the \"Add status node\" button.": "Sleep een statusknooppunt naar het canvas om het toe te voegen, of gebruik de knop \"Statusknooppunt toevoegen\".",

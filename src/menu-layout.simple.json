@@ -6493,7 +6493,10 @@
 							"title": "Version {version}",
 							"meta": {
 								"parts": [
-									"{validFrom|date}",
+									[
+										"{validFrom|date}",
+										"Draft, changed {versionDate|date}"
+									],
 									"{runningCases}"
 								]
 							},
