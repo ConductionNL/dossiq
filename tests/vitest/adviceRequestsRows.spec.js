@@ -38,6 +38,7 @@ describe('DqZaakBesluiten Adviezen as rows', () => {
 
 	it('reminds an open request only, through dossiq\'s remind route', () => {
 		const remind = advice.content.rowAction
+		expect(remind.variant).toBe('outlined')
 		expect(nl[remind.label]).toBe('Herinneren')
 		expect(remind.endpoint).toBe('/apps/dossiq/api/advice/{id}/remind')
 		expect(routes).toContain("'url' => '/api/advice/{id}/remind'")
