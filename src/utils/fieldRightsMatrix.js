@@ -12,6 +12,8 @@
  * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
  */
 
+import { resolveTranslatable } from './i18nResolver.js'
+
 const ROLE_STATES = { hidden: 'hidden', readOnly: 'readOnly' }
 
 /**
@@ -68,11 +70,12 @@ function requiredIn(status) {
  * @param {Array<object>} [input.rules] Its fieldRoleRules.
  * @param {Array<object>} [input.statuses] Its status types, in order.
  * @param {Array<object>} [input.properties] Its property definitions.
+ * @param {Object<string, Array<string>>} [input.roleNames] The role type names per Nextcloud group, to label a group's column.
  * @return {{columns: Array<{id: string, label: string, statuses: Array<string>}>, rows: Array<{field: string, label: string, cells: Array<{state: string}>}>}} The matrix.
  */
-export function fieldRightsMatrix({ rules = [], statuses = [], properties = [] } = {}) {
+export function fieldRightsMatrix({ rules = [], statuses = [], properties = [], roleNames = {} } = {}) {
 	const statusOrder = statuses.map((status) => idOf(status)).filter((id) => id !== '')
-	const statusName = new Map(statuses.map((status) => [idOf(status), String(status?.name ?? '')]))
+	const statusName = new Map(statuses.map((status) => [idOf(status), resolveTranslatable(status?.name ?? '').text]))
 	const labels = new Map()
 	const order = []
 	for (const property of properties) {
@@ -99,7 +102,8 @@ export function fieldRightsMatrix({ rules = [], statuses = [], properties = [] }
 	const columns = [...roleStatuses].map(([role, limit]) => {
 		const limited = statusOrder.filter((id) => limit.has(id))
 		const words = limited.map((id) => statusName.get(id)).filter(Boolean).map((name) => name.charAt(0).toLowerCase() + name.slice(1))
-		return { id: role, label: words.length > 0 ? `${role}, ${words.join(', ')}` : role, statuses: limited }
+		const named = Array.isArray(roleNames?.[role]) && roleNames[role].length > 0 ? roleNames[role].join(' / ') : role
+		return { id: role, label: words.length > 0 ? `${named}, ${words.join(', ')}` : named, statuses: limited }
 	})
 
 	const requiredBy = new Map(statusOrder.map((id) => [id, new Set()]))

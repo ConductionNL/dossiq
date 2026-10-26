@@ -3419,6 +3419,7 @@ OC.L10N.register(
         "Filter by status": "Filter by status",
         "Filter by type": "Filter by type",
         "Filter by zaaktype": "Filter by zaaktype",
+        "Filter by {column}": "Filter by {column}",
         "Filter cases by status: {status}": "Filter cases by status: {status}",
         "Filter cases by type: {type}": "Filter cases by type: {type}",
         "Filter outcome": "Filter outcome",
