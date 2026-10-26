@@ -267,15 +267,36 @@ class CaseRoleVocabularyTest extends TestCase {
 		$this->vocabulary->sync();
 
 		$kinds = $this->schema->configuration['partyKinds'];
-		$this->assertSame(expected: ['person', 'organisation', 'address'], actual: array_column($kinds, 'key'));
-		// Person and organisation name NO roles, on purpose: a kind naming
-		// roles holds only those, and a person link carries a role type uuid
-		// as its role, so binding a list to them would refuse every role type
-		// this instance declares.
+		$this->assertSame(expected: ['person', 'organisation', 'colleague', 'address'], actual: array_column($kinds, 'key'));
+		// Person, organisation and colleague name NO roles, on purpose: a kind
+		// naming roles holds only those, and a person link carries a role type
+		// uuid as its role, so binding a list to them would refuse every role
+		// type this instance declares.
 		$this->assertArrayNotHasKey(key: 'roles', array: $kinds[0]);
 		$this->assertArrayNotHasKey(key: 'roles', array: $kinds[1]);
-		$this->assertSame(expected: ['locatie'], actual: $kinds[2]['roles']);
+		$this->assertArrayNotHasKey(key: 'roles', array: $kinds[2]);
+		$this->assertSame(expected: ['locatie'], actual: $kinds[3]['roles']);
 	}//end testTheCaseDeclaresTheKindsOfPartyItTakes()
+
+	/**
+	 * The kinds the sync writes are the kinds the register declares on the case
+	 * schema, so a kind added to one and not the other cannot be written away.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 */
+	public function testTheSyncedKindsAreTheRegistersKinds(): void {
+		$register = json_decode((string)file_get_contents(__DIR__ . '/../../../../lib/Settings/dossiq_register.json'), true);
+		$declared = $register['components']['schemas']['case']['configuration']['partyKinds'];
+
+		$this->objects->answers['roleType'] = [['@self' => ['id' => 'rt-1'], 'name' => 'Adviseur']];
+		$this->vocabulary->sync();
+		$synced = $this->schema->configuration['partyKinds'];
+
+		$shape = static fn (array $kind): array => [$kind['key'], ($kind['roles'] ?? []), ($kind['identityShapes'] ?? [])];
+		$this->assertSame(expected: array_map($shape, $declared), actual: array_map($shape, $synced));
+	}//end testTheSyncedKindsAreTheRegistersKinds()
 
 	/**
 	 * A vocabulary that has not changed is not written again.

@@ -86,7 +86,7 @@ class PipelinqConsumersTest extends TestCase {
 
 		$this->assertSame('dossiq', $answer['source'], 'A picker has to be able to say where its list came from.');
 		$this->assertSame(
-			['person', 'organisation', 'address'],
+			['person', 'organisation', 'colleague', 'address'],
 			array_column($answer['kinds'], 'key'),
 			'An empty picker reads as "this case type accepts no party at all".'
 		);
