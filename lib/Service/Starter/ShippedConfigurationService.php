@@ -529,7 +529,10 @@ class ShippedConfigurationService {
 			object: (new ShippedRowShape())->asWritten(object: $current, objectsKey: $objectsKey),
 			shippedKeys: array_map('strval', array_keys($newShipped)),
 		);
-		if ($state['set'] !== $set) {
+		// A row the ledger does not know ('' as its set), under the id this set ships it by, was written before the
+		// ledger existed: an install over local changes takes it over, a plain install keeps it.
+		$adoptable = [$set, ...array_fill(0, (int) $overLocalChange, '')];
+		if (in_array($state['set'], $adoptable, true) === false) {
 			return ['outcome' => self::REFRESH_KEPT, 'reason' => 'not_shipped_by_this_set'];
 		}
 
@@ -620,7 +623,7 @@ class ShippedConfigurationService {
 			shippedKeys: array_map('strval', array_keys($newShipped)),
 		);
 
-		if ($state['state'] === self::STATE_LOCAL) {
+		if ($state['state'] === self::STATE_LOCAL && $overLocalChange === false) {
 			return ['adopted' => false, 'reason' => 'not_shipped'];
 		}
 

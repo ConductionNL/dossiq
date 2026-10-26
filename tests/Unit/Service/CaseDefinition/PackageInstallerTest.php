@@ -802,6 +802,34 @@ class PackageInstallerTest extends TestCase {
 	}//end testANewerVersionRefreshesRowsNobodyEdited()
 
 	/**
+	 * A row the package ships by its own id but the ledger does not know (written before the ledger existed) is
+	 * taken over by an install over local changes, and recorded from then on; a plain install keeps it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 */
+	public function testAnInstallOverLocalChangesAdoptsARowTheLedgerDoesNotKnow(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+		$status = '0f1c0000-0000-4000-8000-000000000011';
+		foreach ($this->register->rows['shippedOrigin'] as $id => $row) {
+			if ($row['targetObject'] === $status) {
+				unset($this->register->rows['shippedOrigin'][$id]);
+			}
+		}
+
+		$kept = $this->installer(root: $this->raisedVersion())->install(id: 'fixture-case-type');
+		$this->assertSame('Received', $this->register->row('statusType', $status)['name'], 'a plain install keeps a row it cannot place');
+		$this->assertContains($status, $kept['kept']);
+
+		$outcome = $this->installer(root: $this->raisedVersion())->installOverLocalChanges(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame('Registered', $this->register->row('statusType', $status)['name']);
+		$this->assertSame('1.1.0', $this->ledgerRowOf(targetObject: $status)['setVersion']);
+	}//end testAnInstallOverLocalChangesAdoptsARowTheLedgerDoesNotKnow()
+
+	/**
 	 * A row edited here survives a newer version and is named; its untouched siblings are refreshed.
 	 *
 	 * @return void

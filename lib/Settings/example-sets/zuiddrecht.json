@@ -120,6 +120,14 @@
 	],
 	"appConfig": [
 		{
+			"key": "email_imap_folder",
+			"value": "INBOX"
+		},
+		{
+			"key": "consultation_external_response_url",
+			"value": "https://loket.zuiddrecht.nl/advies"
+		},
+		{
 			"key": "background_service_account",
 			"value": "{{account:background.uid}}"
 		},
@@ -934,6 +942,7 @@
 			"register": "dossiq",
 			"schema": "statusType",
 			"data": {
+				"phase": "Ontvangst",
 				"name": "Ontvangen",
 				"description": "De adviesvraag is binnen bij de adviseur.",
 				"caseType": "{{object:zaaktype-adviesaanvraag.id}}",
@@ -947,6 +956,7 @@
 			"register": "dossiq",
 			"schema": "statusType",
 			"data": {
+				"phase": "Beoordeling",
 				"name": "In behandeling",
 				"description": "De adviseur werkt aan het advies.",
 				"caseType": "{{object:zaaktype-adviesaanvraag.id}}",
@@ -1340,6 +1350,10 @@
 			},
 			"data": {
 				"name": "locatie",
+				"title": {
+					"nl": "Locatie",
+					"en": "Location"
+				},
 				"definition": "Locatie",
 				"description": "Het adres van het bouwwerk of de plek, uit de BAG.",
 				"propertyType": "string",
@@ -1363,6 +1377,10 @@
 			},
 			"data": {
 				"name": "aanvrager",
+				"title": {
+					"nl": "Aanvrager",
+					"en": "Applicant"
+				},
 				"definition": "Aanvrager",
 				"description": "De persoon of organisatie die de vergunning aanvraagt.",
 				"propertyType": "string",
@@ -1385,6 +1403,10 @@
 			},
 			"data": {
 				"name": "datumIndieningDso",
+				"title": {
+					"nl": "Datum indiening DSO",
+					"en": "DSO submission date"
+				},
 				"definition": "Datum indiening DSO",
 				"description": "De dag waarop de aanvraag via het Omgevingsloket is ingediend.",
 				"propertyType": "date",
@@ -1408,6 +1430,10 @@
 			},
 			"data": {
 				"name": "omschrijvingProject",
+				"title": {
+					"nl": "Omschrijving project",
+					"en": "Project description"
+				},
 				"definition": "Omschrijving van het project",
 				"description": "Wat de aanvrager wil doen, in zijn eigen woorden uit het Omgevingsloket.",
 				"propertyType": "string",
@@ -1430,6 +1456,10 @@
 			},
 			"data": {
 				"name": "dsoVerzoeknummer",
+				"title": {
+					"nl": "DSO-verzoeknummer",
+					"en": "DSO request number"
+				},
 				"definition": "DSO-verzoeknummer",
 				"description": "Het nummer dat het Omgevingsloket aan de aanvraag gaf.",
 				"propertyType": "string",
@@ -1453,6 +1483,10 @@
 			},
 			"data": {
 				"name": "kadastraalPerceel",
+				"title": {
+					"nl": "Kadastraal perceel",
+					"en": "Cadastral parcel"
+				},
 				"definition": "Kadastraal perceel",
 				"description": "De kadastrale aanduiding van het perceel, zoals ZDR00 K 1234.",
 				"propertyType": "string",
@@ -1798,6 +1832,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "bouwkosten",
+				"title": {
+					"nl": "Bouwkosten",
+					"en": "Building costs"
+				},
 				"definition": "Bouwkosten",
 				"description": "De geschatte bouwkosten in euro, zonder btw.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
@@ -1813,6 +1851,18 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "soortBouwwerk",
+				"title": {
+					"nl": "Soort bouwwerk",
+					"en": "Type of structure"
+				},
+				"enumCodes": {
+					"Woning": "WON",
+					"Bijgebouw": "BIJ",
+					"Dakkapel": "DAK",
+					"Bedrijfspand": "BED",
+					"Erfafscheiding": "ERF",
+					"Overig": "OVR"
+				},
 				"definition": "Soort bouwwerk",
 				"description": "Wat er gebouwd wordt.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
@@ -1836,6 +1886,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "welstandsgebied",
+				"title": {
+					"nl": "Welstandsgebied",
+					"en": "Aesthetics zone"
+				},
 				"definition": "Welstandsgebied",
 				"description": "Of het bouwwerk in een gebied met welstandseisen staat.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
@@ -2438,6 +2492,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "bouwkosten",
+				"title": {
+					"nl": "Bouwkosten",
+					"en": "Building costs"
+				},
 				"definition": "Bouwkosten",
 				"description": "De geschatte bouwkosten in euro, zonder btw.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
@@ -2453,6 +2511,18 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "soortBouwwerk",
+				"title": {
+					"nl": "Soort bouwwerk",
+					"en": "Type of structure"
+				},
+				"enumCodes": {
+					"Woning": "WON",
+					"Bijgebouw": "BIJ",
+					"Dakkapel": "DAK",
+					"Bedrijfspand": "BED",
+					"Erfafscheiding": "ERF",
+					"Overig": "OVR"
+				},
 				"definition": "Soort bouwwerk",
 				"description": "Wat er gebouwd wordt.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
@@ -2476,6 +2546,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "welstandsgebied",
+				"title": {
+					"nl": "Welstandsgebied",
+					"en": "Aesthetics zone"
+				},
 				"definition": "Welstandsgebied",
 				"description": "Of het bouwwerk in een gebied met welstandseisen staat.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
@@ -2490,6 +2564,10 @@
 			"schema": "propertyDefinition",
 			"data": {
 				"name": "situatietekening",
+				"title": {
+					"nl": "Situatietekening",
+					"en": "Site plan"
+				},
 				"definition": "Situatietekening",
 				"description": "Tekening van de situatie na de verbouwing, met maten.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
@@ -6696,7 +6774,7 @@
 				"roleType": "ambtelijk",
 				"ncGroupId": "zuiddrecht-woo-en-informatie",
 				"teamLead": "{{cast:anouk.uid}}",
-				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+				"parentRoleId": "{{object:afdeling-bedrijfsvoering.id}}"
 			}
 		},
 		{
@@ -9361,6 +9439,7 @@
 			"key": "anouk-woo-verzoeken-team",
 			"data": {
 				"name": "Woo-verzoeken team",
+				"description": "Door Anouk Bakker, team Woo en informatie",
 				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}],
 				"owner": "{{cast:anouk.uid}}",
 				"isPublic": false,
@@ -10402,7 +10481,7 @@
 				"registerName": "dossiq",
 				"schemaName": "case",
 				"producedAt": "{{datetime:-1 16:20}}",
-				"downloadCount": 1
+				"downloadCount": 3
 			}
 		},
 		{
@@ -10415,8 +10494,8 @@
 				"rowCount": 2,
 				"registerName": "dossiq",
 				"schemaName": "case",
-				"producedAt": "{{datetime:-6 10:05}}",
-				"downloadCount": 3
+				"producedAt": "{{datetime:-7 23:30}}",
+				"downloadCount": 1
 			}
 		}
 	],

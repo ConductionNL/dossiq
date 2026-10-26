@@ -494,7 +494,7 @@
 									},
 									"actions": [
 										{
-											"label": "Open these cases",
+											"label": "All cases past their deadline",
 											"route": {
 												"name": "Cases",
 												"query": {
@@ -824,7 +824,8 @@
 										]
 									},
 									"pill": {
-										"field": "status.name"
+										"field": "status.name",
+										"colorField": "status.colour"
 									},
 									"trailing": [
 										"{@self.viewedAt|ago}"
@@ -858,7 +859,8 @@
 									"title": "{title}",
 									"meta": "{identifier}",
 									"pill": {
-										"field": "status.name"
+										"field": "status.name",
+										"colorField": "status.colour"
 									},
 									"rowRoute": "CaseDetail",
 									"emptyText": "Follow a case to keep an eye on it here"
@@ -1152,7 +1154,8 @@
 									},
 									"title": "{title}",
 									"meta": "{identifier} · {initiatorDisplayName}",
-									"badge": "{resultPublicLabel}"
+									"badge": "{resultPublicLabel}",
+									"badgeVariant": "teal"
 								},
 								"facts": [
 									{
@@ -2869,15 +2872,18 @@
 								"receivedAt": {
 									"label": "Registration date",
 									"editable": false,
-									"order": 6
+									"order": 6,
+									"format": "date-long"
 								},
 								"startDate": {
 									"label": "Start date",
-									"order": 7
+									"order": 7,
+									"format": "date-long"
 								},
 								"deadline": {
 									"label": "Decide by",
-									"order": 8
+									"order": 8,
+									"format": "date-long"
 								},
 								"assignee": {
 									"label": "Handler",
@@ -2894,19 +2900,23 @@
 								"archiveStatus": {
 									"label": "Archive status",
 									"editable": false,
-									"order": 14
+									"order": 14,
+									"enumLabels": {"nog_te_archiveren": "Not archived yet", "archived": "Archived", "archived_retention_period_unknown": "Archived, retention period unknown", "overgedragen": "Transferred"}
 								},
 								"parentCase": {
 									"label": "Parent case",
-									"order": 15
+									"order": 15,
+									"emptyValue": "None"
 								},
 								"externalApplication": {
 									"label": "Handled elsewhere",
 									"editable": false,
-									"order": 18
+									"order": 18,
+									"emptyValue": "No"
 								},
 								"result": {
-									"order": 12
+									"order": 12,
+									"emptyValue": "No result yet"
 								},
 								"impact": {
 									"order": 16
@@ -3478,6 +3488,7 @@
 							"presentation": "rows",
 							"ruleAbove": true,
 							"icon": "CalendarBlankOutline",
+							"iconTile": true,
 							"title": "{label}",
 							"meta": [
 								"Owner {owner|user}"
@@ -4246,6 +4257,7 @@
 								"balie": "Desk",
 								"brief": "Letter"
 							},
+							"channelIcons": { "phone": "Phone", "email": "EmailOutline", "webformulier": "Earth", "chat": "MessageTextOutline", "social_media": "ShareVariant", "balie": "OfficeBuildingOutline", "brief": "EmailOpenOutline" },
 							"senderField": "callerIdentification",
 							"usAuthorField": "kccEmployeeId",
 							"usAuthorFormat": "user",
@@ -6204,7 +6216,7 @@
 					},
 					{
 						"key": "subjectLabel",
-						"width": "170px",
+						"width": "168px",
 						"filterField": "objectUuid",
 						"label": "Subject",
 						"cellClass": "cn-cell--wrap",
@@ -6223,6 +6235,7 @@
 					},
 					{
 						"key": "state",
+						"width": "185px",
 						"label": "Status",
 						"_note": "Board DqTaken: the state in the task page's words (\"In uitvoering\", the TaskDetail pill), not the library's \"In progress\". The tones are keyed on the state, so they hold in every language.",
 						"enum": ["available", "enabled", "active", "completed", "terminated", "disabled"],
@@ -6246,6 +6259,7 @@
 					},
 					{
 						"key": "priorityLabel",
+						"width": "133px",
 						"label": "Priority",
 						"filterField": "priority",
 						"sortable": true,
@@ -6260,6 +6274,7 @@
 					},
 					{
 						"key": "dueAt",
+						"width": "133px",
 						"label": "Task deadline",
 						"sortable": true,
 						"widget": "date",
@@ -6560,7 +6575,8 @@
 					}
 				],
 				"typePill": {
-					"field": "category"
+					"field": "category",
+					"variant": "teal"
 				},
 				"statusPill": {
 					"field": "isDraft",
@@ -6603,13 +6619,13 @@
 							"limit": 5,
 							"presentation": "rows",
 							"title": "Version {version}",
+							"_metaNote": "A draft has no running cases (cases start on a published version), so its line is only when it changed, as DqZaaktypeOverzicht draws it; a published version reads its date and its running cases. A template with an empty token empties itself, so the first alternative only fills for a published version.",
 							"meta": {
 								"parts": [
 									[
-										"{validFrom|date}",
+										"{validFrom|date} · {runningCases}",
 										"Draft, changed {versionDate|date}"
-									],
-									"{runningCases}"
+									]
 								]
 							},
 							"aggregates": {

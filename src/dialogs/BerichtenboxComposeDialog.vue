@@ -535,6 +535,7 @@ export default {
 .compose-dialog__label {
 	font-size: 14px;
 	font-weight: 600;
+	line-height: normal;
 }
 
 .compose-dialog__optional {
@@ -544,17 +545,63 @@ export default {
 
 .compose-dialog__hint {
 	font-size: 13px;
+	line-height: normal;
 	color: var(--color-text-maxcontrast);
+}
+
+/* The board's fields sit on the form's 18px gap alone: the server's 3px
+   input margin, NcTextField's own margin and the note card's 15px margin
+   come off, as DqBerichtVersturen draws them. */
+.compose-dialog :deep(.input-field) {
+	margin-block: 0;
+}
+
+.compose-dialog :deep(.input-field__main-wrapper) {
+	padding-block: 0;
+}
+
+.compose-dialog > :deep(.notecard) {
+	margin: 0;
+}
+
+.compose-dialog textarea.compose-dialog__body {
+	margin: 0;
 }
 
 .compose-dialog__check {
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
+	gap: 4px;
+}
+
+/* The board draws the decision box as a plain 15px line with its box, the
+   note 4px under it (DqBerichtVersturen): NcCheckboxRadioSwitch pads its row
+   to 34px and sets the label at 500 on the body's 22.5px leading, and the
+   server's input rule gives the hidden input the clickable height. */
+.compose-dialog__check :deep(.checkbox-content) {
+	padding-block: 0;
+	min-height: 0;
+}
+
+.compose-dialog__check :deep(.checkbox-content__icon) {
+	margin-block: 0;
+}
+
+.compose-dialog__check :deep(.checkbox-content__wrapper),
+.compose-dialog__check :deep(.checkbox-radio-switch__text) {
+	font-weight: 400;
+	line-height: normal;
+}
+
+.compose-dialog__check :deep(.checkbox-radio-switch__input) {
+	min-height: 0;
+	height: 20px;
+	margin: 0;
 }
 
 .compose-dialog__check-note {
 	padding-inline-start: var(--cn-dialog-check-label-inset, 44px);
+	line-height: normal;
 }
 
 .compose-dialog__body {
