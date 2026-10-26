@@ -76,6 +76,8 @@ class CaseRoleHolder {
 	 *
 	 * @return bool True when the person holds one.
 	 *
+	 * @throws RuntimeException When the role bindings cannot be read.
+	 *
 	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
 	 */
 	public function holdsAny(array $case, string $uid, array $genericRoles): bool {
@@ -115,6 +117,8 @@ class CaseRoleHolder {
 	 * @param string               $displayName What the People tab calls them; '' reads their Nextcloud name.
 	 *
 	 * @return bool True when a binding was added.
+	 *
+	 * @throws RuntimeException When the role types or bindings cannot be read.
 	 *
 	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
 	 */
@@ -224,12 +228,14 @@ class CaseRoleHolder {
 	}//end bucketOf()
 
 	/**
-	 * Rows of one configured schema, or an empty list when they cannot be read.
+	 * Rows of one configured schema; a schema that is not configured has none.
 	 *
 	 * @param string               $schemaKey The configuration key naming the schema.
 	 * @param array<string, mixed> $filters   The search filters.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @throws RuntimeException When OpenRegister is absent; a failed search throws as OpenRegister does.
 	 */
 	private function rows(string $schemaKey, array $filters): array {
 		$register = $this->settingsService->getConfigValue('register');
@@ -238,15 +244,7 @@ class CaseRoleHolder {
 			return [];
 		}
 
-		try {
-			return $this->searchObjectsAsArrays(objectService: $this->objectService(), register: $register, schema: $schema, filters: $filters);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: a role lookup could not be answered',
-				['schema' => $schemaKey, 'exception' => $e->getMessage()],
-			);
-			return [];
-		}
+		return $this->searchObjectsAsArrays(objectService: $this->objectService(), register: $register, schema: $schema, filters: $filters);
 	}//end rows()
 
 	/**

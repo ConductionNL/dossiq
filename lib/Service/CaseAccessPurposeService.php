@@ -187,7 +187,7 @@ class CaseAccessPurposeService {
 
 		$rules = $this->rules();
 		$caseData = $this->dataOf(entity: $case);
-		if ($this->roles->holdsAny(case: $caseData, uid: $readerId, genericRoles: $rules['skipFor']) === false) {
+		if ($this->holdsSkipRole(case: $caseData, readerId: $readerId, genericRoles: $rules['skipFor']) === false) {
 			return ['required' => true, 'recorded' => false];
 		}
 
@@ -225,7 +225,18 @@ class CaseAccessPurposeService {
 			$caseData['id'] = $this->idOfEntity(entity: $case);
 		}
 
-		if ($this->roles->bind(case: $caseData, uid: $readerId, genericRole: $role, displayName: '') === false) {
+		try {
+			$bound = $this->roles->bind(case: $caseData, uid: $readerId, genericRole: $role, displayName: '');
+		} catch (Throwable $e) {
+			// The purpose is recorded and the case opens; only the binding is missing.
+			$this->logger->warning(
+				'Dossiq: the roles on the case could not be read, so the reader is not bound to the role their purpose names',
+				['app' => Application::APP_ID, 'role' => $role, 'exception' => $e->getMessage()]
+			);
+			$bound = false;
+		}
+
+		if ($bound === false) {
 			return false;
 		}
 
@@ -244,6 +255,31 @@ class CaseAccessPurposeService {
 
 		return true;
 	}//end bindFor()
+
+	/**
+	 * Whether the reader holds a role that opens the case without the dialog.
+	 * Roles that cannot be read count as not held, so the reader is asked:
+	 * the dialog is the safe side of a failed read.
+	 *
+	 * @param array<string, mixed> $case         The case's fields.
+	 * @param string               $readerId     The reader's user id.
+	 * @param array<int, string>   $genericRoles The generic roles that skip the dialog.
+	 *
+	 * @return bool True when the reader holds one.
+	 *
+	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
+	 */
+	private function holdsSkipRole(array $case, string $readerId, array $genericRoles): bool {
+		try {
+			return $this->roles->holdsAny(case: $case, uid: $readerId, genericRoles: $genericRoles);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the roles on the case could not be read, so the reader is asked for a purpose',
+				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+			);
+			return false;
+		}
+	}//end holdsSkipRole()
 
 	/**
 	 * The purpose and role rules: the app configuration, else the defaults.
