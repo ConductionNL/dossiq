@@ -613,7 +613,7 @@
     },
     "lib/Settings/dossiq_register.json::case": {
         "version": "1.53.0",
-        "digest": "b04fd6d5a0db524911f95bd043820b6d9b65a2f019f9b3520028ed07d803bbb5"
+        "digest": "e4e9e7cc5bfffa0b58ed3d02ba60f30430bf6927dcb6be7ac04e59cfe6436478"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -1733,6 +1733,10 @@
     },
     "lib/Settings/register.d/99-case-dedup-threshold.json::case": {
         "version": "1.57.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-last-activity-at.json::case": {
+        "version": "1.58.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-macro-rights.json::case": {
