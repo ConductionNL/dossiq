@@ -7107,6 +7107,9 @@
 								"responsePath": "rows"
 							},
 							"presentation": "table",
+							"tableLook": "data",
+							"sortable": true,
+							"filterable": true,
 							"columns": [
 								{
 									"label": "Role",
