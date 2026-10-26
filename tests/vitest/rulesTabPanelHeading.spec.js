@@ -28,3 +28,15 @@ describe('the Rules tab against DqZaaktypeRegels', () => {
 		expect(sfc).toMatch(/data-testid="rules-add"[\s\S]{0,120}<template #icon>\s*<Plus :size="20" \/>/)
 	})
 })
+
+describe('the Rules tab rows against DqZaaktypeRegels', () => {
+	it('sets the add button 8px under the subtitle and 12px above the rows', () => {
+		expect(sfc).toMatch(/\.rules-tab__head \{[^}]*margin: -4px 0 12px;/)
+	})
+
+	it('draws a row as the board: a 15px title at 500 and its line 2px under it, on their natural leading', () => {
+		expect(sfc).toMatch(/\.rules-tab__text \{[^}]*gap: 2px;/)
+		expect(sfc).toMatch(/\.rules-tab__title \{[^}]*font-size: 15px;\s*font-weight: 500;\s*line-height: normal;/)
+		expect(sfc).toMatch(/\.rules-tab__line \{[^}]*line-height: normal;/)
+	})
+})
