@@ -307,6 +307,7 @@ class ProcessingTimeReportService {
 				'id'         => $typeId,
 				'slug'       => (string)($row['slug'] ?? ''),
 				'keys'       => $this->typeKeys(row: $row),
+				'family'     => $this->typeFamily(row: $row, typeId: $typeId),
 				'name'       => $name,
 				'targetDays' => $this->calculator->durationToDays(duration: ($row['processingDeadline'] ?? null)),
 			];
@@ -371,6 +372,25 @@ class ProcessingTimeReportService {
 
 		return $ids;
 	}//end resolveTypes()
+
+	/**
+	 * The case type a version belongs to: its identifier, which every version
+	 * of the type shares, else its own id. The breakdown reads one row per
+	 * family, not per version.
+	 *
+	 * @param array<string, mixed> $row    The stored type.
+	 * @param string               $typeId The type's id.
+	 *
+	 * @return string The family key.
+	 */
+	private function typeFamily(array $row, string $typeId): string {
+		$identifier = (string)($row['identifier'] ?? '');
+		if ($identifier !== '') {
+			return $identifier;
+		}
+
+		return $typeId;
+	}//end typeFamily()
 
 	/**
 	 * The names a record type answers to besides its id: its slug, its

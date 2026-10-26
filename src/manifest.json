@@ -8566,6 +8566,17 @@
 									"format": { "style": "number", "decimals": 0 }
 								}
 							],
+							"limit": 3,
+							"viewAllRoute": {
+								"name": "Cases",
+								"query": {
+									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
+									"isDraft": "false",
+									"_order": "[{\"key\":\"deadline\",\"order\":\"asc\"}]"
+								}
+							},
+							"viewAllLabel": "View all",
 							"rowRoute": "CaseDetail",
 							"emptyText": "No cases at risk"
 						}
@@ -8649,7 +8660,8 @@
 										"no-target": "default"
 									}
 								}
-							]
+							],
+							"pageSize": 4
 						}
 					}
 				],
