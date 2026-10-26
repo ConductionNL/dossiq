@@ -872,6 +872,103 @@
 			}
 		},
 		{
+			"key": "actietype-besluit-opstellen",
+			"register": "dossiq",
+			"schema": "plannedActionType",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				}
+			},
+			"data": {
+				"identifier": "besluit-opstellen",
+				"label": "Besluit opstellen",
+				"caseType": "{{lookup:caseType}}",
+				"ownerRole": "behandelaar"
+			}
+		},
+		{
+			"key": "actietype-termijn-controleren",
+			"register": "dossiq",
+			"schema": "plannedActionType",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				}
+			},
+			"data": {
+				"identifier": "termijn-controleren",
+				"label": "Termijn controleren",
+				"caseType": "{{lookup:caseType}}"
+			}
+		},
+		{
+			"key": "zaaktype-adviesaanvraag",
+			"register": "dossiq",
+			"schema": "caseType",
+			"data": {
+				"title": "Adviesaanvraag",
+				"identifier": "adviesaanvraag",
+				"description": "Een afdeling of adviseur geeft advies op een vraag uit een andere zaak; die zaak wacht op het advies.",
+				"category": "Advies",
+				"version": 1,
+				"isDraft": false,
+				"versionDate": "{{date:-400}}",
+				"validFrom": "{{date:-400}}",
+				"processingDeadline": "P14D",
+				"handlingModel": "bpmn",
+				"confidentiality": "intern",
+				"internalOrExternal": "intern"
+			}
+		},
+		{
+			"key": "status-adviesaanvraag-ontvangen",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Ontvangen",
+				"description": "De adviesvraag is binnen bij de adviseur.",
+				"caseType": "{{object:zaaktype-adviesaanvraag.id}}",
+				"order": 1,
+				"isFinal": false,
+				"role": "intake"
+			}
+		},
+		{
+			"key": "status-adviesaanvraag-in-behandeling",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "In behandeling",
+				"description": "De adviseur werkt aan het advies.",
+				"caseType": "{{object:zaaktype-adviesaanvraag.id}}",
+				"order": 2,
+				"isFinal": false,
+				"role": "in-progress"
+			}
+		},
+		{
+			"key": "status-adviesaanvraag-afgehandeld",
+			"register": "dossiq",
+			"schema": "statusType",
+			"data": {
+				"name": "Afgehandeld",
+				"description": "Het advies is gegeven.",
+				"caseType": "{{object:zaaktype-adviesaanvraag.id}}",
+				"order": 3,
+				"isFinal": true,
+				"role": "closed"
+			}
+		},
+		{
 			"key": "parkeren-henk",
 			"register": "dossiq",
 			"schema": "case",
@@ -7965,6 +8062,27 @@
 					"{{flow:flow-documenten-opvragen.uuid}}",
 					"{{flow:flow-verdaging-aankondigen.uuid}}"
 				]
+			}
+		},
+		{
+			"key": "woo-verzoek-werkinstructie",
+			"register": "dossiq",
+			"schema": "caseType",
+			"where": {
+				"identifier": "woo-verzoek",
+				"version": 2
+			},
+			"set": {
+				"knowledgeBasePage": "Woo en informatie/Hoe we Woo-verzoeken behandelen"
+			}
+		},
+		{
+			"key": "zaaktype-adviesaanvraag-begint-bij-ontvangen",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-adviesaanvraag",
+			"set": {
+				"initialStatus": "{{object:status-adviesaanvraag-ontvangen.id}}"
 			}
 		},
 		{
