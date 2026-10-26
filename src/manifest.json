@@ -13795,7 +13795,17 @@
 							"meta": "{identifier} · {caseType.title}",
 							"pill": {
 								"field": "status.name",
-								"variant": "purple"
+								"variant": "purple",
+								"variantWhen": [
+									{
+										"when": {
+											"field": "isFinalStatus",
+											"op": "eq",
+											"value": true
+										},
+										"variant": "success"
+									}
+								]
 							},
 							"trailing": [
 								"Done {endDate|date}",
@@ -14563,7 +14573,17 @@
 							"meta": "{identifier} · {caseType.title}",
 							"pill": {
 								"field": "status.name",
-								"variant": "purple"
+								"variant": "purple",
+								"variantWhen": [
+									{
+										"when": {
+											"field": "isFinalStatus",
+											"op": "eq",
+											"value": true
+										},
+										"variant": "success"
+									}
+								]
 							},
 							"trailing": [
 								"Done {endDate|date}",
