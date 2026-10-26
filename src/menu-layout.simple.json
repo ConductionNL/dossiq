@@ -6802,6 +6802,7 @@
 							"tab": "history"
 						},
 						"content": {
+							"layout": "stacked",
 							"excludeActions": ["read"],
 							"actionLabels": {
 								"create": "Case type created",
