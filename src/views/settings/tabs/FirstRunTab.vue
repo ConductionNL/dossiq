@@ -144,7 +144,7 @@ export default {
 	margin: 0;
 	padding: 0;
 	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large, 8px);
+	border-radius: 8px;
 }
 
 .first-run-tab__item {
@@ -167,9 +167,14 @@ export default {
 }
 
 .first-run-tab__title {
+	/* thematiq colours and underlines every link with `!important` from its tokens. */
+	--nldesign-component-link-color: var(--color-main-text);
+	--nldesign-color-on-surface: var(--color-main-text);
+	--nldesign-component-link-text-decoration: none;
 	color: var(--color-main-text);
 	font-size: 15px;
 	font-weight: 600;
+	line-height: 1.2;
 	text-decoration: none;
 }
 
