@@ -10387,6 +10387,7 @@ OC.L10N.register(
         "View task": "Bekijk taak",
         "View the mail intake log": "Bekijk het mail-intakelogboek",
         "View usage": "Gebruik bekijken",
+        "Viewed {changed.data.fileName}": "Inzage {changed.data.fileName}",
         "Viewing version {version}. Active version is {active}.": "Versie {version} wordt weergegeven. De actieve versie is {active}.",
         "Violation class": "Classificatie",
         "Violation established and classified": "Overtreding vastgesteld en geclassificeerd",
