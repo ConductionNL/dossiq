@@ -21,6 +21,7 @@
                     "order": 1,
                     "isFinal": false,
                     "role": "intake",
+                    "phase": "Ontvangst",
                     "colour": "blue"
                 },
                 {
@@ -29,6 +30,7 @@
                     "order": 2,
                     "isFinal": false,
                     "role": "pending-info",
+                    "phase": "Ontvangst",
                     "colour": "orange"
                 },
                 {
@@ -37,6 +39,7 @@
                     "order": 3,
                     "isFinal": false,
                     "role": "in-progress",
+                    "phase": "Beoordeling",
                     "colour": "purple"
                 },
                 {
@@ -45,6 +48,7 @@
                     "order": 4,
                     "isFinal": false,
                     "role": "review",
+                    "phase": "Besluit",
                     "colour": "orange"
                 },
                 {
