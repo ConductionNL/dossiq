@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Assessment;
 
 use OCA\Dossiq\Service\Assessment\OutstandingDocuments;
+use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
@@ -78,7 +79,7 @@ class OutstandingDocumentsTest extends TestCase {
 	 *
 	 * @return OutstandingDocuments
 	 */
-	private function service(): OutstandingDocuments {
+	private function service(?CaseDocumentDrafts $drafts = null): OutstandingDocuments {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(
@@ -101,6 +102,7 @@ class OutstandingDocumentsTest extends TestCase {
 					rootFolder: $this->createMock(IRootFolder::class),
 					logger: new NullLogger(),
 				),
+				drafts: $drafts,
 			),
 			records: new DocumentRecordStore(settingsService: $settings),
 			settings: $settings,
@@ -121,6 +123,23 @@ class OutstandingDocumentsTest extends TestCase {
 		$this->assertArrayNotHasKey('io-3', $titles, 'An assessed document is not outstanding');
 		$this->assertArrayNotHasKey('io-9', $titles, 'Another case its document is not listed');
 	}//end testItNamesTheDocumentsWithoutAnAssessment()
+
+	/**
+	 * A letter drafted from the case type's template is not a document under review.
+	 *
+	 * @return void
+	 */
+	public function testADraftedLetterIsNotADocumentToAssess(): void {
+		$this->store->seed(schema: 'informatieobject', uuid: 'io-letter', row: ['title' => 'Besluit Woo-verzoek', 'informatieobjecttype' => 'iot-besluit']);
+		$this->store->seed(schema: 'zaakinformatieobject', uuid: 'j-letter', row: ['case' => 'case-1', 'informatieobject' => 'io-letter']);
+		$drafts = $this->createMock(originalClassName: CaseDocumentDrafts::class);
+		$drafts->method('documentTypesForCase')->willReturn(['Besluit', 'iot-besluit']);
+
+		$answer = $this->service(drafts: $drafts)->forCase(caseId: 'case-1');
+
+		$this->assertSame(expected: 3, actual: $answer['count']);
+		$this->assertArrayNotHasKey(key: 'io-letter', array: array_column($answer['documents'], 'title', 'id'));
+	}//end testADraftedLetterIsNotADocumentToAssess()
 
 	/**
 	 * Without a title the file name stands in, and an earlier document is read from its own schema.
