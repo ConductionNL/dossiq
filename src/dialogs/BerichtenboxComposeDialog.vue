@@ -556,10 +556,6 @@ export default {
 	margin-block: 0;
 }
 
-.compose-dialog :deep(.input-field__main-wrapper) {
-	padding-block: 0;
-}
-
 .compose-dialog > :deep(.notecard) {
 	margin: 0;
 }
@@ -587,6 +583,7 @@ export default {
 	margin-block: 0;
 }
 
+.compose-dialog__check :deep(.checkbox-radio-switch),
 .compose-dialog__check :deep(.checkbox-content__wrapper),
 .compose-dialog__check :deep(.checkbox-radio-switch__text) {
 	font-weight: 400;
