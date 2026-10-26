@@ -227,7 +227,7 @@ export default {
 		title() {
 			return this.definition
 				? t('dossiq', 'New version of {z}', {
-						z: this.definition.case_type,
+						z: this.definition.caseType || this.definition.case_type,
 					})
 				: t('dossiq', 'New term definition')
 		},

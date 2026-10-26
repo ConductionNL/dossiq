@@ -93,9 +93,9 @@
 					class="deadline-definitions-tab__row"
 					:class="{ 'deadline-definitions-tab__row--inactive': !isActive(def) }">
 					<td v-if="showCaseType" class="deadline-definitions-tab__row-name">
-						{{ def.case_type }}
+						{{ caseTypeOf(def) }}
 					</td>
-					<td>{{ def.basis || t('dossiq', '(no grondslag)') }}</td>
+					<td>{{ basisOf(def) || t('dossiq', '(no grondslag)') }}</td>
 					<td>{{ formatDuur(def) }}</td>
 					<td>v{{ def.version || 1 }}</td>
 					<td data-testid="deadline-counting-mode-pill">
@@ -185,7 +185,7 @@ export default {
 		 * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
 		 */
 		showCaseType() {
-			return this.definitions.some((def) => Boolean(def.case_type))
+			return this.definitions.some((def) => Boolean(this.caseTypeOf(def)))
 		},
 
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
@@ -193,7 +193,7 @@ export default {
 			const seen = new Set()
 			const opts = []
 			for (const d of this.definitions) {
-				const z = d.case_type || ''
+				const z = this.caseTypeOf(d)
 				if (z && !seen.has(z)) {
 					seen.add(z)
 					opts.push({ id: z, label: z })
@@ -311,8 +311,34 @@ export default {
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		formatDuur(def) {
-			const v = def.duurDagen || def.duur || 0
-			return v ? t('dossiq', '{n} days', { n: v }) : '—'
+			const weeks = Number(def.standardDurationWeeks || 0)
+			if (weeks > 0) {
+				return t('dossiq', '{n} weeks', { n: weeks })
+			}
+			const days = Number(def.standardDurationDays || def.duurDagen || def.duur || 0)
+			return days ? t('dossiq', '{n} days', { n: days }) : '—'
+		},
+
+		/**
+		 * A definition's legal basis, as the register stores it (`legalBasis`).
+		 *
+		 * @param {object} def The definition.
+		 * @return {string} The basis, or the empty string.
+		 * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+		 */
+		basisOf(def) {
+			return String(def?.legalBasis || def?.basis || '')
+		},
+
+		/**
+		 * The case type a definition binds to, by slug (`caseType`).
+		 *
+		 * @param {object} def The definition.
+		 * @return {string} The slug, or the empty string.
+		 * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+		 */
+		caseTypeOf(def) {
+			return String(def?.caseType || def?.case_type || '')
 		},
 
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
