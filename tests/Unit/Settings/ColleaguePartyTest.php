@@ -55,9 +55,9 @@ class ColleaguePartyTest extends TestCase {
 	public function testTheColleagueIsAPartyTiedToAnAccount(): void {
 		$colleague = $this->schemas()['colleague'];
 
-		$this->assertSame(['kind' => 'colleague', 'nameProperty' => 'displayName'], $colleague['configuration']['x-openregister-party']);
-		$this->assertSame(['userId', 'displayName'], $colleague['required']);
-		$this->assertArrayHasKey('jobTitle', $colleague['properties']);
+		$this->assertSame(expected: ['kind' => 'colleague', 'nameProperty' => 'displayName'], actual: $colleague['configuration']['x-openregister-party']);
+		$this->assertSame(expected: ['userId', 'displayName'], actual: $colleague['required']);
+		$this->assertArrayHasKey(key: 'jobTitle', array: $colleague['properties']);
 	}//end testTheColleagueIsAPartyTiedToAnAccount()
 
 	/**
@@ -72,8 +72,8 @@ class ColleaguePartyTest extends TestCase {
 			$shapes[$kind['key']] = ($kind['identityShapes'] ?? null);
 		}
 
-		$this->assertSame(['naturalPerson'], $shapes['person']);
-		$this->assertSame(['organization'], $shapes['organisation']);
-		$this->assertSame(['naturalPerson'], $shapes['colleague']);
+		$this->assertSame(expected: ['naturalPerson'], actual: $shapes['person']);
+		$this->assertSame(expected: ['organization'], actual: $shapes['organisation']);
+		$this->assertSame(expected: ['naturalPerson'], actual: $shapes['colleague']);
 	}//end testTheCaseAcceptsAColleagueAndNamesTheShapes()
 }//end class
