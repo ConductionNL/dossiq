@@ -139,7 +139,9 @@ class ProcessingTimeCalculator {
 				$withinSla++;
 			}
 
-			$byType[$typeId] ??= [
+			// Every version of a case type is one row (its family, the shared identifier).
+			$key = (string)($types[$typeId]['family'] ?? $typeId);
+			$byType[$key] ??= [
 				'id'         => $typeId,
 				'name'       => (string)($types[$typeId]['name'] ?? ''),
 				'total'      => 0,
@@ -147,10 +149,10 @@ class ProcessingTimeCalculator {
 				'totalDays'  => 0,
 				'targetDays' => $target,
 			];
-			$byType[$typeId]['total']++;
-			$byType[$typeId]['totalDays'] += $actual;
+			$byType[$key]['total']++;
+			$byType[$key]['totalDays'] += $actual;
 			if ($isWithin === true) {
-				$byType[$typeId]['withinSla']++;
+				$byType[$key]['withinSla']++;
 			}
 		}//end foreach
 

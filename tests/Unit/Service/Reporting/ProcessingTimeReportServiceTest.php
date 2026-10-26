@@ -299,6 +299,33 @@ class ProcessingTimeReportServiceTest extends TestCase {
 	}//end testBreakdownHasOneRowPerCaseTypeNotPerVersion()
 
 	/**
+	 * The compliance per case type ("Naleving per zaaktype") is one row per
+	 * case type too: Woo-verzoek v1 and v2 together.
+	 *
+	 * @return void
+	 */
+	public function testComplianceHasOneRowPerCaseTypeNotPerVersion(): void {
+		$this->loader = $this->createMock(originalClassName: ProcessMiningDataLoader::class);
+		$this->loader->method('loadCaseTypes')->willReturn(
+			[
+				['id' => 'woo-1', 'identifier' => 'woo-verzoek', 'title' => 'Woo-verzoek', 'processingDeadline' => 'P28D'],
+				['id' => 'woo-2', 'identifier' => 'woo-verzoek', 'title' => 'Woo-verzoek', 'processingDeadline' => 'P28D'],
+			]
+		);
+		$this->loader->method('loadStatusTypes')->willReturn([['id' => 'st-done', 'isFinal' => true]]);
+
+		$report = $this->service(
+			records: [
+				['id' => 'w1', 'caseType' => 'woo-1', 'status' => 'st-done', 'startDate' => '2026-06-01', 'endDate' => '2026-06-05'],
+				['id' => 'w2', 'caseType' => 'woo-2', 'status' => 'st-done', 'startDate' => '2026-06-01', 'endDate' => '2026-06-11'],
+			]
+		)->getReport(period: '12m', caseType: null, view: 'sla', threshold: 1.0);
+
+		self::assertCount(expectedCount: 1, haystack: $report['sla']);
+		self::assertSame(expected: 2, actual: $report['sla'][0]['total']);
+	}//end testComplianceHasOneRowPerCaseTypeNotPerVersion()
+
+	/**
 	 * The unfiltered report is handed to the publisher.
 	 *
 	 * @return void
