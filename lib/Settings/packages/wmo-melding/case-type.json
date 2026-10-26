@@ -345,6 +345,7 @@
   "statusTypes": [
     {
       "id": "a8352923-e31b-55d2-8434-a5784a3f0a0e",
+      "phase": "Ontvangst",
       "name": "Melding ontvangen",
       "description": "De melding is binnen en geregistreerd.",
       "order": 1,
@@ -355,6 +356,7 @@
     },
     {
       "id": "82624110-a91c-5b77-b221-6d3f032d44a5",
+      "phase": "Beoordeling",
       "name": "Onderzoek",
       "description": "Het wijkteam onderzoekt met de inwoner wat er nodig is (het keukentafelgesprek).",
       "order": 2,
@@ -365,6 +367,7 @@
     },
     {
       "id": "19c076c6-da63-5b17-9b15-3f17f8805f40",
+      "phase": "Besluit",
       "name": "Besluit in voorbereiding",
       "description": "Het besluit over de ondersteuning wordt voorbereid.",
       "order": 3,
@@ -374,6 +377,7 @@
     },
     {
       "id": "46323a36-cd5b-5499-b082-dbb20a29cc37",
+      "phase": "Besluit",
       "name": "Besluit genomen",
       "description": "De ondersteuning is toegekend of afgewezen.",
       "order": 4,
@@ -383,6 +387,7 @@
     },
     {
       "id": "45740511-7cdc-566c-91a1-b5ded18b3b17",
+      "phase": "Beoordeling",
       "name": "Uitvoering",
       "description": "De ondersteuning loopt.",
       "order": 5,
@@ -392,6 +397,7 @@
     },
     {
       "id": "09e3780d-6eb9-5572-8baf-fabef0df22f5",
+      "phase": "Beoordeling",
       "name": "Evaluatie",
       "description": "De ondersteuning wordt geëvalueerd.",
       "order": 6,

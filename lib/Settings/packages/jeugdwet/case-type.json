@@ -415,6 +415,7 @@
   "statusTypes": [
     {
       "id": "6ea508cb-3395-5603-98bc-38d4fd34b511",
+      "phase": "Ontvangst",
       "name": "Melding ontvangen",
       "description": "De melding is binnen en geregistreerd.",
       "order": 1,
@@ -425,6 +426,7 @@
     },
     {
       "id": "cea85ff4-c209-5d71-8a3b-c835c46ea3f1",
+      "phase": "Beoordeling",
       "name": "Onderzoek",
       "description": "Het jeugdteam onderzoekt met het gezin wat er nodig is.",
       "order": 2,
@@ -435,6 +437,7 @@
     },
     {
       "id": "7f5bc6ef-3623-5fcf-a9b1-dd0091fbae30",
+      "phase": "Beoordeling",
       "name": "Indicatie",
       "description": "De indicatie voor jeugdhulp wordt opgesteld.",
       "order": 3,
@@ -444,6 +447,7 @@
     },
     {
       "id": "c868dd79-7253-5f14-82ca-ef591d2fac19",
+      "phase": "Advies",
       "name": "Overleg",
       "description": "Het multidisciplinair overleg bespreekt de indicatie en het gezinsplan.",
       "order": 4,
@@ -453,6 +457,7 @@
     },
     {
       "id": "4543667e-c21a-54fa-a323-b3e81292e5a7",
+      "phase": "Besluit",
       "name": "Besluit",
       "description": "Het besluit over de jeugdhulp is genomen en verzonden.",
       "order": 5,
@@ -471,6 +476,7 @@
     },
     {
       "id": "193f2312-727f-52b8-97f2-63c0de836c63",
+      "phase": "Beoordeling",
       "name": "Evaluatie",
       "description": "De jeugdhulp en het gezinsplan worden geëvalueerd.",
       "order": 7,
@@ -480,6 +486,7 @@
     },
     {
       "id": "eba70831-8cc1-5d84-8acc-844c0d1550a0",
+      "phase": "Beoordeling",
       "name": "Verlenging aangevraagd",
       "description": "Een verlenging van de jeugdhulp is aangevraagd.",
       "order": 8,

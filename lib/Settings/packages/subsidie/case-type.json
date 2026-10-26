@@ -55,6 +55,7 @@
   "statusTypes": [
     {
       "id": "b3c1a000-0000-4000-a000-00005ab50001",
+      "phase": "Ontvangst",
       "name": "Ontvangen",
       "description": "Subsidieaanvraag is ontvangen en geregistreerd",
       "order": 1,
@@ -65,6 +66,7 @@
     },
     {
       "id": "2318408c-cb66-5b32-b06a-7809499ec77f",
+      "phase": "Beoordeling",
       "name": "In behandeling",
       "description": "Aanvraag wordt inhoudelijk beoordeeld (volledigheid, regeling, begroting)",
       "order": 2,

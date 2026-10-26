@@ -335,6 +335,8 @@ class DwellTimeAnalyzer {
 				[
 					'statusId' => $statusId,
 					'statusName' => $this->statusLabel(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
+					'statusPhase' => $this->statusPhase(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
+					'statusFinal' => (($statusTypeIndex[$statusId]['isFinal'] ?? false) === true),
 				],
 				$this->summarise(workingHours: $lists['working'], wallHours: $lists['wall'])
 			);
@@ -481,6 +483,25 @@ class DwellTimeAnalyzer {
 
 		return $name;
 	}//end statusLabel()
+
+	/**
+	 * The phase a status type belongs to (its optional `phase`, translated
+	 * for the reader), or '' when it names none.
+	 *
+	 * @param string                              $statusId        StatusType UUID.
+	 * @param array<string, array<string, mixed>> $statusTypeIndex StatusType rows, keyed by id.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/status-type-phase/specs/process-mining/spec.md#requirement-days-per-phase-groups-statuses-by-their-phase
+	 */
+	private function statusPhase(string $statusId, array $statusTypeIndex): string {
+		if (isset($statusTypeIndex[$statusId]) === false) {
+			return '';
+		}
+
+		return $this->text->forReader(value: ($statusTypeIndex[$statusId]['phase'] ?? ''));
+	}//end statusPhase()
 
 	/**
 	 * Extract a record's creation timestamp — either the flattened

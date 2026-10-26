@@ -88,16 +88,16 @@ class PhaseSummary {
 		$columns = [];
 		$rows = [];
 		foreach ($caseTypes as $report) {
-			$byName = [];
-			foreach ($this->namedStats(report: $report) as $stat) {
-				$name = (string)$stat['statusName'];
-				$byName[$name] = (int)round(((float)($stat[$measure] ?? 0)) / self::HOURS_PER_DAY);
-				if (in_array($name, $columns, true) === false) {
-					$columns[] = $name;
+			$hours = [];
+			foreach ($this->columnsOf(stats: $this->namedStats(report: $report)) as $column => $stats) {
+				$hours[$column] = array_sum(array_map(static fn (array $stat): float => (float)($stat[$measure] ?? 0), $stats));
+				if (in_array($column, $columns, true) === false) {
+					$columns[] = $column;
 				}
 			}
 
-			if ($byName !== []) {
+			if ($hours !== []) {
+				$byName = array_map(static fn (float $sum): int => (int)round($sum / self::HOURS_PER_DAY), $hours);
 				$rows[] = ['label' => (string)($report['title'] ?? ''), 'byName' => $byName];
 			}
 		}
@@ -113,6 +113,39 @@ class PhaseSummary {
 			),
 		];
 	}//end matrix()
+
+	/**
+	 * A case type's statistics per matrix column. A status that names a
+	 * phase goes under its phase (the days of a phase are the days of its
+	 * statuses together), any other under its own name. When the case type
+	 * uses phases, its final statuses are no column: the case has left the
+	 * process there.
+	 *
+	 * @param array<int, array<string, mixed>> $stats The named dwell statistics.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>> Column => statistics.
+	 *
+	 * @spec openspec/changes/status-type-phase/specs/process-mining/spec.md#requirement-days-per-phase-groups-statuses-by-their-phase
+	 */
+	private function columnsOf(array $stats): array {
+		$phased = array_filter($stats, static fn (array $stat): bool => (string)($stat['statusPhase'] ?? '') !== '') !== [];
+
+		$columns = [];
+		foreach ($stats as $stat) {
+			if ($phased === true && ($stat['statusFinal'] ?? false) === true) {
+				continue;
+			}
+
+			$column = (string)($stat['statusPhase'] ?? '');
+			if ($column === '') {
+				$column = (string)$stat['statusName'];
+			}
+
+			$columns[$column][] = $stat;
+		}
+
+		return $columns;
+	}//end columnsOf()
 
 	/**
 	 * The dwell statistics of a report whose status resolved to a name. A
