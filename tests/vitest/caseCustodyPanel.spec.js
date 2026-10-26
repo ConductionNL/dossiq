@@ -380,6 +380,13 @@ describe('the holdings as rows (DqZaakArchivering Bewaring)', () => {
 		expect(nl['Request for this case']).toBe('Verzoek om de zaak')
 	})
 
+	it('opts in to the board\'s ruled-list start under the card subtitle', async () => {
+		const wrapper = await mountChain([
+			{ id: 'h-1', organisationUnit: 'Team Woo en informatie', from: '2026-10-03T14:18:00+02:00', until: '', open: true, reason: '' },
+		])
+		expect(wrapper.classes()).toContain('cn-rule-above')
+	})
+
 	it('reads the backfill\'s reason through the translation', async () => {
 		const wrapper = await mountChain([
 			{ id: 'h-1', organisationUnit: 'behandelaars', from: '2026-10-12T09:00:00+02:00', until: '', open: true, reason: 'Opened by the custody backfill from the case as it stood' },
