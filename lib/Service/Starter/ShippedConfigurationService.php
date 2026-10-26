@@ -90,6 +90,13 @@ class ShippedConfigurationService {
 	public const REFRESH_KEPT = 'kept';
 
 	/**
+	 * The schema values a ledger row may carry, built on first use.
+	 *
+	 * @var ShippedLedgerTargets|null
+	 */
+	private ?ShippedLedgerTargets $targets = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param StarterStore       $store       The OpenRegister seam.
@@ -152,6 +159,7 @@ class ShippedConfigurationService {
 			$object = (new ShippedRowShape())->asWritten(object: $stored, objectsKey: $objectsKey);
 		}
 
+		$targetSchema = $this->targets()->slugFor(targetSchema: $targetSchema);
 		$version = ($version ?? $this->sets->versionOf(set: $set));
 		if ($version === '' || $targetObject === '' || $targetSchema === '') {
 			// ADR-102: a stamp that cannot name its set is worse than no stamp,
@@ -334,7 +342,7 @@ class ShippedConfigurationService {
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function overview(string $targetSchema, string $objectsKey): ?array {
-		$ledger = $this->store->rows(configKey: self::LEDGER, filters: ['targetSchema' => $targetSchema]);
+		$ledger = $this->targets()->rows(ledgerKey: self::LEDGER, targetSchema: $targetSchema);
 		if ($ledger === null) {
 			return null;
 		}
@@ -673,19 +681,18 @@ class ShippedConfigurationService {
 			return null;
 		}
 
-		$rows = $this->store->rows(
-			configKey: self::LEDGER,
-			filters: [
-				'targetSchema' => $targetSchema,
-				'targetObject' => $targetObject,
-				'_limit' => 1,
-			],
-		);
-
-		if ($rows === null || $rows === []) {
-			return null;
-		}
-
-		return $rows[0];
+		return $this->targets()->row(ledgerKey: self::LEDGER, targetSchema: $targetSchema, targetObject: $targetObject);
 	}//end ledgerRow()
+
+	/**
+	 * The ledger's schema values, over this service's store.
+	 *
+	 * @return ShippedLedgerTargets The targets.
+	 */
+	private function targets(): ShippedLedgerTargets {
+		$this->targets ??= new ShippedLedgerTargets(store: $this->store);
+
+		return $this->targets;
+	}//end targets()
+
 }//end class
