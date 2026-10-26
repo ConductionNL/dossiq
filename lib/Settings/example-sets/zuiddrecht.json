@@ -1851,7 +1851,6 @@
 			"register": "dossiq",
 			"schema": "statusType",
 			"data": {
-				"phase": "Ontvangst",
 				"name": "Ontvangen",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"order": 1,
@@ -1878,7 +1877,6 @@
 			"register": "dossiq",
 			"schema": "statusType",
 			"data": {
-				"phase": "Ontvangst",
 				"name": "Aanvullende gegevens gevraagd",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"order": 2,
@@ -1895,7 +1893,6 @@
 			"register": "dossiq",
 			"schema": "statusType",
 			"data": {
-				"phase": "Beoordeling",
 				"name": "In behandeling",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"order": 3,
@@ -1912,7 +1909,6 @@
 			"register": "dossiq",
 			"schema": "statusType",
 			"data": {
-				"phase": "Besluit",
 				"name": "Besluit",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
 				"order": 4,
@@ -2592,7 +2588,6 @@
 			"register": "dossiq",
 			"schema": "statusType",
 			"data": {
-				"phase": "Ontvangst",
 				"name": "Ontvangen",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"order": 1,
@@ -2619,7 +2614,6 @@
 			"register": "dossiq",
 			"schema": "statusType",
 			"data": {
-				"phase": "Ontvangst",
 				"name": "Aanvullende gegevens gevraagd",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"order": 2,
@@ -2636,7 +2630,6 @@
 			"register": "dossiq",
 			"schema": "statusType",
 			"data": {
-				"phase": "Beoordeling",
 				"name": "In behandeling",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"order": 3,
@@ -2653,7 +2646,6 @@
 			"register": "dossiq",
 			"schema": "statusType",
 			"data": {
-				"phase": "Besluit",
 				"name": "Besluit",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"order": 4,

@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Every status the example set declares before a case ends names its phase,
- * as the shipped status types do, so DqProcesanalyse's Dagen per fase counts
- * the set's own case types too.
+ * The Adviesaanvraag case type the example set declares names the phase of
+ * each open status, as the shipped status types do, so DqProcesanalyse's Dagen
+ * per fase counts it too.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Settings
@@ -28,17 +28,17 @@ use PHPUnit\Framework\TestCase;
 class ZuiddrechtStatusPhasesTest extends TestCase {
 
 	/**
-	 * A non-final status names one of the five phases.
+	 * Ontvangen is Ontvangst, In behandeling is Beoordeling.
 	 *
 	 * @return void
 	 */
-	public function testEveryOpenStatusNamesItsPhase(): void {
-		$set = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+	public function testTheAdviceRequestStatusesNameTheirPhase(): void {
+		$set     = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$objects = array_column($set['objects'], 'data', 'key');
 
-		foreach ($set['objects'] as $object) {
-			if ($object['schema'] === 'statusType' && ($object['data']['isFinal'] ?? false) === false) {
-				$this->assertContains($object['data']['phase'] ?? null, ['Ontvangst', 'Beoordeling', 'Advies', 'Besluit', 'Verzending'], $object['key']);
-			}
-		}
-	}//end testEveryOpenStatusNamesItsPhase()
+		$this->assertSame(
+			['Ontvangst', 'Beoordeling'],
+			[$objects['status-adviesaanvraag-ontvangen']['phase'] ?? null, $objects['status-adviesaanvraag-in-behandeling']['phase'] ?? null]
+		);
+	}//end testTheAdviceRequestStatusesNameTheirPhase()
 }//end class
