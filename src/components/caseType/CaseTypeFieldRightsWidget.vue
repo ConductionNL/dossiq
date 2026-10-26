@@ -2,7 +2,7 @@
   SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
   SPDX-License-Identifier: EUPL-1.2
 
-  The case type's field rights as a matrix of fields by status, on the Fields
+  The case type's field rights as a matrix of fields by role, on the Fields
   tab (DqZaaktypeVelden "Wie wat ziet en invult, per rol en status"). A view
   over the stored rules: fieldRoleRules (per role, a Nextcloud group,
   optionally limited to statuses) and what each status requires. The rules
@@ -31,7 +31,7 @@
 						{{ row.label }}
 					</th>
 					<td v-for="(cell, index) in row.cells" :key="matrix.columns[index].id" data-testid="case-type-field-rights-cell">
-						<span v-for="line in linesOf(cell)" :key="line.text" :class="{ 'case-type-field-rights__open': line.open }">{{ line.text }}</span>
+						<CnStatusBadge :label="labelOf(cell.state)" :variant="variantOf(cell.state)" size="small" />
 					</td>
 				</tr>
 			</tbody>
@@ -40,6 +40,7 @@
 </template>
 
 <script>
+import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import { subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
@@ -52,7 +53,7 @@ const PAGE_REFRESH = 'cn:page:refresh'
 export default {
 	name: 'CaseTypeFieldRightsWidget',
 
-	components: { NcLoadingIcon },
+	components: { CnStatusBadge, NcLoadingIcon },
 
 	data() {
 		return {
@@ -98,29 +99,29 @@ export default {
 		t,
 
 		/**
-		 * What one cell says: required, then each role's restriction, else
-		 * that everyone may change the field.
+		 * What one cell says, in words.
 		 *
-		 * @param {{required: boolean, roles: Array<{state: string, roles: Array<string>}>}} cell The cell.
-		 * @return {Array<{text: string, open: boolean}>} The lines.
+		 * @param {string} state hidden, readOnly, required or edit.
+		 * @return {string} The pill's label.
 		 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
 		 */
-		linesOf(cell) {
-			const lines = []
-			if (cell.required) {
-				lines.push({ text: t('dossiq', 'Required'), open: false })
-			}
-			for (const entry of cell.roles) {
-				const roles = entry.roles.join(', ')
-				const text = entry.state === 'hidden'
-					? t('dossiq', 'Hidden from {roles}', { roles })
-					: t('dossiq', 'Read only for {roles}', { roles })
-				lines.push({ text, open: false })
-			}
-			if (lines.length === 0) {
-				lines.push({ text: t('dossiq', 'Edit'), open: true })
-			}
-			return lines
+		labelOf(state) {
+			return {
+				hidden: t('dossiq', 'Hidden'),
+				readOnly: t('dossiq', 'Read only'),
+				required: t('dossiq', 'Required'),
+			}[state] || t('dossiq', 'Edit')
+		},
+
+		/**
+		 * The pill's tone for a cell: required info, edit success, hidden error, read only grey.
+		 *
+		 * @param {string} state hidden, readOnly, required or edit.
+		 * @return {string} A CnStatusBadge variant.
+		 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+		 */
+		variantOf(state) {
+			return { hidden: 'error', readOnly: 'default', required: 'info' }[state] || 'success'
 		},
 
 		/**
@@ -170,16 +171,8 @@ export default {
 	font-weight: 600;
 }
 
-.case-type-field-rights__table td span {
-	display: block;
-}
-
 .case-type-field-rights__field {
 	font-weight: 600;
-}
-
-.case-type-field-rights__open {
-	color: var(--color-text-maxcontrast);
 }
 
 .case-type-field-rights__empty {

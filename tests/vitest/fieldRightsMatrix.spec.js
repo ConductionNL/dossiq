@@ -35,21 +35,21 @@ const RULES = [
 describe('the field rights matrix', () => {
 	const matrix = fieldRightsMatrix({ rules: RULES, statuses: STATUSES, properties: PROPERTIES })
 
-	it('has a column per status, in order', () => {
-		expect(matrix.columns).toEqual([{ id: 's1', label: 'Ontvangen' }, { id: 's2', label: 'In behandeling' }, { id: 's3', label: 'Afgehandeld' }])
+	it('has a column per role, labelled with the statuses its rules name', () => {
+		expect(matrix.columns.map((column) => column.label)).toEqual(['Intaker, in behandeling, afgehandeld', 'Iedereen, afgehandeld'])
 	})
 
 	it('has a row per field a rule names or a status requires, in declared order', () => {
 		expect(matrix.rows.map((row) => row.label)).toEqual(['Bouwkosten', 'Soort bouwwerk', 'Welstandsgebied'])
 	})
 
-	it('holds a status-limited rule only in its statuses, an unlimited one everywhere', () => {
-		const [bouwkosten, soort, welstand] = matrix.rows
-		expect(bouwkosten.cells.map((cell) => [cell.required, cell.roles.length])).toEqual([[true, 0], [false, 1], [false, 1]])
-		expect(bouwkosten.cells[1].roles).toEqual([{ state: 'readOnly', roles: ['Intaker'] }])
-		expect(soort.cells.map((cell) => cell.required)).toEqual([false, true, false])
-		expect(welstand.cells[0].roles).toEqual([{ state: 'hidden', roles: ['Intaker'] }])
-		expect(welstand.cells[2].roles).toEqual([{ state: 'hidden', roles: ['Intaker'] }, { state: 'readOnly', roles: ['Iedereen'] }])
+	it('says per role what the field is: a rule first, then required in one of its statuses, else edit', () => {
+		const states = matrix.rows.map((row) => row.cells.map((cell) => cell.state))
+		expect(states).toEqual([
+			['readOnly', 'edit'],
+			['required', 'edit'],
+			['hidden', 'readOnly'],
+		])
 	})
 
 	it('is empty for a case type without rules or statuses', () => {
