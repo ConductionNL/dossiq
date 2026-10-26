@@ -84,7 +84,7 @@ class ZuiddrechtDepartmentTreeTest extends TestCase {
 				'Jeugdteam'                => 'Sociaal domein',
 				'Werk en inkomen'          => 'Sociaal domein',
 				'Bedrijfsvoering'          => 'Gemeente Zuiddrecht',
-				'Woo en informatie'        => 'Gemeente Zuiddrecht',
+				'Woo en informatie'        => 'Bedrijfsvoering',
 				'Team Vergunningen'        => 'Fysiek domein',
 				'Team Handhaving'          => 'Fysiek domein',
 			],

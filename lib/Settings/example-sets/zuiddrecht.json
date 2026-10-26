@@ -120,6 +120,14 @@
 	],
 	"appConfig": [
 		{
+			"key": "email_imap_folder",
+			"value": "INBOX"
+		},
+		{
+			"key": "consultation_external_response_url",
+			"value": "https://loket.zuiddrecht.nl/advies"
+		},
+		{
 			"key": "background_service_account",
 			"value": "{{account:background.uid}}"
 		},
@@ -6672,7 +6680,7 @@
 				"roleName": "Woo en informatie",
 				"roleType": "ambtelijk",
 				"ncGroupId": "zuiddrecht-woo-en-informatie",
-				"parentRoleId": "{{object:afdeling-gemeente.id}}"
+				"parentRoleId": "{{object:afdeling-bedrijfsvoering.id}}"
 			}
 		},
 		{
