@@ -409,6 +409,7 @@
           "enabled": true
         },
         "maxExtensions": 1,
+        "suspensionAllowed": true,
         "x-index": {
           "title": "Woo requests",
           "countText": "{shown} of {total} Woo requests · sorted by legal term",
