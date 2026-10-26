@@ -45,7 +45,7 @@
 			<tbody>
 				<tr v-for="(b, idx) in matrices" :key="b.id">
 					<td>{{ idx + 1 }}</td>
-					<td>{{ b.name || b.mandateNumber || b.id }}</td>
+					<td>{{ b.name || b.decisionName || b.mandateNumber || b.id }}</td>
 					<td>
 						<span
 							class="mandaat-matrix-table__badge"
