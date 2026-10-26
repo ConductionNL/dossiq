@@ -52,6 +52,16 @@ describe('the field rights matrix', () => {
 		])
 	})
 
+	it('reads a status name in a language map and labels a group with its role types', () => {
+		const labelled = fieldRightsMatrix({
+			rules: [{ field: 'bouwkosten', rule: 'readOnly', groups: ['zuiddrecht-vergunningen'], statuses: ['s1'] }],
+			statuses: [{ id: 's1', name: { nl: 'Ontvangen', en: 'Received' } }],
+			properties: PROPERTIES,
+			roleNames: { 'zuiddrecht-vergunningen': ['Intaker', 'Vergunningverlener'] },
+		})
+		expect(labelled.columns.map((column) => column.label)).toEqual(['Intaker / Vergunningverlener, ontvangen'])
+	})
+
 	it('is empty for a case type without rules or statuses', () => {
 		expect(fieldRightsMatrix({})).toEqual({ columns: [], rows: [] })
 	})

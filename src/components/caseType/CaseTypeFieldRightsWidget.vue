@@ -44,7 +44,7 @@ import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import { subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import { fetchBlueprintCatalogue } from '../../services/caseTypeRules.js'
+import { fetchBlueprintCatalogue, fetchRoleNamesByGroup } from '../../services/caseTypeRules.js'
 import { useObjectStore } from '../../store/modules/object.js'
 import { fieldRightsMatrix } from '../../utils/fieldRightsMatrix.js'
 
@@ -61,6 +61,7 @@ export default {
 			rules: [],
 			statuses: [],
 			properties: [],
+			roleNames: {},
 		}
 	},
 
@@ -82,7 +83,7 @@ export default {
 		 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
 		 */
 		matrix() {
-			return fieldRightsMatrix({ rules: this.rules, statuses: this.statuses, properties: this.properties })
+			return fieldRightsMatrix({ rules: this.rules, statuses: this.statuses, properties: this.properties, roleNames: this.roleNames })
 		},
 	},
 
@@ -144,6 +145,7 @@ export default {
 			this.rules = Array.isArray(caseType?.fieldRoleRules) ? caseType.fieldRoleRules : []
 			this.statuses = blueprint ? blueprint.statusTypes : []
 			this.properties = blueprint ? blueprint.propertyDefinitions : []
+			this.roleNames = await fetchRoleNamesByGroup(this.caseTypeId)
 			this.loading = false
 		},
 	},
