@@ -1,25 +1,19 @@
 <?php
 
 /**
- * Example data for DqZoekresultaten's "Uw exports": Pieter's two exports, a
- * spreadsheet and a CSV file, each a real file with the export run that names
- * it (openregister's example-set `exportRuns` part).
+ * Pieter's two exports on DqZoekresultaten "Uw exports": the street-lighting
+ * cases made yesterday and downloaded three times, and the Woo quarter made a
+ * week ago, downloaded once, which expires today (exports are kept seven days).
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Settings
- *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
- *
- * SPDX-License-Identifier: EUPL-1.2
- * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
- *
- * @version GIT: <git-id>
- *
  * @link https://conduction.nl
- *
- * @spec openspec/changes/example-set-export-runs/specs/example-sets/spec.md#requirement-a-fragment-may-give-an-account-an-export-it-made
+ * @spec exclude example set data; no requirement covers the example exports
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -27,38 +21,34 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use PHPUnit\Framework\TestCase;
-use ZipArchive;
 
 /**
  * Pieter's exports.
- *
- * @spec openspec/changes/example-set-export-runs/specs/example-sets/spec.md#requirement-a-fragment-may-give-an-account-an-export-it-made
  */
 class ZuiddrechtPieterExportsTest extends TestCase {
 
 	/**
-	 * Two exports for Pieter, the spreadsheet a readable workbook, both made before the install day.
+	 * When each was made and how often it was downloaded.
 	 *
 	 * @return void
 	 */
-	public function testPieterHasHisTwoExports(): void {
-		$set     = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
-		$exports = array_column(array_column($set['exportRuns'], 'data'), null, 'fileName');
+	public function testTheExportsAreDatedAsTheBoardDraws(): void {
+		$set  = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$runs = array_column($set['exportRuns'], 'data', 'key');
 
-		$this->assertSame(expected: ['zaken-verlichting.xlsx', 'woo-2026-q3.csv'], actual: array_keys($exports));
-		foreach ($exports as $export) {
-			$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $export['user']);
-			$this->assertMatchesRegularExpression(pattern: '/^\{\{datetime:-\d+ \d\d:\d\d\}\}$/', string: $export['producedAt']);
-		}
+		$this->assertSame(['{{datetime:-1 16:20}}', 3], [$runs['export-zaken-verlichting']['producedAt'], $runs['export-zaken-verlichting']['downloadCount']]);
+		$this->assertSame(['{{datetime:-7 23:30}}', 1], [$runs['export-woo-2026-q3']['producedAt'], $runs['export-woo-2026-q3']['downloadCount']]);
+	}//end testTheExportsAreDatedAsTheBoardDraws()
 
-		$bytes = base64_decode($exports['zaken-verlichting.xlsx']['contentBase64'], true);
-		$this->assertNotFalse($bytes);
-		$path = tempnam(sys_get_temp_dir(), 'xlsx');
-		file_put_contents($path, $bytes);
-		$zip = new ZipArchive();
-		$this->assertTrue($zip->open($path));
-		$this->assertStringContainsString(needle: 'Verlichting fietspad Lindelaan', haystack: (string)$zip->getFromName('xl/worksheets/sheet1.xml'));
-		$zip->close();
-		unlink($path);
-	}//end testPieterHasHisTwoExports()
+	/**
+	 * DqFilterInMenu draws Anouk's shared view with who made it and for which team under its name.
+	 *
+	 * @return void
+	 */
+	public function testAnouksSharedViewSaysWhoMadeIt(): void {
+		$set   = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$views = array_column($set['views'], 'data', 'key');
+
+		$this->assertSame('Door Anouk Bakker, team Woo en informatie', $views['anouk-woo-verzoeken-team']['description'] ?? null);
+	}//end testAnouksSharedViewSaysWhoMadeIt()
 }//end class

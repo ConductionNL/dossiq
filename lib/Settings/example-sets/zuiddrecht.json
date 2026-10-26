@@ -9345,6 +9345,7 @@
 			"key": "anouk-woo-verzoeken-team",
 			"data": {
 				"name": "Woo-verzoeken team",
+				"description": "Door Anouk Bakker, team Woo en informatie",
 				"sharedWith": [{"group": "{{cast:woo-en-informatie.gid}}", "mode": "read"}],
 				"owner": "{{cast:anouk.uid}}",
 				"isPublic": false,
@@ -10392,7 +10393,7 @@
 				"registerName": "dossiq",
 				"schemaName": "case",
 				"producedAt": "{{datetime:-1 16:20}}",
-				"downloadCount": 1
+				"downloadCount": 3
 			}
 		},
 		{
@@ -10405,8 +10406,8 @@
 				"rowCount": 2,
 				"registerName": "dossiq",
 				"schemaName": "case",
-				"producedAt": "{{datetime:-6 10:05}}",
-				"downloadCount": 3
+				"producedAt": "{{datetime:-7 23:30}}",
+				"downloadCount": 1
 			}
 		}
 	]
