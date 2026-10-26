@@ -201,7 +201,8 @@ class CaseTypeResolver {
 		return $this->inheritedRows(
 			caseTypeId: $caseTypeId,
 			schemaKey: 'status_type_schema',
-			includeShared: false
+			includeShared: false,
+			ownReplaces: true
 		);
 	}//end statusTypesFor()
 
@@ -384,18 +385,32 @@ class CaseTypeResolver {
 	 * is the only key both ends can be authored with: ids are minted per
 	 * install, so a child could not name the parent row it is overriding.
 	 *
+	 * With `ownReplaces`, a type that declares rows of its own takes only
+	 * those: its statuses are its whole lifecycle, and a parent's Besluitvorming
+	 * merged in would add a step the type does not have.
+	 *
 	 * @param string  $caseTypeId    CaseType UUID.
 	 * @param string  $schemaKey     The settings key naming the schema.
 	 * @param boolean $includeShared Whether rows with no case type count.
+	 * @param boolean $ownReplaces   Whether the type's own rows, when it has any, replace the ancestors'.
 	 *
 	 * @return array<int, array<string, mixed>> The merged rows.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	private function inheritedRows(string $caseTypeId, string $schemaKey, bool $includeShared): array {
+	private function inheritedRows(string $caseTypeId, string $schemaKey, bool $includeShared, bool $ownReplaces=false): array {
 		$chain = $this->chainFor(caseTypeId: $caseTypeId);
 		if ($chain === []) {
 			return [];
+		}
+
+		if ($ownReplaces === true && count($chain) > 1) {
+			$own  = $chain[0];
+			$rows = $this->store->rowsOfType(schemaKey: $schemaKey, caseTypeId: $this->store->rowId(row: $own));
+			if ($rows !== []) {
+				$origin = (new RowOrigins())->originFor(isOwn: true);
+				return $this->sortByOrder(rows: array_map(fn (array $row): array => $this->tag(row: $row, origin: $origin, ancestor: $own), array_values($rows)));
+			}
 		}
 
 		// Furthest ancestor first, so a nearer declaration overwrites it.
