@@ -12,6 +12,7 @@
                 "slug": "colleague",
                 "icon": "AccountTieOutline",
                 "version": "1.0.0",
+                "searchable": false,
                 "x-schema-org": "schema:Person",
                 "title": "Colleague",
                 "description": "A colleague of the municipality who takes part in a case: an adviser, an inspector, a member of the handling team. A party of kind colleague, linked to their Nextcloud account by user id, so a case can show who of the organisation is involved beside the people and organisations it is about.",
