@@ -305,7 +305,8 @@
       "order": 6,
       "isFinal": false,
       "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd",
-      "colour": "purple"
+      "colour": "purple",
+      "phase": "Uitvoering"
     },
     {
       "id": "0dafe7a0-cb02-561e-a5c9-d1983a45f2d6",
@@ -356,7 +357,8 @@
       "order": 4,
       "isFinal": false,
       "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa",
-      "colour": "purple"
+      "colour": "purple",
+      "phase": "Uitvoering"
     },
     {
       "id": "3556fed1-057c-5154-ac70-e23e549a21ca",
@@ -418,7 +420,8 @@
       "order": 5,
       "isFinal": false,
       "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d",
-      "colour": "orange"
+      "colour": "orange",
+      "phase": "Uitvoering"
     },
     {
       "id": "730b3d39-9b6f-57c5-a660-1263b5b2a177",
@@ -448,7 +451,8 @@
       "isFinal": false,
       "role": "intake",
       "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
-      "colour": "red"
+      "colour": "red",
+      "phase": "Uitvoering"
     },
     {
       "id": "086b4d8a-0b58-5e8c-b1b3-0deeb6b9240a",
@@ -458,7 +462,8 @@
       "isFinal": false,
       "role": "in-progress",
       "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
-      "colour": "red"
+      "colour": "red",
+      "phase": "Uitvoering"
     },
     {
       "id": "9f64fdfd-e195-589b-ad34-8138ddf0f92d",
@@ -467,7 +472,8 @@
       "order": 3,
       "isFinal": false,
       "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
-      "colour": "green"
+      "colour": "green",
+      "phase": "Uitvoering"
     },
     {
       "id": "9d668ca1-222f-5595-aacd-9e05529faac1",

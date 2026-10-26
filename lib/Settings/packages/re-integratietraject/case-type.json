@@ -361,7 +361,8 @@
       "order": 3,
       "isFinal": false,
       "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
-      "colour": "purple"
+      "colour": "purple",
+      "phase": "Uitvoering"
     },
     {
       "id": "576f334f-9157-569e-8f9a-4cf66f23ae8c",
