@@ -1412,7 +1412,7 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/74-planned-actions.json::plannedAction": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "aadca8e192cd40ba5c9e1280801020577c6a64b3f909e9407263b29d0ac4bd0f"
     },
     "lib/Settings/register.d/74-planned-actions.json::plannedActionType": {
