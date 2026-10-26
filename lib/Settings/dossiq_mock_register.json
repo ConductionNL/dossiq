@@ -2461,7 +2461,7 @@
           }
         },
         "icon": "FolderAccountOutline",
-        "version": "1.12.0",
+        "version": "1.13.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-archival": {
@@ -13265,7 +13265,7 @@
       "substitution": {
         "slug": "substitution",
         "icon": "AccountSwitchOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Substitution",
         "description": "Vervanging/waarneming registration: who covers an absent handler's workload, when, and for what scope. Domain data on top of OpenRegister RBAC; grants no permissions of its own (handler-vervanging-waarneming spec).",
         "type": "object",
