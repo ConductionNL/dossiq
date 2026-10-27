@@ -69,6 +69,22 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 			) {
 			}
 
+			/**
+			 * Record a partial write.
+			 *
+			 * @param string               $objectId The object id.
+			 * @param array<string, mixed> $data     The fields written.
+			 * @param string               $register The register.
+			 * @param string               $schema   The schema.
+			 *
+			 * @return array<string, mixed> The written fields with the id.
+			 */
+			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+				$this->saved[] = ['schema' => $schema, 'object' => $data + ['id' => $objectId], 'patch' => true];
+
+				return $data + ['id' => $objectId];
+			}
+
 			public function saveObject(array $object, string $register, string $schema): mixed {
 				if ($schema === $this->failsOnSchema) {
 					throw new RuntimeException('schema rejected the object');
@@ -123,6 +139,7 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 		array $statuses = [],
 		bool $configured = true,
 		bool $titleFindsIt = true,
+		array $rows = [],
 	): CaseFlowSeedDataRepairStep {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('isOpenRegisterAvailable')->willReturn(true);
@@ -138,6 +155,7 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 
 		$lookup = $this->createMock(StatusTypeLookup::class);
 		$lookup->method('statusesOf')->willReturn($statuses);
+		$lookup->method('rowsOf')->willReturn($rows);
 
 		return new CaseFlowSeedDataRepairStep($settings, $lookup, $index, new NullLogger());
 	}//end step()
@@ -261,6 +279,32 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 
 		$this->assertSame([], $this->savedTo('status_type_schema'), 'all statuses were already present');
 	}//end testAStatusThatAlreadyExistsIsNotRecreated()
+
+	/**
+	 * A status an earlier run stored without a phase gets the seed's phase; a
+	 * phase already set and another case type's status are left alone.
+	 *
+	 * @return void
+	 */
+	public function testAStoredStatusWithoutAPhaseGetsTheSeedsPhase(): void {
+		$step = $this->step(
+			store: $this->store(),
+			caseType: ['id' => 'ct-existing'],
+			statuses: ['st-1' => 'Bij commissie', 'st-2' => 'In behandeling', 'st-3' => 'Ontvangen'],
+			rows: [
+				['id' => 'st-1', 'name' => 'Bij commissie', 'caseType' => 'ct-existing', 'phase' => null],
+				['id' => 'st-2', 'name' => 'In behandeling', 'caseType' => 'ct-existing', 'phase' => 'Beoordeling'],
+				['id' => 'st-3', 'name' => 'Ontvangen', 'caseType' => 'ct-parent'],
+			]
+		);
+		$step->run(output: $this->createMock(originalClassName: IOutput::class));
+
+		$patches = array_values(array_filter($this->saved, static fn (array $s): bool => ($s['patch'] ?? false) === true));
+		$this->assertSame(
+			expected: [['schema' => 'status_type_schema', 'object' => ['phase' => 'Advies', 'id' => 'st-1'], 'patch' => true]],
+			actual: $patches
+		);
+	}//end testAStoredStatusWithoutAPhaseGetsTheSeedsPhase()
 
 	/**
 	 * A case whose title is already present is not created again.

@@ -387,8 +387,67 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			}
 		}
 
+		$this->backfillPhases(
+			objectService: $objectService,
+			schemas: $schemas,
+			caseTypeId: $caseTypeId,
+			statusTypes: $statusTypes
+		);
+
 		return $created;
 	}//end seedStatuses()
+
+	/**
+	 * Give the statuses an earlier run stored without a phase the seed's phase.
+	 *
+	 * A status is only created once, so one seeded before statuses carried a
+	 * phase kept none, and the process analysis drew it as a column of its own.
+	 * A phase an administrator set is left alone: only an empty one is filled.
+	 *
+	 * @param object               $objectService The ObjectService.
+	 * @param array<string,string> $schemas       Register and schema names.
+	 * @param string               $caseTypeId    The owning case type.
+	 * @param array<int,mixed>     $statusTypes   The statuses declared in the seed.
+	 *
+	 * @return integer How many statuses got their phase.
+	 *
+	 * @spec openspec/changes/seed-status-phases-backfill/specs/seed-status-phases-backfill/spec.md#requirement-a-seeded-status-without-a-phase-gets-the-seeds-phase
+	 */
+	private function backfillPhases(object $objectService, array $schemas, string $caseTypeId, array $statusTypes): int {
+		$phases = [];
+		foreach ($statusTypes as $status) {
+			if (is_array($status) === false) {
+				continue;
+			}
+
+			$name = $this->text->textOf(value: ($status['name'] ?? null));
+			$phase = ($status['phase'] ?? null);
+			if ($name !== '' && $phase !== null && $phase !== '') {
+				$phases[$name] = $phase;
+			}
+		}
+
+		$filled = 0;
+		foreach ($this->statuses->rowsOf(caseTypeId: $caseTypeId) as $row) {
+			$name = $this->text->textOf(value: ($row['name'] ?? null));
+			$id = $this->idOf(value: $row);
+			$own = ((string)($row['caseType'] ?? '') === $caseTypeId);
+			if ($id === '' || $own === false || isset($phases[$name]) === false || empty($row['phase']) === false) {
+				continue;
+			}
+
+			$this->patchObjectAsArray(
+				objectService: $objectService,
+				register: $schemas['register'],
+				schema: $schemas['statusType'],
+				id: $id,
+				changes: ['phase' => $phases[$name]]
+			);
+			$filled++;
+		}
+
+		return $filled;
+	}//end backfillPhases()
 
 	/**
 	 * Create the demo cases belonging to this case type.
