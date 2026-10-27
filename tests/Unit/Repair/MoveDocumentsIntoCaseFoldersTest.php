@@ -201,6 +201,20 @@ class MoveDocumentsIntoCaseFoldersTest extends TestCase {
 	}//end testASecondRunMovesNothing()
 
 	/**
+	 * A site that ran the first version moves the files of joins stored since.
+	 *
+	 * @return void
+	 */
+	public function testAFirstVersionRunRunsAgain(): void {
+		$this->assertNotSame(expected: '1', actual: MoveDocumentsIntoCaseFolders::DONE_VERSION);
+		$this->appConfig->method('getValueString')->willReturn('1');
+		$this->appConfig->expects($this->once())->method('setValueString')
+			->with(Application::APP_ID, MoveDocumentsIntoCaseFolders::DONE_KEY, MoveDocumentsIntoCaseFolders::DONE_VERSION);
+
+		$this->step->run(output: $this->createMock(originalClassName: IOutput::class));
+	}//end testAFirstVersionRunRunsAgain()
+
+	/**
 	 * @return void
 	 */
 	public function testARecordWithoutAFileIsSkippedWithoutALookup(): void {
