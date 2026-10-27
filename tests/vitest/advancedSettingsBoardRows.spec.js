@@ -28,7 +28,9 @@ describe('the advanced settings rows', () => {
 		expect(view).toMatch(/#shipped-schema \{[^}]*max-width: 560px;/)
 	})
 
-	it('keeps the present badge green over the status badge default', () => {
-		expect(read('src', 'views', 'settings', 'tabs', 'PrerequisitesTab.vue')).toContain('.prerequisites .prerequisites__mark--present {')
+	it('draws the present badge as the success tag, not the neutral one', () => {
+		const tab = read('src', 'views', 'settings', 'tabs', 'PrerequisitesTab.vue')
+		expect(tab).toContain("'prerequisites__mark cn-status-badge cn-status-badge--success'")
+		expect(tab).not.toContain('cn-status-badge--default prerequisites__mark--present')
 	})
 })

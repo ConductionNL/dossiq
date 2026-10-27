@@ -15,13 +15,13 @@
 						<td>
 							<span
 								v-if="mappings[key] && mappings[key].enabled"
-								class="status-enabled">
+								class="cn-status-badge cn-status-badge--success">
 								{{ t('dossiq', 'Enabled') }}
 							</span>
-							<span v-else-if="mappings[key]" class="status-disabled">
+							<span v-else-if="mappings[key]" class="cn-status-badge cn-status-badge--warning">
 								{{ t('dossiq', 'Disabled') }}
 							</span>
-							<span v-else class="status-unconfigured">
+							<span v-else class="cn-status-badge cn-status-badge--default">
 								{{ t('dossiq', 'Not configured') }}
 							</span>
 						</td>
@@ -185,32 +185,6 @@ export default {
 .zgw-mapping-settings__actions :deep(.button-vue) {
 	min-height: 34px;
 	height: 34px;
-}
-
-.status-enabled,
-.status-disabled,
-.status-unconfigured {
-	display: inline-block;
-	padding: 2px 8px;
-	border-radius: 10px;
-	font-size: 13px;
-	font-weight: 600;
-	white-space: nowrap;
-}
-
-.status-enabled {
-	background: var(--color-success);
-	color: var(--color-success-text);
-}
-
-.status-disabled {
-	background: var(--color-warning);
-	color: var(--color-warning-text);
-}
-
-.status-unconfigured {
-	background: var(--color-background-dark);
-	color: var(--color-main-text);
 }
 
 .success-message {

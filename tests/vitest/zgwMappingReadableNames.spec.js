@@ -46,7 +46,8 @@ describe('the ZGW mapping names', () => {
 		expect(table).toMatch(/\.zgw-mapping-settings__actions \{\s*display: flex;/)
 	})
 	it('draws the state as a pill and 34px row buttons, as the board', () => {
-		expect(table).toMatch(/\.status-enabled \{\s*background: var\(--color-success\);/)
+		expect(table).toContain('class="cn-status-badge cn-status-badge--success"')
+		expect(table).not.toMatch(/\.status-enabled \{/)
 		expect(table).toMatch(/:deep\(\.button-vue\) \{\s*min-height: 34px;/)
 		expect(nl['ZGW Resource']).toBe('ZGW-bron')
 	})
