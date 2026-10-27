@@ -27,6 +27,8 @@ describe('the Berichtenbox dialog against DqBerichtVersturen', () => {
 		expect(rule('.compose-dialog__check')).toContain('gap: 4px;')
 		expect(rule('.compose-dialog__check :deep(.checkbox-content)')).toContain('padding-block: 0;')
 		expect(style).toMatch(/:deep\(\.checkbox-radio-switch__text\)\s*\{[^}]*font-weight: 400;/)
+		expect(style).toMatch(/\.compose-dialog__check :deep\(\.checkbox-radio-switch\),/)
+		expect(style).not.toContain(':deep(.input-field__main-wrapper)')
 	})
 
 	it('takes the input, textarea and note-card margins off', () => {
