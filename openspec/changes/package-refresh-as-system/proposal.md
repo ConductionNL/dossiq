@@ -6,6 +6,6 @@
 
 ## What changes
 
-- A package install reads and writes its own rows past the caller's access check: the writer's existence check and row write, and the ledger refresh (`StarterStore::systemRow()` / `systemSave()`). Every caller of the installer is an administrator (admin settings, `occ`, repair steps).
+- A package install reads and writes its own rows past the caller's access check: the writer's existence check and row write, and the ledger refresh, through `StarterStore::asSystem()`. Every caller of the installer is an administrator (admin settings, `occ`, repair steps).
 - Nothing else changes: a plain install still keeps a row somebody edited here; `--over-local-changes` still decides whether the package's keys replace it; the fingerprint compares key-order-insensitively as before (`ksort`).
 - `StarterStore::row()` / `save()` keep the caller's access check.
