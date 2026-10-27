@@ -14176,7 +14176,7 @@
 									"icon": "EmailOutline"
 								},
 								{
-									"as": "text",
+									"as": "line",
 									"separator": ", ",
 									"parts": [
 										{
@@ -14201,7 +14201,9 @@
 								{
 									"as": "line",
 									"from": "object",
-									"text": "Phone and email are not in the base registration."
+									"text": "Phone and email are not in the base registration.",
+									"joinPrevious": true,
+									"joinSeparator": ". "
 								}
 							],
 							"action": {
