@@ -269,6 +269,8 @@ class DwellTimeAnalyzer {
 				'actor' => trim((string)($records[$i]['actor'] ?? '')),
 				'hours' => $measured['wallHours'],
 				'workingHours' => $measured['workingHours'],
+				// The visit a still-open case is in: it ends at "now" and grows every day.
+				'open' => (($i + 1) >= $count && $closedAt === null),
 			];
 		}//end for
 

@@ -157,6 +157,11 @@ class ProcessMiningService {
 			);
 
 			$dwellStats = $this->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $statusTypeIndex);
+			// Days per phase reads visits that ended only, so it holds still under the same data.
+			$completedStats = $this->dwellTimeAnalyzer->aggregateDwellStats(
+				intervals: array_values(array_filter($intervals, static fn (array $interval): bool => ($interval['open'] ?? false) === false)),
+				statusTypeIndex: $statusTypeIndex
+			);
 			$bottlenecks = $this->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats);
 			$transitions = $this->transitionBuilder->computeTransitionMatrix(
 				recordsByCase: $recordsForThisGroup,
@@ -168,6 +173,7 @@ class ProcessMiningService {
 				'title' => $group['title'],
 				'caseVolume' => count($group['cases']),
 				'dwellTime' => $dwellStats,
+				'dwellTimeCompleted' => $completedStats,
 				// The working days the CASES hold, beside the aggregates
 				// reconstructed from the record chain. Published rather than
 				// recomputed, so the page and a handler's work list answer the
