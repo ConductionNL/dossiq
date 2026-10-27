@@ -170,6 +170,13 @@ describe('The Prerequisites block', () => {
 		expect(php).toContain('8.3.6')
 	})
 
+	it('reads each platform row as one sentence, translatable whole', () => {
+		const php = row(open(reading()), 'prerequisite-php')
+		expect(php).toContain('This instance runs 8.3.6')
+		expect(php).toContain('PHP 8.3 or higher')
+		expect(php).not.toContain('this instance runs')
+	})
+
 	it('marks the Nextcloud row present or missing, like every other row', () => {
 		// @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
 		// The row had no mark at all, the one row on the page without one.
