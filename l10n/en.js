@@ -6319,7 +6319,7 @@ OC.L10N.register(
         "Phase": "Phase",
         "Phase term": "Phase term",
         "Phase term in days": "Phase term in days",
-        "Phase {order}: {name}": "Phase {order}: {name}",
+        "Phase {number}: {name}": "Phase {number}: {name}",
         "Phases and tasks": "Phases and tasks",
         "Phone": "Phone",
         "phone": "phone",

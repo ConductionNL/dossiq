@@ -218,7 +218,9 @@ class CaseTypePhases {
 		usort($phases, static fn (array $left, array $right): int => ($left['order'] <=> $right['order']));
 		foreach ($phases as $index => $phase) {
 			usort($phase['tasks'], static fn (array $left, array $right): int => ($left['order'] <=> $right['order']));
-			$phases[$index] = $phase;
+			// The phase's place in the case type, counted from 1: "Fase 2: Beoordeling", whatever its first status's order.
+			$phase['number'] = ($index + 1);
+			$phases[$index]  = $phase;
 		}
 
 		return $phases;

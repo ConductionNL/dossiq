@@ -7601,7 +7601,7 @@
 							},
 							"groupsPath": "phases",
 							"itemsKey": "tasks",
-							"groupTitle": "Phase {order}: {name}",
+							"groupTitle": "Phase {number}: {name}",
 							"groupCount": {
 								"one": "{count} task",
 								"other": "{count} tasks"
