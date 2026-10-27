@@ -81,7 +81,9 @@ export function fieldRightsMatrix({ rules = [], statuses = [], properties = [], 
 	for (const property of properties) {
 		const name = typeof property?.name === 'string' ? property.name.trim() : ''
 		if (name !== '' && !labels.has(name)) {
-			labels.set(name, String(property.title || name))
+			// A field's title is translatable, so the store answers a language map.
+			const title = resolveTranslatable(property.title ?? '').text
+			labels.set(name, title || name)
 			order.push(name)
 		}
 	}
