@@ -9141,6 +9141,7 @@
 								},
 								"responsePath": "bottlenecks"
 							},
+							"limit": 4,
 							"columns": [
 								{
 									"key": "caseTypeTitle",
