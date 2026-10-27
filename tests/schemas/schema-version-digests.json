@@ -613,7 +613,7 @@
     },
     "lib/Settings/dossiq_register.json::case": {
         "version": "1.53.0",
-        "digest": "e4e9e7cc5bfffa0b58ed3d02ba60f30430bf6927dcb6be7ac04e59cfe6436478"
+        "digest": "8ad81e9f232daafac4dde683aadb37d648e57fceb45b0dc361735d4fd286928c"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -1737,6 +1737,10 @@
     },
     "lib/Settings/register.d/99-case-dedup-threshold.json::case": {
         "version": "1.57.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-handoff-case-type.json::case": {
+        "version": "1.60.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-intake-identification.json::case": {
