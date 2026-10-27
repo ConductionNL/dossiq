@@ -53,6 +53,13 @@
 			]
 		},
 		{
+			"group": "vergunningen-intake",
+			"displayName": "Intake vergunningen",
+			"members": [
+				"mehmet"
+			]
+		},
+		{
 			"group": "procest-admin",
 			"displayName": "Dossiq beheer",
 			"members": [
@@ -2783,7 +2790,7 @@
 				"description": "Toetst of een aanvraag compleet is en bevestigt de ontvangst.",
 				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier.id}}",
 				"genericRole": "handler",
-				"ncGroupId": "zuiddrecht-vergunningen"
+				"ncGroupId": "vergunningen-intake"
 			}
 		},
 		{
@@ -10222,6 +10229,7 @@
 						"field": "welstandsgebied",
 						"rule": "hidden",
 						"groups": [
+							"vergunningen-intake",
 							"zuiddrecht-vergunningen"
 						],
 						"statuses": [
@@ -10263,6 +10271,42 @@
 						"groups": [
 							"zuiddrecht-vergunningen",
 							"zuiddrecht-toezicht-en-handhaving"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v5-verleend.id}}",
+							"{{object:statustype-regulier-v5-geweigerd.id}}"
+						],
+						"reason": "Een afgehandelde aanvraag verandert niet meer."
+					},
+					{
+						"field": "bouwkosten",
+						"rule": "readOnly",
+						"groups": [
+							"zuiddrecht-medewerkers"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v5-verleend.id}}",
+							"{{object:statustype-regulier-v5-geweigerd.id}}"
+						],
+						"reason": "Een afgehandelde aanvraag verandert niet meer."
+					},
+					{
+						"field": "soortBouwwerk",
+						"rule": "readOnly",
+						"groups": [
+							"zuiddrecht-medewerkers"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v5-verleend.id}}",
+							"{{object:statustype-regulier-v5-geweigerd.id}}"
+						],
+						"reason": "Een afgehandelde aanvraag verandert niet meer."
+					},
+					{
+						"field": "welstandsgebied",
+						"rule": "readOnly",
+						"groups": [
+							"zuiddrecht-medewerkers"
 						],
 						"statuses": [
 							"{{object:statustype-regulier-v5-verleend.id}}",
@@ -10583,6 +10627,53 @@
 		}
 	],
 	"auditEntries": [
+		{
+			"key": "regulier-v4-variant-met-welstand-toegevoegd",
+			"data": {
+				"object": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"action": "update",
+				"user": "{{cast:lars.uid}}",
+				"at": "{{datetime:-7 14:20}}",
+				"changed": {
+					"variants": {
+						"old": [
+							{
+								"name": "Regulier",
+								"description": "De standaardroute, 8 weken",
+								"isDefault": true
+							}
+						],
+						"new": [
+							{
+								"name": "Regulier",
+								"description": "De standaardroute, 8 weken",
+								"isDefault": true
+							},
+							{
+								"name": "Met welstand",
+								"description": "Extra taak Welstandsadvies vragen in fase 2; kiest zichzelf als het bouwwerk in het welstandsgebied ligt",
+								"isDefault": false
+							}
+						]
+					}
+				}
+			}
+		},
+		{
+			"key": "regulier-v4-gepubliceerd",
+			"data": {
+				"object": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"action": "update",
+				"user": "{{cast:lars.uid}}",
+				"at": "{{datetime:-5 09:15}}",
+				"changed": {
+					"isDraft": {
+						"old": true,
+						"new": false
+					}
+				}
+			}
+		},
 		{
 			"key": "jeugdwet-toestemming-vastgelegd",
 			"data": {
