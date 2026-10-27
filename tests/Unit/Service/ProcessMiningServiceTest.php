@@ -393,6 +393,37 @@ class ProcessMiningServiceTest extends TestCase {
 	}//end testACaseWithoutStatusRecordsIsReadFromItsStatusHistory()
 
 	/**
+	 * Time read from a case's status history is held by the person the entry
+	 * names, else by the case's handler, so the per-handler table has a name
+	 * for it instead of "not recorded" (DqProcesanalyse "Doorlooptijd per
+	 * behandelaar").
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dwell-from-status-history-actor/specs/dwell-from-status-history-actor/spec.md#requirement-time-read-from-the-status-history-has-a-holder
+	 */
+	public function testTimeReadFromTheStatusHistoryHasAHolder(): void {
+		$this->objects->seed('caseType', ['id' => 'ct-1', 'title' => 'Woo-verzoek']);
+		$this->objects->seed('statusType', ['id' => 'st-received', 'name' => 'Ontvangen']);
+		$this->objects->seed('statusType', ['id' => 'st-handling', 'name' => 'In behandeling']);
+		$this->objects->seed('case', [
+			'id'            => 'case-1',
+			'caseType'      => 'ct-1',
+			'assignee'      => 'fatma',
+			'startDate'     => '2026-06-01',
+			'endDate'       => '2026-06-10',
+			'statusHistory' => '[{"status":"st-received","enteredAt":"2026-06-01T09:00:00+02:00","actor":"lars"},'
+				.'{"status":"st-handling","enteredAt":"2026-06-03T09:00:00+02:00"}]',
+		]);
+
+		$report = $this->service->getReport(params: ['from' => '2026-01-01', 'to' => '2026-12-31']);
+
+		$actors = array_column($report['caseTypes'][0]['dwellByAssignee'], 'actor');
+		sort($actors);
+		self::assertSame(expected: ['fatma', 'lars'], actual: $actors);
+	}//end testTimeReadFromTheStatusHistoryHasAHolder()
+
+	/**
 	 * `caseType` filter scopes the loaded case set — an unrelated case type
 	 * must not appear in the response.
 	 *
