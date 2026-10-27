@@ -1854,7 +1854,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.53.0",
+                "version": "1.54.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -2045,7 +2045,8 @@
                             "channel": "intakeChannel",
                             "source": "handoffSource",
                             "requester": "requester",
-                            "priority": "priority"
+                            "priority": "priority",
+                            "caseType": "caseType"
                         }
                     },
                     "linkedTypes": [
