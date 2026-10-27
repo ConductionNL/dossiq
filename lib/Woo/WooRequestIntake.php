@@ -101,6 +101,17 @@ class WooRequestIntake {
 	];
 
 	/**
+	 * How a portal subject logged in, per audience of portaliq's verified
+	 * assertion, in the case schema's `intakeIdentification` enum: a resident
+	 * (`citizen`, `client`) logs in with DigiD, a business with eHerkenning.
+	 */
+	public const IDENTIFICATION_BY_AUDIENCE = [
+		'citizen' => 'digid',
+		'client' => 'digid',
+		'business' => 'eherkenning',
+	];
+
+	/**
 	 * Reads the case type and the case, and writes the case, as the system.
 	 *
 	 * @var SystemCaseStore
@@ -195,7 +206,7 @@ class WooRequestIntake {
 				// (site-business-and-authorisation D2). Never a BSN.
 				'portalParty' => 'subject:' . $subjectRef,
 				'intakeChannel' => self::INTAKE_CHANNEL[(string)$wooRequest['origin']],
-			],
+			] + $this->identification(request: $request),
 			startFrom: trim((string)($request['startFrom'] ?? '')),
 			branch: $this->branchOf(request: $request),
 		);
@@ -216,6 +227,37 @@ class WooRequestIntake {
 			'caseUrl' => $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId),
 		] + $saved['answer'];
 	}//end start()
+
+	/**
+	 * How the requester logged in and the portal the request came through,
+	 * for a request from the portal only: the means from the audience the
+	 * receiver read off the verified assertion, the name from portaliq's
+	 * config. An unknown audience and an empty name are left out.
+	 *
+	 * @param array<string, mixed> $request The request.
+	 *
+	 * @return array{intakeIdentification?: string, intakeSourceName?: string}
+	 *
+	 * @spec openspec/changes/requester-identified-at-intake/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
+	 */
+	private function identification(array $request): array {
+		if (($request['origin'] ?? '') !== 'portal') {
+			return [];
+		}
+
+		$out = [];
+		$means = (self::IDENTIFICATION_BY_AUDIENCE[(string)($request['audience'] ?? '')] ?? '');
+		if ($means !== '') {
+			$out['intakeIdentification'] = $means;
+		}
+
+		$source = $this->settingsService->getPortalName();
+		if ($source !== '') {
+			$out['intakeSourceName'] = $source;
+		}
+
+		return $out;
+	}//end identification()
 
 	/**
 	 * Link the dossier to the case after the case is answered.
