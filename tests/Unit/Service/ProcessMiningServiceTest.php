@@ -424,6 +424,33 @@ class ProcessMiningServiceTest extends TestCase {
 	}//end testTimeReadFromTheStatusHistoryHasAHolder()
 
 	/**
+	 * Days per phase counts only visits that ended: a case still sitting in a
+	 * status would otherwise add a visit that grows every day, and the matrix
+	 * would move under the same data (DqProcesanalyse, r33).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/phase-days-from-completed-visits/specs/phase-days-from-completed-visits/spec.md#requirement-days-per-phase-counts-completed-visits
+	 */
+	public function testDaysPerPhaseCountsOnlyCompletedVisits(): void {
+		$this->objects->seed('caseType', ['id' => 'ct-1', 'title' => 'Woo-verzoek']);
+		$this->objects->seed('statusType', ['id' => 'st-received', 'name' => 'Ontvangen', 'phase' => 'Ontvangst']);
+		$this->objects->seed('statusType', ['id' => 'st-handling', 'name' => 'In behandeling', 'phase' => 'Beoordeling']);
+		$this->objects->seed('case', [
+			'id'            => 'case-1',
+			'caseType'      => 'ct-1',
+			'startDate'     => '2026-06-01',
+			'endDate'       => null,
+			'statusHistory' => '[{"status":"st-received","enteredAt":"2026-06-01T09:00:00+02:00"},'
+				.'{"status":"st-handling","enteredAt":"2026-06-03T09:00:00+02:00"}]',
+		]);
+
+		$report = $this->service->getReport(params: ['from' => '2026-01-01', 'to' => '2026-12-31']);
+
+		self::assertSame(expected: ['Ontvangst'], actual: $report['phaseDays']['mean']['columns']);
+	}//end testDaysPerPhaseCountsOnlyCompletedVisits()
+
+	/**
 	 * `caseType` filter scopes the loaded case set — an unrelated case type
 	 * must not appear in the response.
 	 *
