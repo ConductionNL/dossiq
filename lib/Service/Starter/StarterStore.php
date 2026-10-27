@@ -50,6 +50,13 @@ class StarterStore {
 	use SearchesObjects;
 
 	/**
+	 * Whether rows are read and written past the caller's access check; see asSystem().
+	 *
+	 * @var boolean
+	 */
+	private bool $pastAccessCheck = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settings The register and schema resolver.
@@ -60,6 +67,24 @@ class StarterStore {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
+
+	/**
+	 * This store, reading and writing rows past the caller's access check.
+	 *
+	 * Only for a package install, which an administrator starts from the admin
+	 * settings or `occ`: a CLI run has no user, and a schema with authorization
+	 * rules (a case) answers nothing to it.
+	 *
+	 * @return self The store as the system.
+	 *
+	 * @spec openspec/changes/package-refresh-as-system/specs/case-types/spec.md
+	 */
+	public function asSystem(): self {
+		$system = clone $this;
+		$system->pastAccessCheck = true;
+
+		return $system;
+	}//end asSystem()
 
 	/**
 	 * The schema id the app config key names here, or the empty string.
@@ -134,49 +159,21 @@ class StarterStore {
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function row(string $configKey, string $id): ?array {
-		return $this->read(configKey: $configKey, id: $id, rbac: true);
-	}//end row()
-
-	/**
-	 * One row by id, read past the caller's access check.
-	 *
-	 * Only for a package install, which an administrator starts from the admin
-	 * settings or `occ`: a CLI run has no user, and a schema with authorization
-	 * rules (a case) answers nothing to it.
-	 *
-	 * @param string $configKey The app config key naming the schema.
-	 * @param string $id        The row's id.
-	 *
-	 * @return array<string, mixed>|null The row, or null when it is not there.
-	 *
-	 * @spec openspec/changes/package-refresh-as-system/specs/case-types/spec.md
-	 */
-	public function systemRow(string $configKey, string $id): ?array {
-		return $this->read(configKey: $configKey, id: $id, rbac: false);
-	}//end systemRow()
-
-	/**
-	 * One row by id.
-	 *
-	 * @param string  $configKey The app config key naming the schema.
-	 * @param string  $id        The row's id.
-	 * @param boolean $rbac      False reads past the caller's access check.
-	 *
-	 * @return array<string, mixed>|null The row, or null when it is not there.
-	 */
-	private function read(string $configKey, string $id, bool $rbac): ?array {
 		$context = $this->context(configKey: $configKey);
 		if ($context === null || $id === '') {
 			return null;
 		}
 
 		try {
+			if ($this->pastAccessCheck === true) {
+				return $this->systemFind(context: $context, id: $id);
+			}
+
 			return $this->findObjectAsArray(
 				objectService: $context['service'],
 				register: $context['register'],
 				schema: $context['schema'],
 				id: $id,
-				rbac: $rbac,
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -185,7 +182,7 @@ class StarterStore {
 			);
 			return null;
 		}
-	}//end read()
+	}//end row()
 
 	/**
 	 * Write a row, creating it when no id is given.
@@ -199,48 +196,30 @@ class StarterStore {
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function save(string $configKey, array $payload, ?string $id = null): ?array {
-		return $this->write(configKey: $configKey, payload: $payload, id: $id, rbac: true);
-	}//end save()
-
-	/**
-	 * Write a row past the caller's access check; see systemRow().
-	 *
-	 * @param string               $configKey The app config key naming the schema.
-	 * @param array<string, mixed> $payload   The row to write.
-	 * @param string               $id        The id to update.
-	 *
-	 * @return array<string, mixed>|null The stored row, or null when the write failed.
-	 *
-	 * @spec openspec/changes/package-refresh-as-system/specs/case-types/spec.md
-	 */
-	public function systemSave(string $configKey, array $payload, string $id): ?array {
-		return $this->write(configKey: $configKey, payload: $payload, id: $id, rbac: false);
-	}//end systemSave()
-
-	/**
-	 * Write a row, creating it when no id is given.
-	 *
-	 * @param string               $configKey The app config key naming the schema.
-	 * @param array<string, mixed> $payload   The row to write.
-	 * @param string|null          $id        The id to update, or null to create.
-	 * @param boolean              $rbac      False writes past the caller's access check.
-	 *
-	 * @return array<string, mixed>|null The stored row, or null when the write failed.
-	 */
-	private function write(string $configKey, array $payload, ?string $id, bool $rbac): ?array {
 		$context = $this->context(configKey: $configKey);
 		if ($context === null) {
 			return null;
 		}
 
 		try {
+			if ($this->pastAccessCheck === true) {
+				return $this->asArray(
+					object: $context['service']->saveObject(
+						object: $payload,
+						register: $context['register'],
+						schema: $context['schema'],
+						uuid: $id,
+						_rbac: false,
+					)
+				);
+			}
+
 			return $this->saveObjectAsArray(
 				objectService: $context['service'],
 				register: $context['register'],
 				schema: $context['schema'],
 				object: $payload,
 				uuid: $id,
-				rbac: $rbac,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -249,7 +228,7 @@ class StarterStore {
 			);
 			return null;
 		}
-	}//end write()
+	}//end save()
 
 	/**
 	 * Remove a row.
@@ -322,4 +301,48 @@ class StarterStore {
 
 		return ['service' => $service, 'register' => $register, 'schema' => $schema];
 	}//end context()
+	/**
+	 * One row by id, past the caller's access check.
+	 *
+	 * @param array{service: object, register: string, schema: string} $context The store context.
+	 * @param string                                                     $id      The row's id.
+	 *
+	 * @return array<string, mixed>|null The row, or null when it is not there.
+	 */
+	private function systemFind(array $context, string $id): ?array {
+		try {
+			$object = $context['service']->find(
+				id: $id,
+				register: $context['register'],
+				schema: $context['schema'],
+				_rbac: false,
+			);
+		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
+			return null;
+		}
+
+		return $this->asArray(object: $object);
+	}//end systemFind()
+
+	/**
+	 * An object the store answered, as an array.
+	 *
+	 * @param mixed $object An array, or an entity that serialises to one.
+	 *
+	 * @return array<string, mixed>|null The array, or null.
+	 */
+	private function asArray(mixed $object): ?array {
+		if (is_array($object) === true) {
+			return $object;
+		}
+
+		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
+			$serialized = $object->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
+		}
+
+		return null;
+	}//end asArray()
 }//end class

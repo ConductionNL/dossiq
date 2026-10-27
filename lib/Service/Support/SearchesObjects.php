@@ -185,7 +185,6 @@ trait SearchesObjects {
 	 * @param int|string $register Register numeric ID or slug.
 	 * @param int|string $schema Schema numeric ID or slug.
 	 * @param string $id Object UUID / identifier.
-	 * @param bool $rbac False reads past the caller's access check, for an admin-run system task.
 	 *
 	 * @return array<string, mixed>|null The object as an associative array, or
 	 *                                   null when it does not exist.
@@ -197,14 +196,12 @@ trait SearchesObjects {
 		int|string $register,
 		int|string $schema,
 		string $id,
-		bool $rbac = true,
 	): ?array {
 		try {
 			$object = $objectService->find(
 				id: $id,
 				register: $register,
-				schema: $schema,
-				_rbac: $rbac
+				schema: $schema
 			);
 		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
 			return null;
@@ -239,7 +236,6 @@ trait SearchesObjects {
 	 * @param int|string $schema Schema id, UUID or slug.
 	 * @param array<string,mixed> $object The object to store.
 	 * @param string|null $uuid The UUID of the object to update, or null to create.
-	 * @param bool $rbac False writes past the caller's access check, for an admin-run system task.
 	 *
 	 * @return array<string,mixed>|null The stored object, or null if it cannot be represented as one.
 	 *
@@ -251,14 +247,12 @@ trait SearchesObjects {
 		int|string $schema,
 		array $object,
 		?string $uuid = null,
-		bool $rbac = true,
 	): ?array {
 		$saved = $objectService->saveObject(
 			object: $object,
 			register: $register,
 			schema: $schema,
-			uuid: $uuid,
-			_rbac: $rbac
+			uuid: $uuid
 		);
 
 		if (is_array($saved) === true) {
