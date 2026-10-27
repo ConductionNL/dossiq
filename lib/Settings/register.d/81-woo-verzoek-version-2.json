@@ -694,6 +694,7 @@
         "description": "Categorie: burger, journalist of organisatie",
         "propertyType": "enum",
         "enumValues": ["burger", "journalist", "organisatie"],
+        "enumLabels": {"burger": "Burger", "journalist": "Journalist", "organisatie": "Organisatie"},
         "isRequired": false
       },
       {
@@ -784,6 +785,7 @@
         "description": "Hoe de verzoeker de documenten wil ontvangen: papier, digitaal of inzage",
         "propertyType": "enum",
         "enumValues": ["papier", "digitaal", "inzage"],
+        "enumLabels": {"papier": "Papier", "digitaal": "Digitaal", "inzage": "Inzage"},
         "isRequired": false,
         "defaultValue": "digitaal"
       }
