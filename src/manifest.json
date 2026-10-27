@@ -534,6 +534,8 @@
 			"type": "dashboard",
 			"title": "Dashboard",
 			"config": {
+				"gridMargin": 10,
+				"_gridMarginNote": "10px: the board spaces this page's cards 20px apart, GridStack's default 12 drew them 24 apart (and 357px wide in a row of three, the board 360).",
 				"_layoutNote": "No `userLayout` and no in-page Edit button on any dossiq page (Ruben, 18 Oct 2026): a page's layout is the administrator's, changed through buildiq under the buildiq button, and the same for every reader. With `userLayout` on, CnDashboardPage routed a buildiq drag into the reader's own arrangement, which only the in-page button saved, so buildiq geometry never reached the manifest delta. Arrangements readers saved before are no longer read.",
 				"allowEdit": false,
 				"appId": "dossiq",
@@ -7215,6 +7217,8 @@
 			"title": "Close out your day",
 			"_note": "One screen listing what the reader opened today, with a place to write what happened on each. \"Touched\" is OpenRegister's per-reader read state, asked per item: dossiq keeps no second record of who saw what (unread-state-on-the-case), and \"changed today\" would have been the wrong question anyway, since it lists a colleague's afternoon as yours. The time box is humaniq's hours leaf, placed per item; on an instance without humaniq there is no time field at all, because a dossiq one would become a second hours store the day humaniq arrives (ADR-011). An update is written on the thing it is about, so it is there tomorrow for whoever opens the case. SINCE 20 OCTOBER 2026 THIS IS MANIFEST CONFIG (Ruben): the day lists are worked out on the server (GET /api/personal-queue/end-of-day, EndOfDayService), so Recorded today survives a reload; opened is still OpenRegister's read state. What is typed and not yet recorded stays in the browser and is the ready figure inside the notes list (nextcloud-vue record-list `presentation: notes`). The hours box is humaniq's leaf per row (`rowLeaf`), and nothing on an instance without humaniq.",
 			"config": {
+				"gridMargin": 10,
+				"_gridMarginNote": "10px: the board spaces this page's cards 20px apart, GridStack's default 12 drew them 24 apart (and 357px wide in a row of three, the board 360).",
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"allowEdit": false,
 				"gridFloat": false,
@@ -7944,6 +7948,8 @@
 			"title": "Processing time",
 			"_note": "Processing time as drawn on the DqDoorlooptijd board: four figures, the average per month and the share within the norm per case type, read from /api/doorlooptijd/metrics (its `summary` block), then the four compliance charts, the deadline list of one configured case type, the cases at risk and the breakdown, which read /api/reports/processing-time (one `view` per widget; the server shapes every figure, the browser no longer loads every case). The period and case type filters write the workspace, which both halves read.",
 			"config": {
+				"gridMargin": 10,
+				"_gridMarginNote": "10px: the board spaces this page's cards 20px apart, GridStack's default 12 drew them 24 apart (and 357px wide in a row of three, the board 360).",
 				"_headerNote": "Board DqDoorlooptijd's header has no Actions menu and no way back to the dashboard beside the menu's own Dashboard entry. The case type filter stays: it is how this page narrows to one case type. There is no in-page Edit button: changing the layout is buildiq's, under the buildiq button (Ruben, 18 Oct).",
 				"allowEdit": false,
 				"showActionsMenu": false,
@@ -8737,6 +8743,8 @@
 			"title": "Process analysis",
 			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from the ProcessMiningService aggregation endpoint, shaped on the server: each widget reads one `view` of /api/reports/process-mining (summary, dwell, throughput, bottlenecks, byAssignee) through its endpointSource. The duration column titles and the dwell series name come from the report (`labels`), because they say which clock the numbers are on. The page owns the heading, the period presets and the case-type filter; each widget renders content only (hydra#316).",
 			"config": {
+				"gridMargin": 10,
+				"_gridMarginNote": "10px: the board spaces this page's cards 20px apart, GridStack's default 12 drew them 24 apart (and 357px wide in a row of three, the board 360).",
 				"allowEdit": false,
 				"gridFloat": false,
 				"appId": "dossiq",
@@ -11274,6 +11282,8 @@
 			"title": "Deadline monitoring",
 			"_note": "Deadline monitoring as drawn on the DqTermijnen board: five figures, the share decided on time per case type, the notices of default, then the quarterly report and the annual penalty audit. The figures come from /api/deadlines/dashboard/kpi, which counts the running terms and penalties server side; the notices are a register list.",
 			"config": {
+				"gridMargin": 10,
+				"_gridMarginNote": "10px: the board spaces this page's cards 20px apart, GridStack's default 12 drew them 24 apart (and 357px wide in a row of three, the board 360).",
 				"_headerNote": "Board DqTermijnen's header row is Quarterly report, the buildiq square and Register notice of default, with no Actions menu. There is no in-page Edit button: changing the layout is buildiq's, under the buildiq button (Ruben, 18 Oct).",
 				"allowEdit": false,
 				"gridFloat": false,
