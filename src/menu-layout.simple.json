@@ -3647,7 +3647,7 @@
 									"dir": "desc"
 								}
 							},
-							"columns": 2,
+							"columns": 3,
 							"fields": [
 								{
 									"from": "object",
