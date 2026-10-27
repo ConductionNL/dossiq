@@ -50,10 +50,12 @@ import BookOpenPageVariant from 'vue-material-design-icons/BookOpenPageVariant.v
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
 import BriefcaseAccountOutline from 'vue-material-design-icons/BriefcaseAccountOutline.vue'
 import BriefcaseOutline from 'vue-material-design-icons/BriefcaseOutline.vue'
+import BriefcaseSearchOutline from 'vue-material-design-icons/BriefcaseSearchOutline.vue'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 import Calculator from 'vue-material-design-icons/Calculator.vue'
 import Calendar from 'vue-material-design-icons/Calendar.vue'
 import CalendarArrowRight from 'vue-material-design-icons/CalendarArrowRight.vue'
+import CalendarBlankOutline from 'vue-material-design-icons/CalendarBlankOutline.vue'
 import CalendarClock from 'vue-material-design-icons/CalendarClock.vue'
 import CalendarClockOutline from 'vue-material-design-icons/CalendarClockOutline.vue'
 import CalendarPlus from 'vue-material-design-icons/CalendarPlus.vue'
@@ -103,6 +105,7 @@ import DatabaseCogOutline from 'vue-material-design-icons/DatabaseCogOutline.vue
 import Delete from 'vue-material-design-icons/Delete.vue'
 import DeleteClockOutline from 'vue-material-design-icons/DeleteClockOutline.vue'
 import Domain from 'vue-material-design-icons/Domain.vue'
+import Download from 'vue-material-design-icons/Download.vue'
 import Earth from 'vue-material-design-icons/Earth.vue'
 import EmailAlert from 'vue-material-design-icons/EmailAlert.vue'
 import EmailMarkAsUnread from 'vue-material-design-icons/EmailMarkAsUnread.vue'
@@ -164,6 +167,7 @@ import LinkVariant from 'vue-material-design-icons/LinkVariant.vue'
 import ListBoxOutline from 'vue-material-design-icons/ListBoxOutline.vue'
 import ListStatus from 'vue-material-design-icons/ListStatus.vue'
 import LockOpenVariantOutline from 'vue-material-design-icons/LockOpenVariantOutline.vue'
+import LockOutline from 'vue-material-design-icons/LockOutline.vue'
 import MagnifyScan from 'vue-material-design-icons/MagnifyScan.vue'
 import MapMarker from 'vue-material-design-icons/MapMarker.vue'
 import MapMarkerOutline from 'vue-material-design-icons/MapMarkerOutline.vue'
@@ -282,10 +286,12 @@ export default {
 	BookOpenVariantOutline,
 	BriefcaseAccountOutline,
 	BriefcaseOutline,
+	BriefcaseSearchOutline,
 	BriefcaseVariantOutline,
 	Calculator,
 	Calendar,
 	CalendarArrowRight,
+	CalendarBlankOutline,
 	CalendarClock,
 	CalendarClockOutline,
 	CalendarPlus,
@@ -364,6 +370,7 @@ export default {
 	FileTreeOutline,
 	Delete,
 	DeleteClockOutline,
+	Download,
 	FlagCheckered,
 	FlagOutline,
 	FolderAccountOutline,
@@ -396,6 +403,7 @@ export default {
 	ListBoxOutline,
 	ListStatus,
 	LockOpenVariantOutline,
+	LockOutline,
 	MagnifyScan,
 	MapMarker,
 	MapMarkerOutline,
