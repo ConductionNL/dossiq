@@ -382,6 +382,14 @@ export default {
 	font-size: 13px;
 }
 
+/* The search's hint sits 6px under the field, as the board draws it with the
+   field's label and field in one group, not a full 16px step below the search
+   (whose select keeps a margin of its own), on the normal line. */
+.case-location-dialog > .case-location-dialog__hint {
+	margin-top: -16px;
+	line-height: 1.2;
+}
+
 .case-location-dialog__map {
 	min-height: 200px;
 	border-radius: 8px;
