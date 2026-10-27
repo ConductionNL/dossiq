@@ -43,6 +43,9 @@ use Throwable;
 /**
  * Withdraws the statutory term a newly written one takes over from.
  *
+ * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: the four
+ *                                       kinds and the reading of an absent one.
+ *
  * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
  *
  * @template-implements IEventListener<Event>
