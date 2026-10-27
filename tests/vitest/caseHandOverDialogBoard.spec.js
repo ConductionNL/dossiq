@@ -47,7 +47,7 @@ describe('the Hand to another team dialog against board DqOverdragen', () => {
 
 	it('lines each team with the organisation role that names its group (DqOverdragen "6 leden · ...")', () => {
 		for (const action of actionsWithId(manifest, 'case-hand-over')) {
-			expect(action.props.config.assignee.describe).toEqual({ register: 'dossiq', schema: 'organisatieRol' })
+			expect(action.props.config.assignee.describe).toEqual({ register: 'dossiq', schema: 'organisatieRol', only: true })
 		}
 		const fragment = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib', 'Settings', 'register.d', '97-organisation-role-description.json'), 'utf8'))
 		expect(fragment.components.schemas.organisatieRol.properties.description.type).toBe('string')

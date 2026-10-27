@@ -6162,7 +6162,8 @@
 									"hint": "The new team picks its own handler.",
 									"describe": {
 										"register": "dossiq",
-										"schema": "organisatieRol"
+										"schema": "organisatieRol",
+										"only": true
 									},
 									"field": "team"
 								},
