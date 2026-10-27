@@ -670,10 +670,11 @@ export function workDigestFields(t) {
 		{
 			key: 'hour',
 			label: t('dossiq', 'Hour of the day'),
-			type: 'number',
-			integer: true,
-			min: 0,
-			max: 23,
+			type: 'select',
+			options: Array.from({ length: 24 }, (_, hour) => ({
+				value: hour,
+				label: t('dossiq', '{hour}:00', { hour: String(hour).padStart(2, '0') }),
+			})),
 			default: 8,
 			visibleWhen: { key: 'enabled', equals: true },
 		},

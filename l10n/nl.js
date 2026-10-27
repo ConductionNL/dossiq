@@ -3892,6 +3892,7 @@ OC.L10N.register(
         "Hoorgesprek completed": "Hoorgesprek afgerond",
         "Hoorgesprek planned": "Hoorgesprek gepland",
         "Hoort at omgekeerd": "Hoort bij, omgekeerd",
+        "{hour}:00": "{hour}.00 uur",
         "Hour of the day": "Uur van de dag",
         "Hours": "Uren",
         "hours": "uren",
