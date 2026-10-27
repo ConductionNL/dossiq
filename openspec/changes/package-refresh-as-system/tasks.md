@@ -1,0 +1,4 @@
+- [x] StarterStore systemRow / systemSave
+- [x] Ledger refresh reads and writes as the system
+- [x] PackageWriter holds() and writeRow() as the system
+- [x] PHPUnit, red first

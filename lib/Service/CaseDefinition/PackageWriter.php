@@ -479,11 +479,13 @@ class PackageWriter {
 			$rowUuid = $packageId;
 		}
 
+		// An administrator's install; see holds() for why it passes the access check.
 		$stored = $objectService->saveObject(
 			$this->withoutMetadata(row: $row),
 			register: $register,
 			schema: $schema,
-			uuid: $rowUuid
+			uuid: $rowUuid,
+			_rbac: false
 		);
 
 		$id = $this->storedId(stored: $stored);

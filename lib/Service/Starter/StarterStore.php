@@ -134,6 +134,37 @@ class StarterStore {
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function row(string $configKey, string $id): ?array {
+		return $this->read(configKey: $configKey, id: $id, rbac: true);
+	}//end row()
+
+	/**
+	 * One row by id, read past the caller's access check.
+	 *
+	 * Only for a package install, which an administrator starts from the admin
+	 * settings or `occ`: a CLI run has no user, and a schema with authorization
+	 * rules (a case) answers nothing to it.
+	 *
+	 * @param string $configKey The app config key naming the schema.
+	 * @param string $id        The row's id.
+	 *
+	 * @return array<string, mixed>|null The row, or null when it is not there.
+	 *
+	 * @spec openspec/changes/package-refresh-as-system/specs/case-types/spec.md
+	 */
+	public function systemRow(string $configKey, string $id): ?array {
+		return $this->read(configKey: $configKey, id: $id, rbac: false);
+	}//end systemRow()
+
+	/**
+	 * One row by id.
+	 *
+	 * @param string  $configKey The app config key naming the schema.
+	 * @param string  $id        The row's id.
+	 * @param boolean $rbac      False reads past the caller's access check.
+	 *
+	 * @return array<string, mixed>|null The row, or null when it is not there.
+	 */
+	private function read(string $configKey, string $id, bool $rbac): ?array {
 		$context = $this->context(configKey: $configKey);
 		if ($context === null || $id === '') {
 			return null;
@@ -145,6 +176,7 @@ class StarterStore {
 				register: $context['register'],
 				schema: $context['schema'],
 				id: $id,
+				rbac: $rbac,
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -153,7 +185,7 @@ class StarterStore {
 			);
 			return null;
 		}
-	}//end row()
+	}//end read()
 
 	/**
 	 * Write a row, creating it when no id is given.
@@ -167,6 +199,35 @@ class StarterStore {
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function save(string $configKey, array $payload, ?string $id = null): ?array {
+		return $this->write(configKey: $configKey, payload: $payload, id: $id, rbac: true);
+	}//end save()
+
+	/**
+	 * Write a row past the caller's access check; see systemRow().
+	 *
+	 * @param string               $configKey The app config key naming the schema.
+	 * @param array<string, mixed> $payload   The row to write.
+	 * @param string               $id        The id to update.
+	 *
+	 * @return array<string, mixed>|null The stored row, or null when the write failed.
+	 *
+	 * @spec openspec/changes/package-refresh-as-system/specs/case-types/spec.md
+	 */
+	public function systemSave(string $configKey, array $payload, string $id): ?array {
+		return $this->write(configKey: $configKey, payload: $payload, id: $id, rbac: false);
+	}//end systemSave()
+
+	/**
+	 * Write a row, creating it when no id is given.
+	 *
+	 * @param string               $configKey The app config key naming the schema.
+	 * @param array<string, mixed> $payload   The row to write.
+	 * @param string|null          $id        The id to update, or null to create.
+	 * @param boolean              $rbac      False writes past the caller's access check.
+	 *
+	 * @return array<string, mixed>|null The stored row, or null when the write failed.
+	 */
+	private function write(string $configKey, array $payload, ?string $id, bool $rbac): ?array {
 		$context = $this->context(configKey: $configKey);
 		if ($context === null) {
 			return null;
@@ -179,6 +240,7 @@ class StarterStore {
 				schema: $context['schema'],
 				object: $payload,
 				uuid: $id,
+				rbac: $rbac,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -187,7 +249,7 @@ class StarterStore {
 			);
 			return null;
 		}
-	}//end save()
+	}//end write()
 
 	/**
 	 * Remove a row.

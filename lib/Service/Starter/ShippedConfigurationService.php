@@ -503,7 +503,12 @@ class ShippedConfigurationService {
 	 *
 	 * @return array{outcome: string, reason: string} `refreshed`, `unchanged` or `kept`, and why it was kept.
 	 *
+	 * A package install is an administrator's act, from the admin settings or
+	 * `occ`; the row is read and written past the caller's access check, since
+	 * a CLI run has no user and a case schema answers nothing to it.
+	 *
 	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 * @spec openspec/changes/package-refresh-as-system/specs/case-types/spec.md
 	 */
 	private function refresh(
 		string $targetSchema,
@@ -514,7 +519,7 @@ class ShippedConfigurationService {
 		string $version,
 		bool $overLocalChange,
 	): array {
-		$current = $this->store->row(configKey: $objectsKey, id: $targetObject);
+		$current = $this->store->systemRow(configKey: $objectsKey, id: $targetObject);
 		if ($current === null) {
 			return ['outcome' => self::REFRESH_KEPT, 'reason' => 'not_found'];
 		}
@@ -544,6 +549,7 @@ class ShippedConfigurationService {
 			newShipped: $newShipped,
 			overLocalChange: $overLocalChange,
 			version: $version,
+			asSystem: true,
 		);
 		if ($adopted['adopted'] === true) {
 			return ['outcome' => self::REFRESH_DONE, 'reason' => ''];
@@ -598,6 +604,7 @@ class ShippedConfigurationService {
 	 * @param array<string, mixed> $newShipped      The object as the newer set ships it.
 	 * @param boolean              $overLocalChange Whether a local change may go.
 	 * @param string|null          $version         The version to stamp; null to look it up in ShippedSets.
+	 * @param boolean              $asSystem        Read and write the row past the caller's access check (a package install).
 	 *
 	 * @return array{adopted: bool, reason: string} What happened.
 	 */
@@ -609,8 +616,9 @@ class ShippedConfigurationService {
 		array $newShipped,
 		bool $overLocalChange,
 		?string $version,
+		bool $asSystem = false,
 	): array {
-		$current = $this->store->row(configKey: $objectsKey, id: $targetObject);
+		$current = $this->readRow(objectsKey: $objectsKey, id: $targetObject, asSystem: $asSystem);
 		if ($current === null) {
 			return ['adopted' => false, 'reason' => 'not_found'];
 		}
@@ -639,7 +647,10 @@ class ShippedConfigurationService {
 		);
 		$payload['id'] = $targetObject;
 
-		$saved = $this->store->save(configKey: $objectsKey, payload: $payload, id: $targetObject);
+		$saved = match ($asSystem) {
+			true => $this->store->systemSave(configKey: $objectsKey, payload: $payload, id: $targetObject),
+			false => $this->store->save(configKey: $objectsKey, payload: $payload, id: $targetObject),
+		};
 		if ($saved === null) {
 			return ['adopted' => false, 'reason' => 'write_failed'];
 		}
@@ -655,6 +666,23 @@ class ShippedConfigurationService {
 
 		return ['adopted' => true, 'reason' => ''];
 	}//end take()
+
+	/**
+	 * One row, under the caller's access or past it.
+	 *
+	 * @param string  $objectsKey The app config key naming the schema.
+	 * @param string  $id         The row's id.
+	 * @param boolean $asSystem   Read past the caller's access check.
+	 *
+	 * @return array<string, mixed>|null The row.
+	 */
+	private function readRow(string $objectsKey, string $id, bool $asSystem): ?array {
+		if ($asSystem === true) {
+			return $this->store->systemRow(configKey: $objectsKey, id: $id);
+		}
+
+		return $this->store->row(configKey: $objectsKey, id: $id);
+	}//end readRow()
 
 	/**
 	 * Shipped and untouched, or shipped and changed here.
