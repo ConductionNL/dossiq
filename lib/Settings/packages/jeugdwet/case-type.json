@@ -4,6 +4,7 @@
     "identifier": "melding-jeugdwet",
     "title": "Melding Jeugdwet",
     "category": "Jeugdhulp",
+    "colour": "teal",
     "handlerLabel": "Regisseur",
     "description": "Melding over een kind of gezin onder de Jeugdwet: onderzoek, indicatie en overleg tot een besluit over jeugdhulp.",
     "purpose": "Vaststellen of en welke jeugdhulp een kind of gezin nodig heeft (Jeugdwet artikel 2.3).",

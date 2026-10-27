@@ -285,6 +285,18 @@ class SocialDomainCaseTypesTest extends TestCase {
 	}//end testABenefitApplicationRunsOnItsDecisionTerm()
 
 	/**
+	 * Board DqSociaalDomein draws the Melding Jeugdwet type pill teal; the case
+	 * type names that hue, or its pill draws neutral.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-pill-teal-jeugdwet/specs/case-types/spec.md#requirement-the-jeugdwet-case-type-is-drawn-teal
+	 */
+	public function testTheJeugdwetCaseTypeIsDrawnTeal(): void {
+		self::assertSame(expected: 'teal', actual: $this->caseTypeFile(package: 'jeugdwet')['caseType']['colour']);
+	}//end testTheJeugdwetCaseTypeIsDrawnTeal()
+
+	/**
 	 * Each procedure's flow walks from the first status to every other one, and
 	 * guards only fields its case type declares (or the result).
 	 *
