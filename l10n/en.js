@@ -11644,6 +11644,7 @@ OC.L10N.register(
         "{group}, unclaimed": "{group}, unclaimed",
         "{handler}": "{handler}",
         "{hours} hours ago": "{hours} hours ago",
+        "{hour}:00": "{hour}:00",
         "{identifier}": "{identifier}",
         "{identifier} · {caseType.title} · {initiatorDisplayName} · received {receivedAt|date}": "{identifier} · {caseType.title} · {initiatorDisplayName} · received {receivedAt|date}",
         "{id} (no number yet)": "{id} (no number yet)",

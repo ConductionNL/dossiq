@@ -272,7 +272,12 @@ describe('the daily digest', () => {
 	})
 
 	it('asks the hour only while the digest is on', () => {
-		expect(fields.hour).toMatchObject({ min: 0, max: 23, integer: true, visibleWhen: { key: 'enabled', equals: true } })
+		expect(fields.hour).toMatchObject({ type: 'select', visibleWhen: { key: 'enabled', equals: true } })
+	})
+
+	it('offers the 24 hours as a select, as the board draws "08.00 uur"', () => {
+		expect(fields.hour.options).toHaveLength(24)
+		expect(fields.hour.options[8]).toEqual({ value: 8, label: '{hour}:00' })
 	})
 
 	it('names who decided the setting', () => {
