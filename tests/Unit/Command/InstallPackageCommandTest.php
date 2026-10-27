@@ -93,4 +93,27 @@ class InstallPackageCommandTest extends TestCase {
 
 		$this->assertSame(expected: [['jeugdwet', false]], actual: $calls);
 	}//end testWithoutTheOptionLocalChangesAreKept()
+
+	/**
+	 * The output says what the refresh did with the rows already here, not only
+	 * what the writer wrote: "0 written, 33 already present" read as a no-op
+	 * while the refresh had updated the case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-install-reports-refresh/specs/case-types/spec.md#requirement-a-package-install-reports-what-its-refresh-did
+	 */
+	public function testTheOutputNamesTheRefreshedAndKeptRows(): void {
+		$installer = $this->createMock(originalClassName: PackageInstaller::class);
+		$installer->method('installOverLocalChanges')->willReturn(
+			['status' => PackageInstaller::INSTALLED, 'package' => 'jeugdwet', 'version' => '1.13.0', 'message' => 'ok', 'refreshed' => 2, 'kept' => ['c-1']]
+		);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$tester = new CommandTester(command: new InstallPackageCommand(installer: $installer, settings: $settings));
+
+		$tester->execute(input: ['ids' => ['jeugdwet'], '--over-local-changes' => true]);
+
+		$this->assertStringContainsString(needle: '2 row(s) refreshed, 1 kept as this instance holds them: c-1', haystack: $tester->getDisplay());
+	}//end testTheOutputNamesTheRefreshedAndKeptRows()
 }//end class
