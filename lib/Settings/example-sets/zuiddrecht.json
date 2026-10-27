@@ -419,7 +419,8 @@
 					"city": "{{cast:henkvisser.address.city}}"
 				},
 				"displayName": "{{cast:henkvisser.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000014"
 			}
 		},
 		{
@@ -572,7 +573,8 @@
 					"postcode": "{{cast:vandam.address.postcode}}",
 					"place": "{{cast:vandam.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf.",
+				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000003"
 			}
 		},
 		{
