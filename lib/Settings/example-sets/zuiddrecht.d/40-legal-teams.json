@@ -1,0 +1,29 @@
+{
+	"$comment": "The two legal teams a case can be handed to, as DqOverdragen draws them: Juridische zaken (bezwaar, beroep en Woo-advies) and Juridische zaken sociaal domein (bezwaar Wmo en jeugd), each an organisation role bound to its Nextcloud group so the handover list names the team and says what it does.",
+	"objects": [
+		{
+			"key": "team-juridische-zaken",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Juridische zaken",
+				"description": "bezwaar, beroep en Woo-advies",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-juridische-zaken",
+				"parentRoleId": "{{object:afdeling-bedrijfsvoering.id}}"
+			}
+		},
+		{
+			"key": "team-juridische-zaken-sociaal-domein",
+			"register": "dossiq",
+			"schema": "organisatieRol",
+			"data": {
+				"roleName": "Juridische zaken sociaal domein",
+				"description": "bezwaar Wmo en jeugd",
+				"roleType": "ambtelijk",
+				"ncGroupId": "zuiddrecht-juridische-zaken-sociaal-domein",
+				"parentRoleId": "{{object:afdeling-sociaal-domein.id}}"
+			}
+		}
+	]
+}
