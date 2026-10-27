@@ -160,6 +160,8 @@ class CaseTypePhasesTest extends TestCase {
 		$this->assertSame(['Volledigheid toetsen', 'Ontvangstbevestiging'], array_column($result['phases'][0]['tasks'], 'title'));
 		$this->assertSame(['Besluit opstellen'], array_column($result['phases'][2]['tasks'], 'title'));
 		$this->assertSame([], $result['unplaced']);
+		// Numbered by place, not by the first status's order (3 and 4): "Fase 2: Beoordeling".
+		$this->assertSame(expected: [1, 2, 3], actual: array_column(array: $result['phases'], column_key: 'number'));
 
 		$plain = $this->phases(caseType: ['id' => 'ct'], statuses: $this->statuses(), template: null)->phasesFor(caseTypeId: 'ct');
 		$this->assertSame(['Ontvangst', 'Beoordeling'], array_column($plain['phases'], 'name'));
