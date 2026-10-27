@@ -10073,7 +10073,7 @@
 									"resolve": {
 										"register": "dossiq",
 										"schema": "inspectieRapport",
-										"labelField": "title"
+										"labelField": "location"
 									}
 								},
 								{
@@ -10203,7 +10203,7 @@
 									"resolve": {
 										"register": "dossiq",
 										"schema": "inspectieRapport",
-										"labelField": "title"
+										"labelField": "location"
 									}
 								},
 								{
