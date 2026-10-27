@@ -48,6 +48,7 @@ use OCA\Dossiq\Listener\MilestoneStallTimerFiredListener;
 use OCA\Dossiq\Listener\MilestoneStallTimerListener;
 use OCA\Dossiq\Listener\RoutedCaseAcceptanceListener;
 use OCA\Dossiq\Listener\TakeBackTimerFiredListener;
+use OCA\Dossiq\Listener\OneStatutoryTermPerCaseListener;
 use OCA\Dossiq\Listener\TermInstanceMovesCaseDeadlineListener;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -88,6 +89,8 @@ class DeadlineTimerRegistrar {
 		MilestoneStallTimerListener::class,
 		// A statutory term saved outside the term engine (an example set, an import) moves its case's deadline too.
 		TermInstanceMovesCaseDeadlineListener::class,
+		// A new statutory term takes over from the one running before it: one statutory term per case.
+		OneStatutoryTermPerCaseListener::class,
 	];
 
 	/**
