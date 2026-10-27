@@ -1,0 +1,3 @@
+- [x] Meta parts with the handler on the party case rows
+- [x] Dutch label "behandelaar {assignee|user}"
+- [x] Vitest

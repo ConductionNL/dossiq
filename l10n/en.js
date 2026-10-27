@@ -3797,6 +3797,7 @@ OC.L10N.register(
         "Handler is me, deadline within 7 days": "Handler is me, deadline within 7 days",
         "Handler label": "Handler label",
         "handler {assigneeName}": "handler {assigneeName}",
+        "handler {assignee|user}": "handler {assignee|user}",
         "Handler/medewerker reference the message is routed to.": "Handler/medewerker reference the message is routed to.",
         "Handlers": "Handlers",
         "Handling": "Handling",
