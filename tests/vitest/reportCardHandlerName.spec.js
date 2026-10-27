@@ -2,9 +2,11 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Board DqSociaalDomein: De melding names the handler, not the user id.
+ * Board DqSociaalDomein: De melding names the handler, not the user id, in
+ * three columns of facts.
  *
  * @spec openspec/changes/report-card-handler-name/specs/case-page/spec.md#requirement-the-report-card-names-the-handler
+ * @spec openspec/changes/report-card-handler-name/specs/case-page/spec.md#requirement-the-report-card-lays-its-facts-out-in-three-columns
  */
 
 import fs from 'fs'
@@ -39,5 +41,10 @@ describe('the report card (DqSociaalDomein De melding)', () => {
 		const [card] = find(JSON.parse(layout), 'case-summary')
 		const handler = card.content.fields.find((field) => field.path === 'assignee')
 		expect(handler.format).toBe('user')
+	})
+
+	it('lays its facts out in three columns, as drawn', () => {
+		const [card] = find(JSON.parse(layout), 'case-summary')
+		expect(card.content.columns).toBe(3)
 	})
 })
