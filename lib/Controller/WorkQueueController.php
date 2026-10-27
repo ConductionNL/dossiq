@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Controller;
 use DateTime;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Substitution\CoveredWork;
+use OCA\Dossiq\Service\Team\PrimaryTeamService;
 use OCA\Dossiq\Service\WorkQueueService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -37,6 +38,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -45,6 +47,10 @@ use Psr\Log\LoggerInterface;
  * Controller for the intelligent work-queue endpoints.
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the queue, the workload and
+ *  the covered work each read their own collaborator; the workload also needs
+ *  the reader's teams.
  */
 class WorkQueueController extends Controller {
 	/**
@@ -57,6 +63,7 @@ class WorkQueueController extends Controller {
 	 * @param LoggerInterface $logger Logger.
 	 * @param IUserManager $userManager Resolves a handler's display name.
 	 * @param CoveredWork $coveredWork The cases the caller covers for an absent colleague.
+	 * @param PrimaryTeamService $teams The reader's teams, which scope the workload.
 	 *
 	 * @return void
 	 */
@@ -68,6 +75,7 @@ class WorkQueueController extends Controller {
 		private LoggerInterface $logger,
 		private IUserManager $userManager,
 		private CoveredWork $coveredWork,
+		private PrimaryTeamService $teams,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -137,13 +145,64 @@ class WorkQueueController extends Controller {
 		}
 
 		try {
-			$handlers = $this->withDisplayNames(handlers: $this->workQueueService->computeWorkload());
+			$handlers = $this->withDisplayNames(
+				handlers: $this->ofReadersTeams(user: $user, handlers: $this->workQueueService->computeWorkload())
+			);
 			return new JSONResponse(['handlers' => $handlers]);
 		} catch (\Throwable $e) {
 			$this->logger->error('WorkQueue: workload failed', ['error' => $e->getMessage()]);
 			return new JSONResponse(['error' => 'Failed to compute workload'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end workload()
+
+	/**
+	 * Keep the handlers who are members of one of the reader's teams, and list
+	 * a member without open cases with 0, so a free colleague shows; every
+	 * handler for a reader in no team.
+	 *
+	 * @param IUser                                                  $user     The reader.
+	 * @param array<int, array{handler: string, openCaseCount: int}> $handlers The per-handler counts.
+	 *
+	 * @return array<int, array{handler: string, openCaseCount: int}> The handlers of the reader's teams.
+	 *
+	 * @spec openspec/changes/workload-of-the-readers-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
+	 */
+	private function ofReadersTeams(IUser $user, array $handlers): array {
+		try {
+			$teamGroupIds = array_column($this->teams->teamsOf(user: $user), 'groupId');
+		} catch (\Throwable $e) {
+			$this->logger->warning('WorkQueue: the reader\'s teams could not be read', ['error' => $e->getMessage()]);
+			return $handlers;
+		}
+
+		if ($teamGroupIds === []) {
+			return $handlers;
+		}
+
+		$members = [];
+		foreach ($teamGroupIds as $groupId) {
+			foreach (array_keys($this->groupManager->displayNamesInGroup(gid: $groupId)) as $uid) {
+				$members[(string)$uid] = true;
+			}
+		}
+
+		$listed = [];
+		$result = [];
+		foreach ($handlers as $row) {
+			if (isset($members[$row['handler']]) === true) {
+				$result[] = $row;
+				$listed[$row['handler']] = true;
+			}
+		}
+
+		foreach (array_keys($members) as $uid) {
+			if (isset($listed[$uid]) === false) {
+				$result[] = ['handler' => $uid, 'openCaseCount' => 0];
+			}
+		}
+
+		return $result;
+	}//end ofReadersTeams()
 
 	/**
 	 * Add each handler's display name, so a list can show a person rather than a user id.

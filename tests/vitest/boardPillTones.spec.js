@@ -42,7 +42,7 @@ describe('board pill tones', () => {
 		expect(CONNECTION_STATUS_TONES).toEqual({
 			configured: 'success',
 			error: 'error',
-			simulated: 'primary',
+			simulated: 'info',
 			unavailable: 'warning',
 		})
 	})

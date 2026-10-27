@@ -44,5 +44,11 @@ describe('field rights matrix head look', () => {
 	it('grounds the head as the boards\' near-white table head', () => {
 		expect(rule('.case-type-field-rights__table thead th')).toContain('background: var(--cn-board-table-head-bg')
 	})
+
+	it('fits the card: a fixed layout and heads that wrap beside a funnel of fixed size', () => {
+		expect(rule('.case-type-field-rights__table')).toContain('table-layout: fixed;')
+		expect(rule('.case-type-field-rights__table thead th')).toContain('white-space: normal;')
+		expect(rule('.case-type-field-rights__filter')).toContain('flex: none;')
+	})
 })
 

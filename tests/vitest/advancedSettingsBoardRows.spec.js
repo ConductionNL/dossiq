@@ -25,7 +25,9 @@ describe('the advanced settings rows', () => {
 	it('draws the shipped configuration picker as a settings field without a second intro', () => {
 		const view = read('src', 'views', 'settings', 'ShippedConfiguration.vue')
 		expect(view).not.toContain('shipped-configuration__intro')
-		expect(view).toMatch(/#shipped-schema \{[^}]*max-width: 560px;/)
+		expect(view).toMatch(/\.shipped-configuration__picker \{[^}]*max-width: 560px;/)
+		expect(view).toMatch(/<NcSelect[^>]*:inputLabel="t\('dossiq', 'Show'\)"/)
+		expect(view).not.toContain('<select')
 	})
 
 	it('draws the present badge as the success tag, not the neutral one', () => {

@@ -48,7 +48,7 @@
                     "order": 4,
                     "isFinal": false,
                     "role": "review",
-                    "phase": "Besluit",
+                    "phase": "Advies",
                     "colour": "orange"
                 },
                 {

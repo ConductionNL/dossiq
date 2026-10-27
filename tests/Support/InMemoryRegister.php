@@ -60,6 +60,15 @@ class InMemoryRegister {
 	public array $hiddenFromCaller = [];
 
 	/**
+	 * Schemas whose rows a find or save under the caller's own access refuses,
+	 * as OpenRegister refuses an anonymous `occ` run on a schema with
+	 * authorization rules. With `_rbac` false they answer.
+	 *
+	 * @var list<string>
+	 */
+	public array $refusedToCaller = [];
+
+	/**
 	 * Whether a search honours `_limit` and `_offset`, as OpenRegister does.
 	 * Off by default: most tests pass a limit they never reach.
 	 *
@@ -144,6 +153,10 @@ class InMemoryRegister {
 			$this->unscopedReads[] = (string)$schema . '/' . (string)$id;
 		}
 
+		if ($_rbac === true && in_array((string)$schema, $this->refusedToCaller, true) === true) {
+			throw new \RuntimeException("User 'Anonymous' does not have permission to 'read' objects in schema '" . (string)$schema . "'");
+		}
+
 		return ($this->rows[(string)$schema][(string)$id] ?? null);
 	}//end find()
 
@@ -208,6 +221,10 @@ class InMemoryRegister {
 	): array {
 		if (in_array((string)$schema, $this->refusedSchemas, true) === true) {
 			throw new \RuntimeException('Save refused for ' . (string)$schema);
+		}
+
+		if ($_rbac === true && in_array((string)$schema, $this->refusedToCaller, true) === true) {
+			throw new \RuntimeException("User 'Anonymous' does not have permission to 'update' objects in schema '" . (string)$schema . "'");
 		}
 
 		$id = ($uuid ?? ('generated-' . (count($this->rows[(string)$schema] ?? []) + 1)));

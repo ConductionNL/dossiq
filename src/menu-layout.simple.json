@@ -1422,20 +1422,29 @@
 						],
 						"type": "facts",
 						"title": "Requester",
-						"_note": "DqZaak Verzoeker: the requester as a lead (initials and name), then what kind of requester and the channel, read from the projection the requester picker writes.",
+						"_note": "DqZaak Aanvrager: the requester as a lead (initials and name) over how they logged in when the case came in through a portal (intakeIdentification), else what kind of requester, and a link to the contact or organisation page by that kind. The board draws no intake channel here; the header names the portal (headerMeta).",
 						"content": {
 							"fields": [
 								{
 									"as": "lead",
 									"title": "initiatorDisplayName",
-									"subtitle": { "path": "initiatorType", "map": { "person": "Person", "company": "Company", "contact": "Contact" } },
+									"subtitle": {
+										"firstOf": [
+											{ "path": "intakeIdentification", "map": { "digid": "Logged in with DigiD", "eherkenning": "Logged in with eHerkenning" } },
+											{ "path": "initiatorType", "map": { "person": "Person", "company": "Company", "contact": "Contact" } }
+										]
+									},
 									"initialsPath": "initiatorDisplayName"
-								},
-								{
-									"path": "intakeChannel",
-									"label": "Intake channel"
 								}
 							],
+							"link": {
+								"label": "View contact details",
+								"route": {
+									"nameField": "initiatorType",
+									"nameMap": { "person": "ContactDetail", "company": "OrganisationDetail" },
+									"params": { "id": "@source.requester" }
+								}
+							},
 							"emptyText": "No requester yet"
 						}
 					},
@@ -1455,8 +1464,9 @@
 									"format": "user"
 								},
 								{
-									"path": "assignedGroupPublicName",
-									"label": "Team"
+									"path": "assignedGroup",
+									"label": "Team",
+									"format": "group"
 								},
 								{
 									"path": "startDate",
@@ -1857,6 +1867,7 @@
 					"currentField": "identifier",
 					"separator": "/"
 				},
+				"headerMeta": "via {intakeSourceName}",
 				"headerCard": true,
 				"headerWidget": "case-stages",
 				"typePill": {
@@ -3067,6 +3078,7 @@
 								"lngField": "longitude",
 								"popupField": "label"
 							},
+							"labelsBelow": true,
 							"emptyText": "No locations linked to this case yet",
 							"errorText": "The locations could not be loaded.",
 							"refreshOn": "dossiq:case-location:saved",
@@ -3488,6 +3500,7 @@
 							},
 							"limit": 10,
 							"presentation": "rows",
+							"strongTitle": true,
 							"ruleAbove": true,
 							"icon": "CalendarBlankOutline",
 							"iconTile": true,
@@ -3554,6 +3567,7 @@
 							},
 							"limit": 25,
 							"presentation": "rows",
+							"strongTitle": true,
 							"ruleAbove": true,
 							"title": [
 								"{description}",
@@ -3633,7 +3647,7 @@
 									"dir": "desc"
 								}
 							},
-							"columns": 2,
+							"columns": 3,
 							"fields": [
 								{
 									"from": "object",
@@ -5616,7 +5630,7 @@
 							"ruleAbove": true,
 							"title": "{title}",
 							"meta": "{identifier}",
-							"text": "{daysSinceActivity} days idle",
+							"trailing": ["{daysSinceActivity} days idle"],
 							"chevron": false,
 							"rowRoute": "CaseDetail",
 							"emptyText": "All cases active"
@@ -5662,7 +5676,7 @@
 							"ruleAbove": true,
 							"title": "{title}",
 							"meta": "{identifier}",
-							"text": "{@self.viewedAt|relative}",
+							"trailing": ["{@self.viewedAt|relative}"],
 							"footerLink": {
 								"label": "View all",
 								"route": "Cases",
@@ -7591,7 +7605,7 @@
 							},
 							"groupsPath": "phases",
 							"itemsKey": "tasks",
-							"groupTitle": "Phase {order}: {name}",
+							"groupTitle": "Phase {number}: {name}",
 							"groupCount": {
 								"one": "{count} task",
 								"other": "{count} tasks"

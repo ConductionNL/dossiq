@@ -72,7 +72,7 @@ class PhaseSummary {
 	/**
 	 * The days per phase per case type, as columns and rows a matrix reads.
 	 *
-	 * Columns are the named phases in the order they first appear, rows the
+	 * Columns are the named phases in the case types' flow order, rows the
 	 * case types that passed at least one of them; a case type that
 	 * never passes a phase has the word `none` in that cell, which the page
 	 * shows translated rather than as an empty cell.
@@ -86,21 +86,28 @@ class PhaseSummary {
 	 */
 	public function matrix(array $caseTypes, string $measure='meanHours'): array {
 		$columns = [];
+		$sequences = [];
 		$rows = [];
 		foreach ($caseTypes as $report) {
 			$hours = [];
+			$firstOrder = [];
 			foreach ($this->columnsOf(stats: $this->namedStats(report: $report)) as $column => $stats) {
 				$hours[$column] = array_sum(array_map(static fn (array $stat): float => (float)($stat[$measure] ?? 0), $stats));
+				$firstOrder[$column] = $this->firstOrder(stats: $stats);
 				if (in_array($column, $columns, true) === false) {
 					$columns[] = $column;
 				}
 			}
+
+			$sequences[] = $this->sequenceOf(firstOrder: $firstOrder);
 
 			if ($hours !== []) {
 				$byName = array_map(static fn (float $sum): int => (int)round($sum / self::HOURS_PER_DAY), $hours);
 				$rows[] = ['label' => (string)($report['title'] ?? ''), 'byName' => $byName];
 			}
 		}
+
+		$columns = $this->inFlowOrder(columns: $columns, sequences: $sequences);
 
 		return [
 			'columns' => $columns,
@@ -113,6 +120,80 @@ class PhaseSummary {
 			),
 		];
 	}//end matrix()
+
+	/**
+	 * The lowest status order among a column's statistics, or null when none has one.
+	 *
+	 * @param array<int, array<string, mixed>> $stats One column's statistics.
+	 *
+	 * @return int|null
+	 */
+	private function firstOrder(array $stats): ?int {
+		$orders = array_filter(
+			array_map(static fn (array $stat): mixed => ($stat['statusOrder'] ?? null), $stats),
+			static fn (mixed $order): bool => is_int($order)
+		);
+		if ($orders === []) {
+			return null;
+		}
+
+		return min($orders);
+	}//end firstOrder()
+
+	/**
+	 * One case type's columns in its own flow order, those without an order left out.
+	 *
+	 * @param array<string, int|null> $firstOrder Column => its lowest status order.
+	 *
+	 * @return array<int, string>
+	 */
+	private function sequenceOf(array $firstOrder): array {
+		$ordered = array_filter($firstOrder, static fn (?int $order): bool => $order !== null);
+		asort($ordered);
+
+		return array_map('strval', array_keys($ordered));
+	}//end sequenceOf()
+
+	/**
+	 * The columns in the order the case types' flows put them.
+	 *
+	 * One column goes before another when more case types that have both pass
+	 * it first (Advies before Besluit), so the order is the flows', never the
+	 * alphabet's or that of the first case type read. Columns no flow places
+	 * against each other keep the order they first appeared in.
+	 *
+	 * @param array<int, string>             $columns   The columns, in first-appearance order.
+	 * @param array<int, array<int, string>> $sequences Each case type's columns in its flow order.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/phase-columns-in-case-type-order/specs/phase-columns-in-case-type-order/spec.md#requirement-the-phase-columns-follow-the-case-types-order
+	 */
+	private function inFlowOrder(array $columns, array $sequences): array {
+		$before = [];
+		foreach ($sequences as $sequence) {
+			foreach ($sequence as $index => $earlier) {
+				foreach (array_slice($sequence, ($index + 1)) as $later) {
+					$before[$earlier][$later] = (($before[$earlier][$later] ?? 0) + 1);
+				}
+			}
+		}
+
+		$ordered = [];
+		foreach ($columns as $column) {
+			$slot = count($ordered);
+			foreach ($ordered as $position => $placed) {
+				if (($before[$column][$placed] ?? 0) > ($before[$placed][$column] ?? 0)) {
+					$slot = $position;
+					break;
+				}
+			}
+
+			$ordered = [...array_slice($ordered, 0, $slot), $column, ...array_slice($ordered, $slot)];
+		}
+
+		return $ordered;
+	}//end inFlowOrder()
 
 	/**
 	 * A case type's statistics per matrix column. A status that names a

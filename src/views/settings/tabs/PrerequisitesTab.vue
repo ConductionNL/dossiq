@@ -44,18 +44,18 @@
 			<tbody>
 				<tr data-testid="prerequisite-php">
 					<th scope="row">
-						{{ t('dossiq', 'PHP') }} {{ php.required }} {{ t('dossiq', 'or higher') }}
+						{{ t('dossiq', 'PHP {version} or higher', { version: php.required }) }}
 					</th>
-					<td>{{ t('dossiq', 'this instance runs') }} {{ php.running }}</td>
+					<td>{{ t('dossiq', 'This instance runs {version}', { version: php.running }) }}</td>
 					<td><span :class="markClass(php.present)">{{ mark(php.present) }}</span></td>
 				</tr>
 				<tr data-testid="prerequisite-nextcloud">
 					<th scope="row">
-						{{ t('dossiq', 'Nextcloud') }} {{ nextcloud.min }} {{ t('dossiq', 'to') }} {{ nextcloud.max }}
+						{{ t('dossiq', 'Nextcloud {min} to {max}', { min: nextcloud.min, max: nextcloud.max }) }}
 					</th>
 					<td>
 						<template v-if="nextcloud.running">
-							{{ t('dossiq', 'this instance runs') }} {{ nextcloud.running }}
+							{{ t('dossiq', 'This instance runs {version}', { version: nextcloud.running }) }}
 						</template>
 					</td>
 					<td><span :class="markClass(nextcloud.present)">{{ mark(nextcloud.present) }}</span></td>

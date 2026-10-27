@@ -382,7 +382,9 @@ class ShippedConfigurationService {
 				'set' => $set,
 				'setVersion' => $seeded,
 				'latestVersion' => $latest,
-				'updateAvailable' => ($latest !== '' && $latest !== $seeded),
+				// Only a later shipped version is an update; taking an older
+				// one would downgrade the object. An empty version sorts first.
+				'updateAvailable' => version_compare(version1: $latest, version2: $seeded, operator: '>'),
 			];
 		}//end foreach
 
@@ -428,6 +430,7 @@ class ShippedConfigurationService {
 			newShipped: $newShipped,
 			overLocalChange: false,
 			version: $version,
+			rows: $this->store,
 		);
 	}//end adopt()
 
@@ -449,8 +452,12 @@ class ShippedConfigurationService {
 	 *
 	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
 	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 * @spec openspec/changes/package-refresh-as-system/specs/case-types/spec.md
 	 */
 	public function refreshRows(string $set, string $version, array $rows, bool $overLocalChanges): array {
+		// A package install is an administrator's act (admin settings, `occ`); a CLI run has no
+		// user, so the rows are read and written past the caller's access check.
+		$system = $this->store->asSystem();
 		$refresh = ['refreshed' => [], 'kept' => []];
 		foreach ($rows as $row) {
 			if (($row['ownRegister'] ?? false) === true) {
@@ -466,6 +473,7 @@ class ShippedConfigurationService {
 				newShipped: (array)$row['row'],
 				version: $version,
 				overLocalChange: $overLocalChanges,
+				rows: $system,
 			);
 
 			if ($result['outcome'] === self::REFRESH_DONE) {
@@ -500,6 +508,7 @@ class ShippedConfigurationService {
 	 * @param array<string, mixed> $newShipped   The row as the set now ships it.
 	 * @param string               $version      The set's new version.
 	 * @param boolean              $overLocalChange Whether a row changed here takes the set's keys too.
+	 * @param StarterStore         $rows         The store the row is read from and written to.
 	 *
 	 * @return array{outcome: string, reason: string} `refreshed`, `unchanged` or `kept`, and why it was kept.
 	 *
@@ -513,8 +522,9 @@ class ShippedConfigurationService {
 		array $newShipped,
 		string $version,
 		bool $overLocalChange,
+		StarterStore $rows,
 	): array {
-		$current = $this->store->row(configKey: $objectsKey, id: $targetObject);
+		$current = $rows->row(configKey: $objectsKey, id: $targetObject);
 		if ($current === null) {
 			return ['outcome' => self::REFRESH_KEPT, 'reason' => 'not_found'];
 		}
@@ -544,6 +554,7 @@ class ShippedConfigurationService {
 			newShipped: $newShipped,
 			overLocalChange: $overLocalChange,
 			version: $version,
+			rows: $rows,
 		);
 		if ($adopted['adopted'] === true) {
 			return ['outcome' => self::REFRESH_DONE, 'reason' => ''];
@@ -585,6 +596,7 @@ class ShippedConfigurationService {
 			newShipped: $newShipped,
 			overLocalChange: true,
 			version: null,
+			rows: $this->store,
 		);
 	}//end adoptOverLocalChange()
 
@@ -598,6 +610,7 @@ class ShippedConfigurationService {
 	 * @param array<string, mixed> $newShipped      The object as the newer set ships it.
 	 * @param boolean              $overLocalChange Whether a local change may go.
 	 * @param string|null          $version         The version to stamp; null to look it up in ShippedSets.
+	 * @param StarterStore         $rows            The store the row is read from and written to.
 	 *
 	 * @return array{adopted: bool, reason: string} What happened.
 	 */
@@ -609,8 +622,9 @@ class ShippedConfigurationService {
 		array $newShipped,
 		bool $overLocalChange,
 		?string $version,
+		StarterStore $rows,
 	): array {
-		$current = $this->store->row(configKey: $objectsKey, id: $targetObject);
+		$current = $rows->row(configKey: $objectsKey, id: $targetObject);
 		if ($current === null) {
 			return ['adopted' => false, 'reason' => 'not_found'];
 		}
@@ -639,7 +653,7 @@ class ShippedConfigurationService {
 		);
 		$payload['id'] = $targetObject;
 
-		$saved = $this->store->save(configKey: $objectsKey, payload: $payload, id: $targetObject);
+		$saved = $rows->save(configKey: $objectsKey, payload: $payload, id: $targetObject);
 		if ($saved === null) {
 			return ['adopted' => false, 'reason' => 'write_failed'];
 		}

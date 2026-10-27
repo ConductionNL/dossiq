@@ -157,7 +157,7 @@ describe('the payment callback', () => {
 	})
 
 	it('generates a 32-byte secret into the field', () => {
-		expect(fields['generate-callback-secret']).toMatchObject({ type: 'action', fill: { key: 'payout_callback_secret', bytes: 32 } })
+		expect(fields['generate-callback-secret']).toMatchObject({ type: 'action', fill: { key: 'payout_callback_secret', bytes: 32 }, placement: 'save' })
 	})
 })
 
@@ -272,7 +272,17 @@ describe('the daily digest', () => {
 	})
 
 	it('asks the hour only while the digest is on', () => {
-		expect(fields.hour).toMatchObject({ min: 0, max: 23, integer: true, visibleWhen: { key: 'enabled', equals: true } })
+		expect(fields.hour).toMatchObject({ type: 'select', visibleWhen: { key: 'enabled', equals: true } })
+	})
+
+	it('offers the 24 hours as a select, as the board draws "08.00 uur"', () => {
+		expect(fields.hour.options).toHaveLength(24)
+		expect(fields.hour.options[8]).toEqual({ value: 8, label: '{hour}:00' })
+	})
+
+	it('sets a section description 16px above its content (24px gap less 8)', () => {
+		const rule = userSettings.slice(userSettings.indexOf('.dossiq-user-settings__intro {'), userSettings.indexOf('}', userSettings.indexOf('.dossiq-user-settings__intro {')))
+		expect(rule).toContain('margin-block: 0 -8px;')
 	})
 
 	it('names who decided the setting', () => {

@@ -337,6 +337,7 @@ class DwellTimeAnalyzer {
 					'statusName' => $this->statusLabel(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
 					'statusPhase' => $this->statusPhase(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
 					'statusFinal' => (($statusTypeIndex[$statusId]['isFinal'] ?? false) === true),
+					'statusOrder' => filter_var(($statusTypeIndex[$statusId]['order'] ?? null), FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE),
 				],
 				$this->summarise(workingHours: $lists['working'], wallHours: $lists['wall'])
 			);

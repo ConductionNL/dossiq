@@ -181,14 +181,20 @@ export default {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 	gap: 16px 24px;
-	margin-block: 0 12px;
+	margin-block: 0 16px;
+	padding: 0;
+	line-height: normal;
 }
 
+/* Label over value at the font's own leading: a 14px muted label, a 15px
+   value (DqBeheerinstellingen "Zoekindex", 39px; Nextcloud's list padding
+   and 1.5 leading made it 95). */
 .search-index__figures > div {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
 	min-width: 0;
+	padding: 0;
 }
 
 .search-index__figures dt {
@@ -202,11 +208,16 @@ export default {
 	white-space: normal;
 	overflow-wrap: anywhere;
 	color: var(--color-text-maxcontrast);
+	font-size: 14px;
+	line-height: normal;
 }
 
 .search-index__figures dd {
-	font-weight: bold;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: normal;
 	margin: 0;
+	padding: 0;
 	overflow-wrap: anywhere;
 }
 </style>

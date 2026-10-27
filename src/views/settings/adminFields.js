@@ -150,7 +150,7 @@ export function kadasterFields(t) {
 
 /**
  * The tone of each connection status on the integrations table: a working
- * connection is green, a failing one red, a simulated one blue, an
+ * connection is green, a failing one red, a simulated one the info blue, an
  * unavailable one amber, the rest neutral.
  *
  * @type {Readonly<Record<string, string>>}
@@ -159,7 +159,7 @@ export function kadasterFields(t) {
 export const CONNECTION_STATUS_TONES = Object.freeze({
 	configured: 'success',
 	error: 'error',
-	simulated: 'primary',
+	simulated: 'info',
 	unavailable: 'warning',
 })
 
@@ -354,6 +354,8 @@ export function paymentCallbackFields(t) {
 			label: t('dossiq', 'Generate random secret'),
 			type: 'action',
 			fill: { key: 'payout_callback_secret', bytes: 32 },
+			// Beside Save, as the board draws it (nc-vue `placement: 'save'`).
+			placement: 'save',
 		},
 	]
 }
@@ -503,7 +505,7 @@ export function contactCentreFields(t) {
 			label: t('dossiq', 'Sentiment trigger words (one per line)'),
 			type: 'lines',
 			saveAs: 'json',
-			rows: 6,
+			rows: 5,
 			wide: true,
 			placeholder: 'klacht\nadvocaat\nwethouder\nmedia',
 			hint: t(
@@ -673,10 +675,11 @@ export function workDigestFields(t) {
 		{
 			key: 'hour',
 			label: t('dossiq', 'Hour of the day'),
-			type: 'number',
-			integer: true,
-			min: 0,
-			max: 23,
+			type: 'select',
+			options: Array.from({ length: 24 }, (_, hour) => ({
+				value: hour,
+				label: t('dossiq', '{hour}:00', { hour: String(hour).padStart(2, '0') }),
+			})),
 			default: 8,
 			visibleWhen: { key: 'enabled', equals: true },
 		},

@@ -49,8 +49,12 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 
 	/**
 	 * The value the key holds once the step ran; bump it to run the step again.
+	 *
+	 * 2: joins stored straight into OpenRegister (an example set, an import)
+	 * before DocumentJoinHomingListener left their files outside the case
+	 * folder, so the case's Files tab stayed empty.
 	 */
-	public const DONE_VERSION = '1';
+	public const DONE_VERSION = '2';
 
 	/**
 	 * How many records one page holds.

@@ -716,7 +716,7 @@ describe('the header and the side column', () => {
 			// handling a read-only data card, the work instruction a facts card
 			// over the case TYPE (a link only, no fields of the case).
 			const fields = card.type === 'facts'
-				? (card.content.fields || []).flatMap((entry) => (entry.as === 'lead' ? [entry.title, entry.subtitle?.path] : [entry.path])).filter(Boolean)
+				? (card.content.fields || []).flatMap((entry) => (entry.as === 'lead' ? [entry.title, entry.subtitle?.path, ...(entry.subtitle?.firstOf || []).map((option) => option.path)] : [entry.path])).filter(Boolean)
 				: card.type === 'data' ? card.content.include : []
 			if (card.type === 'data') {
 				expect(card.content.editable).toBe(false)
@@ -730,8 +730,10 @@ describe('the header and the side column', () => {
 		const handling = cards.find((card) => card.id === 'side-handling')
 		expect(handling.type).toBe('facts')
 		expect(handling.content.fields.find((field) => field.path === 'assignee').format).toBe('user')
-		// Nothing the requester card showed before is gone.
-		expect(shown).toEqual(expect.arrayContaining(['initiatorDisplayName', 'initiatorType', 'intakeChannel']))
+		// The requester card names the requester, how they logged in, else their
+		// kind; the intake channel is not on it, as the board draws it.
+		expect(shown).toEqual(expect.arrayContaining(['initiatorDisplayName', 'initiatorType', 'intakeIdentification']))
+		expect(shown).not.toContain('intakeChannel')
 		// The deadline has its own card, so no data card repeats it.
 		expect(shown).not.toContain('deadline')
 	})

@@ -60,6 +60,35 @@ class PhaseSummaryTest extends TestCase {
 	}//end reports()
 
 	/**
+	 * The columns follow the case types' flows: Advies, which one case type
+	 * passes before Besluit, goes before it although the first case type read
+	 * never passes it and lists Besluit first.
+	 *
+	 * @return void
+	 */
+	public function testColumnsFollowTheCaseTypesFlowOrder(): void {
+		$stat = static fn (string $phase, int $order): array => [
+			'statusName' => $phase . ' status',
+			'statusPhase' => $phase,
+			'statusOrder' => $order,
+			'meanHours' => 24.0,
+			'medianHours' => 24.0,
+		];
+		$reports = [
+			[
+				'id' => 'woo',
+				'title' => 'Woo-verzoek',
+				'dwellTime' => [$stat('Besluit', 3), $stat('Ontvangst', 1), $stat('Beoordeling', 2), $stat('Verzending', 4)],
+			],
+			['id' => 'bouw', 'title' => 'Bouw', 'dwellTime' => [$stat('Ontvangst', 1), $stat('Beoordeling', 2), $stat('Advies', 3), $stat('Besluit', 4)]],
+		];
+
+		$matrix = (new PhaseSummary())->matrix(caseTypes: $reports, measure: 'meanHours');
+
+		self::assertSame(expected: ['Ontvangst', 'Beoordeling', 'Advies', 'Besluit', 'Verzending'], actual: $matrix['columns']);
+	}//end testColumnsFollowTheCaseTypesFlowOrder()
+
+	/**
 	 * Phases become columns in first-seen order; a phase a case type never passes reads none.
 	 *
 	 * @return void

@@ -40,6 +40,7 @@ vi.mock('@nextcloud/dialogs', () => ({
 }))
 vi.mock('@nextcloud/vue', () => ({
 	NcButton: { name: 'NcButton', render: () => null },
+	NcSelect: { name: 'NcSelect', render: () => null },
 }))
 
 const { default: ShippedConfiguration } =
