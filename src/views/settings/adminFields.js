@@ -354,6 +354,8 @@ export function paymentCallbackFields(t) {
 			label: t('dossiq', 'Generate random secret'),
 			type: 'action',
 			fill: { key: 'payout_callback_secret', bytes: 32 },
+			// Beside Save, as the board draws it (nc-vue `placement: 'save'`).
+			placement: 'save',
 		},
 	]
 }

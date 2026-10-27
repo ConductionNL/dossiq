@@ -157,7 +157,7 @@ describe('the payment callback', () => {
 	})
 
 	it('generates a 32-byte secret into the field', () => {
-		expect(fields['generate-callback-secret']).toMatchObject({ type: 'action', fill: { key: 'payout_callback_secret', bytes: 32 } })
+		expect(fields['generate-callback-secret']).toMatchObject({ type: 'action', fill: { key: 'payout_callback_secret', bytes: 32 }, placement: 'save' })
 	})
 })
 
