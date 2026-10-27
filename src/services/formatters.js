@@ -14,6 +14,7 @@
 // marker formatting.)
 
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
+import { reactive } from 'vue'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
@@ -27,8 +28,6 @@ import { coveredForLabel } from './coveredFor.js'
 import { scanVerdictLabel } from './scanVerdict.js'
 
 
-// Guard so each lookup collection is fetched at most once per page load.
-const lookupFetchStarted = {}
 
 // Batch-fetch guard for sub-case counts: collect the UUIDs requested during a
 // render frame and flush them in a single round-trip on the next microtask,
@@ -109,12 +108,19 @@ function queueSubCaseCount(store, uuid) {
 	})
 }
 
+// Labels of related objects by type, filled by a lookup of their own. The
+// store's shared collection for a type is the state of whatever list last
+// fetched it (a filtered picker, or a query a newer one replaced), so a label
+// read only from there stays a raw UUID.
+const relatedLabels = reactive({})
+const relatedFetchStarted = {}
+
 /**
- * Resolve a related object's UUID to its human label by reading the
- * (reactive) objectStore collection for `type`. Fires a one-off
- * fetchCollection when the collection is not loaded yet — the pinia
- * state access is tracked by the rendering component, so the cell
- * re-renders with the label once the collection arrives.
+ * Resolve a related object's UUID to its human label: from the store's
+ * collection for `type` when it holds the row, else from this module's own
+ * reactive label map, which one unfiltered lookup per type fills. The
+ * rendering component tracks the reactive read, so the cell re-renders with
+ * the label once it arrives.
  *
  * @param {string} type Registered object type ('caseType' / 'statusType').
  * @param {string} uuid The related object's UUID.
@@ -129,25 +135,52 @@ function lookupRelatedName(type, uuid) {
 		return uuid
 	}
 	const collection = store.collections[type]
-	// `registerObjectType` seeds `collections[type] = []` (a truthy empty
-	// array) before any fetch, so a plain `!collection` guard treats a
-	// registered-but-unfetched type as already loaded and never fires the
-	// lookup — leaving reference cells stuck on the raw UUID. Fetch whenever
-	// the collection is empty; `lookupFetchStarted` still guards against
-	// re-fetching a type that genuinely resolved to zero rows.
-	if ((!collection || collection.length === 0) && !lookupFetchStarted[type]) {
-		// Only fetch once the type is registered (initializeStores done).
-		if (store.objectTypeRegistry && store.objectTypeRegistry[type]) {
-			lookupFetchStarted[type] = true
-			store.fetchCollection(type, { _limit: 500 }).catch(() => {
-				lookupFetchStarted[type] = false
-			})
-		}
-	}
 	const hit = (collection || []).find(
 		(o) => o.id === uuid || (o['@self'] && o['@self'].id === uuid),
 	)
-	return hit ? hit.title || hit.name || uuid : uuid
+	if (hit && (hit.title || hit.name)) {
+		return hit.title || hit.name
+	}
+	const known = relatedLabels[type] && relatedLabels[type][uuid]
+	if (known) {
+		return known
+	}
+	if (!relatedFetchStarted[type] && typeof store.fetchCollectionForOptions === 'function' && store.objectTypeRegistry && store.objectTypeRegistry[type]) {
+		relatedFetchStarted[type] = true
+		Promise.resolve(store.fetchCollectionForOptions(type, { _limit: 500 }))
+			.then((rows) => {
+				const labels = {}
+				for (const row of Array.isArray(rows) ? rows : []) {
+					const id = row && (row.id || (row['@self'] && row['@self'].id))
+					const label = row && (row.title || row.name)
+					if (id && label) {
+						labels[id] = label
+					}
+				}
+				relatedLabels[type] = labels
+				if (Object.keys(labels).length === 0) {
+					relatedFetchStarted[type] = false
+				}
+			})
+			.catch(() => {
+				relatedFetchStarted[type] = false
+			})
+	}
+	return uuid
+}
+
+/**
+ * Forget the related labels (tests).
+ *
+ * @return {void}
+ */
+export function resetRelatedLabels() {
+	for (const key of Object.keys(relatedLabels)) {
+		delete relatedLabels[key]
+	}
+	for (const key of Object.keys(relatedFetchStarted)) {
+		delete relatedFetchStarted[key]
+	}
 }
 
 export default {
