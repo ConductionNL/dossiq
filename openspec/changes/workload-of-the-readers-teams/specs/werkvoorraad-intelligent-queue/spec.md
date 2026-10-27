@@ -3,8 +3,8 @@
 ### Requirement: Coordinator Workload Endpoint [MVP]
 
 The system MUST expose `GET /api/work-queue/workload`, returning per-handler
-open-case counts for the handlers who are members of one of the reader's
-teams (every handler for a reader in no team), gated to the coordinator role
+open-case counts for the members of the reader's teams, a member without
+open cases listed with 0 (every handler for a reader in no team), gated to the coordinator role
 (Nextcloud admin group membership, mirroring the existing coordinator model in
 `SubstitutionController`). Non-coordinators MUST receive 403; unauthenticated
 callers MUST receive 401.
@@ -22,6 +22,7 @@ case data; not assertable without seeded fixtures.
 - WHEN the coordinator calls `GET /api/work-queue/workload`
 - THEN the response MUST list Anouk with all her open cases
 - AND it MUST NOT list Beheerder
+- AND a team-A member without open cases MUST be listed with 0
 
 #### Scenario: Non-coordinator is denied
 - GIVEN an authenticated non-admin user

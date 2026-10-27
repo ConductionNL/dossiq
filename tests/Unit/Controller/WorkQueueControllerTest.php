@@ -265,7 +265,7 @@ class WorkQueueControllerTest extends TestCase {
 	}//end testWorkloadReturns200ForCoordinator()
 
 	/**
-	 * The workload names the people of the reader's teams only.
+	 * The workload names the people of the reader's teams only, a free one with 0.
 	 *
 	 * @spec openspec/changes/workload-of-the-readers-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
 	 *
@@ -276,11 +276,9 @@ class WorkQueueControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($user);
 		$this->groupManager->method('isAdmin')->with('pieter')->willReturn(true);
 		$this->teams->method('teamsOf')->willReturn([['groupId' => 'team-a', 'name' => 'Team A']]);
-		$this->groupManager->method('isInGroup')->willReturnMap([
-			['anouk', 'team-a', true],
-			['beheerder', 'team-a', false],
-			['pieter', 'team-a', true],
-		]);
+		$this->groupManager->method('displayNamesInGroup')->with('team-a')->willReturn(
+			['anouk' => 'Anouk Bakker', 'pieter' => 'Pieter Jansen', 'tim' => 'Tim Mulder']
+		);
 		$this->workQueueService->method('computeWorkload')->willReturn([
 			['handler' => 'beheerder', 'openCaseCount' => 10],
 			['handler' => 'anouk', 'openCaseCount' => 9],
@@ -290,7 +288,8 @@ class WorkQueueControllerTest extends TestCase {
 
 		$handlers = $this->controller->workload()->getData()['handlers'];
 
-		self::assertSame(['anouk', 'pieter'], array_column($handlers, 'handler'));
+		self::assertSame(['anouk', 'pieter', 'tim'], array_column($handlers, 'handler'));
+		self::assertSame([9, 7, 0], array_column($handlers, 'openCaseCount'));
 	}//end testWorkloadKeepsTheMembersOfTheReadersTeams()
 
 	/**

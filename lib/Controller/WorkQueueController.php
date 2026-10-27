@@ -156,7 +156,8 @@ class WorkQueueController extends Controller {
 	}//end workload()
 
 	/**
-	 * Keep the handlers who are members of one of the reader's teams; every
+	 * Keep the handlers who are members of one of the reader's teams, and list
+	 * a member without open cases with 0, so a free colleague shows; every
 	 * handler for a reader in no team.
 	 *
 	 * @param IUser                                                  $user     The reader.
@@ -178,20 +179,29 @@ class WorkQueueController extends Controller {
 			return $handlers;
 		}
 
-		return array_values(
-			array_filter(
-				$handlers,
-				function (array $row) use ($teamGroupIds): bool {
-					foreach ($teamGroupIds as $groupId) {
-						if ($this->groupManager->isInGroup($row['handler'], $groupId) === true) {
-							return true;
-						}
-					}
+		$members = [];
+		foreach ($teamGroupIds as $groupId) {
+			foreach (array_keys($this->groupManager->displayNamesInGroup(gid: $groupId)) as $uid) {
+				$members[(string)$uid] = true;
+			}
+		}
 
-					return false;
-				}
-			)
-		);
+		$listed = [];
+		$result = [];
+		foreach ($handlers as $row) {
+			if (isset($members[$row['handler']]) === true) {
+				$result[] = $row;
+				$listed[$row['handler']] = true;
+			}
+		}
+
+		foreach (array_keys($members) as $uid) {
+			if (isset($listed[$uid]) === false) {
+				$result[] = ['handler' => $uid, 'openCaseCount' => 0];
+			}
+		}
+
+		return $result;
 	}//end ofReadersTeams()
 
 	/**
