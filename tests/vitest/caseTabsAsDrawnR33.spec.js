@@ -4,8 +4,9 @@
  *
  * The case cards as the boards draw them (r33 zero audit): the Locaties map
  * names its places under the map ("Fietspad Lindelaan, tussen nummer 2 en
- * 40", DqZaak), and the Incidenten and Wat hierna komt rows set their
- * titles in bold (DqZaakTaken).
+ * 40", DqZaak), the Incidenten and Wat hierna komt rows set their titles
+ * in bold (DqZaakTaken), and Behandeling names the team ("Woo en
+ * informatie") from the case's group, as Zaakgegevens does.
  */
 
 import fs from 'fs'
@@ -42,6 +43,11 @@ describe('case cards as drawn (r33)', () => {
 		const map = widget('case-locations-card')
 		expect(map.content.labelsBelow).toBe(true)
 		expect(map.content.markers.popupField).toBe('label')
+	})
+
+	it('names the Behandeling team by the case group\'s display name', () => {
+		const team = widget('side-handling').content.fields.find((field) => field.label === 'Team')
+		expect(team).toMatchObject({ path: 'assignedGroup', format: 'group' })
 	})
 
 	it('sets the Incidenten and Wat hierna komt row titles in bold', () => {

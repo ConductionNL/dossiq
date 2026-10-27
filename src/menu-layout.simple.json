@@ -1455,8 +1455,9 @@
 									"format": "user"
 								},
 								{
-									"path": "assignedGroupPublicName",
-									"label": "Team"
+									"path": "assignedGroup",
+									"label": "Team",
+									"format": "group"
 								},
 								{
 									"path": "startDate",
