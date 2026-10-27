@@ -858,6 +858,10 @@ export default {
 		gap: 2px;
 		min-width: 0;
 		line-height: normal;
+
+		strong {
+			font-size: 15px;
+		}
 	}
 
 	&__chips {
