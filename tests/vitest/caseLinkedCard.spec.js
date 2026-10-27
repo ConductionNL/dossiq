@@ -56,6 +56,7 @@ describe('the Linked side card on the case page', () => {
 		])
 	})
 
+	// The noun stays blank: the board's nothing-linked line names only leges, contract and projects.
 	it('reads "Vraag in pipelinq" from the pipelinq request that points at this case, as configuration', () => {
 		const requests = linked.content.leaves.find(
 			(leaf) => typeof leaf === 'object' && leaf.id === 'pipelinq-requests',
@@ -65,6 +66,7 @@ describe('the Linked side card on the case page', () => {
 			schema: 'ticket',
 			filter: { caseReference: '@objectId', ticketType: 'request' },
 			requiredApp: 'pipelinq',
+			noun: '',
 			label: 'Question in pipelinq',
 			href: '/apps/pipelinq/tickets/{id}',
 		})

@@ -6665,7 +6665,6 @@ OC.L10N.register(
         "Question or instruction": "Question or instruction",
         "Question or suggestion": "Question or suggestion",
         "Questions": "Questions",
-        "questions": "questions",
         "Queue": "Queue",
         "Queue urgency": "Queue urgency",
         "Queued": "Queued",

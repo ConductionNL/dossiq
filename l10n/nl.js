@@ -6665,7 +6665,6 @@ OC.L10N.register(
         "Question or instruction": "Vraag of instructie",
         "Question or suggestion": "Vraag of suggestie",
         "Questions": "Vragen",
-        "questions": "vragen",
         "Queue": "Werkvoorraad",
         "Queue urgency": "Urgentie in de werkvoorraad",
         "Queued": "Wacht",
