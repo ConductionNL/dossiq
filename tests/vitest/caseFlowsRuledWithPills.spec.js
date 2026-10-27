@@ -60,10 +60,11 @@ describe('the case Flows card', () => {
 })
 
 describe('the Werkinstructie card', () => {
-	it('names the page and where it lives, from the case type', () => {
+	it('names the page, where it lives and where more pages are (DqZaak), from the case type', () => {
 		const text = JSON.stringify(layout)
 		expect(text).toContain('"label":"{knowledgeBasePage:last-segment}"')
-		expect(text).toContain('"note":"From Collectives, team {knowledgeBasePage:first-segment}."')
-		expect(nl['From Collectives, team {knowledgeBasePage:first-segment}.']).toBe('Uit Collectives, team {knowledgeBasePage:first-segment}.')
+		const note = 'From Collectives, team {knowledgeBasePage:first-segment}. More pages under More, Knowledge.'
+		expect(text).toContain(`"note":"${note}"`)
+		expect(nl[note]).toBe('Uit Collectives, team {knowledgeBasePage:first-segment}. Meer pagina\'s onder Meer, Kennis.')
 	})
 })

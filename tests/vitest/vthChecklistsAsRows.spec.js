@@ -58,7 +58,7 @@ describe('VTH checklists as library rows', () => {
 		expect(rows[0].props('config')).toEqual({ titleField: 'name', subtitleField: 'subtitle', badgeField: 'state', badgeVariantField: 'tone' })
 		expect(rows[0].props('object')).toMatchObject({ name: 'Brandveiligheid', state: 'Active', tone: 'success' })
 		expect(rows[0].props('object').subtitle).toContain('3')
-		expect(rows[1].props('object')).toMatchObject({ state: 'Inactive', tone: 'warning' })
+		expect(rows[1].props('object')).toMatchObject({ state: 'Inactive', tone: 'default' })
 	})
 
 	it('keeps Edit and Delete in the row menu, bound to the checklist', async () => {

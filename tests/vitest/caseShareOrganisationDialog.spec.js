@@ -52,7 +52,7 @@ async function mountDialog() {
 				NcButton: { template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot /></button>' },
 				NcCheckboxRadioSwitch: { template: '<label><slot /></label>' },
 				NcNoteCard: { template: '<div><slot /></div>' },
-				NcSelect: { template: '<div />' },
+				NcSelect: { name: 'NcSelect', props: ['clearable', 'inputLabel'], template: '<div />' },
 				NcTextField: { template: '<input>' },
 			},
 			mocks: { $route: { params: {} } },
@@ -111,6 +111,14 @@ describe('CaseShareOrganisationDialog', () => {
 		expect(wrapper.vm.canSubmit).toBe(false)
 		await wrapper.setData({ organisation: wrapper.vm.partners[0], limitFields: true, sharedFields: [] })
 		expect(wrapper.vm.canSubmit).toBe(false)
+	})
+
+	// @spec openspec/changes/share-org-not-clearable/specs/share-org-not-clearable/spec.md#requirement-the-organisation-choice-has-no-clear-button
+	it('offers no clear button on the organisation, as on the act and the permission', async () => {
+		const wrapper = await mountDialog()
+		const selects = wrapper.findAllComponents({ name: 'NcSelect' })
+		expect(selects.length).toBeGreaterThan(0)
+		expect(selects.every((select) => select.props('clearable') === false)).toBe(true)
 	})
 
 	it('opens from Meer on the simple case page', () => {

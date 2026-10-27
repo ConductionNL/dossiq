@@ -8450,13 +8450,13 @@
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"type": "object-table",
 						"title": "Woo statutory deadlines",
-						"_caseTypeNote": "The case type is configuration: this table is the at-risk table narrowed to one case type (by id or slug) with threshold 1, so it lists every open case of that type with its countdown. It replaces selecting cases whose case-type TITLE contains a word.",
+						"_caseTypeNote": "The case type is configuration: this table is the at-risk table narrowed to one case type (by id or slug) with threshold 0.5, so it lists the open cases of that type in the second half of their statutory term with their countdown, as DqDoorlooptijd draws them (Kritiek and Risico, no Op schema rows). It replaces selecting cases whose case-type TITLE contains a word.",
 						"content": {
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
 									"view": "atRisk",
-									"threshold": 1,
+									"threshold": 0.5,
 									"caseType": "woo-verzoek"
 								},
 								"responsePath": "atRisk"
@@ -9141,6 +9141,7 @@
 								},
 								"responsePath": "bottlenecks"
 							},
+							"limit": 4,
 							"columns": [
 								{
 									"key": "caseTypeTitle",
@@ -10073,7 +10074,7 @@
 									"resolve": {
 										"register": "dossiq",
 										"schema": "inspectieRapport",
-										"labelField": "title"
+										"labelField": "location"
 									}
 								},
 								{
@@ -10203,7 +10204,7 @@
 									"resolve": {
 										"register": "dossiq",
 										"schema": "inspectieRapport",
-										"labelField": "title"
+										"labelField": "location"
 									}
 								},
 								{
@@ -13366,6 +13367,9 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "brpPerson",
+				"pagination": {
+					"limit": 8
+				},
 				"sortKey": "displayName",
 				"sortOrder": "asc",
 				"allowSavedViews": true,
@@ -13463,6 +13467,9 @@
 				"quickFilterPlacement": "toolbar",
 				"register": "dossiq",
 				"schema": "kvkCompany",
+				"pagination": {
+					"limit": 8
+				},
 				"allowSavedViews": true,
 				"_savedViewSaveNote": "The board draws no Weergave opslaan in the toolbar; the saved views stay in the side panel.",
 				"savedViewSave": false,
@@ -13802,16 +13809,7 @@
 							"pill": {
 								"field": "status.name",
 								"variant": "purple",
-								"variantWhen": [
-									{
-										"when": {
-											"field": "isFinalStatus",
-											"op": "eq",
-											"value": true
-										},
-										"variant": "success"
-									}
-								]
+								"colorField": "status.colour"
 							},
 							"trailing": [
 								"Done {endDate|date}",
@@ -14179,7 +14177,7 @@
 									"icon": "EmailOutline"
 								},
 								{
-									"as": "text",
+									"as": "line",
 									"separator": ", ",
 									"parts": [
 										{
@@ -14204,7 +14202,9 @@
 								{
 									"as": "line",
 									"from": "object",
-									"text": "Phone and email are not in the base registration."
+									"text": "Phone and email are not in the base registration.",
+									"joinPrevious": true,
+									"joinSeparator": ". "
 								}
 							],
 							"action": {
@@ -14580,16 +14580,7 @@
 							"pill": {
 								"field": "status.name",
 								"variant": "purple",
-								"variantWhen": [
-									{
-										"when": {
-											"field": "isFinalStatus",
-											"op": "eq",
-											"value": true
-										},
-										"variant": "success"
-									}
-								]
+								"colorField": "status.colour"
 							},
 							"trailing": [
 								"Done {endDate|date}",
@@ -15118,7 +15109,8 @@
 							"meta": "{identifier} · {caseType.title}",
 							"pill": {
 								"field": "status.name",
-								"variant": "purple"
+								"variant": "purple",
+								"colorField": "status.colour"
 							},
 							"trailing": "Term {deadline|date}",
 							"rowRoute": "CaseDetail",

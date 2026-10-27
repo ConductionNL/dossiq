@@ -107,7 +107,7 @@ describe('processing time', () => {
 	it('selects one case type for the deadline list by configuration, never by a word in its title', () => {
 		const w = widget('Doorlooptijd', 'processing-time-case-type-deadlines')
 		expect(w.type).toBe('object-table')
-		expect(w.content.endpointSource.params).toMatchObject({ view: 'atRisk', threshold: 1 })
+		expect(w.content.endpointSource.params).toMatchObject({ view: 'atRisk', threshold: 0.5 })
 		expect(typeof w.content.endpointSource.params.caseType).toBe('string')
 		expect(JSON.stringify(w)).not.toContain('caseTypeContains')
 		expect(w.content.rowRoute).toBe('CaseDetail')
@@ -383,6 +383,10 @@ describe('process mining figures', () => {
 		const dwell = widget('ProcessMiningDashboard', 'pm-dwell').content
 		expect(dwell.chartKind).toBe('bar-list')
 		expect(dwell.barValueAtEnd).toBe(true)
+	})
+
+	it('ranks the four worst bottlenecks, as DqProcesanalyse draws Knelpuntenranglijst', () => {
+		expect(widget('ProcessMiningDashboard', 'pm-bottlenecks').content.limit).toBe(4)
 	})
 
 	it('aligns the figures to the end and rules above the first stuck phase, as DqProcesanalyse draws them', () => {

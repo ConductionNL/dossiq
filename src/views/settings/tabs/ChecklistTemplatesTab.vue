@@ -176,7 +176,7 @@ export default {
 	computed: {
 		/**
 		 * The checklists as list rows: the name, its version and size, and its
-		 * state as a status pill (success when active, warning when not).
+		 * state as a status pill (success when active, neutral when not).
 		 *
 		 * @return {Array<object>} One row per checklist.
 		 * @spec openspec/changes/vth-checklists-as-rows/specs/vth-checklists-as-rows/spec.md#requirement-the-vth-checklists-are-library-rows-with-a-status-pill
@@ -190,7 +190,7 @@ export default {
 					subtitle: t('dossiq', 'Version {version}', { version: checklist.version || 1 })
 						+ ' · ' + n('dossiq', '%n item', '%n items', items),
 					state: checklist.active ? t('dossiq', 'Active') : t('dossiq', 'Inactive'),
-					tone: checklist.active ? 'success' : 'warning',
+					tone: checklist.active ? 'success' : 'default',
 					checklist,
 				}
 			})

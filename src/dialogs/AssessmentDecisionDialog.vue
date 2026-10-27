@@ -135,7 +135,7 @@
 						data-testid="assessment-decision-letter">
 						<span class="assessment-decision__label">{{ t('dossiq', 'Letter of the decision') }}</span>
 						<div class="assessment-decision__letter">
-							<FileDocumentCheckOutline :size="20" class="assessment-decision__letter-icon" />
+							<span class="assessment-decision__letter-icon"><FileDocumentCheckOutline :size="18" /></span>
 							<div class="assessment-decision__letter-text">
 								<template v-if="letter">
 									<strong data-testid="assessment-decision-letter-title">{{ letter.title }}</strong>
@@ -808,14 +808,22 @@ export default {
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		padding: 12px 14px;
+		padding: 10px 14px;
 		border: 1px solid var(--color-border);
-		border-radius: var(--border-radius-large);
+		border-radius: 8px;
 	}
 
+	// The letter's mark is a 32px tile on the success tint, as DqBesluit draws it.
 	&__letter-icon {
+		display: inline-flex;
 		flex: none;
-		color: var(--color-success-text);
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		border-radius: 8px;
+		background: var(--nl-color-green-light, #e7f3ea);
+		color: var(--nl-color-green-text, var(--color-success-text));
 	}
 
 	&__letter-text {
@@ -824,6 +832,7 @@ export default {
 		flex-direction: column;
 		gap: 2px;
 		min-width: 0;
+		line-height: normal;
 	}
 
 	&__chips {
@@ -833,11 +842,12 @@ export default {
 	}
 
 	&__chip {
-		padding: 3px 10px;
+		padding: 4px 10px;
 		border-radius: 12px;
 		background: var(--color-background-dark);
 		font-size: 13px;
 		font-weight: 600;
+		line-height: normal;
 	}
 
 	&__blocked {

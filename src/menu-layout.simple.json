@@ -1496,7 +1496,7 @@
 							"_linkNote": "DqZaak Werkinstructie: the page's own title and where it lives (\"Hoe we Woo-verzoeken behandelen\", \"Uit Collectives, team Woo en informatie.\"), from the case type's knowledgeBasePage (nextcloud-vue facts link label/note placeholders).",
 							"link": {
 								"label": "{knowledgeBasePage:last-segment}",
-								"note": "From Collectives, team {knowledgeBasePage:first-segment}.",
+								"note": "From Collectives, team {knowledgeBasePage:first-segment}. More pages under More, Knowledge.",
 								"icon": "BookOpenPageVariant",
 								"href": "{knowledgeBasePage}",
 								"hrefBase": "/apps/collectives/",
@@ -2520,6 +2520,7 @@
 								},
 								"paymentStateCheckedAt": {
 									"label": "Last checked",
+									"format": "date-long",
 									"order": 4
 								}
 							}
@@ -4267,7 +4268,7 @@
 							"usAuthorFormat": "user",
 							"themAuthorField": "@object.initiatorDisplayName",
 							"timestampField": "startTime",
-							"bodyField": "summary",
+							"bodyField": ["message", "summary"],
 							"subjectField": "subject",
 							"noteField": "note",
 							"attachmentCountField": "attachmentCount",
@@ -5943,7 +5944,8 @@
 						"label": "Handler",
 						"widget": "avatar",
 						"widgetProps": {
-							"user": true
+							"user": true,
+							"size": 28
 						}
 					},
 					{

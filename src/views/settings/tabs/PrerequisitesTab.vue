@@ -201,7 +201,7 @@ export default {
 		 */
 		markClass(present) {
 			return present === true
-				? 'prerequisites__mark cn-status-badge cn-status-badge--default prerequisites__mark--present'
+				? 'prerequisites__mark cn-status-badge cn-status-badge--success'
 				: 'prerequisites__mark cn-status-badge cn-status-badge--default prerequisites__mark--missing'
 		},
 	},
@@ -240,12 +240,6 @@ export default {
 
 .prerequisites__mark::first-letter {
 	text-transform: uppercase;
-}
-
-.prerequisites .prerequisites__mark--present {
-	background: color-mix(in srgb, var(--color-success) 15%, var(--color-main-background));
-	--cn-status-badge-ink: var(--color-success-text);
-	color: var(--cn-status-badge-ink);
 }
 
 .prerequisites .prerequisites__mark--missing {

@@ -10,7 +10,7 @@ rgb(30, 107, 42) on rgb(231, 243, 234), 5.77:1, measured on :8080.
 
 ## What changes
 
-- The checklists render as nextcloud-vue `CnObjectRow` rows with a `CnStatusBadge` pill (success while active, warning
+- The checklists render as nextcloud-vue `CnObjectRow` rows with a `CnStatusBadge` pill (success while active, neutral
   while inactive), separated by a hairline.
 - Edit and Delete move to the row's `CnRowActions` menu; their handlers are unchanged.
 - The own badge styles go.

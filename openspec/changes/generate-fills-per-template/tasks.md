@@ -1,0 +1,4 @@
+- [x] TemplateLibraryService fills (phpunit, red first)
+- [x] verdagingsbrief.json fills
+- [x] utils/templateFills.js + dialog rows (vitest, red first)
+- [x] nl/en: Adjournment, "{period}, until {date}"

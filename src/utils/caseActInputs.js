@@ -170,6 +170,9 @@ export function actForm(entry, { caseType = '', caseId = '', requester = '' } = 
 			label: t('dossiq', 'Days the applicant is given'),
 			labelOutside: true,
 			id: 'case-act-days',
+			// The days the applicant gets are the recovery period of Awb 4:5;
+			// a picked pause reason names its own basis instead.
+			description: t('dossiq', 'Awb 4:5, recovery period'),
 			helperFrom: { input: 'pauseReason', key: 'legalBasis' },
 			prefillFrom: { input: 'pauseReason', key: 'defaultDays' },
 			dateField: {

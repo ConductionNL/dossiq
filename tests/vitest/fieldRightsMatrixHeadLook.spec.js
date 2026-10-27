@@ -40,4 +40,9 @@ describe('field rights matrix head look', () => {
 	it('rounds the funnel 4px', () => {
 		expect(rule('.case-type-field-rights__filter :deep(.button-vue)')).toContain('border-radius: 4px;')
 	})
+
+	it('grounds the head as the boards\' near-white table head', () => {
+		expect(rule('.case-type-field-rights__table thead th')).toContain('background: var(--cn-board-table-head-bg')
+	})
 })
+
