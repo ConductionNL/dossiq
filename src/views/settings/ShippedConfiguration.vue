@@ -14,21 +14,14 @@
 -->
 <template>
 	<div class="shipped-configuration">
-		<label class="shipped-configuration__picker" for="shipped-schema">
-			{{ t('dossiq', 'Show') }}
-		</label>
-		<select
-			id="shipped-schema"
-			v-model="schema"
+		<NcSelect
+			class="shipped-configuration__picker"
+			:modelValue="schemaOption"
+			:options="schemas"
+			:inputLabel="t('dossiq', 'Show')"
+			:clearable="false"
 			data-testid="shipped-schema"
-			@change="reload">
-			<option
-				v-for="option in schemas"
-				:key="option.slug"
-				:value="option.slug">
-				{{ option.label }}
-			</option>
-		</select>
+			@update:modelValue="pick" />
 
 		<table
 			class="shipped-configuration__table"
@@ -84,7 +77,7 @@
 <script>
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
-import { NcButton } from '@nextcloud/vue'
+import { NcButton, NcSelect } from '@nextcloud/vue'
 import {
 	adoptShipped,
 	countObjects,
@@ -98,7 +91,7 @@ import {
 
 export default {
 	name: 'ShippedConfiguration',
-	components: { NcButton },
+	components: { NcButton, NcSelect },
 	data() {
 		return {
 			schema: 'caseType',
@@ -115,6 +108,16 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The picked schema as its option, for the select.
+		 *
+		 * @return {object} The option.
+		 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+		 */
+		schemaOption() {
+			return this.schemas.find((option) => option.slug === this.schema) || this.schemas[0]
+		},
+
 		/**
 		 * What the empty table says, which depends on what the register holds.
 		 *
@@ -143,6 +146,19 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Show what shipped for another schema.
+		 *
+		 * @param {object|null} option The picked option.
+		 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+		 */
+		pick(option) {
+			if (option && option.slug !== this.schema) {
+				this.schema = option.slug
+				this.reload()
+			}
+		},
+
 		/**
 		 * Read what shipped for the selected schema.
 		 *
@@ -253,22 +269,9 @@ export default {
    as board DqBeheerGeavanceerd "Wat dossiq meelevert" draws it. */
 .shipped-configuration__picker {
 	display: block;
-	margin-block-end: 6px;
-	font-size: 14px;
-	font-weight: 600;
-}
-
-.shipped-configuration #shipped-schema {
-	display: block;
-	box-sizing: border-box;
 	width: 100%;
 	max-width: 560px;
-	height: 40px;
-	margin: 0 0 4px;
-	padding: 0 12px;
-	border: 1px solid var(--color-border-maxcontrast);
-	border-radius: var(--border-radius-element, 8px);
-	font-size: 15px;
+	margin-block-end: 4px;
 }
 
 .shipped-configuration__name {
