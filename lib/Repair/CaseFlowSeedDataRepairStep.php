@@ -426,11 +426,11 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 * @param string               $caseTypeId    The owning case type.
 	 * @param array<int,mixed>     $statusTypes   The statuses declared in the seed.
 	 *
-	 * @return integer How many statuses got their phase.
+	 * @return void
 	 *
 	 * @spec openspec/changes/seed-status-phases-backfill/specs/seed-status-phases-backfill/spec.md#requirement-a-seeded-status-without-a-phase-gets-the-seeds-phase
 	 */
-	private function backfillPhases(object $objectService, array $schemas, string $caseTypeId, array $statusTypes): int {
+	private function backfillPhases(object $objectService, array $schemas, string $caseTypeId, array $statusTypes): void {
 		$pending = $this->phaseBackfill->pending(
 			statusTypes: $statusTypes,
 			rows: $this->statuses->rowsOf(caseTypeId: $caseTypeId),
@@ -445,8 +445,6 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 				changes: ['phase' => $phase]
 			);
 		}
-
-		return count($pending);
 	}//end backfillPhases()
 
 	/**

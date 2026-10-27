@@ -430,6 +430,7 @@ class ShippedConfigurationService {
 			newShipped: $newShipped,
 			overLocalChange: false,
 			version: $version,
+			rows: $this->store,
 		);
 	}//end adopt()
 
@@ -595,6 +596,7 @@ class ShippedConfigurationService {
 			newShipped: $newShipped,
 			overLocalChange: true,
 			version: null,
+			rows: $this->store,
 		);
 	}//end adoptOverLocalChange()
 
@@ -608,7 +610,7 @@ class ShippedConfigurationService {
 	 * @param array<string, mixed> $newShipped      The object as the newer set ships it.
 	 * @param boolean              $overLocalChange Whether a local change may go.
 	 * @param string|null          $version         The version to stamp; null to look it up in ShippedSets.
-	 * @param StarterStore|null    $rows            The store the row is read from and written to; null is this service's.
+	 * @param StarterStore         $rows            The store the row is read from and written to.
 	 *
 	 * @return array{adopted: bool, reason: string} What happened.
 	 */
@@ -620,9 +622,8 @@ class ShippedConfigurationService {
 		array $newShipped,
 		bool $overLocalChange,
 		?string $version,
-		?StarterStore $rows = null,
+		StarterStore $rows,
 	): array {
-		$rows ??= $this->store;
 		$current = $rows->row(configKey: $objectsKey, id: $targetObject);
 		if ($current === null) {
 			return ['adopted' => false, 'reason' => 'not_found'];
