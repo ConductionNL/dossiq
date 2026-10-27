@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The processing-time chart on the Doorlooptijd page draws its plot 250px in a
+ * The processing-time chart on the Doorlooptijd page draws its plot 233px in a
  * tile sized to its content, and carries its source line as a footnote under
  * the plot, as the DqDoorlooptijd board draws it (a 352px card; r32 live 296).
  * The Naleving cards' charts are 130px, the board's 203px cards (live 223).
@@ -19,8 +19,8 @@ const page = manifest.pages.find((item) => item.id === 'Doorlooptijd')
 const widget = page.config.widgets.find((item) => item.id === 'processing-time-monthly')
 
 describe('the Doorlooptijd monthly chart', () => {
-	it('draws a 250px plot in a tile sized to its content', () => {
-		expect(widget.content.height).toBe(250)
+	it('draws a 233px plot in a tile sized to its content', () => {
+		expect(widget.content.height).toBe(233)
 		expect(page.config.layout.find((item) => item.widgetId === 'processing-time-monthly').sizeToContent).toBe(true)
 	})
 
