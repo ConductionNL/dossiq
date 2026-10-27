@@ -161,3 +161,12 @@ describe('the message field label (DqZaakSamenwerken)', () => {
 		expect(label.find('.case-share-org__optional').text()).toBe('(optional)')
 	})
 })
+
+describe('CaseShareOrganisationDialog spacing', () => {
+	it('puts the first field 16px under the choice cards, as between the fields', () => {
+		const sfc = fs.readFileSync(path.join(ROOT, 'src/dialogs/CaseShareOrganisationDialog.vue'), 'utf8')
+		const at = sfc.indexOf('\n.case-share-org > .cn-choice-cards {')
+		expect(at).toBeGreaterThan(-1)
+		expect(sfc.slice(at, sfc.indexOf('}', at))).toContain('margin-bottom: 4px')
+	})
+})
