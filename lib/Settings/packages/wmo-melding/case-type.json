@@ -417,6 +417,7 @@
     },
     {
       "id": "45863b97-3708-5407-b810-fa8a109d2546",
+      "offPath": true,
       "name": "Ingetrokken",
       "description": "De melding is ingetrokken.",
       "order": 90,

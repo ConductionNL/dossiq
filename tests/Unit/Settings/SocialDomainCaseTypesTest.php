@@ -316,6 +316,29 @@ class SocialDomainCaseTypesTest extends TestCase {
 	}//end testTheJeugdwetSideStatusesAreOffThePath()
 
 	/**
+	 * Every shipped package marks its side statuses (order 90 and up: a
+	 * withdrawal, an inadmissible objection, a settlement) off the path, so
+	 * the stages strip draws the main path the case boards draw.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/stages-off-path/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
+	 */
+	public function testEveryPackageMarksItsSideStatusesOffThePath(): void {
+		$onPath = [];
+		foreach (glob(self::PACKAGES . '*/case-type.json') as $file) {
+			$package = basename(dirname($file));
+			foreach ((array)($this->caseTypeFile(package: $package)['statusTypes'] ?? []) as $status) {
+				if ((int)($status['order'] ?? 0) >= 90 && ($status['offPath'] ?? false) !== true) {
+					$onPath[] = $package . ': ' . $status['name'];
+				}
+			}
+		}
+
+		self::assertSame(expected: [], actual: $onPath);
+	}//end testEveryPackageMarksItsSideStatusesOffThePath()
+
+	/**
 	 * Each procedure's flow walks from the first status to every other one, and
 	 * guards only fields its case type declares (or the result).
 	 *
