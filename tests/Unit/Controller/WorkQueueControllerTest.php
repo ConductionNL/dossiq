@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\WorkQueueController;
 use OCA\Dossiq\Service\Substitution\CoveredWork;
+use OCA\Dossiq\Service\Team\PrimaryTeamService;
 use OCA\Dossiq\Service\WorkQueueService;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -79,6 +80,11 @@ class WorkQueueControllerTest extends TestCase {
 	 */
 	private CoveredWork $coveredWork;
 
+	/**
+	 * @var PrimaryTeamService|MockObject
+	 */
+	private PrimaryTeamService $teams;
+
 	private WorkQueueController $controller;
 
 	/**
@@ -92,6 +98,7 @@ class WorkQueueControllerTest extends TestCase {
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->userManager = $this->createMock(IUserManager::class);
 		$this->coveredWork = $this->createMock(CoveredWork::class);
+		$this->teams = $this->createMock(PrimaryTeamService::class);
 
 		$this->controller = new WorkQueueController(
 			$this->request,
@@ -101,6 +108,7 @@ class WorkQueueControllerTest extends TestCase {
 			$this->logger,
 			$this->userManager,
 			$this->coveredWork,
+			$this->teams,
 		);
 	}//end setUp()
 
@@ -255,6 +263,35 @@ class WorkQueueControllerTest extends TestCase {
 			$response->getData()['handlers']
 		);
 	}//end testWorkloadReturns200ForCoordinator()
+
+	/**
+	 * The workload names the people of the reader's teams only.
+	 *
+	 * @spec openspec/changes/workload-of-the-readers-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
+	 *
+	 * @return void
+	 */
+	public function testWorkloadKeepsTheMembersOfTheReadersTeams(): void {
+		$user = $this->mockUser('pieter');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->with('pieter')->willReturn(true);
+		$this->teams->method('teamsOf')->willReturn([['groupId' => 'team-a', 'name' => 'Team A']]);
+		$this->groupManager->method('isInGroup')->willReturnMap([
+			['anouk', 'team-a', true],
+			['beheerder', 'team-a', false],
+			['pieter', 'team-a', true],
+		]);
+		$this->workQueueService->method('computeWorkload')->willReturn([
+			['handler' => 'beheerder', 'openCaseCount' => 10],
+			['handler' => 'anouk', 'openCaseCount' => 9],
+			['handler' => 'pieter', 'openCaseCount' => 7],
+		]);
+		$this->userManager->method('getDisplayName')->willReturnArgument(0);
+
+		$handlers = $this->controller->workload()->getData()['handlers'];
+
+		self::assertSame(['anouk', 'pieter'], array_column($handlers, 'handler'));
+	}//end testWorkloadKeepsTheMembersOfTheReadersTeams()
 
 	/**
 	 * @return void
