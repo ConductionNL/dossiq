@@ -13,7 +13,7 @@
 -->
 <template>
 	<div class="stuf-endpoints">
-		<table class="stuf-endpoints__table" data-testid="stuf-endpoints-table">
+		<table v-if="endpoints.length" class="stuf-endpoints__table" data-testid="stuf-endpoints-table">
 			<thead>
 				<tr>
 					<th scope="col">{{ t('dossiq', 'Name') }}</th>
@@ -72,13 +72,17 @@
 						</span>
 					</td>
 				</tr>
-				<tr v-if="!endpoints.length">
-					<td colspan="8" class="stuf-endpoints__empty">
-						{{ t('dossiq', 'No StUF endpoints configured yet.') }}
-					</td>
-				</tr>
 			</tbody>
 		</table>
+		<!-- Nothing configured: the board's empty state, not an empty table. -->
+		<NcEmptyContent
+			v-else
+			:name="t('dossiq', 'No StUF endpoints configured yet.')"
+			data-testid="stuf-endpoints-empty">
+			<template #icon>
+				<ServerNetworkOutline :size="48" />
+			</template>
+		</NcEmptyContent>
 		<p class="stuf-endpoints__note">
 			{{
 				t(
@@ -95,14 +99,15 @@
 
 <script>
 import { showError } from '@nextcloud/dialogs'
-import { NcButton } from '@nextcloud/vue'
+import { NcButton, NcEmptyContent } from '@nextcloud/vue'
+import ServerNetworkOutline from 'vue-material-design-icons/ServerNetworkOutline.vue'
 import { testStufEndpoint } from '../../services/connectionTestApi.js'
 import { listEndpoints } from '../../services/stufApi.js'
 import { connectionLabel } from '../../utils/starterStates.js'
 
 export default {
 	name: 'StufEndpoints',
-	components: { NcButton },
+	components: { NcButton, NcEmptyContent, ServerNetworkOutline },
 	data() {
 		return {
 			endpoints: [],
@@ -235,12 +240,6 @@ export default {
 	padding: 6px 8px;
 	border-bottom: 1px solid var(--color-border);
 	text-align: left;
-}
-
-.stuf-endpoints__table td.stuf-endpoints__empty {
-	padding: 16px 12px;
-	color: var(--color-text-maxcontrast);
-	text-align: center;
 }
 
 .stuf-endpoints__health {
