@@ -317,6 +317,33 @@ class SeedDataOriginTest extends TestCase {
 	}//end testTheOverviewNamesTheStateAndTheWaitingUpdate()
 
 	/**
+	 * A row seeded from a later version than the set now ships is not offered
+	 * the older one: "Neem 1.0.0" on a case type at 1.3.0 would downgrade it.
+	 *
+	 * @return void
+	 */
+	public function testAnOlderShippedVersionIsNotOfferedAsAnUpdate(): void {
+		$caseType = ['id' => 'ct-1', 'title' => 'Sloopmelding'];
+		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
+		$this->shipped->stamp(
+			set: ShippedSets::MUNICIPAL_ROLES,
+			targetSchema: 'caseType',
+			targetObject: 'ct-1',
+			object: $caseType,
+		);
+
+		$ledger = $this->harness->register->all(schema: 'shippedOrigin')[0];
+		$ledger['setVersion'] = '1.3.0';
+		$this->harness->seed(schema: 'shippedOrigin', uuid: (string)$ledger['id'], row: $ledger);
+
+		$overview = $this->shipped->overview(targetSchema: 'caseType', objectsKey: 'case_type_schema');
+
+		self::assertNotNull(actual: $overview);
+		self::assertSame(expected: '1.0.0', actual: $overview[0]['latestVersion']);
+		self::assertFalse(condition: $overview[0]['updateAvailable']);
+	}//end testAnOlderShippedVersionIsNotOfferedAsAnUpdate()
+
+	/**
 	 * A seeded row somebody deleted here is reported as removed, not dropped.
 	 *
 	 * @return void

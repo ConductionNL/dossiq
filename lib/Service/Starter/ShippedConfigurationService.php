@@ -382,7 +382,9 @@ class ShippedConfigurationService {
 				'set' => $set,
 				'setVersion' => $seeded,
 				'latestVersion' => $latest,
-				'updateAvailable' => ($latest !== '' && $latest !== $seeded),
+				// Only a later shipped version is an update; taking an older
+				// one would downgrade the object.
+				'updateAvailable' => ($latest !== '' && ($seeded === '' || version_compare(version1: $latest, version2: $seeded, operator: '>') === true)),
 			];
 		}//end foreach
 
