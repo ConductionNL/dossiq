@@ -441,6 +441,18 @@ class SettingsService {
 	}//end wooReportSwitches()
 
 	/**
+	 * The resident portal's name as portaliq holds it ("Mijn Zuiddrecht"),
+	 * or '' when portaliq names none.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/requester-identified-at-intake/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
+	 */
+	public function getPortalName(): string {
+		return mb_substr(trim($this->appConfig->getValueString('portaliq', 'portalName', '')), 0, 255);
+	}//end getPortalName()
+
+	/**
 	 * Get a single configuration value by key.
 	 *
 	 * @param string $key The configuration key

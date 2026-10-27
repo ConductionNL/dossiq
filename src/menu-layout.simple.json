@@ -1422,20 +1422,29 @@
 						],
 						"type": "facts",
 						"title": "Requester",
-						"_note": "DqZaak Verzoeker: the requester as a lead (initials and name), then what kind of requester and the channel, read from the projection the requester picker writes.",
+						"_note": "DqZaak Aanvrager: the requester as a lead (initials and name) over how they logged in when the case came in through a portal (intakeIdentification), else what kind of requester, and a link to the contact or organisation page by that kind. The board draws no intake channel here; the header names the portal (headerMeta).",
 						"content": {
 							"fields": [
 								{
 									"as": "lead",
 									"title": "initiatorDisplayName",
-									"subtitle": { "path": "initiatorType", "map": { "person": "Person", "company": "Company", "contact": "Contact" } },
+									"subtitle": {
+										"firstOf": [
+											{ "path": "intakeIdentification", "map": { "digid": "Logged in with DigiD", "eherkenning": "Logged in with eHerkenning" } },
+											{ "path": "initiatorType", "map": { "person": "Person", "company": "Company", "contact": "Contact" } }
+										]
+									},
 									"initialsPath": "initiatorDisplayName"
-								},
-								{
-									"path": "intakeChannel",
-									"label": "Intake channel"
 								}
 							],
+							"link": {
+								"label": "View contact details",
+								"route": {
+									"nameField": "initiatorType",
+									"nameMap": { "person": "ContactDetail", "company": "OrganisationDetail" },
+									"params": { "id": "@source.requester" }
+								}
+							},
 							"emptyText": "No requester yet"
 						}
 					},
@@ -1857,6 +1866,7 @@
 					"currentField": "identifier",
 					"separator": "/"
 				},
+				"headerMeta": "via {intakeSourceName}",
 				"headerCard": true,
 				"headerWidget": "case-stages",
 				"typePill": {
