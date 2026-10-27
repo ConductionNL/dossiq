@@ -117,6 +117,13 @@ export default {
 .message-template-select__label {
 	font-size: 14px;
 	font-weight: 600;
+	line-height: normal;
+}
+
+/* Under its label as a text field is (DqBerichtVersturen "Sjabloon"): no
+   NcSelect margins, and its 2px ring room above and below out of the flow. */
+.message-template-select .v-select.select {
+	margin: -2px 0;
 }
 
 .message-template-select__optional {
