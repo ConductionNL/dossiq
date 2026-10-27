@@ -36,6 +36,7 @@
 				:options="partners"
 				label="label"
 				:inputLabel="t('dossiq', 'Organisation')"
+				:clearable="false"
 				:placeholder="t('dossiq', 'Choose an organisation')"
 				data-testid="case-share-organisation" />
 
