@@ -104,6 +104,28 @@ class ProcessingTimeRowsTest extends TestCase {
 	}//end testAtRiskSelection()
 
 	/**
+	 * A case's running statutory term decides: a Woo request 24 days into its
+	 * 28-day term, 4 days before its deadline, is at risk even when its case
+	 * type's target says 56 days (DqDoorlooptijd 2026-4864, r33). The days
+	 * left are counted to the deadline.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/at-risk-reads-the-running-term/specs/at-risk-reads-the-running-term/spec.md#requirement-at-risk-reads-the-cases-running-term
+	 */
+	public function testAtRiskReadsTheCasesRunningTerm(): void {
+		$types = ['woo' => $this->type(id: 'woo', target: 56)];
+		$record = $this->record(type: 'woo', start: $this->daysAgo(days: 24), end: null, id: 'woo-1');
+		$record['deadline'] = $this->today->modify('+4 days')->format('Y-m-d');
+
+		$rows = $this->calculator->atRisk(open: [$record], types: $types, threshold: 0.5, today: $this->today);
+
+		self::assertSame(expected: ['woo-1'], actual: array_column($rows, 'id'));
+		self::assertSame(expected: 4, actual: $rows[0]['remainingDays']);
+		self::assertSame(expected: 'critical', actual: $rows[0]['severity']);
+	}//end testAtRiskReadsTheCasesRunningTerm()
+
+	/**
 	 * The most overdue comes first, then the least time left.
 	 *
 	 * @return void
