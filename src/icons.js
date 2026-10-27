@@ -176,6 +176,7 @@ import MapMarkerPlusOutline from 'vue-material-design-icons/MapMarkerPlusOutline
 import MapOutline from 'vue-material-design-icons/MapOutline.vue'
 import MessageAlertOutline from 'vue-material-design-icons/MessageAlertOutline.vue'
 import MessageOutline from 'vue-material-design-icons/MessageOutline.vue'
+import MessageQuestionOutline from 'vue-material-design-icons/MessageQuestionOutline.vue'
 import MessageText from 'vue-material-design-icons/MessageText.vue'
 import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue'
 import NoteTextOutline from 'vue-material-design-icons/NoteTextOutline.vue'
@@ -412,6 +413,7 @@ export default {
 	MapOutline,
 	MessageAlertOutline,
 	MessageOutline,
+	MessageQuestionOutline,
 	MessageText,
 	MessageTextOutline,
 	NoteTextOutline,

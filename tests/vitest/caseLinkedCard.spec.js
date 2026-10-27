@@ -43,13 +43,33 @@ describe('the Linked side card on the case page', () => {
 		expect(ids.indexOf('side-linked')).toBe(ids.indexOf('side-handling') + 1)
 	})
 
-	it('lists the render leaves in the board order: documents, fees, contract, projects', () => {
-		expect(linked.content.leaves).toEqual([
+	it('lists the leaves in the board order: documents, the pipelinq question, fees, contract, projects', () => {
+		const ids = linked.content.leaves.map((leaf) =>
+			typeof leaf === 'object' ? leaf.id : leaf,
+		)
+		expect(ids).toEqual([
 			'filinq-documents',
+			'pipelinq-requests',
 			'shillinq-financial-documents-panel',
 			'shillinq-contracts-panel',
 			'planninq-projects',
 		])
+	})
+
+	// The noun stays blank: the board's nothing-linked line names only leges, contract and projects.
+	it('reads "Vraag in pipelinq" from the pipelinq request that points at this case, as configuration', () => {
+		const requests = linked.content.leaves.find(
+			(leaf) => typeof leaf === 'object' && leaf.id === 'pipelinq-requests',
+		)
+		expect(requests).toMatchObject({
+			register: 'pipelinq',
+			schema: 'ticket',
+			filter: { caseReference: '@objectId', ticketType: 'request' },
+			requiredApp: 'pipelinq',
+			noun: '',
+			label: 'Question in pipelinq',
+			href: '/apps/pipelinq/tickets/{id}',
+		})
 	})
 
 	it('no longer places the projects leaf as a widget or a grid cell', () => {

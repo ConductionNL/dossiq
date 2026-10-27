@@ -48,6 +48,7 @@ use OCA\Dossiq\Listener\MilestoneStallTimerFiredListener;
 use OCA\Dossiq\Listener\MilestoneStallTimerListener;
 use OCA\Dossiq\Listener\RoutedCaseAcceptanceListener;
 use OCA\Dossiq\Listener\TakeBackTimerFiredListener;
+use OCA\Dossiq\Listener\OneStatutoryTermPerCaseListener;
 use OCA\Dossiq\Listener\TermInstanceMovesCaseDeadlineListener;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -111,5 +112,8 @@ class DeadlineTimerRegistrar {
 
 		// Accepting a routed case is an edit of it, so only updates count.
 		$context->registerEventListener(event: ObjectUpdatedEvent::class, listener: RoutedCaseAcceptanceListener::class);
+
+		// A new statutory term takes over from the one running before it, so only creates count.
+		$context->registerEventListener(event: ObjectCreatedEvent::class, listener: OneStatutoryTermPerCaseListener::class);
 	}//end register()
 }//end class
