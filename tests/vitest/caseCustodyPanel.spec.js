@@ -380,6 +380,12 @@ describe('the holdings as rows (DqZaakArchivering Bewaring)', () => {
 		expect(nl['Request for this case']).toBe('Verzoek om de zaak')
 	})
 
+	it('sets a holding\'s initials 700, as the board draws "KC"', () => {
+		const sfc = fs.readFileSync(path.join(ROOT, 'src', 'components', 'case', 'CaseCustodyPanel.vue'), 'utf8')
+		const at = sfc.indexOf('.case-custody__mark {')
+		expect(sfc.slice(at, sfc.indexOf('}', at))).toContain('font-weight: 700')
+	})
+
 	it('opts in to the board\'s ruled-list start under the card subtitle', async () => {
 		const wrapper = await mountChain([
 			{ id: 'h-1', organisationUnit: 'Team Woo en informatie', from: '2026-10-03T14:18:00+02:00', until: '', open: true, reason: '' },
