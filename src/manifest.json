@@ -13802,16 +13802,7 @@
 							"pill": {
 								"field": "status.name",
 								"variant": "purple",
-								"variantWhen": [
-									{
-										"when": {
-											"field": "isFinalStatus",
-											"op": "eq",
-											"value": true
-										},
-										"variant": "success"
-									}
-								]
+								"colorField": "status.colour"
 							},
 							"trailing": [
 								"Done {endDate|date}",
@@ -14580,16 +14571,7 @@
 							"pill": {
 								"field": "status.name",
 								"variant": "purple",
-								"variantWhen": [
-									{
-										"when": {
-											"field": "isFinalStatus",
-											"op": "eq",
-											"value": true
-										},
-										"variant": "success"
-									}
-								]
+								"colorField": "status.colour"
 							},
 							"trailing": [
 								"Done {endDate|date}",
@@ -15118,7 +15100,8 @@
 							"meta": "{identifier} · {caseType.title}",
 							"pill": {
 								"field": "status.name",
-								"variant": "purple"
+								"variant": "purple",
+								"colorField": "status.colour"
 							},
 							"trailing": "Term {deadline|date}",
 							"rowRoute": "CaseDetail",
