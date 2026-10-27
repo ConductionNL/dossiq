@@ -14340,12 +14340,15 @@
 										"residence.postcode",
 										"residence.city"
 									],
-									"separator": " "
+									"separator": " ",
+									"joinPrevious": true,
+									"joinSeparator": "\n"
 								}
 							],
 							"emptyText": "No address on file",
 							"link": {
 								"label": "Cases on the map",
+								"icon": "MapMarkerOutline",
 								"route": {
 									"name": "Cases",
 									"query": {
@@ -15072,11 +15075,14 @@
 										"address.postcode",
 										"address.place"
 									],
-									"separator": " "
+									"separator": " ",
+									"joinPrevious": true,
+									"joinSeparator": "\n"
 								}
 							],
 							"link": {
 								"label": "Cases on the map",
+								"icon": "MapMarkerOutline",
 								"route": {
 									"name": "Cases",
 									"query": {
