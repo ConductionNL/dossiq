@@ -496,12 +496,7 @@ class DwellTimeAnalyzer {
 	 * @spec openspec/changes/phase-columns-in-case-type-order/specs/phase-columns-in-case-type-order/spec.md#requirement-the-phase-columns-follow-the-case-types-order
 	 */
 	private function statusOrder(string $statusId, array $statusTypeIndex): ?int {
-		$order = ($statusTypeIndex[$statusId]['order'] ?? null);
-		if (is_numeric($order) === false) {
-			return null;
-		}
-
-		return (int)$order;
+		return filter_var(($statusTypeIndex[$statusId]['order'] ?? null), FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
 	}//end statusOrder()
 
 	/**

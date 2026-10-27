@@ -181,15 +181,15 @@ class PhaseSummary {
 
 		$ordered = [];
 		foreach ($columns as $column) {
-			$at = count($ordered);
+			$slot = count($ordered);
 			foreach ($ordered as $position => $placed) {
 				if (($before[$column][$placed] ?? 0) > ($before[$placed][$column] ?? 0)) {
-					$at = $position;
+					$slot = $position;
 					break;
 				}
 			}
 
-			$ordered = [...array_slice($ordered, 0, $at), $column, ...array_slice($ordered, $at)];
+			$ordered = [...array_slice($ordered, 0, $slot), $column, ...array_slice($ordered, $slot)];
 		}
 
 		return $ordered;

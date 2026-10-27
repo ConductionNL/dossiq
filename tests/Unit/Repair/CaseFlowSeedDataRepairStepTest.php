@@ -170,7 +170,10 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 			}
 		);
 
-		$index = $this->createMock(CaseFlowSeedIndex::class);
+		$index = $this->getMockBuilder(CaseFlowSeedIndex::class)
+			->setConstructorArgs([$settings])
+			->onlyMethods(['caseTypeBySlug', 'caseTypeByTitle', 'caseTitlesFor'])
+			->getMock();
 		$index->method('caseTypeBySlug')->willReturn($caseType);
 		$index->method('caseTypeByTitle')->willReturn($titleFindsIt === true ? $caseType : null);
 		$index->method('caseTitlesFor')->willReturn($cases);
