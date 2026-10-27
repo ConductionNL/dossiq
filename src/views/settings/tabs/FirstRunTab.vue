@@ -198,9 +198,10 @@ a.first-run-tab__title:focus-visible {
 	flex: none;
 	padding: 2px 8px;
 	border-radius: 10px;
-	background: var(--color-background-dark);
-	color: var(--color-main-text);
+	background: var(--color-background-hover);
+	color: var(--cn-board-text-soft, var(--color-main-text));
 	font-size: 13px;
 	font-weight: 600;
+	line-height: normal;
 }
 </style>

@@ -48,7 +48,7 @@
 					<td>{{ b.name || b.decisionName || b.mandateNumber || b.id }}</td>
 					<td>
 						<span
-							class="mandaat-matrix-table__badge"
+							class="cn-status-badge"
 							:class="badgeClass(b.status)"
 							>{{ statusLabel(b.status) }}</span
 						>
@@ -112,13 +112,13 @@ export default {
 		 */
 		badgeClass(status) {
 			const s = (status || '').toLowerCase()
-			if (s === 'active' || s === 'active')
-				return 'mandaat-matrix-table__badge--ok'
-			if (s === 'lapsed' || s === 'expired')
-				return 'mandaat-matrix-table__badge--alert'
-			if (s === 'draft' || s === 'draft')
-				return 'mandaat-matrix-table__badge--neutral'
-			return 'mandaat-matrix-table__badge--neutral'
+			if (s === 'active') {
+				return 'cn-status-badge--success'
+			}
+			if (s === 'lapsed' || s === 'expired') {
+				return 'cn-status-badge--error'
+			}
+			return 'cn-status-badge--default'
 		},
 	},
 }
@@ -146,27 +146,5 @@ export default {
 .mandaat-matrix-table__table th {
 	background: var(--color-background-dark);
 	font-weight: 500;
-}
-
-.mandaat-matrix-table__badge {
-	font-size: 11px;
-	padding: 2px 8px;
-	border-radius: 8px;
-	display: inline-block;
-}
-
-.mandaat-matrix-table__badge--ok {
-	background: var(--color-success);
-	color: var(--color-success-text);
-}
-
-.mandaat-matrix-table__badge--alert {
-	background: var(--color-error);
-	color: var(--color-error-text);
-}
-
-.mandaat-matrix-table__badge--neutral {
-	background: var(--color-background-dark);
-	color: var(--color-text-maxcontrast);
 }
 </style>

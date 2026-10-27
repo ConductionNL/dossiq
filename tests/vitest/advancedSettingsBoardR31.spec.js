@@ -49,4 +49,18 @@ describe('the mandate matrix, r31', () => {
 		expect(table).toContain("determined: t('dossiq', 'Adopted')")
 		expect(table).not.toContain('variant="primary"')
 	})
+
+	it('draws a mandate status as the status badge in its tone', () => {
+		const table = read('src', 'views', 'settings', 'components', 'DelegationMatrixTable.vue')
+		expect(table).toContain('class="cn-status-badge"')
+		expect(table).toContain("return 'cn-status-badge--success'")
+		expect(table).not.toContain('mandaat-matrix-table__badge')
+	})
+
+	it('draws a first-run state as the board pill: soft ink, light fill, normal leading', () => {
+		const tab = read('src', 'views', 'settings', 'tabs', 'FirstRunTab.vue')
+		const rule = tab.slice(tab.indexOf('.first-run-tab__state {'), tab.indexOf('}', tab.indexOf('.first-run-tab__state {')))
+		expect(rule).toContain('background: var(--color-background-hover);')
+		expect(rule).toContain('line-height: normal;')
+	})
 })
