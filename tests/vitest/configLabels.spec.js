@@ -43,7 +43,9 @@ describe('the conversation message lines (DqZaakContact)', () => {
 	// @spec openspec/changes/contact-message-subject-note/specs/contact-message-subject-note/spec.md#requirement-a-contact-moment-carries-its-subject-note-and-attachment-count
 	it('reads the subject above the summary and the note with the attachment count under it', () => {
 		const content = widget('case-resident-thread').content
-		expect(content.bodyField).toBe('summary')
+		// The full message where the contact has one, else its summary; the table keeps the summary.
+		// @spec openspec/changes/contact-message-text/specs/contact-message-text/spec.md#requirement-a-contact-moment-carries-its-full-message
+		expect(content.bodyField).toEqual(['message', 'summary'])
 		expect(content.subjectField).toBe('subject')
 		expect(content.noteField).toBe('note')
 		expect(content.attachmentCountField).toBe('attachmentCount')
@@ -52,6 +54,7 @@ describe('the conversation message lines (DqZaakContact)', () => {
 	it('declares those fields on the contact moment', () => {
 		const schema = require('../../lib/Settings/register.d/40-kcc-werkplek.json').components.schemas.contactmoment
 		expect(schema.properties.subject.type).toBe('string')
+		expect(schema.properties.message.type).toBe('string')
 		expect(schema.properties.note.type).toBe('string')
 		expect(schema.properties.attachmentCount).toMatchObject({ type: 'integer', minimum: 0 })
 	})

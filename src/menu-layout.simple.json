@@ -4268,7 +4268,7 @@
 							"usAuthorFormat": "user",
 							"themAuthorField": "@object.initiatorDisplayName",
 							"timestampField": "startTime",
-							"bodyField": "summary",
+							"bodyField": ["message", "summary"],
 							"subjectField": "subject",
 							"noteField": "note",
 							"attachmentCountField": "attachmentCount",
