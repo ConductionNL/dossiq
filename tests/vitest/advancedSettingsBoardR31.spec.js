@@ -31,8 +31,8 @@ describe('the advanced settings, r31', () => {
 		expect(read('src', 'views', 'settings', 'tabs', 'FirstRunTab.vue')).toContain('--nldesign-component-link-color: var(--color-main-text);')
 	})
 
-	it('draws a present prerequisite on a light fill', () => {
-		expect(read('src', 'views', 'settings', 'tabs', 'PrerequisitesTab.vue')).toMatch(/__mark--present \{\s*background: color-mix\(/)
+	it('draws a present prerequisite as the soft success tag', () => {
+		expect(read('src', 'views', 'settings', 'tabs', 'PrerequisitesTab.vue')).toContain("'prerequisites__mark cn-status-badge cn-status-badge--success'")
 	})
 })
 
