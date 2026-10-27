@@ -42,6 +42,13 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 	private array $saved = [];
 
 	/**
+	 * The app config the step reads and writes; the instance opted into demo data.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $appConfig = ['demo_data_decided' => 'installed'];
+
+	/**
 	 * A store that records every save and hands back an id.
 	 *
 	 * @param string|null $failsOnSchema A schema whose writes throw, modelling a
@@ -145,7 +152,22 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 		$settings->method('isOpenRegisterAvailable')->willReturn(true);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key): string => ($configured === true ? $key : '')
+			function (string $key) use ($configured): string {
+				if (isset($this->appConfig[$key]) === true) {
+					return $this->appConfig[$key];
+				}
+
+				if ($configured === true) {
+					return $key;
+				}
+
+				return '';
+			}
+		);
+		$settings->method('setConfigValue')->willReturnCallback(
+			function (string $key, string $value): void {
+				$this->appConfig[$key] = $value;
+			}
 		);
 
 		$index = $this->createMock(CaseFlowSeedIndex::class);
@@ -305,6 +327,37 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 			actual: $patches
 		);
 	}//end testAStoredStatusWithoutAPhaseGetsTheSeedsPhase()
+
+	/**
+	 * The demo cases are seeded once per seed version: a demo case an operator
+	 * deleted is not created again by the next repair or upgrade, while the
+	 * case type and its statuses are still checked on every run.
+	 *
+	 * @return void
+	 */
+	public function testADeletedSeedCaseIsNotRecreatedOnASecondRun(): void {
+		$this->step(store: $this->store())->run(output: $this->createMock(originalClassName: IOutput::class));
+		$this->assertNotSame(expected: [], actual: $this->savedTo(schema: 'case_schema'), message: 'the first run seeds the cases');
+
+		// Every case was deleted: the index finds none, the case type is there.
+		$this->step(store: $this->store(), caseType: ['id' => 'ct-existing'])->run(output: $this->createMock(originalClassName: IOutput::class));
+
+		$this->assertSame(expected: [], actual: $this->savedTo(schema: 'case_schema'), message: 'a deleted demo case stays deleted');
+	}//end testADeletedSeedCaseIsNotRecreatedOnASecondRun()
+
+	/**
+	 * An instance that did not opt into demo data gets the case type and its
+	 * statuses, and no demo cases.
+	 *
+	 * @return void
+	 */
+	public function testNoDemoCasesWithoutTheDemoDataDecision(): void {
+		$this->appConfig = ['demo_data_decided' => 'skipped'];
+		$this->step(store: $this->store())->run(output: $this->createMock(originalClassName: IOutput::class));
+
+		$this->assertNotSame(expected: [], actual: $this->savedTo(schema: 'status_type_schema'));
+		$this->assertSame(expected: [], actual: $this->savedTo(schema: 'case_schema'));
+	}//end testNoDemoCasesWithoutTheDemoDataDecision()
 
 	/**
 	 * A case whose title is already present is not created again.
