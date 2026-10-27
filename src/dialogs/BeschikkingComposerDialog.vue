@@ -38,6 +38,10 @@
 							<dt>{{ t('dossiq', 'Decision') }}</dt>
 							<dd>{{ kase.resultPublicLabel }}</dd>
 						</div>
+						<div v-for="fill in chosenTemplateFills" :key="fill.label">
+							<dt>{{ t('dossiq', fill.label) }}</dt>
+							<dd>{{ fill.value }}</dd>
+						</div>
 					</dl>
 				</section>
 
@@ -91,6 +95,7 @@ import {
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
+import { templateFillRows } from '../utils/templateFills.js'
 
 /**
  * Generate document — the case page's Generate document header action.
@@ -175,6 +180,18 @@ export default {
 		 * @return {Array} The picker options.
 		 * @spec openspec/specs/template-library/spec.md
 		 */
+		/**
+		 * What the chosen template fills in beyond the addressee and the case,
+		 * as its library entry names it (`fills`).
+		 *
+		 * @return {Array<{label: string, value: string}>} The rows.
+		 * @spec openspec/changes/generate-fills-per-template/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
+		 */
+		chosenTemplateFills() {
+			const chosen = this.templates.find((template) => template.id === this.templateId)
+			return templateFillRows(chosen?.fills, this.kase)
+		},
+
 		templateOptions() {
 			return this.templates.filter((template) => template.category === 'document').map((template) => ({
 				value: template.id,
