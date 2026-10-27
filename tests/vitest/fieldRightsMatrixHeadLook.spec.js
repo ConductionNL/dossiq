@@ -40,4 +40,11 @@ describe('field rights matrix head look', () => {
 	it('rounds the funnel 4px', () => {
 		expect(rule('.case-type-field-rights__filter :deep(.button-vue)')).toContain('border-radius: 4px;')
 	})
+
+	it('fits the card: a fixed layout and heads that wrap beside a funnel of fixed size', () => {
+		expect(rule('.case-type-field-rights__table')).toContain('table-layout: fixed;')
+		expect(rule('.case-type-field-rights__table thead th')).toContain('white-space: normal;')
+		expect(rule('.case-type-field-rights__filter')).toContain('flex: none;')
+	})
 })
+

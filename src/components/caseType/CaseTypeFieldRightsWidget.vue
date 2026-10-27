@@ -229,6 +229,9 @@ export default {
 <style scoped>
 .case-type-field-rights__table {
 	width: 100%;
+	/* The columns share the card's width and their heads wrap, as
+	   DqZaaktypeVelden draws them, rather than running the table past the card. */
+	table-layout: fixed;
 	border-collapse: collapse;
 	font-size: 14px;
 }
@@ -246,12 +249,17 @@ export default {
 	background: var(--color-background-hover);
 	color: var(--color-text-maxcontrast);
 	font-weight: 600;
+	white-space: normal;
 }
 
 .case-type-field-rights__head {
-	display: inline-flex;
+	display: flex;
 	gap: 4px;
 	align-items: center;
+}
+
+.case-type-field-rights__filter {
+	flex: none;
 }
 
 .case-type-field-rights__sort {
