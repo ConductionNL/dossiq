@@ -172,7 +172,7 @@
 					v-if="asideShown"
 					class="assessment-decision__aside"
 					data-testid="assessment-decision-aside">
-					<AccountGroupOutline :size="20" class="assessment-decision__aside-icon" />
+					<AccountGroupOutline :size="18" class="assessment-decision__aside-icon" />
 					<span>{{ t('dossiq', aside.text) }}</span>
 				</div>
 
@@ -858,6 +858,10 @@ export default {
 		gap: 2px;
 		min-width: 0;
 		line-height: normal;
+
+		strong {
+			font-size: 15px;
+		}
 	}
 
 	&__chips {
@@ -887,14 +891,18 @@ export default {
 		color: var(--color-error-text);
 	}
 
+	// A muted side note as DqBesluit draws it: 10px 14px in, 13px on a 1.5
+	// line in the boards' soft ink, an 18px mark.
 	&__aside {
 		display: flex;
 		gap: 10px;
 		align-items: flex-start;
-		padding: 12px 14px;
-		border-radius: var(--border-radius-large);
+		padding: 10px 14px;
+		border-radius: 10px;
 		background: var(--color-background-dark);
-		color: var(--color-main-text);
+		color: var(--cn-board-text-soft, var(--color-main-text));
+		font-size: 13px;
+		line-height: 1.5;
 	}
 
 	&__aside-icon {

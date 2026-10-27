@@ -2036,6 +2036,7 @@
 								"labelField": "name",
 								"descriptionField": "description",
 								"finalField": "isFinal",
+								"offPathField": "offPath",
 								"limit": 50
 							},
 							"transition": {
@@ -2672,6 +2673,16 @@
 							"composer": "separate",
 							"visibilityLabel": false,
 							"readsToggle": "Also who read the case",
+							"_entriesNote": "DqZaakHistorie entries as drawn: '6 okt, 15:40' (momentFormat short) and an icon per kind in the rail circle (kindIcons; OpenRegister's kinds carry no icon). The message is followed by what the entry is about and the author reads by name, which nextcloud-vue does for every timeline.",
+							"momentFormat": "short",
+							"kindIcons": {
+								"document": "FileDocumentOutline",
+								"taak": "ClipboardCheckOutline",
+								"bericht": "EmailOutline",
+								"ontvangstbevestiging": "EmailOutline",
+								"statuswijziging": "SwapHorizontal",
+								"toewijzing": "AccountOutline"
+							},
 							"entryActions": [
 								{
 									"id": "reply",

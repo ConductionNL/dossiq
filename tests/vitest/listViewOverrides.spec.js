@@ -86,6 +86,8 @@ describe('the my-work view', () => {
 		expect(overrides.cardLayout.headPill).toMatchObject({
 			field: 'deadlineTier',
 			labels: { overdue: 'Late', critical: 'Critical', warning: 'Soon', normal: 'Normal' },
+			// Board DqAanMijToegewezen: "Te laat" and "Kritiek" red, "Bijna" amber, "Normaal" grey.
+			colorMap: { overdue: 'error', critical: 'error', warning: 'warning', normal: 'default' },
 		})
 		expect(overrides.cardLayout).toMatchObject({ number: 'identifier', title: 'title' })
 	})

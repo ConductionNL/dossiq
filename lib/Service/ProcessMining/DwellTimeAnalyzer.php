@@ -160,7 +160,7 @@ class DwellTimeAnalyzer {
 	 * @param DateTimeImmutable $periodFrom Inclusive period start.
 	 * @param DateTimeImmutable $periodTo Inclusive period end.
 	 *
-	 * @return array<int, array{caseId: string, statusId: string, hours: float}>
+	 * @return array<int, array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool}>
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
@@ -216,7 +216,7 @@ class DwellTimeAnalyzer {
 	 * @param DateTimeImmutable $windowStart Inclusive window start.
 	 * @param DateTimeImmutable $windowEnd Inclusive window end.
 	 *
-	 * @return array<int, array{caseId: string, statusId: string, hours: float}>
+	 * @return array<int, array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool}>
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
@@ -269,6 +269,8 @@ class DwellTimeAnalyzer {
 				'actor' => trim((string)($records[$i]['actor'] ?? '')),
 				'hours' => $measured['wallHours'],
 				'workingHours' => $measured['workingHours'],
+				// The visit a still-open case is in: it ends at "now" and grows every day.
+				'open' => (($i + 1) >= $count && $closedAt === null),
 			];
 		}//end for
 

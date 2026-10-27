@@ -33,6 +33,7 @@ describe('the decide dialog letter as DqBesluit draws it', () => {
 		expect(sfc).toContain('<span class="assessment-decision__letter-icon"><FileDocumentCheckOutline :size="18" /></span>')
 		expect(block('__letter-icon')).toContain('width: 32px')
 		expect(block('__letter-text')).toContain('line-height: normal')
+		expect(sfc.slice(sfc.indexOf('&__letter-text {'), sfc.indexOf('&__chips {'))).toContain('font-size: 15px')
 	})
 
 	it('draws a ground chip 4px 10px on the normal line', () => {

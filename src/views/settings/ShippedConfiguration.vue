@@ -39,7 +39,7 @@
 				<tr v-for="row in rows" :key="row.targetObject">
 					<td class="shipped-configuration__name">{{ row.title || row.targetObject }}</td>
 					<td :data-testid="'shipped-state-' + row.targetObject">
-						<span class="shipped-configuration__state" :class="'shipped-configuration__state--' + (row.state || 'local')">
+						<span class="cn-status-badge" :class="'cn-status-badge--' + stateTone(row)">
 							{{ label(row) }}
 						</span>
 					</td>
@@ -193,6 +193,18 @@ export default {
 		 * @param {object} row The row.
 		 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 		 */
+		/**
+		 * The status badge tone of a row's state: shipped and untouched is
+		 * green, changed here or removed is amber, the rest neutral.
+		 *
+		 * @param {object} row The row.
+		 * @return {string} The tone.
+		 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+		 */
+		stateTone(row) {
+			return { shipped: 'success', changed: 'warning', removed: 'warning' }[row.state] || 'default'
+		},
+
 		label(row) {
 			return shippedLabel(row)
 		},
@@ -276,31 +288,6 @@ export default {
 
 .shipped-configuration__name {
 	font-weight: 600;
-}
-
-/* The state reads as a pill, as board DqBeheerGeavanceerd draws it:
-   unchanged on a light success fill, changed or removed on a light warning
-   fill, an object of this instance on a neutral one. */
-.shipped-configuration__state {
-	display: inline-block;
-	padding: 2px 8px;
-	border-radius: 10px;
-	background: var(--color-background-dark);
-	color: var(--color-main-text);
-	font-size: 13px;
-	font-weight: 600;
-	white-space: nowrap;
-}
-
-.shipped-configuration__state--shipped {
-	background: color-mix(in srgb, var(--color-success) 15%, var(--color-main-background));
-	color: var(--color-success-text);
-}
-
-.shipped-configuration__state--changed,
-.shipped-configuration__state--removed {
-	background: color-mix(in srgb, var(--color-warning) 15%, var(--color-main-background));
-	color: var(--color-warning-text);
 }
 
 .shipped-configuration__empty,

@@ -522,6 +522,7 @@ describe('the tabs', () => {
 					labelField: 'name',
 					descriptionField: 'description',
 					finalField: 'isFinal',
+					offPathField: 'offPath',
 					limit: 50,
 				},
 				datesSource: {

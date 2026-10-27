@@ -1,0 +1,3 @@
+- [x] side-address and side-kvk: second line joins with a break
+- [x] map link icon
+- [x] Vitest

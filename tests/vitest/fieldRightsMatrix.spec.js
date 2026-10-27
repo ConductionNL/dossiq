@@ -62,6 +62,15 @@ describe('the field rights matrix', () => {
 		expect(labelled.columns.map((column) => column.label)).toEqual(['Intaker / Vergunningverlener, ontvangen'])
 	})
 
+	it('labels a field with its title as text when the title is a language map', () => {
+		const matrix = fieldRightsMatrix({
+			rules: [{ field: 'bouwkosten', rule: 'readOnly', groups: ['g'] }],
+			properties: [{ name: 'bouwkosten', title: { nl: 'Bouwkosten', en: 'Building costs' } }],
+		})
+		expect(matrix.rows.map((row) => row.label)).not.toContain('[object Object]')
+		expect(['Bouwkosten', 'Building costs']).toContain(matrix.rows[0].label)
+	})
+
 	it('is empty for a case type without rules or statuses', () => {
 		expect(fieldRightsMatrix({})).toEqual({ columns: [], rows: [] })
 	})

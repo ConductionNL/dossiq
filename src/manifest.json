@@ -1130,6 +1130,8 @@
 			"title": "My work",
 			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first.",
 			"config": {
+				"gridMargin": 10,
+				"_gridMarginNote": "10px: DqMijnWerk and DqMijnTeam space their cards 20px since design-system #616 (r33: 24 drew the tiles 6px low).",
 				"allowEdit": false,
 				"gridFloat": false,
 				"appId": "dossiq",
@@ -2177,8 +2179,8 @@
 									},
 									"colorMap": {
 										"overdue": "error",
-										"critical": "warning",
-										"warning": "info",
+										"critical": "error",
+										"warning": "warning",
 										"normal": "default"
 									}
 								},
@@ -3585,7 +3587,8 @@
 								"descriptionField": "description",
 								"dateField": "reachedAt",
 								"orderField": "order",
-								"finalField": "isFinal"
+								"finalField": "isFinal",
+								"offPathField": "offPath"
 							},
 							"transition": {
 								"kind": "lifecycle"
@@ -7670,7 +7673,8 @@
 									"key": "team",
 									"label": "Team",
 									"path": "candidateGroups",
-									"format": "list"
+									"format": "list",
+									"itemFormat": "group"
 								},
 								{
 									"key": "due",
@@ -8161,8 +8165,8 @@
 									"label": "norm {value} days"
 								}
 							],
-							"_heightNote": "250px, as DqDoorlooptijd draws the plot, in a tile sized to its content (layout sizeToContent), so the card is the board's 352px and nothing is cut off or scrolls. A pinned height in a fixed gridHeight 4 tile was cut off.",
-							"height": 250,
+							"_heightNote": "233px, so the card is DqDoorlooptijd's 352px (r33: 250 drew 369), in a tile sized to its content (layout sizeToContent), so the card is the board's 352px and nothing is cut off or scrolls. A pinned height in a fixed gridHeight 4 tile was cut off.",
+							"height": 233,
 							"footnote": "Chart from the OpenRegister analysis layer. Dossiq works out the norm and what counts as within it.",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
@@ -8902,7 +8906,7 @@
 							"ruleAbove": true,
 							"density": "compact",
 							"emptyText": "No phase stands out in this period",
-							"limit": 3
+							"limit": 2
 						}
 					},
 					{
@@ -11481,12 +11485,10 @@
 						"type": "table",
 						"title": "Notices of default and penalty payments",
 						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "noticeOfDefault",
-								"filter": {},
-								"limit": 10
-							},
+							"register": "dossiq",
+							"schema": "noticeOfDefault",
+							"filter": {},
+							"limit": 10,
 							"columns": [
 								{
 									"key": "receiptDate",
@@ -14339,12 +14341,15 @@
 										"residence.postcode",
 										"residence.city"
 									],
-									"separator": " "
+									"separator": " ",
+									"joinPrevious": true,
+									"joinSeparator": "\n"
 								}
 							],
 							"emptyText": "No address on file",
 							"link": {
 								"label": "Cases on the map",
+								"icon": "MapMarkerOutline",
 								"route": {
 									"name": "Cases",
 									"query": {
@@ -15071,11 +15076,14 @@
 										"address.postcode",
 										"address.place"
 									],
-									"separator": " "
+									"separator": " ",
+									"joinPrevious": true,
+									"joinSeparator": "\n"
 								}
 							],
 							"link": {
 								"label": "Cases on the map",
+								"icon": "MapMarkerOutline",
 								"route": {
 									"name": "Cases",
 									"query": {

@@ -112,12 +112,8 @@
 					</td>
 					<td>
 						<span
-							class="deadline-definitions-tab__badge"
-							:class="
-								isActive(def)
-									? 'deadline-definitions-tab__badge--active'
-									: 'deadline-definitions-tab__badge--inactive'
-							">
+							class="cn-status-badge"
+							:class="isActive(def) ? 'cn-status-badge--success' : 'cn-status-badge--default'">
 							{{
 								isActive(def)
 									? t('dossiq', 'Active')
@@ -442,25 +438,6 @@ export default {
 
 .deadline-definitions-tab__validity {
 	white-space: nowrap;
-}
-
-.deadline-definitions-tab__badge {
-	display: inline-block;
-	padding: 2px 8px;
-	border-radius: 10px;
-	font-size: 13px;
-	font-weight: 600;
-	white-space: nowrap;
-}
-
-.deadline-definitions-tab__badge--active {
-	background: color-mix(in srgb, var(--color-success) 15%, var(--color-main-background));
-	color: var(--color-success-text);
-}
-
-.deadline-definitions-tab__badge--inactive {
-	background: var(--color-background-dark);
-	color: var(--color-text-maxcontrast);
 }
 
 .deadline-definitions-tab__row-actions {

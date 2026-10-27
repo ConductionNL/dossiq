@@ -87,6 +87,7 @@
     },
     {
       "id": "75d3e370-0966-5da7-9a89-e2da989ce41f",
+      "offPath": true,
       "name": "Ingetrokken",
       "description": "De aanbesteding is ingetrokken.",
       "order": 90,

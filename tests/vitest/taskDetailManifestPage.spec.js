@@ -83,6 +83,8 @@ describe('the TaskDetail manifest page', () => {
 		expect(widget('side-task').content.fields.map((field) => field.path)).toEqual([
 			'description', 'assignee', 'candidateGroups', 'dueAt', 'expiresAt', 'priority', 'requester', 'created',
 		])
+		// Board DqTaak "Team: Woo en informatie": the groups by display name, not by id.
+		expect(widget('side-task').content.fields.find((field) => field.key === 'team')).toMatchObject({ format: 'list', itemFormat: 'group' })
 		expect(widget('side-case')).toMatchObject({ type: 'facts', visibleWhen: { field: 'objectUuid', op: 'notEmpty' } })
 		expect(widget('side-case').content.link.route).toEqual({ name: 'CaseDetail', params: { id: '@object.objectUuid' } })
 		// Board DqTaak "Wat deze taak tegenhoudt": the step the case moves to

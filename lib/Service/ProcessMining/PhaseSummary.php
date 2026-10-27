@@ -91,7 +91,7 @@ class PhaseSummary {
 		foreach ($caseTypes as $report) {
 			$hours = [];
 			$firstOrder = [];
-			foreach ($this->columnsOf(stats: $this->namedStats(report: $report)) as $column => $stats) {
+			foreach ($this->columnsOf(stats: $this->namedStats(report: $report, key: 'dwellTimeCompleted')) as $column => $stats) {
 				$hours[$column] = array_sum(array_map(static fn (array $stat): float => (float)($stat[$measure] ?? 0), $stats));
 				$firstOrder[$column] = $this->firstOrder(stats: $stats);
 				if (in_array($column, $columns, true) === false) {
@@ -234,15 +234,17 @@ class PhaseSummary {
 	 * is no phase a reader recognises, so it is left out.
 	 *
 	 * @param array<string, mixed> $report One case type's report.
+	 * @param string               $key    The statistics to read: `dwellTimeCompleted` for days per phase (visits that
+	 *                                     ended, falling back to `dwellTime` for a report without them).
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/phase-days-from-completed-visits/specs/phase-days-from-completed-visits/spec.md#requirement-days-per-phase-counts-completed-visits
 	 */
-	private function namedStats(array $report): array {
+	private function namedStats(array $report, string $key='dwellTime'): array {
 		return array_values(
 			array_filter(
-				(array)($report['dwellTime'] ?? []),
+				(array)($report[$key] ?? ($report['dwellTime'] ?? [])),
 				static function (array $stat): bool {
 					$name = (string)($stat['statusName'] ?? '');
 					return $name !== '' && $name !== (string)($stat['statusId'] ?? '');

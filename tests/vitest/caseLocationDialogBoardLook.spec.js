@@ -57,6 +57,12 @@ describe('CaseLocationDialog in the board look', () => {
 		expect(label).toContain('margin-bottom: 6px')
 	})
 
+	it('sets the search hint 6px under the field, on the normal line', () => {
+		const hint = ruleFor('.case-location-dialog > .case-location-dialog__hint')
+		expect(hint).toContain('margin-top: -16px')
+		expect(hint).toContain('line-height: 1.2')
+	})
+
 	it('puts the map beside a 200px layer list in an 8px rounded frame', () => {
 		expect(ruleFor('.case-location-dialog__map-row')).toContain('grid-template-columns: minmax(0, 1fr) 200px')
 		expect(ruleFor('.case-location-dialog__layers')).toContain('border-radius: 8px')

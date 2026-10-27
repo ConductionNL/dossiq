@@ -96,6 +96,7 @@
     },
     {
       "id": "5f7731b9-e67d-59be-a98d-71321ca7a5af",
+      "offPath": true,
       "name": "Ingetrokken",
       "description": "Aanvraag is ingetrokken door de aanvrager",
       "order": 90,

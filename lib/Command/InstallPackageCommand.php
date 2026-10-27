@@ -176,6 +176,16 @@ class InstallPackageCommand extends Command {
 				false => $installer->install(id: $id),
 			};
 			$output->writeln("{$outcome['package']} {$outcome['version']}: {$outcome['status']}. {$outcome['message']}");
+			if (isset($outcome['refreshed']) === true) {
+				$kept = array_map('strval', (array)($outcome['kept'] ?? []));
+				$keptIds = '';
+				if ($kept !== []) {
+					$keptIds = ': ' . implode(', ', $kept);
+				}
+
+				$output->writeln('  ' . (int)$outcome['refreshed'] . ' row(s) refreshed, ' . count($kept) . ' kept as this instance holds them' . $keptIds);
+			}
+
 			foreach ((array)($outcome['errors'] ?? []) as $error) {
 				$output->writeln('  ' . $error);
 			}

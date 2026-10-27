@@ -1,7 +1,7 @@
 {
   "id": "jeugdwet",
   "title": "Jeugdwet",
-  "version": "1.12.0",
+  "version": "1.14.0",
   "requires": [],
   "parts": [
     "case-type",

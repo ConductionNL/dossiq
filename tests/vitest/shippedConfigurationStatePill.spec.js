@@ -18,8 +18,9 @@ const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/nl.json'), 'utf8')).
 
 describe('the shipped configuration state', () => {
 	it('is a pill per state', () => {
-		expect(view).toContain("'shipped-configuration__state--' + (row.state || 'local')")
-		expect(view).toMatch(/\.shipped-configuration__state--shipped \{\s*background: color-mix/)
+		expect(view).toContain(`<span class="cn-status-badge" :class="'cn-status-badge--' + stateTone(row)">`)
+		expect(view).toContain("{ shipped: 'success', changed: 'warning', removed: 'warning' }")
+		expect(view).not.toContain('color-mix')
 	})
 
 	it('reads as the board words it', () => {

@@ -285,6 +285,60 @@ class SocialDomainCaseTypesTest extends TestCase {
 	}//end testABenefitApplicationRunsOnItsDecisionTerm()
 
 	/**
+	 * Board DqSociaalDomein draws the Melding Jeugdwet type pill teal; the case
+	 * type names that hue, or its pill draws neutral.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-pill-teal-jeugdwet/specs/case-types/spec.md#requirement-the-jeugdwet-case-type-is-drawn-teal
+	 */
+	public function testTheJeugdwetCaseTypeIsDrawnTeal(): void {
+		self::assertSame(expected: 'teal', actual: $this->caseTypeFile(package: 'jeugdwet')['caseType']['colour']);
+	}//end testTheJeugdwetCaseTypeIsDrawnTeal()
+
+	/**
+	 * Board DqSociaalDomein draws the Jeugdwet main path only (design-system
+	 * #678): the extension request and the withdrawal are off it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/stages-off-path/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
+	 */
+	public function testTheJeugdwetSideStatusesAreOffThePath(): void {
+		$offPath = [];
+		foreach ($this->caseTypeFile(package: 'jeugdwet')['statusTypes'] as $status) {
+			if (($status['offPath'] ?? false) === true) {
+				$offPath[] = $status['name'];
+			}
+		}
+
+		self::assertSame(expected: ['Verlenging aangevraagd', 'Ingetrokken'], actual: $offPath);
+	}//end testTheJeugdwetSideStatusesAreOffThePath()
+
+	/**
+	 * Every shipped package marks its side statuses (order 90 and up: a
+	 * withdrawal, an inadmissible objection, a settlement) off the path, so
+	 * the stages strip draws the main path the case boards draw.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/stages-off-path/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
+	 */
+	public function testEveryPackageMarksItsSideStatusesOffThePath(): void {
+		$onPath = [];
+		foreach (glob(self::PACKAGES . '*/case-type.json') as $file) {
+			$package = basename(dirname($file));
+			foreach ((array)($this->caseTypeFile(package: $package)['statusTypes'] ?? []) as $status) {
+				if ((int)($status['order'] ?? 0) >= 90 && ($status['offPath'] ?? false) !== true) {
+					$onPath[] = $package . ': ' . $status['name'];
+				}
+			}
+		}
+
+		self::assertSame(expected: [], actual: $onPath);
+	}//end testEveryPackageMarksItsSideStatusesOffThePath()
+
+	/**
 	 * Each procedure's flow walks from the first status to every other one, and
 	 * guards only fields its case type declares (or the result).
 	 *

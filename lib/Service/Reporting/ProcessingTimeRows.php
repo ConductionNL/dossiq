@@ -96,8 +96,9 @@ class ProcessingTimeRows {
 			}
 
 			$elapsed     = $this->days->signed(from: new DateTimeImmutable($start), to: $today);
-			$remaining   = ($target - $elapsed);
-			$percentUsed = ($elapsed / $target);
+			$term        = $this->runningTerm(record: $record, start: $start, target: (int)$target);
+			$remaining   = ($term - $elapsed);
+			$percentUsed = ($elapsed / max(1, $term));
 			if ($remaining >= 0 && (1 - $percentUsed) > $threshold) {
 				continue;
 			}
@@ -231,6 +232,37 @@ class ProcessingTimeRows {
 
 		return $tallies;
 	}//end tally()
+
+	/**
+	 * The days of the term the record runs on: from its start to its own
+	 * deadline when it has one, else its type's target.
+	 *
+	 * A case's deadline follows its running statutory term (an extension, a
+	 * suspension, a Woo request's own four weeks); the type's target is the
+	 * norm the type was given. Measuring a case against the target alone put a
+	 * Woo request four days from its deadline in the "on track" half (r33).
+	 *
+	 * @param array<string, mixed> $record The open record.
+	 * @param string               $start  Its start date.
+	 * @param int                  $target Its type's target days.
+	 *
+	 * @return int The term in days.
+	 *
+	 * @spec openspec/changes/at-risk-reads-the-running-term/specs/at-risk-reads-the-running-term/spec.md#requirement-at-risk-reads-the-cases-running-term
+	 */
+	private function runningTerm(array $record, string $start, int $target): int {
+		$deadline = ($record['deadline'] ?? null);
+		if (is_string($deadline) === false || $deadline === '') {
+			return $target;
+		}
+
+		$term = $this->days->signed(from: new DateTimeImmutable($start), to: new DateTimeImmutable($deadline));
+		if ($term <= 0) {
+			return $target;
+		}
+
+		return $term;
+	}//end runningTerm()
 
 	/**
 	 * The severity band of one open record.
