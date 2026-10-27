@@ -13805,7 +13805,13 @@
 							"limit": 3,
 							"presentation": "rows",
 							"title": "{title}",
-							"meta": "{identifier} · {caseType.title}",
+							"meta": {
+								"parts": [
+									"{identifier}",
+									"{caseType.title}",
+									"handler {assignee|user}"
+								]
+							},
 							"pill": {
 								"field": "status.name",
 								"variant": "purple",
@@ -14576,7 +14582,13 @@
 							"limit": 3,
 							"presentation": "rows",
 							"title": "{title}",
-							"meta": "{identifier} · {caseType.title}",
+							"meta": {
+								"parts": [
+									"{identifier}",
+									"{caseType.title}",
+									"handler {assignee|user}"
+								]
+							},
 							"pill": {
 								"field": "status.name",
 								"variant": "purple",
@@ -15106,7 +15118,12 @@
 							"presentation": "rows",
 							"density": "stacked",
 							"title": "{title}",
-							"meta": "{identifier} · {caseType.title}",
+							"meta": {
+								"parts": [
+									"{identifier}",
+									"handler {assignee|user}"
+								]
+							},
 							"pill": {
 								"field": "status.name",
 								"variant": "purple",
