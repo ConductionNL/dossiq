@@ -126,8 +126,11 @@ export default {
 </script>
 
 <style scoped>
+/* A section's description sits 16px above its content, as the board draws
+   it (DqPersoonlijkeInstellingen "Meldingen"): the section content already
+   sets its children 24px apart, so the description gives 8px back. */
 .dossiq-user-settings__intro {
-	margin-bottom: calc(var(--default-grid-baseline) * 3);
+	margin-block: 0 -8px;
 	color: var(--color-text-maxcontrast);
 }
 </style>

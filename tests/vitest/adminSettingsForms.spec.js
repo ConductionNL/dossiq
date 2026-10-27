@@ -280,6 +280,11 @@ describe('the daily digest', () => {
 		expect(fields.hour.options[8]).toEqual({ value: 8, label: '{hour}:00' })
 	})
 
+	it('sets a section description 16px above its content (24px gap less 8)', () => {
+		const rule = userSettings.slice(userSettings.indexOf('.dossiq-user-settings__intro {'), userSettings.indexOf('}', userSettings.indexOf('.dossiq-user-settings__intro {')))
+		expect(rule).toContain('margin-block: 0 -8px;')
+	})
+
 	it('names who decided the setting', () => {
 		expect(Object.keys(fields.source.textMap)).toEqual(['user-override', 'group-default', 'schema-default', '*'])
 	})
