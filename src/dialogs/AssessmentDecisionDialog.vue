@@ -96,12 +96,15 @@
 							<label class="assessment-decision__label" for="assessment-decision-date">
 								{{ t('dossiq', 'Decision date') }}
 							</label>
-							<input
-								id="assessment-decision-date"
-								v-model="decisionDate"
-								class="assessment-decision__date"
-								type="date"
-								data-testid="assessment-decision-date">
+							<span class="assessment-decision__date-wrap">
+								<input
+									id="assessment-decision-date"
+									v-model="decisionDate"
+									class="assessment-decision__date"
+									type="date"
+									data-testid="assessment-decision-date">
+								<CalendarBlankOutline :size="18" class="assessment-decision__date-icon" aria-hidden="true" />
+							</span>
 							<span v-if="kase && kase.deadline" class="assessment-decision__hint">
 								{{ t('dossiq', 'At the latest {date}', { date: formatDate(kase.deadline) }) }}
 							</span>
@@ -228,6 +231,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import AccountGroupOutline from 'vue-material-design-icons/AccountGroupOutline.vue'
+import CalendarBlankOutline from 'vue-material-design-icons/CalendarBlankOutline.vue'
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
 import BeschikkingComposerDialog from './BeschikkingComposerDialog.vue'
@@ -253,6 +257,7 @@ export default {
 
 	components: {
 		AccountGroupOutline,
+		CalendarBlankOutline,
 		BeschikkingComposerDialog,
 		CnChoiceCards,
 		FileDocumentCheckOutline,
@@ -787,14 +792,34 @@ export default {
 		color: var(--color-text-maxcontrast);
 	}
 
+	// The date field carries the board's calendar icon at its end; the
+	// browser's own picker button stays where it is, only invisible, so a
+	// click there still opens the picker.
+	&__date-wrap {
+		position: relative;
+		display: block;
+	}
+
 	&__date {
 		box-sizing: border-box;
 		width: 100%;
 		height: 40px;
-		padding: 0 12px;
+		padding: 0 40px 0 12px;
 		border: 1px solid var(--color-border-dark);
 		border-radius: 8px;
 		font: inherit;
+
+		&::-webkit-calendar-picker-indicator {
+			opacity: 0;
+		}
+	}
+
+	&__date-icon {
+		position: absolute;
+		top: 11px;
+		right: 12px;
+		color: var(--color-text-maxcontrast);
+		pointer-events: none;
 	}
 
 	&__term {
