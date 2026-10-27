@@ -364,6 +364,13 @@ export default {
 	gap: 12px;
 }
 
+/* Every NcSelect ends 4px under its box, so the fields stand 16px apart; the
+   choice cards end at their border. 4px under them puts the first field 16px
+   down too, as DqZaakSamenwerken draws it. */
+.case-share-org > .cn-choice-cards {
+	margin-bottom: 4px;
+}
+
 .case-share-org__field {
 	display: flex;
 	flex-direction: column;
