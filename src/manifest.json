@@ -7672,7 +7672,8 @@
 									"key": "team",
 									"label": "Team",
 									"path": "candidateGroups",
-									"format": "list"
+									"format": "list",
+									"itemFormat": "group"
 								},
 								{
 									"key": "due",
