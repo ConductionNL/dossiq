@@ -2177,8 +2177,8 @@
 									},
 									"colorMap": {
 										"overdue": "error",
-										"critical": "warning",
-										"warning": "info",
+										"critical": "error",
+										"warning": "warning",
 										"normal": "default"
 									}
 								},
