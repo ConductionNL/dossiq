@@ -11481,12 +11481,10 @@
 						"type": "table",
 						"title": "Notices of default and penalty payments",
 						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "noticeOfDefault",
-								"filter": {},
-								"limit": 10
-							},
+							"register": "dossiq",
+							"schema": "noticeOfDefault",
+							"filter": {},
+							"limit": 10,
 							"columns": [
 								{
 									"key": "receiptDate",
