@@ -580,7 +580,7 @@ describe('the landing page', () => {
 
 	it('draws the dashboard case tiles as the board\'s rows: title, number, one line, no chevron', () => {
 		// DqDashboard: Vastgelopen zaken, Zaken die u volgt and Recent geopend
-		// are rows of the case title, its number and a muted line, without a
+		// are rows of the case title, its number and a muted trailing line, without a
 		// chevron, and their View all sits in the card header.
 		const dashboard = page(builtSimple, 'Dashboard')
 		const before = original('Dashboard')
@@ -606,7 +606,10 @@ describe('the landing page', () => {
 				rowRoute: 'CaseDetail',
 				emptyText: table.content.emptyText,
 			})
-			expect(rows.content.text).toBe(text)
+			// The line is the row's trailing text, which wraps under the number at
+			// the row's start as the board draws it, not a second meta line.
+			expect(rows.content.text).toBeUndefined()
+			expect(rows.content.trailing).toEqual(text === undefined ? undefined : [text])
 			// The header link opens the list the table's View all opened.
 			const layout = dashboard.config.layout.find((entry) => entry.widgetId === id)
 			const { name, ...rest } = table.content.viewAllRoute

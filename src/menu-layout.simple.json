@@ -5630,7 +5630,7 @@
 							"ruleAbove": true,
 							"title": "{title}",
 							"meta": "{identifier}",
-							"text": "{daysSinceActivity} days idle",
+							"trailing": ["{daysSinceActivity} days idle"],
 							"chevron": false,
 							"rowRoute": "CaseDetail",
 							"emptyText": "All cases active"
@@ -5676,7 +5676,7 @@
 							"ruleAbove": true,
 							"title": "{title}",
 							"meta": "{identifier}",
-							"text": "{@self.viewedAt|relative}",
+							"trailing": ["{@self.viewedAt|relative}"],
 							"footerLink": {
 								"label": "View all",
 								"route": "Cases",
