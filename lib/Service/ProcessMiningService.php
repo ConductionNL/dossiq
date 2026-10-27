@@ -427,9 +427,13 @@ class ProcessMiningService {
 	 * @param string               $caseId The case id.
 	 * @param array<string, mixed> $case   The case; `statusHistory` as a list or as JSON text.
 	 *
-	 * @return array<int, array{case: string, statusType: string, createdAt: string}>
+	 * Each is held by the person the entry names, else by the case's handler:
+	 * a history entry carries no actor of its own, and time nobody holds would
+	 * read as "not recorded" in the per-handler table.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @return array<int, array{case: string, statusType: string, createdAt: string, actor: string}>
+	 *
+	 * @spec openspec/changes/dwell-from-status-history-actor/specs/dwell-from-status-history-actor/spec.md#requirement-time-read-from-the-status-history-has-a-holder
 	 */
 	private function recordsFromHistory(string $caseId, array $case): array {
 		$history = ($case['statusHistory'] ?? []);
@@ -437,13 +441,25 @@ class ProcessMiningService {
 			$history = json_decode($history, true);
 		}
 
+		$holder = trim((string)($case['assignee'] ?? ''));
 		$records = [];
 		foreach ((array)$history as $entry) {
+			if (is_array($entry) === false) {
+				continue;
+			}
+
 			$status = (string)($entry['status'] ?? '');
 			$moment = (string)($entry['enteredAt'] ?? '');
-			if (is_array($entry) === true && $status !== '' && $moment !== '') {
-				$records[] = ['case' => $caseId, 'statusType' => $status, 'createdAt' => $moment];
+			if ($status === '' || $moment === '') {
+				continue;
 			}
+
+			$actor = trim((string)($entry['actor'] ?? ($entry['by'] ?? '')));
+			if ($actor === '') {
+				$actor = $holder;
+			}
+
+			$records[] = ['case' => $caseId, 'statusType' => $status, 'createdAt' => $moment, 'actor' => $actor];
 		}
 
 		return $records;
