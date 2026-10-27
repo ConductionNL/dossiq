@@ -78,12 +78,12 @@
 			],
 			"data": {
 				"title": "Kosten nieuw zwembad",
-				"description": "De heer Visser vraagt de ramingen, offertes en raadsstukken over de kosten van het nieuwe zwembad.",
+				"description": "De heer De Wit vraagt de ramingen, offertes en raadsstukken over de kosten van het nieuwe zwembad.",
 				"caseType": "{{lookup:caseType}}",
 				"status": "{{lookup:status}}",
-				"requester": "{{object:persoon-henkvisser.id}}",
+				"requester": "{{object:persoon-kees-dewit.id}}",
 				"initiatorType": "person",
-				"initiatorDisplayName": "{{cast:henkvisser.displayName}}",
+				"initiatorDisplayName": "{{cast:keesdewit.displayName}}",
 				"intakeChannel": "website",
 				"communicationChannel": "email",
 				"confidentiality": "intern",
@@ -104,7 +104,7 @@
 				],
 				"wooRequest": {
 					"onderwerp": "Kosten nieuw zwembad",
-					"omschrijving": "De heer Visser vraagt de ramingen, offertes en raadsstukken over de kosten van het nieuwe zwembad.",
+					"omschrijving": "De heer De Wit vraagt de ramingen, offertes en raadsstukken over de kosten van het nieuwe zwembad.",
 					"periodeVan": "{{date:-730}}",
 					"periodeTot": "{{date:-2}}",
 					"origin": "portal"
