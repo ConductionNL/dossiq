@@ -297,6 +297,25 @@ class SocialDomainCaseTypesTest extends TestCase {
 	}//end testTheJeugdwetCaseTypeIsDrawnTeal()
 
 	/**
+	 * Board DqSociaalDomein draws the Jeugdwet main path only (design-system
+	 * #678): the extension request and the withdrawal are off it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/stages-off-path/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
+	 */
+	public function testTheJeugdwetSideStatusesAreOffThePath(): void {
+		$offPath = [];
+		foreach ($this->caseTypeFile(package: 'jeugdwet')['statusTypes'] as $status) {
+			if (($status['offPath'] ?? false) === true) {
+				$offPath[] = $status['name'];
+			}
+		}
+
+		self::assertSame(expected: ['Verlenging aangevraagd', 'Ingetrokken'], actual: $offPath);
+	}//end testTheJeugdwetSideStatusesAreOffThePath()
+
+	/**
 	 * Each procedure's flow walks from the first status to every other one, and
 	 * guards only fields its case type declares (or the result).
 	 *

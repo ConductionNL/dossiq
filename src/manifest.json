@@ -3585,7 +3585,8 @@
 								"descriptionField": "description",
 								"dateField": "reachedAt",
 								"orderField": "order",
-								"finalField": "isFinal"
+								"finalField": "isFinal",
+								"offPathField": "offPath"
 							},
 							"transition": {
 								"kind": "lifecycle"
