@@ -193,7 +193,7 @@ class DemoDataService {
 			[
 				'id'          => self::NONE_DATASET,
 				'label'       => 'Start empty',
-				'description' => 'You create the first case yourself.',
+				'description' => 'You create the first case yourself',
 				'objectCount' => 0,
 				'icon'        => 'CloseCircleOutline',
 			],
