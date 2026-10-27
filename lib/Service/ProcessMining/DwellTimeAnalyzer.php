@@ -337,6 +337,7 @@ class DwellTimeAnalyzer {
 					'statusName' => $this->statusLabel(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
 					'statusPhase' => $this->statusPhase(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
 					'statusFinal' => (($statusTypeIndex[$statusId]['isFinal'] ?? false) === true),
+					'statusOrder' => $this->statusOrder(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
 				],
 				$this->summarise(workingHours: $lists['working'], wallHours: $lists['wall'])
 			);
@@ -483,6 +484,25 @@ class DwellTimeAnalyzer {
 
 		return $name;
 	}//end statusLabel()
+
+	/**
+	 * A status type's place in its case type's flow (its `order`), or null.
+	 *
+	 * @param string                              $statusId        StatusType UUID.
+	 * @param array<string, array<string, mixed>> $statusTypeIndex StatusType rows, keyed by id.
+	 *
+	 * @return int|null
+	 *
+	 * @spec openspec/changes/phase-columns-in-case-type-order/specs/phase-columns-in-case-type-order/spec.md#requirement-the-phase-columns-follow-the-case-types-order
+	 */
+	private function statusOrder(string $statusId, array $statusTypeIndex): ?int {
+		$order = ($statusTypeIndex[$statusId]['order'] ?? null);
+		if (is_numeric($order) === false) {
+			return null;
+		}
+
+		return (int)$order;
+	}//end statusOrder()
 
 	/**
 	 * The phase a status type belongs to (its optional `phase`, translated
