@@ -10229,7 +10229,8 @@
 						"field": "welstandsgebied",
 						"rule": "hidden",
 						"groups": [
-							"vergunningen-intake"
+							"vergunningen-intake",
+							"zuiddrecht-vergunningen"
 						],
 						"statuses": [
 							"{{object:statustype-regulier-v5-ontvangen.id}}"
