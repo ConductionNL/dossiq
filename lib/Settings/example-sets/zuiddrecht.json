@@ -10240,12 +10240,42 @@
 						"field": "welstandsgebied",
 						"rule": "readOnly",
 						"groups": [
-							"zuiddrecht-vergunningen"
+							"zuiddrecht-vergunningen",
+							"zuiddrecht-toezicht-en-handhaving"
 						],
 						"statuses": [
-							"{{object:statustype-regulier-v5-in-behandeling.id}}"
+							"{{object:statustype-regulier-v5-in-behandeling.id}}",
+							"{{object:statustype-regulier-v5-besluit.id}}",
+							"{{object:statustype-regulier-v5-verleend.id}}",
+							"{{object:statustype-regulier-v5-geweigerd.id}}"
 						],
 						"reason": "Volgt uit de locatie van het bouwwerk."
+					},
+					{
+						"field": "bouwkosten",
+						"rule": "readOnly",
+						"groups": [
+							"zuiddrecht-vergunningen",
+							"zuiddrecht-toezicht-en-handhaving"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v5-verleend.id}}",
+							"{{object:statustype-regulier-v5-geweigerd.id}}"
+						],
+						"reason": "Een afgehandelde aanvraag verandert niet meer."
+					},
+					{
+						"field": "soortBouwwerk",
+						"rule": "readOnly",
+						"groups": [
+							"zuiddrecht-vergunningen",
+							"zuiddrecht-toezicht-en-handhaving"
+						],
+						"statuses": [
+							"{{object:statustype-regulier-v5-verleend.id}}",
+							"{{object:statustype-regulier-v5-geweigerd.id}}"
+						],
+						"reason": "Een afgehandelde aanvraag verandert niet meer."
 					},
 					{
 						"field": "bouwkosten",
