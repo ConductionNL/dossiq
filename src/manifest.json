@@ -8154,7 +8154,8 @@
 									"label": "norm {value} days"
 								}
 							],
-							"_heightNote": "No height: on a dashboard a chart without one fits its tile (nextcloud-vue CnDashboardPage). A pinned 260px plot was taller than the gridHeight 4 tile and the tile cut it off and scrolled (DqDoorlooptijd).",
+							"_heightNote": "250px, as DqDoorlooptijd draws the plot, in a tile sized to its content (layout sizeToContent), so the card is the board's 352px and nothing is cut off or scrolls. A pinned height in a fixed gridHeight 4 tile was cut off.",
+							"height": 250,
 							"footnote": "Chart from the OpenRegister analysis layer. Dossiq works out the norm and what counts as within it.",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/doorlooptijd/metrics",
@@ -8276,7 +8277,7 @@
 								"legend": { "show": false },
 								"dataLabels": { "enabled": false }
 							},
-							"height": 150,
+							"height": 130,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
@@ -8318,7 +8319,7 @@
 								"legend": { "show": false },
 								"dataLabels": { "enabled": false }
 							},
-							"height": 150,
+							"height": 130,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
@@ -8393,7 +8394,7 @@
 									"show": false
 								}
 							},
-							"height": 150,
+							"height": 130,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
@@ -8678,7 +8679,8 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 4
+						"gridHeight": 4,
+						"sizeToContent": true
 					},
 					{
 						"id": 2,

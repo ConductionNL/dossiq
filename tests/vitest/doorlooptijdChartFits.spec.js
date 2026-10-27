@@ -2,10 +2,10 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The processing-time chart on the Doorlooptijd page fits its tile and carries
- * its source line as a footnote under the plot, as the DqDoorlooptijd board
- * draws it. A pinned 260px plot was taller than its gridHeight 4 tile, which
- * cut it off and scrolled.
+ * The processing-time chart on the Doorlooptijd page draws its plot 250px in a
+ * tile sized to its content, and carries its source line as a footnote under
+ * the plot, as the DqDoorlooptijd board draws it (a 352px card; r32 live 296).
+ * The Naleving cards' charts are 130px, the board's 203px cards (live 223).
  *
  * @spec openspec/specs/dashboard/spec.md
  */
@@ -19,9 +19,15 @@ const page = manifest.pages.find((item) => item.id === 'Doorlooptijd')
 const widget = page.config.widgets.find((item) => item.id === 'processing-time-monthly')
 
 describe('the Doorlooptijd monthly chart', () => {
-	it('fits its tile instead of pinning a height', () => {
-		expect(widget.content.height).toBeUndefined()
-		expect(page.config.layout.find((item) => item.widgetId === 'processing-time-monthly').gridHeight).toBe(4)
+	it('draws a 250px plot in a tile sized to its content', () => {
+		expect(widget.content.height).toBe(250)
+		expect(page.config.layout.find((item) => item.widgetId === 'processing-time-monthly').sizeToContent).toBe(true)
+	})
+
+	it('draws the Naleving cards\' charts 130px', () => {
+		for (const id of ['processing-time-charts-distribution', 'processing-time-charts-trend', 'processing-time-charts-throughput']) {
+			expect(page.config.widgets.find((item) => item.id === id).content.height, id).toBe(130)
+		}
 	})
 
 	it('puts its source line under the plot', () => {
