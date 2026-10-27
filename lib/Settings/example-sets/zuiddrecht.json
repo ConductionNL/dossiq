@@ -6856,6 +6856,7 @@
 			"schema": "organisatieRol",
 			"data": {
 				"roleName": "Woo en informatie",
+				"publicName": "Woo en informatie",
 				"roleType": "ambtelijk",
 				"ncGroupId": "zuiddrecht-woo-en-informatie",
 				"teamLead": "{{cast:anouk.uid}}",
