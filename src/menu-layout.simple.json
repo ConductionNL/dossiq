@@ -3066,6 +3066,7 @@
 								"lngField": "longitude",
 								"popupField": "label"
 							},
+							"labelsBelow": true,
 							"emptyText": "No locations linked to this case yet",
 							"errorText": "The locations could not be loaded.",
 							"refreshOn": "dossiq:case-location:saved",
@@ -3487,6 +3488,7 @@
 							},
 							"limit": 10,
 							"presentation": "rows",
+							"strongTitle": true,
 							"ruleAbove": true,
 							"icon": "CalendarBlankOutline",
 							"iconTile": true,
@@ -3553,6 +3555,7 @@
 							},
 							"limit": 25,
 							"presentation": "rows",
+							"strongTitle": true,
 							"ruleAbove": true,
 							"title": [
 								"{description}",
