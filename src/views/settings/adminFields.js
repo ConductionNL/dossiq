@@ -150,7 +150,7 @@ export function kadasterFields(t) {
 
 /**
  * The tone of each connection status on the integrations table: a working
- * connection is green, a failing one red, a simulated one blue, an
+ * connection is green, a failing one red, a simulated one the info blue, an
  * unavailable one amber, the rest neutral.
  *
  * @type {Readonly<Record<string, string>>}
@@ -159,7 +159,7 @@ export function kadasterFields(t) {
 export const CONNECTION_STATUS_TONES = Object.freeze({
 	configured: 'success',
 	error: 'error',
-	simulated: 'primary',
+	simulated: 'info',
 	unavailable: 'warning',
 })
 
