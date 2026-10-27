@@ -2036,6 +2036,7 @@
 								"labelField": "name",
 								"descriptionField": "description",
 								"finalField": "isFinal",
+								"offPathField": "offPath",
 								"limit": 50
 							},
 							"transition": {

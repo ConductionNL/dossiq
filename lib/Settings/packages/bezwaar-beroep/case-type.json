@@ -211,6 +211,7 @@
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a09",
+      "offPath": true,
       "name": "Niet-ontvankelijk",
       "description": "Bezwaar is niet-ontvankelijk verklaard (Awb art. 6:6)",
       "order": 90,
@@ -220,6 +221,7 @@
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a10",
+      "offPath": true,
       "name": "Ingetrokken",
       "description": "Bezwaar is ingetrokken door indiener (Awb art. 6:21)",
       "order": 91,
@@ -301,6 +303,7 @@
     },
     {
       "id": "ea2d92e4-b86f-5bd7-846a-071267dd0b7d",
+      "offPath": true,
       "name": "Ingetrokken",
       "description": "Beroep is ingetrokken",
       "order": 90,
@@ -310,6 +313,7 @@
     },
     {
       "id": "1e48257a-7a3b-5661-9971-c6e70a0b254c",
+      "offPath": true,
       "name": "Schikking",
       "description": "Zaak geschikt buiten de rechtbank",
       "order": 91,

@@ -1,7 +1,7 @@
 {
   "id": "bezwaar-beroep",
   "title": "Bezwaar en beroep",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "requires": [],
   "parts": [
     "case-type",

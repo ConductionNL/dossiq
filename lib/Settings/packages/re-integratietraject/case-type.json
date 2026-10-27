@@ -386,6 +386,7 @@
     },
     {
       "id": "1b5ba03e-ad75-50f3-8cf6-fa16d2abaafa",
+      "offPath": true,
       "name": "Beëindigd",
       "description": "Het traject is voortijdig beëindigd.",
       "order": 90,

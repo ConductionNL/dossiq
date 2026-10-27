@@ -4,6 +4,7 @@
     "identifier": "melding-jeugdwet",
     "title": "Melding Jeugdwet",
     "category": "Jeugdhulp",
+    "colour": "teal",
     "handlerLabel": "Regisseur",
     "description": "Melding over een kind of gezin onder de Jeugdwet: onderzoek, indicatie en overleg tot een besluit over jeugdhulp.",
     "purpose": "Vaststellen of en welke jeugdhulp een kind of gezin nodig heeft (Jeugdwet artikel 2.3).",
@@ -489,6 +490,7 @@
       "id": "eba70831-8cc1-5d84-8acc-844c0d1550a0",
       "phase": "Beoordeling",
       "name": "Verlenging aangevraagd",
+      "offPath": true,
       "description": "Een verlenging van de jeugdhulp is aangevraagd.",
       "order": 8,
       "isFinal": false,
@@ -508,6 +510,7 @@
     {
       "id": "189ed7f4-456a-5f45-b2df-fd2371ef389b",
       "name": "Ingetrokken",
+      "offPath": true,
       "description": "De melding of hulpvraag is ingetrokken.",
       "order": 90,
       "isFinal": true,

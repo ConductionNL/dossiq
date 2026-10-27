@@ -414,6 +414,7 @@
     },
     {
       "id": "a718e044-d85e-5eae-8f72-713599d99c52",
+      "offPath": true,
       "name": "Ingetrokken",
       "description": "De aanvraag is ingetrokken.",
       "order": 90,
