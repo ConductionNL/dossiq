@@ -229,6 +229,7 @@ class ReIntegrationCaseTypeTest extends TestCase {
 
 		self::assertSame(expected: $type['caseType']['id'], actual: $case['caseType']);
 		self::assertSame(expected: $this->statusId(name: 'In uitvoering'), actual: $case['status']);
+		self::assertArrayNotHasKey(key: 'assignee', array: $case, message: 'A package example lands on every install, so it waits for a handler instead of naming one.');
 		$definitions = array_column($type['propertyDefinitions'], 'name', 'id');
 		foreach ($case['properties'] as $answer) {
 			self::assertSame(expected: $answer['name'], actual: $definitions[$answer['propertyDefinition']] ?? null);
