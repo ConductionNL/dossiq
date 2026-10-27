@@ -7288,15 +7288,15 @@
 				"communicationChannel": "email",
 				"confidentiality": "intern",
 				"assignedGroup": "zuiddrecht-woo-en-informatie",
-				"startDate": "{{date:-1}}",
-				"lastActivityAt": "{{datetime:-2 11:20}}",
-				"receivedAt": "{{datetime:-1 09:15}}",
-				"deadline": "{{date:6}}",
-				"currentStatusEnteredAt": "{{datetime:-1 09:15}}",
+				"startDate": "{{date:-6}}",
+				"lastActivityAt": "{{datetime:-5 11:20}}",
+				"receivedAt": "{{datetime:-6 09:15}}",
+				"deadline": "{{date:4}}",
+				"currentStatusEnteredAt": "{{datetime:-6 09:15}}",
 				"statusHistory": [
 					{
 						"status": "{{lookup:status}}",
-						"enteredAt": "{{datetime:-1 09:15}}"
+						"enteredAt": "{{datetime:-6 09:15}}"
 					}
 				],
 				"wooRequest": {
@@ -7319,9 +7319,9 @@
 			"data": {
 				"case": "{{object:woo-afvalinzameling-oosthaven.id}}",
 				"kind": "statutory",
-				"startDate": "{{datetime:-1 09:15}}",
-				"endDateCalculated": "{{date:6}}",
-				"endDateCurrent": "{{date:6}}",
+				"startDate": "{{datetime:-6 09:15}}",
+				"endDateCalculated": "{{date:4}}",
+				"endDateCurrent": "{{date:4}}",
 				"status": "lopend"
 			}
 		},
@@ -7360,15 +7360,15 @@
 				"communicationChannel": "email",
 				"confidentiality": "intern",
 				"assignedGroup": "zuiddrecht-woo-en-informatie",
-				"startDate": "{{date:-2}}",
+				"startDate": "{{date:-5}}",
 				"lastActivityAt": "{{datetime:-1 14:05}}",
-				"receivedAt": "{{datetime:-2 14:40}}",
-				"deadline": "{{date:8}}",
-				"currentStatusEnteredAt": "{{datetime:-2 14:40}}",
+				"receivedAt": "{{datetime:-5 14:40}}",
+				"deadline": "{{date:6}}",
+				"currentStatusEnteredAt": "{{datetime:-5 14:40}}",
 				"statusHistory": [
 					{
 						"status": "{{lookup:status}}",
-						"enteredAt": "{{datetime:-2 14:40}}"
+						"enteredAt": "{{datetime:-5 14:40}}"
 					}
 				],
 				"wooRequest": {
@@ -7391,9 +7391,9 @@
 			"data": {
 				"case": "{{object:woo-dakkapellen-beukenlaan.id}}",
 				"kind": "statutory",
-				"startDate": "{{datetime:-2 14:40}}",
-				"endDateCalculated": "{{date:8}}",
-				"endDateCurrent": "{{date:8}}",
+				"startDate": "{{datetime:-5 14:40}}",
+				"endDateCalculated": "{{date:6}}",
+				"endDateCurrent": "{{date:6}}",
 				"status": "lopend"
 			}
 		},
@@ -7432,15 +7432,15 @@
 				"communicationChannel": "email",
 				"confidentiality": "intern",
 				"assignedGroup": "zuiddrecht-woo-en-informatie",
-				"startDate": "{{date:-2}}",
+				"startDate": "{{date:-4}}",
 				"lastActivityAt": "{{datetime:-2 16:40}}",
-				"receivedAt": "{{datetime:-2 10:05}}",
-				"deadline": "{{date:8}}",
-				"currentStatusEnteredAt": "{{datetime:-2 10:05}}",
+				"receivedAt": "{{datetime:-4 10:05}}",
+				"deadline": "{{date:6}}",
+				"currentStatusEnteredAt": "{{datetime:-4 10:05}}",
 				"statusHistory": [
 					{
 						"status": "{{lookup:status}}",
-						"enteredAt": "{{datetime:-2 10:05}}"
+						"enteredAt": "{{datetime:-4 10:05}}"
 					}
 				],
 				"wooRequest": {
@@ -7463,9 +7463,9 @@
 			"data": {
 				"case": "{{object:woo-afgewezen-parkeervergunningen.id}}",
 				"kind": "statutory",
-				"startDate": "{{datetime:-2 10:05}}",
-				"endDateCalculated": "{{date:8}}",
-				"endDateCurrent": "{{date:8}}",
+				"startDate": "{{datetime:-4 10:05}}",
+				"endDateCalculated": "{{date:6}}",
+				"endDateCurrent": "{{date:6}}",
 				"status": "lopend"
 			}
 		},
