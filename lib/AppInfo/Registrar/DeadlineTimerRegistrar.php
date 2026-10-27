@@ -89,8 +89,6 @@ class DeadlineTimerRegistrar {
 		MilestoneStallTimerListener::class,
 		// A statutory term saved outside the term engine (an example set, an import) moves its case's deadline too.
 		TermInstanceMovesCaseDeadlineListener::class,
-		// A new statutory term takes over from the one running before it: one statutory term per case.
-		OneStatutoryTermPerCaseListener::class,
 	];
 
 	/**
@@ -114,5 +112,8 @@ class DeadlineTimerRegistrar {
 
 		// Accepting a routed case is an edit of it, so only updates count.
 		$context->registerEventListener(event: ObjectUpdatedEvent::class, listener: RoutedCaseAcceptanceListener::class);
+
+		// A new statutory term takes over from the one running before it, so only creates count.
+		$context->registerEventListener(event: ObjectCreatedEvent::class, listener: OneStatutoryTermPerCaseListener::class);
 	}//end register()
 }//end class
