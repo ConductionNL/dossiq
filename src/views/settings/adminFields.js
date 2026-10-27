@@ -500,7 +500,7 @@ export function contactCentreFields(t) {
 			label: t('dossiq', 'Sentiment trigger words (one per line)'),
 			type: 'lines',
 			saveAs: 'json',
-			rows: 6,
+			rows: 5,
 			wide: true,
 			placeholder: 'klacht\nadvocaat\nwethouder\nmedia',
 			hint: t(
