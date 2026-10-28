@@ -10319,6 +10319,7 @@
 						"_note": "DqHandhaving Historie: what happened to the advice, the action on one line and who and when under it. Opening the advice is not an event.",
 						"content": {
 							"layout": "stacked",
+							"density": "compact",
 							"excludeActions": [
 								"read"
 							],
