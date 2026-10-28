@@ -111,6 +111,11 @@ class AdviceTimerTest extends TestCase {
 			expected: ['slaBreached:0', 'preBreach:4'],
 			actual: array_map(static fn (array $r): string => $r['trigger'].':'.$r['offset'], $config['escalationRules'])
 		);
+		// The engine accepts low, medium, high and critical, and refuses the timer otherwise.
+		$this->assertSame(
+			expected: ['medium', 'medium'],
+			actual: array_column($config['escalationRules'], 'priority')
+		);
 		$this->assertSame(expected: AdviceTimer::METADATA_SOURCE, actual: $config['metadata']['source']);
 		$this->assertSame(expected: 'adv-1', actual: $config['metadata']['adviceId']);
 	}//end testAnOpenRequestIsArmedOnTheJobsDays()

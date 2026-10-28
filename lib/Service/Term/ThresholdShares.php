@@ -88,7 +88,7 @@ class ThresholdShares {
 
 			$priority = (string)($rung['priority'] ?? '');
 			if ($priority === '') {
-				$priority = 'normal';
+				$priority = 'medium';
 			}
 
 			$message = (string)($rung['message'] ?? '');

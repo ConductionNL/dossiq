@@ -90,6 +90,50 @@ class TermijnTimerService {
 	public const LADDER_DEFAULT = 'nl-termijn-default';
 
 	/**
+	 * The rungs of {@see self::LADDER_DEFAULT}, as OpenRegister seeds them.
+	 *
+	 * A term shorter than the longest rung gets the rungs that fit it as
+	 * explicit rules: a rung before the anchor makes the engine refuse the
+	 * whole timer.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const DEFAULT_RUNGS = [
+		[
+			'trigger' => 'preBreach',
+			'offset' => 14,
+			'notifyRole' => ['handler'],
+			'escalateToRole' => [],
+			'priority' => 'low',
+			'message' => 'termijn-14d',
+		],
+		[
+			'trigger' => 'preBreach',
+			'offset' => 7,
+			'notifyRole' => ['handler', 'teamleader'],
+			'escalateToRole' => ['teamleader'],
+			'priority' => 'medium',
+			'message' => 'termijn-7d',
+		],
+		[
+			'trigger' => 'preBreach',
+			'offset' => 2,
+			'notifyRole' => ['handler', 'teamleader', 'manager'],
+			'escalateToRole' => ['manager'],
+			'priority' => 'high',
+			'message' => 'termijn-2d',
+		],
+		[
+			'trigger' => 'slaBreached',
+			'offset' => 0,
+			'notifyRole' => ['handler', 'teamleader', 'manager'],
+			'escalateToRole' => ['manager'],
+			'priority' => 'critical',
+			'message' => 'termijn-overschreden',
+		],
+	];
+
+	/**
 	 * Metadata marker the listener filters on.
 	 *
 	 * @var string
@@ -296,6 +340,10 @@ class TermijnTimerService {
 			ladder: (array)($definitie['escalationLadder'] ?? []),
 			slaDays: $slaDays
 		);
+		if ($rules === []) {
+			$rules = $this->defaultRulesFor(instance: $instance, start: $start);
+		}
+
 		if ($rules !== []) {
 			unset($config['ladder']);
 			$config['escalationRules'] = $rules;
@@ -303,6 +351,43 @@ class TermijnTimerService {
 
 		return $this->arm(config: $config, context: 'beslistermijn', instanceId: $instanceId);
 	}//end armBeslistermijn()
+
+	/**
+	 * The default ladder's rungs that fit a term shorter than its longest rung,
+	 * or [] when the whole named ladder fits and the engine can keep it.
+	 *
+	 * Counted in calendar days, the unit the rungs are in, whatever the term
+	 * counts in: a rung lands before the anchor when its offset exceeds the
+	 * calendar days between the start and the end.
+	 *
+	 * @param array<string, mixed> $instance The TermijnInstance row.
+	 * @param DateTimeImmutable    $start    The term's start.
+	 *
+	 * @return array<int, array<string, mixed>> The explicit rules, longest offset first.
+	 */
+	private function defaultRulesFor(array $instance, DateTimeImmutable $start): array {
+		$end = $this->dates->tryParse($instance['endDateCurrent'] ?? null);
+		if ($end === null) {
+			return [];
+		}
+
+		$startDay = $this->dates->parse($this->dates->formatCalendarDate($start), 'startDate');
+		$span = (int)$startDay->diff($end)->days;
+		if ($end < $startDay || $span >= self::DEFAULT_RUNGS[0]['offset']) {
+			return [];
+		}
+
+		$rules = [];
+		foreach (self::DEFAULT_RUNGS as $rung) {
+			if ($rung['offset'] > $span) {
+				continue;
+			}
+
+			$rules[] = array_merge($rung, ['offsetUnit' => WorkingDayRoll::UNIT_CALENDAR_DAYS, 'openIncident' => false]);
+		}
+
+		return $rules;
+	}//end defaultRulesFor()
 
 	/**
 	 * Where a beslistermijn timer counts from: the start of the day after the

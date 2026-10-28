@@ -257,4 +257,49 @@ class TermijnTimerServiceTest extends TestCase {
 		self::assertFalse($this->service->extendBeslistermijn(instance: $this->instance(), days: 7, rationale: 'x', supervisor: false));
 		self::assertSame(0, $this->service->cancelForInstance(instanceId: 'ti-1', reason: 'x'));
 	}
+	/**
+	 * A term shorter than the default ladder's longest rung arms the default
+	 * rungs that fit it, as explicit rules: the 14-day rung would land before
+	 * the anchor, and the engine refuses a timer with such a rung.
+	 *
+	 * @return void
+	 */
+	public function testAShortTermDropsTheDefaultRungsThatLandBeforeItsStart(): void {
+		$instance = array_merge(
+			$this->instance(),
+			['startDate' => '2026-10-22T07:15:00+00:00', 'endDateCalculated' => '2026-11-01', 'endDateCurrent' => '2026-11-01']
+		);
+
+		$this->service->armBeslistermijn(instance: $instance, definitie: []);
+
+		$config = $this->engine->calls['arm'][0]['config'];
+		self::assertArrayNotHasKey('ladder', $config);
+		self::assertSame(['value' => 10, 'unit' => 'calendarDays'], $config['sla']);
+		$offsets = array_map(static fn (array $rule): int => $rule['offset'], $config['escalationRules']);
+		self::assertSame([7, 2, 0], $offsets);
+		foreach ($config['escalationRules'] as $rule) {
+			self::assertContains($rule['priority'], ['low', 'medium', 'high', 'critical']);
+			self::assertLessThanOrEqual(10, $rule['offset']);
+		}
+
+		self::assertSame('slaBreached', $config['escalationRules'][2]['trigger']);
+	}
+
+	/**
+	 * A term the whole default ladder fits keeps the engine's named ladder.
+	 *
+	 * @return void
+	 */
+	public function testATermTheDefaultLadderFitsKeepsTheNamedLadder(): void {
+		$instance = array_merge(
+			$this->instance(),
+			['startDate' => '2026-10-01T09:00:00+00:00', 'endDateCalculated' => '2026-10-15', 'endDateCurrent' => '2026-10-15']
+		);
+
+		$this->service->armBeslistermijn(instance: $instance, definitie: []);
+
+		$config = $this->engine->calls['arm'][0]['config'];
+		self::assertSame('nl-termijn-default', $config['ladder']);
+		self::assertArrayNotHasKey('escalationRules', $config);
+	}
 }
