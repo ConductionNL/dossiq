@@ -182,9 +182,7 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	private function moveOne(array $row): string {
 		$recordId = trim((string)($row['id'] ?? (($row['@self'] ?? [])['id'] ?? '')));
 		$fileName = (string)($row['fileName'] ?? '');
-		$attached = (($row['@self'] ?? [])['files'] ?? []);
-		$hasFile = ((int)($row['fileId'] ?? 0) > 0 || (is_array($attached) === true && $attached !== []));
-		if ($recordId === '' || $fileName === '' || $hasFile === false) {
+		if ($recordId === '' || $fileName === '' || $this->holdsFile(row: $row) === false) {
 			return 'skipped';
 		}
 
@@ -219,6 +217,19 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 			return 'missing';
 		}
 	}//end moveOne()
+
+	/**
+	 * Whether a record holds a file: a `fileId`, or one attached in `@self.files`.
+	 *
+	 * @param array<string, mixed> $row The record row.
+	 *
+	 * @return bool
+	 */
+	private function holdsFile(array $row): bool {
+		$attached = (($row['@self'] ?? [])['files'] ?? []);
+
+		return ((int)($row['fileId'] ?? 0) > 0 || (is_array($attached) === true && $attached !== []));
+	}//end holdsFile()
 
 	/**
 	 * The case of a record's earliest join, by registration date.
