@@ -149,6 +149,18 @@ export default {
 			default: null,
 		},
 
+		/** Case UUID as CnDetailWidgetHost hands it to a manifest card. */
+		objectId: {
+			type: String,
+			default: null,
+		},
+
+		/** The case as CnDetailWidgetHost hands it to a manifest card. */
+		objectData: {
+			type: Object,
+			default: null,
+		},
+
 		/**
 		 * Start and Declare major stand in the card's title row (the widget's
 		 * headerActions), so the panel leaves its own two buttons out.
@@ -174,12 +186,16 @@ export default {
 
 	computed: {
 		resolvedCaseId() {
-			return this.caseId || this.$route?.params?.id || null
+			return this.caseId || this.objectId || this.$route?.params?.id || null
+		},
+
+		resolvedCase() {
+			return this.caseObject || this.objectData || null
 		},
 	},
 
 	watch: {
-		caseObject: {
+		resolvedCase: {
 			immediate: true,
 			handler(value) {
 				this.applyCaseObject(value)
