@@ -82,7 +82,7 @@
 						{{ t('dossiq', 'State') }}
 					</th>
 					<th scope="col">
-						<span class="hidden-visually">{{ t('dossiq', 'Actions') }}</span>
+						{{ t('dossiq', 'Actions') }}
 					</th>
 				</tr>
 			</thead>
@@ -408,7 +408,7 @@ export default {
 
 <style scoped>
 .deadline-definitions-tab {
-	padding: 8px 0;
+	padding: 0 0 8px;
 }
 
 .deadline-definitions-tab__header {
@@ -434,10 +434,6 @@ export default {
 
 .deadline-definitions-tab__row-name {
 	font-weight: 600;
-}
-
-.deadline-definitions-tab__validity {
-	white-space: nowrap;
 }
 
 .deadline-definitions-tab__row-actions {

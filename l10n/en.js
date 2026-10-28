@@ -844,6 +844,7 @@ OC.L10N.register(
         "Applies to": "Applies to",
         "applies to the whole organisation": "applies to the whole organisation",
         "applies to the whole organisation; case types, flows and departments are in the app under Settings": "applies to the whole organisation; case types, flows and departments are in the app under Settings",
+        "applies to the whole organisation; settings you set once or with a specialist": "applies to the whole organisation; settings you set once or with a specialist",
         "applies to you": "applies to you",
         "Applies when": "Applies when",
         "Apply": "Apply",

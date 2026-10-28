@@ -844,6 +844,7 @@ OC.L10N.register(
         "Applies to": "Geldt voor",
         "applies to the whole organisation": "geldt voor de hele organisatie",
         "applies to the whole organisation; case types, flows and departments are in the app under Settings": "geldt voor de hele organisatie; zaaktypen, flows en afdelingen staan in de app onder Instellingen",
+        "applies to the whole organisation; settings you set once or with a specialist": "geldt voor de hele organisatie; instellingen die u eenmalig of met een specialist zet",
         "applies to you": "geldt voor jou",
         "Applies when": "Geldt als",
         "Apply": "Toepassen",
