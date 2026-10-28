@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseType;
 
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Task\TaskDeclaration;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
@@ -51,6 +52,7 @@ class CaseTypePhases {
 	 * @param WorkflowTemplateLoader $templates    The active workflow definition, steps decoded.
 	 * @param TaskDeclaration        $declarations How a step declares its task.
 	 * @param TranslatedText         $text         Reads a translatable status name in the reader's language.
+	 * @param CaseTypeStore          $store        Reads the role types of the case type and its ancestors.
 	 *
 	 * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
 	 */
@@ -59,6 +61,7 @@ class CaseTypePhases {
 		private readonly WorkflowTemplateLoader $templates,
 		private readonly TaskDeclaration $declarations,
 		private readonly TranslatedText $text,
+		private readonly CaseTypeStore $store,
 	) {
 	}//end __construct()
 
@@ -242,8 +245,8 @@ class CaseTypePhases {
 	}//end alwaysAvailable()
 
 	/**
-	 * The name of every role the case type can route a task to, by role id, in
-	 * the reader's language.
+	 * The name of every role the case type or one of its ancestors declares,
+	 * by role id, in the reader's language.
 	 *
 	 * @param string $caseTypeId The case type id.
 	 *
@@ -251,10 +254,13 @@ class CaseTypePhases {
 	 */
 	private function roleNames(string $caseTypeId): array {
 		$names = [];
-		foreach ($this->resolver->roleTypesFor(caseTypeId: $caseTypeId) as $roleType) {
-			$id = (string) ($roleType['id'] ?? ($roleType['@self']['id'] ?? ''));
-			if ($id !== '') {
-				$names[$id] = trim($this->text->forReader(value: ($roleType['name'] ?? '')));
+		foreach ($this->resolver->chainFor(caseTypeId: $caseTypeId) as $caseType) {
+			$rows = $this->store->rowsOfType(schemaKey: 'role_type_schema', caseTypeId: $this->store->rowId(row: $caseType));
+			foreach ($rows as $roleType) {
+				$id = $this->store->rowId(row: $roleType);
+				if ($id !== '' && isset($names[$id]) === false) {
+					$names[$id] = trim($this->text->forReader(value: ($roleType['name'] ?? '')));
+				}
 			}
 		}
 

@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\CaseType;
 
 use OCA\Dossiq\Service\CaseType\CaseTypePhases;
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Task\TaskDeclaration;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
@@ -55,14 +56,25 @@ class CaseTypePhasesTest extends TestCase {
 		$resolver = $this->createMock(CaseTypeResolver::class);
 		$resolver->method('effectiveCaseType')->willReturn($caseType);
 		$resolver->method('statusTypesFor')->willReturn($statuses);
-		$resolver->method('roleTypesFor')->willReturn($roles);
+		$resolver->method('chainFor')->willReturn([['id' => 'ct']]);
+		$store = $this->createMock(originalClassName: CaseTypeStore::class);
+		$store->method('rowsOfType')->willReturnMap([['role_type_schema', 'ct', $roles]]);
+		$store->method('rowId')->willReturnCallback(
+			static fn (array $row): string => (string) ($row['id'] ?? ($row['@self']['id'] ?? ''))
+		);
 		$templates = $this->createMock(WorkflowTemplateLoader::class);
 		$templates->method('getActiveTemplate')->willReturn($template);
 
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('getLanguageCode')->willReturn($language);
 
-		return new CaseTypePhases(resolver: $resolver, templates: $templates, declarations: new TaskDeclaration(), text: new TranslatedText(l10n: $l10n));
+		return new CaseTypePhases(
+			resolver: $resolver,
+			templates: $templates,
+			declarations: new TaskDeclaration(),
+			text: new TranslatedText(l10n: $l10n),
+			store: $store
+		);
 	}//end phases()
 
 	/**
