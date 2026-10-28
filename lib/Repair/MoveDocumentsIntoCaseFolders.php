@@ -53,8 +53,10 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	 * 2: joins stored straight into OpenRegister (an example set, an import)
 	 * before DocumentJoinHomingListener left their files outside the case
 	 * folder, so the case's Files tab stayed empty.
+	 * 3: such a record holds its file in `@self.files` with no `fileId`, which
+	 * version 2 still skipped.
 	 */
-	public const DONE_VERSION = '2';
+	public const DONE_VERSION = '3';
 
 	/**
 	 * How many records one page holds.
@@ -180,7 +182,9 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	private function moveOne(array $row): string {
 		$recordId = trim((string)($row['id'] ?? (($row['@self'] ?? [])['id'] ?? '')));
 		$fileName = (string)($row['fileName'] ?? '');
-		if ($recordId === '' || $fileName === '' || (int)($row['fileId'] ?? 0) <= 0) {
+		$attached = (($row['@self'] ?? [])['files'] ?? []);
+		$hasFile = ((int)($row['fileId'] ?? 0) > 0 || (is_array($attached) === true && $attached !== []));
+		if ($recordId === '' || $fileName === '' || $hasFile === false) {
 			return 'skipped';
 		}
 
