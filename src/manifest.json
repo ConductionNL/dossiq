@@ -2103,7 +2103,11 @@
 								"route": "MyWorkHome"
 							},
 							"headerMeta": "{total} cases in your name[, {rows:coveredFor} of them as a substitute] · most urgent first",
-							"footerNote": "Urgency follows from the deadline, the priority and how long a case has been idle.",
+							"footerNote": "sorted by urgency",
+							"notice": {
+								"variant": "info",
+								"text": "Urgency follows from the deadline, the priority and how long a case has been idle. Work of a colleague you cover for carries their name, as long as the cover runs."
+							},
 							"bulkBandAlways": false,
 							"countText": "",
 							"countSubtitle": null,
@@ -2456,7 +2460,7 @@
 								"leading": {
 									"key": "startDate",
 									"widget": "age",
-									"width": "96px",
+									"width": "60px",
 									"widgetProps": {
 										"variantWhen": [
 											{
@@ -2479,12 +2483,12 @@
 												"colorField": "colour"
 											}
 										},
-										"width": "200px"
+										"width": "172px"
 									},
 									{
 										"key": "deadline",
 										"widget": "date",
-										"width": "140px",
+										"width": "96px",
 										"widgetProps": {
 											"due": {
 												"todayLabel": "Today",
