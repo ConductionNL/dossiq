@@ -7,7 +7,7 @@
  * - The team queue's list columns are the board's: the wait 60px, the type
  *   172px, the deadline 96px; the title column takes the rest.
  * - Assigned to me reads "10 of 10 · sorted by urgency" on its footer and
- *   explains the urgency in an info notice under the list.
+ *   explains the urgency in an info notice under the cards, on the page ground.
  * - Dossiq's index pages put the footer 20px under a card grid, as the boards
  *   do (nextcloud-vue `--cn-board-pager-gap`).
  *
@@ -38,8 +38,9 @@ describe('assigned to me', () => {
 		expect(nl['sorted by urgency']).toBe('gesorteerd op urgentie')
 	})
 
-	it('explains the urgency in an info notice under the list', () => {
+	it('explains the urgency in an info notice under the cards, on the page ground', () => {
 		expect(myWork.notice.variant).toBe('info')
+		expect(myWork.notice.placement).toBe('page')
 		expect(nl[myWork.notice.text]).toBe('De urgentie volgt uit de termijn, de prioriteit en hoe lang een zaak stil ligt. Werk van een collega voor wie u waarneemt staat erbij met zijn naam, zolang de waarneming loopt.')
 	})
 })

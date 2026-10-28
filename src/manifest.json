@@ -2106,6 +2106,7 @@
 							"footerNote": "sorted by urgency",
 							"notice": {
 								"variant": "info",
+								"placement": "page",
 								"text": "Urgency follows from the deadline, the priority and how long a case has been idle. Work of a colleague you cover for carries their name, as long as the cover runs."
 							},
 							"bulkBandAlways": false,

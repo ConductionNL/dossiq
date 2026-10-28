@@ -14,7 +14,7 @@ r34 measured three gaps between dossiq's case lists and their boards that are do
 ## What changes
 
 - The team queue's `listConfig` widths: leading 60px, type 172px, deadline 96px.
-- Assigned to me: `footerNote` "sorted by urgency"; `notice` (info) with the board's explanation, including the line
+- Assigned to me: `footerNote` "sorted by urgency"; `notice` (info, `placement: page`, on the page ground as DqContracten) with the board's explanation, including the line
   about covered work.
 - app.css sets nextcloud-vue's `--cn-board-pager-gap` to 20px on dossiq's index pages.
 
