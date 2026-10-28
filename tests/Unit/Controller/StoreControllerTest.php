@@ -42,6 +42,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\StoreController;
 use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use OCA\OpenRegister\AppHost\Service\GenericStoreService;
+use OCA\OpenRegister\AppHost\Service\StoreDescriptor;
+use OCA\OpenRegister\AppHost\Store\StoreActionAuthorizer;
 use OCP\AppFramework\Http;
 use OCP\IAppConfig;
 use OCP\IRequest;
@@ -94,6 +96,13 @@ class StoreControllerTest extends TestCase {
 	private $storeService;
 
 	/**
+	 * Who may publish (OpenRegister).
+	 *
+	 * @var StoreActionAuthorizer&MockObject
+	 */
+	private StoreActionAuthorizer&MockObject $actionAuthorizer;
+
+	/**
 	 * The configured object-write seam.
 	 *
 	 * @var ConfiguredRegistryService&MockObject
@@ -123,7 +132,7 @@ class StoreControllerTest extends TestCase {
 
 		$this->storeService = $this->getMockBuilder(GenericStoreService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['isConfigured', 'search', 'resolve'])
+			->onlyMethods(['isConfigured', 'search', 'resolve', 'publish'])
 			->getMock();
 
 		$this->registry = $this->getMockBuilder(ConfiguredRegistryService::class)
@@ -131,13 +140,15 @@ class StoreControllerTest extends TestCase {
 			->onlyMethods(['save', 'recordStoreStatus'])
 			->getMock();
 
+		$this->actionAuthorizer = $this->createMock(StoreActionAuthorizer::class);
 		$this->controller = new StoreController(
 			$this->request,
 			$this->logger,
 			$this->userSession,
 			$this->appConfig,
 			$this->storeService,
-			$this->registry
+			$this->registry,
+			$this->actionAuthorizer
 		);
 	}//end setUp()
 
@@ -150,6 +161,83 @@ class StoreControllerTest extends TestCase {
 	private function signIn(): void {
 		$this->userSession->method('getUser')->willReturn($this->createMock(IUser::class));
 	}//end signIn()
+
+
+	/**
+	 * Publish refuses an anonymous caller, so the canonical route never 500s.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/store-publish-passthrough/specs/dossiq-store-surface/spec.md
+	 */
+	public function testAnAnonymousCallerCannotPublish(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->storeService->expects($this->never())->method('publish');
+
+		$response = $this->controller->publish();
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}//end testAnAnonymousCallerCannotPublish()
+
+
+	/**
+	 * A user the store's publish groups do not admit gets 403, and nothing is sent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/store-publish-passthrough/specs/dossiq-store-surface/spec.md
+	 */
+	public function testPublishRefusesAUserWhoMayNotPublish(): void {
+		$this->signIn();
+		$this->actionAuthorizer->method('canPublish')->willReturn(false);
+		$this->storeService->expects($this->never())->method('publish');
+
+		$response = $this->controller->publish();
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testPublishRefusesAUserWhoMayNotPublish()
+
+
+	/**
+	 * Publish passes the item to the engine, which decides; dossiq's store
+	 * declares no publish fields, so the engine answers not_publishable.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/store-publish-passthrough/specs/dossiq-store-surface/spec.md
+	 */
+	public function testPublishIsPassedToTheEngine(): void {
+		$this->signIn();
+		$this->actionAuthorizer->method('canPublish')->willReturn(true);
+		$this->request->method('getParam')->willReturn(['slug' => 'woo-verzoek']);
+		$this->storeService->expects($this->once())->method('publish')
+			->with($this->isInstanceOf(StoreDescriptor::class), ['slug' => 'woo-verzoek'])
+			->willReturn(['outcome' => 'not_publishable', 'slug' => '']);
+
+		$response = $this->controller->publish();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['outcome' => 'not_publishable', 'slug' => ''], $response->getData());
+	}//end testPublishIsPassedToTheEngine()
+
+
+	/**
+	 * A publish without an item is a bad request, and the engine is not asked.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/store-publish-passthrough/specs/dossiq-store-surface/spec.md
+	 */
+	public function testPublishWithoutAnItemIsABadRequest(): void {
+		$this->signIn();
+		$this->actionAuthorizer->method('canPublish')->willReturn(true);
+		$this->request->method('getParam')->willReturn(null);
+		$this->storeService->expects($this->never())->method('publish');
+
+		$response = $this->controller->publish();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+	}//end testPublishWithoutAnItemIsABadRequest()
 
 
 	/**

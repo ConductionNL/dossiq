@@ -53,6 +53,7 @@ use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCA\OpenRegister\AppHost\Service\GenericStoreService;
 use OCA\OpenRegister\AppHost\Service\StoreDescriptor;
+use OCA\OpenRegister\AppHost\Store\StoreActionAuthorizer;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -65,9 +66,13 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Store search, dossiq's own install, and the registry connection settings.
+ * Store search, dossiq's own install, publish, and the registry connection settings.
  *
  * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the store's routes each reach
+ *   their own engine collaborator (discovery, the publish guard, the registry
+ *   write seam), and the canonical publish route has to be answered here.
  */
 class StoreController extends Controller {
 	/**
@@ -117,6 +122,7 @@ class StoreController extends Controller {
 	 * @param IAppConfig $appConfig App config store holding the registry connection.
 	 * @param GenericStoreService $storeService Engine-owned store discovery client.
 	 * @param ConfiguredRegistryService $registry Dossiq's configured object-write seam.
+	 * @param StoreActionAuthorizer|null $actionAuthorizer Decides who may publish (OpenRegister); absent, nobody may.
 	 *
 	 * @return void
 	 */
@@ -127,6 +133,7 @@ class StoreController extends Controller {
 		private readonly IAppConfig $appConfig,
 		private readonly GenericStoreService $storeService,
 		private readonly ConfiguredRegistryService $registry,
+		private readonly ?StoreActionAuthorizer $actionAuthorizer = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -391,6 +398,53 @@ class StoreController extends Controller {
 
 		return $object;
 	}//end asNewObject()
+
+	/**
+	 * Publish one store item through the engine.
+	 *
+	 * OpenRegister's canonical routes include `POST /api/store/publish`, and
+	 * dossiq answers its own store routes here rather than through the
+	 * engine's GenericStoreController, so this action must exist or the route
+	 * fails at dispatch. The engine decides: dossiq's descriptor declares no
+	 * publish fields or groups, so it answers `not_publishable`.
+	 *
+	 * @return JSONResponse `{outcome, slug}`; 401 anonymous, 403 not admitted, 400 without an item.
+	 *
+	 * @spec openspec/changes/store-publish-passthrough/specs/dossiq-store-surface/spec.md
+	 */
+	#[NoAdminRequired]
+	public function publish(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(
+				data: ['outcome' => 'unauthenticated', 'slug' => ''],
+				statusCode: Http::STATUS_UNAUTHORIZED
+			);
+		}
+
+		$descriptor = $this->descriptor();
+		if ($this->actionAuthorizer === null
+			|| $this->actionAuthorizer->canPublish(descriptor: $descriptor, user: $user) === false
+		) {
+			return new JSONResponse(
+				data: ['outcome' => 'forbidden', 'slug' => ''],
+				statusCode: Http::STATUS_FORBIDDEN
+			);
+		}
+
+		$item = $this->request->getParam('item');
+		if (is_array($item) === false) {
+			return new JSONResponse(
+				data: ['outcome' => GenericStoreService::OUTCOME_NOT_PUBLISHABLE, 'slug' => ''],
+				statusCode: Http::STATUS_BAD_REQUEST
+			);
+		}
+
+		return new JSONResponse(
+			data: $this->storeService->publish(descriptor: $descriptor, payload: $item),
+			statusCode: Http::STATUS_OK
+		);
+	}//end publish()
 
 	/**
 	 * Read the registry connection.
