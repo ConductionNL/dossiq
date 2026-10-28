@@ -639,6 +639,7 @@ export default {
 .rules-tab__trial > summary {
 	cursor: pointer;
 	font-size: 14px;
+	line-height: normal;
 	color: var(--color-text-maxcontrast);
 }
 

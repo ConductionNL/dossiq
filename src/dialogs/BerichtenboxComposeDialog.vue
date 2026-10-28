@@ -553,7 +553,7 @@ export default {
    input margin, NcTextField's own margin and the note card's 15px margin
    come off, as DqBerichtVersturen draws them. */
 .compose-dialog :deep(.input-field) {
-	margin-block: 0;
+	margin-block: -2px;
 }
 
 .compose-dialog > :deep(.notecard) {
@@ -562,6 +562,13 @@ export default {
 
 .compose-dialog textarea.compose-dialog__body {
 	margin: 0;
+}
+
+/* A field takes the board's 40px in the flow: NcTextField and NcSelect hold
+   2px of focus-ring room above and below the box, which put every row 4px
+   lower than DqBerichtVersturen; NcSelect's own 6px/4px margins came on top. */
+.compose-dialog__field .v-select.select {
+	margin: -2px 0;
 }
 
 .compose-dialog__check {
@@ -604,13 +611,13 @@ export default {
 .compose-dialog__body {
 	box-sizing: border-box;
 	width: 100%;
-	min-height: 200px;
+	min-height: 0;
 	padding: 10px 12px;
 	border: 1px solid var(--color-border-dark);
 	border-radius: 8px;
 	font: inherit;
 	font-size: 15px;
-	line-height: 1.5;
+	line-height: 1.2;
 	resize: vertical;
 }
 

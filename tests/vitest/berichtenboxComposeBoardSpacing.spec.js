@@ -32,8 +32,16 @@ describe('the Berichtenbox dialog against DqBerichtVersturen', () => {
 	})
 
 	it('takes the input, textarea and note-card margins off', () => {
-		expect(rule('.compose-dialog :deep(.input-field)')).toContain('margin-block: 0;')
+		expect(rule('.compose-dialog :deep(.input-field)')).toContain('margin-block: -2px;')
 		expect(rule('.compose-dialog textarea.compose-dialog__body')).toContain('margin: 0;')
 		expect(rule('.compose-dialog > :deep(.notecard)')).toContain('margin: 0;')
+	})
+
+	it('gives every field and the template select the board\'s 40px in the flow, the body 8 rows at 18px (r33)', () => {
+		expect(rule('.compose-dialog__field .v-select.select')).toContain('margin: -2px 0;')
+		expect(style).toMatch(/\n\.compose-dialog__body \{[^}]*min-height: 0;[^}]*line-height: 1\.2;/)
+		const template = readFileSync(new URL('../../src/components/case/MessageTemplateSelect.vue', import.meta.url), 'utf8')
+		expect(template).toMatch(/\.message-template-select__label \{[^}]*line-height: normal;/)
+		expect(template).toMatch(/\.message-template-select \.v-select\.select \{[^}]*margin: -2px 0;/)
 	})
 })
