@@ -2293,7 +2293,8 @@
 										"register": "dossiq",
 										"schema": "contactmoment",
 										"filter": {
-											"case": "@objectId"
+											"case": "@objectId",
+											"automatic": {"isnull": true}
 										}
 									},
 									"widgetIds": [
@@ -3258,7 +3259,8 @@
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
-								"case": "@objectId"
+								"case": "@objectId",
+								"automatic": {"isnull": true}
 							},
 							"sort": {
 								"field": "startTime",
