@@ -675,13 +675,13 @@ class DeadlineReportingControllerContractTest extends TestCase {
 	 */
 	public function testNoticesAnswersTheNoticesByCase(): void {
 		$this->signIn();
-		$rows = $this->createMock(NoticeOfDefaultRows::class);
+		$rows = $this->createMock(originalClassName: NoticeOfDefaultRows::class);
 		$rows->expects($this->once())->method('list')->willReturn(['notices' => [['caseLabel' => '2026-4863 Kapvergunning Parkstraat']]]);
 
 		$response = $this->noticesController(rows: $rows)->notices();
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame('2026-4863 Kapvergunning Parkstraat', $response->getData()['notices'][0]['caseLabel']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: '2026-4863 Kapvergunning Parkstraat', actual: $response->getData()['notices'][0]['caseLabel']);
 	}//end testNoticesAnswersTheNoticesByCase()
 
 	/**
@@ -690,11 +690,11 @@ class DeadlineReportingControllerContractTest extends TestCase {
 	 * @return void
 	 */
 	public function testNoticesRefusesAnAnonymousCaller(): void {
-		$rows = $this->createMock(NoticeOfDefaultRows::class);
+		$rows = $this->createMock(originalClassName: NoticeOfDefaultRows::class);
 		$rows->expects($this->never())->method('list');
 		$this->userSession->method('getUser')->willReturn(null);
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $this->noticesController(rows: $rows)->notices()->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $this->noticesController(rows: $rows)->notices()->getStatus());
 	}//end testNoticesRefusesAnAnonymousCaller()
 
 	/**
@@ -705,7 +705,7 @@ class DeadlineReportingControllerContractTest extends TestCase {
 	public function testNoticesIsUnavailableWithoutTheRows(): void {
 		$this->signIn();
 
-		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $this->controller->notices()->getStatus());
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $this->controller->notices()->getStatus());
 	}//end testNoticesIsUnavailableWithoutTheRows()
 
 	/**

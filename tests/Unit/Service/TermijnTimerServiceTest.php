@@ -273,16 +273,16 @@ class TermijnTimerServiceTest extends TestCase {
 		$this->service->armBeslistermijn(instance: $instance, definitie: []);
 
 		$config = $this->engine->calls['arm'][0]['config'];
-		self::assertArrayNotHasKey('ladder', $config);
-		self::assertSame(['value' => 10, 'unit' => 'calendarDays'], $config['sla']);
+		self::assertArrayNotHasKey(key: 'ladder', array: $config);
+		self::assertSame(expected: ['value' => 10, 'unit' => 'calendarDays'], actual: $config['sla']);
 		$offsets = array_map(static fn (array $rule): int => $rule['offset'], $config['escalationRules']);
-		self::assertSame([7, 2, 0], $offsets);
+		self::assertSame(expected: [7, 2, 0], actual: $offsets);
 		foreach ($config['escalationRules'] as $rule) {
-			self::assertContains($rule['priority'], ['low', 'medium', 'high', 'critical']);
-			self::assertLessThanOrEqual(10, $rule['offset']);
+			self::assertContains(needle: $rule['priority'], haystack: ['low', 'medium', 'high', 'critical']);
+			self::assertLessThanOrEqual(expected: 10, actual: $rule['offset']);
 		}
 
-		self::assertSame('slaBreached', $config['escalationRules'][2]['trigger']);
+		self::assertSame(expected: 'slaBreached', actual: $config['escalationRules'][2]['trigger']);
 	}
 
 	/**
@@ -299,7 +299,7 @@ class TermijnTimerServiceTest extends TestCase {
 		$this->service->armBeslistermijn(instance: $instance, definitie: []);
 
 		$config = $this->engine->calls['arm'][0]['config'];
-		self::assertSame('nl-termijn-default', $config['ladder']);
-		self::assertArrayNotHasKey('escalationRules', $config);
+		self::assertSame(expected: 'nl-termijn-default', actual: $config['ladder']);
+		self::assertArrayNotHasKey(key: 'escalationRules', array: $config);
 	}
 }

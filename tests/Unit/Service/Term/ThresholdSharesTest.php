@@ -139,6 +139,6 @@ class ThresholdSharesTest extends TestCase {
 	public function testARungWithoutAPriorityGetsOneTheEngineAccepts(): void {
 		$rules = (new ThresholdShares())->rulesFor(ladder: [['days' => 3]], slaDays: 10);
 
-		$this->assertSame('medium', $rules[0]['priority']);
+		$this->assertSame(expected: 'medium', actual: $rules[0]['priority']);
 	}
 }
