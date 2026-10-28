@@ -63,3 +63,11 @@ describe('mandate columns (DqTenant)', () => {
 		expect(cell(null)).toBe('Nee')
 	})
 })
+
+describe('tenant tables without a row link (DqTenant)', () => {
+	it.each(['organisation-mandates', 'organisation-billing', 'organisation-mandates-list', 'organisation-billing-list'])('%s reads its first column as text', (id) => {
+		const content = config.widgets.find((widget) => widget.id === id).content
+		expect(content.rowRoute).toBeUndefined()
+		expect(content.rowTitle).toBe('text')
+	})
+})

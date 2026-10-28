@@ -414,6 +414,7 @@
 						"content": {
 							"register": "dossiq",
 							"schema": "tenantMandate",
+							"rowTitle": "text",
 							"filter": {
 								"tenantRef": "@objectId"
 							},
@@ -465,6 +466,7 @@
 						"content": {
 							"register": "dossiq",
 							"schema": "tenantBillingEvent",
+							"rowTitle": "text",
 							"filter": {
 								"tenantRef": "@objectId"
 							},
@@ -544,6 +546,7 @@
 						"content": {
 							"register": "dossiq",
 							"schema": "tenantMandate",
+							"rowTitle": "text",
 							"filter": {
 								"tenantRef": "@objectId"
 							},
@@ -576,6 +579,7 @@
 						"content": {
 							"register": "dossiq",
 							"schema": "tenantBillingEvent",
+							"rowTitle": "text",
 							"filter": {
 								"tenantRef": "@objectId"
 							},

@@ -19,3 +19,11 @@ The `containsLabel` formatter MUST return the translated `yes` word when the val
 #### Scenario: no objections
 - GIVEN decision types `vergunning`
 - THEN the cell reads "Nee"
+
+### Requirement: a tenant table without a row link reads its first column as text
+
+The Mandaten and Facturatie lists open no record per row, so their first column MUST read in the body ink at regular weight (`rowTitle: "text"`), not in the link colour.
+
+#### Scenario: Mandaten
+- GIVEN the Overzicht tab of Gemeente Waterland
+- THEN "Behandelaar" reads as plain text
