@@ -40,6 +40,15 @@ use Psr\Log\LoggerInterface;
  */
 class DbValueMigrationPort implements ValueMigrationPort {
 	/**
+	 * The column types that can hold an enum value, as PostgreSQL and MySQL name
+	 * them. Every OpenRegister shard table is scanned, so another app's integer
+	 * or jsonb column of the same name must never be compared with a string.
+	 *
+	 * @var array<int, string>
+	 */
+	public const TEXT_TYPES = ['text', 'character varying', 'character', 'varchar', 'char', 'tinytext', 'mediumtext', 'longtext'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IDBConnection $db Database connection.
@@ -92,6 +101,7 @@ class DbValueMigrationPort implements ValueMigrationPort {
 		try {
 			$stmt = $this->db->prepare(
 				'SELECT column_name FROM information_schema.columns WHERE table_name = :table'
+				." AND data_type IN ('".implode("', '", self::TEXT_TYPES)."')"
 			);
 			$stmt->bindValue('table', $table);
 			$stmt->execute();

@@ -18,9 +18,12 @@ const page = manifest.pages.find((item) => item.id === 'TermijnDashboard')
 const notices = page.config.widgets.find((item) => item.id === 'deadline-report-notices')
 
 describe('the notices-of-default table', () => {
-	it('names its register, schema and limit on the content', () => {
-		expect(notices.type).toBe('table')
-		expect(notices.content).toMatchObject({ register: 'dossiq', schema: 'noticeOfDefault', limit: 10 })
+	it('reads its rows from the notices endpoint, not from a register list (notices-of-default-by-case)', () => {
+		expect(notices.type).toBe('object-table')
+		expect(notices.content.endpointSource.url).toBe('/apps/dossiq/api/deadlines/notices')
+		expect(notices.content.limit).toBe(10)
+		expect(notices.content.register).toBeUndefined()
+		expect(notices.content.schema).toBeUndefined()
 		expect(notices.content.source).toBeUndefined()
 	})
 })

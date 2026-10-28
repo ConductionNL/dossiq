@@ -1,0 +1,5 @@
+- [x] NoticeOfDefaultRows + PHPUnit
+- [x] deadlineReporting#notices + route + contract tests
+- [x] formatters receivedOn / penaltyLine
+- [x] manifest card + l10n en/nl
+- [x] vitest
