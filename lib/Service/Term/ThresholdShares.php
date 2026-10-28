@@ -102,6 +102,18 @@ class ThresholdShares {
 	];
 
 	/**
+	 * Constructor.
+	 *
+	 * @param DayCount $days The calendar day count between two dates.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly DayCount $days = new DayCount(),
+	) {
+	}//end __construct()
+
+	/**
 	 * The engine rules a declared ladder becomes, for a term of this length.
 	 *
 	 * A rung is either `days` (that many days before the end) or `share` (that
@@ -179,7 +191,7 @@ class ThresholdShares {
 			return [];
 		}
 
-		$span = (int)$startDay->diff($end)->days;
+		$span = $this->days->between(from: $startDay, to: $end);
 		if ($span >= self::DEFAULT_RUNGS[0]['offset']) {
 			return [];
 		}
