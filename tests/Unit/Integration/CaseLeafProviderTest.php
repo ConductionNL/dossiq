@@ -92,15 +92,20 @@ class CaseLeafProviderTest extends TestCase {
 				);
 			}
 		};
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->objects);
 		$settings->method('getConfigValue')->willReturn('dossiq');
-		$users = $this->createMock(IUserManager::class);
+		$users = $this->createMock(originalClassName: IUserManager::class);
 		$users->method('getDisplayName')->willReturnCallback(static fn (string $uid): ?string => ['lars' => 'Lars de Koning'][$uid] ?? null);
-		$urls = $this->createMock(IURLGenerator::class);
+		$urls = $this->createMock(originalClassName: IURLGenerator::class);
 		$urls->method('linkToRoute')->willReturn('/index.php/apps/dossiq/');
 
-		return new CaseLeafProvider($settings, $users, $urls, $this->createMock(LoggerInterface::class));
+		return new CaseLeafProvider(
+			settingsService: $settings,
+			userManager: $users,
+			urlGenerator: $urls,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 	}//end leaf()
 
 	/**
@@ -117,9 +122,21 @@ class CaseLeafProviderTest extends TestCase {
 				['id' => 'org-2', 'masterEntityRef' => 'master-8'],
 			],
 			'case' => [
-				['id' => 'c-old', 'requester' => 'org-1', 'identifier' => '2025-0388', 'title' => 'Melding kapot speeltoestel', 'caseType' => 't-melding', 'status' => 's-done', 'isFinalStatus' => true, 'endDate' => '2025-11-03', 'deadline' => '2025-11-10', 'assignee' => 'anouk'],
-				['id' => 'c-open', 'requester' => 'org-1', 'identifier' => '2026-0070', 'title' => 'Subsidie voor het straatfeest', 'caseType' => 't-subsidie', 'status' => 's-besluit', 'isFinalStatus' => false, 'deadline' => '2026-10-20', 'assignee' => 'lars'],
-				['id' => 'c-recent', 'requester' => 'org-1', 'identifier' => '2026-0031', 'title' => 'Evenementenvergunning', 'caseType' => 't-melding', 'status' => 's-done', 'isFinalStatus' => true, 'endDate' => '2026-06-12', 'deadline' => '2026-06-30'],
+				[
+					'id' => 'c-old', 'requester' => 'org-1', 'identifier' => '2025-0388', 'title' => 'Melding kapot speeltoestel',
+					'caseType' => 't-melding', 'status' => 's-done', 'isFinalStatus' => true,
+					'endDate' => '2025-11-03', 'deadline' => '2025-11-10', 'assignee' => 'anouk',
+				],
+				[
+					'id' => 'c-open', 'requester' => 'org-1', 'identifier' => '2026-0070', 'title' => 'Subsidie voor het straatfeest',
+					'caseType' => 't-subsidie', 'status' => 's-besluit', 'isFinalStatus' => false,
+					'deadline' => '2026-10-20', 'assignee' => 'lars',
+				],
+				[
+					'id' => 'c-recent', 'requester' => 'org-1', 'identifier' => '2026-0031', 'title' => 'Evenementenvergunning',
+					'caseType' => 't-melding', 'status' => 's-done', 'isFinalStatus' => true,
+					'endDate' => '2026-06-12', 'deadline' => '2026-06-30',
+				],
 				['id' => 'c-other', 'requester' => 'org-2', 'identifier' => '2026-0001', 'title' => 'Not this party', 'isFinalStatus' => false],
 			],
 			'caseType' => [
@@ -140,12 +157,12 @@ class CaseLeafProviderTest extends TestCase {
 	 * @return void
 	 */
 	public function testReadsThePartysCasesOpenFirstThenNewestClosed(): void {
-		$answer = $this->leaf($this->buurtoost())->byMasterEntity('master-7');
+		$answer = $this->leaf(rows: $this->buurtoost())->byMasterEntity(ref: 'master-7');
 
-		self::assertSame(200, $answer['status']);
-		self::assertSame(['2026-0070', '2026-0031', '2025-0388'], array_column($answer['cases'], 'identifier'));
+		self::assertSame(expected: 200, actual: $answer['status']);
+		self::assertSame(expected: ['2026-0070', '2026-0031', '2025-0388'], actual: array_column($answer['cases'], 'identifier'));
 		self::assertSame(
-			[
+			expected: [
 				'id' => 'c-open',
 				'identifier' => '2026-0070',
 				'title' => 'Subsidie voor het straatfeest',
@@ -159,9 +176,9 @@ class CaseLeafProviderTest extends TestCase {
 				'assigneeName' => 'Lars de Koning',
 				'url' => '/index.php/apps/dossiq/cases/c-open',
 			],
-			$answer['cases'][0]
+			actual: $answer['cases'][0]
 		);
-		self::assertSame('anouk', $answer['cases'][2]['assigneeName']);
+		self::assertSame(expected: 'anouk', actual: $answer['cases'][2]['assigneeName']);
 	}//end testReadsThePartysCasesOpenFirstThenNewestClosed()
 
 	/**
@@ -170,8 +187,11 @@ class CaseLeafProviderTest extends TestCase {
 	 * @return void
 	 */
 	public function testFiltersOpenAndClosed(): void {
-		self::assertSame(['c-open'], array_column($this->leaf($this->buurtoost())->byMasterEntity('master-7', 'open')['cases'], 'id'));
-		self::assertSame(['c-recent', 'c-old'], array_column($this->leaf($this->buurtoost())->byMasterEntity('master-7', 'closed')['cases'], 'id'));
+		$open = $this->leaf(rows: $this->buurtoost())->byMasterEntity(ref: 'master-7', status: 'open');
+		$closed = $this->leaf(rows: $this->buurtoost())->byMasterEntity(ref: 'master-7', status: 'closed');
+
+		self::assertSame(expected: ['c-open'], actual: array_column($open['cases'], 'id'));
+		self::assertSame(expected: ['c-recent', 'c-old'], actual: array_column($closed['cases'], 'id'));
 	}//end testFiltersOpenAndClosed()
 
 	/**
@@ -180,9 +200,9 @@ class CaseLeafProviderTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnknownMasterEntityHasNoCases(): void {
-		self::assertSame(['status' => 200, 'cases' => []], $this->leaf($this->buurtoost())->byMasterEntity(' '));
-		self::assertSame(['status' => 200, 'cases' => []], $this->leaf($this->buurtoost())->byMasterEntity('master-unknown'));
-		self::assertNotContains('case', array_column($this->objects->reads, 0));
+		self::assertSame(expected: ['status' => 200, 'cases' => []], actual: $this->leaf(rows: $this->buurtoost())->byMasterEntity(ref: ' '));
+		self::assertSame(expected: ['status' => 200, 'cases' => []], actual: $this->leaf(rows: $this->buurtoost())->byMasterEntity(ref: 'master-unknown'));
+		self::assertNotContains(needle: 'case', haystack: array_column($this->objects->reads, 0));
 	}//end testAnUnknownMasterEntityHasNoCases()
 
 	/**
@@ -191,6 +211,6 @@ class CaseLeafProviderTest extends TestCase {
 	 * @return void
 	 */
 	public function testRefusesAnUnknownStatusFilter(): void {
-		self::assertSame(400, $this->leaf($this->buurtoost())->byMasterEntity('master-7', 'pending')['status']);
+		self::assertSame(expected: 400, actual: $this->leaf(rows: $this->buurtoost())->byMasterEntity(ref: 'master-7', status: 'pending')['status']);
 	}//end testRefusesAnUnknownStatusFilter()
 }//end class
