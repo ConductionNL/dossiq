@@ -1700,6 +1700,7 @@
 						"_note": "DqSociaalDomein Historie: the case's latest events from its audit trail, reads left out, with who opened the case for which purpose (the access purpose dossiq records on the trail, dossiq.case.access-purpose, its purpose in the entry's changed). Only on a case type that holds special categories of personal data, where every opening asks a purpose.",
 						"content": {
 							"layout": "stacked",
+							"density": "compact",
 							"maxDisplay": 3,
 							"excludeActors": [
 								"System"
