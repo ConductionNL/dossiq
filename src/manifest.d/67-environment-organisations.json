@@ -92,7 +92,8 @@
 				},
 				"headerFields": [
 					{
-						"key": "slug"
+						"key": "slug",
+						"format": "strong"
 					}
 				],
 				"actionsMenu": {
@@ -414,6 +415,7 @@
 						"content": {
 							"register": "dossiq",
 							"schema": "tenantMandate",
+							"rowTitle": "text",
 							"filter": {
 								"tenantRef": "@objectId"
 							},
@@ -436,16 +438,19 @@
 								{
 									"key": "terms.decisionTypes",
 									"label": "Decides objections",
-									"contains": "bezwaar",
-									"valueLabels": {
-										"true": "Yes",
-										"false": "No"
+									"formatter": "containsLabel",
+									"formatterOptions": {
+										"token": "bezwaar",
+										"yes": "Yes",
+										"no": "No"
 									}
 								},
 								{
 									"key": "terms.enforcement",
 									"label": "Enforcement",
-									"valueLabels": {
+									"widget": "label",
+									"enum": ["none", "warning", "full"],
+									"enumLabels": {
 										"none": "No",
 										"warning": "Warning",
 										"full": "Yes"
@@ -462,6 +467,7 @@
 						"content": {
 							"register": "dossiq",
 							"schema": "tenantBillingEvent",
+							"rowTitle": "text",
 							"filter": {
 								"tenantRef": "@objectId"
 							},
@@ -479,7 +485,9 @@
 								{
 									"key": "eventType",
 									"label": "Event",
-									"valueLabels": {
+									"widget": "label",
+									"enum": ["case_created", "case_closed", "user_activated", "storage_increment", "api_burst", "quota_exceeded", "case_refund", "subscription_fee"],
+									"enumLabels": {
 										"case_created": "Case created",
 										"case_closed": "Case closed",
 										"user_activated": "User activated",
@@ -539,6 +547,7 @@
 						"content": {
 							"register": "dossiq",
 							"schema": "tenantMandate",
+							"rowTitle": "text",
 							"filter": {
 								"tenantRef": "@objectId"
 							},
@@ -571,6 +580,7 @@
 						"content": {
 							"register": "dossiq",
 							"schema": "tenantBillingEvent",
+							"rowTitle": "text",
 							"filter": {
 								"tenantRef": "@objectId"
 							},
@@ -588,7 +598,9 @@
 								{
 									"key": "eventType",
 									"label": "Event",
-									"valueLabels": {
+									"widget": "label",
+									"enum": ["case_created", "case_closed", "user_activated", "storage_increment", "api_burst", "quota_exceeded", "case_refund", "subscription_fee"],
+									"enumLabels": {
 										"case_created": "Case created",
 										"case_closed": "Case closed",
 										"user_activated": "User activated",

@@ -251,6 +251,25 @@ export default {
 	},
 
 	/**
+	 * Whether a list value holds `formatterOptions.token`, as the translated
+	 * `yes` or `no` word (DqTenant Mandaten "Bezwaar beslissen"). A comma
+	 * separated text counts as a list.
+	 *
+	 * @param {unknown} value A list of codes, or a comma separated text.
+	 * @param {object} row The row.
+	 * @param {object} property The property.
+	 * @param {{token?: string, yes?: string, no?: string}} options The column's formatter options.
+	 * @return {string}
+	 * @spec openspec/changes/tenant-tables-in-words/specs/tenant-tables-in-words/spec.md#requirement-a-list-value-is-read-as-yes-or-no-by-a-token-it-holds
+	 */
+	containsLabel: (value, row, property, options) => {
+		const opts = options || {}
+		const list = Array.isArray(value) ? value : String(value ?? '').split(',')
+		const holds = list.some((entry) => String(entry).trim() === String(opts.token ?? ''))
+		return t('dossiq', holds ? (opts.yes || 'Yes') : (opts.no || 'No'))
+	},
+
+	/**
 	 * The outcome of a document checksum's last check, in words; the code
 	 * itself when it is not one of the four.
 	 *
