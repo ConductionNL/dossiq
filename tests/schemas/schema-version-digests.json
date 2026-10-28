@@ -1124,8 +1124,8 @@
         "digest": "6ae7a0456477b79b22c360e803b77c1ad76401a9832f01bdec39a81546f5e958"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::casePlanGoal": {
-        "version": "1.1.1",
-        "digest": "de1ec038ac3b600095fdc72e2427548841a76460fd25b9ced52000db6047bd7f"
+        "version": "1.2.0",
+        "digest": "fde68b46c93b400b88095cf232a71ae90c8f8ec45c771675e95888a4747b700e"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::gdprClassification": {
         "version": "1.1.1",
@@ -1777,6 +1777,10 @@
     },
     "lib/Settings/register.d/99-case-type-forfeit-raises-invoice.json::caseType": {
         "version": "1.40.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-type-goal-prompt.json::caseType": {
+        "version": "1.45.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-type-handler-label.json::caseType": {

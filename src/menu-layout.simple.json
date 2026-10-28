@@ -3110,7 +3110,8 @@
 						"content": {
 							"emptyText": "This case type has no adaptive plan",
 							"stateLabels": {"active": "Active"},
-							"headerNote": "Milestones and parts of this case"
+							"headerNote": "Milestones and parts of this case",
+							"trailWidgetIds": ["case-goals"]
 						},
 						"visibleWhen": {
 							"any": [
@@ -3127,6 +3128,66 @@
 						},
 						"title": "Case plan",
 						"_note": "The adaptive plan as a card of the Overview stack (library widget type plan -> CnPlanWidget). The full profile keeps cmmn-case-plan as a layout cell. The line about the plan is the card's note at the right of the title (content.headerNote), as DqZaak draws it; nc-vue before plan-header-note draws no line."
+					},
+					{
+						"id": "case-goals",
+						"type": "record-list",
+						"visibleWhen": {
+							"field": "@context.caseType.goalPrompt",
+							"op": "notEmpty"
+						},
+						"_note": "case-goals: the case's goals as the last row of the Zaakplan card (case-plan-card content.trailWidgetIds, nextcloud-vue widget-trail-widgets-in-card), as DqZaak draws 'Doelen nog geen doelen: wat wil de verzoeker dat er verandert? + Doel toevoegen'. Rows and the prompt come from one answer, GET /api/cases/{id}/goals ({ results, prompt }); the prompt is the case type's goalPrompt, so a case type without one shows no row (visibleWhen). footerAction layout row and note {path, lead} are nextcloud-vue record-list-footer-prompt; an older library draws the button under the list without the lead.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/goals",
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{metWhen}",
+							"emptyText": "",
+							"footerAction": {
+								"label": "Add goal",
+								"icon": "Plus",
+								"layout": "row",
+								"note": {
+									"path": "prompt",
+									"lead": "Goals"
+								},
+								"type": "open-modal",
+								"target": "CnActionDialog",
+								"props": {
+									"objectId": "@objectId",
+									"config": {
+										"title": "Add goal",
+										"subtitle": "What the requester wants to change, and what would show it has.",
+										"fields": [
+											{
+												"field": "title",
+												"type": "text",
+												"label": "Goal",
+												"required": true
+											},
+											{
+												"field": "metWhen",
+												"type": "text",
+												"label": "Met when",
+												"required": true
+											}
+										],
+										"confirm": {
+											"label": "Add goal",
+											"icon": "Plus",
+											"request": {
+												"method": "POST",
+												"url": "/apps/dossiq/api/cases/@objectId/goals"
+											}
+										},
+										"doneText": "The goal is added."
+									}
+								}
+							}
+						}
 					},
 					{
 						"id": "case-publication",
