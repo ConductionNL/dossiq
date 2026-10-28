@@ -11795,7 +11795,13 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "{value} of your cases are past their deadline or end today.",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Add goal": "Add goal",
+        "Met when": "Met when",
+        "What the requester wants to change, and what would show it has.": "What the requester wants to change, and what would show it has.",
+        "The goal is added.": "The goal is added.",
+        "no goals yet: what does the requester want to change?": "no goals yet: what does the requester want to change?",
+        "Say which case or family plan this goal belongs to.": "Say which case or family plan this goal belongs to."
     },
     "nplurals=2; plural=(n != 1);"
 )

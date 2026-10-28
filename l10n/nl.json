@@ -11872,6 +11872,12 @@
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Add goal": "Doel toevoegen",
+        "Met when": "Behaald als",
+        "What the requester wants to change, and what would show it has.": "Wat de verzoeker veranderd wil zien, en waaraan u ziet dat het zo is.",
+        "The goal is added.": "Het doel is toegevoegd.",
+        "no goals yet: what does the requester want to change?": "nog geen doelen: wat wil de verzoeker dat er verandert?",
+        "Say which case or family plan this goal belongs to.": "Zeg bij welke zaak of welk gezinsplan dit doel hoort."
     }
 }

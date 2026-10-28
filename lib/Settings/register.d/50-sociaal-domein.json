@@ -655,17 +655,22 @@
             "casePlanGoal": {
                 "slug": "casePlanGoal",
                 "icon": "TargetVariant",
-                "version": "1.1.1",
+                "version": "1.2.0",
                 "searchable": false,
-                "title": "Goal in the family plan",
-                "description": "Een doel van het gezinsplan, dat benoemt wat als behaald telt. \"De thuissituatie verbeteren\" kan niemand afsluiten; het waarneembare ding benoemen geeft een evaluatie iets om over te beslissen en laat het gezin zelf meekijken of het gehaald is (REQ-CPN-01, D-3). OpenRegister-backed.",
+                "title": "Goal",
+                "description": "Een doel van een zaak of van het gezinsplan, dat benoemt wat als behaald telt. \"De thuissituatie verbeteren\" kan niemand afsluiten; het waarneembare ding benoemen geeft een evaluatie iets om over te beslissen en laat het gezin zelf meekijken of het gehaald is (REQ-CPN-01, D-3). OpenRegister-backed.",
                 "type": "object",
-                "required": ["plan", "title", "metWhen"],
+                "required": ["title", "metWhen"],
                 "properties": {
                     "plan": {
                         "title": "Family plan",
                         "type": "string",
-                        "description": "A reference to the family plan"
+                        "description": "A reference to the family plan, for a goal of a family plan"
+                    },
+                    "case": {
+                        "title": "Case",
+                        "type": "string",
+                        "description": "A reference to the case, for a goal that belongs to a case directly. A goal names a case or a plan (CasePlanGoals refuses one with neither)."
                     },
                     "title": {
                         "title": "Goal",
