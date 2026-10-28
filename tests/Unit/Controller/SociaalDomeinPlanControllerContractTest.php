@@ -49,10 +49,12 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\SociaalDomeinPlanController;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanReview;
 use OCA\Dossiq\Service\SociaalDomein\CrossDomainExistence;
+use OCA\Dossiq\Service\SociaalDomein\FamilyPlanAccess;
 use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -72,6 +74,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\SociaalDomein\CrossDomainExistence
  * @uses \OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore
  * @uses \OCA\Dossiq\Controller\Support\TranslatesRefusals
+ * @uses \OCA\Dossiq\Service\SociaalDomein\FamilyPlanAccess
  */
 class SociaalDomeinPlanControllerContractTest extends TestCase {
 
@@ -171,15 +174,24 @@ class SociaalDomeinPlanControllerContractTest extends TestCase {
 			}
 		);
 
+		// The plan and goal belong to a case the caller may change; the
+		// refusals are SociaalDomeinPlanWriteAccessTest's.
+		$store = $this->createMock(originalClassName: SociaalDomeinStore::class);
+		$store->method('read')->willReturnCallback(
+			static fn (string $schema, string $id): array => ['id' => $id, 'plan' => self::PLAN_ID, 'caseId' => 'case-1']
+		);
+		$guard = $this->createMock(originalClassName: CaseAccessGuard::class);
+		$guard->method('hasCaseMutationAccess')->willReturn(true);
+
 		return new SociaalDomeinPlanController(
 			appName: 'dossiq',
 			request: $request,
-			store: $this->createMock(SociaalDomeinStore::class),
+			store: $store,
 			goals: $this->goals,
 			interventions: $this->interventions,
 			review: $this->review,
 			existence: $this->createMock(CrossDomainExistence::class),
-			userSession: $session,
+			planAccess: new FamilyPlanAccess(store: $store, caseAccessGuard: $guard, userSession: $session),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end controller()
