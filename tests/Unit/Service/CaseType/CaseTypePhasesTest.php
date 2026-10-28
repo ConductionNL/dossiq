@@ -47,13 +47,15 @@ class CaseTypePhasesTest extends TestCase {
 	 * @param array<int, array<string, mixed>>       $statuses The statuses.
 	 * @param array<string, mixed>|null              $template The active template.
 	 * @param string                                 $language The reader's language.
+	 * @param array<int, array<string, mixed>>       $roles    The role types.
 	 *
 	 * @return CaseTypePhases The service.
 	 */
-	private function phases(array $caseType, array $statuses, ?array $template, string $language = 'nl'): CaseTypePhases {
+	private function phases(array $caseType, array $statuses, ?array $template, string $language = 'nl', array $roles = []): CaseTypePhases {
 		$resolver = $this->createMock(CaseTypeResolver::class);
 		$resolver->method('effectiveCaseType')->willReturn($caseType);
 		$resolver->method('statusTypesFor')->willReturn($statuses);
+		$resolver->method('roleTypesFor')->willReturn($roles);
 		$templates = $this->createMock(WorkflowTemplateLoader::class);
 		$templates->method('getActiveTemplate')->willReturn($template);
 
@@ -185,4 +187,42 @@ class CaseTypePhasesTest extends TestCase {
 
 		self::assertSame('Intake', $result['phases'][0]['name']);
 	}//end testAPhaseIsNamedAsTextInTheReadersLanguage()
+
+	/**
+	 * A task names the role it routes to, in the reader's language, and keeps
+	 * its description: DqZaaktype reads "Intaker · 5 werkdagen" on a task with
+	 * a term, and the description on one without. A task routed to no role, or
+	 * to a role the type does not have, names none.
+	 *
+	 * @return void
+	 */
+	public function testATaskNamesItsRoleAndKeepsItsDescription(): void {
+		$template = ['steps' => [
+			[
+				'id'          => 't1',
+				'title'       => 'Volledigheid toetsen',
+				'status'      => 's1',
+				'order'       => 1,
+				'routingRule' => ['roleType' => 'r-in'],
+				'task'        => ['leadTimeDays' => 5],
+			],
+			['id' => 't2', 'title' => 'Ontvangstbevestiging', 'status' => 's1', 'order' => 2, 'description' => ' Automatisch, bericht aan de aanvrager '],
+			['id' => 't3', 'title' => 'Besluit opstellen', 'status' => 's2', 'order' => 1, 'assigneeRole' => 'r-vv'],
+			['id' => 't4', 'title' => 'Zwerver', 'status' => 's2', 'order' => 2, 'routingRule' => ['roleType' => 'r-gone']],
+		]];
+		$roles    = [
+			['id' => 'r-in', 'name' => ['nl' => 'Intaker', 'en' => 'Intake officer']],
+			['@self' => ['id' => 'r-vv'], 'name' => 'Vergunningverlener'],
+		];
+		$result   = $this->phases(
+			caseType: ['id' => 'ct'],
+			statuses: $this->statuses(),
+			template: $template,
+			roles: $roles
+		)->phasesFor(caseTypeId: 'ct');
+
+		self::assertSame(expected: ['Intaker', ''], actual: array_column($result['phases'][0]['tasks'], 'roleName'));
+		self::assertSame(expected: ['', 'Automatisch, bericht aan de aanvrager'], actual: array_column($result['phases'][0]['tasks'], 'description'));
+		self::assertSame(expected: ['Vergunningverlener', ''], actual: array_column($result['phases'][1]['tasks'], 'roleName'));
+	}//end testATaskNamesItsRoleAndKeepsItsDescription()
 }//end class

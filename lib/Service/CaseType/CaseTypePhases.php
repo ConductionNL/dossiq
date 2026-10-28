@@ -25,6 +25,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
  * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
+ * @spec openspec/changes/case-type-task-meta-role-and-description/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -86,10 +87,11 @@ class CaseTypePhases {
 
 		$grouped  = $this->phasesOf(caseTypeId: $caseTypeId);
 		$phases   = $grouped['phases'];
+		$roles    = $this->roleNames(caseTypeId: $caseTypeId);
 		$unplaced = [];
 		$count    = 0;
 		foreach ($this->stepsOf(caseTypeId: $caseTypeId) as $step) {
-			$task = $this->taskOf(step: $step);
+			$task = $this->taskOf(step: $step, roles: $roles);
 			if ($task === null) {
 				continue;
 			}
@@ -240,13 +242,37 @@ class CaseTypePhases {
 	}//end alwaysAvailable()
 
 	/**
+	 * The name of every role the case type can route a task to, by role id, in
+	 * the reader's language.
+	 *
+	 * @param string $caseTypeId The case type id.
+	 *
+	 * @return array<string, string> The names by role type id.
+	 */
+	private function roleNames(string $caseTypeId): array {
+		$names = [];
+		foreach ($this->resolver->roleTypesFor(caseTypeId: $caseTypeId) as $roleType) {
+			$id = (string) ($roleType['id'] ?? ($roleType['@self']['id'] ?? ''));
+			if ($id !== '') {
+				$names[$id] = trim($this->text->forReader(value: ($roleType['name'] ?? '')));
+			}
+		}
+
+		return $names;
+	}//end roleNames()
+
+	/**
 	 * One step as the task card a phase lists, or null when it runs no task.
 	 *
-	 * @param array<string, mixed> $step The decoded workflow step.
+	 * A task names the role it routes to (`roleName`, empty when it routes to
+	 * none the type has), so a card reads "Intaker" rather than a group id.
+	 *
+	 * @param array<string, mixed>  $step  The decoded workflow step.
+	 * @param array<string, string> $roles The role names by role type id.
 	 *
 	 * @return array<string, mixed>|null The task, or null.
 	 */
-	private function taskOf(array $step): ?array {
+	private function taskOf(array $step, array $roles): ?array {
 		$declaration = $this->declarations->forStep(step: $step);
 		if ($declaration['enabled'] === false) {
 			return null;
@@ -257,13 +283,16 @@ class CaseTypePhases {
 			$routing = [];
 		}
 
+		$roleTypeId = (string) ($routing['roleType'] ?? ($step['assigneeRole'] ?? ''));
+
 		return [
 			'id'              => (string) ($step['id'] ?? ''),
 			'title'           => $this->declarations->titleOf(step: $step),
 			'description'     => trim((string) ($step['description'] ?? '')),
 			'order'           => (int) ($step['order'] ?? 0),
 			'required'        => (($step['isRequired'] ?? false) === true),
-			'roleTypeId'      => (string) ($routing['roleType'] ?? ($step['assigneeRole'] ?? '')),
+			'roleTypeId'      => $roleTypeId,
+			'roleName'        => ($roles[$roleTypeId] ?? ''),
 			'candidateGroups' => $declaration['candidateGroups'],
 			'leadTimeDays'    => $declaration['leadTimeDays'],
 		];

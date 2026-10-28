@@ -237,6 +237,23 @@ class CaseTypeResolver {
 	}//end ownLifecycle()
 
 	/**
+	 * The roles a case of this type can be routed to, the ancestors' included.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The rows, each carrying `origin`.
+	 *
+	 * @spec openspec/changes/case-type-task-meta-role-and-description/specs/case-types/spec.md
+	 */
+	public function roleTypesFor(string $caseTypeId): array {
+		return $this->inheritedRows(
+			caseTypeId: $caseTypeId,
+			schemaKey: 'role_type_schema',
+			includeShared: false
+		);
+	}//end roleTypesFor()
+
+	/**
 	 * The results a case of this type can close with.
 	 *
 	 * @param string $caseTypeId CaseType UUID.
