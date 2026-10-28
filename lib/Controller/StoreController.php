@@ -393,6 +393,42 @@ class StoreController extends Controller {
 	}//end asNewObject()
 
 	/**
+	 * Publish one store item through the engine.
+	 *
+	 * OpenRegister's canonical routes include `POST /api/store/publish`, and
+	 * dossiq answers its own store routes here rather than through the
+	 * engine's GenericStoreController, so this action must exist or the route
+	 * fails at dispatch. The engine decides: dossiq's descriptor declares no
+	 * publish fields or groups, so it answers `not_publishable`.
+	 *
+	 * @return JSONResponse `{outcome, slug}`; 401 anonymous, 400 without an item.
+	 *
+	 * @spec openspec/changes/store-publish-passthrough/specs/dossiq-store-surface/spec.md
+	 */
+	#[NoAdminRequired]
+	public function publish(): JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return new JSONResponse(
+				data: ['outcome' => 'unauthenticated', 'slug' => ''],
+				statusCode: Http::STATUS_UNAUTHORIZED
+			);
+		}
+
+		$item = $this->request->getParam('item');
+		if (is_array($item) === false) {
+			return new JSONResponse(
+				data: ['outcome' => GenericStoreService::OUTCOME_NOT_PUBLISHABLE, 'slug' => ''],
+				statusCode: Http::STATUS_BAD_REQUEST
+			);
+		}
+
+		return new JSONResponse(
+			data: $this->storeService->publish(descriptor: $this->descriptor(), payload: $item),
+			statusCode: Http::STATUS_OK
+		);
+	}//end publish()
+
+	/**
 	 * Read the registry connection.
 	 *
 	 * Reports WHETHER a token is set and never what it is. A settings form that
