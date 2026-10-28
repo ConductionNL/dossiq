@@ -70,6 +70,9 @@ class NoticeOfDefaultRows {
 	 *
 	 * @return array{notices: list<array<string, mixed>>}
 	 *
+	 * @throws Throwable When the notices or the penalty calculations cannot be read; a list
+	 *                   without them would read "no notices" or "no penalty".
+	 *
 	 * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
 	 */
 	public function list(): array {
@@ -80,11 +83,7 @@ class NoticeOfDefaultRows {
 			return ['notices' => []];
 		}
 
-		try {
-			$notices = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $noticeSchema, filters: []);
-		} catch (Throwable $e) {
-			return ['notices' => []];
-		}
+		$notices = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $noticeSchema, filters: []);
 
 		$this->found = [];
 		$penalties = $this->penaltiesByNotice(objectService: $objectService, register: $register);
@@ -105,6 +104,8 @@ class NoticeOfDefaultRows {
 	 * @param string $register      The register id.
 	 *
 	 * @return array<string, array<string, mixed>>
+	 *
+	 * @throws Throwable When the calculations cannot be read.
 	 */
 	private function penaltiesByNotice(object $objectService, string $register): array {
 		$schema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
@@ -112,11 +113,7 @@ class NoticeOfDefaultRows {
 			return [];
 		}
 
-		try {
-			$calculations = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
-		} catch (Throwable $e) {
-			return [];
-		}
+		$calculations = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
 
 		$byNotice = [];
 		foreach ($calculations as $calculation) {
