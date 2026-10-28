@@ -210,6 +210,10 @@
             "{count} werkdag",
             "{count} werkdagen"
         ],
+        "_{total} case without an address_::_{total} cases without an address_": [
+            "{total} zaak zonder adres",
+            "{total} zaken zonder adres"
+        ],
         "_{total} case, {shown} on this page_::_{total} cases, {shown} on this page_": [
             "{total} zaak, {shown} op deze pagina",
             "{total} zaken, {shown} op deze pagina"
@@ -921,6 +925,7 @@
         "Applies to": "Geldt voor",
         "applies to the whole organisation": "geldt voor de hele organisatie",
         "applies to the whole organisation; case types, flows and departments are in the app under Settings": "geldt voor de hele organisatie; zaaktypen, flows en afdelingen staan in de app onder Instellingen",
+        "applies to the whole organisation; settings you set once or with a specialist": "geldt voor de hele organisatie; instellingen die u eenmalig of met een specialist zet",
         "applies to you": "geldt voor jou",
         "Applies when": "Geldt als",
         "Apply": "Toepassen",
@@ -7768,6 +7773,7 @@
         "Sent": "Verzonden",
         "Sent a document that is on this case.": "Heeft een document verzonden dat bij deze zaak hoort.",
         "Sent at": "Verzonden op",
+        "Sent automatically": "Automatisch verzonden",
         "Sent By": "Verzonden door",
         "Sent on": "Verzonden op",
         "Sent on to another body": "Doorgezonden naar een ander bestuursorgaan",
@@ -8003,6 +8009,8 @@
         "Soort": "Soort",
         "Sort by": "Sorteren op",
         "Sort My Work": "Mijn werk sorteren",
+        "sorted by deadline, ascending · sort in the side panel · 20 per page": "gesorteerd op termijn, oplopend · sorteren via het zijpaneel · 20 per pagina",
+        "sorted by urgency": "gesorteerd op urgentie",
         "Source": "Bron",
         "Source address": "Bronadres",
         "Source app": "Bron-app",
@@ -10158,6 +10166,7 @@
         "Triggered at": "Getriggerd op",
         "Triggergebeurtenis": "Triggergebeurtenis",
         "True = an optional item the case worker may choose to enable. False = mandatory, auto-cascades to active once entry criteria are met.": "Waar betekent een optioneel item dat de behandelaar kan aanzetten. Onwaar betekent verplicht, en het gaat vanzelf naar actief zodra aan de instapvoorwaarden is voldaan.",
+        "True on a message the system sent by itself, such as a receipt. It stays in the conversation and the history, and the contact log leaves it out. Absent on a contact a person recorded.": "Waar bij een bericht dat het systeem zelf verstuurde, zoals een ontvangstbevestiging. Het blijft in het gesprek en de geschiedenis staan; het contactlogboek laat het weg. Ontbreekt bij een contact dat iemand heeft vastgelegd.",
         "True when a mock provider answered, so nothing reached a real mailbox.": "Waar als een testprovider antwoordde, zodat niets een echte berichtenbox bereikte.",
         "True when the mail's headers could not be read; a report counts it under unreadable.": "Waar als de kopregels van de mail niet te lezen waren; een rapportage telt de mail onder onleesbaar.",
         "True when the plafond has been hit; no further accrual": "Waar zodra het plafond is bereikt; er komt niets meer bij",
@@ -10308,6 +10317,7 @@
         "uren": "uren",
         "Urgency": "Urgentie",
         "Urgency follows from the deadline, the priority and how long a case has been idle.": "De urgentie volgt uit de termijn, de prioriteit en hoe lang een zaak stil ligt.",
+        "Urgency follows from the deadline, the priority and how long a case has been idle. Work of a colleague you cover for carries their name, as long as the cover runs.": "De urgentie volgt uit de termijn, de prioriteit en hoe lang een zaak stil ligt. Werk van een collega voor wie u waarneemt staat erbij met zijn naam, zolang de waarneming loopt.",
         "Urgent": "Urgent",
         "Urgent: the appellant has also requested interim relief. This may require expedited handling.": "Urgent: de indiener heeft ook een voorlopige voorziening aangevraagd. Dit kan een versnelde behandeling vereisen.",
         "URI of the involved party": "URI van de betrokken partij",

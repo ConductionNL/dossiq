@@ -5016,7 +5016,7 @@
       "contactmoment": {
         "slug": "contactmoment",
         "icon": "PhoneInTalk",
-        "version": "1.8.0",
+        "version": "1.9.0",
         "configuration": {
           "x-openregister-processing": {
             "logReads": true,
@@ -5224,6 +5224,11 @@
             "minimum": 0,
             "title": "Attachments",
             "description": "How many attachments came with the contact"
+          },
+          "automatic": {
+            "type": "boolean",
+            "title": "Sent automatically",
+            "description": "True on a message the system sent by itself, such as a receipt. It stays in the conversation and the history, and the contact log leaves it out. Absent on a contact a person recorded."
           },
           "accordingToIntent": {
             "type": "string",

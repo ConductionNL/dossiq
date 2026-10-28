@@ -321,6 +321,7 @@ describe('the cases list', () => {
 			_savedViewCountTextNote,
 			defaultOrder,
 			footerNote,
+			footerNoteByView,
 			bulkHint,
 			bulkNoun,
 			headerButtons,

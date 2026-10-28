@@ -23,10 +23,10 @@ const cases = layout.pages.find((page) => page.id === 'Cases')
 describe('Cases page order', () => {
 	it('opens sorted by deadline, as its count line says', () => {
 		expect(cases.config.countText).toMatch(/sorted by deadline/)
-		expect(cases.config.defaultOrder).toBe('deadline')
+		expect(cases.config.defaultOrder).toBe('deadline,receivedAt')
 	})
 
 	it('orders by a column it shows, so the header is marked sorted', () => {
-		expect(cases.config.columns.map((column) => column.key)).toContain(cases.config.defaultOrder.replace(/^-/, ''))
+		expect(cases.config.columns.map((column) => column.key)).toContain(cases.config.defaultOrder.split(',')[0].replace(/^-/, ''))
 	})
 })

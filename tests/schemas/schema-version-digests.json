@@ -156,7 +156,7 @@
         "digest": "c557d3536bbdbfb337d3043d5cb27cb8cdd5b7a61d71e02a67b51993c1527344"
     },
     "lib/Settings/dossiq_mock_register.json::contactmoment": {
-        "version": "1.8.0",
+        "version": "1.9.0",
         "digest": "d66a1682d798cf119c3d457345744598dcd5a8213e1381bffac4369ab7a67bab"
     },
     "lib/Settings/dossiq_mock_register.json::customerContact": {
@@ -1032,7 +1032,7 @@
         "digest": "103ac9e4f77f544243b3ebd3daf777c4b2ea877d6472faeea155fcbd2321f29b"
     },
     "lib/Settings/register.d/40-kcc-werkplek.json::contactmoment": {
-        "version": "1.8.0",
+        "version": "1.9.0",
         "digest": "d66a1682d798cf119c3d457345744598dcd5a8213e1381bffac4369ab7a67bab"
     },
     "lib/Settings/register.d/40-kcc-werkplek.json::doorverbinding": {

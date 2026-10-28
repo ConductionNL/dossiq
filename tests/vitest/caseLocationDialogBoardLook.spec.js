@@ -50,6 +50,11 @@ describe('CaseLocationDialog in the board look', () => {
 		expect(ruleFor('.case-location-dialog__layers :deep(.checkbox-content__text)')).toContain('font-size: 14px')
 	})
 
+	it('draws the layer rows 34px apart with a regular-weight label (r34)', () => {
+		expect(ruleFor('.case-location-dialog__layers')).toContain('gap: 10px')
+		expect(ruleFor('.case-location-dialog__layers :deep(.checkbox-content__text)')).toContain('font-weight: 400')
+	})
+
 	it('sets the address label at 14px/600, 6px above the field', () => {
 		const label = ruleFor('.case-location-dialog :deep(.select__label)')
 		expect(label).toContain('font-size: 14px')

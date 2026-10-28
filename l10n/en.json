@@ -210,6 +210,10 @@
             "{count} working day",
             "{count} working days"
         ],
+        "_{total} case without an address_::_{total} cases without an address_": [
+            "{total} case without an address",
+            "{total} cases without an address"
+        ],
         "_{total} case, {shown} on this page_::_{total} cases, {shown} on this page_": [
             "{total} case, {shown} on this page",
             "{total} cases, {shown} on this page"
@@ -921,6 +925,7 @@
         "Applies to": "Applies to",
         "applies to the whole organisation": "applies to the whole organisation",
         "applies to the whole organisation; case types, flows and departments are in the app under Settings": "applies to the whole organisation; case types, flows and departments are in the app under Settings",
+        "applies to the whole organisation; settings you set once or with a specialist": "applies to the whole organisation; settings you set once or with a specialist",
         "applies to you": "applies to you",
         "Applies when": "Applies when",
         "Apply": "Apply",
@@ -7768,6 +7773,7 @@
         "Sent": "Sent",
         "Sent a document that is on this case.": "Sent a document that is on this case.",
         "Sent at": "Sent at",
+        "Sent automatically": "Sent automatically",
         "Sent By": "Sent By",
         "Sent on": "Sent on",
         "Sent on to another body": "Sent on to another body",
@@ -8003,6 +8009,8 @@
         "Soort": "Soort",
         "Sort by": "Sort by",
         "Sort My Work": "Sort My Work",
+        "sorted by deadline, ascending · sort in the side panel · 20 per page": "sorted by deadline, ascending · sort in the side panel · 20 per page",
+        "sorted by urgency": "sorted by urgency",
         "Source": "Source",
         "Source address": "Source address",
         "Source app": "Source app",
@@ -10158,6 +10166,7 @@
         "Triggered at": "Triggered at",
         "Triggergebeurtenis": "Triggergebeurtenis",
         "True = an optional item the case worker may choose to enable. False = mandatory, auto-cascades to active once entry criteria are met.": "True = an optional item the case worker may choose to enable. False = mandatory, auto-cascades to active once entry criteria are met.",
+        "True on a message the system sent by itself, such as a receipt. It stays in the conversation and the history, and the contact log leaves it out. Absent on a contact a person recorded.": "True on a message the system sent by itself, such as a receipt. It stays in the conversation and the history, and the contact log leaves it out. Absent on a contact a person recorded.",
         "True when a mock provider answered, so nothing reached a real mailbox.": "True when a mock provider answered, so nothing reached a real mailbox.",
         "True when the mail's headers could not be read; a report counts it under unreadable.": "True when the mail's headers could not be read; a report counts it under unreadable.",
         "True when the plafond has been hit; no further accrual": "True when the plafond has been hit; no further accrual",
@@ -10308,6 +10317,7 @@
         "uren": "uren",
         "Urgency": "Urgency",
         "Urgency follows from the deadline, the priority and how long a case has been idle.": "Urgency follows from the deadline, the priority and how long a case has been idle.",
+        "Urgency follows from the deadline, the priority and how long a case has been idle. Work of a colleague you cover for carries their name, as long as the cover runs.": "Urgency follows from the deadline, the priority and how long a case has been idle. Work of a colleague you cover for carries their name, as long as the cover runs.",
         "Urgent": "Urgent",
         "Urgent: the appellant has also requested interim relief. This may require expedited handling.": "Urgent: the appellant has also requested interim relief. This may require expedited handling.",
         "URI of the involved party": "URI of the involved party",

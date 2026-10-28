@@ -16,7 +16,7 @@
             "contactmoment": {
                 "slug": "contactmoment",
                 "icon": "PhoneInTalk",
-                "version": "1.8.0",
+                "version": "1.9.0",
                 "configuration": {
                     "x-openregister-processing": {
                         "logReads": true,
@@ -53,6 +53,7 @@
                     "subject": {"authorization": {"read": [{"group": "dossiq-sensitive"}]}, "type": "string", "title": "Subject", "description": "Subject line of the message the contact was about (an e-mail subject), shown above the summary"},
                     "note": {"authorization": {"read": [{"group": "dossiq-sensitive"}]}, "type": "string", "title": "Note", "description": "A short remark shown under the contact, such as how it arrived or who summarised it"},
                     "attachmentCount": {"type": "integer", "minimum": 0, "title": "Attachments", "description": "How many attachments came with the contact"},
+                    "automatic": {"type": "boolean", "title": "Sent automatically", "description": "True on a message the system sent by itself, such as a receipt. It stays in the conversation and the history, and the contact log leaves it out. Absent on a contact a person recorded."},
                     "accordingToIntent": {"type": "string", "title": "Intent Compliant", "description": "Detected dialogue intent"},
                     "firstTimeFix": {"type": "boolean", "title": "First Time Fix", "default": false, "description": "Whether the issue was resolved in one contact"},
                     "visibleToApplicant": {"type": "boolean", "title": "Visible to the applicant", "default": false, "description": "Off by default. Tick it to put this contact on the timeline the applicant reads."},
