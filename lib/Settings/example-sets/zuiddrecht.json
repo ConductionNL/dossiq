@@ -2288,7 +2288,7 @@
 						"isInitial": false,
 						"isFinal": false,
 						"isRequired": true,
-						"description": "Vergunningverlener, mandaat teamleider VTH",
+						"description": "Vergunningverlener · mandaat teamleider VTH",
 						"routingRule": {
 							"strategy": "single-role",
 							"roleType": "{{object:roltype-regulier-v4-vergunningverlener.id}}"
