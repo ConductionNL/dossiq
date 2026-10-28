@@ -4,9 +4,11 @@
  *
  * DqZaaktypeVelden's Velden table reads Veld, Soort, Invullen: the field, the
  * kind of answer in words and how it is filled in, through the app's cell
- * formatters.
+ * formatters. "In de lijst" has no filter, as drawn: its funnel took the
+ * width the field names need.
  *
  * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
+ * @spec openspec/changes/case-type-fields-in-list-no-filter/specs/case-types/spec.md
  */
 
 import fs from 'fs'
@@ -29,7 +31,7 @@ describe('the Velden table (DqZaaktypeVelden)', () => {
 			{ key: 'propertyType', label: 'Kind', formatter: 'fieldKind' },
 			{ key: 'isRequired', label: 'Fill in', formatter: 'fieldFill' },
 			{ key: 'origin', label: 'Origin', formatter: 'fieldOrigin', widget: 'badge', emptyValue: 'own', widgetProps: { colorMap: { own: 'default', shared: 'info', inherited: 'purple' } } },
-			{ key: 'caseType', label: 'In the list', formatter: 'fieldInCaseList' },
+			{ key: 'caseType', label: 'In the list', formatter: 'fieldInCaseList', filterable: false },
 		])
 		expect(editor.content.columns.map((col) => nl[col.label])).toEqual(['Veld', 'Soort', 'Invullen', 'Herkomst', 'In de lijst'])
 	})

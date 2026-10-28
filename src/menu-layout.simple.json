@@ -1171,7 +1171,7 @@
 											},
 											{
 												"label": "Destruction date",
-												"value": "{archiveActionDate}"
+												"value": "{archiveActionDate|date}"
 											},
 											{
 												"label": "Archive status afterwards",
@@ -1231,6 +1231,7 @@
 									"title": "Read only afterwards",
 									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
 								},
+								"fieldsAfterNote": true,
 								"fields": [
 									{
 										"field": "notifyRequester",
@@ -2021,6 +2022,9 @@
 						}
 					},
 					"case-stages": {
+						"notTabs": [
+							"ai-oversight"
+						],
 						"content": {
 							"currentField": "status",
 							"orientation": "horizontal",
@@ -2289,7 +2293,8 @@
 										"register": "dossiq",
 										"schema": "contactmoment",
 										"filter": {
-											"case": "@objectId"
+											"case": "@objectId",
+											"automatic": {"isnull": true}
 										}
 									},
 									"widgetIds": [
@@ -3254,7 +3259,8 @@
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
-								"case": "@objectId"
+								"case": "@objectId",
+								"automatic": {"isnull": true}
 							},
 							"sort": {
 								"field": "startTime",
@@ -5174,6 +5180,7 @@
 								"url": "/apps/dossiq/api/cases/@objectId/letters/decision"
 							},
 							"emptyWhen": "empty",
+							"columns": 3,
 							"fields": [
 								{
 									"label": "Status",
@@ -5230,7 +5237,12 @@
 								{
 									"key": "decidedAt",
 									"label": "Moment",
-									"format": "date-time"
+									"format": "date-time",
+									"widget": "date",
+									"widgetProps": {
+										"short": true,
+										"showTime": true
+									}
 								},
 								{
 									"key": "decidedBy",
@@ -5239,7 +5251,8 @@
 								},
 								{
 									"key": "prompt",
-									"label": "Question or suggestion"
+									"label": "Question or suggestion",
+									"cellClass": "cn-cell--wrap"
 								},
 								{
 									"key": "status",
@@ -5266,7 +5279,8 @@
 								},
 								{
 									"key": "advisoryContext.model",
-									"label": "Model"
+									"label": "Model",
+									"cellClass": "cn-cell--wrap"
 								}
 							],
 							"rowTitle": "text",
@@ -5932,7 +5946,11 @@
 								}
 							}
 						],
-						"due": "{deadline|date}"
+						"due": "{deadline|date}",
+						"missingTitle": {
+							"singular": "{total} case without an address",
+							"plural": "{total} cases without an address"
+						}
 					}
 				},
 				"columns": [
@@ -5996,7 +6014,7 @@
 				],
 				"showTitle": true,
 				"countSubtitle": "{total} cases",
-				"defaultOrder": "deadline",
+				"defaultOrder": "deadline,receivedAt",
 				"countText": "{shown} of {total} open cases in your teams, sorted by deadline",
 				"defaultFilters": {
 					"isFinalStatus": false,
@@ -6011,6 +6029,9 @@
 					"map": "{shown} of {total} open cases in your teams"
 				},
 				"footerNote": "click a column header to sort · 20 per page",
+				"footerNoteByView": {
+					"cards": "sorted by deadline, ascending · sort in the side panel · 20 per page"
+				},
 				"bulkHint": "See what changes first, then carry it out.",
 				"bulkNoun": "cases",
 				"headerButtons": [
@@ -6957,6 +6978,7 @@
 						},
 						"content": {
 							"layout": "stacked",
+							"density": "compact",
 							"excludeActions": ["read"],
 							"actionLabels": {
 								"create": "Case type created",
@@ -7623,9 +7645,39 @@
 							},
 							"itemTitle": "{title}",
 							"itemMeta": [
-								"{candidateGroups}",
-								"{leadTimeDays} working days"
+								{
+									"text": "{roleName}",
+									"when": {
+										"any": [
+											{ "field": "leadTimeDays", "op": "gt", "value": 0 },
+											{ "field": "description", "op": "empty" }
+										]
+									}
+								},
+								{
+									"text": "{candidateGroups}",
+									"when": {
+										"all": [
+											{ "field": "roleName", "op": "empty" },
+											{
+												"any": [
+													{ "field": "leadTimeDays", "op": "gt", "value": 0 },
+													{ "field": "description", "op": "empty" }
+												]
+											}
+										]
+									}
+								},
+								{
+									"text": "{leadTimeDays} working days",
+									"when": { "field": "leadTimeDays", "op": "gt", "value": 0 }
+								},
+								{
+									"text": "{description}",
+									"when": { "field": "leadTimeDays", "op": "lte", "value": 0 }
+								}
 							],
+							"_itemMetaNote": "DqZaaktype task cards: a task with a term reads its role and the term (Intaker · 5 werkdagen); one without reads its description (Automatisch, bericht aan de aanvrager), or its role when it has none. The group stands in for a task routed to no role.",
 							"columns": 2,
 							"extraGroup": {
 								"title": "Available in every phase",

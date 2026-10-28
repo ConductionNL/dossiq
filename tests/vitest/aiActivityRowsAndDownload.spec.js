@@ -35,6 +35,15 @@ describe('the AI oversight card', () => {
 		expect(status.colorMap).toEqual({ approved: 'success', overridden: 'info', unused: 'default', denied: 'error' })
 	})
 
+	it('writes the moment with its time and wraps the question and the model, as drawn (r34 rows 57px)', () => {
+		const moment = list.content.columns.find((column) => column.key === 'decidedAt')
+		expect(moment.widget).toBe('date')
+		expect(moment.widgetProps).toEqual({ short: true, showTime: true })
+		for (const key of ['prompt', 'advisoryContext.model']) {
+			expect(list.content.columns.find((column) => column.key === key).cellClass).toBe('cn-cell--wrap')
+		}
+	})
+
 	it('offers no Add', () => {
 		expect(list.content.allowCreate).toBe(false)
 	})

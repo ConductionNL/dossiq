@@ -241,7 +241,13 @@ export default {
 	padding: 10px 12px;
 	border-top: 1px solid var(--color-border);
 	text-align: start;
-	vertical-align: top;
+	vertical-align: middle;
+	line-height: normal;
+}
+
+.case-type-field-rights__table tbody th,
+.case-type-field-rights__table tbody td {
+	padding: 11px 12px;
 }
 
 .case-type-field-rights__table thead th {
@@ -289,8 +295,11 @@ export default {
 	border-radius: 4px;
 }
 
+/* The field name reads as plain text on the card, as the board draws it,
+   not as the theme's grey table head. */
 .case-type-field-rights__field {
-	font-weight: 600;
+	font-weight: 400;
+	background: transparent;
 }
 
 .case-type-field-rights__empty {

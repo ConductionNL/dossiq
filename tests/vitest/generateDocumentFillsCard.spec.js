@@ -62,3 +62,18 @@ describe('the note under the template facts (DqDocumentGenereren)', () => {
 		expect(source).toContain("import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'")
 	})
 })
+
+describe('the generate dialog keeps the board\'s rhythm (r34: the note 4.1px high)', () => {
+	it('stands the templates, the fills card and the note 18px apart', () => {
+		expect(rule('.generate-document__form')).toContain('gap: 18px;')
+	})
+
+	it('sets each fact 3px under its label in the medium weight', () => {
+		// The dd's own rule, not the tail of the shared `dt,\n...dd` rule.
+		const at = style.indexOf('}\n\n.generate-document__fills-grid dd {')
+		expect(at).toBeGreaterThan(-1)
+		const value = style.slice(at + 1, style.indexOf('}', at + 1))
+		expect(value).toContain('margin: 3px 0 0;')
+		expect(value).toContain('font-weight: 500;')
+	})
+})

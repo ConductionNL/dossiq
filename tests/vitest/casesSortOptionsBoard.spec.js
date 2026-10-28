@@ -25,7 +25,7 @@ describe('DqZakenSorteren', () => {
 
 	it('sorts each by its own field', () => {
 		const order = Object.fromEntries(options.map((option) => [option.value, option.order]))
-		expect(order).toMatchObject({ deadline: 'deadline', title: 'title', assignee: 'assignee', updated: '-@self.updated' })
+		expect(order).toMatchObject({ deadline: 'deadline,receivedAt', title: 'title', assignee: 'assignee', updated: '-@self.updated' })
 	})
 
 	it('names each in Dutch as the board does', () => {
