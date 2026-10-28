@@ -310,7 +310,7 @@ export default {
 .generate-document__form {
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
+	gap: 18px;
 }
 
 .generate-document__fills {
@@ -360,9 +360,9 @@ export default {
 }
 
 .generate-document__fills-grid dd {
-	margin: 2px 0 0;
+	margin: 3px 0 0;
 	font-size: 15px;
-	font-weight: 600;
+	font-weight: 500;
 }
 
 .generate-document__intro {
