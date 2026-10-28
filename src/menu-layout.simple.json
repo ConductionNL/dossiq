@@ -6957,6 +6957,7 @@
 						},
 						"content": {
 							"layout": "stacked",
+							"density": "compact",
 							"excludeActions": ["read"],
 							"actionLabels": {
 								"create": "Case type created",
