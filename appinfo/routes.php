@@ -1290,6 +1290,9 @@ $extra = [
     ['name' => 'store#install',      'url' => '/api/store/items/{slug}/install',  'verb' => 'POST', 'requirements' => ['slug' => '[a-z0-9][a-z0-9-]*[a-z0-9]']],
     ['name' => 'store#getSettings',  'url' => '/api/store/settings',              'verb' => 'GET'],
     ['name' => 'store#saveSettings', 'url' => '/api/store/settings',              'verb' => 'PUT'],
+    // Also in OpenRegister's canonical table; declared here so it is visible
+    // where this app's routes are read, and it overrides by name.
+    ['name' => 'store#publish',      'url' => '/api/store/publish',               'verb' => 'POST'],
 
         // What a new instance starts with (starter-content-and-templates).
         // The literal `/api/starter/roles` paths sit BEFORE the `{schema}` and

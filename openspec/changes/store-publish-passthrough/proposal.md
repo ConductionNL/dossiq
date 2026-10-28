@@ -10,4 +10,4 @@ OpenRegister's canonical routes now include `POST /api/store/publish` (openregis
 
 ## What changes
 
-`StoreController::publish()` passes `item` to OpenRegister's `GenericStoreService::publish()` and returns its answer. It answers 401 to an anonymous caller and 400 when there is no item. dossiq's descriptor declares no publish fields or groups, so the engine answers `not_publishable`: nothing can be published from dossiq yet, but the route answers instead of failing.
+`StoreController::publish()` passes `item` to OpenRegister's `GenericStoreService::publish()` and returns its answer. It answers 401 to an anonymous caller, 403 unless OpenRegister's `canPublish()` admits the user, and 400 when there is no item. dossiq's descriptor declares no publish fields or groups, so the engine answers `not_publishable`: nothing can be published from dossiq yet, but the route answers instead of failing.
