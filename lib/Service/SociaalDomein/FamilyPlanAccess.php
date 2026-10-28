@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Who may write on a family plan: whoever may change the plan's case.
+ * Who may read or write a family plan: whoever may read or change its case.
  *
  * A gezinsplan points at its case (`caseId`), a goal at its plan or at a case
  * directly (`case`), an intervention at its plan. Every write on any of them
@@ -9,7 +9,9 @@
  * the store is written. A write naming an existing goal or intervention by id
  * also needs the right to change that record's case, so an id taken from
  * another family's plan is not rewritten through a plan the caller may change.
- * A plan without a case has nothing to check and is not written.
+ * A read of a plan asks {@see CaseAccessGuard::hasCaseReadAccess()} for its
+ * case the same way, before the goals and interventions are read. A plan
+ * without a case has nothing to check and is neither read nor written.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\SociaalDomein
@@ -38,11 +40,11 @@ use OCP\AppFramework\Http;
 use OCP\IUserSession;
 
 /**
- * The access check every family plan write runs first.
+ * The access check every family plan read and write runs first.
  *
  * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
  */
-class FamilyPlanWriteAccess {
+class FamilyPlanAccess {
 
 	/**
 	 * Constructor.
@@ -96,7 +98,7 @@ class FamilyPlanWriteAccess {
 			return Http::STATUS_NOT_FOUND;
 		}
 
-		$status = $this->caseWrite(caseId: trim((string)($plan['caseId'] ?? '')));
+		$status = $this->caseCheck(write: true, caseId: trim((string)($plan['caseId'] ?? '')));
 		if ($status !== Http::STATUS_OK || $recordSchema === '' || $recordId === '') {
 			return $status;
 		}
@@ -106,7 +108,7 @@ class FamilyPlanWriteAccess {
 			return Http::STATUS_OK;
 		}
 
-		return $this->caseWrite(caseId: $this->caseOf(record: $record));
+		return $this->caseCheck(write: true, caseId: $this->caseOf(record: $record));
 	}//end planWrite()
 
 	/**
@@ -127,8 +129,43 @@ class FamilyPlanWriteAccess {
 			return Http::STATUS_NOT_FOUND;
 		}
 
-		return $this->caseWrite(caseId: $this->caseOf(record: $goal));
+		return $this->caseCheck(write: true, caseId: $this->caseOf(record: $goal));
 	}//end goalWrite()
+
+	/**
+	 * The status a read of a plan answers before the plan is shown: 200 when
+	 * it may be read, 404 for a plan that is not there, else the status of
+	 * the read check on the plan's case.
+	 *
+	 * @param string $planId The gezinsplan uuid.
+	 *
+	 * @return int The HTTP status.
+	 *
+	 * @throws RefusedException When the store cannot be read.
+	 *
+	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-family-plan-is-read-only-by-whoever-may-read-its-case
+	 */
+	public function planRead(string $planId): int {
+		$plan = $this->store->read(schema: CasePlanReview::SCHEMA, id: $planId);
+		if ($plan === null) {
+			return Http::STATUS_NOT_FOUND;
+		}
+
+		return $this->caseCheck(write: false, caseId: trim((string)($plan['caseId'] ?? '')));
+	}//end planRead()
+
+	/**
+	 * The status a read of a case's plan answers before any plan is read.
+	 *
+	 * @param string $caseId The case uuid from the route.
+	 *
+	 * @return int The HTTP status.
+	 *
+	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-family-plan-is-read-only-by-whoever-may-read-its-case
+	 */
+	public function caseRead(string $caseId): int {
+		return $this->caseCheck(write: false, caseId: trim($caseId));
+	}//end caseRead()
 
 	/**
 	 * The case a goal or intervention belongs to: its own `case`, else its plan's `caseId`.
@@ -151,23 +188,33 @@ class FamilyPlanWriteAccess {
 	}//end caseOf()
 
 	/**
-	 * 401 without a session, 403 when the caller may not change the case or
-	 * there is no case to check, 200 when the write may run.
+	 * 401 without a session, 403 when the caller may not read (or change) the
+	 * case or there is no case to check, 200 when the operation may run.
 	 *
+	 * @param bool   $write  Whether the operation changes the plan.
 	 * @param string $caseId The case uuid.
 	 *
 	 * @return int The HTTP status.
 	 */
-	private function caseWrite(string $caseId): int {
+	private function caseCheck(bool $write, string $caseId): int {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return Http::STATUS_UNAUTHORIZED;
 		}
 
-		if ($caseId === '' || $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+		if ($caseId === '') {
+			return Http::STATUS_FORBIDDEN;
+		}
+
+		$allowed = match ($write) {
+			true => $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user),
+			false => $this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user),
+		};
+
+		if ($allowed === false) {
 			return Http::STATUS_FORBIDDEN;
 		}
 
 		return Http::STATUS_OK;
-	}//end caseWrite()
+	}//end caseCheck()
 }//end class

@@ -42,7 +42,7 @@ use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanReview;
 use OCA\Dossiq\Service\SociaalDomein\CrossDomainExistence;
-use OCA\Dossiq\Service\SociaalDomein\FamilyPlanWriteAccess;
+use OCA\Dossiq\Service\SociaalDomein\FamilyPlanAccess;
 use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -73,7 +73,7 @@ class SociaalDomeinPlanController extends Controller {
 	 * @param CasePlanInterventions $interventions The plan's interventions.
 	 * @param CasePlanReview        $review        The plan's reviews.
 	 * @param CrossDomainExistence  $existence     The cross-domain lookup.
-	 * @param FamilyPlanWriteAccess $planAccess    The case check every plan write runs first.
+	 * @param FamilyPlanAccess $planAccess    The case check every plan write runs first.
 	 * @param LoggerInterface       $logger        The logger.
 	 *
 	 * @return void
@@ -88,7 +88,7 @@ class SociaalDomeinPlanController extends Controller {
 		private readonly CasePlanInterventions $interventions,
 		private readonly CasePlanReview $review,
 		private readonly CrossDomainExistence $existence,
-		private readonly FamilyPlanWriteAccess $planAccess,
+		private readonly FamilyPlanAccess $planAccess,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -106,6 +106,11 @@ class SociaalDomeinPlanController extends Controller {
 	#[NoAdminRequired]
 	public function plan(string $planId): JSONResponse {
 		try {
+			$status = $this->planAccess->planRead(planId: $planId);
+			if ($status !== Http::STATUS_OK) {
+				return $this->denied(status: $status);
+			}
+
 			$plan = $this->store->read(schema: CasePlanReview::SCHEMA, id: $planId);
 			if ($plan === null) {
 				return new JSONResponse(['error' => 'Family plan not found'], Http::STATUS_NOT_FOUND);
@@ -134,6 +139,11 @@ class SociaalDomeinPlanController extends Controller {
 	#[NoAdminRequired]
 	public function planOfCase(string $caseId): JSONResponse {
 		try {
+			$status = $this->planAccess->caseRead(caseId: $caseId);
+			if ($status !== Http::STATUS_OK) {
+				return $this->denied(status: $status);
+			}
+
 			$plans = [];
 			if (trim($caseId) !== '') {
 				$plans = $this->store->rows(schema: CasePlanReview::SCHEMA, filters: ['caseId' => $caseId]);
@@ -404,9 +414,9 @@ class SociaalDomeinPlanController extends Controller {
 	}//end lookupsAbout()
 
 	/**
-	 * The answer to a plan write the case check refused; nothing was written.
+	 * The answer to a plan read or write the case check refused; nothing was read or written.
 	 *
-	 * @param int $status 401, 403 or 404 from FamilyPlanWriteAccess.
+	 * @param int $status 401, 403 or 404 from FamilyPlanAccess.
 	 *
 	 * @return JSONResponse The refusal.
 	 *

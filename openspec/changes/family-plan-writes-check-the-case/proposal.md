@@ -19,6 +19,7 @@ intervention by `id` could also rewrite another family's record through a plan t
 
 ## Scope
 
-`lib/Controller/SociaalDomeinPlanController.php` and a new `lib/Service/SociaalDomein/FamilyPlanWriteAccess.php`, which holds the check
-(the controller takes it in place of the session, so its own size stays inside the PHPMD limits). The reads (`plan`, `planOfCase`) are unchanged: they stay scoped by
-OpenRegister RBAC through the store.
+`lib/Controller/SociaalDomeinPlanController.php` and a new `lib/Service/SociaalDomein/FamilyPlanAccess.php`, which holds the check
+(the controller takes it in place of the session, so its own size stays inside the PHPMD limits). The reads get the same check: `plan` answers only when the caller may read
+the plan's case (`hasCaseReadAccess`), `planOfCase` only when the caller may read the case in the route, before any
+goal, intervention or plan is read; 401 / 403 / 404 as for the writes.

@@ -32,7 +32,7 @@ use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanReview;
 use OCA\Dossiq\Service\SociaalDomein\CrossDomainExistence;
-use OCA\Dossiq\Service\SociaalDomein\FamilyPlanWriteAccess;
+use OCA\Dossiq\Service\SociaalDomein\FamilyPlanAccess;
 use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -84,6 +84,10 @@ class SociaalDomeinPlanOfCaseTest extends TestCase {
 		$review = $this->createMock(CasePlanReview::class);
 		$review->method('isDue')->willReturn(false);
 
+		// The case check is SociaalDomeinPlanReadAccessTest's; here the reader may read the case.
+		$planAccess = $this->createMock(originalClassName: FamilyPlanAccess::class);
+		$planAccess->method('caseRead')->willReturn(Http::STATUS_OK);
+
 		return new SociaalDomeinPlanController(
 			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
@@ -92,7 +96,7 @@ class SociaalDomeinPlanOfCaseTest extends TestCase {
 			interventions: $interventions,
 			review: $review,
 			existence: $this->createMock(CrossDomainExistence::class),
-			planAccess: $this->createMock(originalClassName: FamilyPlanWriteAccess::class),
+			planAccess: $planAccess,
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end controller()
