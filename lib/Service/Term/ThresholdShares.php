@@ -39,6 +39,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Term;
 
+use DateTimeImmutable;
+
 /**
  * Turns a declared ladder into the engine's own escalation rules.
  *
@@ -54,6 +56,50 @@ class ThresholdShares {
 	 * The unit the engine counts a rung's offset in.
 	 */
 	private const UNIT = 'calendarDays';
+
+	/**
+	 * The rungs of OpenRegister's seeded `nl-termijn-default` ladder (14/7/2/0).
+	 *
+	 * A term shorter than the longest rung gets the rungs that fit it as
+	 * explicit rules: a rung before the anchor makes the engine refuse the
+	 * whole timer.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const DEFAULT_RUNGS = [
+		[
+			'trigger' => 'preBreach',
+			'offset' => 14,
+			'notifyRole' => ['handler'],
+			'escalateToRole' => [],
+			'priority' => 'low',
+			'message' => 'termijn-14d',
+		],
+		[
+			'trigger' => 'preBreach',
+			'offset' => 7,
+			'notifyRole' => ['handler', 'teamleader'],
+			'escalateToRole' => ['teamleader'],
+			'priority' => 'medium',
+			'message' => 'termijn-7d',
+		],
+		[
+			'trigger' => 'preBreach',
+			'offset' => 2,
+			'notifyRole' => ['handler', 'teamleader', 'manager'],
+			'escalateToRole' => ['manager'],
+			'priority' => 'high',
+			'message' => 'termijn-2d',
+		],
+		[
+			'trigger' => 'slaBreached',
+			'offset' => 0,
+			'notifyRole' => ['handler', 'teamleader', 'manager'],
+			'escalateToRole' => ['manager'],
+			'priority' => 'critical',
+			'message' => 'termijn-overschreden',
+		],
+	];
 
 	/**
 	 * The engine rules a declared ladder becomes, for a term of this length.
@@ -114,6 +160,39 @@ class ThresholdShares {
 
 		return $rules;
 	}//end rulesFor()
+
+	/**
+	 * The default ladder's rungs that fit a term shorter than its longest rung,
+	 * or [] when the whole named ladder fits and the engine can keep it.
+	 *
+	 * Counted in calendar days, the unit the rungs are in, whatever the term
+	 * counts in: a rung lands before the anchor when its offset exceeds the
+	 * calendar days between the start and the end.
+	 *
+	 * @param DateTimeImmutable      $startDay The term's start day.
+	 * @param DateTimeImmutable|null $end      The term's current end, null when unknown.
+	 *
+	 * @return array<int, array<string, mixed>> The explicit rules, longest offset first.
+	 */
+	public function defaultRulesFor(DateTimeImmutable $startDay, ?DateTimeImmutable $end): array {
+		if ($end === null || $end < $startDay) {
+			return [];
+		}
+
+		$span = (int)$startDay->diff($end)->days;
+		if ($span >= self::DEFAULT_RUNGS[0]['offset']) {
+			return [];
+		}
+
+		$rules = [];
+		foreach (self::DEFAULT_RUNGS as $rung) {
+			if ($rung['offset'] <= $span) {
+				$rules[] = array_merge($rung, ['offsetUnit' => self::UNIT, 'openIncident' => false]);
+			}
+		}
+
+		return $rules;
+	}//end defaultRulesFor()
 
 	/**
 	 * How many days before the end one rung sits.
