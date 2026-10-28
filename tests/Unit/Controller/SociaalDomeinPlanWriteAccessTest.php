@@ -307,6 +307,51 @@ class SociaalDomeinPlanWriteAccessTest extends TestCase {
 	}//end testSaveInterventionCannotRewriteAnInterventionOfAnotherCase()
 
 	/**
+	 * An intervention cannot serve a goal of another plan, even when the caller may change both cases.
+	 *
+	 * @return void
+	 */
+	public function testSaveInterventionRefusesAGoalOfAnotherPlan(): void {
+		$response = $this->controller(mayChange: [self::CASE_ID, self::OTHER_CASE_ID], params: ['goal' => self::OTHER_GOAL_ID, 'title' => 'Begeleiding'])
+			->saveIntervention(planId: self::PLAN_ID);
+
+		self::assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
+		self::assertSame(expected: [], actual: $this->writes);
+	}//end testSaveInterventionRefusesAGoalOfAnotherPlan()
+
+	/**
+	 * A goal that is not there, or one that belongs to a case and not to this plan, is refused.
+	 *
+	 * @return void
+	 */
+	public function testSaveInterventionRefusesAGoalThatIsNotOnThePlan(): void {
+		$missing = $this->controller(mayChange: [self::CASE_ID], params: ['goal' => 'goal-missing', 'title' => 'Begeleiding'])
+			->saveIntervention(planId: self::PLAN_ID);
+		$ofCase = $this->controller(mayChange: [self::CASE_ID], params: ['goal' => self::CASE_GOAL_ID, 'title' => 'Begeleiding'])
+			->saveIntervention(planId: self::PLAN_ID);
+
+		self::assertSame(expected: Http::STATUS_NOT_FOUND, actual: $missing->getStatus());
+		self::assertSame(expected: Http::STATUS_NOT_FOUND, actual: $ofCase->getStatus());
+		self::assertSame(expected: [], actual: $this->writes);
+	}//end testSaveInterventionRefusesAGoalThatIsNotOnThePlan()
+
+	/**
+	 * An intervention serving a goal of its own plan, or no goal, is written.
+	 *
+	 * @return void
+	 */
+	public function testSaveInterventionWritesForAGoalOfItsOwnPlanOrNone(): void {
+		$withGoal = $this->controller(mayChange: [self::CASE_ID], params: ['goal' => self::GOAL_ID, 'title' => 'Begeleiding'])
+			->saveIntervention(planId: self::PLAN_ID);
+		$withoutGoal = $this->controller(mayChange: [self::CASE_ID], params: ['title' => 'Begeleiding'])
+			->saveIntervention(planId: self::PLAN_ID);
+
+		self::assertSame(expected: Http::STATUS_OK, actual: $withGoal->getStatus());
+		self::assertSame(expected: Http::STATUS_OK, actual: $withoutGoal->getStatus());
+		self::assertSame(expected: ['intervention.save', 'intervention.save'], actual: $this->writes);
+	}//end testSaveInterventionWritesForAGoalOfItsOwnPlanOrNone()
+
+	/**
 	 * A plan without a case, or one that is not there, is not written: there is no case to check.
 	 *
 	 * @return void

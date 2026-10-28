@@ -112,6 +112,34 @@ class FamilyPlanAccess {
 	}//end planWrite()
 
 	/**
+	 * The status an intervention's goal answers before the intervention is
+	 * written: 200 when it names no goal or a goal of this plan, 404 when the
+	 * goal is not there or belongs to another plan or to a case, so an
+	 * intervention never serves another family's goal.
+	 *
+	 * @param string $planId The gezinsplan uuid from the route.
+	 * @param string $goalId The goal the intervention names, or ''.
+	 *
+	 * @return int The HTTP status.
+	 *
+	 * @throws RefusedException When the store cannot be read.
+	 *
+	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-an-intervention-serves-a-goal-of-its-own-plan
+	 */
+	public function goalOnPlan(string $planId, string $goalId): int {
+		if ($goalId === '') {
+			return Http::STATUS_OK;
+		}
+
+		$goal = $this->store->read(schema: CasePlanGoals::SCHEMA, id: $goalId);
+		if ($goal === null || trim((string)($goal['plan'] ?? '')) !== $planId) {
+			return Http::STATUS_NOT_FOUND;
+		}
+
+		return Http::STATUS_OK;
+	}//end goalOnPlan()
+
+	/**
 	 * The status closing a goal answers before it runs: 404 for a goal that is
 	 * not there, else the status of the check on the goal's case.
 	 *

@@ -38,3 +38,14 @@ intervention is read. A plan without a case SHALL NOT be answered.
 - **GIVEN** a family plan of case A and a signed-in user who may not read case A
 - **WHEN** they ask `/api/family-plans/{planId}` or `/api/cases/A/family-plan`
 - **THEN** the answer is 403 and holds no plan, goal or intervention
+
+### Requirement: An intervention serves a goal of its own plan
+
+Saving an intervention that names a `goal` SHALL be refused with 404 before anything is written when that goal is not
+there, belongs to another plan, or belongs to a case rather than to this plan. The goal written is the goal checked.
+
+#### Scenario: Another plan's goal
+
+- **GIVEN** a user who may change cases A and B
+- **WHEN** they save an intervention on case A's plan naming a goal of case B's plan
+- **THEN** the answer is 404 and nothing is written

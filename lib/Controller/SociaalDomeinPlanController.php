@@ -272,6 +272,10 @@ class SociaalDomeinPlanController extends Controller {
 				recordSchema: CasePlanInterventions::SCHEMA,
 				recordId: trim((string)$this->request->getParam('id', ''))
 			);
+			if ($status === Http::STATUS_OK) {
+				$status = $this->planAccess->goalOnPlan(planId: $planId, goalId: trim((string)$this->request->getParam('goal', '')));
+			}
+
 			if ($status !== Http::STATUS_OK) {
 				return $this->denied(status: $status);
 			}
@@ -281,7 +285,7 @@ class SociaalDomeinPlanController extends Controller {
 					intervention: [
 						'id' => trim((string)$this->request->getParam('id', '')),
 						'plan' => $planId,
-						'goal' => (string)$this->request->getParam('goal', ''),
+						'goal' => trim((string)$this->request->getParam('goal', '')),
 						'title' => (string)$this->request->getParam('title', ''),
 						'description' => (string)$this->request->getParam('description', ''),
 						'provider' => (string)$this->request->getParam('provider', ''),
