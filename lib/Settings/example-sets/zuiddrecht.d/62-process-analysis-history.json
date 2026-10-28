@@ -1,0 +1,352 @@
+{
+	"$comment": "Finished cases for DqProcesanalyse, so its days-per-phase matrix reads the six phases and the case types the board draws: a complaint that spent 13 days in Onderzoek, a licence-plate change 3 days in Ontvangen, an advice 4 days in behandeling, a Bezwaar whose committee advice (11 days) sent it back to In behandeling (the rework the report counts), and a re-integration that ran 21 days In uitvoering. All closed more than three weeks before the install and held by colleagues other than Pieter, so his work lists and his month's closed count stay as drawn.",
+	"objects": [
+		{
+			"key": "procesanalyse-klacht-afhandeling-melding",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "klacht-behandeling"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Onderzoek"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Klacht over de afhandeling van een melding",
+				"description": "Een inwoner vindt dat zijn melding over een kapotte lantaarnpaal te lang bleef liggen.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:daan.uid}}",
+				"assignedGroup": "zuiddrecht-kcc",
+				"startDate": "{{date:-60}}",
+				"endDate": "{{date:-47}}",
+				"receivedAt": "{{datetime:-60 10:15}}",
+				"currentStatusEnteredAt": "{{datetime:-47 16:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-60 10:15}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-47 16:00}}"
+					}
+				],
+				"tags": [
+					"klacht"
+				]
+			}
+		},
+		{
+			"key": "procesanalyse-kenteken-oosterkade",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "kenteken-wijzigen-parkeervergunning"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Nieuw kenteken op de bewonersvergunning Oosterkade",
+				"description": "Een bewoner van de Oosterkade heeft een andere auto en vraagt het kenteken op de vergunning te wijzigen.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-publiekszaken",
+				"startDate": "{{date:-45}}",
+				"endDate": "{{date:-42}}",
+				"receivedAt": "{{datetime:-45 19:20}}",
+				"currentStatusEnteredAt": "{{datetime:-42 11:05}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-45 19:20}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-42 11:05}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "procesanalyse-advies-uitrit-molenweg",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "adviesaanvraag"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Advies over een uitrit aan de Molenweg",
+				"description": "Mobiliteit en verkeer geeft advies over een nieuwe uitrit bij Molenweg 12.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "manual",
+				"confidentiality": "intern",
+				"assignee": "{{cast:lars.uid}}",
+				"assignedGroup": "zuiddrecht-mobiliteit-en-verkeer",
+				"startDate": "{{date:-38}}",
+				"endDate": "{{date:-34}}",
+				"receivedAt": "{{datetime:-38 09:00}}",
+				"currentStatusEnteredAt": "{{datetime:-34 15:30}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-38 09:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-34 15:30}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "procesanalyse-bezwaar-uitrit-dorpsstraat",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "bezwaar",
+						"icon": "Gavel"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Advies uitgebracht"
+					}
+				},
+				"stap5": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Beslissing op bezwaar"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Bezwaar weigering uitrit Dorpsstraat",
+				"description": "Bezwaar tegen de weigering van een uitrit. De commissie stuurde het dossier terug voor een aanvullend onderzoek naar de verkeersveiligheid.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "intern",
+				"assignee": "{{cast:anouk.uid}}",
+				"assignedGroup": "zuiddrecht-juridische-zaken",
+				"startDate": "{{date:-70}}",
+				"endDate": "{{date:-22}}",
+				"receivedAt": "{{datetime:-70 10:40}}",
+				"currentStatusEnteredAt": "{{datetime:-22 16:10}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-70 10:40}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-59 09:00}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-44 14:00}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-33 10:00}}"
+					},
+					{
+						"status": "{{lookup:stap5}}",
+						"enteredAt": "{{datetime:-29 11:30}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-22 16:10}}"
+					}
+				],
+				"tags": [
+					"bezwaar"
+				]
+			}
+		},
+		{
+			"key": "procesanalyse-reintegratie-werkervaringsplek",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "re-integratietraject"
+					}
+				},
+				"stap1": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Aangemeld"
+					}
+				},
+				"stap2": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Plan van aanpak"
+					}
+				},
+				"stap3": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In uitvoering"
+					}
+				},
+				"stap4": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Evaluatie"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgerond"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Re-integratie met een werkervaringsplek",
+				"description": "Een traject naar werk met een werkervaringsplek bij de groenvoorziening, afgerond met een arbeidscontract.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "manual",
+				"confidentiality": "intern",
+				"assignee": "{{cast:fatma.uid}}",
+				"assignedGroup": "zuiddrecht-sociaal-domein",
+				"startDate": "{{date:-80}}",
+				"endDate": "{{date:-31}}",
+				"receivedAt": "{{datetime:-80 09:30}}",
+				"currentStatusEnteredAt": "{{datetime:-31 15:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:stap1}}",
+						"enteredAt": "{{datetime:-80 09:30}}"
+					},
+					{
+						"status": "{{lookup:stap2}}",
+						"enteredAt": "{{datetime:-78 11:00}}"
+					},
+					{
+						"status": "{{lookup:stap3}}",
+						"enteredAt": "{{datetime:-59 10:00}}"
+					},
+					{
+						"status": "{{lookup:stap4}}",
+						"enteredAt": "{{datetime:-38 14:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-31 15:00}}"
+					}
+				]
+			}
+		}
+	]
+}
