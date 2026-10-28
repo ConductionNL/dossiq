@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.159.0",
+	"version": "2.160.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -2479,7 +2479,8 @@
 										"type": "object",
 										"properties": {
 											"groupByRelation": { "type": "boolean", "description": "Split the Objects group by the relation label OpenRegister answers per direction." },
-											"layout": { "type": "string", "enum": ["tabs", "list", "sections"], "description": "`sections` draws every group under its own heading in one list." },
+											"sectionOrder": { "type": "array", "items": { "type": "string" }, "description": "The order of extraSources and referenceSections by key." },
+											"layout": { "type": "string", "enum": ["tabs", "list", "sections", "links"], "description": "`sections` draws every group under its own heading in one list; `links` shows the host's sections as plain links with Show all." },
 											"groupActions": { "type": "object", "additionalProperties": { "type": "object" }, "description": "An action on a group's heading in `layout: \"sections\"`, keyed by the group's key (DqZaakGerelateerd \"Vervolg plannen\")." }
 										}
 									}
@@ -5651,6 +5652,11 @@
 							"type": "string",
 							"minLength": 1,
 							"description": "type='index', board look: the count line under the title, a template with `{shown}` (rows on this page), `{total}` (all rows) and free text, e.g. \"{shown} of {total} open cases in your teams\"; defaults to `countSubtitle`, else \"{shown} of {total}\" (screens-index-list-parity). Maps to CnIndexPage `countText`."
+						},
+						"countValues": {
+							"type": "object",
+							"additionalProperties": { "type": "object" },
+							"description": "type='index', board look: named values the count line (`countText`) can carry, written as template tokens with a format (`{pipeline|currency:EUR}`). An entry is a sum or count over this page's register and schema under the active filters plus its own `filter` (`{ metric: 'sum', field: 'value', filter? }`), or a field of an app endpoint (`{ endpoint, path, followFilters? }`; `followFilters: true` sends the active filters as `filter[<field>]=<value>`). A value not read yet leaves its token empty. Maps to CnIndexPage `countValues`."
 						},
 						"footerNote": {
 							"type": "string",
