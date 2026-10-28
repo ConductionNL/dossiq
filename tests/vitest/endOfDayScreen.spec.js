@@ -79,6 +79,7 @@ describe('the end-of-day page', () => {
 			'eod-unavailable': undefined,
 			'eod-open': 'main',
 			'eod-recorded': 'main',
+			'eod-ready': 'main',
 			'eod-figures': 'side',
 			'eod-tomorrow': 'side',
 			'eod-how': 'side',
@@ -139,5 +140,19 @@ describe('the end-of-day page', () => {
 		expect(hours.visibleWhen).toEqual({ appInstalled: 'humaniq', endpoint: SUMMARY, field: 'hours', op: 'gte', value: 0 })
 		expect(widget('eod-hours')).toBeUndefined()
 		expect(page.config.layout.some((cell) => cell.widgetId === 'eod-hours')).toBe(false)
+	})
+})
+
+describe('Ready for today? as its own card (DqDagAfsluiten r34)', () => {
+	it('is a text card after Recorded today, and the list puts its buttons at its foot', () => {
+		const ready = widget('eod-ready')
+		expect(ready.type).toBe('text')
+		expect(ready.title).toBe('Ready for today?')
+		expect(ready.content.text).toBe(widget('eod-open').content.noteAction.recordAll.text)
+		expect(widget('eod-open').content.noteAction.recordAll.placement).toEqual({ widget: 'eod-ready' })
+		const at = (id) => page.config.layout.find((item) => item.widgetId === id)
+		const recorded = at('eod-recorded')
+		expect(at('eod-ready')).toMatchObject({ gridX: 0, gridWidth: 8, track: 'main', sizeToContent: true })
+		expect(at('eod-ready').gridY).toBe(recorded.gridY + recorded.gridHeight)
 	})
 })
