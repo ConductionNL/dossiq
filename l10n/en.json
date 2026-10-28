@@ -210,6 +210,10 @@
             "{count} working day",
             "{count} working days"
         ],
+        "_{total} case without an address_::_{total} cases without an address_": [
+            "{total} case without an address",
+            "{total} cases without an address"
+        ],
         "_{total} case, {shown} on this page_::_{total} cases, {shown} on this page_": [
             "{total} case, {shown} on this page",
             "{total} cases, {shown} on this page"
@@ -8003,6 +8007,7 @@
         "Soort": "Soort",
         "Sort by": "Sort by",
         "Sort My Work": "Sort My Work",
+        "sorted by deadline, ascending · sort in the side panel · 20 per page": "sorted by deadline, ascending · sort in the side panel · 20 per page",
         "Source": "Source",
         "Source address": "Source address",
         "Source app": "Source app",
