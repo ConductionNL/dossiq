@@ -61,6 +61,10 @@ describe('the decision letter card', () => {
 		expect(nl[letter.content.fields[0].map.draft]).toBe('Concept, nog niet ondertekend')
 	})
 
+	it('draws the rows as the board\'s three columns, each label over its value (r34)', () => {
+		expect(letter.content.columns).toBe(3)
+	})
+
 	it('says under the rows what signing fixes, as the board does', () => {
 		expect(nl[letter.content.footnote]).toBe('Na het ondertekenen is de beschikking niet meer te wijzigen. De bezwaartermijn van zes weken start op de dag van bekendmaking.')
 	})
