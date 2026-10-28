@@ -92,7 +92,8 @@
 				},
 				"headerFields": [
 					{
-						"key": "slug"
+						"key": "slug",
+						"format": "strong"
 					}
 				],
 				"actionsMenu": {

@@ -27,3 +27,10 @@ The Mandaten and Facturatie lists open no record per row, so their first column 
 #### Scenario: Mandaten
 - GIVEN the Overzicht tab of Gemeente Waterland
 - THEN "Behandelaar" reads as plain text
+
+### Requirement: the tenant header names its slug as bold text
+
+The organisation page header MUST show the slug as bold text in the header line (`headerFields` format `strong`), not as a framed chip.
+
+#### Scenario: Gemeente Waterland
+- THEN the header line reads "waterland" in bold, with no border or background

@@ -4298,7 +4298,7 @@
 										"additionalProperties": false,
 										"properties": {
 											"key": { "type": "string", "minLength": 1 },
-											"format": { "enum": ["text", "mono", "badge", "user", "date"] },
+											"format": { "enum": ["text", "mono", "badge", "user", "date", "strong"] },
 											"labelField": { "type": "string" },
 											"colorField": { "type": "string" },
 											"warnWhenPast": { "type": "boolean" }
