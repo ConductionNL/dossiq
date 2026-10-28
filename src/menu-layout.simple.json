@@ -3109,7 +3109,8 @@
 						"type": "plan",
 						"content": {
 							"emptyText": "This case type has no adaptive plan",
-							"stateLabels": {"active": "Active"}
+							"stateLabels": {"active": "Active"},
+							"headerNote": "Milestones and parts of this case"
 						},
 						"visibleWhen": {
 							"any": [
@@ -3125,8 +3126,7 @@
 							]
 						},
 						"title": "Case plan",
-						"subtitle": "Milestones and parts of this case",
-						"_note": "The adaptive plan as a card of the Overview stack (library widget type plan -> CnPlanWidget). The full profile keeps cmmn-case-plan as a layout cell."
+						"_note": "The adaptive plan as a card of the Overview stack (library widget type plan -> CnPlanWidget). The full profile keeps cmmn-case-plan as a layout cell. The line about the plan is the card's note at the right of the title (content.headerNote), as DqZaak draws it; nc-vue before plan-header-note draws no line."
 					},
 					{
 						"id": "case-publication",
