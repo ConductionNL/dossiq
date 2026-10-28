@@ -12,6 +12,7 @@
 		tabsVariant="underline"
 		:compact="true"
 		:descGap="6"
+		plainNotes
 		:sectionColumns="['general', 'vth'].includes(activeTab) ? 2 : 1"
 		:formatters="adminFormatters"
 		:showSetup="true"
@@ -830,6 +831,9 @@ export default {
 			// tabs say where the in-app settings are.
 			if (this.activeTab === 'general') {
 				return this.t('dossiq', 'applies to the whole organisation')
+			}
+			if (this.activeTab === 'advanced') {
+				return this.t('dossiq', 'applies to the whole organisation; settings you set once or with a specialist')
 			}
 			return this.t(
 				'dossiq',
