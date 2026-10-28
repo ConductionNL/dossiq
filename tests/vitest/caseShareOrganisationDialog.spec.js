@@ -178,3 +178,22 @@ describe('CaseShareOrganisationDialog spacing', () => {
 		expect(sfc.slice(at, sfc.indexOf('}', at))).toContain('margin-bottom: 4px')
 	})
 })
+
+describe('the message field on DqZaakSamenwerken (r34: Bericht 9.5px low)', () => {
+	const sfc = fs.readFileSync(path.join(ROOT, 'src/dialogs/CaseShareOrganisationDialog.vue'), 'utf8')
+	const rule = (selector) => {
+		const at = sfc.indexOf('\n' + selector + ' {')
+		expect(at, selector).toBeGreaterThan(-1)
+		return sfc.slice(at, sfc.indexOf('}', at))
+	}
+
+	it('sets the label at 14px on the normal line, as the select labels above it', () => {
+		const label = rule('.case-share-org__label')
+		expect(label).toContain('font-size: 14px;')
+		expect(label).toContain('line-height: normal;')
+	})
+
+	it('stands the control 6px under the label, counting the field\'s 2px focus inset', () => {
+		expect(rule('.case-share-org__field')).toContain('gap: 4px;')
+	})
+})

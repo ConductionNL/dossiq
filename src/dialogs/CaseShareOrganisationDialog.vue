@@ -371,14 +371,19 @@ export default {
 	margin-bottom: 4px;
 }
 
+/* The board puts the control 6px under the label; the text field's wrapper
+   holds the control 2px in (its focus inset), so the gap is 4px. */
 .case-share-org__field {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 4px;
 }
 
+/* 14px/600 on the normal line, as the board dialog's select labels. */
 .case-share-org__label {
+	font-size: 14px;
 	font-weight: 600;
+	line-height: normal;
 }
 
 .case-share-org__optional {
