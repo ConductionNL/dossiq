@@ -51,10 +51,12 @@ const seededCase = {
 	majorChannel: { roomUrl: '/call/major' },
 }
 
-const mountPanel = (propsData) => shallowMount(CaseConversationsPanel, {
-	propsData,
-	mocks: { t: (_app, s) => s, $route: { params: {} } },
-})
+function mountPanel(propsData) {
+	return shallowMount(CaseConversationsPanel, {
+		propsData,
+		mocks: { t: (_app, s) => s, $route: { params: {} } },
+	})
+}
 
 describe('CaseConversationsPanel on a manifest card', () => {
 	beforeEach(() => {
