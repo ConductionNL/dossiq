@@ -507,8 +507,10 @@ describe('the tabs', () => {
 			config.widgets.find((widget) => widget.id === id)
 		// The design draws the case's progress as a bar across the header
 		// card. The widget keeps everything but its orientation.
+		// It stands aside beside AI oversight, as the what-now card does.
 		expect(find(simple, 'case-stages')).toEqual({
 			...find(original, 'case-stages'),
+			notTabs: ['ai-oversight'],
 			content: {
 				...find(original, 'case-stages').content,
 				orientation: 'horizontal',
