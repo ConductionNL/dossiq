@@ -203,17 +203,21 @@ export default {
 	color: var(--color-text-maxcontrast);
 }
 
-/* Board DqAanMijToegewezen: an 18px title over a 14px hint, 2px apart. */
+/* Board DqAanMijToegewezen: an 18px title over a 14px hint, 2px apart, on the
+   normal line height; the page's gap is the only space below it. */
 .workload-summary--heading {
+	margin-bottom: 0;
 	gap: 2px;
 
 	.workload-summary__title {
 		font-size: 18px;
+		line-height: normal;
 	}
 
 	.workload-summary__hint {
 		margin: 0;
 		font-size: 14px;
+		line-height: normal;
 	}
 }
 
