@@ -39,7 +39,7 @@ class ZuiddrechtHearingAppointmentTest extends TestCase {
 		$this->assertNotNull($hearing);
 		$this->assertSame('{{task:hoorzitting-inplannen.uuid}}', $hearing['object']);
 		$this->assertSame(['Hoorzitting bezwaar parkeerboete', '{{cast:pieter.uid}}', 'Stadskantoor, zaal 2.04'], [$hearing['summary'], $hearing['owner'], $hearing['location']]);
-		$this->assertSame(['{{datetime:4 14:00}}', '{{datetime:4 15:00}}'], [$hearing['start'], $hearing['end']]);
+		$this->assertSame(['{{datetime:14 14:00}}', '{{datetime:14 15:00}}'], [$hearing['start'], $hearing['end']]);
 		$this->assertSame([['name' => '{{cast:fatima.displayName}}', 'email' => '{{cast:fatima.email}}', 'status' => 'invited']], $hearing['attendees']);
 	}//end testTheHearingIsOnTheTask()
 }//end class
