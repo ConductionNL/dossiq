@@ -406,7 +406,7 @@ export default {
 .case-location-dialog__layers {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 10px;
 	margin: 0;
 	border: 1px solid var(--color-border);
 	border-radius: 8px;
@@ -431,8 +431,11 @@ export default {
 	padding-inline-start: 4px;
 }
 
+/* The layer rows stand 34px apart (a 24px row and 10px), their labels at
+   regular weight, as DqZaakLocatie draws them. */
 .case-location-dialog__layers :deep(.checkbox-content__text) {
 	font-size: 14px;
+	font-weight: 400;
 	line-height: 1.2;
 }
 
