@@ -11482,7 +11482,11 @@
 					},
 					{
 						"id": "deadline-report-notices",
-						"roles": ["controllers", "beheerders", "admin"],
+						"roles": [
+							"controllers",
+							"beheerders",
+							"admin"
+						],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
 							"field": "visible.deadline-report-notices",
@@ -11490,38 +11494,81 @@
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
-						"type": "table",
+						"type": "object-table",
 						"title": "Notices of default and penalty payments",
 						"content": {
-							"register": "dossiq",
-							"schema": "noticeOfDefault",
-							"filter": {},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/deadlines/notices",
+								"responsePath": "notices"
+							},
+							"rowRoute": "CaseDetail",
+							"rowIdField": "caseId",
 							"limit": 10,
 							"columns": [
 								{
+									"key": "caseLabel",
+									"label": "Case",
+									"cellClass": "cn-cell--wrap"
+								},
+								{
 									"key": "receiptDate",
 									"label": "Notice of default",
-									"format": "date"
+									"formatter": "receivedOn"
 								},
 								{
 									"key": "validityStatus",
 									"label": "Assessment",
-									"widget": "badge"
+									"widget": "badge",
+									"enum": [
+										"unknown",
+										"valid",
+										"premaat",
+										"ongeldig"
+									],
+									"enumLabels": {
+										"unknown": "Not assessed yet",
+										"valid": "Valid",
+										"premaat": "Too early: the term is still running",
+										"ongeldig": "Invalid"
+									},
+									"widgetProps": {
+										"colorMap": {
+											"valid": "success",
+											"premaat": "warning",
+											"ongeldig": "error"
+										}
+									}
 								},
 								{
-									"key": "decisionRegisteredDate",
-									"label": "Decision registered",
-									"format": "date"
+									"key": "penaltyState",
+									"label": "Penalty payment",
+									"formatter": "penaltyLine"
 								},
 								{
-									"key": "notificationChannel",
-									"label": "Received via"
+									"key": "financeState",
+									"label": "Finances",
+									"widget": "badge",
+									"enum": [
+										"signal-sent",
+										"amount-open"
+									],
+									"enumLabels": {
+										"signal-sent": "Payment signal sent",
+										"amount-open": "Amount not fixed yet"
+									},
+									"widgetProps": {
+										"colorMap": {
+											"signal-sent": "info"
+										}
+									},
+									"emptyLabel": "Not applicable"
 								}
 							],
 							"borderless": true,
 							"emptyText": "No notice of default has been received"
 						},
-						"subtitle": "Awb 4:17 and 4:18"
+						"subtitle": "Awb 4:17 and 4:18",
+						"_noticesNote": "DqTermijnen draws one row per notice of default: the case (opens it), when it came in, the assessment, the penalty it started and where that money stands. GET /api/deadlines/notices joins notice, term, case and penalty calculation (NoticeOfDefaultRows); a fixed penalty has gone to finance as a payment signal, a running one is not fixed yet, a notice without a penalty is not applicable (nextcloud-vue column emptyLabel)."
 					},
 					{
 						"id": "deadline-report-quarterly",

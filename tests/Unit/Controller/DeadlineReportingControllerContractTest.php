@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\DeadlineReportingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use OCA\Dossiq\Service\Term\FirstResponseOutcome;
+use OCA\Dossiq\Service\Termijn\NoticeOfDefaultRows;
 use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -663,4 +664,66 @@ class DeadlineReportingControllerContractTest extends TestCase {
 			penaltyPayments: $rows,
 		);
 	}//end paymentsController()
+	/**
+	 * The notices route answers the notices by case for a caller in the audience.
+	 *
+	 * Contract coverage for `deadlineReporting#notices`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+	 */
+	public function testNoticesAnswersTheNoticesByCase(): void {
+		$this->signIn();
+		$rows = $this->createMock(NoticeOfDefaultRows::class);
+		$rows->expects($this->once())->method('list')->willReturn(['notices' => [['caseLabel' => '2026-4863 Kapvergunning Parkstraat']]]);
+
+		$response = $this->noticesController(rows: $rows)->notices();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('2026-4863 Kapvergunning Parkstraat', $response->getData()['notices'][0]['caseLabel']);
+	}//end testNoticesAnswersTheNoticesByCase()
+
+	/**
+	 * The notices route refuses an anonymous caller and reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testNoticesRefusesAnAnonymousCaller(): void {
+		$rows = $this->createMock(NoticeOfDefaultRows::class);
+		$rows->expects($this->never())->method('list');
+		$this->userSession->method('getUser')->willReturn(null);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $this->noticesController(rows: $rows)->notices()->getStatus());
+	}//end testNoticesRefusesAnAnonymousCaller()
+
+	/**
+	 * Without the notice rows the route says it is not available.
+	 *
+	 * @return void
+	 */
+	public function testNoticesIsUnavailableWithoutTheRows(): void {
+		$this->signIn();
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $this->controller->notices()->getStatus());
+	}//end testNoticesIsUnavailableWithoutTheRows()
+
+	/**
+	 * A controller holding the given notice rows.
+	 *
+	 * @param NoticeOfDefaultRows $rows The notice rows.
+	 *
+	 * @return DeadlineReportingController
+	 */
+	private function noticesController(NoticeOfDefaultRows $rows): DeadlineReportingController {
+		return new DeadlineReportingController(
+			appName: 'dossiq',
+			request: $this->request,
+			service: $this->service,
+			userSession: $this->userSession,
+			logger: $this->logger,
+			audience: $this->audience,
+			notices: $rows,
+		);
+	}//end noticesController()
 }//end class
