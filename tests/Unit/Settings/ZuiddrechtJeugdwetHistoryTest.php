@@ -28,7 +28,7 @@ use PHPUnit\Framework\TestCase;
 class ZuiddrechtJeugdwetHistoryTest extends TestCase {
 
 	/**
-	 * The consent is recorded by Fatma on the day of receipt; she opens the medical report three days later.
+	 * Fatma records the consent on its own date, the day after the report came in, and opens the medical report three days later.
 	 *
 	 * @return void
 	 */
@@ -38,11 +38,11 @@ class ZuiddrechtJeugdwetHistoryTest extends TestCase {
 
 		$consent = $entries['jeugdwet-toestemming-vastgelegd'] ?? null;
 		$this->assertNotNull($consent);
-		$this->assertSame(['3d903a5f-7066-50c8-a952-7e1c775055bb', 'create', '{{cast:fatma.uid}}', '{{datetime:-15 10:40}}'], [$consent['object'], $consent['action'], $consent['user'], $consent['at']]);
+		$this->assertSame(['3d903a5f-7066-50c8-a952-7e1c775055bb', 'create', '{{cast:fatma.uid}}', '{{datetime:-14 10:40}}'], [$consent['object'], $consent['action'], $consent['user'], $consent['at']]);
 
 		$report = $entries['jeugdwet-inzage-medisch-verslag'] ?? null;
 		$this->assertNotNull($report);
-		$this->assertSame(['e0b306d2-c523-5938-9b5c-3474d292dc01', 'file.downloaded', '{{cast:fatma.uid}}', '{{datetime:-12 11:05}}'], [$report['object'], $report['action'], $report['user'], $report['at']]);
+		$this->assertSame(['e0b306d2-c523-5938-9b5c-3474d292dc01', 'file.downloaded', '{{cast:fatma.uid}}', '{{datetime:-11 11:05}}'], [$report['object'], $report['action'], $report['user'], $report['at']]);
 		$this->assertSame('medisch verslag', $report['changed']['data']['fileName']);
 	}//end testFatmaRecordsTheConsentAndReadsTheReport()
 }//end class

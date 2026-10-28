@@ -10683,7 +10683,7 @@
 				"object": "3d903a5f-7066-50c8-a952-7e1c775055bb",
 				"action": "create",
 				"user": "{{cast:fatma.uid}}",
-				"at": "{{datetime:-15 10:40}}"
+				"at": "{{datetime:-14 10:40}}"
 			}
 		},
 		{
@@ -10692,7 +10692,7 @@
 				"object": "e0b306d2-c523-5938-9b5c-3474d292dc01",
 				"action": "file.downloaded",
 				"user": "{{cast:fatma.uid}}",
-				"at": "{{datetime:-12 11:05}}",
+				"at": "{{datetime:-11 11:05}}",
 				"changed": {
 					"data": {
 						"fileName": "medisch verslag"
@@ -10708,8 +10708,8 @@
 				"object": "{{task:hoorzitting-inplannen.uuid}}",
 				"owner": "{{cast:pieter.uid}}",
 				"summary": "Hoorzitting bezwaar parkeerboete",
-				"start": "{{datetime:4 14:00}}",
-				"end": "{{datetime:4 15:00}}",
+				"start": "{{datetime:14 14:00}}",
+				"end": "{{datetime:14 15:00}}",
 				"location": "Stadskantoor, zaal 2.04",
 				"description": "Hoorzitting met de indiener en de bezwaarcommissie.",
 				"attendees": [
