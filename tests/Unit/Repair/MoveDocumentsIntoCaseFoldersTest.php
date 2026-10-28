@@ -226,4 +226,35 @@ class MoveDocumentsIntoCaseFoldersTest extends TestCase {
 		$this->step->run(output: $this->createMock(originalClassName: IOutput::class));
 		$this->addToAssertionCount(count: 1);
 	}//end testARecordWithoutAFileIsSkippedWithoutALookup()
+
+	/**
+	 * A record the example set stored with its file attached in OpenRegister
+	 * (`@self.files`) but no `fileId` still moves into its case.
+	 *
+	 * @return void
+	 */
+	public function testARecordWithAnAttachedFileButNoFileIdMoves(): void {
+		$this->appConfig->method('getValueString')->willReturn('');
+		$this->objects->records = [['@self' => ['id' => 'rec-set', 'files' => [20751]], 'fileName' => 'Offerte.pdf']];
+		$this->projection->method('folderOf')->willReturn($this->folder(holdsFile: true));
+		$this->store->method('joinsFor')->willReturn([['case' => 'case-set', 'registrationDate' => '2026-10-18T10:00:00Z']]);
+		$this->projection->expects($this->once())->method('homeDocument')
+			->with('rec-set', 'case-set')->willReturn(true);
+
+		$this->step->run(output: $this->createMock(originalClassName: IOutput::class));
+	}//end testARecordWithAnAttachedFileButNoFileIdMoves()
+
+	/**
+	 * A site that ran the second version moves the example set's attached files.
+	 *
+	 * @return void
+	 */
+	public function testASecondVersionRunRunsAgain(): void {
+		$this->assertNotSame(expected: '2', actual: MoveDocumentsIntoCaseFolders::DONE_VERSION);
+		$this->appConfig->method('getValueString')->willReturn('2');
+		$this->appConfig->expects($this->once())->method('setValueString')
+			->with(Application::APP_ID, MoveDocumentsIntoCaseFolders::DONE_KEY, MoveDocumentsIntoCaseFolders::DONE_VERSION);
+
+		$this->step->run(output: $this->createMock(originalClassName: IOutput::class));
+	}//end testASecondVersionRunRunsAgain()
 }//end class
