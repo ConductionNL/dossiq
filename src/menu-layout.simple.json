@@ -2021,6 +2021,9 @@
 						}
 					},
 					"case-stages": {
+						"notTabs": [
+							"ai-oversight"
+						],
 						"content": {
 							"currentField": "status",
 							"orientation": "horizontal",
