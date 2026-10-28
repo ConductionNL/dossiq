@@ -1751,6 +1751,7 @@
 							{
 								"id": "t6",
 								"widgetId": "cases-by-status",
+								"clear": true,
 								"gridX": 0,
 								"gridY": 6,
 								"gridWidth": 6,
@@ -1761,6 +1762,7 @@
 							{
 								"id": "t7",
 								"widgetId": "cases-by-type",
+								"clear": true,
 								"gridX": 6,
 								"gridY": 6,
 								"gridWidth": 6,
