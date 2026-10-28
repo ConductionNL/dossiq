@@ -174,11 +174,11 @@ class SociaalDomeinPlanControllerContractTest extends TestCase {
 
 		// The plan and goal belong to a case the caller may change; the
 		// refusals are SociaalDomeinPlanWriteAccessTest's.
-		$store = $this->createMock(SociaalDomeinStore::class);
+		$store = $this->createMock(originalClassName: SociaalDomeinStore::class);
 		$store->method('read')->willReturnCallback(
 			static fn (string $schema, string $id): array => ['id' => $id, 'plan' => self::PLAN_ID, 'caseId' => 'case-1']
 		);
-		$guard = $this->createMock(CaseAccessGuard::class);
+		$guard = $this->createMock(originalClassName: CaseAccessGuard::class);
 		$guard->method('hasCaseMutationAccess')->willReturn(true);
 
 		return new SociaalDomeinPlanController(

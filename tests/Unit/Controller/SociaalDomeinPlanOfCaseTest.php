@@ -94,7 +94,7 @@ class SociaalDomeinPlanOfCaseTest extends TestCase {
 			review: $review,
 			existence: $this->createMock(CrossDomainExistence::class),
 			userSession: $this->createMock(IUserSession::class),
-			caseAccessGuard: $this->createMock(CaseAccessGuard::class),
+			caseAccessGuard: $this->createMock(originalClassName: CaseAccessGuard::class),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end controller()

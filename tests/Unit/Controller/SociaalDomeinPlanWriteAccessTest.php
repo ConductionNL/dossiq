@@ -49,28 +49,44 @@ use Psr\Log\LoggerInterface;
  */
 class SociaalDomeinPlanWriteAccessTest extends TestCase {
 
-	/** The case the plan belongs to. */
+	/**
+	 * The case the plan belongs to.
+	 */
 	private const CASE_ID = 'e0b306d2-c523-5938-9b5c-3474d292dc01';
 
-	/** Another family's case. */
+	/**
+	 * Another family's case.
+	 */
 	private const OTHER_CASE_ID = '9a1c55e0-0000-4000-8000-00000000c0de';
 
-	/** The plan the writes are routed to. */
+	/**
+	 * The plan the writes are routed to.
+	 */
 	private const PLAN_ID = 'plan-2b19';
 
-	/** Another family's plan. */
+	/**
+	 * Another family's plan.
+	 */
 	private const OTHER_PLAN_ID = 'plan-other';
 
-	/** A goal on the plan. */
+	/**
+	 * A goal on the plan.
+	 */
 	private const GOAL_ID = 'goal-55af';
 
-	/** A goal that belongs to a case directly. */
+	/**
+	 * A goal that belongs to a case directly.
+	 */
 	private const CASE_GOAL_ID = 'goal-on-case';
 
-	/** A goal on another family's plan. */
+	/**
+	 * A goal on another family's plan.
+	 */
 	private const OTHER_GOAL_ID = 'goal-other';
 
-	/** An intervention on another family's plan. */
+	/**
+	 * An intervention on another family's plan.
+	 */
 	private const OTHER_INTERVENTION_ID = 'intervention-other';
 
 	/**
