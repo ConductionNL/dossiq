@@ -38,18 +38,17 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanReview;
 use OCA\Dossiq\Service\SociaalDomein\CrossDomainExistence;
+use OCA\Dossiq\Service\SociaalDomein\FamilyPlanWriteAccess;
 use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -74,9 +73,8 @@ class SociaalDomeinPlanController extends Controller {
 	 * @param CasePlanInterventions $interventions The plan's interventions.
 	 * @param CasePlanReview        $review        The plan's reviews.
 	 * @param CrossDomainExistence  $existence     The cross-domain lookup.
-	 * @param IUserSession          $userSession     The session.
-	 * @param CaseAccessGuard       $caseAccessGuard Per-case authorization of every plan write (fails closed).
-	 * @param LoggerInterface       $logger          The logger.
+	 * @param FamilyPlanWriteAccess $planAccess    The case check every plan write runs first.
+	 * @param LoggerInterface       $logger        The logger.
 	 *
 	 * @return void
 	 *
@@ -90,8 +88,7 @@ class SociaalDomeinPlanController extends Controller {
 		private readonly CasePlanInterventions $interventions,
 		private readonly CasePlanReview $review,
 		private readonly CrossDomainExistence $existence,
-		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly FamilyPlanWriteAccess $planAccess,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -190,13 +187,13 @@ class SociaalDomeinPlanController extends Controller {
 	#[NoAdminRequired]
 	public function saveGoal(string $planId): JSONResponse {
 		try {
-			$denied = $this->refusalForPlanWrite(
+			$status = $this->planAccess->planWrite(
 				planId: $planId,
 				recordSchema: CasePlanGoals::SCHEMA,
 				recordId: trim((string)$this->request->getParam('id', ''))
 			);
-			if ($denied !== null) {
-				return $denied;
+			if ($status !== Http::STATUS_OK) {
+				return $this->denied(status: $status);
 			}
 
 			return new JSONResponse(
@@ -229,14 +226,9 @@ class SociaalDomeinPlanController extends Controller {
 	#[NoAdminRequired]
 	public function closeGoal(string $goalId): JSONResponse {
 		try {
-			$goal = $this->store->read(schema: CasePlanGoals::SCHEMA, id: $goalId);
-			if ($goal === null) {
-				return new JSONResponse(['error' => 'Goal not found'], Http::STATUS_NOT_FOUND);
-			}
-
-			$denied = $this->refusalForCase(caseId: $this->caseOfRecord(record: $goal));
-			if ($denied !== null) {
-				return $denied;
+			$status = $this->planAccess->goalWrite(goalId: $goalId);
+			if ($status !== Http::STATUS_OK) {
+				return $this->denied(status: $status);
 			}
 
 			return new JSONResponse(
@@ -265,13 +257,13 @@ class SociaalDomeinPlanController extends Controller {
 	#[NoAdminRequired]
 	public function saveIntervention(string $planId): JSONResponse {
 		try {
-			$denied = $this->refusalForPlanWrite(
+			$status = $this->planAccess->planWrite(
 				planId: $planId,
 				recordSchema: CasePlanInterventions::SCHEMA,
 				recordId: trim((string)$this->request->getParam('id', ''))
 			);
-			if ($denied !== null) {
-				return $denied;
+			if ($status !== Http::STATUS_OK) {
+				return $this->denied(status: $status);
 			}
 
 			return new JSONResponse(
@@ -309,27 +301,21 @@ class SociaalDomeinPlanController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function recordReview(string $planId): JSONResponse {
-		$user = $this->userSession->getUser();
-		$reviewedBy = '';
-		if ($user !== null) {
-			$reviewedBy = $user->getUID();
-		}
-
 		$changes = $this->request->getParam('changes', []);
 		if (is_array($changes) === false) {
 			$changes = [];
 		}
 
 		try {
-			$denied = $this->refusalForPlanWrite(planId: $planId);
-			if ($denied !== null) {
-				return $denied;
+			$status = $this->planAccess->planWrite(planId: $planId);
+			if ($status !== Http::STATUS_OK) {
+				return $this->denied(status: $status);
 			}
 
 			return new JSONResponse(
 				$this->review->record(
 					planId: $planId,
-					reviewedBy: $reviewedBy,
+					reviewedBy: $this->planAccess->currentUid(),
 					changes: $changes,
 					nextReviewDate: (string)$this->request->getParam('nextReviewDate', ''),
 				)
@@ -371,8 +357,8 @@ class SociaalDomeinPlanController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function lookUp(): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
+		$uid = $this->planAccess->currentUid();
+		if ($uid === '') {
 			return new JSONResponse(
 				['message' => 'Sign in before looking a person up.', 'error' => 'not-signed-in'],
 				Http::STATUS_FORBIDDEN,
@@ -386,7 +372,7 @@ class SociaalDomeinPlanController extends Controller {
 						bsn: (string)$this->request->getParam('bsn', ''),
 						ownDomain: (string)$this->request->getParam('domain', ''),
 						ground: (string)$this->request->getParam('ground', ''),
-						requester: $user->getUID(),
+						requester: $uid,
 					),
 				]
 			);
@@ -418,84 +404,23 @@ class SociaalDomeinPlanController extends Controller {
 	}//end lookupsAbout()
 
 	/**
-	 * Why a write on a plan may not run, or null when it may: the caller needs
-	 * the right to change the plan's case and, when the write names an
-	 * existing goal or intervention by id, the right to change that record's
-	 * case too, so an id from another family's plan is not rewritten.
+	 * The answer to a plan write the case check refused; nothing was written.
 	 *
-	 * @param string $planId       The gezinsplan uuid from the route.
-	 * @param string $recordSchema The schema of the record the write names, or ''.
-	 * @param string $recordId     The id of the record the write names, or ''.
+	 * @param int $status 401, 403 or 404 from FamilyPlanWriteAccess.
 	 *
-	 * @return JSONResponse|null The refusal, or null.
-	 *
-	 * @throws RefusedException When the store cannot be read.
+	 * @return JSONResponse The refusal.
 	 *
 	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
 	 */
-	private function refusalForPlanWrite(string $planId, string $recordSchema = '', string $recordId = ''): ?JSONResponse {
-		$plan = $this->store->read(schema: CasePlanReview::SCHEMA, id: $planId);
-		if ($plan === null) {
-			return new JSONResponse(['error' => 'Family plan not found'], Http::STATUS_NOT_FOUND);
-		}
+	private function denied(int $status): JSONResponse {
+		$message = match ($status) {
+			Http::STATUS_UNAUTHORIZED => 'unauthenticated',
+			Http::STATUS_NOT_FOUND => 'not_found',
+			default => 'access_denied',
+		};
 
-		$denied = $this->refusalForCase(caseId: trim((string)($plan['caseId'] ?? '')));
-		if ($denied !== null || $recordSchema === '' || $recordId === '') {
-			return $denied;
-		}
-
-		$record = $this->store->read(schema: $recordSchema, id: $recordId);
-		if ($record === null) {
-			return null;
-		}
-
-		return $this->refusalForCase(caseId: $this->caseOfRecord(record: $record));
-	}//end refusalForPlanWrite()
-
-	/**
-	 * The case a goal or intervention belongs to: its own `case`, else its plan's `caseId`.
-	 *
-	 * @param array<string, mixed> $record The goal or intervention.
-	 *
-	 * @return string The case uuid, or '' when none is found.
-	 *
-	 * @throws RefusedException When the store cannot be read.
-	 *
-	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
-	 */
-	private function caseOfRecord(array $record): string {
-		$caseId = trim((string)($record['case'] ?? ''));
-		if ($caseId !== '') {
-			return $caseId;
-		}
-
-		$plan = $this->store->read(schema: CasePlanReview::SCHEMA, id: trim((string)($record['plan'] ?? '')));
-
-		return trim((string)($plan['caseId'] ?? ''));
-	}//end caseOfRecord()
-
-	/**
-	 * 401 without a session, 403 when the caller may not change the case or
-	 * there is no case to check, null when the write may run.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return JSONResponse|null The refusal, or null.
-	 *
-	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
-	 */
-	private function refusalForCase(string $caseId): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($caseId === '' || $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['message' => 'access_denied'], Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
-	}//end refusalForCase()
+		return new JSONResponse(['message' => $message], $status);
+	}//end denied()
 
 	/**
 	 * A failure that is not a refusal, logged and answered as one.

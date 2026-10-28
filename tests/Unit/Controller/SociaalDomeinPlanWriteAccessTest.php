@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanReview;
 use OCA\Dossiq\Service\SociaalDomein\CrossDomainExistence;
+use OCA\Dossiq\Service\SociaalDomein\FamilyPlanWriteAccess;
 use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -45,6 +46,7 @@ use Psr\Log\LoggerInterface;
  * Every plan write checks the plan's case first.
  *
  * @covers \OCA\Dossiq\Controller\SociaalDomeinPlanController
+ * @covers \OCA\Dossiq\Service\SociaalDomein\FamilyPlanWriteAccess
  * @uses \OCA\Dossiq\Controller\Support\TranslatesRefusals
  */
 class SociaalDomeinPlanWriteAccessTest extends TestCase {
@@ -194,8 +196,7 @@ class SociaalDomeinPlanWriteAccessTest extends TestCase {
 			interventions: $interventions,
 			review: $review,
 			existence: $this->createMock(originalClassName: CrossDomainExistence::class),
-			userSession: $session,
-			caseAccessGuard: $guard,
+			planAccess: new FamilyPlanWriteAccess(store: $store, caseAccessGuard: $guard, userSession: $session),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end controller()

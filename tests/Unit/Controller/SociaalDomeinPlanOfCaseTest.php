@@ -28,15 +28,14 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\SociaalDomeinPlanController;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanReview;
 use OCA\Dossiq\Service\SociaalDomein\CrossDomainExistence;
+use OCA\Dossiq\Service\SociaalDomein\FamilyPlanWriteAccess;
 use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
-use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -93,8 +92,7 @@ class SociaalDomeinPlanOfCaseTest extends TestCase {
 			interventions: $interventions,
 			review: $review,
 			existence: $this->createMock(CrossDomainExistence::class),
-			userSession: $this->createMock(IUserSession::class),
-			caseAccessGuard: $this->createMock(originalClassName: CaseAccessGuard::class),
+			planAccess: $this->createMock(originalClassName: FamilyPlanWriteAccess::class),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end controller()

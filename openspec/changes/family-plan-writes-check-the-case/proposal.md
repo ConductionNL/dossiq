@@ -19,5 +19,6 @@ intervention by `id` could also rewrite another family's record through a plan t
 
 ## Scope
 
-`lib/Controller/SociaalDomeinPlanController.php`. The reads (`plan`, `planOfCase`) are unchanged: they stay scoped by
+`lib/Controller/SociaalDomeinPlanController.php` and a new `lib/Service/SociaalDomein/FamilyPlanWriteAccess.php`, which holds the check
+(the controller takes it in place of the session, so its own size stays inside the PHPMD limits). The reads (`plan`, `planOfCase`) are unchanged: they stay scoped by
 OpenRegister RBAC through the store.
