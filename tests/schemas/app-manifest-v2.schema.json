@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.160.0",
+	"version": "2.161.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -966,6 +966,11 @@
 			"pattern": "^@source\\.[A-Za-z][A-Za-z0-9_.@]*$",
 			"description": "Facts source: a field of the object a facts widget shows (@source.<field>, dot path allowed), read by a fact row's `route` params. Mirrors SENTINEL_TOKEN_PATTERNS.source."
 		},
+		"sentinelInputToken": {
+			"type": "string",
+			"pattern": "^@input\\.[A-Za-z][A-Za-z0-9_]*$",
+			"description": "Facts input: what the user typed into a facts widget's `input` field (@input.<key>), read by its actions' url and payload ('' when nothing was typed). Mirrors SENTINEL_TOKEN_PATTERNS.input."
+		},
 		"sentinelSubjectToken": {
 			"type": "string",
 			"pattern": "^@subject\\.[A-Za-z][A-Za-z0-9_.]*$",
@@ -987,6 +992,7 @@
 				{ "$ref": "#/$defs/sentinelSubjectToken" },
 				{ "$ref": "#/$defs/sentinelContextToken" },
 				{ "$ref": "#/$defs/sentinelSourceToken" },
+				{ "$ref": "#/$defs/sentinelInputToken" },
 				{ "$ref": "#/$defs/sentinelDeprecatedToken" }
 			]
 		},
