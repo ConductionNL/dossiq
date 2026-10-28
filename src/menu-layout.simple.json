@@ -7643,9 +7643,39 @@
 							},
 							"itemTitle": "{title}",
 							"itemMeta": [
-								"{candidateGroups}",
-								"{leadTimeDays} working days"
+								{
+									"text": "{roleName}",
+									"when": {
+										"any": [
+											{ "field": "leadTimeDays", "op": "gt", "value": 0 },
+											{ "field": "description", "op": "empty" }
+										]
+									}
+								},
+								{
+									"text": "{candidateGroups}",
+									"when": {
+										"all": [
+											{ "field": "roleName", "op": "empty" },
+											{
+												"any": [
+													{ "field": "leadTimeDays", "op": "gt", "value": 0 },
+													{ "field": "description", "op": "empty" }
+												]
+											}
+										]
+									}
+								},
+								{
+									"text": "{leadTimeDays} working days",
+									"when": { "field": "leadTimeDays", "op": "gt", "value": 0 }
+								},
+								{
+									"text": "{description}",
+									"when": { "field": "leadTimeDays", "op": "lte", "value": 0 }
+								}
 							],
+							"_itemMetaNote": "DqZaaktype task cards: a task with a term reads its role and the term (Intaker · 5 werkdagen); one without reads its description (Automatisch, bericht aan de aanvrager), or its role when it has none. The group stands in for a task routed to no role.",
 							"columns": 2,
 							"extraGroup": {
 								"title": "Available in every phase",
