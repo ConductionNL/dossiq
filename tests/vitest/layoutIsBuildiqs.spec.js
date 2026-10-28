@@ -38,6 +38,14 @@ vi.mock('@nextcloud/dialogs', () => ({
 	showInfo: vi.fn(),
 }))
 
+// nextcloud-vue's app installer (useAppInstaller) registers these on load;
+// the real package pulls in NcDialog's stylesheet outside Vite.
+vi.mock('@nextcloud/password-confirmation', () => ({
+	addPasswordConfirmationInterceptors: vi.fn(),
+	confirmPassword: vi.fn(),
+	PwdConfirmationMode: { Strict: 'strict', Lax: 'lax' },
+}))
+
 const { default: CnDashboardPage } = await import(
 	'@conduction/nextcloud-vue/src/components/CnDashboardPage/CnDashboardPage.vue'
 )

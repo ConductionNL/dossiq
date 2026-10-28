@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.158.0",
+	"version": "2.159.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -120,6 +120,8 @@
 							"optionsByParent": { "type": "object", "description": "choice: map of parent-choice value → options[] for a dependent (dependsOn) choice. Same option item shape as `options`.", "additionalProperties": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["value", "label"], "properties": { "value": {}, "label": { "type": "string" } } } } },
 							"suggestFrom": { "type": "string", "description": "choice: the configKey of an earlier choice this step pre-fills a suggestion from. When that value is set and the user has not yet picked here, the option matching suggestMap[parentValue] is auto-selected (still user-overridable)." },
 							"default": { "description": "choice: the option value chosen when the step opens (an array of values with `multiple`). Not applied to a step the server already completed." },
+							"optionalLabels": { "type": "boolean", "description": "config-fields: a field the step's schema does not require reads \"(optional)\" after its label (PqInstellen, setup-wizard-optional-skip)." },
+							"skippable": { "type": "boolean", "description": "The wizard offers \"Skip this step\": it moves on without validating or saving the step (PqInstellen, setup-wizard-optional-skip)." },
 							"noteStyle": { "type": "string", "enum": ["line", "card"], "default": "line", "description": "choice: how `note` is drawn: a muted line under the options (`line`) or an info note card (`card`)." },
 							"suggestMap": { "type": "object", "description": "choice: map of suggestFrom value → suggested option value. Used to auto-suggest a default (e.g. RGS template suggested from organisation type).", "additionalProperties": { "type": "string" } },
 							"multiple": { "type": "boolean", "default": false, "description": "choice: allow multi-select." },
@@ -615,7 +617,8 @@
 						"groupField": { "type": "string", "minLength": 1, "description": "Groups the options by this field, groups in the order they first appear (form-small-features)." },
 						"where": { "type": "object", "description": "Keep the rows whose fields equal these values; a value may be `@answer.<key>`, another field of the form (object-list-edit-in-place)." },
 						"itemsPath": { "type": "string", "minLength": 1, "description": "Read the options from the list at this path in each row (object-list-edit-in-place)." },
-						"hideWhenEmpty": { "type": "boolean", "description": "Leave the field out while the source gives no options (object-list-edit-in-place)." }
+						"hideWhenEmpty": { "type": "boolean", "description": "Leave the field out while the source gives no options (object-list-edit-in-place)." },
+						"keepFields": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Values of the row each option carries along as `data`, such as a programme's terms url a create form links to (create-form-widget)." }
 					}
 				},
 				{
@@ -631,7 +634,8 @@
 						"groupField": { "type": "string", "minLength": 1, "description": "Groups the options by this field, groups in the order they first appear (form-small-features)." },
 						"where": { "type": "object", "description": "Keep the rows whose fields equal these values; a value may be `@answer.<key>`, another field of the form (object-list-edit-in-place)." },
 						"itemsPath": { "type": "string", "minLength": 1, "description": "Read the options from the list at this path in each row (object-list-edit-in-place)." },
-						"hideWhenEmpty": { "type": "boolean", "description": "Leave the field out while the source gives no options (object-list-edit-in-place)." }
+						"hideWhenEmpty": { "type": "boolean", "description": "Leave the field out while the source gives no options (object-list-edit-in-place)." },
+						"keepFields": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Values of the row each option carries along as `data`, such as a programme's terms url a create form links to (create-form-widget)." }
 					}
 				}
 			]
@@ -649,7 +653,8 @@
 				"href": { "type": "string" },
 				"icon": { "type": "string", "minLength": 1, "description": "Optional MDI icon name (e.g. `Home`) drawn as the first crumb instead of the label, which then becomes its accessible name (zuiddrecht-pixel-gaps-2). Without it the label shows as text." },
 				"currentField": { "type": "string", "minLength": 1, "description": "A field of the record (dotted path, e.g. `identifier`) whose value is the current crumb instead of the display name; an empty value falls back to the display name (zuiddrecht-pixel-gaps-3)." },
-				"separator": { "type": "string", "minLength": 1, "maxLength": 3, "description": "Text drawn between the crumbs (e.g. `/`) instead of the chevron (zuiddrecht-pixel-gaps-3)." }
+				"separator": { "type": "string", "minLength": 1, "maxLength": 3, "description": "Text drawn between the crumbs (e.g. `/`) instead of the chevron (zuiddrecht-pixel-gaps-3)." },
+				"visibleWhen": { "type": "object", "description": "A local visibleWhen condition read off the record; the crumb shows only while it holds, so one page can name a different list per kind of record (detail-record-kind-variants)." }
 			}
 		},
 		"rowIndicator": {
@@ -1305,7 +1310,7 @@
 					"type": "object",
 					"description": "screens-kanban-parity: how the sum is formatted when the field's own schema does not say: `{ style, currency, decimals }`.",
 					"properties": {
-						"style": { "type": "string", "enum": ["number", "currency", "percent", "duration-hours", "decimal"] },
+						"style": { "type": "string", "enum": ["number", "currency", "percent", "duration-hours", "decimal", "date"] },
 						"currency": { "type": "string" },
 						"decimals": { "type": "integer", "minimum": 0 }
 					}
@@ -4004,12 +4009,12 @@
 				"format": {
 					"description": "How the value is shown, as a type:'stat' widget's content.format: a style name, or { style, currency, currencyField, decimals, prefix, suffix }. Omitted, the plain localized count is shown. Numbers are formatted with Intl in the user's locale.",
 					"oneOf": [
-						{ "type": "string", "enum": ["number", "currency", "percent", "decimal", "duration-hours"] },
+						{ "type": "string", "enum": ["number", "currency", "percent", "decimal", "duration-hours", "date"] },
 						{
 							"type": "object",
 							"additionalProperties": false,
 							"properties": {
-								"style": { "type": "string", "enum": ["number", "currency", "percent", "decimal", "duration-hours"] },
+								"style": { "type": "string", "enum": ["number", "currency", "percent", "decimal", "duration-hours", "date"] },
 								"currency": { "type": "string", "description": "ISO-4217 code, or a token such as @config.currency or @object.currency." },
 								"currencyField": { "type": "string", "description": "Field of the detail page's object that holds the currency (dot-path allowed)." },
 								"decimals": { "type": "integer", "minimum": 0, "description": "Fraction digits." },
@@ -4688,6 +4693,21 @@
 									"minLength": 1,
 									"description": "A field path, read like a `visibleWhen` field, whose value holds the stages in the `stages` shape, e.g. `@context.caseType.nextStep`, so each case type keeps its own stage texts and checklist. The declared `stages` apply otherwise (2.129.0)."
 								},
+								"variants": {
+									"type": "array",
+									"minItems": 1,
+									"description": "Per kind of record: the first variant whose `when` holds replaces the declared `title` and `stages` (a contact moment's own steps on the ticket page; detail-record-kind-variants).",
+									"items": {
+										"type": "object",
+										"additionalProperties": false,
+										"required": ["when", "stages"],
+										"properties": {
+											"when": { "type": "object", "description": "A local visibleWhen condition read off the record." },
+											"title": { "anyOf": [{ "type": "string" }, { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }], "description": "As `title`." },
+											"stages": { "type": "object", "description": "As `stages`: keys are stage values." }
+										}
+									}
+								},
 								"title": {
 									"anyOf": [{ "type": "string" }, { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }],
 									"description": "i18n key / heading used by a stage that names none. May name record fields as `{path}` tokens; a list is candidates, the first whose fields all have a value is used."
@@ -4811,6 +4831,12 @@
 							"type": "string",
 							"minLength": 1,
 							"description": "type='detail': a field path, read like a `visibleWhen` field, whose value picks the side column and its order for this record, e.g. `@context.caseType.sideCards` (a case type that names the cards its cases show). When the value is a non-empty list of widget ids, the side column is those of `sideColumn` in that order and the rest are left out; each still follows its own `visibleWhen`. Any other value, or no value, keeps `sideColumn` as declared. Maps to CnDetailPage `sideColumnFrom`."
+						},
+						"sideColumnOrder": {
+							"type": "string",
+							"enum": ["board", "declared"],
+							"default": "board",
+							"description": "type='detail', board look: the side column's order. `board` (default) puts a notice first and the History card last; `declared` keeps the order of `sideColumn`, for a board that draws History on top. Maps to CnDetailPage `sideColumnOrder`."
 						},
 						"headerActions": {
 							"type": "array",
@@ -5537,6 +5563,14 @@
 							"default": [],
 							"description": "type='dashboard': widget ids drawn as a KPI row above the grid, in the listed order, in an auto-fit grid (`repeat(auto-fit, minmax(200px, 1fr))`, gap 16). The named widgets are not GridStack items, so they do not reflow with the grid and are not part of the emitted layout; an id that names no widget is skipped with a development warning (screens-dashboard-parity). Maps to CnDashboardPage `kpiRow`. `dateRange.control` also accepts \"segmented\": the presets as one compact segmented group under the header."
 						},
+						"kpiColumns": {
+							"oneOf": [
+								{ "type": "integer", "enum": [2, 3, 4] },
+								{ "type": "string", "enum": ["auto"] }
+							],
+							"default": "auto",
+							"description": "type='dashboard': the columns of the `kpiRow` at full width, 2, 3 or 4 (PqLoyaliteit draws eight tiles in two rows of four), or \"auto\" (the default) for as many 200px columns as fit. Maps to CnDashboardPage `kpiColumns`."
+						},
 						"greeting": {
 							"oneOf": [
 								{ "type": "boolean" },
@@ -5718,6 +5752,8 @@
 							"description": "type='index': the property keys the cards view shows as the facts list of each card, in order; defaults to the first four list columns under the board look (screens-card-parity). Maps to CnIndexPage `cardFields`.",
 							"items": { "type": "string", "minLength": 1 }
 						},
+						"expandableRows": { "type": "object", "additionalProperties": false, "description": "type='index', list view: every row opens to a sub-table (CnExpandableRow, index-expandable-rows). Closed: title, a badge while `badge.when` holds, description, a list field as chips (`tones` colour each by its entry) and meta templates. Open: the list as a table (columns `as` text, order, bar, check, yesNo or pill), a note and a footer action. A button or the footer action names a row action by id. `open` first or all opens rows at the start. Maps to CnIndexPage `expandableRows`.", "required": ["title"], "properties": { "title": { "type": "string", "minLength": 1 }, "badge": { "type": "object", "additionalProperties": false, "required": ["label"], "properties": { "when": { "type": "object" }, "label": { "type": "string", "minLength": 1 } } }, "description": { "type": "string", "minLength": 1 }, "chips": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "each": { "type": "string", "minLength": 1 }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "tones": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["when", "variant"], "properties": { "when": { "type": "object" }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "text": { "type": "string" } } } } } }, "meta": { "type": "array", "items": { "type": "string", "minLength": 1 } }, "table": { "type": "object", "additionalProperties": false, "required": ["field", "columns"], "properties": { "field": { "type": "string", "minLength": 1 }, "columns": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "key": { "type": "string", "minLength": 1 }, "label": { "type": "string" }, "as": { "type": "string", "enum": ["text", "order", "bar", "check", "yesNo", "pill"] }, "template": { "type": "string", "minLength": 1 }, "strong": { "type": "boolean" }, "text": { "type": "string" }, "tones": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["when", "variant"], "properties": { "when": { "type": "object" }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "text": { "type": "string" } } } } } } }, "note": { "type": "string" }, "action": { "type": "object", "additionalProperties": false, "required": ["id"], "properties": { "id": { "type": "string", "minLength": 1 }, "label": { "type": "string" } } } } }, "buttons": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["action"], "properties": { "action": { "type": "string", "minLength": 1 }, "label": { "type": "string" } } } }, "open": { "type": "string", "enum": ["first", "all", "none"] } } },
+						"tableTitle": { "type": "string", "minLength": 1, "description": "type='index', table view: a title at the top of the table card, an i18n key; under the board look the head row then reads on white with a rule under it (index-table-title). Maps to CnIndexPage `tableTitle`." },
 						"cardLayout": {
 							"type": "object",
 							"additionalProperties": false,
@@ -5732,7 +5768,7 @@
 								"footerCell": { "description": "A part in the footer before the date, read as a meta part is: a field name draws through the page column it names (its widget, e.g. the handler's picture and name), `{ field, formatter?, formatterOptions? }` reads as text through its own formatter; left out while empty (DqZakenSorteren, 2.145.0).", "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" } } }] },
 								"footerDate": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 }, "overdueVariant": { "type": "string", "enum": ["error", "warning"], "description": "The date's tone once it has passed (2.132.0)." } } },
 								"description": { "description": "A line under the meta line: a field, or `{ field, maxLength? }` cut at maxLength characters (140 by default) with an ellipsis (2.132.0).", "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "maxLength": { "type": "integer", "minimum": 1 } } }] },
-								"chips": { "type": "array", "description": "Pills under the description, one per entry whose field holds a value; the text reads through the entry's formatter, `colorMap` and `labels` work as on a pill (2.132.0). With `each`, a list field gives one pill per entry: `each` names the entry's field or is a template filled from the entry (card-list-chips).", "items": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "each": { "type": "string", "minLength": 1 }, "resolve": { "type": "object", "additionalProperties": false, "description": "pill-color-field: the field holds the id of a record; the pill takes the tone that record's colour maps onto and shows its icon. Register and schema default to the field's reference.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "colorField": { "type": "string", "minLength": 1 }, "iconField": { "type": "string", "minLength": 1 } } }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } } }] } }
+								"chips": { "type": "array", "description": "Pills under the description, one per entry whose field holds a value; the text reads through the entry's formatter, `colorMap` and `labels` work as on a pill (2.132.0). With `each`, a list field gives one pill per entry: `each` names the entry's field or is a template filled from the entry (card-list-chips).", "items": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "each": { "type": "string", "minLength": 1 }, "tones": { "type": "array", "description": "On a list chip (each): the first tone whose `when` (a visibleWhen condition read on the list entry) holds gives the chip its variant (card-list-chip-tones, 2.159.0).", "items": { "type": "object", "additionalProperties": false, "required": ["when", "variant"], "properties": { "when": { "type": "object" }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } } } }, "resolve": { "type": "object", "additionalProperties": false, "description": "pill-color-field: the field holds the id of a record; the pill takes the tone that record's colour maps onto and shows its icon. Register and schema default to the field's reference.", "properties": { "register": { "type": "string", "minLength": 1 }, "schema": { "type": "string", "minLength": 1 }, "colorField": { "type": "string", "minLength": 1 }, "iconField": { "type": "string", "minLength": 1 } } }, "formatter": { "type": "string", "minLength": 1 }, "formatterOptions": { "type": "object" }, "colorMap": { "type": "object", "additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } }, "labels": { "type": "object", "additionalProperties": { "type": "string" } }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] } } }] } }
 							}
 						},
 						"afterList": { "type": "array", "description": "type='index': cards after the list, stacked full width in the listed order, the counterpart of statRow above it (index-scope-presentation). Each entry is a widget definition resolved like statRow's. A query preset or a folder scope can set its own. Maps to CnIndexPage `afterList`.", "items": { "type": "object", "required": ["id", "type"], "properties": { "id": { "type": "string", "minLength": 1 }, "type": { "type": "string", "minLength": 1 }, "title": { "type": "string" }, "subtitle": { "type": "string" }, "content": { "type": "object" }, "headerLink": { "type": "object" } } } },
