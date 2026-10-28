@@ -5937,7 +5937,11 @@
 								}
 							}
 						],
-						"due": "{deadline|date}"
+						"due": "{deadline|date}",
+						"missingTitle": {
+							"singular": "{total} case without an address",
+							"plural": "{total} cases without an address"
+						}
 					}
 				},
 				"columns": [
@@ -6001,7 +6005,7 @@
 				],
 				"showTitle": true,
 				"countSubtitle": "{total} cases",
-				"defaultOrder": "deadline",
+				"defaultOrder": "deadline,receivedAt",
 				"countText": "{shown} of {total} open cases in your teams, sorted by deadline",
 				"defaultFilters": {
 					"isFinalStatus": false,
@@ -6016,6 +6020,9 @@
 					"map": "{shown} of {total} open cases in your teams"
 				},
 				"footerNote": "click a column header to sort · 20 per page",
+				"footerNoteByView": {
+					"cards": "sorted by deadline, ascending · sort in the side panel · 20 per page"
+				},
 				"bulkHint": "See what changes first, then carry it out.",
 				"bulkNoun": "cases",
 				"headerButtons": [
