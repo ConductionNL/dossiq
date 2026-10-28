@@ -1058,6 +1058,7 @@
 							{
 								"id": "s11",
 								"widgetId": "followed-cases",
+								"clear": true,
 								"gridX": 0,
 								"gridY": 16,
 								"gridWidth": 6,
@@ -1086,6 +1087,7 @@
 							{
 								"id": "s12",
 								"widgetId": "archival-reviews",
+								"clear": true,
 								"gridX": 6,
 								"gridY": 16,
 								"gridWidth": 6,
