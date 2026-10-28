@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Service\DeadlineReportingService;
 use OCA\Dossiq\Service\Reporting\ReportingAudience;
 use OCA\Dossiq\Service\Term\FirstResponseOutcome;
+use OCA\Dossiq\Service\Termijn\NoticeOfDefaultRows;
 use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -59,6 +60,7 @@ class DeadlineReportingController extends Controller {
 	 * @param ReportingAudience $audience Who may read a figure about every case.
 	 * @param FirstResponseOutcome|null $firstResponse The first-response figures.
 	 * @param PenaltyPaymentRows|null   $penaltyPayments The forfeited penalty payments by case.
+	 * @param NoticeOfDefaultRows|null  $notices         The notices of default by case, with their penalty.
 	 *        Nullable so an instance that never wired it answers "not available"
 	 *        rather than failing to construct the three reports beside it.
 	 */
@@ -71,6 +73,7 @@ class DeadlineReportingController extends Controller {
 		private readonly ReportingAudience $audience,
 		private readonly ?FirstResponseOutcome $firstResponse = null,
 		private readonly ?PenaltyPaymentRows $penaltyPayments = null,
+		private readonly ?NoticeOfDefaultRows $notices = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -302,6 +305,36 @@ class DeadlineReportingController extends Controller {
 			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end penaltyPayments()
+
+	/**
+	 * The notices of default by case, with the penalty each started and where
+	 * that money stands (board DqTermijnen "Ingebrekestellingen en dwangsom").
+	 * Behind the same audience gate as the figures beside it.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+	 */
+	public function notices(): JSONResponse {
+		$denied = $this->ensureMayReadReports();
+		if ($denied !== null) {
+			return $denied;
+		}
+
+		if ($this->notices === null) {
+			return new JSONResponse(['message' => 'Not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		try {
+			return new JSONResponse($this->notices->list());
+		} catch (Throwable $e) {
+			$this->logger->error('Notice of default list failed', ['error' => $e->getMessage()]);
+
+			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}//end notices()
 
 	/**
 	 * dashboard() on its old address.

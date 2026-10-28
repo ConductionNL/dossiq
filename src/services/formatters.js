@@ -13,7 +13,7 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
-import { translatePlural as n, translate as t } from '@nextcloud/l10n'
+import { getCanonicalLocale, translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { reactive } from 'vue'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
@@ -183,6 +183,21 @@ export function resetRelatedLabels() {
 	}
 }
 
+/**
+ * A day as "7 Aug" in the reader's locale, or '' when it is not a day.
+ *
+ * @param {unknown} value The day (YYYY-MM-DD).
+ * @return {string}
+ */
+function shortDay(value) {
+	const match = typeof value === 'string' ? value.match(/^(\d{4})-(\d{2})-(\d{2})/) : null
+	if (!match) {
+		return ''
+	}
+	const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])))
+	return new Intl.DateTimeFormat(getCanonicalLocale(), { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(date)
+}
+
 export default {
 	/**
 	 * A stored code by its label (`formatterOptions.labels`), translated; the
@@ -199,6 +214,40 @@ export default {
 		const code = value === null || value === undefined ? '' : String(value)
 		const label = options && options.labels && typeof options.labels[code] === 'string' ? options.labels[code] : ''
 		return label === '' ? code : t('dossiq', label)
+	},
+
+	/**
+	 * "Received 7 Aug": the day a notice came in, as the deadline dashboard
+	 * names it (DqTermijnen "Ontvangen 7 aug"); empty without a day.
+	 *
+	 * @param {unknown} value The day (YYYY-MM-DD).
+	 * @return {string}
+	 * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+	 */
+	receivedOn: (value) => {
+		const day = shortDay(value)
+		return day === '' ? '' : t('dossiq', 'Received {date}', { date: day })
+	},
+
+	/**
+	 * A notice's penalty in words: "€ 1.442, fixed", "€ 207, running since
+	 * 16 Oct" or "None" (DqTermijnen "Dwangsom").
+	 *
+	 * @param {unknown} value The penalty state: `definitive`, `running` or `none`.
+	 * @param {object} row The row, with `penaltyEuros` and `penaltySince`.
+	 * @return {string}
+	 * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+	 */
+	penaltyLine: (value, row) => {
+		if (value !== 'definitive' && value !== 'running') {
+			return t('dossiq', 'None')
+		}
+		const amount = new Intl.NumberFormat(getCanonicalLocale(), { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(row?.penaltyEuros) || 0)
+		if (value === 'definitive') {
+			return t('dossiq', '{amount}, fixed', { amount })
+		}
+		const since = shortDay(row?.penaltySince)
+		return since === '' ? amount : t('dossiq', '{amount}, running since {date}', { amount, date: since })
 	},
 
 	/**

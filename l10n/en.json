@@ -117,6 +117,12 @@
         "8 weeks": "8 weeks",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source",
         "> 90 dagen": "> 90 dagen",
+        "Amount not fixed yet": "Amount not fixed yet",
+        "Finances": "Finances",
+        "Not applicable": "Not applicable",
+        "Payment signal sent": "Payment signal sent",
+        "Penalty payment": "Penalty payment",
+        "Received {date}": "Received {date}",
         "_%n case type_::_%n case types_": [
             "%n case type",
             "%n case types"
@@ -11616,6 +11622,8 @@
         "{action}": "{action}",
         "{adviceDate|date} · {committeeChair}": "{adviceDate|date} · {committeeChair}",
         "{adviceType}": "{adviceType}",
+        "{amount}, fixed": "{amount}, fixed",
+        "{amount}, running since {date}": "{amount}, running since {date}",
         "{application, from}: the source number kept in formerReferences.": "{application, from}: the source number kept in formerReferences.",
         "{assessed}/{total} documents assessed": "{assessed}/{total} documents assessed",
         "{candidateGroups}": "{candidateGroups}",
