@@ -782,14 +782,29 @@ export default {
 		min-width: 0;
 	}
 
+	// Labels and help lines sit on the font's normal line, as DqBesluit draws
+	// them; the body's 1.5 put each 2px lower and 4px taller.
 	&__label {
 		font-size: 14px;
 		font-weight: 600;
+		line-height: normal;
 	}
 
 	&__hint {
 		font-size: 13px;
+		line-height: normal;
 		color: var(--color-text-maxcontrast);
+	}
+
+	// The text area stands right under its label and over its help line:
+	// NcTextArea's 6px top margin and its wrapper's 2px ring room on either
+	// side come out, and the inline text area leaves no descender gap.
+	& :deep(.textarea) {
+		margin-block: -2px;
+	}
+
+	& :deep(.textarea__input) {
+		vertical-align: top;
 	}
 
 	// The date field carries the board's calendar icon at its end; the
@@ -808,6 +823,7 @@ export default {
 		border: 1px solid var(--color-border-dark);
 		border-radius: 8px;
 		font: inherit;
+		vertical-align: top;
 
 		&::-webkit-calendar-picker-indicator {
 			opacity: 0;
