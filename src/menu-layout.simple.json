@@ -5230,7 +5230,12 @@
 								{
 									"key": "decidedAt",
 									"label": "Moment",
-									"format": "date-time"
+									"format": "date-time",
+									"widget": "date",
+									"widgetProps": {
+										"short": true,
+										"showTime": true
+									}
 								},
 								{
 									"key": "decidedBy",
@@ -5239,7 +5244,8 @@
 								},
 								{
 									"key": "prompt",
-									"label": "Question or suggestion"
+									"label": "Question or suggestion",
+									"cellClass": "cn-cell--wrap"
 								},
 								{
 									"key": "status",
@@ -5266,7 +5272,8 @@
 								},
 								{
 									"key": "advisoryContext.model",
-									"label": "Model"
+									"label": "Model",
+									"cellClass": "cn-cell--wrap"
 								}
 							],
 							"rowTitle": "text",
