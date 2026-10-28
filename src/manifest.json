@@ -5924,7 +5924,7 @@
 											},
 											{
 												"label": "Destruction date",
-												"value": "{archiveActionDate}"
+												"value": "{archiveActionDate|date}"
 											},
 											{
 												"label": "Archive status afterwards",
@@ -5984,6 +5984,7 @@
 									"title": "Read only afterwards",
 									"text": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date."
 								},
+								"fieldsAfterNote": true,
 								"fields": [
 									{
 										"field": "notifyRequester",
