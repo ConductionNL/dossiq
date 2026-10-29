@@ -143,6 +143,13 @@ describe('the end-of-day page', () => {
 	})
 })
 
+describe('each row names its case (DqDagAfsluiten r36)', () => {
+	it('templates the server\'s meta lines under the titles', () => {
+		expect(widget('eod-open').content.meta).toBe('{meta}')
+		expect(widget('eod-recorded').content.meta).toBe('{recordedMeta}')
+	})
+})
+
 describe('Ready for today? as its own card (DqDagAfsluiten r34)', () => {
 	it('is a text card after Recorded today, and the list puts its buttons at its foot', () => {
 		const ready = widget('eod-ready')
@@ -154,12 +161,5 @@ describe('Ready for today? as its own card (DqDagAfsluiten r34)', () => {
 		const recorded = at('eod-recorded')
 		expect(at('eod-ready')).toMatchObject({ gridX: 0, gridWidth: 8, track: 'main', sizeToContent: true })
 		expect(at('eod-ready').gridY).toBe(recorded.gridY + recorded.gridHeight)
-	})
-})
-
-describe('each row names its case (DqDagAfsluiten r36)', () => {
-	it('templates the server\'s meta lines under the titles', () => {
-		expect(widget('eod-open').content.meta).toBe('{meta}')
-		expect(widget('eod-recorded').content.meta).toBe('{recordedMeta}')
 	})
 })
