@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
 use OCA\Dossiq\Service\Money\PayoutReader;
 use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -109,7 +110,32 @@ class PenaltyPaymentRowsTest extends TestCase {
 		self::assertSame(3, $summary['count']);
 		self::assertSame(3420.0, $summary['totalEuros']);
 		self::assertSame(1, $summary['disputedCount']);
-		self::assertSame([['year' => 2026, 'count' => 3, 'totalEuros' => 3420.0, 'disputedCount' => 1]], $this->rows->forYear(2026)['summaryRows']);
+		$expected = [['year' => 2026, 'count' => 3, 'totalEuros' => 3420.0, 'disputedCount' => 1, 'note' => '']];
+		self::assertSame(expected: $expected, actual: $this->rows->forYear(2026)['summaryRows']);
+	}
+
+	/**
+	 * The summary row words the count and the disputed ones with their plural,
+	 * "1 betaling, geen betwist" (DqTermijnen "Jaarlijkse dwangsomaudit").
+	 *
+	 * @return void
+	 */
+	public function testSummaryRowWordsTheCount(): void {
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('n')->willReturnCallback(
+			static function (string $one, string $many, int $count, array $params = []): string {
+				$text = $many;
+				if ($count === 1) {
+					$text = $one;
+				}
+
+				return vsprintf(format: str_replace(search: '%n', replace: (string)$count, subject: $text), values: $params);
+			}
+		);
+		$rows = new PenaltyPaymentRows(settingsService: $this->settings(objects: $this->objects, paymentSchema: 'dwangsomUitbetaling'), l10n: $l10n);
+
+		self::assertSame(expected: '3 payments, 1 disputed', actual: $rows->forYear(2026)['summaryRows'][0]['note']);
+		self::assertSame(expected: '1 payment, none disputed', actual: $rows->forYear(2025)['summaryRows'][0]['note']);
 	}
 
 	/**
@@ -155,7 +181,8 @@ class PenaltyPaymentRowsTest extends TestCase {
 		$rows = new PenaltyPaymentRows($this->settings(objects: $this->objects, paymentSchema: ''));
 
 		$none = ['count' => 0, 'totalEuros' => 0.0, 'disputedCount' => 0];
-		self::assertSame(['year' => 2026, 'rows' => [], 'summary' => $none, 'summaryRows' => [['year' => 2026] + $none]], $rows->forYear(2026));
+		$expected = ['year' => 2026, 'rows' => [], 'summary' => $none, 'summaryRows' => [['year' => 2026] + $none + ['note' => '']]];
+		self::assertSame(expected: $expected, actual: $rows->forYear(2026));
 	}
 
 	/**

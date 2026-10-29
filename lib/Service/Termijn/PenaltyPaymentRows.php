@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\IL10N;
 use Throwable;
 
 /**
@@ -59,10 +60,12 @@ class PenaltyPaymentRows {
 	 *
 	 * @param SettingsService $settingsService The app settings, for the object service and the schema ids.
 	 * @param PayoutReader|null $payouts Reads the payouts from the finance app, beside the rows it does not hold.
+	 * @param IL10N|null        $l10n    Words the summary row's note; without it the note is empty.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ?PayoutReader $payouts = null,
+		private readonly ?IL10N $l10n = null,
 	) {
 	}//end __construct()
 
@@ -77,7 +80,7 @@ class PenaltyPaymentRows {
 	 */
 	public function forYear(int $year): array {
 		$none = ['count' => 0, 'totalEuros' => 0.0, 'disputedCount' => 0];
-		$empty = ['year' => $year, 'rows' => [], 'summary' => $none, 'summaryRows' => [['year' => $year] + $none]];
+		$empty = ['year' => $year, 'rows' => [], 'summary' => $none, 'summaryRows' => [['year' => $year] + $none + ['note' => '']]];
 
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
@@ -117,9 +120,29 @@ class PenaltyPaymentRows {
 			'year'        => $year,
 			'rows'        => $rows,
 			'summary'     => $summary,
-			'summaryRows' => [['year' => $year] + $summary],
+			'summaryRows' => [['year' => $year] + $summary + ['note' => $this->note(summary: $summary)]],
 		];
 	}//end forYear()
+
+	/**
+	 * The summary in words, "1 payment, none disputed"; empty without
+	 * payments or without words.
+	 *
+	 * @param array{count: int, totalEuros: float, disputedCount: int} $summary The year's summary.
+	 *
+	 * @return string
+	 */
+	private function note(array $summary): string {
+		if ($summary['count'] === 0 || $this->l10n === null) {
+			return '';
+		}
+
+		if ($summary['disputedCount'] === 0) {
+			return $this->l10n->n('%n payment, none disputed', '%n payments, none disputed', $summary['count']);
+		}
+
+		return $this->l10n->n('%n payment, %s disputed', '%n payments, %s disputed', $summary['count'], [$summary['disputedCount']]);
+	}//end note()
 
 	/**
 	 * One payment as a row, named by its case.

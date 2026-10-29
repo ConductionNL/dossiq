@@ -329,6 +329,10 @@ describe('deadline reports', () => {
 		const summary = widget('TermijnDashboard', 'deadline-report-annual-summary')
 		expect(summary.content.endpointSource.responsePath).toBe('summaryRows')
 		expect(summary.content.title).toContain('{totalEuros|currency:EUR}')
+		// DqTermijnen: the total and "1 betaling, geen betwist" on one line, the note worded by the server.
+		expect(summary.content.meta).toBe('{note}')
+		expect(summary.content.metaBeside).toBe(true)
+		expect(summary.content.density).toBe('stacked')
 		expect(widget('TermijnDashboard', 'deadline-report-annual-warnings').content.valueField).toBe('summary.warningCount')
 	})
 })

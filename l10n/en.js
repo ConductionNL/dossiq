@@ -129,6 +129,8 @@ OC.L10N.register(
         "_%n more in My work_::_%n more in My work_": ["%n more in My work","%n more in My work"],
         "_%n object_::_%n objects_": ["%n object","%n objects"],
         "_%n option_::_%n options_": ["%n option","%n options"],
+        "_%n payment, %s disputed_::_%n payments, %s disputed_": ["%n payment, %s disputed","%n payments, %s disputed"],
+        "_%n payment, none disputed_::_%n payments, none disputed_": ["%n payment, none disputed","%n payments, none disputed"],
         "_%n property_::_%n properties_": ["%n property","%n properties"],
         "_%n week_::_%n weeks_": ["%n week","%n weeks"],
         "_%n year_::_%n years_": ["%n year","%n years"],

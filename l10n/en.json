@@ -161,6 +161,14 @@
             "%n option",
             "%n options"
         ],
+        "_%n payment, %s disputed_::_%n payments, %s disputed_": [
+            "%n payment, %s disputed",
+            "%n payments, %s disputed"
+        ],
+        "_%n payment, none disputed_::_%n payments, none disputed_": [
+            "%n payment, none disputed",
+            "%n payments, none disputed"
+        ],
         "_%n property_::_%n properties_": [
             "%n property",
             "%n properties"

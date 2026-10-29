@@ -161,6 +161,14 @@
             "%n optie",
             "%n opties"
         ],
+        "_%n payment, %s disputed_::_%n payments, %s disputed_": [
+            "%n betaling, %s betwist",
+            "%n betalingen, %s betwist"
+        ],
+        "_%n payment, none disputed_::_%n payments, none disputed_": [
+            "%n betaling, geen betwist",
+            "%n betalingen, geen betwist"
+        ],
         "_%n property_::_%n properties_": [
             "%n eigenschap",
             "%n eigenschappen"

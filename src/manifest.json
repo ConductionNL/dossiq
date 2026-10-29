@@ -11799,7 +11799,9 @@
 								"responsePath": "summaryRows"
 							},
 							"title": "Total penalty in {year}: {totalEuros|currency:EUR}",
-							"meta": "{count} payments, of which {disputedCount} disputed",
+							"meta": "{note}",
+							"metaBeside": true,
+							"density": "stacked",
 							"emptyText": "No penalty was forfeited in this year"
 						}
 					},
