@@ -213,4 +213,36 @@ class CaseLeafProviderTest extends TestCase {
 	public function testRefusesAnUnknownStatusFilter(): void {
 		self::assertSame(expected: 400, actual: $this->leaf(rows: $this->buurtoost())->byMasterEntity(ref: 'master-7', status: 'pending')['status']);
 	}//end testRefusesAnUnknownStatusFilter()
+
+	/**
+	 * A case type title and a status name are translatable, so a read answers
+	 * them as language maps; the leaf hands the host app their text, not "Array".
+	 *
+	 * @return void
+	 */
+	public function testReadsTranslatableTitlesAsText(): void {
+		$rows = $this->buurtoost();
+		$rows['caseType'] = [['id' => 't-subsidie', 'title' => ['en' => 'Grant', 'nl' => 'Subsidie']]];
+		$rows['statusType'] = [['id' => 's-besluit', 'name' => ['en' => 'Decision', 'nl' => 'Besluit'], 'colour' => 'purple']];
+
+		$answer = $this->leaf(rows: $rows)->byMasterEntity(ref: 'master-7', status: 'open');
+
+		self::assertSame('Subsidie', $answer['cases'][0]['caseTypeTitle']);
+		self::assertSame('Besluit', $answer['cases'][0]['statusName']);
+	}//end testReadsTranslatableTitlesAsText()
+
+	/**
+	 * Without a readable status the case's own public label is the status name.
+	 *
+	 * @return void
+	 */
+	public function testFallsBackToThePublicLabelForAnEmptyStatusName(): void {
+		$rows = $this->buurtoost();
+		$rows['statusType'] = [['id' => 's-besluit', 'name' => [], 'colour' => '']];
+		$rows['case'][1]['statusPublicLabel'] = 'In behandeling';
+
+		$answer = $this->leaf(rows: $rows)->byMasterEntity(ref: 'master-7', status: 'open');
+
+		self::assertSame('In behandeling', $answer['cases'][0]['statusName']);
+	}//end testFallsBackToThePublicLabelForAnEmptyStatusName()
 }//end class
