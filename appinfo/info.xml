@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261029095800</version>
+    <version>0.4.47-unstable.20261029154700</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -745,6 +745,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  field existed has none. Same rules as the statusRole step.
                  Post-migration only: a fresh install has no cases. -->
             <step>OCA\Dossiq\Repair\BackfillCaseTypeIdentifier</step>
+            <!-- case-last-activity-at: existing cases without `lastActivityAt`
+                 get the newest activity date they carry, else their creation
+                 date, so the stalled-case lists can show them. Once, behind
+                 app config case_last_activity_backfill. Post-migration only:
+                 a fresh install has no cases. -->
+            <step>OCA\Dossiq\Repair\BackfillCaseLastActivity</step>
             <!-- communication-portal-conversation-on-the-case D-2: each portal
                  message's attachments are copied into the message folder portaliq
                  serves, once, behind a persisted key. Post-migration only: a
@@ -959,6 +965,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
               BackfillCaseTypeIdentifier        fills caseTypeIdentifier on existing cases; a fresh install has none
+              BackfillCaseLastActivity          dates the last activity of existing cases; a fresh install has none
               CopyMessageAttachmentsIntoMessageFolders  copies existing message attachments into the message folder; a fresh install has none
               BackfillPortalParty               fills portalParty on existing portal cases; a fresh install has none
               MoveDecisionTablesToOpenRegister  copies existing dossiq decision tables into OpenRegister; a fresh install has none

@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Integration;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
@@ -76,12 +77,14 @@ class CaseLeafProvider {
 	 * @param IUserManager    $userManager     Names the handler.
 	 * @param IURLGenerator   $urlGenerator    Links a case to its page.
 	 * @param LoggerInterface $logger          PSR logger.
+	 * @param LanguageMapText $text            A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IUserManager $userManager,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -261,8 +264,11 @@ class CaseLeafProvider {
 			'id' => $id,
 			'identifier' => (string)($case['identifier'] ?? ''),
 			'title' => (string)($case['title'] ?? ''),
-			'caseTypeTitle' => (string)($caseType['title'] ?? ''),
-			'statusName' => (string)($statusType['name'] ?? ($case['statusPublicLabel'] ?? '')),
+			'caseTypeTitle' => $this->text->textOf(value: ($caseType['title'] ?? '')),
+			'statusName' => $this->text->textOr(
+				value: ($statusType['name'] ?? ''),
+				fallback: $this->text->textOf(value: ($case['statusPublicLabel'] ?? ''))
+			),
 			'statusColour' => (string)($statusType['colour'] ?? ''),
 			'isFinal' => (($case['isFinalStatus'] ?? false) === true),
 			'deadline' => (string)($case['deadline'] ?? ''),

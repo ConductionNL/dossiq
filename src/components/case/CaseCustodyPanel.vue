@@ -133,7 +133,7 @@
 
 						<span v-if="isOpen(request)" class="case-custody__answer">
 							<NcButton
-								variant="primary"
+								variant="secondary"
 								:disabled="answering"
 								data-testid="case-custody-accept"
 								@click="accept(request)">
@@ -563,6 +563,7 @@ export default {
 	height: 32px;
 	border-radius: 50%;
 	background: var(--color-background-dark);
+	color: var(--cn-board-text-soft, var(--color-main-text));
 	font-size: 12px;
 	font-weight: 700;
 }
@@ -590,6 +591,7 @@ export default {
 	padding: 3px 10px;
 	border-radius: 12px;
 	background: var(--color-background-dark);
+	color: var(--cn-board-text-soft, var(--color-main-text));
 	font-size: 13px;
 	font-weight: 600;
 	line-height: normal;

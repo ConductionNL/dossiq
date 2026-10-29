@@ -11,3 +11,4 @@ The Archiving tab SHALL draw each holding as a row with the unit's initials, the
 - **WHEN** the handler opens the Archiving tab
 - **THEN** the KCC row SHALL read "Van 3 okt 14:10 tot 3 okt 14:18" with the pill "Overgedragen"
 - **AND** the Woo row SHALL read "In handen sinds 3 okt" with the pill "Houder nu"
+- **AND** the "Overgedragen" pill and the initials SHALL use the soft ink, and a request's "Overdragen" SHALL be a secondary button next to "Houden, met reden"
