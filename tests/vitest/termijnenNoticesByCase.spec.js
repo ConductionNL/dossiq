@@ -56,6 +56,11 @@ describe('the notices of default card (DqTermijnen)', () => {
 		expect(nl[col('financeState').emptyLabel]).toBe('Niet van toepassing')
 	})
 
+	it('tones a payment signal as handed on (teal), as the board draws it', () => {
+		const col = (key) => widget.content.columns.find((c) => c.key === key)
+		expect(col('financeState').widgetProps.colorMap['signal-sent']).toBe('teal')
+	})
+
 	it('words the receipt and the penalty', () => {
 		expect(formatters.receivedOn('2026-08-07')).toBe('Ontvangen 7 aug')
 		expect(plain(formatters.penaltyLine('definitive', { penaltyEuros: 1442, penaltySince: '2026-08-21' }))).toBe('€ 1.442, vastgesteld')
