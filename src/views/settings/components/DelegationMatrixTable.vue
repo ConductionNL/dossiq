@@ -128,7 +128,7 @@ export default {
 .mandaat-matrix-table__toolbar {
 	display: flex;
 	gap: 8px;
-	margin-bottom: 12px;
+	margin-bottom: 14px;
 }
 
 .mandaat-matrix-table__table {
