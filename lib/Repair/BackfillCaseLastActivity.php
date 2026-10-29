@@ -32,14 +32,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use DateTimeImmutable;
 use DateTimeInterface;
-use DateTimeZone;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Activity\CaseActivityStamp;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -103,15 +101,15 @@ class BackfillCaseLastActivity implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Names the register and the case schema, and hands out the object service.
-	 * @param IAppConfig      $appConfig       Holds the completion key.
-	 * @param ITimeFactory    $time            The clock, to pass over dates in the future.
-	 * @param LoggerInterface $logger          Records a case that refused.
+	 * @param SettingsService    $settingsService Names the register and the case schema, and hands out the object service.
+	 * @param IAppConfig         $appConfig       Holds the completion key.
+	 * @param CaseDateNormaliser $dates           Reads and writes every date, and is the clock that passes over dates in the future.
+	 * @param LoggerInterface    $logger          Records a case that refused.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IAppConfig $appConfig,
-		private readonly ITimeFactory $time,
+		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -189,18 +187,18 @@ class BackfillCaseLastActivity implements IRepairStep {
 
 		$newest = null;
 		foreach (self::ACTIVITY_FIELDS as $field) {
-			$moment = $this->moment(value: ($case[$field] ?? null));
+			$moment = $this->dates->tryParse(value: ($case[$field] ?? null));
 			if ($moment !== null && $moment <= $now && ($newest === null || $moment > $newest)) {
 				$newest = $moment;
 			}
 		}
 
-		$newest ??= $this->moment(value: (($case['@self'] ?? [])['created'] ?? null));
+		$newest ??= $this->dates->tryParse(value: (($case['@self'] ?? [])['created'] ?? null));
 		if ($newest === null) {
 			return '';
 		}
 
-		return $newest->setTimezone(new DateTimeZone('UTC'))->format(DateTimeInterface::ATOM);
+		return $this->dates->formatMoment(moment: $newest);
 	}//end dateFor()
 
 	/**
@@ -217,7 +215,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 	 */
 	private function backfill(object $objectService, string $register, string $schema): array {
 		$tally = ['dated' => 0, 'failed' => 0, 'skipped' => 0];
-		$now = $this->time->now();
+		$now = $this->dates->now();
 		$todo = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
 			$rows = $this->searchObjectsAsArraysUnscoped(
@@ -264,23 +262,4 @@ class BackfillCaseLastActivity implements IRepairStep {
 
 		return $tally;
 	}//end backfill()
-
-	/**
-	 * A stored date as a moment, or null when it is empty or not a date.
-	 *
-	 * @param mixed $value The stored value.
-	 *
-	 * @return DateTimeImmutable|null The moment.
-	 */
-	private function moment(mixed $value): ?DateTimeImmutable {
-		if (is_string($value) === false || trim($value) === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (Throwable) {
-			return null;
-		}
-	}//end moment()
 }//end class

@@ -22,10 +22,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Repair;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Repair\BackfillCaseLastActivity;
 use OCA\Dossiq\Service\SettingsService;
-use OCP\AppFramework\Utility\ITimeFactory;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -36,6 +35,8 @@ use RuntimeException;
  * Tests for the lastActivityAt backfill.
  */
 final class BackfillCaseLastActivityTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The app config the step reads and writes, by key.
@@ -137,9 +138,6 @@ final class BackfillCaseLastActivityTest extends TestCase {
 			}
 		);
 
-		$time = $this->createMock(originalClassName: ITimeFactory::class);
-		$time->method('now')->willReturn(new DateTimeImmutable('2026-10-29T12:00:00+00:00'));
-
 		$lines = [];
 		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->method('info')->willReturnCallback(
@@ -151,7 +149,7 @@ final class BackfillCaseLastActivityTest extends TestCase {
 		$step = new BackfillCaseLastActivity(
 			settingsService: $settings,
 			appConfig: $appConfig,
-			time: $time,
+			dates: $this->caseDatesFrozenAt(instant: '2026-10-29T12:00:00+00:00', zone: 'UTC'),
 			logger: $this->createMock(originalClassName: LoggerInterface::class)
 		);
 		$step->run($output);
