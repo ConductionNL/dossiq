@@ -43,38 +43,76 @@ class CaseRelationStoreTest extends TestCase {
 	 */
 	private function objectService(): object {
 		return new class {
-			/** @var array<int, string> */
+			/**
+			 * The setters called, in order.
+			 *
+			 * @var array<int, string>
+			 */
 			public array $calls = [];
 
+			/**
+			 * The register an earlier call left set.
+			 *
+			 * @var string
+			 */
 			public string $register = 'stale-register';
 
+			/**
+			 * The schema an earlier call left set.
+			 *
+			 * @var string
+			 */
 			public string $schema = 'stale-schema';
 
+			/**
+			 * Mimic OR setRegister().
+			 *
+			 * @param string $register Register.
+			 *
+			 * @return void
+			 */
 			public function setRegister(string $register): void {
-				$this->calls[] = 'register:'.$register;
+				$this->calls[]  = 'register:'.$register;
 				$this->register = $register;
-			}
-
-			public function setSchema(string $schema): void {
-				$this->calls[] = 'schema:'.$schema;
-				$this->schema = $schema;
-			}
+			}//end setRegister()
 
 			/**
+			 * Mimic OR setSchema().
+			 *
+			 * @param string $schema Schema.
+			 *
+			 * @return void
+			 */
+			public function setSchema(string $schema): void {
+				$this->calls[] = 'schema:'.$schema;
+				$this->schema  = $schema;
+			}//end setSchema()
+
+			/**
+			 * Mimic OR getObjectUses().
+			 *
+			 * @param string $objectId Object UUID.
+			 *
 			 * @return array<string, mixed>
 			 */
 			public function getObjectUses(string $objectId): array {
 				return $this->answer();
-			}
+			}//end getObjectUses()
 
 			/**
+			 * Mimic OR getObjectUsedBy().
+			 *
+			 * @param string $objectId Object UUID.
+			 *
 			 * @return array<string, mixed>
 			 */
 			public function getObjectUsedBy(string $objectId): array {
 				return $this->answer();
-			}
+			}//end getObjectUsedBy()
 
 			/**
+			 * Rows only under the case register and schema, as OR's magic tables.
+			 *
 			 * @return array<string, mixed>
 			 */
 			private function answer(): array {
@@ -82,10 +120,13 @@ class CaseRelationStoreTest extends TestCase {
 					return ['results' => [], 'total' => 0];
 				}
 
-				return ['results' => [['id' => 'far', 'relation' => ['property' => 'blockingCases', 'type' => 'waitsOn']]], 'total' => 1];
-			}
+				return [
+					'results' => [['id' => 'far', 'relation' => ['property' => 'blockingCases', 'type' => 'waitsOn']]],
+					'total'   => 1,
+				];
+			}//end answer()
 		};
-	}
+	}//end objectService()
 
 	/**
 	 * The store over a settings service naming register dossiq and schema case.
@@ -95,15 +136,18 @@ class CaseRelationStoreTest extends TestCase {
 	 * @return CaseRelationStore The store.
 	 */
 	private function store(object $objectService): CaseRelationStore {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnMap([
 			['register', '', 'dossiq'],
 			['case_schema', '', 'case'],
 		]);
 
-		return new CaseRelationStore($settings, $this->createMock(LoggerInterface::class));
-	}
+		return new CaseRelationStore(
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
+	}//end store()
 
 	/**
 	 * Both directions are asked under the case register and schema, register first.
@@ -112,14 +156,14 @@ class CaseRelationStoreTest extends TestCase {
 	 */
 	public function testAsksUnderTheCaseSchemaWhateverWasSetBefore(): void {
 		$objectService = $this->objectService();
-		$store         = $this->store($objectService);
+		$store         = $this->store(objectService: $objectService);
 
 		foreach ([false, true] as $incoming) {
 			$rows = $store->relationRows(caseUuid: 'case-1', incoming: $incoming);
-			$this->assertSame('blockingCases', $rows[0]['relation']['property'] ?? null);
+			$this->assertSame(expected: 'blockingCases', actual: ($rows[0]['relation']['property'] ?? null));
 		}
 
-		$this->assertSame('register:dossiq', $objectService->calls[0] ?? null);
-		$this->assertSame('schema:case', $objectService->calls[1] ?? null);
-	}
-}
+		$this->assertSame(expected: 'register:dossiq', actual: ($objectService->calls[0] ?? null));
+		$this->assertSame(expected: 'schema:case', actual: ($objectService->calls[1] ?? null));
+	}//end testAsksUnderTheCaseSchemaWhateverWasSetBefore()
+}//end class
