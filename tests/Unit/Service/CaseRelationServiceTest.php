@@ -102,6 +102,26 @@ class CaseRelationServiceTest extends TestCase {
 			}//end __construct()
 
 			/**
+			 * Mimic OR setRegister(); the fake keeps one table.
+			 *
+			 * @param mixed $register Register (ignored).
+			 *
+			 * @return void
+			 */
+			public function setRegister($register): void {
+			}//end setRegister()
+
+			/**
+			 * Mimic OR setSchema(); the fake keeps one table.
+			 *
+			 * @param mixed $schema Schema (ignored).
+			 *
+			 * @return void
+			 */
+			public function setSchema($schema): void {
+			}//end setSchema()
+
+			/**
 			 * Mimic OR find() — null when the id is unknown (RBAC fail-closed).
 			 *
 			 * @param string $id Object UUID.

@@ -224,6 +224,11 @@ class CaseRelationStore {
 	/**
 	 * Ask OpenRegister for one direction's rows.
 	 *
+	 * The object service is shared within a request and looks the case up in
+	 * the table of whatever register and schema an earlier call left set; under
+	 * another schema it answers nothing. So the case's own register is set
+	 * first, then its schema, as OpenRegister's own uses/used controllers do.
+	 *
 	 * @param object $objectService OpenRegister's object service.
 	 * @param string $caseUuid Case UUID.
 	 * @param bool $incoming Whether to ask for the reverse direction.
@@ -231,6 +236,13 @@ class CaseRelationStore {
 	 * @return array<string, mixed> The envelope.
 	 */
 	private function askOpenRegister(object $objectService, string $caseUuid, bool $incoming): array {
+		$register = $this->settingsService->getConfigValue('register');
+		$schema   = $this->settingsService->getConfigValue('case_schema');
+		if ($register !== '' && $schema !== '') {
+			$objectService->setRegister($register);
+			$objectService->setSchema($schema);
+		}
+
 		if ($incoming === true) {
 			return $objectService->getObjectUsedBy($caseUuid);
 		}
