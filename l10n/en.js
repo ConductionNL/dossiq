@@ -6076,6 +6076,7 @@ OC.L10N.register(
         "Organisatie-identificatienummer": "Organisatie-identificatienummer",
         "OrganisatieRol id": "OrganisatieRol id",
         "Organisation": "Organisation",
+        "Organisation created": "Organisation created",
         "Organisation name": "Organisation name",
         "Organisation onboarding": "Organisation onboarding",
         "Organisation parts": "Organisation parts",

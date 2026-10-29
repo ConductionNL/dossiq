@@ -239,10 +239,10 @@
 						"id": "organisation-side-history",
 						"type": "record-list",
 						"title": "Record history",
-						"_note": "Board DqTenant Historie side card: the two newest events of the organisation, what, who and when, from the same audit trail the Historie tab lists in full. The organisation's start date stays in the Status card (Since).",
+						"_note": "Board DqTenant Historie side card: the two newest events of the organisation, what, who and when, from the same audit trail the Historie tab lists in full. Its creation is one of those events, as the board draws it; the Status card keeps the start date (Since). Rows ruled above the first and 10px above and below, as drawn.",
 						"content": {
 							"endpointSource": {
-								"url": "/apps/openregister/api/audit-trails?object_uuid=@objectId&action=organisation.status_changed,organisation.updated&sort=created&order=DESC",
+								"url": "/apps/openregister/api/audit-trails?object_uuid=@objectId&action=organisation.status_changed,organisation.updated,create&sort=created&order=DESC",
 								"responsePath": "results"
 							},
 							"presentation": "rows",
@@ -251,10 +251,13 @@
 							"valueLabels": {
 								"action": {
 									"organisation.status_changed": "Status changed",
-									"organisation.updated": "Details edited"
+									"organisation.updated": "Details edited",
+									"create": "Organisation created"
 								}
 							},
 							"limit": 2,
+							"ruleAbove": true,
+							"density": "compact",
 							"emptyText": "Nothing has happened to this organisation yet"
 						}
 					}
@@ -302,10 +305,10 @@
 						"id": "organisation-history",
 						"type": "record-list",
 						"title": "Record history",
-						"_note": "Board DqTenant Historie: what happened to this organisation, newest first. OpenRegister writes an organisation's status changes and edits to the audit trail keyed by its uuid (OrganisationLifecycleAuditor); the admin audit list filters on object_uuid and action. Admin-only, as this page is.",
+						"_note": "Board DqTenant Historie: what happened to this organisation, newest first. OpenRegister writes an organisation's creation, status changes and edits to the audit trail keyed by its uuid (OrganisationLifecycleAuditor); the admin audit list filters on object_uuid and action. Admin-only, as this page is.",
 						"content": {
 							"endpointSource": {
-								"url": "/apps/openregister/api/audit-trails?object_uuid=@objectId&action=organisation.status_changed,organisation.updated&sort=created&order=DESC",
+								"url": "/apps/openregister/api/audit-trails?object_uuid=@objectId&action=organisation.status_changed,organisation.updated,create&sort=created&order=DESC",
 								"responsePath": "results"
 							},
 							"presentation": "rows",
@@ -314,7 +317,8 @@
 							"valueLabels": {
 								"action": {
 									"organisation.status_changed": "Status changed",
-									"organisation.updated": "Details edited"
+									"organisation.updated": "Details edited",
+									"create": "Organisation created"
 								}
 							},
 							"limit": 25,
