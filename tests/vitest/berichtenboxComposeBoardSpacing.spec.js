@@ -37,6 +37,10 @@ describe('the Berichtenbox dialog against DqBerichtVersturen', () => {
 		expect(rule('.compose-dialog > :deep(.notecard)')).toContain('margin: 0;')
 	})
 
+	it('pads the body 10px 12px over the theme\'s 5px, so 8 rows are the board\'s 166px (r35)', () => {
+		expect(rule('.compose-dialog textarea.compose-dialog__body')).toContain('padding: 10px 12px !important;')
+	})
+
 	it('gives every field and the template select the board\'s 40px in the flow, the body 8 rows at 18px (r33)', () => {
 		expect(rule('.compose-dialog__field .v-select.select')).toContain('margin: -2px 0;')
 		expect(style).toMatch(/\n\.compose-dialog__body \{[^}]*min-height: 0;[^}]*line-height: 1\.2;/)

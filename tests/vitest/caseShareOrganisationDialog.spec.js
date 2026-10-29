@@ -197,3 +197,13 @@ describe('the message field on DqZaakSamenwerken (r34: Bericht 9.5px low)', () =
 		expect(rule('.case-share-org__field')).toContain('gap: 4px;')
 	})
 })
+
+describe('the selects on DqZaakSamenwerken (r35: fields 18px apart, the card 5.7px low)', () => {
+	const sfc = fs.readFileSync(path.join(ROOT, 'src/dialogs/CaseShareOrganisationDialog.vue'), 'utf8')
+
+	it('ends each select 2px under its wrapper, so its 40px control stands 16px above the next label', () => {
+		const at = sfc.indexOf('\n.case-share-org > .v-select.select {')
+		expect(at).toBeGreaterThan(-1)
+		expect(sfc.slice(at, sfc.indexOf('}', at))).toContain('margin-bottom: 2px;')
+	})
+})

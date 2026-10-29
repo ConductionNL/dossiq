@@ -245,7 +245,10 @@ export default {
 	margin-bottom: 14px;
 }
 
+/* The board look gives a labelled settings select -4px below, which wins over
+   the picker's own margin; 18px here collapses with it to the drawn 14px. */
 .mandaat-matrix-tab__body {
+	margin-top: 18px;
 	padding: 0;
 }
 </style>

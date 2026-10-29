@@ -364,11 +364,16 @@ export default {
 	gap: 12px;
 }
 
-/* Every NcSelect ends 4px under its box, so the fields stand 16px apart; the
-   choice cards end at their border. 4px under them puts the first field 16px
-   down too, as DqZaakSamenwerken draws it. */
+/* The choice cards end at their border. 4px under them puts the first field
+   16px down, as DqZaakSamenwerken draws it. */
 .case-share-org > .cn-choice-cards {
 	margin-bottom: 4px;
+}
+
+/* NcSelect's wrapper holds its 40px control 2px in, so 2px under the wrapper
+   puts the control 16px above the next label, as drawn. */
+.case-share-org > .v-select.select {
+	margin-bottom: 2px;
 }
 
 /* The board puts the control 6px under the label; the text field's wrapper
