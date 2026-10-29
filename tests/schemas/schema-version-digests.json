@@ -1691,6 +1691,10 @@
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/93-tenant-subscription.json::tenantSubscription": {
+        "version": "1.0.0",
+        "digest": "857e27e43c77a42a6cba132731725cddbb5a52a99825d548b05f547ea3d3cb3d"
+    },
     "lib/Settings/register.d/95-dmn-decision-tables.json::decisionTable": {
         "version": "1.0.1",
         "digest": "19b2d7d234140944ff68df3c04c963449ac62f50f43c0e1a9fa3fa1e45b5fe83"

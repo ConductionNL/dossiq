@@ -6048,6 +6048,17 @@
 			}
 		},
 		{
+			"key": "waterland-abonnement",
+			"register": "dossiq",
+			"schema": "tenantSubscription",
+			"data": {
+				"tenantRef": "{{organisation:waterland}}",
+				"packageName": "Standaard",
+				"reference": "TEN-0014",
+				"startDate": "{{date:-51}}"
+			}
+		},
+		{
 			"key": "waterland-factuur-pakket",
 			"register": "dossiq",
 			"schema": "tenantBillingEvent",
