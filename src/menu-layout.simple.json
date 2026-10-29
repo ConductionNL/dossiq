@@ -4532,6 +4532,7 @@
 									"label": "Add party",
 									"dialogTitle": "Add party",
 									"confirmLabel": "Add",
+									"placement": "title",
 									"sources": [
 										{
 											"id": "person",
@@ -4564,7 +4565,7 @@
 									]
 								}
 							},
-							"_manageNote": "Board DqZaakBetrokkenen draws \"Partij toevoegen\" on this card. The picker searches residents (BSN lookup), organisations and colleagues (the colleague party schema, kind colleague, tied to a Nextcloud user); the role is one the case declares.",
+							"_manageNote": "The add button stands in the card's title row (placement title), so the accepted kinds strip is the first thing under the title as DqZaakBetrokkenen draws it. The picker searches residents (BSN lookup), organisations and colleagues (the colleague party schema, kind colleague, tied to a Nextcloud user); the role is one the case declares.",
 							"rolesObjects": {
 								"register": "dossiq",
 								"schema": "role",
