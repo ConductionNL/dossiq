@@ -92,6 +92,9 @@ class InMemoryTaskEngine {
 	/**
 	 * One page of the inbox, as TaskInboxService::inbox() answers.
 	 *
+	 * A row is the task as `Task::jsonSerialize()` gives it, so the stored
+	 * `taskKey` comes back as `key`.
+	 *
 	 * @param object $criteria The criteria.
 	 * @param int    $limit    The page size.
 	 * @param int    $offset   The offset.
@@ -105,6 +108,14 @@ class InMemoryTaskEngine {
 				static fn (array $task): bool => ($criteria->objectUuid === null || $task['objectUuid'] === $criteria->objectUuid)
 					&& ($criteria->kind === null || $task['kind'] === $criteria->kind)
 			)
+		);
+		$rows = array_map(
+			static function (array $task): array {
+				$task['key'] = $task['taskKey'];
+				unset($task['taskKey']);
+				return $task;
+			},
+			$rows
 		);
 
 		return ['results' => array_slice($rows, $offset, $limit), 'total' => count($rows)];
