@@ -32,6 +32,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\IL10N;
 
 /**
  * Computes the deadline dashboard's running figures and on-time shares.
@@ -53,10 +54,12 @@ class TermDashboardFigures {
 	 *
 	 * @param SettingsService      $settingsService Settings and the object service.
 	 * @param TermCaseTypeResolver $caseTypes       Resolves each term's case type.
+	 * @param IL10N|null           $l10n            Words the notes under the figures; without it they are empty.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly TermCaseTypeResolver $caseTypes,
+		private readonly ?IL10N $l10n = null,
 	) {
 	}//end __construct()
 
@@ -110,7 +113,7 @@ class TermDashboardFigures {
 	 * @param array<int, array<string, mixed>> $rows  Instance rows.
 	 * @param DateTimeImmutable                $today The day the figures are read on.
 	 *
-	 * @return array{runningCount:int,runningCaseTypeCount:int,dueThisWeekCount:int,overdueCount:int}
+	 * @return array{runningCount:int,runningCaseTypeCount:int,dueThisWeekCount:int,dueThisWeekNote:string,overdueCount:int}
 	 *
 	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
@@ -126,7 +129,7 @@ class TermDashboardFigures {
 
 		$ends = array_filter(array_map(static fn (array $row): string => substr((string)($row['endDateCurrent'] ?? ''), 0, 10), $running));
 		$overdue = count(array_filter($ends, static fn (string $end): bool => $end < $todayDate));
-		$dueThisWeek = count(array_filter($ends, static fn (string $end): bool => $end >= $todayDate && $end <= $weekEnd));
+		$weekEnds = array_filter($ends, static fn (string $end): bool => $end >= $todayDate && $end <= $weekEnd);
 
 		$types = $this->caseTypes->resolve(rows: $running);
 		$keys = array_unique(array_map(static fn (array $type): string => $type['key'], $types['byRow']));
@@ -134,15 +137,92 @@ class TermDashboardFigures {
 		return [
 			'runningCount' => count($running),
 			'runningCaseTypeCount' => count($keys),
-			'dueThisWeekCount' => $dueThisWeek,
+			'dueThisWeekCount' => count($weekEnds),
+			'dueThisWeekNote' => $this->leadCaseTypeNote(types: array_intersect_key($types['byRow'], $weekEnds)),
 			'overdueCount' => $overdue,
 		];
 	}//end running()
 
 	/**
+	 * The case type most of the given terms belong to, as "2 at Woo-verzoek";
+	 * empty without terms, without a titled case type or without words.
+	 *
+	 * @param array<int, array{key: string, title: string}> $types The case type of each term.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function leadCaseTypeNote(array $types): string {
+		$counts = [];
+		$titles = [];
+		foreach ($types as $type) {
+			if ($type['title'] === '') {
+				continue;
+			}
+
+			$counts[$type['key']] = (($counts[$type['key']] ?? 0) + 1);
+			$titles[$type['key']] = $type['title'];
+		}
+
+		if ($counts === [] || $this->l10n === null) {
+			return '';
+		}
+
+		arsort($counts);
+		$lead = (string)array_key_first($counts);
+
+		return $this->l10n->n('%n at %s', '%n at %s', $counts[$lead], [$titles[$lead]]);
+	}//end leadCaseTypeNote()
+
+	/**
+	 * How far the running penalties are, as "1 case, day 9 of 42": the day of
+	 * the longest running one and the last day its rate bands reach. Empty
+	 * without a running penalty or without words.
+	 *
+	 * @param array<int, array<string, mixed>> $running The running penalty calculations.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function penaltyNote(array $running): string {
+		if ($running === [] || $this->l10n === null) {
+			return '';
+		}
+
+		$longest = null;
+		foreach ($running as $row) {
+			if ($longest === null || (int)($row['currentDag'] ?? 0) > (int)($longest['currentDag'] ?? 0)) {
+				$longest = $row;
+			}
+		}
+
+		$day = (int)($longest['currentDag'] ?? 0);
+		$lastDay = 0;
+		foreach ((array)($longest['rateBands'] ?? []) as $band) {
+			$upTo = 0;
+			if (is_array($band) === true) {
+				$upTo = (int)($band['upTo'] ?? 0);
+			}
+
+			if ($upTo > $lastDay) {
+				$lastDay = $upTo;
+			}
+		}
+		$count = count(value: $running);
+
+		if ($lastDay === 0) {
+			return $this->l10n->n('%n case, day %s', '%n cases, the longest at day %s', $count, [$day]);
+		}
+
+		return $this->l10n->n('%n case, day %1$s of %2$s', '%n cases, the longest at day %1$s of %2$s', $count, [$day, $lastDay]);
+	}//end penaltyNote()
+
+	/**
 	 * Sum the penalty payments that are still accruing, in euros.
 	 *
-	 * @return array{penaltyRunningEuros:float,penaltyRunningCount:int}
+	 * @return array{penaltyRunningEuros:float,penaltyRunningCount:int,penaltyRunningNote:string}
 	 *
 	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
@@ -151,7 +231,7 @@ class TermDashboardFigures {
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
 		if ($objectService === null || $register === '' || $schema === '') {
-			return ['penaltyRunningEuros' => 0.0, 'penaltyRunningCount' => 0];
+			return ['penaltyRunningEuros' => 0.0, 'penaltyRunningCount' => 0, 'penaltyRunningNote' => ''];
 		}
 
 		try {
@@ -163,7 +243,11 @@ class TermDashboardFigures {
 		$running = array_filter($rows, static fn (array $row): bool => (string)($row['status'] ?? '') === 'lopend');
 		$cents = array_sum(array_map(static fn (array $row): int => (int)($row['cumulativeAmount'] ?? 0), $running));
 
-		return ['penaltyRunningEuros' => round($cents / 100, 2), 'penaltyRunningCount' => count($running)];
+		return [
+			'penaltyRunningEuros' => round($cents / 100, 2),
+			'penaltyRunningCount' => count($running),
+			'penaltyRunningNote'  => $this->penaltyNote(running: array_values($running)),
+		];
 	}//end penalties()
 
 	/**

@@ -11390,7 +11390,7 @@
 								"style": "decimal",
 								"decimals": 0
 							},
-							"caption": "within the next seven days"
+							"caption": "{dueThisWeekNote}"
 						}
 					},
 					{
@@ -11444,7 +11444,7 @@
 								"currency": "EUR",
 								"decimals": 0
 							},
-							"caption": "Cases: {penaltyRunningCount}",
+							"caption": "{penaltyRunningNote}",
 							"captionVariant": "error"
 						}
 					},

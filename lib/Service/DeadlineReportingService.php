@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\Termijn\TermCaseTypeResolver;
 use OCA\Dossiq\Service\Termijn\TermDashboardFigures;
 use OCA\Dossiq\Service\Termijn\TermOutcome;
 use RuntimeException;
+use OCP\IL10N;
 
 /**
  * Quarterly KPI + annual dwangsom audit + dashboard KPI reports.
@@ -117,17 +118,19 @@ class DeadlineReportingService {
 	 * @param TermCaseTypeResolver|null $caseTypes       The case-type resolver; built from the settings when absent.
 	 * @param DayCount                  $days            Counts the days between two moments.
 	 * @param PayoutReader|null         $payouts         Reads the payouts from the finance app, beside the rows it does not hold.
+	 * @param IL10N|null                $l10n            Words the KPI notes; without it they are empty.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		?TermCaseTypeResolver $caseTypes = null,
 		private readonly DayCount $days = new DayCount(),
 		private readonly ?PayoutReader $payouts = null,
+		?IL10N $l10n = null,
 	) {
 		$this->caseTypes = ($caseTypes ?? new TermCaseTypeResolver(settingsService: $settingsService));
 		$this->outcomes = new TermOutcome();
 		$this->perTypeRows = new PerTypeRows();
-		$this->figures = new TermDashboardFigures(settingsService: $settingsService, caseTypes: $this->caseTypes);
+		$this->figures = new TermDashboardFigures(settingsService: $settingsService, caseTypes: $this->caseTypes, l10n: $l10n);
 	}//end __construct()
 
 	/**
