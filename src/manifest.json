@@ -984,7 +984,8 @@
 								"filter": {
 									"isFinalStatus": false,
 									"statusHiddenInLists": false,
-									"isDraft": false
+									"isDraft": false,
+									"lastActivityAt[lt]": "@today-7d"
 								},
 								"extend": ["calculations"],
 								"order": {
@@ -1013,6 +1014,7 @@
 									"isFinalStatus": "false",
 									"statusHiddenInLists": "false",
 									"isDraft": "false",
+									"lastActivityAt[lt]": "@today-7d",
 									"_order": "[{\"key\":\"lastActivityAt\",\"order\":\"asc\"}]"
 								}
 							},
@@ -1657,7 +1659,8 @@
 										"filter": {
 											"isFinalStatus": false,
 											"statusHiddenInLists": false,
-											"isDraft": false
+											"isDraft": false,
+											"lastActivityAt[lt]": "@today-7d"
 										},
 										"extend": [
 											"calculations"
@@ -1687,7 +1690,8 @@
 										"query": {
 											"isFinalStatus": "false",
 											"statusHiddenInLists": "false",
-											"isDraft": "false"
+											"isDraft": "false",
+											"lastActivityAt[lt]": "@today-7d"
 										}
 									},
 									"viewAllLabel": "View all",

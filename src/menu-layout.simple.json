@@ -417,6 +417,7 @@
 										"isFinalStatus": "false",
 										"statusHiddenInLists": "false",
 										"isDraft": "false",
+										"lastActivityAt[lt]": "@today-7d",
 										"_order": "[{\"key\":\"lastActivityAt\",\"order\":\"asc\"}]"
 									}
 								},
@@ -426,7 +427,8 @@
 									"filter": {
 										"isFinalStatus": false,
 										"statusHiddenInLists": false,
-										"isDraft": false
+										"isDraft": false,
+										"lastActivityAt[lt]": "@today-7d"
 									},
 									"extend": [
 										"calculations"
@@ -5643,6 +5645,7 @@
 								"isFinalStatus": "false",
 								"statusHiddenInLists": "false",
 								"isDraft": "false",
+								"lastActivityAt[lt]": "@today-7d",
 								"_order": "[{\"key\":\"lastActivityAt\",\"order\":\"asc\"}]"
 							},
 							"placement": "title"
@@ -5706,7 +5709,8 @@
 							"filter": {
 								"isFinalStatus": false,
 								"statusHiddenInLists": false,
-								"isDraft": false
+								"isDraft": false,
+								"lastActivityAt[lt]": "@today-7d"
 							},
 							"extend": [
 								"calculations"
