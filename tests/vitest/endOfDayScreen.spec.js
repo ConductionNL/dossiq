@@ -156,3 +156,14 @@ describe('Ready for today? as its own card (DqDagAfsluiten r34)', () => {
 		expect(at('eod-ready').gridY).toBe(recorded.gridY + recorded.gridHeight)
 	})
 })
+
+describe('the kind pill (DqDagAfsluiten r36)', () => {
+	it('draws a task purple and a case in the info tone, in both day lists', () => {
+		for (const id of ['eod-open', 'eod-recorded']) {
+			const pill = widget(id).content.pill
+			expect(pill.field).toBe('kindLabel')
+			expect(pill.variant).toBe('info')
+			expect(pill.variantWhen).toEqual([{ when: { field: 'subjectType', op: 'eq', value: 'task' }, variant: 'purple' }])
+		}
+	})
+})

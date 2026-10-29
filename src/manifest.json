@@ -7277,7 +7277,13 @@
 							"title": "{title}",
 							"pill": {
 								"field": "kindLabel",
-								"variant": "info"
+								"variant": "info",
+								"variantWhen": [
+									{
+										"when": { "field": "subjectType", "op": "eq", "value": "task" },
+										"variant": "purple"
+									}
+								]
 							},
 							"due": {
 								"field": "dueAt",
@@ -7348,7 +7354,13 @@
 							"title": "{title}",
 							"pill": {
 								"field": "kindLabel",
-								"variant": "info"
+								"variant": "info",
+								"variantWhen": [
+									{
+										"when": { "field": "subjectType", "op": "eq", "value": "task" },
+										"variant": "purple"
+									}
+								]
 							},
 							"meta": "{recordedTime}",
 							"text": "{note}",
