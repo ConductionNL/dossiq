@@ -261,8 +261,8 @@ class EndOfDayServiceTest extends TestCase {
 		$this->assertSame(3, $day['opened']);
 		$this->assertSame('/apps/openregister/api/objects/dossiq/case/c1/notes', $day['open'][0]['notesUrl']);
 		$this->assertSame(['CaseDetail', 'c1'], [$day['open'][0]['routeName'], $day['open'][0]['routeId']]);
-		$this->assertSame('N-c1', $day['open'][0]['meta']);
-		$this->assertSame('N-c2 · 15:40', $day['recorded'][0]['recordedMeta']);
+		$this->assertSame(expected: 'N-c1', actual: $day['open'][0]['meta']);
+		$this->assertSame(expected: 'N-c2 · 15:40', actual: $day['recorded'][0]['recordedMeta']);
 	}//end testSortsTheDayIntoOpenAndRecorded()
 
 	/**

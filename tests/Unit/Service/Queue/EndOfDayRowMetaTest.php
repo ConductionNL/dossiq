@@ -84,18 +84,18 @@ class EndOfDayRowMetaTest extends TestCase {
 			}
 		};
 
-		$gateway = $this->createMock(EngineTaskGateway::class);
+		$gateway = $this->createMock(originalClassName: EngineTaskGateway::class);
 		$gateway->method('find')->willReturnCallback(
 			static fn (string $taskId): ?array => ($tasks[$taskId] ?? null)
 		);
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default=''): string => $default
 		);
 
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnCallback(
 			static fn (string $text, array $parameters=[]): string => vsprintf($text, array_values($parameters))
 		);
@@ -119,8 +119,8 @@ class EndOfDayRowMetaTest extends TestCase {
 
 		$facts = $meta->factsOf(item: ['subjectType' => 'case', 'subjectId' => 'c1']);
 
-		$this->assertSame('2026-4836 · In behandeling', $meta->openLine(facts: $facts));
-		$this->assertSame('2026-4836 · 15:40', $meta->recordedLine(facts: $facts, time: '15:40'));
+		$this->assertSame(expected: '2026-4836 · In behandeling', actual: $meta->openLine(facts: $facts));
+		$this->assertSame(expected: '2026-4836 · 15:40', actual: $meta->recordedLine(facts: $facts, time: '15:40'));
 	}//end testACaseNamesItsNumberAndStatus()
 
 	/**
@@ -136,8 +136,8 @@ class EndOfDayRowMetaTest extends TestCase {
 
 		$facts = $meta->factsOf(item: ['subjectType' => 'task', 'subjectId' => 't1']);
 
-		$this->assertSame('at 2026-4839 Kapvergunning essen Parkweg', $meta->openLine(facts: $facts));
-		$this->assertSame('at 2026-4839 · 11:15', $meta->recordedLine(facts: $facts, time: '11:15'));
+		$this->assertSame(expected: 'at 2026-4839 Kapvergunning essen Parkweg', actual: $meta->openLine(facts: $facts));
+		$this->assertSame(expected: 'at 2026-4839 · 11:15', actual: $meta->recordedLine(facts: $facts, time: '11:15'));
 	}//end testATaskNamesTheCaseItIsOn()
 
 	/**
@@ -156,9 +156,9 @@ class EndOfDayRowMetaTest extends TestCase {
 		$task = $meta->factsOf(item: ['subjectType' => 'task', 'subjectId' => 't1']);
 		$missing = $meta->factsOf(item: ['subjectType' => 'case', 'subjectId' => 'nope']);
 
-		$this->assertSame('2026-4836', $meta->openLine(facts: $case));
-		$this->assertSame('', $meta->openLine(facts: $task));
-		$this->assertSame('11:15', $meta->recordedLine(facts: $task, time: '11:15'));
-		$this->assertSame('', $meta->openLine(facts: $missing));
+		$this->assertSame(expected: '2026-4836', actual: $meta->openLine(facts: $case));
+		$this->assertSame(expected: '', actual: $meta->openLine(facts: $task));
+		$this->assertSame(expected: '11:15', actual: $meta->recordedLine(facts: $task, time: '11:15'));
+		$this->assertSame(expected: '', actual: $meta->openLine(facts: $missing));
 	}//end testWhatCannotBeReadIsLeftOut()
 }//end class
