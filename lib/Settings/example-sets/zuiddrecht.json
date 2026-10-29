@@ -3357,7 +3357,7 @@
 				"assignee": "{{cast:mehmet.uid}}",
 				"assignedGroup": "zuiddrecht-medewerkers",
 				"startDate": "{{date:-26}}",
-				"lastActivityAt": "{{datetime:-12 10:15}}",
+				"lastActivityAt": "{{datetime:-2 10:15}}",
 				"receivedAt": "{{datetime:-26 09:40}}",
 				"currentStatusEnteredAt": "{{datetime:-19 14:00}}",
 				"statusHistory": [
