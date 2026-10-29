@@ -39,6 +39,31 @@ function widgetsWithId(root, id) {
 	return found
 }
 
+/**
+ * Every stalled-cases widget, layout entry and config patch under a root.
+ *
+ * @param {object} root The tree.
+ * @return {object[]} The nodes.
+ */
+function stalledNodes(root) {
+	const found = []
+	const walk = (node) => {
+		if (Array.isArray(node)) {
+			node.forEach(walk)
+		} else if (node !== null && typeof node === 'object') {
+			if (node.id === 'stalled-cases' || node.widgetId === 'stalled-cases') {
+				found.push(node)
+			}
+			if (node['stalled-cases'] !== undefined) {
+				found.push(node['stalled-cases'])
+			}
+			Object.values(node).forEach(walk)
+		}
+	}
+	walk(root)
+	return found
+}
+
 describe('a case\'s last activity', () => {
 	it('is a date-time on the case', () => {
 		expect(fragment.components.schemas.case.properties.lastActivityAt).toMatchObject({ type: 'string', format: 'date-time' })
@@ -56,6 +81,21 @@ describe('a case\'s last activity', () => {
 			const text = JSON.stringify(widget)
 			expect(text).not.toContain('@self.updated')
 			expect(text).toContain('lastActivityAt')
+		}
+	})
+
+	it('lists only cases idle for more than a week, and View all opens the same cases', () => {
+		const stalled = [manifest, simple].flatMap((root) => stalledNodes(root))
+		const lists = stalled.filter((widget) => widget.content !== undefined)
+		const links = stalled.flatMap((widget) => [widget.headerLink, widget.content?.viewAllRoute]).filter(Boolean)
+		expect(lists.length).toBeGreaterThanOrEqual(4)
+		expect(links.length).toBeGreaterThanOrEqual(4)
+		for (const widget of lists) {
+			const filter = (widget.content.source ?? widget.content).filter
+			expect(filter['lastActivityAt[lt]']).toBe('@today-7d')
+		}
+		for (const link of links) {
+			expect(link.query['lastActivityAt[lt]']).toBe('@today-7d')
 		}
 	})
 })
