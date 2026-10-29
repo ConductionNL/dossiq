@@ -191,16 +191,47 @@ class TermDashboardFigures {
 			return '';
 		}
 
-		$longest = null;
+		$longest = $this->longestRunning(running: $running);
+		$day = (int)($longest['currentDag'] ?? 0);
+		$lastDay = $this->lastRateDay(calculation: $longest);
+		$count = count(value: $running);
+
+		if ($lastDay === 0) {
+			return $this->l10n->n('%n case, day %s', '%n cases, the longest at day %s', $count, [$day]);
+		}
+
+		return $this->l10n->n('%n case, day %1$s of %2$s', '%n cases, the longest at day %1$s of %2$s', $count, [$day, $lastDay]);
+	}//end penaltyNote()
+
+	/**
+	 * The running penalty that has run the most days.
+	 *
+	 * @param array<int, array<string, mixed>> $running The running penalty calculations, at least one.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function longestRunning(array $running): array {
+		$longest = $running[0];
 		foreach ($running as $row) {
-			if ($longest === null || (int)($row['currentDag'] ?? 0) > (int)($longest['currentDag'] ?? 0)) {
+			if ((int)($row['currentDag'] ?? 0) > (int)($longest['currentDag'] ?? 0)) {
 				$longest = $row;
 			}
 		}
 
-		$day = (int)($longest['currentDag'] ?? 0);
+		return $longest;
+	}//end longestRunning()
+
+	/**
+	 * The last day a calculation's rate bands reach (42 under Awb 4:17), or 0
+	 * without bands.
+	 *
+	 * @param array<string, mixed> $calculation The penalty calculation.
+	 *
+	 * @return int
+	 */
+	private function lastRateDay(array $calculation): int {
 		$lastDay = 0;
-		foreach ((array)($longest['rateBands'] ?? []) as $band) {
+		foreach ((array)($calculation['rateBands'] ?? []) as $band) {
 			$upTo = 0;
 			if (is_array($band) === true) {
 				$upTo = (int)($band['upTo'] ?? 0);
@@ -210,14 +241,9 @@ class TermDashboardFigures {
 				$lastDay = $upTo;
 			}
 		}
-		$count = count(value: $running);
 
-		if ($lastDay === 0) {
-			return $this->l10n->n('%n case, day %s', '%n cases, the longest at day %s', $count, [$day]);
-		}
-
-		return $this->l10n->n('%n case, day %1$s of %2$s', '%n cases, the longest at day %1$s of %2$s', $count, [$day, $lastDay]);
-	}//end penaltyNote()
+		return $lastDay;
+	}//end lastRateDay()
 
 	/**
 	 * Sum the penalty payments that are still accruing, in euros.
