@@ -197,26 +197,41 @@ class CaseRoleVocabulary {
 	/**
 	 * The published role types as vocabulary entries, keyed by uuid.
 	 *
+	 * Every role type, page by page, read regardless of who asks: the
+	 * vocabulary belongs to the instance, and a sync triggered by one user's
+	 * save must not shrink it to what that user may see.
+	 *
 	 * @return array<int, array<string, string>> The entries, ordered by label.
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
 	 */
 	public function roleEntries(): array {
 		[$objectService, $register] = $this->requireRegister();
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $this->schema(key: 'role_type_schema'),
-			filters: ['_limit' => self::PAGE_SIZE],
-		);
+		$schema = $this->schema(key: 'role_type_schema');
 
 		$entries = [];
-		foreach ($rows as $row) {
-			$entry = $this->entryOf(row: $row);
-			if ($entry !== []) {
-				$entries[$entry['key']] = $entry;
+		$offset = 0;
+		do {
+			$rows = $this->searchObjectsAsArraysUnscoped(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['_limit' => self::PAGE_SIZE, '_offset' => $offset],
+			);
+			$before  = count($entries);
+			$fetched = count($rows);
+			foreach ($rows as $row) {
+				$entry = $this->entryOf(row: $row);
+				if ($entry !== []) {
+					$entries[$entry['key']] = $entry;
+				}
 			}
-		}
+
+			$offset += self::PAGE_SIZE;
+			// A full page that added nothing new is a service ignoring the
+			// offset: reading on would answer the same page forever.
+			$grew = count($entries) > $before;
+		} while ($fetched >= self::PAGE_SIZE && $grew === true);
 
 		$entries = array_values($entries);
 		usort($entries, static fn (array $a, array $b): int => strcasecmp($a['label'], $b['label']));

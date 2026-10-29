@@ -8313,13 +8313,14 @@
 						"content": {
 							"chartKind": "bar",
 							"options": {
+								"chart": { "parentHeightOffset": 0 },
 								"xaxis": { "labels": { "rotate": 0, "hideOverlappingLabels": true } },
 								"yaxis": { "show": false },
 								"grid": { "show": false },
 								"legend": { "show": false },
 								"dataLabels": { "enabled": false }
 							},
-							"height": 130,
+							"height": 140,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
@@ -8354,6 +8355,7 @@
 							"chartKind": "line",
 							"categoryFormat": "month",
 							"options": {
+								"chart": { "parentHeightOffset": 0 },
 								"stroke": { "curve": "straight", "width": 2 },
 								"markers": { "size": 4 },
 								"xaxis": { "labels": { "rotate": 0, "hideOverlappingLabels": true } },
@@ -8361,7 +8363,7 @@
 								"legend": { "show": false },
 								"dataLabels": { "enabled": false }
 							},
-							"height": 130,
+							"height": 140,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {
@@ -8408,6 +8410,7 @@
 							"categoryFormat": "week",
 							"colors": ["var(--nl-color-teal-text, var(--color-primary-element))"],
 							"options": {
+								"chart": { "parentHeightOffset": 0 },
 								"plotOptions": {
 									"bar": {
 										"columnWidth": "62%",
@@ -8436,7 +8439,7 @@
 									"show": false
 								}
 							},
-							"height": 130,
+							"height": 140,
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/processing-time",
 								"params": {

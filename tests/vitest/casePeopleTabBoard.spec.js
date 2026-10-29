@@ -60,6 +60,10 @@ describe('the People tab', () => {
 		expect(nl[roles.subtitle]).toBe('Uit het partijmodel van OpenRegister, ook voor wie geen account heeft')
 		expect(en[roles.subtitle]).toBe(roles.subtitle)
 	})
+
+	it('puts Betrokkene toevoegen in the Rollen title row, so the accepted kinds come first under the title', () => {
+		expect(card('case-party-roles-card').content.manage.add.placement).toBe('title')
+	})
 })
 
 describe('the Partijen button row', () => {

@@ -27,6 +27,20 @@ describe('organisation side history (DqTenant)', () => {
 		expect(side.content.valueLabels).toEqual(tab.content.valueLabels)
 	})
 
+	it('draws its rows as DqTenant does: ruled above the first, 10px above and below each', () => {
+		expect(side.content.ruleAbove).toBe(true)
+		expect(side.content.density).toBe('compact')
+	})
+
+	it('names the creation of the organisation, as the board\'s "Organisatie aangemaakt"', () => {
+		expect(tab.content.endpointSource.url).toContain('action=organisation.status_changed,organisation.updated,create&')
+		expect(tab.content.valueLabels.action.create).toBe('Organisation created')
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/nl.json'), 'utf8')).translations
+		const en = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/en.json'), 'utf8')).translations
+		expect(nl['Organisation created']).toBe('Organisatie aangemaakt')
+		expect(en['Organisation created']).toBe('Organisation created')
+	})
+
 	it('keeps its title Historie', () => {
 		expect(side.title).toBe('Record history')
 	})
