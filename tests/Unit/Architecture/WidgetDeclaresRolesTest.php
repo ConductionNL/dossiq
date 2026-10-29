@@ -63,6 +63,7 @@ class WidgetDeclaresRolesTest extends TestCase {
 		'eod-figures' => "Counts of the reader's own day, nothing about anybody else's work.",
 		'eod-tomorrow' => "The reader's own items due by tomorrow, from their own queue.",
 		'eod-how' => 'A fixed sentence on how the end-of-day page works; it shows no data.',
+		'eod-ready' => 'A fixed sentence above the close-out buttons of the reader\'s own notes; it shows no data.',
 		'kpi-my-tasks' => "The reader's own tasks: it can hold nothing they may not see, because it is filtered to them.",
 		'personal-queue' => "Everything waiting on the reader, from their own queue, which the server filters to them.",
 		'cases-by-status' => 'Where the open caseload sits, which is the shape of the same list everyone can already read.',

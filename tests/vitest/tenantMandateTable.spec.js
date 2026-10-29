@@ -23,8 +23,8 @@ describe('the tenant mandate card', () => {
 		expect(card.content.columns).toEqual([
 			{ key: 'mandateMatrixRef', label: 'Role' },
 			{ key: 'terms.plafond', label: 'Decides up to', format: { style: 'currency', currency: 'EUR', decimals: 0 }, emptyLabel: 'Unlimited' },
-			{ key: 'terms.decisionTypes', label: 'Decides objections', contains: 'bezwaar', valueLabels: { true: 'Yes', false: 'No' } },
-			{ key: 'terms.enforcement', label: 'Enforcement', valueLabels: { none: 'No', warning: 'Warning', full: 'Yes' } },
+			{ key: 'terms.decisionTypes', label: 'Decides objections', formatter: 'containsLabel', formatterOptions: { token: 'bezwaar', yes: 'Yes', no: 'No' } },
+			{ key: 'terms.enforcement', label: 'Enforcement', widget: 'label', enum: ['none', 'warning', 'full'], enumLabels: { none: 'No', warning: 'Warning', full: 'Yes' } },
 		])
 	})
 
