@@ -38,3 +38,14 @@ describe('process analysis rows', () => {
 		expect(throughput.sameHeight).toBe(true)
 	})
 })
+
+describe('throughput page rows', () => {
+	const doorlooptijd = manifest.pages.find((candidate) => candidate.id === 'Doorlooptijd')
+	const at = (widgetId) => doorlooptijd.config.layout.find((item) => item.widgetId === widgetId)
+
+	it('draws "Zaken met risico" as tall as "Prestaties per zaaktype" beside it, as DqDoorlooptijd (r36 340 vs 396)', () => {
+		expect(at('processing-time-at-risk').gridY).toBe(at('processing-time-breakdown').gridY)
+		expect(at('processing-time-at-risk').sameHeight).toBe(true)
+		expect(at('processing-time-breakdown').sameHeight).toBe(true)
+	})
+})

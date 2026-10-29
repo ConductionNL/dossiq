@@ -8765,7 +8765,8 @@
 						"gridY": 18,
 						"gridWidth": 6,
 						"gridHeight": 6,
-						"sizeToContent": true
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": 6,
@@ -8774,7 +8775,8 @@
 						"gridY": 18,
 						"gridWidth": 6,
 						"gridHeight": 6,
-						"sizeToContent": true
+						"sizeToContent": true,
+						"sameHeight": true
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
