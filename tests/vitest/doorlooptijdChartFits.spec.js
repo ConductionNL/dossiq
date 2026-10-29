@@ -24,9 +24,9 @@ describe('the Doorlooptijd monthly chart', () => {
 		expect(page.config.layout.find((item) => item.widgetId === 'processing-time-monthly').sizeToContent).toBe(true)
 	})
 
-	it('draws the Naleving cards\' charts 130px', () => {
+	it('draws the Naleving cards\' charts 140px', () => {
 		for (const id of ['processing-time-charts-distribution', 'processing-time-charts-trend', 'processing-time-charts-throughput']) {
-			expect(page.config.widgets.find((item) => item.id === id).content.height, id).toBe(130)
+			expect(page.config.widgets.find((item) => item.id === id).content.height, id).toBe(140)
 		}
 	})
 
