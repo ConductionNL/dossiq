@@ -1085,6 +1085,8 @@
         "Associations": "Verenigingen",
         "Async collaboration on this shared case. Entries are append-only and visible to both organisations.": "Asynchrone samenwerking op deze gedeelde zaak. Berichten kunnen alleen worden toegevoegd en zijn zichtbaar voor beide organisaties.",
         "At": "Op",
+        "at %1$s %2$s": "bij %1$s %2$s",
+        "at %s": "bij %s",
         "at case {subject.identifier}, deadline {dueAt|relative}": "bij zaak {subject.identifier}, deadline {dueAt|relative}",
         "At least one clock on this case has run out.": "Minstens een termijn op deze zaak is verlopen.",
         "At least one status must be marked as final": "Ten minste één status moet als definitief zijn gemarkeerd",

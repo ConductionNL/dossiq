@@ -19,6 +19,19 @@ not be read. A candidate changed today but not opened by the reader SHALL NOT co
 - **WHEN** he reloads "Close out your day"
 - **THEN** the case is under "Recorded today" with the note and 15:40, and not under "Still open from today"
 
+### Requirement: Each row names its case
+
+Each open and recorded row SHALL carry a meta line naming its case: for a case its number and the name of its status
+("2026-4836 · In behandeling"), for a task the number and title of the case it is on ("bij 2026-4839 Kapvergunning essen
+Parkweg"). A recorded row's meta line SHALL carry the case number and the time of the note ("2026-0110 · 15:40", for a
+task "bij 2026-4836 · 11:15"). What cannot be read is left out of the line; the row stays.
+
+#### Scenario: A task names its case
+
+- **GIVEN** Pieter opened the task "Advies boomdeskundige beoordelen" on case 2026-4839 "Kapvergunning essen Parkweg" today
+- **WHEN** he opens "Close out your day"
+- **THEN** its row reads "bij 2026-4839 Kapvergunning essen Parkweg" under the title
+
 ### Requirement: The page is manifest config and keeps what the screen held
 
 "Close out your day" SHALL be a manifest dashboard on `/end-of-day` with: a note field per opened row recorded on the

@@ -71,6 +71,7 @@ class EndOfDayService {
 	 * @param IL10N                $l10n     The labels on screen.
 	 * @param LoggerInterface      $logger   The log.
 	 * @param EngineTaskGateway    $tasks    The task engine, where tasks live.
+	 * @param EndOfDayRowMeta      $rowMeta  The case a row names under its title.
 	 */
 	public function __construct(
 		private readonly PersonalQueueService $queue,
@@ -78,6 +79,7 @@ class EndOfDayService {
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly EngineTaskGateway $tasks,
+		private readonly EndOfDayRowMeta $rowMeta,
 	) {
 	}//end __construct()
 
@@ -109,12 +111,13 @@ class EndOfDayService {
 			$row = $this->rowOf(item: $item);
 			$note = $this->noteOfToday(item: $item, userId: $userId, today: $today, zone: $now->getTimezone());
 			if ($note !== null) {
-				$recorded[] = $row + $note;
+				$facts = $this->rowMeta->factsOf(item: $item);
+				$recorded[] = $row + $note + ['recordedMeta' => $this->rowMeta->recordedLine(facts: $facts, time: $note['recordedTime'])];
 				continue;
 			}
 
 			if ($this->openedToday(item: $item, userId: $userId, today: $today, zone: $now->getTimezone()) === true) {
-				$open[] = $row;
+				$open[] = $row + ['meta' => $this->rowMeta->openLine(facts: $this->rowMeta->factsOf(item: $item))];
 				continue;
 			}
 

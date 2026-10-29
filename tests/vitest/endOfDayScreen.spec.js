@@ -156,3 +156,10 @@ describe('Ready for today? as its own card (DqDagAfsluiten r34)', () => {
 		expect(at('eod-ready').gridY).toBe(recorded.gridY + recorded.gridHeight)
 	})
 })
+
+describe('each row names its case (DqDagAfsluiten r36)', () => {
+	it('templates the server\'s meta lines under the titles', () => {
+		expect(widget('eod-open').content.meta).toBe('{meta}')
+		expect(widget('eod-recorded').content.meta).toBe('{recordedMeta}')
+	})
+})

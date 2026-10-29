@@ -7275,6 +7275,7 @@
 							},
 							"presentation": "notes",
 							"title": "{title}",
+							"meta": "{meta}",
 							"pill": {
 								"field": "kindLabel",
 								"variant": "info"
@@ -7350,7 +7351,7 @@
 								"field": "kindLabel",
 								"variant": "info"
 							},
-							"meta": "{recordedTime}",
+							"meta": "{recordedMeta}",
 							"text": "{note}",
 							"rowRouteField": "routeName",
 							"rowIdField": "routeId",
