@@ -111,6 +111,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
 		'BackfillCaseStatusRole' => 'fills statusRole on existing cases; a fresh install has none',
 		'BackfillCaseTypeIdentifier' => 'fills caseTypeIdentifier on existing cases; a fresh install has none',
+		'BackfillCaseLastActivity' => 'dates the last activity of existing cases; a fresh install has none',
 		'MigrateCmmnCasePlans' => 'drains existing casePlanState blobs into OpenRegister plan items; a fresh install has none',
 		'CarryInspectionRunsOntoTasks' => 'carries existing inspection reports, runs and results onto tasks; a fresh install has none',
 		'FoldInspectionChecklistTemplates' => 'folds existing inspectieChecklist and inspectionChecklist rows into the one template schema; a fresh install has none',
