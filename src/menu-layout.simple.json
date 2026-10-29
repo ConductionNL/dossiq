@@ -1113,7 +1113,6 @@
 						"type": "open-modal",
 						"target": "CaseLifecycleMenuDialog",
 						"label": "Next step",
-						"icon": "PlayCircleOutline",
 						"id": "stage-next-step",
 						"notTabs": [
 							"ai-oversight"
@@ -1124,7 +1123,6 @@
 						"type": "open-modal",
 						"target": "CaseLifecycleMenuDialog",
 						"label": "Next step",
-						"icon": "PlayCircleOutline",
 						"id": "stage-next-step",
 						"notTabs": [
 							"ai-oversight"
@@ -1134,7 +1132,6 @@
 						"type": "open-modal",
 						"target": "CaseLifecycleMenuDialog",
 						"label": "Next step",
-						"icon": "PlayCircleOutline",
 						"id": "stage-next-step",
 						"notTabs": [
 							"ai-oversight"
