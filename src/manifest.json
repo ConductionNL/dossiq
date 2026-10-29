@@ -11676,6 +11676,7 @@
 								}
 							],
 							"exportId": "deadline-report-quarterly",
+							"fitWidth": false,
 							"exportFileName": "deadline-report",
 							"emptyText": "No terms started in this quarter."
 						}
