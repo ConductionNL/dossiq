@@ -73,9 +73,9 @@ describe('tenant tables without a row link (DqTenant)', () => {
 })
 
 describe('tenant header (DqTenant)', () => {
-	it('names the slug as bold text, not a chip', () => {
-		expect(config.headerFields).toEqual([{ key: 'slug', format: 'strong' }])
+	it('names the slug in a soft pill', () => {
+		expect(config.headerFields).toEqual([{ key: 'slug', format: 'pill' }])
 		const schema = read('tests/schemas/app-manifest-v2.schema.json')
-		expect(JSON.stringify(schema)).toContain('"enum":["text","mono","badge","user","date","strong"]')
+		expect(JSON.stringify(schema)).toContain('"enum":["text","mono","badge","user","date","strong","pill"]')
 	})
 })
