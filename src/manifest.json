@@ -8245,6 +8245,7 @@
 						"title": "Within the norm per case type",
 						"content": {
 							"chartKind": "bar-list",
+							"barListWide": true,
 							"barMax": 100,
 							"valueFormat": {
 								"name": "number",
@@ -11489,6 +11490,7 @@
 						"title": "Decided on time per case type",
 						"content": {
 							"chartKind": "bar-list",
+							"barListWide": true,
 							"barMax": 100,
 							"valueFormat": {
 								"name": "number",
