@@ -560,8 +560,11 @@ export default {
 	margin: 0;
 }
 
+/* The theme pads every textarea 5px 12px with !important; the board draws
+   10px 12px, so 8 rows are 166px. */
 .compose-dialog textarea.compose-dialog__body {
 	margin: 0;
+	padding: 10px 12px !important;
 }
 
 /* A field takes the board's 40px in the flow: NcTextField and NcSelect hold
