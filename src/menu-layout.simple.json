@@ -5317,7 +5317,7 @@
 								{
 									"key": "prompt",
 									"label": "Question or suggestion",
-									"cellClass": "cn-cell--wrap"
+									"cellClass": "cn-cell--wrap cn-cell--leading-normal"
 								},
 								{
 									"key": "status",
@@ -5345,7 +5345,7 @@
 								{
 									"key": "advisoryContext.model",
 									"label": "Model",
-									"cellClass": "cn-cell--wrap"
+									"cellClass": "cn-cell--wrap cn-cell--leading-normal"
 								}
 							],
 							"rowTitle": "text",
