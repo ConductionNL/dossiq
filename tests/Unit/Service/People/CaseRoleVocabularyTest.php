@@ -77,16 +77,46 @@ class CaseRoleVocabularyTest extends TestCase {
 			public array $answers = [];
 
 			/**
-			 * Rows matching the filters.
+			 * Every read: its filters and whether it lifted RBAC and tenancy.
+			 *
+			 * @var array<int, array<string, mixed>>
+			 */
+			public array $reads = [];
+
+			/**
+			 * Whether the service ignores `_offset`, as an older one might.
+			 *
+			 * @var bool
+			 */
+			public bool $ignoresOffset = false;
+
+			/**
+			 * One page of the rows, as OpenRegister pages them.
 			 *
 			 * @param string $register The register.
 			 * @param string $schema The schema.
 			 * @param array<string, mixed> $filters The filters.
+			 * @param bool $_rbac Whether RBAC applies.
+			 * @param bool $_multitenancy Whether tenancy applies.
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
-				return ($this->answers[$schema] ?? []);
+			public function searchObjectsBySlug(
+				string $register,
+				string $schema,
+				array $filters,
+				bool $_rbac = true,
+				bool $_multitenancy = true,
+			): array {
+				$this->reads[] = ['filters' => $filters, 'rbac' => $_rbac, 'multitenancy' => $_multitenancy];
+				$offset = (int)($filters['_offset'] ?? 0);
+				if ($this->ignoresOffset === true) {
+					$offset = 0;
+				}
+
+				$limit = (int)($filters['_limit'] ?? 20);
+
+				return array_slice(($this->answers[$schema] ?? []), $offset, $limit);
 			}
 		};
 
@@ -230,6 +260,63 @@ class CaseRoleVocabularyTest extends TestCase {
 		$this->assertSame(expected: 'rt-3', actual: $stored[2]['label']);
 		$this->assertSame(expected: 'Authorised representative', actual: $stored[4]['label']);
 	}//end testTheRoleTypesBecomeTheVocabulary()
+
+	/**
+	 * Every role type is read, however many there are: a set that brings in
+	 * more than one page's worth must not leave the later ones unlabelled.
+	 *
+	 * @return void
+	 */
+	public function testEveryRoleTypeIsReadPastTheFirstPage(): void {
+		$this->objects->answers['roleType'] = array_map(
+			static fn (int $n): array => ['@self' => ['id' => sprintf('rt-%03d', $n)], 'name' => sprintf('Rol %03d', $n)],
+			range(1, 450)
+		);
+
+		$entries = $this->vocabulary->roleEntries();
+
+		$this->assertCount(expectedCount: 450, haystack: $entries);
+		$this->assertSame(expected: 'rt-450', actual: $entries[449]['key']);
+		$this->assertSame(expected: 'Rol 450', actual: $entries[449]['label']);
+	}//end testEveryRoleTypeIsReadPastTheFirstPage()
+
+	/**
+	 * A service that answers the same page whatever the offset ends the read
+	 * instead of looping on it.
+	 *
+	 * @return void
+	 */
+	public function testAServiceIgnoringTheOffsetEndsTheRead(): void {
+		$this->objects->ignoresOffset = true;
+		$this->objects->answers['roleType'] = array_map(
+			static fn (int $n): array => ['@self' => ['id' => 'rt-' . $n], 'name' => 'Rol ' . $n],
+			range(1, 250)
+		);
+
+		$entries = $this->vocabulary->roleEntries();
+
+		$this->assertCount(expectedCount: 200, haystack: $entries);
+		$this->assertLessThanOrEqual(expected: 2, actual: count($this->objects->reads));
+	}//end testAServiceIgnoringTheOffsetEndsTheRead()
+
+	/**
+	 * The vocabulary is the instance's, so it is read regardless of who
+	 * triggered the sync: a save by one user must not write a vocabulary
+	 * limited to what that user may see.
+	 *
+	 * @return void
+	 */
+	public function testTheRoleTypesAreReadUnscoped(): void {
+		$this->objects->answers['roleType'] = [['@self' => ['id' => 'rt-1'], 'name' => 'Adviseur']];
+
+		$this->vocabulary->sync();
+
+		$this->assertNotSame(expected: [], actual: $this->objects->reads);
+		foreach ($this->objects->reads as $read) {
+			$this->assertFalse(condition: $read['rbac']);
+			$this->assertFalse(condition: $read['multitenancy']);
+		}
+	}//end testTheRoleTypesAreReadUnscoped()
 
 	/**
 	 * A role type already claiming a generic key is not listed twice.
