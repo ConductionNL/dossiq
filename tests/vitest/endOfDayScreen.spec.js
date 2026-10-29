@@ -174,3 +174,15 @@ describe('the kind pill (DqDagAfsluiten r36)', () => {
 		}
 	})
 })
+
+describe('Recorded today as drawn (DqDagAfsluiten r36)', () => {
+	it('leads each row with a green done mark, the pill, title and meta on one line, the note under it, ruled from the first row', () => {
+		const content = widget('eod-recorded').content
+		expect(content.icon).toBe('Check')
+		expect(content.iconTile).toEqual({ size: 24, tone: 'success' })
+		expect(content.headLine).toBe(true)
+		expect(content.ruleAbove).toBe(true)
+		expect(content.chevron).toBe(false)
+		expect(content.text).toBe('{note}')
+	})
+})
