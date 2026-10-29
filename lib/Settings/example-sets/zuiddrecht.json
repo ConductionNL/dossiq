@@ -9624,12 +9624,10 @@
 			}
 		},
 		{
-			"key": "pieter-opende-kapvergunning-essen",
+			"key": "pieter-opende-advies-boomdeskundige",
 			"data": {
 				"user": "{{cast:pieter.uid}}",
-				"objectUuid": "{{object:kapvergunning-essen-parkweg.id}}",
-				"register": "dossiq",
-				"schema": "case",
+				"objectUuid": "{{task:advies-boomdeskundige.uuid}}",
 				"seenAt": "{{datetime:0 10:15}}"
 			}
 		}
