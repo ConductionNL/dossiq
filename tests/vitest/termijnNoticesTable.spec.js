@@ -36,4 +36,10 @@ describe('the notices-of-default table', () => {
 		const nl = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../l10n/nl.json'), 'utf8')).translations
 		expect(nl[notices.content.footnote]).toBe('Een ingebrekestelling telt pas als de beslistermijn voorbij is (Awb 4:17). Een vastgesteld bedrag gaat als betaalsignaal naar de financiële administratie; het resultaat komt terug op de zaak.')
 	})
+
+	it('draws the case as a plain link, as DqTermijnen (r36: 15/600 title ink, board 14/400 link)', () => {
+		// A borderless object table keeps the board title-column look (DqDashboard's case list);
+		// a framed one in a card shows its first column plain. The dashboard card draws no frame either way.
+		expect(notices.content.borderless).toBeUndefined()
+	})
 })

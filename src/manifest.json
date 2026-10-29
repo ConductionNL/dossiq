@@ -11591,7 +11591,6 @@
 									"emptyLabel": "Not applicable"
 								}
 							],
-							"borderless": true,
 							"emptyText": "No notice of default has been received",
 							"sortable": true,
 							"filterable": true,
