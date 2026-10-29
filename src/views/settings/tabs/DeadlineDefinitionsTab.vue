@@ -428,6 +428,12 @@ export default {
 	white-space: normal;
 }
 
+/* Heads on one line, as drawn: a head that may wrap gives its column less
+   room under the auto layout ("Gesloten dag" 130 against 140). */
+.deadline-definitions-tab__table th {
+	white-space: nowrap;
+}
+
 .deadline-definitions-tab__row--inactive {
 	opacity: 0.65;
 }
