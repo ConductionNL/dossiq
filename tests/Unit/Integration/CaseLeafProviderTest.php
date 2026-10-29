@@ -227,8 +227,8 @@ class CaseLeafProviderTest extends TestCase {
 
 		$answer = $this->leaf(rows: $rows)->byMasterEntity(ref: 'master-7', status: 'open');
 
-		self::assertSame('Subsidie', $answer['cases'][0]['caseTypeTitle']);
-		self::assertSame('Besluit', $answer['cases'][0]['statusName']);
+		self::assertSame(expected: 'Subsidie', actual: $answer['cases'][0]['caseTypeTitle']);
+		self::assertSame(expected: 'Besluit', actual: $answer['cases'][0]['statusName']);
 	}//end testReadsTranslatableTitlesAsText()
 
 	/**
@@ -243,6 +243,6 @@ class CaseLeafProviderTest extends TestCase {
 
 		$answer = $this->leaf(rows: $rows)->byMasterEntity(ref: 'master-7', status: 'open');
 
-		self::assertSame('In behandeling', $answer['cases'][0]['statusName']);
+		self::assertSame(expected: 'In behandeling', actual: $answer['cases'][0]['statusName']);
 	}//end testFallsBackToThePublicLabelForAnEmptyStatusName()
 }//end class
