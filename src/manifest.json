@@ -11582,7 +11582,7 @@
 									},
 									"widgetProps": {
 										"colorMap": {
-											"signal-sent": "info"
+											"signal-sent": "teal"
 										}
 									},
 									"emptyLabel": "Not applicable"
