@@ -218,7 +218,8 @@ class CaseRoleVocabulary {
 				schema: $schema,
 				filters: ['_limit' => self::PAGE_SIZE, '_offset' => $offset],
 			);
-			$before = count($entries);
+			$before  = count($entries);
+			$fetched = count($rows);
 			foreach ($rows as $row) {
 				$entry = $this->entryOf(row: $row);
 				if ($entry !== []) {
@@ -229,7 +230,8 @@ class CaseRoleVocabulary {
 			$offset += self::PAGE_SIZE;
 			// A full page that added nothing new is a service ignoring the
 			// offset: reading on would answer the same page forever.
-		} while (count($rows) >= self::PAGE_SIZE && count($entries) > $before);
+			$grew = count($entries) > $before;
+		} while ($fetched >= self::PAGE_SIZE && $grew === true);
 
 		$entries = array_values($entries);
 		usort($entries, static fn (array $a, array $b): int => strcasecmp($a['label'], $b['label']));
