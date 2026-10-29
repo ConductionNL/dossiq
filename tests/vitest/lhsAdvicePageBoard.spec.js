@@ -92,6 +92,12 @@ describe('the Wat nu? button on the enforcement advice (DqHandhaving)', () => {
 		}
 		expect(nl['Draft the pre-announcement']).toBe('Vooraankondiging opstellen')
 	})
+
+	it('draws the button as text only, as the board does', () => {
+		for (const stage of Object.keys(page.config.primaryActionByStage)) {
+			expect(page.config.primaryActionByStage[stage].icon, stage).toBeUndefined()
+		}
+	})
 })
 
 describe('the Historie card on the enforcement advice (DqHandhaving)', () => {

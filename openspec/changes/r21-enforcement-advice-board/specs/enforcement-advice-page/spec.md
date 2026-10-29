@@ -28,3 +28,8 @@ its history card with a string that reads "Historie" in Dutch.
 - **GIVEN** an enforcement advice page
 - **THEN** the side column shows Zaak, Classificatie, Aanbeveling, Afwijking en definitief and Historie, in that order
 - **AND** the main column shows the matrix and the violation only
+
+#### Scenario: Wat nu? button
+
+- **GIVEN** an enforcement advice page whose advice settles on a warning or a pre-announcement
+- **THEN** the Wat nu? card's button reads "Waarschuwing opstellen" or "Vooraankondiging opstellen", as text without an icon
