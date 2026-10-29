@@ -158,7 +158,8 @@ describe('process mining', () => {
 			expect(w.content.valueField).toBe(field)
 			expect(onGrid('ProcessMiningDashboard', id)).toBe(true)
 		}
-		expect(widget('ProcessMiningDashboard', 'pm-kpis-rework').content.caption).toBe('{summary.reworkNotice}')
+		// DqProcesanalyse: "Bezwaar keert het vaakst terug naar Beoordeling" under the rework rate.
+		expect(widget('ProcessMiningDashboard', 'pm-kpis-rework').content.caption).toBe('{summary.reworkLead}')
 	})
 
 	it('names the clock in the dwell series and in both duration headings', () => {

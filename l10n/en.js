@@ -9,6 +9,7 @@ OC.L10N.register(
         "%1$s cases, %2$s tasks": "%1$s cases, %2$s tasks",
         "%1$s checklist item not ticked: '%2$s'": "%1$s checklist item not ticked: '%2$s'",
         "%1$s is still open. %2$s": "%1$s is still open. %2$s",
+        "%1$s most often returns to %2$s": "%1$s most often returns to %2$s",
         "%1$s needs a value for \"%2$s\".": "%1$s needs a value for \"%2$s\".",
         "%1$s of %2$s documents are still waiting for an assessment": "%1$s of %2$s documents are still waiting for an assessment",
         "%1$s of %2$s partly public documents are still waiting for a redacted version": "%1$s of %2$s partly public documents are still waiting for a redacted version",

@@ -199,8 +199,38 @@ class ReportViews {
 			'topBottleneck'        => $top,
 			'topBottleneckLabel'   => $label,
 			'reworkNotice'         => $notice,
+			'reworkLead'           => $this->reworkLead(caseTypes: $caseTypes),
 		];
 	}//end summary()
+
+	/**
+	 * Where cases return most: the case type and status of the transition
+	 * that went back most often, as "Bezwaar most often returns to
+	 * Beoordeling"; empty when no case went back.
+	 *
+	 * @param array<int, array<string, mixed>> $caseTypes The per case type reports.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/process-mining-bottlenecks/spec.md
+	 */
+	private function reworkLead(array $caseTypes): string {
+		$lead = null;
+		foreach ($caseTypes as $caseType) {
+			foreach ((array)($caseType['transitionMatrix'] ?? []) as $transition) {
+				$returns = (int)($transition['reworkCount'] ?? 0);
+				if ($returns > 0 && ($lead === null || $returns > $lead['returns'])) {
+					$lead = ['returns' => $returns, 'caseType' => (string)($caseType['title'] ?? ''), 'status' => (string)($transition['toName'] ?? '')];
+				}
+			}
+		}
+
+		if ($lead === null || $lead['caseType'] === '' || $lead['status'] === '') {
+			return '';
+		}
+
+		return $this->l10n->t('%1$s most often returns to %2$s', [$lead['caseType'], $lead['status']]);
+	}//end reworkLead()
 
 	/**
 	 * Every type's bottlenecks in one ranking, highest score first.

@@ -8,6 +8,7 @@
         "%1$s cases, %2$s tasks": "%1$s zaken, %2$s taken",
         "%1$s checklist item not ticked: '%2$s'": "%1$s checklistitem niet afgevinkt: '%2$s'",
         "%1$s is still open. %2$s": "%1$s staat nog open. %2$s",
+        "%1$s most often returns to %2$s": "%1$s keert het vaakst terug naar %2$s",
         "%1$s needs a value for \"%2$s\".": "%1$s heeft een waarde nodig voor \"%2$s\".",
         "%1$s of %2$s documents are still waiting for an assessment": "%1$s van %2$s documenten wachten nog op een beoordeling",
         "%1$s of %2$s partly public documents are still waiting for a redacted version": "%1$s van %2$s deels openbare documenten wachten nog op een gelakte versie",

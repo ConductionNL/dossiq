@@ -9036,7 +9036,7 @@
 								"decimals": 1,
 								"suffix": " %"
 							},
-							"caption": "{summary.reworkNotice}",
+							"caption": "{summary.reworkLead}",
 							"captionVariant": "warning"
 						}
 					},

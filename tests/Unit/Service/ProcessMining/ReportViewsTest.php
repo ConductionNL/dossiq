@@ -37,7 +37,15 @@ class ReportViewsTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnArgument(0);
+		$l10n->method('t')->willReturnCallback(
+			static function (string $text, array $params = []): string {
+				if ($params === []) {
+					return $text;
+				}
+
+				return vsprintf(format: $text, values: $params);
+			}
+		);
 
 		$this->views = new ReportViews(l10n: $l10n);
 	}//end setUp()
@@ -111,6 +119,36 @@ class ReportViewsTest extends TestCase {
 		self::assertNull($summary['topBottleneck']);
 		self::assertSame('—', $summary['topBottleneckLabel']);
 	}//end testEmptySummary()
+
+	/**
+	 * The summary names the case type and status cases return to most
+	 * (DqProcesanalyse "Bezwaar keert het vaakst terug naar Beoordeling").
+	 *
+	 * @return void
+	 */
+	public function testSummaryNamesWhereCasesReturnMost(): void {
+		$types = $this->caseTypes();
+		$types[0]['transitionMatrix'] = [
+			['from' => 'r', 'to' => 'i', 'toName' => 'Intake', 'count' => 6, 'reworkCount' => 1],
+		];
+		$types[1]['transitionMatrix'] = [
+			['from' => 'd', 'to' => 'a', 'toName' => 'Advice', 'count' => 2, 'reworkCount' => 0],
+			['from' => 'a', 'to' => 'r', 'toName' => 'Review', 'count' => 3, 'reworkCount' => 2],
+		];
+
+		$summary = $this->views->summary(caseTypes: $types);
+
+		self::assertSame(expected: 'Objection most often returns to Review', actual: $summary['reworkLead']);
+	}//end testSummaryNamesWhereCasesReturnMost()
+
+	/**
+	 * Without a returning transition there is no lead.
+	 *
+	 * @return void
+	 */
+	public function testNoReworkLeadWithoutReturns(): void {
+		self::assertSame(expected: '', actual: $this->views->summary(caseTypes: $this->caseTypes())['reworkLead']);
+	}//end testNoReworkLeadWithoutReturns()
 
 	/**
 	 * At 20% rework or more the summary carries the notice sentence.
