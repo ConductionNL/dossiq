@@ -219,6 +219,11 @@ describe('the Custody tab', () => {
 		})
 	})
 
+	it('draws "Overdragen" as a secondary button, as the board does', async () => {
+		const wrapper = await mountPanel()
+		expect(wrapper.find('[data-testid="case-custody-accept"]').attributes('variant')).toBe('secondary')
+	})
+
 	it('re-reads the case after an answer, rather than rewriting the row', async () => {
 		const wrapper = await mountPanel()
 		const readsBefore = axios.get.mock.calls.length
@@ -384,6 +389,14 @@ describe('the holdings as rows (DqZaakArchivering Bewaring)', () => {
 		const sfc = fs.readFileSync(path.join(ROOT, 'src', 'components', 'case', 'CaseCustodyPanel.vue'), 'utf8')
 		const at = sfc.indexOf('.case-custody__mark {')
 		expect(sfc.slice(at, sfc.indexOf('}', at))).toContain('font-weight: 700')
+	})
+
+	it('sets the handed-over pill and the initials in the soft ink, as the board draws "Overgedragen" and "KC"', () => {
+		const sfc = fs.readFileSync(path.join(ROOT, 'src', 'components', 'case', 'CaseCustodyPanel.vue'), 'utf8')
+		for (const rule of ['.case-custody__pill {', '.case-custody__mark {']) {
+			const at = sfc.indexOf(rule)
+			expect(sfc.slice(at, sfc.indexOf('}', at))).toContain('color: var(--cn-board-text-soft, var(--color-main-text))')
+		}
 	})
 
 	it('opts in to the board\'s ruled-list start under the card subtitle', async () => {
