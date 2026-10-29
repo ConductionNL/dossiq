@@ -182,9 +182,10 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 		$this->assertSame(expected: $ids, actual: array_values(array_unique($ids)));
 	}//end testTheInboxHoldsSeventeenUnroutedMessages()
 	/**
-	 * Close out your day has Pieter's day to show: he opened three of his
-	 * cases today and wrote notes on two others and on his hearing task, all
-	 * on the install day.
+	 * Close out your day has Pieter's day to show, as DqDagAfsluiten draws it:
+	 * he opened two of his cases and the tree expert's advice task today
+	 * without a note yet, and wrote notes on two other cases and on his
+	 * hearing task, all on the install day.
 	 *
 	 * @return void
 	 *
@@ -216,7 +217,7 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 			expected: [
 				'{{object:melding-geluidsoverlast-terras-markt.id}}',
 				'{{object:bezwaar-parkeerboete-havenstraat.id}}',
-				'{{object:kapvergunning-essen-parkweg.id}}',
+				'{{task:advies-boomdeskundige.uuid}}',
 			],
 			actual: $opened
 		);
@@ -230,7 +231,8 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 		);
 		$tasks = array_column($set['tasks'], null, 'key');
 		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $tasks['hoorzitting-inplannen']['data']['assignee']);
-		foreach ([...$opened, $noted[0], $noted[2]] as $reference) {
+		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $tasks['advies-boomdeskundige']['data']['assignee']);
+		foreach ([$opened[0], $opened[1], $noted[0], $noted[2]] as $reference) {
 			$key = (string)preg_replace(pattern: '/^\{\{object:([a-z0-9-]+)\.id\}\}$/', replacement: '$1', subject: $reference);
 			$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $cases[$key]['data']['assignee'], message: $key);
 		}
