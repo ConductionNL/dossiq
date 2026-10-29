@@ -641,6 +641,10 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectCreatedEventStub.php';
 }
 
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/ObjectDeletedEventStub.php';
+}
+
 // people-on-the-case: OpenRegister's three person-link events, so
 // PersonLinkListenerTest can exercise handle() against the real getLink()
 // shape on a bare container. Declaration-only stubs, shared with psalm and
