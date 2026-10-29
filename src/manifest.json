@@ -9313,7 +9313,8 @@
 						"gridY": 8,
 						"gridWidth": 3,
 						"gridHeight": 3,
-						"sizeToContent": true
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": 7,
@@ -9322,7 +9323,8 @@
 						"gridY": 8,
 						"gridWidth": 3,
 						"gridHeight": 3,
-						"sizeToContent": true
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": 8,
@@ -9331,7 +9333,8 @@
 						"gridY": 8,
 						"gridWidth": 3,
 						"gridHeight": 3,
-						"sizeToContent": true
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": 9,
@@ -9340,7 +9343,8 @@
 						"gridY": 8,
 						"gridWidth": 3,
 						"gridHeight": 3,
-						"sizeToContent": true
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": 2,
@@ -9349,7 +9353,8 @@
 						"gridY": 11,
 						"gridWidth": 6,
 						"gridHeight": 6,
-						"sizeToContent": true
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": 3,
@@ -9357,7 +9362,8 @@
 						"gridX": 6,
 						"gridY": 11,
 						"gridWidth": 6,
-						"gridHeight": 4
+						"gridHeight": 4,
+						"sameHeight": true
 					},
 					{
 						"id": 4,
