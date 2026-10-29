@@ -220,17 +220,31 @@
 						"id": "organisation-side-admin",
 						"type": "facts",
 						"title": "Administrator",
+						"_note": "Board DqTenant Beheerder: the organisation's admin user (the tenantUser with role admin, earliest joined) by display name, and the organisation's contact address.",
 						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "tenantUser",
+								"filter": {
+									"tenantRef": "@objectId",
+									"role": "admin"
+								},
+								"sort": {
+									"field": "joinedAt",
+									"dir": "asc"
+								}
+							},
 							"fields": [
 								{
 									"label": "Owner",
-									"path": "owner",
+									"path": "userRef",
 									"format": "user"
 								},
 								{
 									"label": "Email",
 									"path": "contactEmail",
-									"format": "email"
+									"format": "email",
+									"from": "object"
 								}
 							],
 							"emptyText": "No administrator named yet"
