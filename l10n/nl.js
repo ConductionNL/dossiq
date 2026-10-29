@@ -1115,6 +1115,7 @@ OC.L10N.register(
         "Awarded Points": "Toegekende punten",
         "Away": "Afwezig",
         "Awb 4:17 and 4:18": "Awb 4:17 en 4:18",
+        "A notice of default only counts once the decision term has passed (Awb 4:17). A fixed amount goes to the financial administration as a payment signal; the result comes back on the case.": "Een ingebrekestelling telt pas als de beslistermijn voorbij is (Awb 4:17). Een vastgesteld bedrag gaat als betaalsignaal naar de financiële administratie; het resultaat komt terug op de zaak.",
         "Awb 4:3a: the requester hears that the request has arrived": "Awb 4:3a: de verzoeker hoort dat het verzoek binnen is",
         "Awb 4:5, recovery period": "Awb 4:5, hersteltermijn",
         "Awb 5:24 enforcement procedure with a recovery period and re-inspection.": "Handhavingsprocedure conform Awb 5:24 met begunstigingstermijn en hercontrole.",
