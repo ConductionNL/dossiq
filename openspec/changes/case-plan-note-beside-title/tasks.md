@@ -1,0 +1,1 @@
+- [x] 1.1 case-plan-card content.headerNote, no subtitle (tests/vitest/casePlanNoteBesideTitle.spec.js)

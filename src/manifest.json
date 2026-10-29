@@ -7314,6 +7314,9 @@
 									"cancel": {
 										"label": "Cancel",
 										"route": "MyWorkHome"
+									},
+									"placement": {
+										"widget": "eod-ready"
 									}
 								}
 							},
@@ -7432,6 +7435,16 @@
 						}
 					},
 					{
+						"id": "eod-ready",
+						"type": "text",
+						"title": "Ready for today?",
+						"_note": "DqDagAfsluiten draws Ready for today? as its own card after Recorded today; the notes list puts its Cancel / Close out your day pair at this card's foot (noteAction.recordAll.placement, nextcloud-vue). Without that library the list keeps the block under its rows.",
+						"content": {
+							"contentMode": "markdown",
+							"text": "The button records every note you filled in on its own case or task. An item without a note stays open and is back in My work tomorrow."
+						}
+					},
+					{
 						"id": "eod-how",
 						"type": "text",
 						"title": "How this works",
@@ -7469,6 +7482,16 @@
 						"gridY": 7,
 						"gridWidth": 8,
 						"gridHeight": 4,
+						"track": "main",
+						"sizeToContent": true
+					},
+					{
+						"id": 7,
+						"widgetId": "eod-ready",
+						"gridX": 0,
+						"gridY": 11,
+						"gridWidth": 8,
+						"gridHeight": 2,
 						"track": "main",
 						"sizeToContent": true
 					},

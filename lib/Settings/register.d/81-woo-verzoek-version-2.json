@@ -21,6 +21,7 @@
         "trigger": "Ontvangst van een WOO-verzoek van een burger, journalist of organisatie",
         "subject": "Openbaarmaking van overheidsinformatie",
         "processingDeadline": "P28D",
+        "goalPrompt": "no goals yet: what does the requester want to change?",
         "handling": {
           "defaultGroup": "behandelaars"
         },

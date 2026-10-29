@@ -47,7 +47,6 @@ function widget(node, id) {
 
 describe('more board lines under card titles', () => {
 	it.each([
-		['src/menu-layout.simple.json', 'case-plan-card', 'Mijlpalen en onderdelen van deze zaak'],
 		['src/manifest.json', 'cmmn-case-plan', 'Mijlpalen en onderdelen van deze zaak'],
 		['src/manifest.json', 'case-notes-panel', 'Interne notities, ook zichtbaar in de historie'],
 		['src/manifest.json', 'case-decisions-panel', 'Uit de besluitvorming van decidiq, op de zaak getoond'],
