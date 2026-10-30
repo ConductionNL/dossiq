@@ -9664,7 +9664,7 @@
 			"key": "hoorzitting-inplannen",
 			"data": {
 				"title": "Hoorzitting inplannen",
-				"description": "Plan de hoorzitting met de indiener en de commissie.",
+				"description": "",
 				"objectUuid": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
 				"state": "active",
 				"assignee": "{{cast:pieter.uid}}",
