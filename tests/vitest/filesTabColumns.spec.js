@@ -35,7 +35,11 @@ function filesProps() {
  */
 function withScanner(columns) {
 	return columns.map((column) => {
-		if (column === null || typeof column !== 'object' || column.requiredApp === undefined) {
+		if (
+			column === null
+			|| typeof column !== 'object'
+			|| column.requiredApp === undefined
+		) {
 			return column
 		}
 		const { requiredApp, ...rest } = column
@@ -47,22 +51,46 @@ describe('the Files tab columns as the library reads them', () => {
 	it('renders the name, then the board columns, and keeps the rest in the side cards', () => {
 		const columns = normaliseFileColumns(withScanner(filesProps().columns))
 		// Without the virus scanner the library leaves the Scan column out.
-		expect(normaliseFileColumns(filesProps().columns).map((column) => column.key)).not.toContain('scanVerdict')
+		expect(
+			normaliseFileColumns(filesProps().columns).map((column) => column.key),
+		).not.toContain('scanVerdict')
 		// A column with `when` (the review verdict) is drawn only on a case type that reviews its documents.
-		const keys = columns.filter((column) => column.hidden !== true && column.when === undefined).map((column) => column.key)
+		const keys = columns
+			.filter((column) => column.hidden !== true && column.when === undefined)
+			.map((column) => column.key)
 
 		expect(keys).toEqual(['name', 'scanVerdict', 'vertrouwelijkheidaanduiding'])
 		// The library keeps a `when` column only once the page resolved its condition to true.
 		expect(columns.map((column) => column.key)).not.toContain('reviewVerdict')
-		const resolved = withScanner(filesProps().columns).map((column) => (column?.when !== undefined ? { ...column, when: true } : column))
-		expect(normaliseFileColumns(resolved).map((column) => column.key)).toContain('reviewVerdict')
-		// The documents list's Direction and Keywords start hidden, a tick away in Columns.
-		expect(columns.filter((column) => column.hidden === true).map((column) => column.key)).toEqual(['direction', 'keywords'])
-		expect(normaliseFileColumns(filesProps().columns)[0].label, 'board DqDocumentenBeheer heads the name column Document').toBe('Document')
+		const resolved = withScanner(filesProps().columns).map((column) =>
+			column?.when !== undefined ? { ...column, when: true } : column,
+		)
+		expect(normaliseFileColumns(resolved).map((column) => column.key)).toContain(
+			'reviewVerdict',
+		)
+		// Document type, Direction, Sender or recipient and Keywords start hidden, a tick away in Columns (case-files-list-columns).
+		expect(
+			columns
+				.filter((column) => column.hidden === true)
+				.map((column) => column.key),
+		).toEqual(['documentType', 'direction', 'partyName', 'keywords'])
+		expect(
+			normaliseFileColumns(filesProps().columns)[0].label,
+			'board DqDocumentenBeheer heads the name column Document',
+		).toBe('Document')
 
 		// The rest of the row moved into the selected file's cards (DqDocumentenBeheer).
-		const cardKeys = filesProps().sideCards.flatMap((card) => card.fields.map((field) => field.key))
-		expect(cardKeys).toEqual(expect.arrayContaining(['senderName', 'recipientNames', 'approvalMarker', 'integrity.value']))
+		const cardKeys = filesProps().sideCards.flatMap((card) =>
+			card.fields.map((field) => field.key),
+		)
+		expect(cardKeys).toEqual(
+			expect.arrayContaining([
+				'senderName',
+				'recipientNames',
+				'approvalMarker',
+				'integrity.value',
+			]),
+		)
 	})
 
 	it('reads the row columns from the dossier listing, keyed by file id', () => {
@@ -82,7 +110,9 @@ describe('the Files tab columns as the library reads them', () => {
 	 */
 	function columnsFor(reviews) {
 		const token = '@context.caseType.documentReview.enabled'
-		const declared = withScanner(filesProps().columns).map((column) => (column.hidden === token ? { ...column, hidden: reviews } : column))
+		const declared = withScanner(filesProps().columns).map((column) =>
+			column.hidden === token ? { ...column, hidden: reviews } : column,
+		)
 		return normaliseFileColumns(declared)
 	}
 
@@ -90,17 +120,33 @@ describe('the Files tab columns as the library reads them', () => {
 	it('a review case starts without Scan and Visible to, which stay in Columns', () => {
 		const review = columnsFor(true)
 
-		expect(review.filter((column) => column.hidden !== true).map((column) => column.key)).toEqual(['name'])
-		expect(review.map((column) => column.key)).toEqual(expect.arrayContaining(['scanVerdict', 'vertrouwelijkheidaanduiding']))
-		expect(columnsFor(false).filter((column) => column.hidden !== true).map((column) => column.key)).toEqual(['name', 'scanVerdict', 'vertrouwelijkheidaanduiding'])
+		expect(
+			review
+				.filter((column) => column.hidden !== true)
+				.map((column) => column.key),
+		).toEqual(['name'])
+		expect(review.map((column) => column.key)).toEqual(
+			expect.arrayContaining(['scanVerdict', 'vertrouwelijkheidaanduiding']),
+		)
+		expect(
+			columnsFor(false)
+				.filter((column) => column.hidden !== true)
+				.map((column) => column.key),
+		).toEqual(['name', 'scanVerdict', 'vertrouwelijkheidaanduiding'])
 	})
 
 	// @spec openspec/specs/scan-column-needs-a-scanner/spec.md#requirement-the-scan-column-shows-only-with-a-virus-scanner
 	it('shows the Scan column only where the virus scanner files_antivirus is enabled', () => {
-		const scan = filesProps().columns.find((column) => column.key === 'scanVerdict')
+		const scan = filesProps().columns.find(
+			(column) => column.key === 'scanVerdict',
+		)
 
 		expect(scan.requiredApp).toBe('files_antivirus')
-		expect(filesProps().columns.filter((column) => column.requiredApp !== undefined).map((column) => column.key)).toEqual(['scanVerdict'])
+		expect(
+			filesProps()
+				.columns.filter((column) => column.requiredApp !== undefined)
+				.map((column) => column.key),
+		).toEqual(['scanVerdict'])
 	})
 
 	it('control: the old declaration leaves the library nothing to render', () => {
