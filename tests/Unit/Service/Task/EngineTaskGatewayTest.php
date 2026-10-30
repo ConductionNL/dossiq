@@ -490,13 +490,21 @@ class EngineTaskGatewayTest extends TestCase {
 			 */
 			public function get(string $id): object {
 				return new class {
+					/** @var string|null The run. */
 					protected ?string $runUuid = null;
+					/** @var string|null The flow node. */
 					protected ?string $nodeId = null;
+					/** @var string|null Who has it. */
 					protected ?string $assignee = null;
+					/** @var array|null The checklist. */
 					protected ?array $checklist = null;
+					/** @var string|null The case. */
 					protected ?string $objectUuid = 'case-9';
+					/** @var \DateTime|null The term. */
 					protected ?\DateTime $dueAt = null;
+					/** @var array|null The groups it is offered to. */
 					protected ?array $candidateGroups = ['vergunningen'];
+					/** @var array|null What dossiq declared. */
 					protected ?array $metadata = ['form' => 'x'];
 
 					/**
@@ -541,7 +549,7 @@ class EngineTaskGatewayTest extends TestCase {
 			}
 		};
 
-		$task = $this->gatewayWith($service)->find(taskId: 'task-1');
+		$task = $this->gatewayWith(service: $service)->find(taskId: 'task-1');
 
 		$this->assertSame(expected: 'case-9', actual: $task['objectUuid']);
 		$this->assertSame(expected: '2026-11-02T00:00:00+00:00', actual: $task['dueDate']);
