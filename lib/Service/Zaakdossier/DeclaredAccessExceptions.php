@@ -71,20 +71,12 @@ class DeclaredAccessExceptions {
 
 		$history = $this->historyOf(record: $record);
 		$last = end($history);
-		$recorded = (is_array($last) === true && $this->sameException(left: ($last['new'] ?? null), right: $exception) === true);
+		$recorded = $this->sameException(left: $last, right: $exception);
 
 		$fileId = (int)($record['fileId'] ?? 0);
-		$fileNamed = ($fileId > 0 && ($recorded === false || $fileId !== (int)($before['fileId'] ?? 0)));
+		$fileNamed = $this->fileToRestrict(fileId: $fileId, recorded: $recorded, before: $before);
 
-		$withReaders = $this->readers->withReaders(record: $record);
-		$readersInStep = true;
-		foreach (['restricted', 'accessUsers', 'accessGroups', 'accessHandlers'] as $field) {
-			if (($withReaders[$field] ?? null) !== ($record[$field] ?? null)) {
-				$readersInStep = false;
-			}
-		}
-
-		if ($recorded === true && $fileNamed === false && $readersInStep === true) {
+		if ($recorded === true && $fileNamed === false && $this->readersInStep(record: $record) === true) {
 			return false;
 		}
 
@@ -103,6 +95,42 @@ class DeclaredAccessExceptions {
 	}//end apply()
 
 	/**
+	 * Whether this write asks for the file to be restricted: the record names a file, and either the exception is
+	 * new to its history or the file is new to the record.
+	 *
+	 * @param int                       $fileId   The file the record names, 0 when none.
+	 * @param bool                      $recorded Whether the history already holds the exception.
+	 * @param array<string, mixed>|null $before   The document before this write.
+	 *
+	 * @return bool
+	 */
+	private function fileToRestrict(int $fileId, bool $recorded, ?array $before): bool {
+		if ($fileId <= 0) {
+			return false;
+		}
+
+		return $recorded === false || $fileId !== (int)($before['fileId'] ?? 0);
+	}//end fileToRestrict()
+
+	/**
+	 * Whether the record's derived readers are the ones its exception gives.
+	 *
+	 * @param array<string, mixed> $record The record.
+	 *
+	 * @return bool
+	 */
+	private function readersInStep(array $record): bool {
+		$withReaders = $this->readers->withReaders(record: $record);
+		foreach (['restricted', 'accessUsers', 'accessGroups', 'accessHandlers'] as $field) {
+			if (($withReaders[$field] ?? null) !== ($record[$field] ?? null)) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end readersInStep()
+
+	/**
 	 * The history entry for an exception the history does not hold yet.
 	 *
 	 * @param array<string, mixed> $exception The exception, as AccessExceptionValue::exceptionOf() reads it.
@@ -118,15 +146,15 @@ class DeclaredAccessExceptions {
 			$old = $last['new'];
 		}
 
-		$at = $exception['setAt'];
-		if ($at === '') {
-			$at = (new DateTimeImmutable())->format(DATE_ATOM);
+		$setAt = $exception['setAt'];
+		if ($setAt === '') {
+			$setAt = (new DateTimeImmutable())->format(DATE_ATOM);
 		}
 
 		return [
 			'action' => $action,
 			'by' => $exception['setBy'],
-			'at' => $at,
+			'at' => $setAt,
 			'old' => $old,
 			'new' => $exception,
 			'reason' => $exception['reason'],
@@ -150,14 +178,15 @@ class DeclaredAccessExceptions {
 	}//end historyOf()
 
 	/**
-	 * Whether a history entry's exception names the same people, groups and reason.
+	 * Whether a history entry holds the exception: the same people, groups and reason in its `new`.
 	 *
-	 * @param mixed                $left  The entry's `new`.
+	 * @param mixed                $left  The history entry, false when there is none.
 	 * @param array<string, mixed> $right The exception.
 	 *
 	 * @return bool
 	 */
 	private function sameException(mixed $left, array $right): bool {
+		$left = (is_array($left) === true ? ($left['new'] ?? null) : null);
 		if (is_array($left) === false) {
 			return false;
 		}
