@@ -222,7 +222,7 @@ export default {
 	 *
 	 * @param {unknown} value The day (YYYY-MM-DD).
 	 * @return {string}
-	 * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	receivedOn: (value) => {
 		const day = shortDay(value)
@@ -236,7 +236,7 @@ export default {
 	 * @param {unknown} value The penalty state: `definitive`, `running` or `none`.
 	 * @param {object} row The row, with `penaltyEuros` and `penaltySince`.
 	 * @return {string}
-	 * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	penaltyLine: (value, row) => {
 		if (value !== 'definitive' && value !== 'running') {
@@ -311,7 +311,7 @@ export default {
 	 *
 	 * @param {string} value The case id.
 	 * @return {string}
-	 * @spec openspec/changes/zakenkaart-map-list/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
+	 * @spec openspec/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
 	 */
 	caseAddress: (value) => caseAddress(value),
 

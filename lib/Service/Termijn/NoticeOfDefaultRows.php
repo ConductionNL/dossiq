@@ -23,7 +23,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Throwable;
  * amount is fixed, and a fixed amount goes to finance as a payment signal;
  * any other calculation is still running money, its amount not fixed yet.
  *
- * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 class NoticeOfDefaultRows {
 	use SearchesObjects;
@@ -73,7 +73,7 @@ class NoticeOfDefaultRows {
 	 * @throws Throwable When the notices or the penalty calculations cannot be read; a list
 	 *                   without them would read "no notices" or "no penalty".
 	 *
-	 * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	public function list(): array {
 		$objectService = $this->settingsService->getObjectService();

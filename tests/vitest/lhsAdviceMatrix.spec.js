@@ -7,7 +7,7 @@
  * into the manifest: a fixed table would show one municipality's matrix on
  * every install and could disagree with the matrix the advice used.
  *
- * @spec openspec/changes/screens-round12-enforcement-advice/specs/enforcement-advice/spec.md
+ * @spec openspec/specs/enforcement-advice/spec.md
  */
 
 import { describe, expect, it } from 'vitest'

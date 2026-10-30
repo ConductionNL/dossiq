@@ -152,7 +152,7 @@ class CaseLifecycleService {
 	 *                          is already suspended, the reason is empty, or the
 	 *                          pause reason is not one the case type declares
 	 *
-	 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function suspend(string $caseId, string $reason, int $days, string $pauseReason = ''): array {
 		$case = $this->requireCase(caseId: $caseId);

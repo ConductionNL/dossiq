@@ -21,7 +21,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/the-woo-publication-carries-its-documents/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 
 declare(strict_types=1);

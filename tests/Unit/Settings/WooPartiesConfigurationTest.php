@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-parties-configuration/specs/woo-parties-configuration/spec.md#requirement-a-woo-case-names-its-parties-roles-and-its-contacts-are-parties
+ * @spec openspec/specs/woo-parties-configuration/spec.md#requirement-a-woo-case-names-its-parties-roles-and-its-contacts-are-parties
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Woo role types and the party declarations of the contact schemas.
  *
- * @spec openspec/changes/woo-parties-configuration/specs/woo-parties-configuration/spec.md#requirement-a-woo-case-names-its-parties-roles-and-its-contacts-are-parties
+ * @spec openspec/specs/woo-parties-configuration/spec.md#requirement-a-woo-case-names-its-parties-roles-and-its-contacts-are-parties
  */
 class WooPartiesConfigurationTest extends TestCase {
 
