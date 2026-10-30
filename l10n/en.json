@@ -11930,6 +11930,9 @@
         "{value} of your cases are past their deadline or end today.": "{value} of your cases are past their deadline or end today.",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Invoice last month": "Invoice last month",
+        "Last month's invoice is handed to the finance app.": "Last month's invoice is handed to the finance app.",
+        "No invoice was made for last month. Every billing event of that month may already be invoiced.": "No invoice was made for last month. Every billing event of that month may already be invoiced."
     }
 }
