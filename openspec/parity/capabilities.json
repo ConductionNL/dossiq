@@ -14846,10 +14846,11 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"built": {
-				"state": "specified",
-				"owner": "ConductionNL/nextcloud-vue",
-				"change": "nextcloud-vue/files-browser-columns",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/files-browser-columns (nextcloud-vue lane).",
+				"state": "built",
+				"owner": "ConductionNL/dossiq",
+				"change": "case-files-list-columns",
+				"evidence": "src/manifest.json CaseDetail case-files props.columns (documentType, direction, partyName in the Columns chooser, reviewVerdict when the case type reviews its documents) over rowDataUrl /api/cases/{objectId}/dossier; lib/Service/Zaakdossier/DocumentListingLabels.php (documentType, partyName on the dossier listing); provider nextcloud-vue files-browser-columns (CnFilesBrowser columns, CnFilesTab rowDataUrl)",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/files-browser-columns (nextcloud-vue lane). Built in dossiq by case-files-list-columns (30 Oct, lane dq-build-4).",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakDocumenten"
