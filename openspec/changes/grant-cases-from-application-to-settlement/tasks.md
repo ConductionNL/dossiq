@@ -3,6 +3,8 @@
 ## 1. Case page
 
 - [ ] 1.1 Wait for board DqSubsidie (gap list b), then place on CaseDetail (`src/manifest.json`) the widgets it draws: decision and advance schedule, interim reports, evidence, settlement, recovery; each `visibleWhen` on the subsidie case type's config (`@context.caseType.grantChain`), not on its name.
+  - [x] 1.1a Voorschotschema and Bedragen: `case-payment-schedule` (Overview) and `side-payment-amounts` (side column) in `src/menu-layout.simple.json`, both over `GET /api/cases/{caseId}/payment-schedule` (`PaymentScheduleController` over `lib/Service/Money/PaymentScheduleOverview.php`: each instalment of the case's `beschikking.paymentSchedule` with its state and the totals). Gated on the case type's folder (`Subsidies`, `Grants`) like the other grant cards, and listed in the subsidie case type's `overviewCards` and `sideCards`, which is the per-case-type switch the case page reads since overview-cards-per-case-type; no `grantChain` flag is needed for these two.
+  - [ ] 1.1b Interim reports, evidence, settlement and recovery: each hangs off the execution, two references away from the case, which one `_referenced` block cannot reach (overview-cards-per-case-type 1.8).
 - [ ] 1.2 Header actions `interim-report-record` (`POST /api/subsidies/uitvoeringen/{id}/tussenrapportages`), `interim-report-assess` (`/beoordelen`), `grant-settle` (`/vaststellingen/{id}/vast`), `grant-recover`; dialogs under `src/dialogs/` named by what they do.
 - [ ] 1.3 `lib/Settings/packages/subsidie/case-type.json`: set `grantChain: true`; bump the version.
 
