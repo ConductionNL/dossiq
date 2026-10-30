@@ -218,7 +218,7 @@ class TermInstanceStore {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/woo-screens-follow-the-case/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function save(string $schemaConfigKey, array $object): ?array {
 		$objectService = $this->settingsService->getObjectService();

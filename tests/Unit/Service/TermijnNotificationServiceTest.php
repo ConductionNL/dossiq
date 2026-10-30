@@ -196,7 +196,7 @@ class TermijnNotificationServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
 	 */
 	public function testALetterHandedTheCaseUuidNamesTheCaseNumber(): void {
 		$uuid = '7849aeec-d7da-474e-8211-6215e9c6230f';
@@ -219,7 +219,7 @@ class TermijnNotificationServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
 	 */
 	public function testACaseNumberIsLeftAsWritten(): void {
 		$service = $this->serviceReadingCases(cases: []);
@@ -234,7 +234,7 @@ class TermijnNotificationServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
 	 */
 	public function testAnUnreadableCaseKeepsTheReference(): void {
 		$uuid = '0b3c5a3e-1111-4222-8333-944455556666';

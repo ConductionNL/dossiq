@@ -185,7 +185,7 @@ export default {
 		 * as its library entry names it (`fills`).
 		 *
 		 * @return {Array<{label: string, value: string}>} The rows.
-		 * @spec openspec/changes/generate-fills-per-template/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
+		 * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
 		 */
 		chosenTemplateFills() {
 			const chosen = this.templates.find((template) => template.id === this.templateId)

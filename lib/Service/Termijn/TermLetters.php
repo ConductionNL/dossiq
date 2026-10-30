@@ -59,7 +59,7 @@ class TermLetters {
 	 * @return array{subject:string, body:string, locale:string}
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
-	 * @spec openspec/changes/receipt-names-the-case-number/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
 	 */
 	public function render(string $type, array $instance, array $context): array {
 		$locale = (string)($context['locale'] ?? 'nl');

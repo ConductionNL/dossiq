@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/documents-merge-pdf/specs/documents-merge-pdf/spec.md
+ * @spec openspec/specs/documents-merge-pdf/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -40,7 +40,7 @@ use Throwable;
  * The caller must be allowed to add to the case, because the PDF lands in
  * its folder; filinq then reads every input as the caller.
  *
- * @spec openspec/changes/documents-merge-pdf/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
+ * @spec openspec/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
  */
 class CaseDocumentMergeController extends Controller {
 
@@ -74,7 +74,7 @@ class CaseDocumentMergeController extends Controller {
 	 *
 	 * @return JSONResponse Filinq's finished job, or the refusal.
 	 *
-	 * @spec openspec/changes/documents-merge-pdf/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
+	 * @spec openspec/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
 	 */
 	#[NoAdminRequired]
 	public function merge(string $caseId, array $fileIds=[], string $name=''): JSONResponse {

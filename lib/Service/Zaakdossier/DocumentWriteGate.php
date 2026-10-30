@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md
+ * @spec openspec/specs/document-writes-need-every-case/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -39,7 +39,7 @@ use OCP\IUser;
 /**
  * Refuses a document write before it runs, or lets it through.
  *
- * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md
+ * @spec openspec/specs/document-writes-need-every-case/spec.md
  */
 class DocumentWriteGate {
 
@@ -65,7 +65,7 @@ class DocumentWriteGate {
 	 *
 	 * @return JSONResponse|null 403 naming the document and the refused case, or null.
 	 *
-	 * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md#requirement-a-document-write-needs-the-change-right-on-every-case-of-the-document
+	 * @spec openspec/specs/document-writes-need-every-case/spec.md#requirement-a-document-write-needs-the-change-right-on-every-case-of-the-document
 	 */
 	public function refusedWrite(IUser $user, string $documentId): ?JSONResponse {
 		$caseId = $this->caseWrites->refusedCase(user: $user, documentId: $documentId);
@@ -84,7 +84,7 @@ class DocumentWriteGate {
 	 *
 	 * @return JSONResponse|null 403 naming the first refused document and its case, or null.
 	 *
-	 * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md#requirement-a-bulk-document-write-is-refused-whole
+	 * @spec openspec/specs/document-writes-need-every-case/spec.md#requirement-a-bulk-document-write-is-refused-whole
 	 */
 	public function refusedBulkMetadata(IUser $user, array $ids): ?JSONResponse {
 		$refused = $this->caseWrites->firstRefused(user: $user, documentIds: $ids);

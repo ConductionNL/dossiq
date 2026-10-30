@@ -13,7 +13,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/woo-screens-follow-the-case/specs/woo-case-type/spec.md
+ * @spec openspec/specs/woo-case-type/spec.md
  */
 
 declare(strict_types=1);

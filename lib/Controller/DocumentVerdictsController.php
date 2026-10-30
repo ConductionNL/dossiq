@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-document-verdicts/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
+ * @spec openspec/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -38,7 +38,7 @@ use OCP\IUserSession;
  *
  * The case read check runs before anything is read.
  *
- * @spec openspec/changes/case-document-verdicts/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
+ * @spec openspec/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
  */
 class DocumentVerdictsController extends Controller {
 
@@ -70,7 +70,7 @@ class DocumentVerdictsController extends Controller {
 	 *
 	 * @return JSONResponse The verdicts, or the refusal.
 	 *
-	 * @spec openspec/changes/case-document-verdicts/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
+	 * @spec openspec/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
 	 */
 	#[NoAdminRequired]
 	public function forCase(string $id): JSONResponse {

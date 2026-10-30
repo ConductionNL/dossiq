@@ -358,7 +358,7 @@ class PortalContributionProviderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/portal-contribution/spec.md#requirement-the-woo-request-form-asks-dates-as-dates-and-the-requester-as-a-choice-req-wdi-004
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-woo-request-form-asks-dates-as-dates-and-the-requester-as-a-choice-req-wdi-004
 	 */
 	public function testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice(): void {
 		foreach (['startWooVerzoek', 'startWooVerzoekAlgemeen'] as $id) {
@@ -389,7 +389,7 @@ class PortalContributionProviderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-request-prefills-the-requester/specs/portal-contribution/spec.md#requirement-the-woo-request-starts-from-the-signed-in-residents-name-and-e-mail-address
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-woo-request-starts-from-the-signed-in-residents-name-and-e-mail-address
 	 */
 	public function testTheWooRequestPrefillsTheRequesterFromTheProfile(): void {
 		foreach (['startWooVerzoek', 'startWooVerzoekAlgemeen'] as $id) {

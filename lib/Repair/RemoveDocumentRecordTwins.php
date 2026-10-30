@@ -34,7 +34,7 @@ use Throwable;
  * file goes with its joins; one with a folder of its own stays, since it may
  * hold files of its own.
  *
- * @spec openspec/changes/document-lookups-stay-in-their-schema/specs/document-projection/spec.md
+ * @spec openspec/specs/document-projection/spec.md
  */
 class RemoveDocumentRecordTwins implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -74,7 +74,7 @@ class RemoveDocumentRecordTwins implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/document-lookups-stay-in-their-schema/specs/document-projection/spec.md
+	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {

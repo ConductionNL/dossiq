@@ -8,7 +8,7 @@
  * the library draws says "(niet verplicht)". The Dutch catalogue follows the
  * library's word.
  *
- * @spec openspec/changes/woo-screens-follow-the-case/specs/woo-case-type/spec.md
+ * @spec openspec/specs/woo-case-type/spec.md
  */
 
 import fs from 'fs'

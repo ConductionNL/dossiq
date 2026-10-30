@@ -141,3 +141,40 @@ A repair step SHALL move every existing document's file into the folder of the c
 - **GIVEN** a record whose `fileId` resolves to no node
 - **WHEN** the repair step runs
 - **THEN** the record SHALL be unchanged and the log SHALL name it
+
+### Requirement: A case folder lookup MUST survive a parallel create
+
+When OpenRegister answers a folder lookup with a lock, dossiq SHALL ask again after a short wait, at most three times in all. A lock that outlasts those asks SHALL be reported as a busy folder, which a read endpoint answers with 503. A locked folder SHALL never be read as an object without a folder, and SHALL never answer 500.
+
+#### Scenario: Two requests open a new case's documents at once
+
+- **GIVEN** a case with no folder yet
+- **AND** a parallel request is creating that folder
+- **WHEN** a handler's Documents tab asks for the linked documents
+- **THEN** the lookup waits, finds the folder the other request made, and answers 200
+
+#### Scenario: A folder that stays locked
+
+- **GIVEN** a case folder that stays locked for every ask
+- **WHEN** the linked documents are asked for
+- **THEN** the answer is 503, after three asks
+
+### Requirement: A document lookup answers only its own schema
+
+Looking up a case, a document record or a document type by uuid SHALL answer only a row that lives in the configured schema for it. A row that OpenRegister found in another schema of the register SHALL count as not found.
+
+#### Scenario: A file attached to a document's own folder
+- GIVEN the example set writes the document "Advies Groenbeheer" with sender Groenbeheer
+- WHEN it attaches the file to the document's own folder
+- THEN the document's uuid is not taken for a case
+- AND the file has exactly one document record, the one the set wrote
+
+### Requirement: Existing second records of a file are removed
+
+An upgrade SHALL keep one document record per file id: the first one written. Every later record of that file SHALL be deleted with its joins, once. A later record with a folder of its own SHALL stay and be named in the log.
+
+#### Scenario: A set document with a twin
+- GIVEN "Advies Groenbeheer" has two records for one file, the second without a sender
+- WHEN the repair runs
+- THEN the second record and its joins are gone
+- AND the case lists the document with sender Groenbeheer
