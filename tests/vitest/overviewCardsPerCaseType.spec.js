@@ -80,7 +80,9 @@ describe('overview cards per case type', () => {
 			expect(caseType.overviewCards).toBeUndefined()
 		}
 		const grant = packageCaseTypes('subsidie')[0]
-		expect(grant.overviewCards).toEqual(['case-grant-decisions-card'])
-		expect(overview).toContain('case-grant-decisions-card')
+		expect(grant.overviewCards).toEqual(['case-grant-decisions-card', 'case-payment-schedule'])
+		for (const id of grant.overviewCards) {
+			expect(overview).toContain(id)
+		}
 	})
 })
