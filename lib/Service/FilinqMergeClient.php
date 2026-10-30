@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/documents-merge-pdf/specs/documents-merge-pdf/spec.md
+ * @spec openspec/specs/documents-merge-pdf/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,7 +35,7 @@ use RuntimeException;
 /**
  * Hands a case's files to filinq's merge.
  *
- * @spec openspec/changes/documents-merge-pdf/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
+ * @spec openspec/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
  */
 class FilinqMergeClient {
 
@@ -69,7 +69,7 @@ class FilinqMergeClient {
 	 *
 	 * @throws RuntimeException When filinq is absent (`filinq_unavailable`) or refuses.
 	 *
-	 * @spec openspec/changes/documents-merge-pdf/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
+	 * @spec openspec/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
 	 */
 	public function merge(array $fileIds, string $name, string $caseId): array {
 		$service = FleetAppId::getService($this->container, 'filinq', self::MERGE_SERVICE);

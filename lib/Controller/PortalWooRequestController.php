@@ -301,7 +301,7 @@ class PortalWooRequestController extends Controller {
 	 *
 	 * @return array<string, mixed> The body.
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
 	 */
 	private function refusalBody(WooRequestRefused $refused): array {
 		$sentence = $refused->getDetail();

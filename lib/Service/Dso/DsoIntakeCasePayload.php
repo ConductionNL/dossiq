@@ -231,7 +231,7 @@ class DsoIntakeCasePayload {
 	 *
 	 * @return array<string, string> `['receivedAt' => moment]`, or [].
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
 	 */
 	private function receivedAtField(string $submitted): array {
 		$submitted = trim($submitted);

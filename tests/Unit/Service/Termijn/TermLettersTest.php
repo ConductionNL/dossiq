@@ -61,7 +61,7 @@ class TermLettersTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 */
 	public function testEveryDateInALetterReadsTheSameWay(): void {
 		$letters = new TermLetters();

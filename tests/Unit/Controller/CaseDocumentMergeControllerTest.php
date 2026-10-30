@@ -13,7 +13,7 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
- * @spec openspec/changes/documents-merge-pdf/specs/documents-merge-pdf/spec.md
+ * @spec openspec/specs/documents-merge-pdf/spec.md
  */
 
 declare(strict_types=1);

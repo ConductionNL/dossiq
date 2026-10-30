@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/documents-copy-to-case/specs/documents-copy-to-case/spec.md
+ * @spec openspec/specs/documents-copy-to-case/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Copies readable documents to another case, one result per document.
  *
- * @spec openspec/changes/documents-copy-to-case/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
+ * @spec openspec/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
  */
 class DocumentCopier {
 
@@ -69,7 +69,7 @@ class DocumentCopier {
 	 *
 	 * @return list<array<string, mixed>> Per id: `id`, `success`, and `copyId` or `error`.
 	 *
-	 * @spec openspec/changes/documents-copy-to-case/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
+	 * @spec openspec/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
 	 */
 	public function copyAll(IUser $user, array $ids, string $targetCaseId): array {
 		$results = [];

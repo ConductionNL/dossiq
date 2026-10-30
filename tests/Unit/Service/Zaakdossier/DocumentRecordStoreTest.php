@@ -285,7 +285,7 @@ class DocumentRecordStoreTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/document-lookups-stay-in-their-schema/specs/document-projection/spec.md
+	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	public function testALookupAnswersOnlyARowOfTheSchemaItAskedFor(): void {
 		$this->objects->rows['doc-1'] = ['@self' => ['id' => 'doc-1', 'register' => 'dossiq', 'schema' => 'informatieobject'], 'title' => 'Advies'];

@@ -86,7 +86,7 @@ describe('the Files tab columns as the library reads them', () => {
 		return normaliseFileColumns(declared)
 	}
 
-	// @spec openspec/changes/review-case-columns-hidden/specs/review-case-columns-hidden/spec.md#requirement-a-review-case-hides-scan-and-visible-to-by-default
+	// @spec openspec/specs/review-case-columns-hidden/spec.md#requirement-a-review-case-hides-scan-and-visible-to-by-default
 	it('a review case starts without Scan and Visible to, which stay in Columns', () => {
 		const review = columnsFor(true)
 

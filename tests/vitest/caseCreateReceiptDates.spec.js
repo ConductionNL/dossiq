@@ -15,7 +15,7 @@
  * the manifest. The count is asserted too, so a walk that stops finding them
  * cannot pass by checking nothing.
  *
- * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import wooFragment from '../../lib/Settings/register.d/81-woo-verzoek.json'

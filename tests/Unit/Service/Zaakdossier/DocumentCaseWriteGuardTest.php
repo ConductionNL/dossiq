@@ -12,7 +12,7 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
- * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md
+ * @spec openspec/specs/document-writes-need-every-case/spec.md
  */
 
 declare(strict_types=1);

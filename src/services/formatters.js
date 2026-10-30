@@ -208,7 +208,7 @@ export default {
 	 * @param {object} property The property.
 	 * @param {{labels?: object}} options The column's formatter options.
 	 * @return {string}
-	 * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
+	 * @spec openspec/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
 	 */
 	optionLabel: (value, row, property, options) => {
 		const code = value === null || value === undefined ? '' : String(value)
@@ -275,7 +275,7 @@ export default {
 	 *
 	 * @param {unknown} value `unchanged`, `changed`, `missing` or `unchecked`.
 	 * @return {string}
-	 * @spec openspec/changes/document-integrity-check/specs/document-integrity-check/spec.md#requirement-the-checksum-card-says-when-and-how-the-file-was-last-checked
+	 * @spec openspec/specs/document-integrity-check/spec.md#requirement-the-checksum-card-says-when-and-how-the-file-was-last-checked
 	 */
 	integrityStatus: (value) => {
 		const labels = {

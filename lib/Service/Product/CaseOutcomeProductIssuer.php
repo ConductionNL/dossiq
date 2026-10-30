@@ -39,7 +39,7 @@ use Throwable;
  * decision app's outcome event). The decision outcome reaches it through
  * DecisionConcludedListener.
  *
- * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
  */
 class CaseOutcomeProductIssuer {
 	use SearchesObjects;
@@ -88,7 +88,7 @@ class CaseOutcomeProductIssuer {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
+	 * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
 	 */
 	public function onConcludedDecision(string $caseId, string $decisionId, string $status, ?string $decidedAt): void {
 		try {
@@ -114,7 +114,7 @@ class CaseOutcomeProductIssuer {
 	 *
 	 * @return array<string, mixed>|null The product written or changed, or null.
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
+	 * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
 	 */
 	public function issueFor(string $caseId, string $decisionId, string $status, ?string $decidedAt): ?array {
 		$objectService = $this->settingsService->getObjectService();

@@ -192,7 +192,7 @@ class InformatieobjectReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-each-document-row-carries-its-verdict
+	 * @spec openspec/specs/files-review-row-verdict/spec.md#requirement-each-document-row-carries-its-verdict
 	 */
 	public function withReviewVerdicts(string $caseId, array $documents): array {
 		if ($this->reviewVerdicts === null || $documents === []) {

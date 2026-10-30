@@ -6,7 +6,7 @@
  *
  * The repair keeps one document record per file: the first one written.
  *
- * @spec openspec/changes/document-lookups-stay-in-their-schema/specs/document-projection/spec.md
+ * @spec openspec/specs/document-projection/spec.md
  */
 
 declare(strict_types=1);
