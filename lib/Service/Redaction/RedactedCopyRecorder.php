@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redacted-copy-is-recorded-as-a-document-of-the-case-req-drd-003
+ * @spec openspec/specs/document-redaction/spec.md#requirement-the-redacted-copy-is-recorded-as-a-document-of-the-case-req-drd-003
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -40,7 +40,7 @@ use RuntimeException;
 /**
  * Records a redacted copy as an informatieobject of the case.
  *
- * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redacted-copy-is-recorded-as-a-document-of-the-case-req-drd-003
+ * @spec openspec/specs/document-redaction/spec.md#requirement-the-redacted-copy-is-recorded-as-a-document-of-the-case-req-drd-003
  */
 class RedactedCopyRecorder {
 
@@ -80,7 +80,7 @@ class RedactedCopyRecorder {
 	 *
 	 * @throws RuntimeException When the file cannot be found or the record not written.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redacted-copy-is-recorded-as-a-document-of-the-case-req-drd-003
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redacted-copy-is-recorded-as-a-document-of-the-case-req-drd-003
 	 */
 	public function recordFile(string $caseId, array $original, int $fileId): string {
 		$recordId = (string)($this->store->findRecord(fileId: $fileId)['id'] ?? '');
@@ -115,7 +115,7 @@ class RedactedCopyRecorder {
 	 *
 	 * @throws RuntimeException When the file cannot be stored or recorded.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
 	 */
 	public function storeUpload(string $caseId, array $original, string $fileName, string $content): array {
 		$base = pathinfo((string)($original['fileName'] ?? ($original['title'] ?? 'document')), PATHINFO_FILENAME);

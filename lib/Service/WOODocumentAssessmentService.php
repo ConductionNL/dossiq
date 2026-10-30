@@ -360,7 +360,7 @@ class WOODocumentAssessmentService {
 	 *
 	 * @return array<int, array<string, mixed>> The assessments.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
 	 */
 	public function partlyPublicAssessments(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -487,7 +487,7 @@ class WOODocumentAssessmentService {
 	 * @throws RuntimeException When OpenRegister is unavailable or the document has not been assessed.
 	 * @throws RefusedException (403 `owned-by-another-reviewer`) When the caller may not change this assessment.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
 	 */
 	public function saveRedaction(string $caseId, string $documentRef, array $redaction, ?string $redactedDocumentRef = null): array {
 		$fields = ['redaction' => $redaction];

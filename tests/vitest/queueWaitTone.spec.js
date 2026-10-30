@@ -6,7 +6,7 @@
  * ("6 dagen", "5 dagen" red; "4 dagen" and less in the main ink), in the list
  * view's leading cell and the table's Waiting column alike.
  *
- * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
+ * @spec openspec/specs/case-lists/spec.md
  */
 
 import { describe, expect, it } from 'vitest'

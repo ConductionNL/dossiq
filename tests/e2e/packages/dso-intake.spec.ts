@@ -21,7 +21,7 @@ import { PAGE_LOAD } from '../helpers/nav.ts'
 const DSO_CHECK = 'OCA\\Dossiq\\SetupCheck\\DsoIntakeCheck'
 
 test.describe('package dso-intake', () => {
-	// @e2e openspec/changes/dso-intake-package/specs/vth-dso-integration/spec.md#scenario-fresh-install-with-integriq
+	// @e2e openspec/specs/vth-dso-integration/spec.md#scenario-fresh-install-with-integriq
 	test("an administrator finds DSO intake reading integriq's dso_verzoek schema", async ({
 		page,
 	}) => {

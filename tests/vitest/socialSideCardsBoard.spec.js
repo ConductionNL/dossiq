@@ -5,7 +5,7 @@
  *
  * Board DqSociaalDomein side column: order, Consent as facts, Who behind initials.
  *
- * @spec openspec/changes/social-side-cards-read-like-the-board/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 import fs from 'fs'
 import path from 'path'

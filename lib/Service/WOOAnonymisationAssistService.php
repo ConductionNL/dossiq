@@ -353,7 +353,7 @@ class WOOAnonymisationAssistService {
 	 *
 	 * @return array<string, mixed> `{spans, source, llmAvailable, llmError?}`.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
 	 */
 	public function spansFor(string $text, string $documentRef): array {
 		$text = mb_substr($text, 0, self::MAX_TEXT_LENGTH);

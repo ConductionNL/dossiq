@@ -106,3 +106,91 @@ above and below, the first row 10px under the title, as DqSociaalDomein and DqHa
 - **GIVEN** an enforcement advice in the board look
 - **WHEN** its Historie card lists "Advies berekend" with "Systeem · 24 okt 13:37"
 - **THEN** the row is padded 10px above and below
+
+### Requirement: The social domain side column reads like its board
+
+A Melding Jeugdwet case SHALL show its side cards in the order notice,
+Consent, Who, Status. Consent SHALL show the newest consent on the case as
+label-left facts (purpose, given by, recorded with date and channel, valid
+until), and Who SHALL show each person on the case behind their initials with
+their name and role on one line.
+
+#### Scenario: the Oosthaven case
+- GIVEN the Melding Jeugdwet case of the Oosthaven family with a written consent by both parents for "Onderzoek naar jeugdhulp" and no end date
+- WHEN the case page opens
+- THEN the side column reads Bijzondere persoonsgegevens, Toestemming, Wie, Status in that order
+- AND Toestemming reads "Doel: Onderzoek naar jeugdhulp", "Gegeven door: Beide ouders", "Geldig tot: Tot intrekking"
+- AND Wie reads "FK Fatma Kaya, regisseur, jeugdteam"
+
+### Requirement: A consent can be withdrawn from its card
+
+The Consent card SHALL carry "Withdraw consent" while the newest consent may be
+withdrawn and is not withdrawn yet. Confirmed, it SHALL mark the consent
+withdrawn and end it today, changing no other field.
+
+#### Scenario: the parents withdraw their consent
+- GIVEN the Oosthaven consent, withdrawable and not withdrawn
+- WHEN the handler chooses "Toestemming intrekken" and confirms
+- THEN the consent is PATCHed with `withdrawn: true` and `validTo` today
+
+### Requirement: The social domain side column ends with the case's history
+
+On a case type that holds special categories of personal data the side column
+SHALL show, before Status, the case's latest audit events without reads, and
+an access purpose SHALL read as the purpose the reader gave.
+
+#### Scenario: Fatma opened the case for handling
+- GIVEN Fatma Kaya opened the Oosthaven case stating the purpose "handling"
+- WHEN the case page opens
+- THEN Historie lists "Zaak ingezien, doel behandeling" by Fatma Kaya
+
+### Requirement: A social domain case offers to plan a case meeting
+
+A social domain case that is not archived SHALL offer "Plan a case meeting",
+which asks the meeting's date and agenda and files the meeting on this case.
+Melding Jeugdwet SHALL list it as its quick action, above the case.
+
+#### Scenario: Overleg plannen on the Oosthaven case
+- GIVEN the Melding Jeugdwet case of the Oosthaven family
+- WHEN the case page opens
+- THEN "Overleg plannen" stands above the case and opens a form for the date and agenda of a meeting on this case
+
+### Requirement: The household reads as a table
+
+"Andere zaken van dit huishouden" SHALL list its rows as a table with the
+columns Zaak, Zaaktype, Status and Zichtbaar voor u. A case the reader may open
+SHALL show its number and title, type, status and "Ja"; an other-domain
+existence SHALL show its domain, its contact and "Alleen dat hij bestaat", and
+nothing more.
+
+#### Scenario: one case the reader may open and one other-domain existence
+- GIVEN the Oosthaven household with a Wmo case the reader may open and a case in another domain the reader may not open
+- WHEN the case page opens
+- THEN "Andere zaken van dit huishouden" shows a table with the columns Zaak, Zaaktype, Status and Zichtbaar voor u
+- AND the Wmo case row shows its number and title, its case type, its status and "Ja"
+- AND the other-domain row shows only its domain, its contact and "Alleen dat hij bestaat"
+
+### Requirement: The seats card reads as the board
+
+The case's Zetels card SHALL show the subtitle "Wie het werk doet en wie ervoor staat", one column of pairs, and "Nee" /
+"Niemand" for a hand-over that is not pending.
+
+#### Scenario: no hand-over
+- **GIVEN** a case with a handler and no hand-over
+- **THEN** the card reads "Wacht op oppakken: Nee" and "Doorgegeven aan: Niemand"
+
+### Requirement: The case's next actions are ruled rows
+
+The Taken tab's "Wat hierna komt" SHALL list the planned actions as rows under a rule, each with a calendar tile, the
+action, its owner and its planned date at the end, and SHALL say how many are planned in its title row.
+
+#### Scenario: two planned actions
+- **GIVEN** a case with two planned actions
+- **THEN** the card reads "2 gepland" and lists them by planned date, first the soonest
+
+### Requirement: The sub-cases table names status and handler
+
+The sub-cases table SHALL show each sub-case's status by name as a toned pill and its handler as a person under "Behandelaar", with the board's footnote under the table.
+
+#### Scenario: two sub-cases
+- **THEN** the rows read "In behandeling" / "Ontvangen" and "Lars de Koning" / "Pieter Jansen", never a uuid or a uid

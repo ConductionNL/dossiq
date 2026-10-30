@@ -7,7 +7,7 @@
  * "Behandelaar" (live drew the uid under "Toegewezen aan"), and the board's
  * footnote under the table.
  *
- * @spec openspec/changes/sub-cases-columns-board/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 
 import fs from 'fs'

@@ -40,7 +40,7 @@ use Throwable;
  * be able to tell an address the BAG does not hold from a read that did not
  * happen.
  *
- * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
+ * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
  */
 class BagObjectReader {
 	/**
@@ -85,7 +85,7 @@ class BagObjectReader {
 	 *
 	 * @return array{available:bool,reason:string,found:bool,simulated:bool}
 	 *
-	 * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
+	 * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
 	 */
 	public function read(string $type, string $identificatie): array {
 		if (FleetAppId::isInstalled(appManager: $this->appManager, canonical: 'integriq') === false) {
