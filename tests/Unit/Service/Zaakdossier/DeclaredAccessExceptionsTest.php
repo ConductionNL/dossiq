@@ -130,7 +130,9 @@ class DeclaredAccessExceptionsTest extends TestCase {
 			'id' => 'doc-1',
 			'fileId' => 751,
 			'accessException' => $exception,
-			'accessExceptionHistory' => [['action' => 'set', 'by' => 'pieter', 'at' => 'x', 'old' => null, 'new' => $exception, 'reason' => 'Bedrijfsgevoelige prijzen']],
+			'accessExceptionHistory' => [
+				['action' => 'set', 'by' => 'pieter', 'at' => 'x', 'old' => null, 'new' => $exception, 'reason' => 'Bedrijfsgevoelige prijzen'],
+			],
 			'restricted' => true,
 			'accessUsers' => ['pieter'],
 			'accessGroups' => ['zuiddrecht-vergunningen'],

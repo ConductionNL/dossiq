@@ -105,8 +105,8 @@ class DeclaredAccessExceptions {
 	/**
 	 * The history entry for an exception the history does not hold yet.
 	 *
-	 * @param array{users: list<string>, groups: list<string>, reason: string, setBy: string, setAt: string} $exception The exception.
-	 * @param mixed                                                                                         $last      The newest entry so far, false when none.
+	 * @param array<string, mixed> $exception The exception, as AccessExceptionValue::exceptionOf() reads it.
+	 * @param mixed                $last      The newest entry so far, false when none.
 	 *
 	 * @return array<string, mixed> The entry.
 	 */

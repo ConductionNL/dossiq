@@ -110,6 +110,6 @@ class DeclaredAccessExceptionListenerTest extends TestCase {
 		$this->assertSame(expected: [], actual: $this->applied);
 
 		$this->listener(fail: true)->handle(event: new ObjectCreatedEvent($this->entity(record: [])));
-		$this->addToAssertionCount(1);
+		$this->addToAssertionCount(count: 1);
 	}//end testAnotherSchemaIsIgnoredAndAFailureDoesNotEscape()
 }//end class
