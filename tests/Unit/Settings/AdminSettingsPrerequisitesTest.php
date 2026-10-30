@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
  * version. This asserts the wiring from the CALLER: the form passes the
  * major version, so the Nextcloud row reads present on a supported instance.
  *
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 class AdminSettingsPrerequisitesTest extends TestCase {
 

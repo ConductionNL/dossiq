@@ -170,7 +170,7 @@ class CaseRelationService {
 	 *
 	 * @return string The title, or ''.
 	 *
-	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	private function titleOf(string $caseId): string {
 		$case = $this->store->fetchCase(caseUuid: $caseId);

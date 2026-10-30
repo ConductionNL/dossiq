@@ -270,7 +270,7 @@ describe('check:manifest tells a lag from a defect', () => {
 		expect(result.out).toContain('FAIL')
 	}, 30000)
 
-	// @spec openspec/changes/the-getting-started-tour-starts-on-the-dashboard/specs/getting-started-tour/spec.md
+	// @spec openspec/specs/getting-started-tour/spec.md
 	it('a tour key only the newer schema declares is a lag, and an unknown one is not', () => {
 		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
 		const installed = JSON.parse(fs.readFileSync(INSTALLED, 'utf8'))

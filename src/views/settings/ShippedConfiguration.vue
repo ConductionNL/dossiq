@@ -126,7 +126,7 @@ export default {
 		 * 24 case types was untrue (round-4 cloud check).
 		 *
 		 * @return {string} The sentence.
-		 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		emptyText() {
 			if (typeof this.present === 'number' && this.present > 0) {

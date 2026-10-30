@@ -5,7 +5,7 @@
  * The ZGW API mapping table names each resource as a person reads it
  * ("Zaaktype", "Roltype") instead of the stored key ("caseType", "roltype").
  *
- * @spec openspec/changes/zgw-mapping-readable-names/specs/admin-settings/spec.md#requirement-a-zgw-mapping-row-names-its-resource
+ * @spec openspec/specs/admin-settings/spec.md#requirement-a-zgw-mapping-row-names-its-resource
  */
 
 import fs from 'fs'

@@ -168,7 +168,7 @@ export default {
 		/**
 		 * @return {Array} The required apps this instance does not have.
 		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
-		 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		missingRequired() {
 			return this.required.filter((row) => row.present !== true)

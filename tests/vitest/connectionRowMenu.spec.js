@@ -5,7 +5,7 @@
  * DqInstellingen: every Koppelingen row ends with a "…" menu holding what the
  * row offers, opening its settings card.
  *
- * @spec openspec/changes/connection-row-menu/specs/admin-settings/spec.md#requirement-a-connection-row-has-a-menu-with-what-the-row-offers
+ * @spec openspec/specs/admin-settings/spec.md#requirement-a-connection-row-has-a-menu-with-what-the-row-offers
  */
 
 import fs from 'fs'

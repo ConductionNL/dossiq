@@ -6,7 +6,7 @@
  * draws it: DSO-activiteit, Wordt zaaktype, Variant, Laatst ontvangen, and a
  * row per activity no mapping links yet.
  *
- * @spec openspec/changes/vth-dso-activity-board-columns/specs/admin-settings/spec.md#requirement-the-dso-activity-table-shows-what-each-activity-becomes-and-when-it-last-arrived
+ * @spec openspec/specs/admin-settings/spec.md#requirement-the-dso-activity-table-shows-what-each-activity-becomes-and-when-it-last-arrived
  */
 
 import fs from 'fs'

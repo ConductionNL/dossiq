@@ -15,7 +15,7 @@
  * no page (the catch-all redirect, a page without a title) keeps the server's
  * title as it is, rather than inventing a name.
  *
- * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/page-titles/spec.md
+ * @spec openspec/specs/page-titles/spec.md
  */
 
 /** What separates the page name from the rest, as Nextcloud's apps write it. */
@@ -27,7 +27,7 @@ export const TITLE_SEPARATOR = ' - '
  * @param {object} manifest The built manifest (with `pages[]`).
  * @param {object} route    A vue-router route (`meta.cnPageId`, `name`).
  * @return {object|null} The page, or null when the route names none.
- * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/page-titles/spec.md
+ * @spec openspec/specs/page-titles/spec.md
  */
 export function pageForRoute(manifest, route) {
 	const id = route?.meta?.cnPageId || route?.name || ''
@@ -49,7 +49,7 @@ export function pageForRoute(manifest, route) {
  * @param {string}        pageId The page the route renders.
  * @param {string}        caseType The case type id in the query.
  * @return {object|null} The entry, or null when no entry opens that filter.
- * @spec openspec/changes/r7-dossiq-filtered-title-board-config/specs/page-titles/spec.md
+ * @spec openspec/specs/page-titles/spec.md
  */
 export function menuEntryForCaseType(menu, pageId, caseType) {
 	const entries = Array.isArray(menu) ? menu : []
@@ -79,7 +79,7 @@ export const FILTERED_CASES_TITLE = 'Cases of one case type'
  * @param {Array<object>} menu The current menu.
  * @param {(label: string) => string} translate Translates a label.
  * @return {string} The name, or an empty string.
- * @spec openspec/changes/r7-dossiq-filtered-title-board-config/specs/page-titles/spec.md
+ * @spec openspec/specs/page-titles/spec.md
  */
 function nameFor(page, route, menu, translate) {
 	const raw = typeof page?.title === 'string' ? page.title.trim() : ''
@@ -111,8 +111,8 @@ function nameFor(page, route, menu, translate) {
  * @param {(label: string) => string} translate Translates a manifest label.
  * @param {Array<object>} menu The current menu (with the backend delta), defaults to the manifest's.
  * @return {string} "<page> - <baseTitle>", or `baseTitle` when the route names no page.
- * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/page-titles/spec.md
- * @spec openspec/changes/r7-dossiq-filtered-title-board-config/specs/page-titles/spec.md
+ * @spec openspec/specs/page-titles/spec.md
+ * @spec openspec/specs/page-titles/spec.md
  */
 export function pageTitleFor(
 	manifest,
@@ -145,8 +145,8 @@ export function pageTitleFor(
  * @param {object}   doc       The document (injectable for tests).
  * @param {() => Array<object>} currentMenu Reads the current menu.
  * @return {() => void} Re-titles the current route.
- * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/page-titles/spec.md
- * @spec openspec/changes/r7-dossiq-filtered-title-board-config/specs/page-titles/spec.md
+ * @spec openspec/specs/page-titles/spec.md
+ * @spec openspec/specs/page-titles/spec.md
  */
 export function installPageTitles(
 	router,
