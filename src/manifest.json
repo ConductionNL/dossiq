@@ -4379,6 +4379,8 @@
 												"indicator": "geheimhouding",
 												"kinds": ["person"]
 											},
+											"representationUntil": "Authorisation until {date}",
+											"_representationUntilNote": "Board DqZaakBetrokkenen Rollen (design-system #811): a party that acts for another (role rows, representedParty) ends its row with a warning pill naming when its link ends (validUntil), \"Machtiging tot 31 dec\".",
 											"roleLabels": {
 												"aanvrager": "Requester",
 												"gemachtigde": "Authorised representative",

@@ -1062,6 +1062,7 @@ OC.L10N.register(
         "Author of the document": "Auteur van het document",
         "Authorised Representative": "Gemachtigde",
         "Authorised representative": "Gemachtigde",
+        "Authorisation until {date}": "Machtiging tot {date}",
         "Authority Type": "Soort bevoegd gezag",
         "Authorization": "Autorisatie",
         "Authorization Basis": "Grondslag voor de autorisatie",

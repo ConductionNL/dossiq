@@ -1062,6 +1062,7 @@ OC.L10N.register(
         "Author of the document": "Author of the document",
         "Authorised Representative": "Authorised Representative",
         "Authorised representative": "Authorised representative",
+        "Authorisation until {date}": "Authorisation until {date}",
         "Authority Type": "Authority Type",
         "Authorization": "Authorization",
         "Authorization Basis": "Authorization Basis",
