@@ -53,9 +53,10 @@ describe('the count subtitles', () => {
 		expect(list.content.headerSubtitle).toBeUndefined()
 	})
 
-	it('the set-up steps say how many are done', () => {
+	it('the set-up steps say how many are done, at the right of the title as the board draws it', () => {
 		const [list] = widgets(organisations, 'organisation-onboarding')
-		expect(nl[list.content.headerSubtitle]).toBe('{count:status=completed} van {total} stappen klaar')
+		expect(nl[list.content.headerNote]).toBe('{count:status=completed} van {total} stappen klaar')
+		expect(list.content.headerSubtitle).toBeUndefined()
 	})
 
 	it('the task checklist puts "2 of 4 done" under its title', () => {

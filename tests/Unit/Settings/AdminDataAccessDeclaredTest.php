@@ -102,6 +102,12 @@ final class AdminDataAccessDeclaredTest extends TestCase {
 			'update' => ['admin', 'beheerders', 'dossiq-background-service'],
 			'delete' => ['admin', 'beheerders'],
 		],
+		'tenantSubscription' => [
+			'read' => ['admin', 'beheerders', 'dossiq-background-service'],
+			'create' => ['admin', 'beheerders'],
+			'update' => ['admin', 'beheerders'],
+			'delete' => ['admin', 'beheerders'],
+		],
 	];
 
 	/**

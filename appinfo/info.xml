@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261029154700</version>
+    <version>0.4.47-unstable.20261030033700</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -785,6 +785,9 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <!-- documents-live-on-the-case: every document's file moves into the
                  folder of the case that owns it, once, behind a persisted key. -->
             <step>OCA\Dossiq\Repair\MoveDocumentsIntoCaseFolders</step>
+            <!-- document-lookups-stay-in-their-schema: one document record per
+                 file; a later record of a file goes with its joins, once. -->
+            <step>OCA\Dossiq\Repair\RemoveDocumentRecordTwins</step>
             <!-- gemachtigde-role-on-every-case-type: the one role type that names
                  no case type, so every case type can record a representative
                  under Awb 2:1. MUST come before SyncCaseRoleVocabulary, which
@@ -970,6 +973,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               BackfillPortalParty               fills portalParty on existing portal cases; a fresh install has none
               MoveDecisionTablesToOpenRegister  copies existing dossiq decision tables into OpenRegister; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
+              RemoveDocumentRecordTwins         removes second records of a file an earlier projection made; a fresh install has none
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made
               MigratePayoutRowsToFinance        hands payout rows dossiq kept to the finance app; a fresh install has none

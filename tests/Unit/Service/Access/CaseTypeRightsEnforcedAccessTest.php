@@ -206,19 +206,32 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		$memberOfClass = 'OCA\\OpenRegister\\Service\\Rbac\\MemberOfResolver';
 		$matcherClass = 'OCA\\OpenRegister\\Service\\ConditionMatcher';
 		$container = $this->createMock(ContainerInterface::class);
-		$matcher = new $matcherClass($session, $container, $evaluator, new NullLogger(), $groups, new $memberOfClass($schemas, $registers, $objects, $evaluator, new NullLogger()));
+		// OpenRegister resolves MagicMapper through the container from ecd4e6c8 on; an
+		// older checkout takes the mapper itself as the third argument.
+		$third = (new \ReflectionMethod(objectOrMethod: $memberOfClass, method: '__construct'))->getParameters()[2]->getType();
+		$memberOfThird = $objects;
+		if ($third instanceof \ReflectionNamedType && $third->getName() === ContainerInterface::class) {
+			$memberOfThird = $container;
+		}
+
+		$memberOf = new $memberOfClass($schemas, $registers, $memberOfThird, $evaluator, new NullLogger());
+		$matcher = new $matcherClass($session, $container, $evaluator, new NullLogger(), $groups, $memberOf);
 
 		$permissionClass = 'OCA\\OpenRegister\\Service\\Object\\PermissionHandler';
 		$permissions = new $permissionClass($session, $users, $groups, $schemas, $objects, $matcher, $appConfig, new NullLogger(), $container, $dispatcher);
 
 		$container->method('get')->willReturnCallback(
-			static function (string $id) use ($permissions, $registers, $permissionClass) {
+			static function (string $id) use ($permissions, $registers, $objects, $permissionClass) {
 				if ($id === $permissionClass) {
 					return $permissions;
 				}
 
 				if ($id === 'OCA\\OpenRegister\\Db\\RegisterMapper') {
 					return $registers;
+				}
+
+				if ($id === 'OCA\\OpenRegister\\Db\\MagicMapper') {
+					return $objects;
 				}
 
 				throw new \RuntimeException('Not in this test: ' . $id);

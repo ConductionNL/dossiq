@@ -267,7 +267,7 @@ export default {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 10px;
-	margin: 16px 0 12px;
+	margin: 16px 0;
 }
 
 .stuf-audit-log__table {

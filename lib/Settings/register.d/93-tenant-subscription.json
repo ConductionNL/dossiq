@@ -1,0 +1,61 @@
+{
+  "_note": "A tenant's subscription: the package an organisation on this environment takes and the contract reference it is known by, beside its billing events (board DqTenant: Pakket Standaard, Kenmerk TEN-0014). One record per organisation, linked by tenantRef. Admin data, read and written by admin and beheerders; the background service reads it.",
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": ["tenantSubscription"]
+      }
+    },
+    "schemas": {
+      "tenantSubscription": {
+        "slug": "tenantSubscription",
+        "icon": "PackageVariantClosed",
+        "version": "1.0.0",
+        "searchable": false,
+        "title": "Tenant Subscription",
+        "description": "The package an organisation on this environment subscribes to and the contract reference it is known by.",
+        "type": "object",
+        "required": ["tenantRef", "packageName"],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "nc-organisation",
+            "title": "Tenant Reference",
+            "description": "Reference to the organisation in OpenRegister"
+          },
+          "packageName": {
+            "type": "string",
+            "title": "Package",
+            "description": "The package the organisation takes, such as Standaard.",
+            "maxLength": 100
+          },
+          "reference": {
+            "type": "string",
+            "title": "Contract reference",
+            "description": "The reference the subscription is known by in the contract and on invoices, such as TEN-0014.",
+            "maxLength": 50
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "title": "Start date",
+            "description": "The day the subscription began."
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "title": "End date",
+            "description": "The day the subscription ends. Empty while it runs on."
+          }
+        },
+        "authorization": {
+          "read": ["admin", "beheerders", "dossiq-background-service"],
+          "create": ["admin", "beheerders"],
+          "update": ["admin", "beheerders"],
+          "delete": ["admin", "beheerders"]
+        }
+      }
+    }
+  }
+}
