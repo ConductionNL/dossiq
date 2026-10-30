@@ -25,6 +25,13 @@ describe('the case type Historie card', () => {
 		expect(nl['Reference {identifier}']).toBe('Kenmerk {identifier}')
 	})
 
+	it('leaves out what the system writes, so the people who changed the type stay in view', () => {
+		// The window refresh and the upgrades save a case type as System (with OpenRegister's cause import or
+		// migration); the board draws "Versie 4 gepubliceerd, Lars de Koning". The All history tab keeps them.
+		expect(history.content.excludeActors).toEqual(['System'])
+		expect(history.content.excludeActions).toEqual(['read'])
+	})
+
 	it('draws compact stacked rows, 10px above and below, as DqZaaktype does', () => {
 		expect(history.content.layout).toBe('stacked')
 		expect(history.content.density).toBe('compact')

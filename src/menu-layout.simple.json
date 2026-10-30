@@ -7055,6 +7055,8 @@
 							"layout": "stacked",
 							"density": "compact",
 							"excludeActions": ["read"],
+							"excludeActors": ["System"],
+							"_excludeActorsNote": "Board DqZaaktype Historie: who changed the type. The window refresh, the daily refresh of the example set and the upgrades save a case type as System (OpenRegister records them with cause import or migration), and their edits pushed the people's entries out of view. The All history tab keeps every entry.",
 							"actionLabels": {
 								"create": "Case type created",
 								"update": "Case type changed"
