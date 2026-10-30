@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-tenant-waterland/specs/example-set-tenant-waterland/spec.md#requirement-the-tenant-page-has-a-tenant-with-an-administrator-mandates-and-billing
+ * @spec openspec/specs/example-set-tenant-waterland/spec.md#requirement-the-tenant-page-has-a-tenant-with-an-administrator-mandates-and-billing
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Waterland's tenant records.
  *
- * @spec openspec/changes/example-set-tenant-waterland/specs/example-set-tenant-waterland/spec.md#requirement-the-tenant-page-has-a-tenant-with-an-administrator-mandates-and-billing
+ * @spec openspec/specs/example-set-tenant-waterland/spec.md#requirement-the-tenant-page-has-a-tenant-with-an-administrator-mandates-and-billing
  */
 class ZuiddrechtTenantWaterlandTest extends TestCase {
 
@@ -81,7 +81,7 @@ class ZuiddrechtTenantWaterlandTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-set-tenant-waterland/specs/example-set-tenant-waterland/spec.md#requirement-the-tenant-page-has-a-tenant-with-an-administrator-mandates-and-billing
+	 * @spec openspec/specs/example-set-tenant-waterland/spec.md#requirement-the-tenant-page-has-a-tenant-with-an-administrator-mandates-and-billing
 	 */
 	public function testWaterlandsRecordsAreWhatTheSchemasStore(): void {
 		$set     = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);

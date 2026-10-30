@@ -3,7 +3,7 @@
 **Status**: proposed
 **Scope**: dossiq
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: The case list filters a case type's fields on the case's own answers
 

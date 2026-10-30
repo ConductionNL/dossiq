@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/social-domain-procedures-are-case-types/specs/case-record-import/spec.md
+ * @spec openspec/specs/case-record-import/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,7 +35,7 @@ use Throwable;
 /**
  * Finds the case a number already became, and moves references onto a case.
  *
- * @spec openspec/changes/social-domain-procedures-are-case-types/specs/case-record-import/spec.md
+ * @spec openspec/specs/case-record-import/spec.md
  */
 class RecordImportReferences {
 	use SearchesObjects;
@@ -63,7 +63,7 @@ class RecordImportReferences {
 	 *
 	 * @throws Throwable When the cases cannot be read.
 	 *
-	 * @spec openspec/changes/social-domain-procedures-are-case-types/specs/case-record-import/spec.md
+	 * @spec openspec/specs/case-record-import/spec.md
 	 */
 	public function casesByFormerReference(object $objectService, array $caseType, array $import): array {
 		$application = (string)($import['formerReference']['application'] ?? '');
@@ -116,7 +116,7 @@ class RecordImportReferences {
 	 *
 	 * @throws Throwable When the cases cannot be read.
 	 *
-	 * @spec openspec/changes/social-domain-procedures-are-case-types/specs/case-record-import/spec.md
+	 * @spec openspec/specs/case-record-import/spec.md
 	 */
 	public function caseOfSameNumber(object $objectService, array $caseType, array $import, array $source, ?array &$cache): string {
 		$number = $this->numberOf(import: $import, source: $source);
@@ -138,7 +138,7 @@ class RecordImportReferences {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/social-domain-procedures-are-case-types/specs/case-record-import/spec.md
+	 * @spec openspec/specs/case-record-import/spec.md
 	 */
 	public function rememberNumber(array $import, array $source, string $caseId, ?array &$cache): void {
 		$number = $this->numberOf(import: $import, source: $source);
@@ -164,7 +164,7 @@ class RecordImportReferences {
 	 *
 	 * @throws Throwable When a referencing record cannot be read or written.
 	 *
-	 * @spec openspec/changes/social-domain-procedures-are-case-types/specs/case-record-import/spec.md
+	 * @spec openspec/specs/case-record-import/spec.md
 	 */
 	public function repoint(object $objectService, array $import, array $oldValues, string $caseId): int {
 		$moved = 0;

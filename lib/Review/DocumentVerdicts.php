@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-document-verdicts/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
+ * @spec openspec/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -37,7 +37,7 @@ use Throwable;
  * their fields holds the verdict and the cited grounds, and which verdict
  * marks a document as partly withheld, is configuration.
  *
- * @spec openspec/changes/case-document-verdicts/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
+ * @spec openspec/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
  */
 class DocumentVerdicts {
 
@@ -70,7 +70,7 @@ class DocumentVerdicts {
 	 *
 	 * @return array<string, mixed> `documents`, `assessed`, `remaining`, `counts` per verdict and `grounds`.
 	 *
-	 * @spec openspec/changes/case-document-verdicts/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
+	 * @spec openspec/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
 	 */
 	public function forCase(string $caseId): array {
 		$documents = $this->assessments->getDocumentsUnderReview(caseId: $caseId);
@@ -116,7 +116,7 @@ class DocumentVerdicts {
 	 *
 	 * @return array<string, string> The verdict per document id.
 	 *
-	 * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-each-document-row-carries-its-verdict
+	 * @spec openspec/specs/files-review-row-verdict/spec.md#requirement-each-document-row-carries-its-verdict
 	 */
 	public function byDocument(string $caseId): array {
 		$documents = $this->assessments->getDocumentsUnderReview(caseId: $caseId);

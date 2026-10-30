@@ -7,7 +7,7 @@
  * entity the organisation shares with its pipelinq client; both hide when
  * pipelinq is absent.
  *
- * @spec openspec/changes/organisation-open-tickets/specs/pipelinq-consumption/spec.md
+ * @spec openspec/specs/pipelinq-consumption/spec.md
  */
 
 import fs from 'fs'

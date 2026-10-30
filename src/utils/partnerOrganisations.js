@@ -14,7 +14,7 @@ import { generateUrl } from '@nextcloud/router'
  * The search endpoint lists every organisation; of those, only the ones typed
  * `partner` are offered, never this instance's own tenant.
  *
- * @spec openspec/changes/share-dialog-lists-every-partner/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
+ * @spec openspec/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
  * @return {Promise<Array<object>>} The partner organisations.
  */
 export async function loadPartnerOrganisations() {

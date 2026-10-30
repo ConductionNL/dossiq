@@ -6,7 +6,7 @@
  * its line, the add button under it at the start with a plus. A tab's single
  * widget heads its panel only when it carries a description.
  *
- * @spec openspec/changes/rules-tab-panel-heading/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'

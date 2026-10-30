@@ -70,7 +70,7 @@ function endOf(from, iso) {
  * @param {object} kase The case.
  * @param {string} [locale] The locale for dates.
  * @return {Array<{label: string, value: string}>} The rows.
- * @spec openspec/changes/generate-fills-per-template/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
+ * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
  */
 export function templateFillRows(fills, kase, locale = getCanonicalLocale()) {
 	if (!Array.isArray(fills) || !kase) {

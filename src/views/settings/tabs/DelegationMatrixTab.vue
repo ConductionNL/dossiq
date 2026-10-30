@@ -97,7 +97,7 @@ export default {
 		 * The section shown, as the picker's value.
 		 *
 		 * @return {object} The option.
-		 * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		activeOption() {
 			return this.tabOptions.find((opt) => opt.id === this.active) || this.tabOptions[0]

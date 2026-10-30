@@ -86,7 +86,7 @@ describe('the Files tab columns as the library reads them', () => {
 		return normaliseFileColumns(declared)
 	}
 
-	// @spec openspec/changes/review-case-columns-hidden/specs/review-case-columns-hidden/spec.md#requirement-a-review-case-hides-scan-and-visible-to-by-default
+	// @spec openspec/specs/review-case-columns-hidden/spec.md#requirement-a-review-case-hides-scan-and-visible-to-by-default
 	it('a review case starts without Scan and Visible to, which stay in Columns', () => {
 		const review = columnsFor(true)
 
@@ -95,7 +95,7 @@ describe('the Files tab columns as the library reads them', () => {
 		expect(columnsFor(false).filter((column) => column.hidden !== true).map((column) => column.key)).toEqual(['name', 'scanVerdict', 'vertrouwelijkheidaanduiding'])
 	})
 
-	// @spec openspec/changes/scan-column-needs-a-scanner/specs/scan-column-needs-a-scanner/spec.md#requirement-the-scan-column-shows-only-with-a-virus-scanner
+	// @spec openspec/specs/scan-column-needs-a-scanner/spec.md#requirement-the-scan-column-shows-only-with-a-virus-scanner
 	it('shows the Scan column only where the virus scanner files_antivirus is enabled', () => {
 		const scan = filesProps().columns.find((column) => column.key === 'scanVerdict')
 

@@ -23,7 +23,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-last-activity-at/specs/case-last-activity-at/spec.md
+ * @spec openspec/specs/case-last-activity-at/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
 /**
  * Writes `lastActivityAt` onto a case.
  *
- * @spec openspec/changes/case-last-activity-at/specs/case-last-activity-at/spec.md
+ * @spec openspec/specs/case-last-activity-at/spec.md
  */
 class CaseActivityStamp {
 
@@ -77,7 +77,7 @@ class CaseActivityStamp {
 	 *
 	 * @return bool True when the case was stamped.
 	 *
-	 * @spec openspec/changes/case-last-activity-at/specs/case-last-activity-at/spec.md#requirement-work-on-a-case-stamps-its-last-activity
+	 * @spec openspec/specs/case-last-activity-at/spec.md#requirement-work-on-a-case-stamps-its-last-activity
 	 */
 	public function stamp(string $caseId): bool {
 		$caseId = trim($caseId);

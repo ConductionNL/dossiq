@@ -7,7 +7,7 @@
  * the object stores are registered, so the versions request is not refused
  * as "not registered" and read as "No workflow defined" (DqZaaktypeFlow).
  *
- * @spec openspec/changes/case-type-flow-direct-load/specs/case-types/spec.md#requirement-the-case-type-flow-page-loads-its-workflow-when-opened-directly
+ * @spec openspec/specs/case-types/spec.md#requirement-the-case-type-flow-page-loads-its-workflow-when-opened-directly
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

@@ -6,7 +6,7 @@
  * meeting tabs show only to a holder of the `sociaal-domein` role
  * permission, as the social-domain pages do.
  *
- * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+ * @spec openspec/specs/admin-data-access/spec.md
  */
 
 import fs from 'fs'

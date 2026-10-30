@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-last-activity-at/specs/case-last-activity-at/spec.md
+ * @spec openspec/specs/case-last-activity-at/spec.md
  */
 
 declare(strict_types=1);

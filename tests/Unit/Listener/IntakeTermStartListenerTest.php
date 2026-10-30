@@ -28,7 +28,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -69,7 +69,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Portal\PortalConversation
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  *
- * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
@@ -124,7 +124,7 @@ class IntakeTermStartListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testACaseFiledByHandGetsItsDatesFromCreation(): void {
 		$this->listener()->handle(self::created(['title' => 'Kosten zwembad'], created: '2026-10-06T10:00:00+02:00'));
@@ -146,7 +146,7 @@ class IntakeTermStartListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testAnImportedReceiptIsKeptAndStartsTheTerm(): void {
 		$answers = [['propertyDefinition' => self::RECEIPT_DEFINITION, 'name' => 'receiptDate', 'value' => '2026-09-01']];
@@ -163,7 +163,7 @@ class IntakeTermStartListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testASuppliedStartDateIsKept(): void {
 		$this->listener(declaresReceipt: false)->handle(
@@ -181,7 +181,7 @@ class IntakeTermStartListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testAReplayWritesNothing(): void {
 		$this->listener()->handle(
@@ -203,7 +203,7 @@ class IntakeTermStartListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testTheDatesDoNotWaitForTheCalendar(): void {
 		$this->listener(calendarAnswers: false)->handle(self::created([], created: '2026-10-06T10:00:00+02:00'));
@@ -220,7 +220,7 @@ class IntakeTermStartListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testANonCaseIsLeftAlone(): void {
 		$this->listener(slug: 'task')->handle(self::created([], created: '2026-10-06T10:00:00+02:00'));
@@ -240,7 +240,7 @@ class IntakeTermStartListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testACaseMadeJustAfterMidnightInAmsterdamStartsThatDay(): void {
 		$event = self::creating(['title' => 'Kosten zwembad'], created: '2026-10-10T23:52:00+00:00');
@@ -261,7 +261,7 @@ class IntakeTermStartListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testAWooCaseIsStoredWithItsReceiptAnswer(): void {
 		$answers = [['propertyDefinition' => 'def-subject', 'name' => 'onderwerp', 'value' => 'Kermis']];
@@ -292,7 +292,7 @@ class IntakeTermStartListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testTheCreatedFallbackSendsOnlyTheFieldsItAdds(): void {
 		$this->listener()->handle(

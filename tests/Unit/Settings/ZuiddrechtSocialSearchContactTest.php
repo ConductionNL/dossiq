@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-social-search-contact/specs/example-set-social-search-contact/spec.md#requirement-the-example-data-carries-what-the-social-search-and-contact-boards-draw
+ * @spec openspec/specs/example-set-social-search-contact/spec.md#requirement-the-example-data-carries-what-the-social-search-and-contact-boards-draw
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The jeugdwet example case, the saved search and Sanne's contact record.
  *
- * @spec openspec/changes/example-set-social-search-contact/specs/example-set-social-search-contact/spec.md#requirement-the-example-data-carries-what-the-social-search-and-contact-boards-draw
+ * @spec openspec/specs/example-set-social-search-contact/spec.md#requirement-the-example-data-carries-what-the-social-search-and-contact-boards-draw
  */
 class ZuiddrechtSocialSearchContactTest extends TestCase {
 

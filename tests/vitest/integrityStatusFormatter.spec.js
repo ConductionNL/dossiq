@@ -5,7 +5,7 @@
  *
  * The outcome of a checksum's last check, in words.
  *
- * @spec openspec/changes/document-integrity-check/specs/document-integrity-check/spec.md
+ * @spec openspec/specs/document-integrity-check/spec.md
  */
 
 import { describe, expect, it, vi } from 'vitest'

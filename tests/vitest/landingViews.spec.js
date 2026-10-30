@@ -14,7 +14,7 @@
  * it does not declare leaves a hole, and a team widget copied from the
  * dashboard can drift from it without anybody noticing.
  *
- * @spec openspec/changes/landing-views/specs/my-work-landing/spec.md
+ * @spec openspec/specs/my-work-landing/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'

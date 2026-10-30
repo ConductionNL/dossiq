@@ -9,7 +9,7 @@
  * statuses), the statuses' required field rules and a property's
  * requiredAtStatus.
  *
- * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { resolveTranslatable } from './i18nResolver.js'

@@ -7,7 +7,7 @@
  * a reader understands, a line saying what it does and a pill (Calculated, On,
  * Off), in a titled card; trying a rule sits behind a disclosure.
  *
- * @spec openspec/changes/case-type-rules-as-rows/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
+ * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

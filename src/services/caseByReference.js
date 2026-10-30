@@ -5,7 +5,7 @@
  * id as the case's `externalReference`, so an old link to the record still
  * finds the case.
  *
- * @spec openspec/changes/re-integration-page-retires/specs/dossiq-sociaal-domein-participatiewet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'

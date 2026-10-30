@@ -5,7 +5,7 @@
  * Board DqContacten (design-system #424): the BSN head is a plain label.
  * OpenRegister refuses sorting and filtering on an explicit-reveal value.
  *
- * @spec openspec/changes/contacts-bsn-plain-head/specs/party-pages/spec.md#requirement-the-contacts-list-neither-sorts-nor-filters-on-the-bsn
+ * @spec openspec/specs/party-pages/spec.md#requirement-the-contacts-list-neither-sorts-nor-filters-on-the-bsn
  */
 
 import fs from 'fs'

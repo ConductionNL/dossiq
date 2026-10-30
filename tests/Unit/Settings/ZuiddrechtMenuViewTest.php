@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-menu-view/specs/example-set-menu-view/spec.md#requirement-pieters-own-view-is-in-his-menu
+ * @spec openspec/specs/example-set-menu-view/spec.md#requirement-pieters-own-view-is-in-his-menu
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Pieter's menu holds his view "Termijn deze week".
  *
- * @spec openspec/changes/example-set-menu-view/specs/example-set-menu-view/spec.md#requirement-pieters-own-view-is-in-his-menu
+ * @spec openspec/specs/example-set-menu-view/spec.md#requirement-pieters-own-view-is-in-his-menu
  */
 class ZuiddrechtMenuViewTest extends TestCase {
 

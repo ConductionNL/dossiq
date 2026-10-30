@@ -280,7 +280,7 @@ class TermijnNotificationService {
 	 *
 	 * @return array<string, mixed> The context the letter is rendered with.
 	 *
-	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
 	 */
 	private function withCaseNumber(array $instance, array $context): array {
 		$reference = trim((string)($context['case'] ?? ''));

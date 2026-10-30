@@ -7,7 +7,7 @@
  * stay on the page, on a Properties tab under the tab strip's Actions menu,
  * and the written terms' Edit opens that tab.
  *
- * @spec openspec/changes/case-type-fields-tab-board-cards/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'

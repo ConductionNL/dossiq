@@ -288,7 +288,7 @@ export default {
 		 *
 		 * @param {string} query What the reader typed.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/documents-copy-to-case/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
+		 * @spec openspec/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
 		 */
 		async searchCases(query) {
 			const term = String(query ?? '').trim()
@@ -314,7 +314,7 @@ export default {
 		 * Have the case merge the ticked files, in order, into one PDF.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/documents-merge-pdf/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
+		 * @spec openspec/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
 		 */
 		async mergePdf() {
 			if (this.resolvedCaseId === '') return

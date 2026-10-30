@@ -131,8 +131,8 @@ final class Prerequisites {
 	 *
 	 * @var array<string, string>
 	 *
-	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
-	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public const DISPLAY_NAMES = [
 		'openregister' => 'OpenRegister',
@@ -165,7 +165,7 @@ final class Prerequisites {
 	 * @return array<string, mixed> The declaration with a `present` on every item.
 	 *
 	 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
-	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function check(
 		IAppManager $appManager,

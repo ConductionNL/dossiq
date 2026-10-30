@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-integrity-check/specs/document-integrity-check/spec.md
+ * @spec openspec/specs/document-integrity-check/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -36,7 +36,7 @@ use OCP\BackgroundJob\TimedJob;
 /**
  * Re-verifies a batch of stored checksums once a day.
  *
- * @spec openspec/changes/document-integrity-check/specs/document-integrity-check/spec.md#requirement-stored-checksums-are-checked-again-and-the-check-is-recorded
+ * @spec openspec/specs/document-integrity-check/spec.md#requirement-stored-checksums-are-checked-again-and-the-check-is-recorded
  */
 class DocumentIntegrityCheckJob extends TimedJob {
 

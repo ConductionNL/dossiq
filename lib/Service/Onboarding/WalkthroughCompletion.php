@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+ * @spec openspec/specs/first-load-onboarding/spec.md
  */
 
 declare(strict_types=1);
@@ -81,7 +81,7 @@ class WalkthroughCompletion {
 	 *
 	 * @return bool True when the tour is behind them.
 	 *
-	 * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+	 * @spec openspec/specs/first-load-onboarding/spec.md
 	 */
 	public function seen(): bool {
 		$user = $this->userSession->getUser();

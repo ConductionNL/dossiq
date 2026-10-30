@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/re-integration-is-a-case-type/specs/dossiq-sociaal-domein-participatiewet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Import\RecordValues
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  *
- * @spec openspec/changes/re-integration-is-a-case-type/specs/dossiq-sociaal-domein-participatiewet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
  */
 class ReIntegrationCaseTypeTest extends TestCase {
 	use MakesCaseDateNormaliser;

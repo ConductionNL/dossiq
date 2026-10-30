@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader
  *
- * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-each-document-row-carries-its-verdict
+ * @spec openspec/specs/files-review-row-verdict/spec.md#requirement-each-document-row-carries-its-verdict
  */
 class InformatieobjectReaderReviewVerdictTest extends TestCase {
 

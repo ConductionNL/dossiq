@@ -208,7 +208,7 @@ export default {
 	 * @param {object} property The property.
 	 * @param {{labels?: object}} options The column's formatter options.
 	 * @return {string}
-	 * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
+	 * @spec openspec/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
 	 */
 	optionLabel: (value, row, property, options) => {
 		const code = value === null || value === undefined ? '' : String(value)
@@ -222,7 +222,7 @@ export default {
 	 *
 	 * @param {unknown} value The day (YYYY-MM-DD).
 	 * @return {string}
-	 * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	receivedOn: (value) => {
 		const day = shortDay(value)
@@ -236,7 +236,7 @@ export default {
 	 * @param {unknown} value The penalty state: `definitive`, `running` or `none`.
 	 * @param {object} row The row, with `penaltyEuros` and `penaltySince`.
 	 * @return {string}
-	 * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	penaltyLine: (value, row) => {
 		if (value !== 'definitive' && value !== 'running') {
@@ -260,7 +260,7 @@ export default {
 	 * @param {object} property The property.
 	 * @param {{token?: string, yes?: string, no?: string}} options The column's formatter options.
 	 * @return {string}
-	 * @spec openspec/changes/tenant-tables-in-words/specs/tenant-tables-in-words/spec.md#requirement-a-list-value-is-read-as-yes-or-no-by-a-token-it-holds
+	 * @spec openspec/specs/tenant-tables-in-words/spec.md#requirement-a-list-value-is-read-as-yes-or-no-by-a-token-it-holds
 	 */
 	containsLabel: (value, row, property, options) => {
 		const opts = options || {}
@@ -275,7 +275,7 @@ export default {
 	 *
 	 * @param {unknown} value `unchanged`, `changed`, `missing` or `unchecked`.
 	 * @return {string}
-	 * @spec openspec/changes/document-integrity-check/specs/document-integrity-check/spec.md#requirement-the-checksum-card-says-when-and-how-the-file-was-last-checked
+	 * @spec openspec/specs/document-integrity-check/spec.md#requirement-the-checksum-card-says-when-and-how-the-file-was-last-checked
 	 */
 	integrityStatus: (value) => {
 		const labels = {
@@ -311,7 +311,7 @@ export default {
 	 *
 	 * @param {string} value The case id.
 	 * @return {string}
-	 * @spec openspec/changes/zakenkaart-map-list/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
+	 * @spec openspec/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
 	 */
 	caseAddress: (value) => caseAddress(value),
 
@@ -368,7 +368,7 @@ export default {
 	 * @param {unknown} value The cell value (unused).
 	 * @param {object} row The field.
 	 * @return {string} The words.
-	 * @spec openspec/changes/case-type-fields-origin-and-list/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	fieldOrigin: (value, row) => fieldOrigin(row),
 
@@ -391,7 +391,7 @@ export default {
 	 * @param {object} options The column's options (unused).
 	 * @param {{object: (object|null)}} context The page record (nextcloud-vue cell-formatter-page-record).
 	 * @return {string} Yes or No.
-	 * @spec openspec/changes/case-type-fields-origin-and-list/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	fieldInCaseList: (value, row, property, options, context) => fieldInCaseList(row, context && context.object),
 
@@ -555,7 +555,7 @@ export default {
 	 * @param {object} property The column's property.
 	 * @param {{name: string}} options The column's `formatterOptions`.
 	 * @return {string} The answer as text.
-	 * @spec openspec/changes/re-integration-is-a-case-type/specs/dossiq-sociaal-domein-participatiewet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
 	 */
 	caseAnswer: (value, row, property, options) => caseAnswerText(value, options),
 
@@ -645,7 +645,7 @@ export default {
 	 *
 	 * @param {Array<object>} value The case's outbound communications.
 	 * @return {string} The lines joined with "; ", or '' without messages.
-	 * @spec openspec/changes/receipt-confirmation-card-reads/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
+	 * @spec openspec/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
 	 */
 	outboundMessages: (value) => {
 		if (!Array.isArray(value)) {

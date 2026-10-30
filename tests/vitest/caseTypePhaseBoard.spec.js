@@ -7,7 +7,7 @@
  * steps are a JSON string no declarative list can group), then the terms,
  * the messages and the blueprint as before, so nothing that tab showed is lost.
  *
- * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { describe, expect, it } from 'vitest'

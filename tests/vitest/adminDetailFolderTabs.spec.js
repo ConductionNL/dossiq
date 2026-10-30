@@ -5,7 +5,7 @@
  * The case type and organisation pages draw the folder tabs of the case page
  * (boards DqZaaktypeOverzicht and DqTenant), not a segmented switch.
  *
- * @spec openspec/changes/admin-detail-folder-tabs/specs/admin-detail-folder-tabs/spec.md#requirement-the-case-type-and-organisation-pages-draw-folder-tabs
+ * @spec openspec/specs/admin-detail-folder-tabs/spec.md#requirement-the-case-type-and-organisation-pages-draw-folder-tabs
  */
 
 import fs from 'fs'

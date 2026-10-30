@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md
+ * @spec openspec/specs/end-of-day-manifest/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\IUserSession;
 /**
  * The reader's day.
  *
- * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md
+ * @spec openspec/specs/end-of-day-manifest/spec.md
  */
 class EndOfDayController extends Controller {
 	/**
@@ -68,7 +68,7 @@ class EndOfDayController extends Controller {
 	 *
 	 * @return JSONResponse The day.
 	 *
-	 * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
+	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
 	 */
 	#[NoAdminRequired]
 	public function show(): JSONResponse {

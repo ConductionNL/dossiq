@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use OCP\IAppConfig;
 /**
  * Offers and installs the on-request case definition packages.
  *
- * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 class CaseTypePackageChoice {
 
@@ -72,7 +72,7 @@ class CaseTypePackageChoice {
 	 *
 	 * @return array<int, array{id: string, label: string, description: string, icon: string}> The options.
 	 *
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function options(): array {
 		$options = [
@@ -107,7 +107,7 @@ class CaseTypePackageChoice {
 	 *
 	 * @return bool True when the step is done.
 	 *
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function isDecided(): bool {
 		if ($this->appConfig->getValueString('dossiq', self::CONFIG_KEY, '') !== '') {
@@ -133,7 +133,7 @@ class CaseTypePackageChoice {
 	 *
 	 * @return array{success: bool, message: string, detail?: array<string, mixed>} The outcome.
 	 *
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function install(string $id): array {
 		$known = array_column($this->offered(), 'id');

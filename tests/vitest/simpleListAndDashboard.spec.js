@@ -13,7 +13,7 @@
  * the manifest.
  *
  * @spec openspec/specs/dashboard/spec.md
- * @spec openspec/changes/landing-views/specs/my-work-landing/spec.md
+ * @spec openspec/specs/my-work-landing/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'

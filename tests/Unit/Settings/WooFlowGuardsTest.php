@@ -329,7 +329,7 @@ class WooFlowGuardsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-redaction-stage-waits-for-every-redacted-copy/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
+	 * @spec openspec/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
 	 */
 	public function testTheDecisionWaitsForEveryRedactedCopy(): void {
 		$this->underReview = ['doc-1', 'doc-2'];

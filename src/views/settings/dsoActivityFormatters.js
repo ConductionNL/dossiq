@@ -12,7 +12,7 @@ import { translatePlural as n } from '@nextcloud/l10n'
  * @param {Array<object>} value The row's `caseTypes`.
  * @param {object} row The overview row.
  * @return {string} The cell text.
- * @spec openspec/changes/vth-dso-activity-board-columns/specs/admin-settings/spec.md#requirement-the-dso-activity-table-shows-what-each-activity-becomes-and-when-it-last-arrived
+ * @spec openspec/specs/admin-settings/spec.md#requirement-the-dso-activity-table-shows-what-each-activity-becomes-and-when-it-last-arrived
  */
 function dsoCaseTypes(value, row) {
 	if (row?.unmapped === true) {
@@ -29,7 +29,7 @@ function dsoCaseTypes(value, row) {
  *
  * @param {Array<object>} value The row's `caseTypes`.
  * @return {string} The cell text.
- * @spec openspec/changes/vth-dso-activity-board-columns/specs/admin-settings/spec.md#requirement-the-dso-activity-table-shows-what-each-activity-becomes-and-when-it-last-arrived
+ * @spec openspec/specs/admin-settings/spec.md#requirement-the-dso-activity-table-shows-what-each-activity-becomes-and-when-it-last-arrived
  */
 function dsoVariants(value) {
 	const variants = (Array.isArray(value) ? value : [])

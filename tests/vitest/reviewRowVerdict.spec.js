@@ -8,7 +8,7 @@
  * is open, which opens the assessment dialog with that document chosen.
  * DqDocumentenBeheer (any other case) shows neither.
  *
- * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md
+ * @spec openspec/specs/files-review-row-verdict/spec.md
  */
 
 import fs from 'fs'

@@ -144,7 +144,7 @@ class SociaalDomeinStore {
 	 *
 	 * @throws RefusedException When the cases or their case types cannot be read.
 	 *
-	 * @spec openspec/changes/social-domain-procedures-are-case-types/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function openCaseContactsAbout(string $bsn): array {
 		$objectService = $this->objectService();
@@ -192,7 +192,7 @@ class SociaalDomeinStore {
 	 *
 	 * @return string The domain.
 	 *
-	 * @spec openspec/changes/social-domain-procedures-are-case-types/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function domainOfCategory(string $category): string {
 		foreach (self::DOMAIN_CATEGORIES as $domain => $categories) {

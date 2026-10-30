@@ -6,7 +6,7 @@
  * The re-integration list is a view of the case list; its addresses and menu
  * entry still lead there, and an old trajectory link opens the case it moved to.
  *
- * @spec openspec/changes/re-integration-page-retires/specs/dossiq-sociaal-domein-participatiewet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
  */
 
 import fs from 'fs'

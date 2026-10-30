@@ -693,7 +693,7 @@ class AcknowledgementDutyTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-names-the-case-number/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
 	 */
 	public function testTheReceiptNamesTheCaseNumberNotTheTermsCaseLink(): void {
 		$uuid = 'cecc92cc-6e45-4edd-b38f-908fb543e710';

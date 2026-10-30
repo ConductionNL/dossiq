@@ -248,7 +248,7 @@ class ProcessingTimeRows {
 	 *
 	 * @return int The term in days.
 	 *
-	 * @spec openspec/changes/at-risk-reads-the-running-term/specs/at-risk-reads-the-running-term/spec.md#requirement-at-risk-reads-the-cases-running-term
+	 * @spec openspec/specs/at-risk-reads-the-running-term/spec.md#requirement-at-risk-reads-the-cases-running-term
 	 */
 	private function runningTerm(array $record, string $start, int $target): int {
 		$deadline = ($record['deadline'] ?? null);

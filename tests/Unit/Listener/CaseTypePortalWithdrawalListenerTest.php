@@ -285,7 +285,7 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testTheFlowThePayloadNamesIsJudgedNotTheStoredActiveOne(): void {
 		$basis = [['id' => 'pick-up', 'fromStatus' => self::ONTVANGEN, 'toStatus' => self::IN_BEHANDELING]];
@@ -312,7 +312,7 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testADanglingFlowNameFallsBackToTheActiveFlow(): void {
 		$listener = $this->listener([['id' => 'pick-up', 'fromStatus' => self::ONTVANGEN, 'toStatus' => self::IN_BEHANDELING]]);

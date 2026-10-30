@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md
+ * @spec openspec/specs/woo-request-intake/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -46,7 +46,7 @@ use Psr\Log\LoggerInterface;
 /**
  * The portal route on a store, as a resident fills in the form.
  *
- * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md
+ * @spec openspec/specs/woo-request-intake/spec.md
  */
 class PortalWooRequestDutchAnswersTest extends TestCase {
 
@@ -151,7 +151,7 @@ class PortalWooRequestDutchAnswersTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
 	 */
 	public function testADayWrittenDayFirstIsKeptAsADate(): void {
 		$response = $this->route(
@@ -169,7 +169,7 @@ class PortalWooRequestDutchAnswersTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
 	 */
 	public function testTheRequestersDutchWordIsKeptAsItsValue(): void {
 		$response = $this->route(['onderwerp' => 'Verlichting fietspad', 'verzoekerType' => 'Inwoner'])->start();
@@ -184,7 +184,7 @@ class PortalWooRequestDutchAnswersTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
 	 */
 	public function testAnImpossibleDayIsRefusedOnItsFieldInDutch(): void {
 		$response = $this->route(['onderwerp' => 'Verlichting fietspad', 'periodeVan' => '31-02-2026'])->start();
@@ -204,7 +204,7 @@ class PortalWooRequestDutchAnswersTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
 	 */
 	public function testEveryRefusalNamesItsFieldInDutch(): void {
 		$cases = [
@@ -230,7 +230,7 @@ class PortalWooRequestDutchAnswersTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
 	 */
 	public function testAnEnglishReaderGetsTheEnglishSentence(): void {
 		$data = $this->route(['onderwerp' => ''], 'en-GB,en;q=0.8')->start()->getData();
@@ -244,7 +244,7 @@ class PortalWooRequestDutchAnswersTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-confirmation-names-its-dates-as-days-req-wdi-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-confirmation-names-its-dates-as-days-req-wdi-003
 	 */
 	public function testTheConfirmationNamesItsDatesAsDays(): void {
 		$answer = (new WrittenCase())->read(

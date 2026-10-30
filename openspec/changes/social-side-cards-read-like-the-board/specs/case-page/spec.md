@@ -55,3 +55,10 @@ columns Zaak, Zaaktype, Status and Zichtbaar voor u. A case the reader may open
 SHALL show its number and title, type, status and "Ja"; an other-domain
 existence SHALL show its domain, its contact and "Alleen dat hij bestaat", and
 nothing more.
+
+#### Scenario: one case the reader may open and one other-domain existence
+- GIVEN the Oosthaven household with a Wmo case the reader may open and a case in another domain the reader may not open
+- WHEN the case page opens
+- THEN "Andere zaken van dit huishouden" shows a table with the columns Zaak, Zaaktype, Status and Zichtbaar voor u
+- AND the Wmo case row shows its number and title, its case type, its status and "Ja"
+- AND the other-domain row shows only its domain, its contact and "Alleen dat hij bestaat"

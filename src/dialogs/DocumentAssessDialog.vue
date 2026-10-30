@@ -259,7 +259,7 @@ export default {
 		 * document's row ("Beoordelen", DqZaakDocumenten). Ignored when it is
 		 * not outstanding.
 		 *
-		 * @spec openspec/changes/files-review-row-verdict/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
+		 * @spec openspec/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
 		 */
 		documentId: {
 			type: String,
@@ -534,7 +534,7 @@ export default {
 		 * @param {object} answer The server's answer, with `saved`.
 		 * @param {string} fieldOfDocument What the document field of an assessment is called.
 		 * @return {Array<string>} Their ids.
-		 * @spec openspec/changes/woo-screens-follow-the-case/specs/document-assessment/spec.md
+		 * @spec openspec/specs/document-assessment/spec.md
 		 */
 		savedIdsOf(answer, fieldOfDocument) {
 			return (Array.isArray(answer?.saved) ? answer.saved : [])

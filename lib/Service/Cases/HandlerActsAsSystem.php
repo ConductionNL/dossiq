@@ -31,7 +31,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use OCP\IUser;
 /**
  * Runs one act on a case as the system, for its handler, at its step.
  *
- * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 class HandlerActsAsSystem {
 
@@ -82,7 +82,7 @@ class HandlerActsAsSystem {
 	 * @throws RefusedException When the caller is not the handler (403) or the case
 	 *                          is not at the act's step (422).
 	 *
-	 * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function run(string $caseId, IUser $user, string $stepField, array $stepIn, callable $operation): mixed {
 		if ($this->guard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {

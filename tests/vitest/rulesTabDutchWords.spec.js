@@ -7,7 +7,7 @@
  * ("Derives a value ...") have a Dutch catalogue entry, as do the case
  * schema's first sentences shown under a title.
  *
- * @spec openspec/changes/rules-tab-dutch-words/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import nl from '../../l10n/nl.json'

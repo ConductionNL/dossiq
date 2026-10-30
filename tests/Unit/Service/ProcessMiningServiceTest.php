@@ -400,7 +400,7 @@ class ProcessMiningServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dwell-from-status-history-actor/specs/dwell-from-status-history-actor/spec.md#requirement-time-read-from-the-status-history-has-a-holder
+	 * @spec openspec/specs/dwell-from-status-history-actor/spec.md#requirement-time-read-from-the-status-history-has-a-holder
 	 */
 	public function testTimeReadFromTheStatusHistoryHasAHolder(): void {
 		$this->objects->seed('caseType', ['id' => 'ct-1', 'title' => 'Woo-verzoek']);
@@ -430,7 +430,7 @@ class ProcessMiningServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/phase-days-from-completed-visits/specs/phase-days-from-completed-visits/spec.md#requirement-days-per-phase-counts-completed-visits
+	 * @spec openspec/specs/phase-days-from-completed-visits/spec.md#requirement-days-per-phase-counts-completed-visits
 	 */
 	public function testDaysPerPhaseCountsOnlyCompletedVisits(): void {
 		$this->objects->seed('caseType', ['id' => 'ct-1', 'title' => 'Woo-verzoek']);

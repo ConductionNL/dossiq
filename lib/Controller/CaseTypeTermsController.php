@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCP\IRequest;
 /**
  * Answers a case type's terms in words.
  *
- * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class CaseTypeTermsController extends Controller {
 
@@ -49,7 +49,7 @@ class CaseTypeTermsController extends Controller {
 	 * @param IRequest       $request The request.
 	 * @param CaseTypeTerms $terms  Groups the workflow steps under the statuses.
 	 *
-	 * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function __construct(
 		string $appName,
@@ -70,7 +70,7 @@ class CaseTypeTermsController extends Controller {
 	 *
 	 * @return JSONResponse The terms, or 404 when the case type cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $id): JSONResponse {

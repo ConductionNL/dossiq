@@ -12,7 +12,7 @@
  * that warning while the board loaded its three schemas through
  * initializeStores() anyway.
  *
- * @spec openspec/changes/r7-dossiq-filtered-title-board-config/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import manifest from '../../src/manifest.json'

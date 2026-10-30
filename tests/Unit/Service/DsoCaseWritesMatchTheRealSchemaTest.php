@@ -251,7 +251,7 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
 	 */
 	public function testTheSubmissionMomentIsTheReceipt(): void {
 		$verzoek = $this->mappedVerzoek();

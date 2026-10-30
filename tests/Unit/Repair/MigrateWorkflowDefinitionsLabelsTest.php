@@ -122,7 +122,7 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/vth-package/specs/vth-workflow-templates/spec.md
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
 	public function testACaseTypeHoldingOnlyADraftStillGetsItsBasisTemplate(): void {
 		$this->runStep(caseType: self::caseType(), versions: [self::template(lifecycle: 'draft')]);
@@ -145,7 +145,7 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 	 *
 	 * @dataProvider lifecyclesThatAreNotADraft
 	 *
-	 * @spec openspec/changes/vth-package/specs/vth-workflow-templates/spec.md
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
 	public function testACaseTypeHoldingMoreThanDraftsIsLeftAlone(string $lifecycle): void {
 		$this->runStep(

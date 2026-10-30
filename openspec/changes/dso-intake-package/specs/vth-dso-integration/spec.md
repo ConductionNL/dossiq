@@ -6,7 +6,7 @@
 
 The system SHALL ship the settings-only case definition package `dso-intake`, installed automatically on install and on upgrade. Its setting names integriq's `dso_verzoek` schema by register (`integriq`, or the old `openconnector`) and slug, and the installer SHALL store that schema's id on this instance in `dso_vergunningaanvraag_schema` when the key was never set. A value an administrator set, an empty value included, SHALL NOT be overwritten. When integriq or its `dso_verzoek` schema is missing, the package SHALL be refused naming integriq and SHALL be tried again on the next upgrade. While the key is empty, the administration overview SHALL warn that DSO intake is off.
 
-#### Scenario: DSO intake is on after install when integriq is installed
+#### Scenario: Fresh install with integriq
 @e2e tests/e2e/packages/dso-intake.spec.ts
 
 - **GIVEN** an instance with integriq, where the key was never set
