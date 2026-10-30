@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/organisation-open-tickets/specs/pipelinq-consumption/spec.md
+ * @spec openspec/specs/pipelinq-consumption/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use OCP\IRequest;
 /**
  * Read parties' open pipelinq tickets by master entity.
  *
- * @spec openspec/changes/organisation-open-tickets/specs/pipelinq-consumption/spec.md
+ * @spec openspec/specs/pipelinq-consumption/spec.md
  */
 class PartyTicketController extends Controller {
 
@@ -76,7 +76,7 @@ class PartyTicketController extends Controller {
 	 *
 	 * @return JSONResponse `{available, values: {ref: count}}`, or `{available: false}`.
 	 *
-	 * @spec openspec/changes/organisation-open-tickets/specs/pipelinq-consumption/spec.md
+	 * @spec openspec/specs/pipelinq-consumption/spec.md
 	 */
 	#[NoAdminRequired]
 	public function openTicketCounts(): JSONResponse {
@@ -108,7 +108,7 @@ class PartyTicketController extends Controller {
 	 *
 	 * @return JSONResponse `{available, results, total}`, or `{available: false}`.
 	 *
-	 * @spec openspec/changes/organisation-open-tickets/specs/pipelinq-consumption/spec.md
+	 * @spec openspec/specs/pipelinq-consumption/spec.md
 	 * @spec openspec/changes/party-tickets-all-with-reference/specs/pipelinq-consumption/spec.md#requirement-a-partys-tickets-card-lists-its-handled-tickets-too
 	 */
 	#[NoAdminRequired]

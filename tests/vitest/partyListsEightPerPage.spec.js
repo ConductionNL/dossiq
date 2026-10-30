@@ -5,7 +5,7 @@
  * Boards DqContacten and DqOrganisaties show eight rows per page ("8 van 187",
  * "8 van 23"); live showed twenty, so the pager stood rows lower.
  *
- * @spec openspec/changes/party-lists-eight-per-page/specs/party-pages/spec.md#requirement-the-party-lists-show-eight-rows-per-page
+ * @spec openspec/specs/party-pages/spec.md#requirement-the-party-lists-show-eight-rows-per-page
  */
 
 import fs from 'fs'

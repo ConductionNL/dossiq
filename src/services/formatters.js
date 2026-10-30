@@ -260,7 +260,7 @@ export default {
 	 * @param {object} property The property.
 	 * @param {{token?: string, yes?: string, no?: string}} options The column's formatter options.
 	 * @return {string}
-	 * @spec openspec/changes/tenant-tables-in-words/specs/tenant-tables-in-words/spec.md#requirement-a-list-value-is-read-as-yes-or-no-by-a-token-it-holds
+	 * @spec openspec/specs/tenant-tables-in-words/spec.md#requirement-a-list-value-is-read-as-yes-or-no-by-a-token-it-holds
 	 */
 	containsLabel: (value, row, property, options) => {
 		const opts = options || {}
