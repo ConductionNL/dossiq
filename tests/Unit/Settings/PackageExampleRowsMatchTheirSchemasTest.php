@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/package-examples-encoding/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Psr\Log\NullLogger;
 /**
  * Example rows, as written, have the types, values and required properties their schemas declare.
  *
- * @spec openspec/changes/package-examples-encoding/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class PackageExampleRowsMatchTheirSchemasTest extends TestCase {
 
@@ -174,7 +174,7 @@ class PackageExampleRowsMatchTheirSchemasTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/package-examples-encoding/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testEveryExampleRowMatchesItsSchemaAsWritten(): void {
 		$schemas = $this->schemas();
@@ -200,7 +200,7 @@ class PackageExampleRowsMatchTheirSchemasTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/package-examples-encoding/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testTheStatusHistoryIsWrittenAsText(): void {
 		$file = $this->examplesAsWritten()['bezwaar-beroep/examples/20-case.json'];

@@ -7,7 +7,7 @@
  * rests on under the days, and keeps the free text behind "Other". A case type
  * without reasons keeps the free-text reason alone.
  *
- * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 import { readTransitionInputs } from '@conduction/nextcloud-vue'

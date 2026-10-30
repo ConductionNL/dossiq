@@ -28,7 +28,7 @@ use PHPUnit\Framework\TestCase;
  * portal-contribution T3: every notice the supplier portal announces is a
  * rule that mails the supplier's own contact address through `supplierRef`.
  *
- * @spec openspec/changes/portal-contribution/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-30-portal-contribution/tasks.md#T3
  */
 class SupplierNoticesDeclaredTest extends TestCase {
 

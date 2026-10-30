@@ -6,7 +6,7 @@
  * the card's body, 15px at 1.5 in the main ink under the title, not as the
  * 14px muted description the other cards carry.
  *
- * @spec openspec/changes/admin-advanced-tab/specs/admin-settings/spec.md#requirement-the-decision-tables-card-reads-its-text-as-body
+ * @spec openspec/specs/admin-settings/spec.md#requirement-the-decision-tables-card-reads-its-text-as-body
  */
 
 import fs from 'fs'

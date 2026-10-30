@@ -7,7 +7,7 @@
  * type's templates that fit the channel and hands back the template rendered
  * for the case.
  *
- * @spec openspec/changes/compose-from-message-template/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
+ * @spec openspec/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

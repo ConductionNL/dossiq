@@ -8,7 +8,7 @@
  * an administrator holds them all. A page, menu entry or page tab declaring a
  * role is hidden from everybody else.
  *
- * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+ * @spec openspec/specs/admin-data-access/spec.md
  */
 
 import fs from 'fs'

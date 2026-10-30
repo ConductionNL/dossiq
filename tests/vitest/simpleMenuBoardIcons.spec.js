@@ -10,7 +10,7 @@
  * manifest names them (a profile takes icons from the manifest), and every
  * name is registered: an unregistered name draws no icon at all.
  *
- * @spec openspec/changes/menu-board-icons/specs/menu-board-icons/spec.md#requirement-the-menu-entries-carry-the-boards-icons
+ * @spec openspec/specs/menu-board-icons/spec.md#requirement-the-menu-entries-carry-the-boards-icons
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'

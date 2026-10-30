@@ -6,3 +6,5 @@
 - DqBezwaar https://identity.conduction.nl/screens/board?id=dossiq/DqBezwaar
 - DqSubsidie https://identity.conduction.nl/screens/board?id=dossiq/DqSubsidie
 - DqHandhaving https://identity.conduction.nl/screens/board?id=dossiq/DqHandhaving
+- DqVthInstellingen https://identity.conduction.nl/screens/board?id=dossiq/DqVthInstellingen
+- DqInspectie https://identity.conduction.nl/screens/board?id=dossiq/DqInspectie

@@ -6,7 +6,7 @@
  * the type tag in the case lists, and the case type form and card where an
  * author picks both.
  *
- * @spec openspec/changes/case-type-colour-icon/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+ * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
  */
 
 import fs from 'fs'

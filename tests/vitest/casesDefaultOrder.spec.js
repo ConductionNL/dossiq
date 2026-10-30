@@ -9,7 +9,7 @@
  * `aria-sort`. `defaultOrder` names the deadline column, which the library
  * turns into the first fetch's `_order` and the table's sorted header.
  *
- * @spec openspec/changes/cases-default-order/specs/cases-default-order/spec.md#requirement-the-cases-list-opens-sorted-by-deadline
+ * @spec openspec/specs/cases-default-order/spec.md#requirement-the-cases-list-opens-sorted-by-deadline
  */
 
 import fs from 'fs'

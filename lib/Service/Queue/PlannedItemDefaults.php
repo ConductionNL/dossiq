@@ -21,7 +21,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ class PlannedItemDefaults {
 	 *
 	 * @return array{startsAt: string} The defaults.
 	 *
-	 * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function startsAt(?DateTimeImmutable $now = null): array {
 		$today = ($now ?? new DateTimeImmutable())->setTime(hour: self::START_HOUR, minute: 0);

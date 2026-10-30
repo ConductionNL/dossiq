@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/procesanalyse-csv/specs/procesanalyse-csv/spec.md
+ * @spec openspec/specs/procesanalyse-csv/spec.md
  */
 
 declare(strict_types=1);

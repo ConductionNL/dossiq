@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
+ * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
  * A case or status that no longer exists is left out of the line: the row
  * itself stays. A store that fails to answer is an error, not an empty line.
  *
- * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
+ * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
  */
 class EndOfDayRowMeta {
 	use SearchesObjects;
@@ -70,7 +70,7 @@ class EndOfDayRowMeta {
 	 *
 	 * @return array{task: bool, number: string, status: string, caseTitle: string}
 	 *
-	 * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
+	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
 	 */
 	public function factsOf(array $item): array {
 		$task = (($item['subjectType'] ?? '') === 'task');
@@ -102,7 +102,7 @@ class EndOfDayRowMeta {
 	 *
 	 * @return string The line, '' when nothing could be read.
 	 *
-	 * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
+	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
 	 */
 	public function openLine(array $facts): string {
 		if ($facts['number'] === '') {
@@ -125,7 +125,7 @@ class EndOfDayRowMeta {
 	 *
 	 * @return string The line.
 	 *
-	 * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
+	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
 	 */
 	public function recordedLine(array $facts, string $time): string {
 		$case = $facts['number'];

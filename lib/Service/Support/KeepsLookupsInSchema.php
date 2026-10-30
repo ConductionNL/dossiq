@@ -27,7 +27,7 @@ namespace OCA\Dossiq\Service\Support;
  * not say, or says it as an id where the configuration holds a slug (or the
  * other way round), is kept.
  *
- * @spec openspec/changes/document-lookups-stay-in-their-schema/specs/document-projection/spec.md
+ * @spec openspec/specs/document-projection/spec.md
  */
 trait KeepsLookupsInSchema {
 	/**
@@ -38,7 +38,7 @@ trait KeepsLookupsInSchema {
 	 *
 	 * @return bool False when the row names another schema.
 	 *
-	 * @spec openspec/changes/document-lookups-stay-in-their-schema/specs/document-projection/spec.md
+	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	private function rowInSchema(array $row, string $schema): bool {
 		$found = ((array)($row['@self'] ?? []))['schema'] ?? null;

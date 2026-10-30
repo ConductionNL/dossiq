@@ -20,7 +20,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
  */
 
 declare(strict_types=1);

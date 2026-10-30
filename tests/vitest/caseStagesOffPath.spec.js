@@ -5,7 +5,7 @@
  * The case's stages strip leaves a side status (offPath) off unless the case
  * is in it, as boards DqZaak and DqSociaalDomein draw the main path only.
  *
- * @spec openspec/changes/stages-off-path/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
+ * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
  */
 
 import fs from 'fs'

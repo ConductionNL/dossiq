@@ -36,7 +36,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ use Throwable;
 /**
  * Reads the curated example data fragments and fills in their load-time tokens.
  *
- * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 class ExampleDataFragments {
 
@@ -93,7 +93,7 @@ class ExampleDataFragments {
 	 *
 	 * @return array<int, string> The slugs.
 	 *
-	 * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function slugs(): array {
 		return array_values(
@@ -109,7 +109,7 @@ class ExampleDataFragments {
 	 *
 	 * @return array<int, array<string, mixed>> The objects, in file name order.
 	 *
-	 * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function rawObjects(): array {
 		$files = glob($this->appManager->getAppPath(Application::APP_ID) . self::DIRECTORY . '/*.json');
@@ -141,7 +141,7 @@ class ExampleDataFragments {
 	 *
 	 * @return array<int, array<string, mixed>> The objects.
 	 *
-	 * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function objects(array $skipSlugs = []): array {
 		$who = ['@me' => '', '@myGroup' => ''];

@@ -53,7 +53,7 @@ use Throwable;
  * never a pass: the move it guards is the one that says the work is done.
  *
  * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/status-transition-engine/spec.md
- * @spec openspec/changes/the-redaction-stage-waits-for-every-redacted-copy/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 	/**
@@ -172,7 +172,7 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return GuardResult
 	 *
-	 * @spec openspec/changes/the-redaction-stage-waits-for-every-redacted-copy/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
+	 * @spec openspec/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
 	 */
 	private function redacted(string $caseId): GuardResult {
 		try {

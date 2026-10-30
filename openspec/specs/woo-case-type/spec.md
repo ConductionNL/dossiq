@@ -84,9 +84,11 @@ The WOO zaaktype MUST define eight ordered stages reflecting the statutory WOO p
 - **AND** the notification MUST be recorded in the case timeline
 
 ### Requirement: WOO-specific intake form
-The system MUST provide intake fields specific to WOO requests as property definitions on the zaaktype.
+The system MUST provide intake fields specific to WOO requests as property definitions on the zaaktype. The ontvangstdatum is not one the case worker fills: dossiq answers it when the case is created (REQ-TERM-042).
 
 #### Scenario: Required intake fields
+@e2e exclude The hidden Ontvangstdatum is asserted in tests/vitest/wooReceiptDateOffCreateForm.spec.js; the seeded definitions are data, not a create run.
+
 - **GIVEN** a new WOO Verzoek case being created via `CaseCreateDialog.vue`
 - **WHEN** the case worker fills in the intake form
 - **THEN** the form MUST include these property definitions:
@@ -96,8 +98,9 @@ The system MUST provide intake fields specific to WOO requests as property defin
   - **Onderwerp** (text, required -- topic of the request)
   - **Periode van** / **Periode tot** (date range the request covers)
   - **Bestuurlijke aangelegenheid** (text -- administrative matter)
-  - **Ontvangstdatum** (date, required -- receipt date for deadline calculation)
   - **Gewenste vorm** (enum: papier/digitaal/inzage, default: digitaal)
+- **AND** **Ontvangstdatum** (date) MUST NOT be required: dossiq answers it on creation from the receipt, and keeps an answer an integration supplied
+- **AND** the create form MUST NOT ask for the **Ontvangstdatum** (`hideOnCreate`, REQ-PDM-16)
 
 #### Scenario: Intake form validation
 - **GIVEN** a case worker submitting the WOO intake form
@@ -112,7 +115,7 @@ The system MUST provide intake fields specific to WOO requests as property defin
 - **AND** if the verzoeker matches an existing contact in OpenRegister, the system MUST suggest linking to the existing record
 
 #### Scenario: Intake auto-generates ontvangstbevestiging task
-- **GIVEN** a WOO case is created with ontvangstdatum filled
+- **GIVEN** a WOO case is created
 - **WHEN** the case enters the "Ontvangst" stage
 - **THEN** a task MUST be auto-created: "Verstuur ontvangstbevestiging" with a 2-day deadline
 - **AND** the task MUST reference the verzoeker's contact details
@@ -423,3 +426,22 @@ backend filinq names in its detection report, and MUST treat filinq's
 - **GIVEN** filinq anonymised a document with the presidio detector
 - **WHEN** the outcome is reported
 - **THEN** its detection backend MUST be `presidio`
+
+### Requirement: The Woo case screens follow the case they show (REQ-WCT-SCR-01)
+
+The Woo request's screens MUST say where the case is in words and dates the reader reads. The delivered-sets list MUST show its dates in the reader's locale and its states as words. A status after the decision MUST NOT carry the role of the handling steps, so the what-now card does not send the case back to handling. The Dutch catalogue MUST mark an optional field with one wording, the library's "(niet verplicht)".
+
+#### Scenario: The delivered sets read as dates and words
+@e2e exclude {asserted in tests/vitest/manifestWooDeliveredSets.spec.js on the shipped manifest and catalogue}
+
+- **GIVEN** a published Woo request with one delivered set
+- **WHEN** a Dutch reader opens the Aangeleverde sets section
+- **THEN** the delivery date MUST be a date in their locale, not an ISO timestamp
+- **AND** the state MUST read "Aangeleverd en vastgelegd", not `frozen`
+
+#### Scenario: At Publicatie the card does not ask for handling
+@e2e exclude {asserted in tests/Unit/Settings/WooStatusRolesTest.php on the shipped fragment}
+
+- **GIVEN** a Woo request whose decision is recorded, at the status Publicatie
+- **WHEN** the handler opens the case
+- **THEN** the what-now card MUST NOT read "Wat nu? Behandelen" or "Daarna: het besluit"

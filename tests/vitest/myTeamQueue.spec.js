@@ -6,7 +6,7 @@
  * Woo en informatie"): its view filters on `@myTeam`, and dossiq answers the
  * library which group that is from GET /api/me/team.
  *
- * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
+ * @spec openspec/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -240,3 +240,48 @@ hand-off SHALL carry that scope. A share SHALL NOT be created without one.
 - **GIVEN** a case shared with a partner organisation
 - **WHEN** the case's sharing is read
 - **THEN** it SHALL name the consent, the scope and the period it runs for
+
+### Requirement: A household the reader may not see says so in their language
+
+When the household endpoint refuses a reader, the household card SHALL show
+the refusal's sentence in the reader's language, not a load error.
+
+#### Scenario: Pieter outside the sensitive group
+- GIVEN a social domain case and a reader outside `dossiq-sensitive`
+- WHEN the Overview shows "Andere zaken van dit huishouden"
+- THEN it reads "Alleen wie met de bijzondere persoonsgegevens van deze zaak werkt, ziet het huishouden."
+
+### Requirement: A household is closed to administrators outside the sensitive group
+
+The household endpoints SHALL answer only to a reader in `dossiq-sensitive` who
+may read the case. Administering the instance SHALL NOT open a household.
+
+#### Scenario: an administrator outside the group
+- GIVEN an instance administrator who is not in `dossiq-sensitive`
+- WHEN they ask for a case's household cases or look the household up
+- THEN they are refused with 403 `household-not-allowed`
+
+### Requirement: The cross-domain lookup answers from cases too (REQ-AVG-CD-010)
+
+The cross-domain existence lookup SHALL also answer from open cases (`isFinalStatus` not true)
+whose `subjectBsn` is the person and whose case type's category belongs to a domain other than the
+caller's. It SHALL read those cases as the system, return only exists, domain and contact (the
+assignee, else the assigned group, else the domain), and log the act as before. A procedure record
+that moved onto a case (`migratedTo`) SHALL answer only through its case. An unreadable case store
+SHALL refuse, not answer "nothing exists".
+
+#### Scenario: A confidential case in another domain is known, nothing more
+- **GIVEN** an open Participatiewet case about the person that the caller cannot open
+- **WHEN** a Wmo consulent looks the person up on a ground
+- **THEN** the answer SHALL say an open case exists in Participatiewet and whom to call, and nothing else
+
+### Requirement: Sensitive data on a case keeps its access (REQ-AVG-CD-011)
+
+`case.subjectBsn` and `case.sensitiveProperties` SHALL be readable and writable only by the group
+`dossiq-sensitive`. A case-type field flagged `sensitive` SHALL keep its answers in
+`sensitiveProperties`.
+
+#### Scenario: A social-domain handler outside dossiq-sensitive reads neither
+- **GIVEN** a reader in dossiq-sociaal-domein and not in dossiq-sensitive
+- **WHEN** they read a case with a subject BSN and a sensitive answer
+- **THEN** neither SHALL be in what they read, and the ordinary answers SHALL be

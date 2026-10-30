@@ -7,7 +7,7 @@
  * equal to the chip it came from: a default that drifted from its chip would
  * count one set of cases while the chip beside it counts another.
  *
- * @spec openspec/changes/saved-views-default-views/specs/case-lists/spec.md
+ * @spec openspec/specs/case-lists/spec.md
  */
 
 import fs from 'node:fs'

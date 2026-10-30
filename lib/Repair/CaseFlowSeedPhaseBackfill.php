@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/seed-status-phases-backfill/specs/seed-status-phases-backfill/spec.md#requirement-a-seeded-status-without-a-phase-gets-the-seeds-phase
+ * @spec openspec/specs/seed-status-phases-backfill/spec.md#requirement-a-seeded-status-without-a-phase-gets-the-seeds-phase
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ class CaseFlowSeedPhaseBackfill {
 	 *
 	 * @return array<string,mixed> Phase per status id, for the rows without one.
 	 *
-	 * @spec openspec/changes/seed-status-phases-backfill/specs/seed-status-phases-backfill/spec.md#requirement-a-seeded-status-without-a-phase-gets-the-seeds-phase
+	 * @spec openspec/specs/seed-status-phases-backfill/spec.md#requirement-a-seeded-status-without-a-phase-gets-the-seeds-phase
 	 */
 	public function pending(array $statusTypes, iterable $rows, string $caseTypeId): array {
 		$phases = $this->phasesByName(statusTypes: $statusTypes);

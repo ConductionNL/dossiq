@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use Throwable;
 /**
  * Reads and writes the active organisation's name and logo.
  *
- * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 class ActiveOrganisationProfile {
 
@@ -74,7 +74,7 @@ class ActiveOrganisationProfile {
 	 *
 	 * @return array{available: bool, name: string, logo: string} `available` is false when there is no active organisation to read.
 	 *
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function read(): array {
 		$unavailable = ['available' => false, 'name' => '', 'logo' => ''];
@@ -105,7 +105,7 @@ class ActiveOrganisationProfile {
 	 *
 	 * @return bool True when settled.
 	 *
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function isSettled(): bool {
 		$profile = $this->read();
@@ -126,7 +126,7 @@ class ActiveOrganisationProfile {
 	 *
 	 * @return bool True when there was nothing to write or the write succeeded.
 	 *
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function write(array $fields): bool {
 		$name = trim((string)($fields[self::NAME_FIELD] ?? ''));

@@ -11404,7 +11404,8 @@
 		},
 		"avg-processing-surface": {
 			"board": [
-				"DqPrivacy"
+				"DqZaken",
+				"DqZaak"
 			]
 		},
 		"bag-location-save-validation": {
@@ -11420,7 +11421,7 @@
 		},
 		"beroep-escalation": {
 			"board": [
-				"DqBezwaar",
+				"DqZaak",
 				"DqZaaktypen"
 			]
 		},
@@ -11430,12 +11431,13 @@
 		},
 		"bezwaar-advisory-committee": {
 			"board": [
-				"DqBezwaar"
+				"DqZaak"
 			]
 		},
 		"bezwaar-rest-api": {
 			"board": [
-				"DqBezwaar"
+				"DqZaken",
+				"DqZaak"
 			]
 		},
 		"brk-woz-register-adapters": {
@@ -12478,7 +12480,12 @@
 						"DqDashboard",
 						"DqMijnWerk"
 					]
-				}
+				},
+				"spec": "openspec/specs/dashboard",
+				"requirement": [
+					"openspec/specs/dashboard :: REQ-DASH-016: The Nextcloud dashboard SHALL provide CasesOverview, MyTasks and StartCase widgets",
+					"openspec/specs/dashboard :: REQ-DASH-007: Quick Actions [MVP]"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/HomeView.vue:167,261 mounts NewCaseDialog and defines openNewCaseDialog but no template element calls it; lib/Dashboard widgets only link to existing cases. Nearest is the header Opret menu on every page (src/App.vue:194) | round 2 drive: procest/opencase/round2/pages/NextcloudDashboardWidgets.md:9 \"each row links into /apps/opencase/case/<id> or /document/<id>.\"",
@@ -13135,7 +13142,9 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakMeer"
-				}
+				},
+				"spec": "openspec/specs/case-management",
+				"requirement": "openspec/specs/case-management :: A held case cannot be deleted, and you are told why (REQ-CM-35)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 appinfo/routes.php and lib/Controller/CaseController.php have DELETE routes for documents (routes.php:163), files (:177) and grants (CaseController.php:511) but none for a case; closing and archiving are the end states | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:22 \"Close case (Reopen case and Archive when closed)\"",
@@ -13602,7 +13611,12 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "none: no page, menu entry or action reaches the complaint routes",
 				"note": "Rated no rather than the partial the reader proposed: the backend is complete and nothing a user can open reaches it, which is the rule this file applied to fourteen rows on 2026-09-25. Missing: a complaint page or case-type entry that starts and works a complaint.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/complaints-are-a-case-type",
+				"requirement": [
+					"openspec/changes/complaints-are-a-case-type/specs/complaint-management :: A complaint is a case of the shipped complaint case type (REQ-CMP-CT-01)",
+					"openspec/changes/complaints-are-a-case-type/specs/complaint-management :: Existing complaint records move onto cases once (REQ-CMP-CT-02)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -13653,7 +13667,12 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "case Contract tab (shillinq) and the contract decision raised in decidiq",
 				"note": "Partial covers suppliers and the contract hand-offs only; the tender suite itself (publication, bids, evaluation, award) is not built. Missing: tenders, bids, evaluation, award, eForms/TED, thresholds and supplier pages.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/tenders-run-on-the-tender-case-type",
+				"requirement": [
+					"openspec/specs/dossiq-procurement-tender-management :: REQ-TND-001 — Tenders SHALL be modelled as dossiq cases (`schema:Project`), not as a parallel domain object",
+					"openspec/changes/tenders-run-on-the-tender-case-type/specs/dossiq-procurement-tender-management :: A tender is worked end to end on its case page (REQ-TND-CASE-01)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -14066,7 +14085,8 @@
 						"DqZaakDialogen",
 						"DqZaak"
 					]
-				}
+				},
+				"requirement": "openspec/specs/workflow-definition-engine :: You start an allowed flow from the case (REQ-WDE-01)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/CreateSubCaseDialog.vue opened from the Opret undersag action creates a plain child case (parentCaseId); there is no process or reusable building block to start | round 2 drive: procest/opencase/round2/code-census.md:108 \"BPM: none. Document review/approval workflow only\"",
@@ -14208,7 +14228,9 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqTaak"
-				}
+				},
+				"plan": "openspec/changes/task-forms-keep-a-draft",
+				"requirement": "openspec/changes/task-forms-keep-a-draft/specs/task-management :: A task form keeps what you typed (REQ-TM-DRAFT-01)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no task forms to save part-way; workflow actions are single submits (lib/Service/WorkflowService.php:134) | round 2 drive: procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\"",
@@ -14494,7 +14516,9 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "/my-queue (consultations waiting on you), /advice/:id (AdviceDetail, read-only), Settings > consultation tab",
 				"note": "Missing: a place on the case to request advice or a consultation and to read the answers (the advice and consultations tabs the queue links to). Pending proposal 3.32 covers outside advice.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/advice-and-consultation-on-the-case",
+				"requirement": "openspec/changes/advice-and-consultation-on-the-case/specs/advice-management :: A handler asks for advice or starts a consultation from the case (REQ-ADV-CASE-01)"
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -14829,7 +14853,9 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakDocumenten"
-				}
+				},
+				"plan": "openspec/changes/case-files-list-columns",
+				"requirement": "openspec/changes/case-files-list-columns/specs/document-zaakdossier :: The case files list shows the document columns of the board (REQ-ZAK-COL-01)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/DocumentList.vue renders fixed rows with Åbn and Slet actions (lines 25,29); grep -i 'column' finds no chooser or column setting | round 2 drive: procest/opencase/round2/pages/CaseDetail-Documents.md:10 \"cards, no columns, no filters\"",
@@ -15499,7 +15525,12 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqNieuweZaak"
-				}
+				},
+				"requirement": [
+					"openspec/specs/initiator-selection :: Cross-source initiator search returns unified results",
+					"openspec/specs/brp-register :: BRP person register schema exists in OpenRegister",
+					"openspec/specs/kvk-register :: KvK company register schema exists in OpenRegister"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Service/CprCvrLookupService.php:34-36,67-69 calls Datafordeler CitizenClient and CompanyClient only when enterprise_version is on and the class exists; those client classes are absent from the public tree (lib/Service/Datafordeler holds only DTOs); not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:226 \"CPR/CVR lookup (Datafordeler) :: partial (enterprise)\" | open for the lab: With the enterprise package enabled, does Søg Borger query CPR by number and return a person not yet on any case?",
@@ -15660,7 +15691,8 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqAfdelingen"
-				}
+				},
+				"requirement": "openspec/specs/mandaat-matrix :: OrganisatieRol and Toewijzing Management"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/EmployeeController.php:65,232 org tree and employee search; src/views/OrganisationSearchView.vue:122-123 OrgTreeNode tree; EmployeeSearchView lists employees with their cases (EmployeeController.php:185); organisations synced from SF1500 | round 2 drive: procest/opencase/round2/code-census.md:229 \"Organisation tree and employee search :: yes\"",
@@ -15928,7 +15960,9 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "Settings > supplier users; supplier pages on the portaliq site",
 				"note": "Missing: the contract endpoints the supplier pages read (ContractController in supplier-portal), and with them a supplier's own contracts.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/supplier-portal-reads-its-collections",
+				"requirement": "openspec/changes/supplier-portal-reads-its-collections/specs/supplier-portal :: A supplier reads its own tenders, contracts and messages through portal collections (REQ-SUP-COL-01)"
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -16232,7 +16266,10 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakContact"
-				}
+				},
+				"plan": "openspec/changes/portal-conversation-live-pass",
+				"spec": "openspec/specs/portal-contribution",
+				"requirement": "openspec/changes/portal-conversation-live-pass/specs/portal-contribution :: A message goes round trip between the handler and the resident (REQ-PORTAL-RT-01)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js:84 only a staff citizen search, no citizen route; appinfo/routes.php:20-34 public endpoints are mTLS machine receivers and a SAML bearer case API, no citizen login or message thread | round 2 drive: procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\"",
@@ -16380,11 +16417,18 @@
 				"evidence": "lib/Service/Transitions/WebhookHandler.php; lib/Controller/NrcController.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/automatic-actions",
+				"spec": [
+					"openspec/specs/automatic-actions",
+					"openspec/specs/webhook-steps-through-integriq"
+				],
 				"screen": {
 					"board": null,
 					"reason": "backend: webhooks on case events"
-				}
+				},
+				"requirement": [
+					"openspec/specs/webhook-steps-through-integriq :: REQ-WSI-002 A declared transition webhook posts the case and the transition",
+					"openspec/specs/automatic-actions :: Automatic Action Framework"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -i 'webhook|cloudevent' over lib returns nothing; the public routes (appinfo/routes.php:20-34) are inbound only | round 2 drive: procest/_round2/compare/M1-functionality.md:161 \"| 6.11 | Event outbox or webhooks on case events | no |\"",
@@ -16478,7 +16522,8 @@
 						"DqZaakContact",
 						"DqZaakDialogen"
 					]
-				}
+				},
+				"requirement": "openspec/specs/kcc-werkplek-zaaksysteem-bridge :: Case-voorblad resolves for a burger on inbound contact"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -i 'telefon|pbx|softphone|opkald' over lib and src hits only phone number fields in party dialogs | round 2 drive: procest/_round2/compare/M1-functionality.md:163 \"| 6.13 | Telephony (KCC) panel | no |\"",
@@ -16904,7 +16949,9 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "LhsRecommendations pages, by URL only (no menu entry, read-only)",
 				"note": "Missing: the enforcement panel or wizard on a handhaving case that asks for a recommendation and records an override.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/enforcement-intervention-from-the-case",
+				"requirement": "openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs :: A handler asks the case type's decision table for advice on the case (REQ-LHS-CASE-01)"
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -17135,7 +17182,8 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: deadline e-mails"
-				}
+				},
+				"requirement": "openspec/specs/termijn-escalation :: Pro-actieve notificaties bij naderende deadlines (REQ-TERM-004)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/AccessDeadlineNotificationJob.php:22-80 would notify on FOI deadlines, but nothing schedules it (not in appinfo/info.xml, not added in lib/AppInfo/Application.php:172-245) and lib/Notification/FileShareNotifier.php:229 throws UnknownNotificationException for its access_deadline_* subjects; no e-mail path | round 2 drive: procest/opencase/round2/code-census.md:245 \"FOI statutory deadline with extension and notification job :: yes\"",
@@ -17237,7 +17285,15 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: timers in the term engine"
-				}
+				},
+				"spec": [
+					"openspec/specs/termijnbewaking-schemas",
+					"openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers"
+				],
+				"requirement": [
+					"openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers :: REQ-TOT-001 — Every active beslistermijn is an armed FlowTimer",
+					"openspec/specs/status-transition-engine :: A status may declare a maximum dwell that breaches on its own (REQ-SDC-03)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no process engine; background jobs are fixed Nextcloud TimedJobs (lib/BackgroundJob) | round 2 drive: procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\"",
@@ -17500,7 +17556,13 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "TermijnDashboard audit widget; BezwaarDetail dwangsom fields (display only)",
 				"note": "Missing: registering the notice of default from the case, and the payout signal to finance.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/notice-of-default-from-the-case",
+				"requirement": [
+					"openspec/specs/dwangsom-calculation :: Dwangsom-staffel berekening volgens AWB 4:17 (REQ-TERM-006)",
+					"openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling :: A handler registers a notice of default on the case (REQ-ING-CASE-01)",
+					"openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling :: A definitive penalty is prepared for payout from its notice (REQ-ING-CASE-02)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -17544,7 +17606,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqKop"
-				}
+				},
+				"requirement": "openspec/changes/unified-search-opens-every-hit-in-dossiq/specs/case-search-via-or-unified-search :: A hit on a record with no page opens its case"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/App.vue:36 nav entry to the search page; src/views/SearchView.vue:7,229 one box over content, titles and case numbers, dispatches the store search; lib/Controller/SearchController.php:61 GET /api/v1/search returns cases, documents and files; lib/AppInfo/Application.php:114-116 three Nextcloud unified search providers in the header | round 2 drive: procest/opencase/round2/search-anatomy.md:18 \"Query \"Lund\" grouped both cases under Cases with number and title, each linking to the case.\"",
@@ -17675,7 +17738,9 @@
 					"board": "DqZaken"
 				},
 				"evidence": "openregister view-group-share (archived 2026-09-30): View.sharedWith with ViewMapper::findAllFor(user) and owner-or-admin guards, editable in openregister's own src/modals/view/EditView.vue:284; dossiq's lists save views through nextcloud-vue CnSaveViewDialog, which offers only a public toggle (src/components/CnSaveViewDialog/CnSaveViewDialog.vue:28-31)",
-				"readOn": "2026-10-07"
+				"readOn": "2026-10-07",
+				"plan": "openspec/changes/case-views-shared-with-a-team",
+				"requirement": "openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists :: A saved case view can be shared with a team (REQ-CSL-SHARE-01)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no saved searches exist at all (see 9.3), so none can be shared | round 2 drive: procest/opencase/round2/code-census.md:253 \"Saved searches :: no\"",
@@ -17820,12 +17885,17 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": [
 					"openspec/specs/case-map-overview",
-					"openspec/specs/case-map-via-maps-leaf"
+					"openspec/specs/case-map-via-maps-leaf",
+					"openspec/specs/case-type-navigation"
 				],
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZakenKaart"
-				}
+				},
+				"requirement": [
+					"openspec/specs/case-map-overview :: REQ-OVERVIEW-01: Cases Map View",
+					"openspec/specs/case-type-navigation :: REQ-CTN-003 — Cases Index Offers A Map View"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'leaflet|openlayers|maplibre' over src returns nothing; search views render lists only | round 2 drive: procest/opencase/round2/search-anatomy.md:30 \"dossiq's Cases index (CnIndexPage) carries saved views, table, cards and map view modes\"",
@@ -17987,7 +18057,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqKop"
-				}
+				},
+				"requirement": "openspec/changes/unified-search-opens-every-hit-in-dossiq/specs/case-search-via-or-unified-search :: Every dossiq schema is linked or kept out"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/AppInfo/Application.php:114-116 registers OpenCaseCasesSearchProvider, OpenCaseDocumentsSearchProvider and OpenCaseFilesSearchProvider; lib/Search/OpenCaseCasesSearchProvider.php:43-74 returns cases linking to case/{id} | round 2 drive: procest/opencase/round2/pages/NextcloudUnifiedSearch.md:5 \"Three OpenCase providers in unified search: Cases, Documents, Files.\"",
@@ -18177,7 +18248,11 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqProcesanalyse"
-				}
+				},
+				"requirement": [
+					"openspec/changes/archive/2026-07-14-process-mining-bottlenecks/specs/process-mining-bottlenecks :: Per-status dwell-time statistics",
+					"openspec/changes/archive/2026-07-14-process-mining-bottlenecks/specs/process-mining-bottlenecks :: Bottleneck ranking"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'heatmap|lead.?time|throughput' over src and lib returns nothing; no report or chart view in src/router/index.js | round 2 drive: procest/opencase/round2/code-census.md:258 \"Report pages or charts :: no\"",
@@ -18245,7 +18320,12 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: reporting and metrics API"
-				}
+				},
+				"requirement": [
+					"openspec/specs/prometheus-metrics :: REQ-PROM-001: Metrics Endpoint",
+					"openspec/specs/dashboard :: REQ-DASH-017: DashboardController SHALL expose the in-app dashboard data endpoints",
+					"openspec/changes/archive/2026-07-14-process-mining-bottlenecks/specs/process-mining-bottlenecks :: Report endpoint authorization"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 appinfo/routes.php:142 GET /api/v1/cases/stats; lib/Controller/CaseController.php:411 counts cases per organisation and year; src/store/index.js:39-40 the SPA reads it to build the organisation list; no other reporting endpoint | round 2 drive: procest/opencase/round2/code-census.md:122 \"Statistics endpoint `GET /api/v1/cases/statistics` (`API.md:56`).\"",
@@ -18447,7 +18527,9 @@
 						"DqZaak",
 						"DqDagAfsluiten"
 					]
-				}
+				},
+				"spec": "openspec/specs/case-hours-via-humaniq-leaf",
+				"requirement": "openspec/specs/case-hours-via-humaniq-leaf :: REQ-HRS-001, the hours surface on a case is a leaf placement"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 the same grep over src/openzaak finds nothing; no time model in the ZGW Zaken API",
@@ -18483,7 +18565,12 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "taakveld picker on the case (Iv3TaakveldList)",
 				"note": "Missing: the quarterly aggregation (Iv3ReportService) and a page or export that reports costs per taakveld.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/case-costs-reported-per-iv3-taakveld",
+				"requirement": [
+					"openspec/specs/iv3-taakveld-2023-refinement :: Iv3ReportService quarterly aggregation SHALL bucket cases by aggregation key, so old- and new-code-classified cases land in the same bucket",
+					"openspec/changes/case-costs-reported-per-iv3-taakveld/specs/iv3-taakveld-2023-refinement :: The reports page shows case costs per Iv3 taakveld per quarter (REQ-IV3-REPORT-01)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -18636,7 +18723,8 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: the form builder is buildiq's"
-				}
+				},
+				"requirement": "buildiq:openspec/changes/registration-form-builder/specs/registration-form-builder :: The form builder groups questions per phase with rules and steps (REQ-OBRF-002)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js has no form route; src/views and src/components hold no form designer; the only field lists are hard coded dialogs such as src/components/NewCaseDialog.vue | round 2 drive: procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
@@ -18755,7 +18843,8 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: case page layout is configured in buildiq"
-				}
+				},
+				"requirement": "buildiq:openspec/changes/case-page-layout-per-case-type/specs/page-layout-per-type :: A widget tab holds a grid, each widget with a width and an order (REQ-OBPL-005)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue tab bodies are fixed components (CaseInfoPanel.vue, DocumentList.vue, CaseParticipantList.vue); no widget model in lib/Db | round 2 drive: procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\"",
@@ -18871,7 +18960,9 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqZaaktypeVelden"
-				}
+				},
+				"spec": "openspec/specs/property-definition-management",
+				"requirement": "openspec/specs/property-definition-management :: A property takes its options from a concept scheme (REQ-PDM-03)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/App.vue:166 Konfiguration for Administrator; src/views/ConfigurationView.vue:216,228-235 Værdilister tab with seven lists (case status, case type, contact roles, document categories, document status, insight level, party roles) opened in CodeListDialog; lib/Controller/CodeListController.php:47,66,105 list, create, update | round 2 drive: procest/opencase/round2/code-census.md:262 \"Code lists editable by admin :: yes\"",
@@ -19167,7 +19258,11 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: checks on publish"
-				}
+				},
+				"requirement": [
+					"openspec/specs/case-type-publish-validation :: Backend MUST enforce publish prerequisites",
+					"openspec/specs/case-type-publish-validation :: Publishing MUST refuse a status nothing leads to"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:7,10,14 Prerequisites section checks required Nextcloud apps (group folders, full text search) and shows an error box; nothing checks case types or code lists for gaps | round 2 drive: procest/opencase/round2/pages/AdminSettings.md:6 \"Prerequisites (Group folders, Full text search x3)\"",
@@ -19529,7 +19624,12 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "Settings > Checklists; VTH case types available after install",
 				"note": "Missing: the VTH admin page (workflows, leges, beschikking templates, DSO), placing the VTH panels on the case, and callers for the VTH template and DSO intake.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/vth-cases-run-end-to-end",
+				"requirement": [
+					"openspec/changes/vth-cases-run-end-to-end/specs/vth-admin-settings :: A package shows its configuration on its own admin tab (REQ-VAS-PKG-01)",
+					"openspec/changes/vth-cases-run-end-to-end/specs/vth-admin-settings :: A case that came in through DSO can be forwarded or shared from the case (REQ-VAS-DSO-01)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -19712,7 +19812,12 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: StUF gateway"
-				}
+				},
+				"requirement": [
+					"openspec/specs/stuf-integration :: REQ-002: StUF-ZKN case handlers (zakLk01, zakLv01, edcLk01)",
+					"openspec/specs/stuf-integration :: REQ-003: StUF-BG person query handler (npsLv01)",
+					"openspec/specs/stuf-zkn-outbound :: Outbound orchestration"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ri stuf over lib and src returns nothing | round 2 drive: procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\"",
@@ -19750,7 +19855,8 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: DSO intake; the cases arrive in the case list"
-				}
+				},
+				"requirement": "openspec/specs/dso-omgevingsloket :: REQ-DSO-014 -- Integration with Dossiq for zaakafhandeling"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'omgevingswet|dso' over lib and src returns nothing (Danish product) | round 2 drive: procest/opencase/round2/code-census.md:274 \"ZGW APIs, StUF, DSO :: no\"",
@@ -19970,7 +20076,12 @@
 					"board": null,
 					"reason": "backend: document generation vendor adapter"
 				},
-				"readOn": "2026-10-07"
+				"readOn": "2026-10-07",
+				"plan": "openspec/changes/decision-templates-render-through-a-vendor",
+				"requirement": [
+					"openspec/specs/beschikking-generatie :: The template seam SHALL say whether a real renderer is behind it",
+					"openspec/changes/decision-templates-render-through-a-vendor/specs/beschikking-generatie :: A decision template may render through a document vendor (REQ-BG-VENDOR-01)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/TemplateMergeService.php merges DOCX, XLSX and ODT templates locally; no SmartDocuments or Xential client | round 2 drive: procest/opencase/round2/code-census.md:110 \"Document generation: DOCX/XLSX/ODT template merge (`lib/Service/TemplateMergeService.php`\"",
@@ -20192,7 +20303,12 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: connector framework"
-				}
+				},
+				"spec": "openspec/specs/admin-settings",
+				"requirement": [
+					"openspec/specs/admin-settings :: An Integrations page under the gear (REQ-ADMIN-018)",
+					"openspec/specs/admin-settings :: The Integrations page lists dossiq's rows from integriq's registry (REQ-ADMIN-025)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no plugin or connector registry in lib; each integration is a fixed service class | round 2 drive: procest/opencase/round2/code-census.md:90 \"OpenCase has no plugin system of its own.\"",
@@ -20256,11 +20372,18 @@
 				"evidence": "lib/Middleware/ZgwAuthMiddleware.php; lib/Service/ZgwJwtValidator.php; lib/Controller/AcController.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/zgw-autorisaties-api",
+				"spec": [
+					"openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access",
+					"openspec/specs/zgw-autorisaties-api"
+				],
 				"screen": {
 					"board": null,
 					"reason": "backend: ZGW authorisations"
-				}
+				},
+				"requirement": [
+					"openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access :: The caller may present a JWT, an API key or a client certificate (REQ-PAA-02)",
+					"openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access :: An administrator issues and revokes access in OpenRegister (REQ-PAA-04)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 appinfo/routes.php:32-41 /public/v1/api case, document and journal note endpoints; lib/Middleware/PublicDataApiMiddleware.php:23-34 bearer SAML assertion checked against registered API client certificates; lib/Controller/PublicApi | round 2 drive: procest/opencase/round2/code-census.md:273 \"mTLS and bearer API clients :: yes\"",
@@ -20572,11 +20695,18 @@
 				"evidence": "register.d/62-handler-vervanging.json#substitution.endDate",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/handler-vervanging-waarneming",
+				"spec": [
+					"openspec/specs/case-management",
+					"openspec/specs/handler-vervanging-waarneming"
+				],
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakBetrokkenen"
-				}
+				},
+				"requirement": [
+					"openspec/specs/case-management :: A case type may say when a right it grants ends (REQ-CGP-08)",
+					"openspec/specs/case-management :: A grant that ends, or that reaches one area, says so (REQ-CGP-07)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/GrantAccessDialog.vue:35,41 Tidsbegraenset adgang with an expiry date; lib/Service/PermissionService.php:154,183 expired grants give no read or write; src/components/CaseAccessPanel.vue:97,103 Udloebet or Permanent shown per grant | round 2 drive: procest/opencase/round2/code-census.md:280 \"Direct time-limited case grants :: yes\"",
@@ -21108,7 +21238,9 @@
 						"DqZaakBetrokkenen",
 						"DqZaak"
 					]
-				}
+				},
+				"spec": "openspec/specs/case-management",
+				"requirement": "openspec/specs/case-management :: You follow a case you do not own (REQ-CM-40)"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 Rol (src/openzaak/components/zaken/models/zaken.py) records betrokkenen; notifications go to subscribed API clients, not to watching people",
@@ -21149,7 +21281,13 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "needs assessment, MDO, re-integration and data breach register pages; family-plan widget",
 				"note": "Missing: the consent and classification UI, wijkteam-only access, seeded Wmo, Jeugdwet and Participatiewet case types, and the anonymised export.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/social-domain-consent-and-safeguards",
+				"requirement": [
+					"openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent :: Consent is recorded and revoked on the case (REQ-SDC-CONSENT-01)",
+					"openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent :: A case type can require a special-category classification and keep cases to its team (REQ-SDC-SAFE-01)",
+					"openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent :: A case list can be exported anonymised (REQ-SDC-ANON-01)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -21190,7 +21328,13 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "none: no page or caller reaches the subsidy routes",
 				"note": "Rated no rather than the partial the reader proposed: nothing a user opens reaches the subsidy backend (same rule as the 2026-09-25 rows). subsidie-settlement-case-costs contradicts ADR-081 and needs a decision before it is built.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/grant-cases-from-application-to-settlement",
+				"requirement": [
+					"openspec/specs/subsidieverlening-keten :: REQ-SUB-001 Multi-year beschikking with voorschot-schema",
+					"openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten :: A handler runs a grant from its case page (REQ-SUB-CASE-01)",
+					"openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten :: Advances are a payment schedule raised with finance when due (REQ-SUB-CASE-02)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -21279,7 +21423,13 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "Settings > Tenants (CRUD, lifecycle, onboarding tab)",
 				"note": "Missing: wiring provision and usage, enforcing quotas, and a billing view.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/tenant-quotas-enforced-and-billing-shown",
+				"requirement": [
+					"openspec/specs/tenant-crud-lifecycle :: Tenant lifecycle state machine (REQ-001-A-LIFECYCLE)",
+					"openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas :: A tenant past its hard quota cannot create more (REQ-TQ-ENF-01)",
+					"openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas :: An administrator sees and runs a tenant's monthly billing (REQ-TQ-BILL-01)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",

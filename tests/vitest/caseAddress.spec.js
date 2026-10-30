@@ -6,7 +6,7 @@
  * DqZakenKaart: the map list's line under a title is the case's address and
  * number, and its pills name the case type and the status.
  *
- * @spec openspec/changes/zakenkaart-map-list/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
+ * @spec openspec/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
  */
 
 import fs from 'fs'

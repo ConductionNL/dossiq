@@ -474,7 +474,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<int, array{case: string, statusType: string, createdAt: string, actor: string}>
 	 *
-	 * @spec openspec/changes/dwell-from-status-history-actor/specs/dwell-from-status-history-actor/spec.md#requirement-time-read-from-the-status-history-has-a-holder
+	 * @spec openspec/specs/dwell-from-status-history-actor/spec.md#requirement-time-read-from-the-status-history-has-a-holder
 	 */
 	private function recordsFromHistory(string $caseId, array $case): array {
 		$history = ($case['statusHistory'] ?? []);

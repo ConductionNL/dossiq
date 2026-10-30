@@ -388,7 +388,7 @@ class WooPublicationService {
 	 *
 	 * @return list<string> Their names.
 	 *
-	 * @spec openspec/changes/the-woo-publication-carries-its-documents/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	private function unreadable(array $documents): array {
 		$names = [];

@@ -6,7 +6,7 @@
  * (DqUwWachtrij; Ruben, 23 Oct): the dialog reads the defaults endpoint as its
  * record, draws no summary row for it, and starts the field from it.
  *
- * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 import fs from 'fs'

@@ -6,7 +6,7 @@
  * title and its field labels in the board's words, the fields the board
  * leaves out behind the card's Geavanceerd disclosure rather than gone.
  *
- * @spec openspec/changes/system-settings-read-as-the-board/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 import fs from 'fs'

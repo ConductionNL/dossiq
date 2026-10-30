@@ -17,7 +17,7 @@
  *
  * @link https://www.conduction.nl
  *
- * @spec openspec/changes/generate-fills-per-template/specs/generate-fills-per-template/spec.md
+ * @spec openspec/specs/generate-fills-per-template/spec.md
  */
 
 declare(strict_types=1);

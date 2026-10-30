@@ -117,7 +117,7 @@ class ProcessMiningController extends Controller {
 	 *                                          invalid parameters.
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
-	 * @spec openspec/changes/procesanalyse-csv/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
+	 * @spec openspec/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
 	 */
 	#[NoAdminRequired]
 	public function report(): JSONResponse|DataDownloadResponse {
@@ -188,7 +188,7 @@ class ProcessMiningController extends Controller {
 	 *
 	 * @return array{0: mixed, 1: mixed} The format and the statistic.
 	 *
-	 * @spec openspec/changes/procesanalyse-csv/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
+	 * @spec openspec/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
 	 */
 	private function requestedDownload(): array {
 		return [
@@ -205,7 +205,7 @@ class ProcessMiningController extends Controller {
 	 *
 	 * @return array<string, mixed> The matrix, empty when the report has none.
 	 *
-	 * @spec openspec/changes/procesanalyse-csv/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
+	 * @spec openspec/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
 	 */
 	private function phaseDays(array $report, string $statistic): array {
 		return (array)($report['phaseDays'][$statistic] ?? []);
@@ -219,7 +219,7 @@ class ProcessMiningController extends Controller {
 	 *
 	 * @return JSONResponse|null A 400 response, or null when both are valid.
 	 *
-	 * @spec openspec/changes/procesanalyse-csv/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
+	 * @spec openspec/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
 	 */
 	private function validateDownload(mixed $format, mixed $statistic): ?JSONResponse {
 		if (in_array($format, ['json', 'csv'], true) === false) {
@@ -242,7 +242,7 @@ class ProcessMiningController extends Controller {
 	 *
 	 * @return DataDownloadResponse The CSV, with a byte order mark so a spreadsheet reads it as UTF-8.
 	 *
-	 * @spec openspec/changes/procesanalyse-csv/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
+	 * @spec openspec/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
 	 */
 	private function csv(array $matrix): DataDownloadResponse {
 		$none = $this->l10n->t('none');

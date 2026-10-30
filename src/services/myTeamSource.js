@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
+ * @spec openspec/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
  */
 
 import axios from '@nextcloud/axios'
@@ -22,7 +22,7 @@ import { generateUrl } from '@nextcloud/router'
  * @return {Promise<string|string[]|null>} The team's Nextcloud group id, the ids of several, or null for
  *   no team or a team the server could not read (503; the server logs why).
  *
- * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
+ * @spec openspec/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
  */
 export async function fetchMyTeam() {
 	let data
@@ -44,7 +44,7 @@ export async function fetchMyTeam() {
  *
  * @return {Promise<string|null>} The team's name (or names), or null for no team or an unreadable team.
  *
- * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
+ * @spec openspec/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
  */
 export async function fetchMyTeamName() {
 	let data
@@ -66,7 +66,7 @@ export async function fetchMyTeamName() {
  * @param {Function|undefined} register The library's `registerMyTeamNameSource`.
  * @return {boolean} Whether it was registered.
  *
- * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
+ * @spec openspec/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
  */
 export function installMyTeamNameSource(register) {
 	if (typeof register !== 'function') {
@@ -82,7 +82,7 @@ export function installMyTeamNameSource(register) {
  * @param {Function|undefined} register The library's `registerMyTeamSource`.
  * @return {boolean} Whether it was registered.
  *
- * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
+ * @spec openspec/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
  */
 export function installMyTeamSource(register) {
 	if (typeof register !== 'function') {

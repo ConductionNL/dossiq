@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
  */
 
 declare(strict_types=1);

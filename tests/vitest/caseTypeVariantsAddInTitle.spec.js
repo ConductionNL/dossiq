@@ -5,7 +5,7 @@
  * DqZaaktype Varianten: "Variant toevoegen" sits in the card's title row,
  * and the name and description fields open above the variants.
  *
- * @spec openspec/changes/case-type-variants-add-in-title/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import fs from 'fs'

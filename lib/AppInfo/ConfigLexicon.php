@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/search-placeholder-default/specs/workplace/spec.md
+ * @spec openspec/specs/workplace/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCP\Config\ValueType;
  * pages (board DqKop), an English source string the theme (thematiq)
  * translates through dossiq's catalogue. An administrator can still set it.
  *
- * @spec openspec/changes/search-placeholder-default/specs/workplace/spec.md#requirement-dossiq-words-the-search-field
+ * @spec openspec/specs/workplace/spec.md#requirement-dossiq-words-the-search-field
  */
 class ConfigLexicon implements ILexicon {
 
@@ -56,7 +56,7 @@ class ConfigLexicon implements ILexicon {
 	 *
 	 * @return Strictness The strictness.
 	 *
-	 * @spec openspec/changes/search-placeholder-default/specs/workplace/spec.md#requirement-dossiq-words-the-search-field
+	 * @spec openspec/specs/workplace/spec.md#requirement-dossiq-words-the-search-field
 	 */
 	public function getStrictness(): Strictness {
 		return Strictness::IGNORE;
@@ -67,7 +67,7 @@ class ConfigLexicon implements ILexicon {
 	 *
 	 * @return Entry[] The entries.
 	 *
-	 * @spec openspec/changes/search-placeholder-default/specs/workplace/spec.md#requirement-dossiq-words-the-search-field
+	 * @spec openspec/specs/workplace/spec.md#requirement-dossiq-words-the-search-field
 	 */
 	public function getAppConfigs(): array {
 		return [
@@ -85,7 +85,7 @@ class ConfigLexicon implements ILexicon {
 	 *
 	 * @return Entry[] None.
 	 *
-	 * @spec openspec/changes/search-placeholder-default/specs/workplace/spec.md#requirement-dossiq-words-the-search-field
+	 * @spec openspec/specs/workplace/spec.md#requirement-dossiq-words-the-search-field
 	 */
 	public function getUserConfigs(): array {
 		return [];

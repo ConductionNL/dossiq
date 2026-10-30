@@ -35,7 +35,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Controller\DocumentCopyController
  *
- * @spec openspec/changes/documents-copy-to-case/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
+ * @spec openspec/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
  */
 final class DocumentCopyControllerTest extends TestCase {
 

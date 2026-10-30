@@ -5,7 +5,7 @@
  * DqZaaktypeVelden "Wie wat ziet en invult, per rol en status": the field
  * rights as a matrix of fields by status, over the stored rules.
  *
- * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import fs from 'fs'

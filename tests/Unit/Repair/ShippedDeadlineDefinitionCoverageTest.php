@@ -364,7 +364,7 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function testEachDecidedCaseTypeCarriesItsDecidedTerm(): void {
 		$caseTypes = $this->shippedCaseTypes();
@@ -393,7 +393,7 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function testEveryShippedCitationNamesAnArticleAndAnOfficialSource(): void {
 		$definitions = $this->shippedDefinitions();
@@ -424,7 +424,7 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function testTheOpenQuestionsAreStillOpen(): void {
 		$caseTypes = $this->shippedCaseTypes();

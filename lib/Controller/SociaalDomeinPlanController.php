@@ -424,7 +424,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The refusal.
 	 *
-	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
 	 */
 	private function denied(int $status): JSONResponse {
 		$message = match ($status) {

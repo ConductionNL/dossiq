@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md
+ * @spec openspec/specs/document-writes-need-every-case/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -37,7 +37,7 @@ use RuntimeException;
 /**
  * Reads the ids of the cases a document belongs to, whoever asks.
  *
- * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md
+ * @spec openspec/specs/document-writes-need-every-case/spec.md
  */
 class DocumentCaseIds {
 	use SearchesObjects;
@@ -63,7 +63,7 @@ class DocumentCaseIds {
 	 *
 	 * @return list<string> The case ids.
 	 *
-	 * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md#requirement-a-document-write-needs-the-change-right-on-every-case-of-the-document
+	 * @spec openspec/specs/document-writes-need-every-case/spec.md#requirement-a-document-write-needs-the-change-right-on-every-case-of-the-document
 	 */
 	public function caseIdsOf(string $recordId): array {
 		[$objectService, $register] = $this->requireRegister();

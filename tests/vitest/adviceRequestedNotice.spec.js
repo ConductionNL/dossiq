@@ -6,7 +6,7 @@
  * shows while an open advice request points at this case, and names the
  * first one, the soonest due.
  *
- * @spec openspec/changes/advice-requested-notice/specs/advice-requested-notice/spec.md#requirement-a-case-shows-that-advice-is-still-asked
+ * @spec openspec/specs/advice-requested-notice/spec.md#requirement-a-case-shows-that-advice-is-still-asked
  */
 
 import fs from 'fs'

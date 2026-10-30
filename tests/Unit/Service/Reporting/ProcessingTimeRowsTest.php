@@ -111,7 +111,7 @@ class ProcessingTimeRowsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/at-risk-reads-the-running-term/specs/at-risk-reads-the-running-term/spec.md#requirement-at-risk-reads-the-cases-running-term
+	 * @spec openspec/specs/at-risk-reads-the-running-term/spec.md#requirement-at-risk-reads-the-cases-running-term
 	 */
 	public function testAtRiskReadsTheCasesRunningTerm(): void {
 		$types = ['woo' => $this->type(id: 'woo', target: 56)];

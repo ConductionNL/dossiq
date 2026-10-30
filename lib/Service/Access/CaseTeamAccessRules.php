@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ namespace OCA\Dossiq\Service\Access;
 /**
  * Builds the case schema's authorization block from the shipped block and the case types.
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 class CaseTeamAccessRules {
 
@@ -77,7 +77,7 @@ class CaseTeamAccessRules {
 	 *
 	 * @return array<string, mixed> The block.
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function block(array $shipped, array $caseTypes): array {
 		$entries = $this->teamEntries(caseTypes: $caseTypes);
@@ -105,7 +105,7 @@ class CaseTeamAccessRules {
 	 *
 	 * @return array<int, array<string, mixed>> The entries, sorted by group.
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function teamEntries(array $caseTypes): array {
 		$byTeam = [];

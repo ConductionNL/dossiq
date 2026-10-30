@@ -428,7 +428,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seed-status-phases-backfill/specs/seed-status-phases-backfill/spec.md#requirement-a-seeded-status-without-a-phase-gets-the-seeds-phase
+	 * @spec openspec/specs/seed-status-phases-backfill/spec.md#requirement-a-seeded-status-without-a-phase-gets-the-seeds-phase
 	 */
 	private function backfillPhases(object $objectService, array $schemas, string $caseTypeId, array $statusTypes): void {
 		$pending = $this->phaseBackfill->pending(

@@ -77,7 +77,7 @@ class StarterStore {
 	 *
 	 * @return self The store as the system.
 	 *
-	 * @spec openspec/changes/package-refresh-as-system/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function asSystem(): self {
 		$system = clone $this;

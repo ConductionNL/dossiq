@@ -5,7 +5,7 @@
  * An organisation can be suspended, resumed and ended from its page, through
  * OpenRegister's organisation lifecycle (board DqTenant).
  *
- * @spec openspec/changes/organisation-header-actions/specs/organisation-header-actions/spec.md#requirement-an-organisation-can-be-suspended-resumed-and-ended-from-its-page
+ * @spec openspec/specs/organisation-header-actions/spec.md#requirement-an-organisation-can-be-suspended-resumed-and-ended-from-its-page
  */
 
 import fs from 'fs'
@@ -37,7 +37,7 @@ describe('organisation lifecycle actions', () => {
 })
 
 /**
- * @spec openspec/changes/organisation-edit/specs/organisation-edit/spec.md#requirement-an-organisation-is-edited-from-its-page
+ * @spec openspec/specs/organisation-edit/spec.md#requirement-an-organisation-is-edited-from-its-page
  */
 describe('organisation edit', () => {
 	it('edits the name and description through OpenRegister\'s organisation endpoint', () => {
@@ -49,7 +49,7 @@ describe('organisation edit', () => {
 })
 
 /**
- * @spec openspec/changes/organisation-history-tab/specs/organisation-history-tab/spec.md#requirement-an-organisation-shows-its-history
+ * @spec openspec/specs/organisation-history-tab/spec.md#requirement-an-organisation-shows-its-history
  */
 describe('organisation history', () => {
 	const tabs = fragment.pages.find((entry) => entry.id === 'EnvironmentOrganisationDetail').config.widgets.find((widget) => widget.id === 'organisation-panels').content.tabs

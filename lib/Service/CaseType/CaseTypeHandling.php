@@ -110,7 +110,7 @@ final class CaseTypeHandling {
 	 * }
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
-	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
 	 */
 	public function block(array $caseType): array {
 		return [
@@ -168,7 +168,7 @@ final class CaseTypeHandling {
 	 *
 	 * @return array<int, string> The group ids, possibly empty.
 	 *
-	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
 	 */
 	public function teams(array $caseType): array {
 		$teams = [];

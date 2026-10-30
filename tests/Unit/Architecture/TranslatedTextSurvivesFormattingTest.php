@@ -23,7 +23,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/translated-percent-sign/specs/translated-percent-sign/spec.md#requirement-a-text-translated-without-parameters-survives-formatting
+ * @spec openspec/specs/translated-percent-sign/spec.md#requirement-a-text-translated-without-parameters-survives-formatting
  */
 
 declare(strict_types=1);

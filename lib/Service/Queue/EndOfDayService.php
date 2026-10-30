@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md
+ * @spec openspec/specs/end-of-day-manifest/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
  * "Recorded today" is the reader's own notes of today on those items, so the
  * list is there again after a reload.
  *
- * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md
+ * @spec openspec/specs/end-of-day-manifest/spec.md
  */
 class EndOfDayService {
 
@@ -91,7 +91,7 @@ class EndOfDayService {
 	 *
 	 * @return array<string, mixed> `open`, `recorded`, `tomorrow`, `figures`, the counts and what could not be read.
 	 *
-	 * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
+	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
 	 */
 	public function dayFor(string $userId, ?DateTimeImmutable $now=null): array {
 		$now = ($now ?? new DateTimeImmutable());
@@ -221,7 +221,7 @@ class EndOfDayService {
 	 *
 	 * @return object|null The read state.
 	 *
-	 * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
+	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
 	 */
 	private function readStateOf(array $item, string $userId): ?object {
 		if ($item['subjectType'] === 'task') {

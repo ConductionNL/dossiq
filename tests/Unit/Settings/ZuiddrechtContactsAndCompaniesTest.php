@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-contacts-companies/specs/example-set-contacts-companies/spec.md#requirement-the-example-data-carries-the-contacts-and-companies-the-list-boards-draw
+ * @spec openspec/specs/example-set-contacts-companies/spec.md#requirement-the-example-data-carries-the-contacts-and-companies-the-list-boards-draw
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The persons and companies the list boards draw.
  *
- * @spec openspec/changes/example-set-contacts-companies/specs/example-set-contacts-companies/spec.md#requirement-the-example-data-carries-the-contacts-and-companies-the-list-boards-draw
+ * @spec openspec/specs/example-set-contacts-companies/spec.md#requirement-the-example-data-carries-the-contacts-and-companies-the-list-boards-draw
  */
 class ZuiddrechtContactsAndCompaniesTest extends TestCase {
 

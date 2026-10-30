@@ -8,7 +8,7 @@
  * success colour, 2.6:1 under the Zuiddrecht theme; the library's success pill
  * is the light tint with the deep ink, 5.8:1.
  *
- * @spec openspec/changes/vth-checklists-as-rows/specs/vth-checklists-as-rows/spec.md#requirement-the-vth-checklists-are-library-rows-with-a-status-pill
+ * @spec openspec/specs/vth-checklists-as-rows/spec.md#requirement-the-vth-checklists-are-library-rows-with-a-status-pill
  */
 
 import axios from '@nextcloud/axios'

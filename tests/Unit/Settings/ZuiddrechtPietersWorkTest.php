@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-pieters-work/specs/example-set-pieters-work/spec.md#requirement-the-example-data-carries-the-cases-and-tasks-the-work-boards-draw
+ * @spec openspec/specs/example-set-pieters-work/spec.md#requirement-the-example-data-carries-the-cases-and-tasks-the-work-boards-draw
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Pieter's cases and the tasks on them.
  *
- * @spec openspec/changes/example-set-pieters-work/specs/example-set-pieters-work/spec.md#requirement-the-example-data-carries-the-cases-and-tasks-the-work-boards-draw
+ * @spec openspec/specs/example-set-pieters-work/spec.md#requirement-the-example-data-carries-the-cases-and-tasks-the-work-boards-draw
  */
 class ZuiddrechtPietersWorkTest extends TestCase {
 

@@ -156,7 +156,7 @@ final class PauseReason {
 	 *
 	 * @return int|null The days, or null.
 	 *
-	 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private static function defaultDays(mixed $value): ?int {
 		if (is_int($value) === false && (is_string($value) === false || preg_match('/^\d+$/', trim($value)) !== 1)) {

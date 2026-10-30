@@ -5,7 +5,7 @@
  * Boards DqContact and DqOrganisatie rule a line under the title of Zaken,
  * Tickets and Laatste contactmomenten, above the first row.
  *
- * @spec openspec/changes/party-cards-rule-above/specs/party-pages/spec.md#requirement-a-partys-list-cards-rule-above-their-first-row
+ * @spec openspec/specs/party-pages/spec.md#requirement-a-partys-list-cards-rule-above-their-first-row
  */
 
 import fs from 'fs'

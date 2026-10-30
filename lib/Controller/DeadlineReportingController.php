@@ -272,7 +272,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/penalty-payment-rows/specs/termijn-reporting/spec.md#requirement-the-annual-audit-lists-the-forfeited-payments-by-case
+	 * @spec openspec/specs/termijn-reporting/spec.md#requirement-the-annual-audit-lists-the-forfeited-payments-by-case
 	 */
 	public function penaltyPayments(int $year = 0): JSONResponse {
 		$denied = $this->ensureMayReadReports();

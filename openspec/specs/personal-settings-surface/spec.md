@@ -17,3 +17,14 @@ their own styles outside the app page too.
 - **WHEN** the "Which notices reach me" table renders
 - **THEN** the Notifications column header shows "Notifications" with "Bundle these" and its choice on their own lines below it
 - **AND** the scope picker shows its whole label and value
+
+### Requirement: The personal settings open with the views in my menu
+
+The user settings dialog SHALL draw the library's Views in my menu section (`views`) first, before dossiq's own
+sections, where the case type picker was.
+
+#### Scenario: DqPersoonlijkeInstellingen
+
+- **GIVEN** a user opens Persoonlijke instellingen
+- **THEN** the first section is "Weergaven in mijn menu", listing their pinned views with "Uit menu halen" and a
+  "Weergave toevoegen" picker
