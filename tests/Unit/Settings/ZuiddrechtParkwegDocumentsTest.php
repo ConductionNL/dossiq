@@ -63,4 +63,27 @@ class ZuiddrechtParkwegDocumentsTest extends TestCase {
 			actual: $names
 		);
 	}//end testTheCaseHasItsFourDocuments()
+
+	/**
+	 * Board DqDocumentenBeheer: the quote is for Pieter Jansen and team Vergunningen only, with its reason.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-declared-access-exception-is-applied/specs/document-access-exception/spec.md#requirement-an-exception-written-straight-onto-a-document-is-applied-as-the-writer-applies-it
+	 */
+	public function testTheQuoteDeclaresItsAccessException(): void {
+		$set     = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$objects = array_column($set['objects'], null, 'key');
+
+		$this->assertSame(
+			expected: [
+				'users'  => ['{{cast:pieter.uid}}'],
+				'groups' => ['zuiddrecht-vergunningen'],
+				'reason' => 'Bedrijfsgevoelige prijzen',
+				'setBy'  => '{{cast:pieter.uid}}',
+				'setAt'  => '{{datetime:-10 10:12}}',
+			],
+			actual: $objects['parkweg-doc-offerte-herplant']['data']['accessException'] ?? null
+		);
+	}//end testTheQuoteDeclaresItsAccessException()
 }//end class

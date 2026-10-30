@@ -134,15 +134,38 @@ class DocumentIntegrityVerifierTest extends TestCase {
 		$register = $this->register();
 		$checked = $this->verifier(register: $register)->verifyNext(batch: 10);
 
-		self::assertSame(expected: 3, actual: $checked);
+		self::assertSame(expected: 4, actual: $checked);
 		self::assertSame(expected: 'unchanged', actual: $register->row(schema: 'informatieobject', uuid: 'd1')['integrity']['status']);
 		self::assertSame(expected: 'changed', actual: $register->row(schema: 'informatieobject', uuid: 'd2')['integrity']['status']);
 		self::assertSame(expected: 'missing', actual: $register->row(schema: 'informatieobject', uuid: 'd3')['integrity']['status']);
 		self::assertSame(expected: 'aaa', actual: $register->row(schema: 'informatieobject', uuid: 'd1')['integrity']['value']);
 		self::assertSame(expected: '2026-09-13T16:57:49', actual: $register->row(schema: 'informatieobject', uuid: 'd1')['integrity']['date']);
 		self::assertNotEmpty(actual: $register->row(schema: 'informatieobject', uuid: 'd1')['integrity']['checkedAt']);
-		self::assertArrayNotHasKey(key: 'integrity', array: $register->row(schema: 'informatieobject', uuid: 'd4'));
 	}//end testRecordsTheOutcomeAndTimeOfEachCheck()
+
+	/**
+	 * A document whose file was never hashed gets its hash on the first check; one without a file stays without.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-document-without-a-checksum-gets-one/specs/document-integrity-check/spec.md#requirement-a-document-without-a-stored-checksum-gets-one-on-its-first-check
+	 */
+	public function testADocumentWithoutAHashGetsOneOnItsFirstCheck(): void {
+		$register = $this->register();
+		$register->seed(schema: 'informatieobject', uuid: 'd5', row: ['fileId' => 13]);
+		$register->seed(schema: 'informatieobject', uuid: 'd6', row: ['title' => 'No file']);
+
+		$checked = $this->verifier(register: $register)->verifyNext(batch: 10);
+
+		$recorded = $register->row(schema: 'informatieobject', uuid: 'd4')['integrity'];
+		self::assertSame(expected: 4, actual: $checked);
+		self::assertSame(expected: 'zzz', actual: $recorded['value']);
+		self::assertSame(expected: 'now', actual: $recorded['date']);
+		self::assertSame(expected: 'unchanged', actual: $recorded['status']);
+		self::assertNotEmpty(actual: $recorded['checkedAt']);
+		self::assertArrayNotHasKey(key: 'integrity', array: $register->row(schema: 'informatieobject', uuid: 'd5'));
+		self::assertArrayNotHasKey(key: 'integrity', array: $register->row(schema: 'informatieobject', uuid: 'd6'));
+	}//end testADocumentWithoutAHashGetsOneOnItsFirstCheck()
 
 	/**
 	 * A run takes the next batch and starts over after the last one.
