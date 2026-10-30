@@ -29,3 +29,36 @@ foldout, the task SHALL say to open Advanced first.
 - **GIVEN** a menu item whose label changes
 - **WHEN** a tour task still names the old label
 - **THEN** `tests/vitest/tourMenuLabels.spec.js` fails
+
+### Requirement: The tour says only what the page shows
+
+A step of the `dossiq:getting-started` tour SHALL NOT state a count the
+instance does not hold, SHALL name a page the way the page names itself, and
+SHALL describe the list it points at as that list describes itself.
+
+#### Scenario: The case types step
+<!-- @e2e exclude Copy contract; proven by tests/vitest/tourTellsTheTruth.spec.js. -->
+- **WHEN** the tour reaches the case types step
+- **THEN** its text names no number of case types
+
+#### Scenario: The last step
+<!-- @e2e exclude Copy contract; proven by tests/vitest/tourTellsTheTruth.spec.js. -->
+- **WHEN** the tour reaches its last step
+- **THEN** title and text both say dashboard, the label of the Dashboard menu item
+
+#### Scenario: The cases step
+<!-- @e2e exclude Copy contract; proven by tests/vitest/tourTellsTheTruth.spec.js. -->
+- **GIVEN** the cases list says it shows the open cases in your teams
+- **WHEN** the tour reaches the cases step
+- **THEN** its text says open cases in your teams, and not every case, open and closed
+
+### Requirement: The getting-started tour MUST start only from the dashboard
+
+The getting-started tour SHALL auto-start only on the Dashboard route. A user whose first visit is a deep link SHALL see the page they opened, and SHALL get the tour when they first open the dashboard.
+
+#### Scenario: First visit through a link to a Woo request
+
+- **GIVEN** a staff user who never saw the tour
+- **WHEN** they open a link to a Woo request
+- **THEN** the case page shows without the welcome card
+- **AND** when they open the dashboard the tour starts at "Welcome to Dossiq"

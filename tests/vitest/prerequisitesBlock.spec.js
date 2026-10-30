@@ -178,7 +178,7 @@ describe('The Prerequisites block', () => {
 	})
 
 	it('marks the Nextcloud row present or missing, like every other row', () => {
-		// @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+		// @spec openspec/specs/admin-settings/spec.md
 		// The row had no mark at all, the one row on the page without one.
 		const inRange = row(
 			open(
@@ -213,7 +213,7 @@ describe('The Prerequisites block', () => {
 	})
 
 	it('shows the name the server gives, not the id it looked up', () => {
-		// @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+		// @spec openspec/specs/admin-settings/spec.md
 		const wrapper = open(
 			reading({
 				apps: {

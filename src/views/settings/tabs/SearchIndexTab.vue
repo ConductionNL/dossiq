@@ -107,7 +107,7 @@ export default {
 		 * When maintenance last ran, as a date and time, or that it never has.
 		 *
 		 * @return {string} The answer, in words.
-		 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		lastRun() {
 			if (this.status.lastRun === null || this.status.lastRun === '') {

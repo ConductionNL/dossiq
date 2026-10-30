@@ -6,7 +6,7 @@
  * content edge, "Wat dossiq meelevert" picks with a settings field and no
  * second intro, and a prerequisite's "Aanwezig" keeps its green.
  *
- * @spec openspec/changes/advanced-settings-board-rows/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 import fs from 'fs'

@@ -32,7 +32,7 @@ function decimal(value, locale) {
  *
  * @param {object} rule The fee schedule.
  * @return {string} The name.
- * @spec openspec/changes/fee-rules-column/specs/admin-settings/spec.md#requirement-the-fee-table-names-each-rule-and-its-calculation
+ * @spec openspec/specs/admin-settings/spec.md#requirement-the-fee-table-names-each-rule-and-its-calculation
  */
 export function feeRuleName(rule) {
 	return (rule && (rule.name || rule.typeValue)) || ''
@@ -43,7 +43,7 @@ export function feeRuleName(rule) {
  *
  * @param {object} rule The fee schedule.
  * @return {string} E.g. "Legesverordening 2026, 2.3.1".
- * @spec openspec/changes/fee-rules-column/specs/admin-settings/spec.md#requirement-the-fee-table-names-each-rule-and-its-calculation
+ * @spec openspec/specs/admin-settings/spec.md#requirement-the-fee-table-names-each-rule-and-its-calculation
  */
 export function feeRuleBasis(rule) {
 	const basis = (rule && rule.legalBasis) || {}
@@ -57,7 +57,7 @@ export function feeRuleBasis(rule) {
  * @param {(text: string, vars?: object) => string} t Translate in the app's domain.
  * @param {string} locale The reader's locale.
  * @return {string} E.g. "2,35 % of the bouwkosten, at least € 125,00".
- * @spec openspec/changes/fee-rules-column/specs/admin-settings/spec.md#requirement-the-fee-table-names-each-rule-and-its-calculation
+ * @spec openspec/specs/admin-settings/spec.md#requirement-the-fee-table-names-each-rule-and-its-calculation
  */
 export function feeRuleCalculation(rule, t, locale) {
 	if (!rule) {

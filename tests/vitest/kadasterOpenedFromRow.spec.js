@@ -8,7 +8,7 @@
  * WOZ". A row's link opens its card on the same page, and a connection
  * switched off reads Uit.
  *
- * @spec openspec/changes/kadaster-opened-from-row/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 import fs from 'fs'

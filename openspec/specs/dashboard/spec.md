@@ -933,32 +933,6 @@ to visible.
 - **WHEN** an administrator reads the configuration report
 - **THEN** it SHALL name the widget and the missing role
 
-### Requirement: The simple dashboard opens with the handler's own day (REQ-DASH-025)
-In the simple structure the dashboard MUST first show a greeting, a card for
-deadlines that end today, four counts of the handler's own cases, the deadlines
-of this week, the handler's cases per step and the handler's tasks. Every
-widget the dashboard held before MUST still be on the page. The full structure
-MUST keep the dashboard unchanged.
-
-#### Scenario: A handler with a deadline today
-@e2e exclude Needs seeded cases with today's deadline on a live instance; the widgets, their filters and the layout are asserted in simpleListAndDashboard.spec.js, and the coordinator checks the page live.
-- **GIVEN** the simple structure and a handler with an open case whose deadline is today
-- **WHEN** they open the dashboard
-- **THEN** the card "First today" MUST be shown and MUST link to those cases
-- **AND** the week strip MUST mark that case as late
-
-#### Scenario: A handler without a deadline today
-@e2e exclude Same reason; the card's condition is asserted in simpleListAndDashboard.spec.js.
-- **GIVEN** the simple structure and a handler with no case past its deadline or ending today
-- **WHEN** they open the dashboard
-- **THEN** the card "First today" MUST NOT be shown
-
-#### Scenario: Nothing the dashboard held is lost
-@e2e exclude A comparison of the built page with the manifest, asserted in simpleListAndDashboard.spec.js.
-- **GIVEN** the simple structure
-- **WHEN** the dashboard is built
-- **THEN** every widget and every layout entry it had MUST still be there
-
 ### Requirement: The simple cases list leads with five counted views and six columns (REQ-DASH-026)
 In the simple structure the cases list MUST lead with the views All, Mine, Due
 this week, Waiting on the applicant and Woo requests, each with a count, and
@@ -1175,6 +1149,35 @@ token could name the reader's groups.
 - **THEN** it SHALL show its prompt and SHALL send no request
 
 @e2e exclude Library behaviour, covered by nextcloud-vue's tests/utils/resolveFilterTokensMyGroups.spec.js.
+
+### Requirement: The Recently opened tile shows when, whatever its width (REQ-DASH-030)
+
+The Recently opened tile SHALL keep its date column visible inside the tile. It
+SHALL show the case title with the case number under it, and the date at the end
+of the row; a long title SHALL wrap rather than push the date out of the tile.
+
+#### Scenario: The date stays visible in a narrow tile
+@e2e exclude {a layout measurement; the column setup is asserted in tests/vitest/recentTileViewedAt.spec.js and measured live at 1440px}
+
+- **GIVEN** the Dashboard at 1440px wide, where the tile is about 340px
+- **WHEN** the reader has opened a case with a long title
+- **THEN** the date column SHALL be inside the tile
+- **AND** the case number SHALL show under the title
+
+### Requirement: The workflow board page config declares no half register/schema pair
+
+No custom page in the manifest or a structure profile SHALL declare only one
+of `config.register` and `config.schema`.
+
+> The WorkflowBoard custom page this was written for has retired: the workflow
+> board is the Cases list in board view, an index page that declares both. The
+> rule for every other custom page stands.
+
+#### Scenario: Opening the workflow board
+<!-- @e2e exclude Manifest shape; proven by tests/vitest/customPageTypesConfig.spec.js and live on :8099 (console without the CnPageRenderer warning). -->
+- **GIVEN** a user opens the workflow board
+- **WHEN** the page renders
+- **THEN** the console holds no `declares only one of config.register / config.schema` warning
 
 ## Non-Functional Requirements
 

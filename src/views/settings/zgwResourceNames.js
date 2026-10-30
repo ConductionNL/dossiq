@@ -8,7 +8,7 @@
  * keys are the stored keys (some are Dutch ZGW names, some English schema
  * slugs); the values are catalogue keys.
  *
- * @spec openspec/changes/zgw-mapping-readable-names/specs/admin-settings/spec.md#requirement-a-zgw-mapping-row-names-its-resource
+ * @spec openspec/specs/admin-settings/spec.md#requirement-a-zgw-mapping-row-names-its-resource
  */
 export const ZGW_RESOURCE_NAMES = Object.freeze({
 	abonnement: 'Subscription',
@@ -45,7 +45,7 @@ export const ZGW_RESOURCE_NAMES = Object.freeze({
  * @param {string} key The stored resource key.
  * @param {(app: string, text: string) => string} t The translate function.
  * @return {string} The name.
- * @spec openspec/changes/zgw-mapping-readable-names/specs/admin-settings/spec.md#requirement-a-zgw-mapping-row-names-its-resource
+ * @spec openspec/specs/admin-settings/spec.md#requirement-a-zgw-mapping-row-names-its-resource
  */
 export function zgwResourceName(key, t) {
 	const name = ZGW_RESOURCE_NAMES[key]
