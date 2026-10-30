@@ -1392,10 +1392,10 @@ export default {
 </script>
 
 <style>
-/* A card whose text is its body, drawn as body text under the title
-   (DqBeheerGeavanceerd "Beslistabellen (DMN)"). */
+/* A card whose text is its body, drawn as body text 16px under the title
+   (DqBeheerGeavanceerd "Beslistabellen (DMN)"); the card's gap is 14px. */
 .dq-settings-body-text {
-	margin: 0;
+	margin: 2px 0 0;
 	font-size: 15px;
 	line-height: 1.5;
 	color: var(--color-main-text);
