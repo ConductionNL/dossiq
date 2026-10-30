@@ -40,7 +40,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/woo-case-type/spec.md
- * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md
+ * @spec openspec/specs/document-redaction/spec.md
  */
 
 declare(strict_types=1);
@@ -109,7 +109,7 @@ class FilinqRedactionClient {
 	 *
 	 * @throws RuntimeException When filinq is absent or the detection fails.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
 	 */
 	public function detect(int $fileId): array {
 		$service = $this->service(relative: self::ANONYMIZATION_SERVICE);
@@ -134,7 +134,7 @@ class FilinqRedactionClient {
 	 *
 	 * @throws RuntimeException When filinq is absent, nobody is named, or the mark is not written.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
 	 */
 	public function markChecked(int $fileId, array $entities, string $checkedBy): array {
 		if (trim($checkedBy) === '') {
@@ -161,7 +161,7 @@ class FilinqRedactionClient {
 	 *
 	 * @throws RuntimeException When filinq is absent or fails for a reason that is not an outcome.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
 	 */
 	public function anonymize(int $fileId, array $entities, string $userId): array {
 		$service = $this->service(relative: self::ANONYMIZATION_SERVICE);

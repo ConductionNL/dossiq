@@ -515,7 +515,7 @@ test.describe('Assigned to me view', () => {
 	// status, deadline. Both halves are the view's overrides (cardLayout,
 	// viewModes, columns).
 	test('renders as a card index scoped to the current user', async ({ page }) => {
-		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs view overrides: openspec/changes/lists-are-views/restore.md section 2')
+		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs view overrides: openspec/changes/archive/2026-10-30-lists-are-views/restore.md section 2')
 		test.setTimeout(120_000)
 		await navToRoute(page, CasesSavedView('my-work'))
 		// The sidebar's Sort section opens on Urgency and offers Newest.

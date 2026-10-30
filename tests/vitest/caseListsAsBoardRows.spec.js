@@ -7,7 +7,7 @@
  * planned actions as rows with a calendar tile, the owner and the date at
  * the end, and "{total} gepland" in the title row.
  *
- * @spec openspec/changes/case-lists-as-board-rows/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 
 import fs from 'fs'

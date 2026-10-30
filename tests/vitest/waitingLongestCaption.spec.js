@@ -6,7 +6,7 @@
  * case that waits longest has waited, "langste: 9 dagen", counted from the
  * day each case entered its status.
  *
- * @spec openspec/changes/my-work-waiting-longest/specs/my-work-waiting-longest/spec.md#requirement-the-waiting-tile-says-how-long-the-longest-wait-is
+ * @spec openspec/specs/my-work-waiting-longest/spec.md#requirement-the-waiting-tile-says-how-long-the-longest-wait-is
  */
 
 import fs from 'fs'

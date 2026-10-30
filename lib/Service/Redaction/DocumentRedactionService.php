@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md
+ * @spec openspec/specs/document-redaction/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -52,7 +52,7 @@ use Throwable;
 /**
  * Detects, checks and redacts a partly public document, or records an uploaded redacted version.
  *
- * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md
+ * @spec openspec/specs/document-redaction/spec.md
  */
 class DocumentRedactionService {
 
@@ -89,7 +89,7 @@ class DocumentRedactionService {
 	 *
 	 * @return array<int, array<string, mixed>> `{documentRef, title, redactedDocumentRef, redaction}` per document.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
 	 */
 	public function forCase(string $caseId): array {
 		$rows = [];
@@ -122,7 +122,7 @@ class DocumentRedactionService {
 	 *
 	 * @throws RefusedException When the document is not partly public, has no file, or filinq cannot detect.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
 	 */
 	public function detect(string $caseId, string $documentRef, string $userId): array {
 		$assessment = $this->partlyPublic(caseId: $caseId, documentRef: $documentRef);
@@ -174,7 +174,7 @@ class DocumentRedactionService {
 	 *
 	 * @throws RefusedException When the document is not partly public, the list is empty, or filinq cannot record the check.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
 	 */
 	public function check(string $caseId, string $documentRef, array $entities, string $userId): array {
 		$assessment = $this->partlyPublic(caseId: $caseId, documentRef: $documentRef);
@@ -220,7 +220,7 @@ class DocumentRedactionService {
 	 *
 	 * @throws RefusedException When nothing was checked, the file changed, or filinq wrote no copy.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
 	 */
 	public function redact(string $caseId, string $documentRef, string $userId): array {
 		$assessment = $this->partlyPublic(caseId: $caseId, documentRef: $documentRef);
@@ -286,7 +286,7 @@ class DocumentRedactionService {
 	 *
 	 * @throws RefusedException When the document is not partly public, the upload is empty, or it cannot be stored.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
 	 */
 	public function upload(string $caseId, string $documentRef, string $fileName, string $content, string $userId): array {
 		$assessment = $this->partlyPublic(caseId: $caseId, documentRef: $documentRef);

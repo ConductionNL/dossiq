@@ -136,7 +136,7 @@ final class CaseTypeViews {
 	 *
 	 * @return array<int, array{slug: string, name: string, description: string, caseTypeIdentifier: string}> The declared views.
 	 *
-	 * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
+	 * @spec openspec/specs/case-lists/spec.md
 	 */
 	public function declaredViews(): array {
 		$decoded = json_decode((string)file_get_contents(__DIR__ . '/../Settings/case-type-views.json'), true);
@@ -164,7 +164,7 @@ final class CaseTypeViews {
 	 *
 	 * @return array<int, array{slug: string, name: string, description: string, secondary: bool, filters: array<string, mixed>}> The views.
 	 *
-	 * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
+	 * @spec openspec/specs/case-lists/spec.md
 	 */
 	public function instanceViews(array $byIdentifier): array {
 		$views = [];

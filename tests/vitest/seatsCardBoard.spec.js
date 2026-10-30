@@ -6,7 +6,7 @@
  * subtitle, one column of pairs, "Wacht op oppakken: Nee" and "Doorgegeven
  * aan: Niemand" when nothing is pending.
  *
- * @spec openspec/changes/seats-card-board/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 
 import fs from 'fs'

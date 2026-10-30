@@ -383,39 +383,6 @@ The app MUST register ZGW authentication middleware and deep links for cross-app
 
 ---
 
-### Requirement: SeedDataService SHALL idempotently seed bezwaar/beroep case types from a bundled JSON template (REQ-014)
-
-`OCA\Dossiq\Service\SeedDataService::seedBezwaarBeroepData()` SHALL:
-- Read seed data from `lib/Settings/bezwaar_seed_data.json` (the path is `__DIR__.'/../Settings/bezwaar_seed_data.json'` relative to the service).
-- Return `{success: false, message: 'Seed data file not found'}` if the file is missing.
-- Return `{success: false, message: 'Invalid JSON in seed data file'}` on JSON parse failure.
-- Return `{success: false, message: 'ObjectService not available'}` if `getObjectService()` returns null.
-- Return `{success: false, message: 'Register or schemas not configured'}` if `register` or `case_type_schema` IAppConfig keys are empty.
-- Otherwise iterate `seedData.caseTypes[]`, delegating each entry to `seedCaseType(...)` with `caseType_schema`, `statusType_schema`, `roleType_schema`, and `workflow_template_schema` references, and SHALL aggregate per-type counts (caseTypes / statusTypes / roleTypes / workflows / skipped) into the result summary.
-- Be IDEMPOTENT — every nested writer SHALL check for existing objects by identifier before creating, incrementing the `skipped` counter on collision.
-
-#### Scenario: Missing seed file returns structured failure
-- **GIVEN** `lib/Settings/bezwaar_seed_data.json` does not exist
-- **WHEN** `seedBezwaarBeroepData()` is called
-- **THEN** the method SHALL return `{success: false, message: 'Seed data file not found'}`
-- **AND** SHALL log an error
-
-#### Scenario: Empty register config returns structured failure
-- **GIVEN** the `register` IAppConfig key is empty
-- **WHEN** `seedBezwaarBeroepData()` is called
-- **THEN** the method SHALL return `{success: false, message: 'Register or schemas not configured'}`
-
-#### Scenario: Re-running the seeder is idempotent
-- **GIVEN** `seedBezwaarBeroepData()` has already been run successfully (4 caseTypes created)
-- **WHEN** the method is called a second time
-- **THEN** the result SHALL have `success: true` and `caseTypes: 0`, with `skipped: 4`
-
-#### Notes
-- The service intentionally lives outside the InitializeSettings repair step so admins can also re-seed on demand (e.g. after restoring an empty register).
-
-
----
-
 ## Current Implementation Status
 
 **Fully implemented.** All scaffold requirements are satisfied.

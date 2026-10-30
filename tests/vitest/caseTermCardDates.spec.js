@@ -6,7 +6,7 @@
  * date with the year ("6 okt 2026"), not the stored date-time
  * ("26-10-2026, 17:47:35", r32).
  *
- * @spec openspec/changes/case-lists-as-board-rows/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 
 import fs from 'fs'

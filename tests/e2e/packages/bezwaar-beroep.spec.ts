@@ -60,7 +60,7 @@ async function runSeed(page: Page): Promise<{ status: number; body: any }> {
 }
 
 test.describe('package bezwaar-beroep', () => {
-	// @e2e openspec/changes/bezwaar-beroep-package/specs/case-types/spec.md#an-administrator-installs-bezwaar-and-beroep
+	// @e2e openspec/specs/case-types/spec.md#an-administrator-installs-bezwaar-and-beroep
 	test('an administrator installs bezwaar and beroep and finds both case types', async ({
 		page,
 	}) => {

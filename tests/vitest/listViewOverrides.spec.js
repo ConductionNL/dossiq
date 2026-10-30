@@ -8,7 +8,7 @@
  * me's cards, urgency order and two slots; the data subject requests' tabs,
  * notice, chips and columns.
  *
- * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
+ * @spec openspec/specs/case-lists/spec.md
  */
 
 import fs from 'fs'

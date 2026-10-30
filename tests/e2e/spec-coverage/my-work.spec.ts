@@ -91,7 +91,7 @@ test.describe('My Work spec coverage', () => {
 
 	// @e2e openspec/specs/my-work/spec.md#card-and-table-view
 	test('opens in card view, and offers a card/table toggle', async ({ page }) => {
-		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs view overrides: openspec/changes/lists-are-views/restore.md section 2')
+		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs view overrides: openspec/changes/archive/2026-10-30-lists-are-views/restore.md section 2')
 		await openMyWork(page)
 
 		// The DEFAULT is the claim, so nothing is clicked before it is read.
@@ -116,7 +116,7 @@ test.describe('My Work spec coverage', () => {
 	test('the table view shows identifier, title, case type, status and deadline', async ({
 		page,
 	}) => {
-		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs view overrides: openspec/changes/lists-are-views/restore.md section 2')
+		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs view overrides: openspec/changes/archive/2026-10-30-lists-are-views/restore.md section 2')
 		await openMyWork(page)
 		// Wait for the list to answer before switching: the toggle paints with
 		// the shell, and switching before the rows exist leaves a table view

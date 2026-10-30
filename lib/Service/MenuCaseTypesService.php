@@ -209,7 +209,7 @@ class MenuCaseTypesService {
 	 *
 	 * @return array<string, array{id: string, title: string}> The case types found.
 	 *
-	 * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
+	 * @spec openspec/specs/case-lists/spec.md
 	 */
 	public function byIdentifier(array $identifiers): array {
 		if ($identifiers === []) {

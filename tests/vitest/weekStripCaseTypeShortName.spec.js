@@ -6,7 +6,7 @@
  * the case number and the case type's short name, read through the case
  * type (its title when it has no short name).
  *
- * @spec openspec/changes/case-type-short-name/specs/case-type-short-name/spec.md#requirement-a-case-type-can-carry-a-short-name
+ * @spec openspec/specs/case-type-short-name/spec.md#requirement-a-case-type-can-carry-a-short-name
  */
 
 import fs from 'fs'

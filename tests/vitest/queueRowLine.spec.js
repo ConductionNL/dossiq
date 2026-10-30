@@ -7,7 +7,7 @@
  * and the priority as a word, where live printed the stored "normal". Needs
  * nextcloud-vue `{field|formatter}` in a row's subtitleTemplate.
  *
- * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
+ * @spec openspec/specs/case-lists/spec.md
  */
 import fs from 'fs'
 import path from 'path'

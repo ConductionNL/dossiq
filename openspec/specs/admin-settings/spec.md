@@ -789,7 +789,7 @@ making.
 - **GIVEN** the seeded Integrations page
 - **WHEN** the admin reads the KvK card
 - **THEN** it SHALL show Not available
-- **AND** its message SHALL say the adapter is built and bound and that no caller exists
+- **AND** its message SHALL say dossiq ships no KvK client and that integriq holds the KvK source
 - **AND** its message SHALL NOT say the connection is not built
 - **AND** it SHALL NOT offer Open settings
 
@@ -1010,8 +1010,8 @@ SHALL declare its connections in `lib/Settings/connections.json` with the
 twelve keys the page already used: zgw, stuf, kcc, dmn, mailbox, store,
 financial, brp, kvk, pdok, berichtenbox and templates (hydra REQ-CONN-001 and
 REQ-CONN-008). A `settingsUrl` SHALL only point at a section that exists on
-the admin page. KvK SHALL be declared not available with a message saying the
-adapter is built and bound and nothing calls it. Berichtenbox and Document
+the admin page. KvK SHALL be declared not available with a message saying
+dossiq ships no KvK client and integriq holds the KvK source. Berichtenbox and Document
 templates SHALL name their adapter config key and a message that says a mock
 adapter answers. Their `simulatedValues` SHALL list the empty string and the
 mock class the registrar falls back to, so naming the mock class still reads
@@ -1063,7 +1063,7 @@ BRP SHALL be declared with an `unconfiguredMessage` that names
 - **GIVEN** the declaration integriq synced
 - **WHEN** the admin reads the KvK row
 - **THEN** it SHALL read Not available
-- **AND** its message SHALL say the adapter is built and bound
+- **AND** its message SHALL say dossiq ships no KvK client
 - **AND** its message SHALL NOT say the connection is not built
 
 ### Requirement: A probe reports and a save asks integriq to look again (REQ-ADMIN-027)

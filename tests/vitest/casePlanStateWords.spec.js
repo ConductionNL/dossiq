@@ -6,7 +6,7 @@
  * reads "In behandeling"); a reached milestone and an optional item take the
  * widget's own words, Bereikt and Optioneel.
  *
- * @spec openspec/changes/case-lists-as-board-rows/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 
 import fs from 'fs'

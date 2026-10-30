@@ -5,7 +5,7 @@
  * Every icon the manifests name is in the icon registry: an unregistered name
  * draws the unknown-icon glyph (DqZaakTaken "Wat hierna komt", r32).
  *
- * @spec openspec/changes/case-lists-as-board-rows/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 
 import fs from 'fs'

@@ -195,7 +195,7 @@ class DeadlineReportingService {
 	 *
 	 * @return array<int, array<string, int|string>> The summary row, or none.
 	 *
-	 * @spec openspec/changes/termijnen-week-and-footnote/specs/termijnen-week-and-footnote/spec.md#requirement-the-quarterly-report-summarises-the-decided-terms
+	 * @spec openspec/specs/termijnen-week-and-footnote/spec.md#requirement-the-quarterly-report-summarises-the-decided-terms
 	 */
 	private function quarterSummary(string $period, array $perType): array {
 		$met = 0;
