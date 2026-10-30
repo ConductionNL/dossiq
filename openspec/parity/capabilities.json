@@ -21315,7 +21315,7 @@
 			"providerHow": "note-cites-dossiq-code",
 			"built": {
 				"state": "specified",
-				"evidence": "lib/Controller/SubsidieController.php and lib/Service/Subsidie with 9 schemas; no page and no caller in src/; VaststellingService no longer appends kosten (ADR-081), contrary to subsidie-settlement-case-costs",
+				"evidence": "lib/Controller/SubsidieController.php and lib/Service/Subsidie with 9 schemas; no page and no caller in src/; VaststellingService no longer appends kosten (ADR-081); decision 258 keeps it that way and subsidie-settlement-appends-no-case-costs moves the spec to the code",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
 					"openspec/specs/subsidieverlening-keten",
@@ -21327,13 +21327,14 @@
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "none: no page or caller reaches the subsidy routes",
-				"note": "Rated no rather than the partial the reader proposed: nothing a user opens reaches the subsidy backend (same rule as the 2026-09-25 rows). subsidie-settlement-case-costs contradicts ADR-081 and needs a decision before it is built.",
+				"note": "Rated no rather than the partial the reader proposed: nothing a user opens reaches the subsidy backend (same rule as the 2026-09-25 rows). Decision 258 (30 Oct): ADR-081 wins, settlement appends no case costs (subsidie-settlement-appends-no-case-costs).",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
 				"plan": "openspec/changes/grant-cases-from-application-to-settlement",
 				"requirement": [
 					"openspec/specs/subsidieverlening-keten :: REQ-SUB-001 Multi-year beschikking with voorschot-schema",
 					"openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten :: A handler runs a grant from its case page (REQ-SUB-CASE-01)",
-					"openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten :: Advances are a payment schedule raised with finance when due (REQ-SUB-CASE-02)"
+					"openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten :: Advances are a payment schedule raised with finance when due (REQ-SUB-CASE-02)",
+					"openspec/specs/subsidie-settlement-case-costs :: Settling a grant records the settled amount on the vaststelling and writes nothing to the linked case (REQ-SSC-005)"
 				]
 			},
 			"evidence": {

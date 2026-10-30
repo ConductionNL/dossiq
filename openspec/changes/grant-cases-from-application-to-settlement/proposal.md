@@ -13,7 +13,7 @@ Row 15.2 (process grants from application through advances to final settlement).
 
 ## Not in this change
 
-`subsidie-settlement-case-costs` says settlement appends the case's costs; `VaststellingService` stopped doing that under ADR-081. That needs Ruben's decision before either is built (see the lane hand-back).
+Case costs. Decision 258 (30 October): ADR-081 wins, so settling a grant appends nothing to the case's `kosten`. The settled amount stays on the vaststelling. `subsidie-settlement-appends-no-case-costs` moves `subsidie-settlement-case-costs` to that rule; this change builds on it and adds no cost line to the case.
 
 ## Impact
 
