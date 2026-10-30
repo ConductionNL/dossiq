@@ -21380,7 +21380,8 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "Settings > Checklists; FieldEvidence and OfflineSync admin lists",
 				"note": "Missing: an inspection panel on the case that fills a checklist, takes photos and submits the result, and the offline path that feeds the sync queue. Pending proposal 16.1 covers offline.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/inspection-checklists-onto-task"
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
