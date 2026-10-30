@@ -7,7 +7,7 @@
  * end (Start, Term suspended, End), and a line under them saying where colour
  * and order apply.
  *
- * @spec openspec/changes/case-type-statuses-tiles/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import fs from 'fs'

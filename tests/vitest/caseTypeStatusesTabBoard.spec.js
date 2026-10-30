@@ -7,7 +7,7 @@
  * statuses list shows what a handler and an applicant see of a status, and a
  * result's retention period reads in words.
  *
- * @spec openspec/changes/case-type-statuses-tab-board/specs/case-types/spec.md#requirement-the-statuses-tab-reads-as-the-board
+ * @spec openspec/specs/case-types/spec.md#requirement-the-statuses-tab-reads-as-the-board
  */
 
 import { describe, expect, it } from 'vitest'

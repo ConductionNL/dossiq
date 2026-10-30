@@ -368,7 +368,7 @@ export default {
 	 * @param {unknown} value The cell value (unused).
 	 * @param {object} row The field.
 	 * @return {string} The words.
-	 * @spec openspec/changes/case-type-fields-origin-and-list/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	fieldOrigin: (value, row) => fieldOrigin(row),
 
@@ -391,7 +391,7 @@ export default {
 	 * @param {object} options The column's options (unused).
 	 * @param {{object: (object|null)}} context The page record (nextcloud-vue cell-formatter-page-record).
 	 * @return {string} Yes or No.
-	 * @spec openspec/changes/case-type-fields-origin-and-list/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	fieldInCaseList: (value, row, property, options, context) => fieldInCaseList(row, context && context.object),
 

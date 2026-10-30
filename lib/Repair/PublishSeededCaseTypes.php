@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/seeded-case-types-are-published/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * Sets `isDraft: false` once on the seeded case types that were stored as drafts.
  *
- * @spec openspec/changes/seeded-case-types-are-published/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class PublishSeededCaseTypes implements IRepairStep {
 
@@ -102,7 +102,7 @@ class PublishSeededCaseTypes implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/seeded-case-types-are-published/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function getName(): string {
 		return 'Publish the seeded case types that were stored as drafts';
@@ -118,7 +118,7 @@ class PublishSeededCaseTypes implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seeded-case-types-are-published/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === '1') {
@@ -170,7 +170,7 @@ class PublishSeededCaseTypes implements IRepairStep {
 	 *
 	 * @return array{published: int, skipped: int, failed: int, unreadable: bool} The tally.
 	 *
-	 * @spec openspec/changes/seeded-case-types-are-published/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function publish(object $objectService, string $register, string $schema): array {
 		$tally = ['published' => 0, 'skipped' => 0, 'failed' => 0, 'unreadable' => false];

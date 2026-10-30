@@ -26,7 +26,7 @@ use Psr\Log\NullLogger;
 /**
  * Open cases filed while their case type had no handling block get its team.
  *
- * @spec openspec/changes/open-cases-take-their-case-type-team/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class AssignOpenCasesTheirCaseTypeTeamTest extends TestCase {
 

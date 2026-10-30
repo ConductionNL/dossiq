@@ -170,7 +170,7 @@ export function parentTitleOf(blueprint) {
  * @param {object|null} blueprint The /blueprint answer.
  * @return {{statuses: number, finalStatuses: number, results: number, attributes: number, inheritedAttributes: number, parent: string}}
  *
- * @spec openspec/changes/case-type-blueprint-summary/specs/case-types/spec.md#requirement-the-blueprint-reads-as-a-summary-card
+ * @spec openspec/specs/case-types/spec.md#requirement-the-blueprint-reads-as-a-summary-card
  */
 export function blueprintSummary(blueprint) {
 	const list = (key) => (Array.isArray(blueprint?.[key]) ? blueprint[key] : [])

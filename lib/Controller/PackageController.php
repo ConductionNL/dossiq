@@ -116,7 +116,7 @@ class PackageController extends Controller {
 	 *
 	 * @return JSONResponse `{ results: [...] }`, one outcome per package; 500 when one failed.
 	 *
-	 * @spec openspec/changes/reload-shipped-packages/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function reload(): JSONResponse {

@@ -7,7 +7,7 @@
  * type's own rules as the Rules tab does ("Als … / dan …" with an Aan pill),
  * without the tab's menus, Add button, inventory or trial.
  *
- * @spec openspec/changes/case-type-rules-summary-sentences/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

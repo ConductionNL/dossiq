@@ -191,7 +191,7 @@ export default {
 		 * Whether the widget draws the per-language summary instead of the editor.
 		 *
 		 * @return {boolean} True for `content.mode: "summary"`.
-		 * @spec openspec/changes/case-type-translations-summary/specs/case-types/spec.md#requirement-the-overview-tab-summarises-the-translations
+		 * @spec openspec/specs/case-types/spec.md#requirement-the-overview-tab-summarises-the-translations
 		 */
 		summary() {
 			return this.content?.mode === 'summary'

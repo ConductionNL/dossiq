@@ -7,7 +7,7 @@
  * at 500, straight on the card's own inset. jsdom draws no layout, so the
  * rules are read from the component's style block.
  *
- * @spec openspec/changes/case-type-blueprint-summary-look/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'

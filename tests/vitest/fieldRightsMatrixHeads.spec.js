@@ -8,7 +8,7 @@
  * and a funnel on its heads (r31 gapBelowTitle 41 vs 43.8 came from the
  * board's 22px head controls the live heads lacked).
  *
- * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

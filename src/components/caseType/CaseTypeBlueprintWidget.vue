@@ -172,7 +172,7 @@ export default {
 		 * The counts the card leads with.
 		 *
 		 * @return {object}
-		 * @spec openspec/changes/case-type-blueprint-summary/specs/case-types/spec.md#requirement-the-blueprint-reads-as-a-summary-card
+		 * @spec openspec/specs/case-types/spec.md#requirement-the-blueprint-reads-as-a-summary-card
 		 */
 		summary() {
 			return blueprintSummary(this.blueprint)
