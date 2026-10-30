@@ -4290,6 +4290,7 @@
 						"_note": "The Notes tab of the case panels: the library notes tab with @mentions posted to dossiq's notification endpoint and the one act dossiq adds to a note, sending it to the neighbouring register (NotePush). The endpoint answers sent, failed, not-sent or no-register with its own sentence. The sidebar Notes tab stays.",
 						"props": {
 							"composer": "button",
+							"noteRows": "authored",
 							"mentionUrl": "/apps/dossiq/api/notes/mention",
 							"noteActions": [
 								{
