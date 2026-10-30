@@ -471,4 +471,83 @@ class EngineTaskGatewayTest extends TestCase {
 
 		$this->assertSame('dossiq:once:rule:t:r:case-1', $payload['key']);
 	}//end testAOnceKeyedTaskCarriesItAsItsEngineKey()
+	/**
+	 * OpenRegister's Task is a Nextcloud Entity: its column getters are magic
+	 * (`__call`), so `method_exists()` says no. A task read through `find()`
+	 * still carries its case, its term, its candidates and its metadata, and a
+	 * column the engine does not have reads as empty instead of failing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 */
+	public function testFindReadsTheEntitysMagicColumns(): void {
+		$service = new class {
+			/**
+			 * @param string $id The task uuid.
+			 *
+			 * @return object The task, as an Entity answers it.
+			 */
+			public function get(string $id): object {
+				return new class {
+					protected ?string $runUuid = null;
+					protected ?string $nodeId = null;
+					protected ?string $assignee = null;
+					protected ?array $checklist = null;
+					protected ?string $objectUuid = 'case-9';
+					protected ?\DateTime $dueAt = null;
+					protected ?array $candidateGroups = ['vergunningen'];
+					protected ?array $metadata = ['form' => 'x'];
+
+					/**
+					 * Sets the term.
+					 */
+					public function __construct() {
+						$this->dueAt = new \DateTime('2026-11-02T00:00:00+00:00');
+					}
+
+					/**
+					 * An Entity's magic getter: a column it has, else BadFunctionCallException.
+					 *
+					 * @param string       $name The method.
+					 * @param array<mixed> $args The arguments.
+					 *
+					 * @return mixed
+					 */
+					public function __call(string $name, array $args): mixed {
+						$property = lcfirst(substr($name, 3));
+						if (str_starts_with($name, 'get') === true && property_exists($this, $property) === true) {
+							return $this->{$property};
+						}
+
+						throw new \BadFunctionCallException($name . ' is not a valid attribute');
+					}
+
+					/** @return string */
+					public function getUuid(): string {
+						return 'task-1';
+					}
+
+					/** @return string */
+					public function getTitle(): string {
+						return 'Advies boomdeskundige beoordelen';
+					}
+
+					/** @return string */
+					public function getState(): string {
+						return 'available';
+					}
+				};
+			}
+		};
+
+		$task = $this->gatewayWith($service)->find(taskId: 'task-1');
+
+		$this->assertSame(expected: 'case-9', actual: $task['objectUuid']);
+		$this->assertSame(expected: '2026-11-02T00:00:00+00:00', actual: $task['dueDate']);
+		$this->assertSame(expected: ['vergunningen'], actual: $task['candidateGroups']);
+		$this->assertSame(expected: ['form' => 'x'], actual: $task['metadata']);
+		$this->assertSame(expected: [], actual: $task['candidateUsers']);
+		$this->assertSame(expected: '', actual: $task['flowRun']);
+	}//end testFindReadsTheEntitysMagicColumns()
 }//end class
