@@ -651,22 +651,20 @@
 								"type": "stat",
 								"title": "Waiting on the applicant",
 								"content": {
-									"caption": "{count} for longer than a week",
+									"caption": "longest: {count} days",
+									"_captionNote": "DqMijnWerk \"langste: 9 dagen\": the whole days since the case that waits longest entered its status (nextcloud-vue captionSource metric daysSinceEarliest, one list read ordered by currentStatusEnteredAt). Not currentStatusDwellDays: that is written only at a status change, so it reads 0 for a case still waiting. Without a wait of a day or more the caption is left out.",
 									"captionSource": {
 										"register": "dossiq",
 										"schema": "case",
-										"metric": "count",
+										"metric": "daysSinceEarliest",
+										"field": "currentStatusEnteredAt",
 										"filter": {
 											"assignee": "@me",
 											"isFinalStatus": false,
 											"statusHiddenInLists": false,
 											"isDraft": false,
-											"waitingOnApplicant": true,
-											"currentStatusEnteredAt": {
-												"lt": "@today-7d"
-											}
-										},
-										"zeroText": "none for longer than a week"
+											"waitingOnApplicant": true
+										}
 									},
 									"label": "Waiting on the applicant",
 									"format": {
@@ -738,11 +736,12 @@
 											"isFinalStatus": false,
 											"statusHiddenInLists": false,
 											"isDraft": false
-										}
+										},
+										"extend": ["caseType"]
 									},
 									"dateField": "deadline",
 									"titleField": "title",
-									"metaFields": ["identifier"],
+									"metaFields": ["identifier", ["caseType.shortName", "caseType.title"]],
 									"itemRoute": "CaseDetail",
 									"lateWhen": {
 										"op": "lt",
