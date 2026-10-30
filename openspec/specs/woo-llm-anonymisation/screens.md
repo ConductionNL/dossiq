@@ -1,4 +1,3 @@
 # Screens
 
-- DqLakken https://identity.conduction.nl/screens/board?id=dossiq/DqLakken
-- OcLakken https://identity.conduction.nl/screens/board?id=opencatalogi/OcLakken
+- OcLakken https://identity.conduction.nl/screens/board?id=opencatalogi/OcLakken (redaction is opencatalogi's screen, decision 256; dossiq links out)
