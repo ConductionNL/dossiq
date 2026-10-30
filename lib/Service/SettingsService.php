@@ -446,7 +446,7 @@ class SettingsService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/requester-identified-at-intake/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
+	 * @spec openspec/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
 	 */
 	public function getPortalName(): string {
 		return mb_substr(trim($this->appConfig->getValueString('portaliq', 'portalName', '')), 0, 255);

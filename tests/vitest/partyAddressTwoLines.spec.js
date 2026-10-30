@@ -5,7 +5,7 @@
  * Boards DqContact and DqOrganisatie write the address as two lines of one
  * block and put a map pin before "Zaken op de kaart".
  *
- * @spec openspec/changes/party-address-two-lines/specs/party-pages/spec.md#requirement-a-partys-address-is-two-lines-of-one-block
+ * @spec openspec/specs/party-pages/spec.md#requirement-a-partys-address-is-two-lines-of-one-block
  */
 
 import fs from 'fs'

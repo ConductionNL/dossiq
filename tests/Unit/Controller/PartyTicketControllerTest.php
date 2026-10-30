@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The open tickets of parties, as the organisation list and page read them.
  *
- * @spec openspec/changes/organisation-open-tickets/specs/pipelinq-consumption/spec.md
+ * @spec openspec/specs/pipelinq-consumption/spec.md
  */
 class PartyTicketControllerTest extends TestCase {
 	/**
