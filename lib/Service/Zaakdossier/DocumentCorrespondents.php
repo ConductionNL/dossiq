@@ -196,14 +196,9 @@ class DocumentCorrespondents {
 	 * @param array<string, mixed> $document The document row.
 	 * @param array<int, array<string, mixed>> $parties The party links of the case.
 	 *
-	 * `partyName` is the other side of the document in one cell: the sender
-	 * of an incoming document, the recipients of an outgoing one, and for an
-	 * internal one whichever it names, the sender first.
-	 *
-	 * @return array{senderName: string, recipientNames: array<int, string>, partyName: string} The names.
+	 * @return array{senderName: string, recipientNames: array<int, string>} The names.
 	 *
 	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
-	 * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
 	 */
 	public function describe(array $document, array $parties): array {
 		$recipients = [];
@@ -211,47 +206,14 @@ class DocumentCorrespondents {
 			$recipients[] = $this->nameOf(identifier: $identifier, parties: $parties);
 		}
 
-		$sender = $this->nameOf(
-			identifier: trim((string)($document['sender'] ?? '')),
-			parties: $parties,
-		);
-
 		return [
-			'senderName' => $sender,
-			'recipientNames' => $recipients,
-			'partyName' => $this->partyNameOf(
-				direction: trim((string)($document['direction'] ?? '')),
-				sender: $sender,
-				recipients: $recipients,
+			'senderName' => $this->nameOf(
+				identifier: trim((string)($document['sender'] ?? '')),
+				parties: $parties,
 			),
+			'recipientNames' => $recipients,
 		];
 	}//end describe()
-
-	/**
-	 * The other side of a document as one line.
-	 *
-	 * @param string $direction The document's direction.
-	 * @param string $sender The sender's name, or ''.
-	 * @param array<int, string> $recipients The recipients' names.
-	 *
-	 * @return string The sender or the recipients, '' when the document names neither.
-	 */
-	private function partyNameOf(string $direction, string $sender, array $recipients): string {
-		$recipientLine = implode(', ', $recipients);
-		if ($direction === self::DIRECTION_INCOMING) {
-			return $sender;
-		}
-
-		if ($direction === self::DIRECTION_OUTGOING) {
-			return $recipientLine;
-		}
-
-		if ($sender !== '') {
-			return $sender;
-		}
-
-		return $recipientLine;
-	}//end partyNameOf()
 
 	/**
 	 * Whether a document names one party, as sender or as addressee.

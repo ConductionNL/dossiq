@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
@@ -112,6 +113,7 @@ interface DossierObjectServiceStub {
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
  */
 class ZaakdossierServiceTest extends TestCase {
@@ -244,6 +246,7 @@ class ZaakdossierServiceTest extends TestCase {
 				people: $this->createMock(originalClassName: PersonLinkReader::class),
 				settingsService: $this->settings,
 				store: new DocumentRecordStore(settingsService: $this->settings),
+				labels: new DocumentListingLabels(settingsService: $this->settings),
 			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
@@ -817,53 +820,4 @@ class ZaakdossierServiceTest extends TestCase {
 		);
 
 	}//end testTheDirectionVocabularyMatchesTheRegisterFragment()
-
-	/**
-	 * Every listed document carries its type by name, read from one search of
-	 * the type catalogue, whether it refers to the type by uuid, slug or name.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
-	 */
-	public function testListedDocumentsCarryTheirTypeByName(): void {
-		$os = $this->createMock(originalClassName: DossierObjectServiceStub::class);
-		$this->settings->method('getObjectService')->willReturn($os);
-		$os->expects($this->once())->method('searchObjectsBySlug')
-			->with('dossiq', 'informatieobjecttype', ['_limit' => 500])
-			->willReturn([
-				['id' => '11111111-2222-4333-8444-555555555555', '@self' => ['slug' => 'iot-aanvraag'], 'description' => 'Aanvraag'],
-				['id' => 'type-2', 'description' => ''],
-			]);
-
-		$documents = $this->service->withDocumentTypeNames(documents: [
-			['id' => 'a', 'informatieobjecttype' => '11111111-2222-4333-8444-555555555555'],
-			['id' => 'b', 'informatieobjecttype' => 'iot-aanvraag'],
-			['id' => 'c', 'informatieobjecttype' => 'Ontvangstbevestiging'],
-			['id' => 'd', 'informatieobjecttype' => '99999999-2222-4333-8444-555555555555'],
-			['id' => 'e'],
-		]);
-
-		$this->assertSame(
-			expected: ['Aanvraag', 'Aanvraag', 'Ontvangstbevestiging', '', ''],
-			actual: array_column(array: $documents, column_key: 'documentType')
-		);
-
-	}//end testListedDocumentsCarryTheirTypeByName()
-
-	/**
-	 * An empty listing reads no catalogue at all.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
-	 */
-	public function testAnEmptyListingReadsNoTypeCatalogue(): void {
-		$os = $this->createMock(originalClassName: DossierObjectServiceStub::class);
-		$this->settings->method('getObjectService')->willReturn($os);
-		$os->expects($this->never())->method('searchObjectsBySlug');
-
-		$this->assertSame(expected: [], actual: $this->service->withDocumentTypeNames(documents: []));
-
-	}//end testAnEmptyListingReadsNoTypeCatalogue()
 }//end class

@@ -246,50 +246,6 @@ class DocumentRecordStore {
 	}//end findDocumentType()
 
 	/**
-	 * Every document type's name, keyed by each way a document may refer to it.
-	 *
-	 * One read of the type catalogue for a whole listing. A document's
-	 * `informatieobjecttype` holds the type's uuid, its slug, or the name
-	 * itself (DocumentTypeResolver passes an unknown name through), so all
-	 * three map to the name. An unreadable catalogue answers [].
-	 *
-	 * @return array<string, string> Reference to the type's name.
-	 *
-	 * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
-	 */
-	public function documentTypeNames(): array {
-		try {
-			[$objectService, $register] = $this->requireRegister();
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'dossier_informatieobjecttype_schema'),
-				filters: ['_limit' => 500],
-			);
-		} catch (Throwable) {
-			return [];
-		}
-
-		$names = [];
-		foreach ($rows as $row) {
-			$row = $this->rowOf(value: $row);
-			$name = trim((string)($row['description'] ?? ''));
-			if ($name === '') {
-				continue;
-			}
-
-			$self = (array)($row['@self'] ?? []);
-			foreach ([$this->idOf(row: $row), trim((string)($self['slug'] ?? '')), $name] as $reference) {
-				if ($reference !== '' && isset($names[$reference]) === false) {
-					$names[$reference] = $name;
-				}
-			}
-		}
-
-		return $names;
-	}//end documentTypeNames()
-
-	/**
 	 * Store a file in an object's folder, attached to that object.
 	 *
 	 * @param string $objectId The object uuid, a case.

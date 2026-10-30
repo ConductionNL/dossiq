@@ -453,47 +453,13 @@ class ZaakdossierService {
 		// document, which is the difference between one OpenRegister read and
 		// forty to draw one column.
 		return $this->groupByType(
-			documents: $this->withDocumentTypeNames(
-				documents: $this->correspondents->describeAll(
-					caseId: $caseId,
-					documents: $documents,
-					correspondent: $correspondent,
-				)
+			documents: $this->correspondents->describeAll(
+				caseId: $caseId,
+				documents: $documents,
+				correspondent: $correspondent,
 			)
 		);
 	}//end getDossierForCase()
-
-	/**
-	 * Every document with its type by name, as `documentType`, for the Files
-	 * tab's Document type column.
-	 *
-	 * A reference the catalogue does not know reads '' when it is a uuid and
-	 * as written otherwise, because a stored name is already the label.
-	 *
-	 * @param array<int, array<string, mixed>> $documents The documents.
-	 *
-	 * @return array<int, array<string, mixed>> The documents with `documentType`.
-	 *
-	 * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
-	 */
-	public function withDocumentTypeNames(array $documents): array {
-		if ($documents === []) {
-			return [];
-		}
-
-		$names = $this->recordStore->documentTypeNames();
-		foreach ($documents as $index => $document) {
-			$reference = trim((string)($document['informatieobjecttype'] ?? ''));
-			$name = ($names[$reference] ?? $reference);
-			if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $name) === 1) {
-				$name = '';
-			}
-
-			$documents[$index]['documentType'] = $name;
-		}
-
-		return $documents;
-	}//end withDocumentTypeNames()
 
 	/**
 	 * Group a list of informatieobjecten by informatieobjecttype with counts.
