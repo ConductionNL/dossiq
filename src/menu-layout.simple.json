@@ -833,6 +833,7 @@
 										"{@self.viewedAt|ago}"
 									],
 									"rowRoute": "CaseDetail",
+									"chevron": true,
 									"emptyText": "Cases you open show up here",
 									"lensReasonTexts": {
 										"recent.audit-trail-disabled": "This server does not keep track of which cases you open.",

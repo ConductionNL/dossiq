@@ -672,6 +672,17 @@ describe('the landing page', () => {
 		expect(widget('your-teams-queue').content.rowAction.variant).toBe('outlined')
 	})
 
+	it('ends a Verder werken row with the chevron, and only that list among the dashboard lists', () => {
+		// DqMijnWerk draws a chevron after the time on each Verder werken row; no
+		// other list on DqMijnWerk, DqMijnTeam, DqDashboard or DqDagAfsluiten
+		// does. The board look hides a dashboard row's chevron unless the list
+		// asks for it (nextcloud-vue record-list `chevron: true`).
+		expect(widget('simple-continue').content.chevron).toBe(true)
+		for (const id of ['followed-cases', 'your-teams-queue', 'stalled-cases']) {
+			expect(widget(id).content.chevron, id).not.toBe(true)
+		}
+	})
+
 	it('shows recent activity without tag changes, each item in the tone of its app', () => {
 		// DqMijnWerk Recente activiteit: a reaction primary, a publication
 		// green, a handover grey; tag changes are not work.
