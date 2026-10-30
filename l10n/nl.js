@@ -237,6 +237,7 @@ OC.L10N.register(
         "A new, not-yet-verified email address.": "Een nieuw e-mailadres dat nog niet is geverifieerd.",
         "A Nextcloud Forms form opens cases": "Een formulier in Nextcloud Forms opent zaken",
         "A note to the receiving organisation, written with a partner share": "Een bericht aan de ontvangende organisatie, geschreven bij een deling met een partner",
+        "A notice of default only counts once the decision term has passed (Awb 4:17). A fixed amount goes to the financial administration as a payment signal; the result comes back on the case.": "Een ingebrekestelling telt pas als de beslistermijn voorbij is (Awb 4:17). Een vastgesteld bedrag gaat als betaalsignaal naar de financiële administratie; het resultaat komt terug op de zaak.",
         "A payment provider configured with the earlier address {endpoint} keeps working.": "Een betaalprovider die met het eerdere adres {endpoint} is ingesteld, blijft werken.",
         "A permit case is nearing its deadline": "Een vergunningzaak nadert de termijn",
         "A permit deadline has passed": "Een vergunningtermijn is verstreken",
