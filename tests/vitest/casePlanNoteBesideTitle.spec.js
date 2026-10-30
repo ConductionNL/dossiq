@@ -5,7 +5,7 @@
  * DqZaak Zaakplan draws "Mijlpalen en onderdelen ..." at the right of the
  * title row, not as a line under it.
  *
- * @spec openspec/changes/case-plan-note-beside-title/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 
 import fs from 'fs'

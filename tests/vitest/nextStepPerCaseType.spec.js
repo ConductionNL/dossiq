@@ -6,7 +6,7 @@
  * stage. The case page reads them from the case type through
  * nextStep.stagesFrom; a case type without them keeps the page's stages.
  *
- * @spec openspec/changes/next-step-per-stage/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 
 import fs from 'fs'

@@ -8,7 +8,7 @@
  * DqZaakDocumentenSlepen). The words are the library's, so the manifest names
  * none: a label declared here would reach the component untranslated.
  *
- * @spec openspec/changes/files-dropped-on-the-list/specs/case-dashboard-view/spec.md
+ * @spec openspec/specs/case-dashboard-view/spec.md
  */
 
 import fs from 'fs'

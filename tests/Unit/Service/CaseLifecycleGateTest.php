@@ -269,7 +269,7 @@ class CaseLifecycleGateTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/frontend-locale-completeness/spec.md
+	 * @spec openspec/specs/frontend-locale-completeness/spec.md
 	 */
 	public function testTheRefusalIsTranslated(): void {
 		$rules = $this->createMock(originalClassName: LifecycleCaseTypeRules::class);
