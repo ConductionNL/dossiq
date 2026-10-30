@@ -14218,7 +14218,9 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqTaak"
-				}
+				},
+				"plan": "openspec/changes/task-forms-keep-a-draft",
+				"requirement": "openspec/changes/task-forms-keep-a-draft/specs/task-management :: A task form keeps what you typed (REQ-TM-DRAFT-01)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no task forms to save part-way; workflow actions are single submits (lib/Service/WorkflowService.php:134) | round 2 drive: procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\"",
@@ -14839,7 +14841,9 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakDocumenten"
-				}
+				},
+				"plan": "openspec/changes/case-files-list-columns",
+				"requirement": "openspec/changes/case-files-list-columns/specs/document-zaakdossier :: The case files list shows the document columns of the board (REQ-ZAK-COL-01)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/DocumentList.vue renders fixed rows with Åbn and Slet actions (lines 25,29); grep -i 'column' finds no chooser or column setting | round 2 drive: procest/opencase/round2/pages/CaseDetail-Documents.md:10 \"cards, no columns, no filters\"",
@@ -17709,7 +17713,9 @@
 					"board": "DqZaken"
 				},
 				"evidence": "openregister view-group-share (archived 2026-09-30): View.sharedWith with ViewMapper::findAllFor(user) and owner-or-admin guards, editable in openregister's own src/modals/view/EditView.vue:284; dossiq's lists save views through nextcloud-vue CnSaveViewDialog, which offers only a public toggle (src/components/CnSaveViewDialog/CnSaveViewDialog.vue:28-31)",
-				"readOn": "2026-10-07"
+				"readOn": "2026-10-07",
+				"plan": "openspec/changes/case-views-shared-with-a-team",
+				"requirement": "openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists :: A saved case view can be shared with a team (REQ-CSL-SHARE-01)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no saved searches exist at all (see 9.3), so none can be shared | round 2 drive: procest/opencase/round2/code-census.md:253 \"Saved searches :: no\"",
