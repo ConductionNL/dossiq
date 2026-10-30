@@ -10537,6 +10537,7 @@ OC.L10N.register(
         "Waiting for your signature": "Waiting for your signature",
         "Waiting in the intake inbox": "Waiting in the intake inbox",
         "Waiting longest": "Waiting longest",
+        "longest: {count} days": "longest: {count} days",
         "Waiting on": "Waiting on",
         "Waiting on someone outside the organisation": "Waiting on someone outside the organisation",
         "Waiting on the applicant": "Waiting on the applicant",
