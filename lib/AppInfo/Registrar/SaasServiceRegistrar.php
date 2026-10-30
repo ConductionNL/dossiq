@@ -30,6 +30,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\OrganisationStatusChangeListener;
+use OCA\Dossiq\Listener\QuotaConsumptionListener;
+use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\OrganisationUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -63,5 +66,14 @@ class SaasServiceRegistrar {
 			event: OrganisationUpdatedEvent::class,
 			listener: OrganisationStatusChangeListener::class
 		);
+
+		// Creating a case or adding a tenant user consumes the tenant's quota:
+		// refused before the save past a blocking limit, counted after it.
+		foreach ([ObjectCreatingEvent::class, ObjectCreatedEvent::class] as $quotaEvent) {
+			$context->registerEventListener(
+				event: $quotaEvent,
+				listener: QuotaConsumptionListener::class
+			);
+		}
 	}//end register()
 }//end class

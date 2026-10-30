@@ -11930,6 +11930,11 @@
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Your organisation reached its limit of %1$s on the %2$s plan.": "Uw organisatie heeft de limiet van %1$s in het pakket %2$s bereikt.",
+        "%s users": "%s gebruikers",
+        "%s cases per month": "%s zaken per maand",
+        "Your organisation is close to its limit of %s": "Uw organisatie nadert de limiet van %s",
+        "Used this period: %1$s of %2$s.": "Gebruikt in deze periode: %1$s van %2$s."
     }
 }

@@ -11841,7 +11841,12 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "{value} of your cases are past their deadline or end today.",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Your organisation reached its limit of %1$s on the %2$s plan.": "Your organisation reached its limit of %1$s on the %2$s plan.",
+        "%s users": "%s users",
+        "%s cases per month": "%s cases per month",
+        "Your organisation is close to its limit of %s": "Your organisation is close to its limit of %s",
+        "Used this period: %1$s of %2$s.": "Used this period: %1$s of %2$s."
     },
     "nplurals=2; plural=(n != 1);"
 )
