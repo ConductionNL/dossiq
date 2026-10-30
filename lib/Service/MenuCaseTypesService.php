@@ -233,7 +233,7 @@ class MenuCaseTypesService {
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
-	 * @spec openspec/changes/menu-case-type-titles-in-the-readers-language/specs/case-type-navigation/spec.md
+	 * @spec openspec/specs/case-type-navigation/spec.md
 	 */
 	private function currentCaseTypes(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -314,7 +314,7 @@ class MenuCaseTypesService {
 	 *
 	 * @throws \Throwable When OpenRegister's facet query fails.
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function withOpenCaseCounts(array $caseTypes): array {
 		$counts = (new OpenCaseCounts(settingsService: $this->settingsService))->byCaseType(
@@ -344,7 +344,7 @@ class MenuCaseTypesService {
 	 *
 	 * @return array<int, array{id: string, title: string, openCases: null}> The case types, count unknown.
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function withUnknownOpenCaseCounts(array $caseTypes): array {
 		return array_map(
@@ -455,7 +455,7 @@ class MenuCaseTypesService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	private function rememberSuperseded(array $row): void {
 		$old = $this->resolveUuid(object: $row);

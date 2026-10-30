@@ -5,7 +5,7 @@
  * The case type page's side column follows the open tab (boards
  * DqZaaktypeOverzicht, DqZaaktype, DqZaaktypeVelden).
  *
- * @spec openspec/changes/case-type-side-cards-per-tab/specs/case-type-side-cards-per-tab/spec.md#requirement-the-case-type-side-column-follows-the-open-tab
+ * @spec openspec/specs/case-type-side-cards-per-tab/spec.md#requirement-the-case-type-side-column-follows-the-open-tab
  */
 
 import fs from 'fs'

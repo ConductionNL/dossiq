@@ -12,7 +12,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * @version GIT: <git-id>
  * @link https://conduction.nl
- * @spec openspec/changes/shipped-ledger-schema-slug/specs/case-type-seed-data/spec.md
+ * @spec openspec/specs/case-type-seed-data/spec.md
  */
 
 declare(strict_types=1);
@@ -26,7 +26,7 @@ use OCA\Dossiq\Service\Settings\SchemaSlugMap;
  * name it by the configured schema id (165). This maps an id to its slug for
  * writing, and a slug to both values for reading.
  *
- * @spec openspec/changes/shipped-ledger-schema-slug/specs/case-type-seed-data/spec.md
+ * @spec openspec/specs/case-type-seed-data/spec.md
  */
 class ShippedLedgerTargets {
 
@@ -59,7 +59,7 @@ class ShippedLedgerTargets {
 	 *
 	 * @return string The slug, or the value as given when no slug names it.
 	 *
-	 * @spec openspec/changes/shipped-ledger-schema-slug/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function slugFor(string $targetSchema): string {
 		if ($targetSchema === '' || isset(SchemaSlugMap::SLUG_TO_CONFIG_KEY[$targetSchema]) === true) {
@@ -87,7 +87,7 @@ class ShippedLedgerTargets {
 	 *
 	 * @return array<int, string> The values to look under.
 	 *
-	 * @spec openspec/changes/shipped-ledger-schema-slug/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function valuesFor(string $targetSchema): array {
 		$targetSchema = $this->slugFor(targetSchema: $targetSchema);
@@ -111,7 +111,7 @@ class ShippedLedgerTargets {
 	 *
 	 * @return array<int, array<string, mixed>>|null The rows, or null when the store is unreachable.
 	 *
-	 * @spec openspec/changes/shipped-ledger-schema-slug/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function rows(string $ledgerKey, string $targetSchema): ?array {
 		$ledger = [];
@@ -138,7 +138,7 @@ class ShippedLedgerTargets {
 	 *
 	 * @return array<string, mixed>|null The row, or null when nothing shipped it.
 	 *
-	 * @spec openspec/changes/shipped-ledger-schema-slug/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function row(string $ledgerKey, string $targetSchema, string $targetObject): ?array {
 		foreach ($this->valuesFor(targetSchema: $targetSchema) as $target) {

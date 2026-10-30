@@ -5,7 +5,7 @@
  * The case type Overview carries the board's cards and the phase board opens
  * the case type's workflow (boards DqZaaktypeOverzicht, DqZaaktype).
  *
- * @spec openspec/changes/case-type-overview-cards/specs/case-type-overview-cards/spec.md#requirement-the-case-type-overview-shows-the-boards-cards
+ * @spec openspec/specs/case-type-overview-cards/spec.md#requirement-the-case-type-overview-shows-the-boards-cards
  */
 
 import fs from 'fs'
@@ -34,7 +34,7 @@ describe('case type Overview cards', () => {
 })
 
 /**
- * @spec openspec/changes/case-type-overview-cards/specs/case-type-overview-cards/spec.md#requirement-the-phase-board-opens-the-case-types-workflow
+ * @spec openspec/specs/case-type-overview-cards/spec.md#requirement-the-phase-board-opens-the-case-types-workflow
  */
 describe('phase board', () => {
 	it('links View as flow to the case type\'s workflow canvas', () => {

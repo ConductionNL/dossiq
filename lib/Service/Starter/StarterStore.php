@@ -93,7 +93,7 @@ class StarterStore {
 	 *
 	 * @return string The schema id.
 	 *
-	 * @spec openspec/changes/shipped-ledger-schema-slug/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function schemaIdOf(string $configKey): string {
 		return (string)$this->settings->getConfigValue(key: $configKey);

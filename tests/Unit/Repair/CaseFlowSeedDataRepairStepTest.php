@@ -273,7 +273,7 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 	 * created "Omgevingsvergunning kleine bouwactiviteit" again, and the New
 	 * case picker offered it twice (review-check, 11 October 2026, N-5).
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function testACaseTypeStoredByAnEarlierRunIsFoundBySlug(): void {
 		$step = $this->step($this->store(), caseType: ['id' => 'ct-existing'], titleFindsIt: false);

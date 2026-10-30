@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
+ * @spec openspec/specs/catalogue/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Resolves the schema an OpenRegister object URL names.
  *
- * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
+ * @spec openspec/specs/catalogue/spec.md
  */
 class ObjectTypeSchemaResolver {
 
@@ -115,7 +115,7 @@ class ObjectTypeSchemaResolver {
 	 *
 	 * @return array{id: string, title: string, properties: int, views: array<int, string>, objects: int|null}|null The schema, or null.
 	 *
-	 * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
+	 * @spec openspec/specs/catalogue/spec.md
 	 */
 	public function describe(string $objectUrl): ?array {
 		$named = self::segmentsOf(objectUrl: $objectUrl);
@@ -229,7 +229,7 @@ class ObjectTypeSchemaResolver {
 	 *
 	 * @return int|null The count.
 	 *
-	 * @spec openspec/changes/catalogue-object-count/specs/catalogue/spec.md
+	 * @spec openspec/specs/catalogue/spec.md
 	 */
 	private function objectCount(?object $register, object $schema): ?int {
 		if ($register === null || $this->container->has(self::OBJECTS) === false) {

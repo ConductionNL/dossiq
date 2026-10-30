@@ -36,7 +36,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+ * @spec openspec/specs/case-type-seed-data/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use Throwable;
 /**
  * Supersedes the older copies of a seeded case type stored more than once.
  *
- * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+ * @spec openspec/specs/case-type-seed-data/spec.md
  */
 class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 
@@ -77,7 +77,7 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function getName(): string {
 		return 'Supersede the older copies of a seeded case type stored twice';
@@ -90,7 +90,7 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -122,7 +122,7 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	 *
 	 * @return integer How many copies were superseded.
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	private function supersede(object $objectService, string $register, string $schema): int {
 		try {
@@ -165,7 +165,7 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	 *
 	 * @return array<string, array<int, array{id: string, created: string}>> The groups.
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	private function duplicateGroups(array $rows): array {
 		$groups = [];
@@ -216,7 +216,7 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	 *
 	 * @return integer 1 when written, 0 when the write failed.
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	private function supersedeOne(object $objectService, string $register, string $schema, string $olderId, string $currentId): int {
 		try {

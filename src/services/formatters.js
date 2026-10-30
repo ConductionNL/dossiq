@@ -321,7 +321,7 @@ export default {
 	 *
 	 * @param {unknown} value The count.
 	 * @return {string} The phrase, or ''.
-	 * @spec openspec/changes/object-types-used-in-case-types/specs/catalogue/spec.md
+	 * @spec openspec/specs/catalogue/spec.md
 	 */
 	caseTypeCount: (value) => {
 		if (value === null || value === undefined || value === '') {
@@ -401,7 +401,7 @@ export default {
 	 *
 	 * @param {unknown} value The count.
 	 * @return {string} The phrase, or ''.
-	 * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
+	 * @spec openspec/specs/catalogue/spec.md
 	 */
 	propertyCount: (value) => {
 		if (value === null || value === undefined || value === '') {
@@ -416,7 +416,7 @@ export default {
 	 *
 	 * @param {unknown} value The view keys, `map` and `table`.
 	 * @return {string} The views, or '' for none.
-	 * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
+	 * @spec openspec/specs/catalogue/spec.md
 	 */
 	objectViews: (value) => {
 		const labels = { map: t('dossiq', 'Map'), table: t('dossiq', 'Table') }

@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/screens-round15-catalogue-schema-columns/specs/catalogue/spec.md
+ * @spec openspec/specs/catalogue/spec.md
  */
 
 declare(strict_types=1);

@@ -5,7 +5,7 @@
  * "Wat dossiq meelevert" draws a row's state as the board's pill:
  * "Ongewijzigd" on a light success fill, "Door u gewijzigd" on a warning fill.
  *
- * @spec openspec/changes/shipped-ledger-schema-slug/specs/case-type-seed-data/spec.md
+ * @spec openspec/specs/case-type-seed-data/spec.md
  */
 
 import fs from 'fs'
