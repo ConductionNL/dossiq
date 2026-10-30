@@ -16932,7 +16932,9 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "LhsRecommendations pages, by URL only (no menu entry, read-only)",
 				"note": "Missing: the enforcement panel or wizard on a handhaving case that asks for a recommendation and records an override.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/enforcement-intervention-from-the-case",
+				"requirement": "openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs :: A handler asks the case type's decision table for advice on the case (REQ-LHS-CASE-01)"
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -17537,7 +17539,13 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "TermijnDashboard audit widget; BezwaarDetail dwangsom fields (display only)",
 				"note": "Missing: registering the notice of default from the case, and the payout signal to finance.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/notice-of-default-from-the-case",
+				"requirement": [
+					"openspec/specs/dwangsom-calculation :: Dwangsom-staffel berekening volgens AWB 4:17 (REQ-TERM-006)",
+					"openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling :: A handler registers a notice of default on the case (REQ-ING-CASE-01)",
+					"openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling :: A definitive penalty is prepared for payout from its notice (REQ-ING-CASE-02)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -19594,7 +19602,12 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "Settings > Checklists; VTH case types available after install",
 				"note": "Missing: the VTH admin page (workflows, leges, beschikking templates, DSO), placing the VTH panels on the case, and callers for the VTH template and DSO intake.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/vth-cases-run-end-to-end",
+				"requirement": [
+					"openspec/changes/vth-cases-run-end-to-end/specs/vth-admin-settings :: A package shows its configuration on its own admin tab (REQ-VAS-PKG-01)",
+					"openspec/changes/vth-cases-run-end-to-end/specs/vth-admin-settings :: A case that came in through DSO can be forwarded or shared from the case (REQ-VAS-DSO-01)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
