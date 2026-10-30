@@ -15008,7 +15008,7 @@
 				"spec": "openspec/specs/woo-llm-anonymisation",
 				"screen": {
 					"canvas": "design-system",
-					"board": "DqLakken"
+					"board": "OcLakken"
 				}
 			},
 			"evidence": {
@@ -15303,8 +15303,8 @@
 				"note": "OpenSpec pass 2026-09-27: matrix corrected (opencatalogi lane: existing): rated yes with built.state none. lib/Service/WooPublicationService.php and lib/Service/PublicationService.php read at dossiq 96b8ef8f (corrected 2026-09-28). Corrections round 8 (2026-09-28): the publication reference is not stored because the decision schema does not declare it, so a published Woo decision cannot be withdrawn and publishing again creates a second publication (live check in woo-publish-decision-from-the-case task 1.1), dossiq#3162; rating kept because the publish itself still reaches OpenCatalogi.",
 				"spec": "openspec/specs/woo-publication-via-opencatalogi",
 				"screen": {
-					"canvas": "5NkFW28vZUUij43xzxHg5a",
-					"board": "DqPubliceren"
+					"canvas": "design-system",
+					"board": "OcPubliceren"
 				}
 			},
 			"evidence": {
@@ -16776,11 +16776,11 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/woo-case-type",
 				"screen": {
-					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"canvas": "design-system",
 					"board": [
-						"DqWooVerzoeken",
+						"OcWooBatch",
 						"DqBesluit",
-						"DqPubliceren"
+						"OcPubliceren"
 					]
 				}
 			},
@@ -19165,8 +19165,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/case-type-publish-validation",
 				"screen": {
-					"board": null,
-					"reason": "backend: checks on publish"
+					"canvas": "design-system",
+					"board": "DqZaaktypeOverzicht"
 				}
 			},
 			"evidence": {
@@ -20735,8 +20735,8 @@
 				"evidence": "dossiq#2899 8de94cb4a",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
-					"board": null,
-					"reason": "backend: field permissions"
+					"canvas": "design-system",
+					"board": "DqZaaktypeVelden"
 				}
 			},
 			"evidence": {
