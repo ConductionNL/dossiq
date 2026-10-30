@@ -311,16 +311,7 @@ class ShippedConfigurationService {
 			return ['state' => self::STATE_LOCAL, 'set' => '', 'setVersion' => ''];
 		}
 
-		$fingerprint = (string)($row['fingerprint'] ?? '');
-		// A ledger row from before `shippedFingerprint` was recorded was
-		// stamped with the shipped row itself.
-		$shippedFingerprint = (string)($row['shippedFingerprint'] ?? $fingerprint);
-		$untouched = $this->fingerprint->untouched(
-			object: $object,
-			fingerprint: $fingerprint,
-			shippedFingerprint: $shippedFingerprint,
-			shippedKeys: $shippedKeys,
-		);
+		$untouched = $this->untouchedSinceStamp(row: $row, object: $object, shippedKeys: $shippedKeys);
 
 		return [
 			'state' => $this->stateFor(untouched: $untouched),
@@ -370,9 +361,10 @@ class ShippedConfigurationService {
 			$set = (string)($row['set'] ?? '');
 			$latest = $this->sets->versionOf(set: $set);
 			$seeded = (string)($row['setVersion'] ?? '');
-			$untouched = $this->fingerprint->matches(
-				object: $object,
-				fingerprint: (string)($row['fingerprint'] ?? ''),
+			$untouched = $this->untouchedSinceStamp(
+				row: $row,
+				object: (new ShippedRowShape())->asWritten(object: $object, objectsKey: $objectsKey),
+				shippedKeys: [],
 			);
 
 			$overview[] = [
@@ -669,6 +661,31 @@ class ShippedConfigurationService {
 
 		return ['adopted' => true, 'reason' => ''];
 	}//end take()
+
+	/**
+	 * Whether a shipped object is untouched since its ledger stamp, as
+	 * {@see ShippedFingerprint::untouched()} decides it.
+	 *
+	 * @param array<string, mixed> $row         The ledger row.
+	 * @param array<string, mixed> $object      The object as it stands now, with its `@self`.
+	 * @param array<int, string>   $shippedKeys The keys a package ships for it, or none.
+	 *
+	 * @return boolean True when untouched.
+	 */
+	private function untouchedSinceStamp(array $row, array $object, array $shippedKeys): bool {
+		$fingerprint = (string)($row['fingerprint'] ?? '');
+		// A ledger row from before `shippedFingerprint` was recorded was
+		// stamped with the shipped row itself.
+		$shippedFingerprint = (string)($row['shippedFingerprint'] ?? $fingerprint);
+
+		return $this->fingerprint->untouched(
+			object: $object,
+			fingerprint: $fingerprint,
+			shippedFingerprint: $shippedFingerprint,
+			shippedKeys: $shippedKeys,
+			stampedAt: (string)($row['seededAt'] ?? ''),
+		);
+	}//end untouchedSinceStamp()
 
 	/**
 	 * Shipped and untouched, or shipped and changed here.
