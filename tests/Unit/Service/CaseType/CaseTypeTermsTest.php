@@ -150,6 +150,9 @@ class CaseTypeTermsTest extends TestCase {
 		$this->assertSame(expected: 'Yes, after a notice of default', actual: $plain['penalty']);
 		$this->assertSame(expected: 'No', actual: $none['penalty']);
 		$this->assertSame(expected: '', actual: $unset['penalty']);
+		$this->assertTrue(condition: $plain['penaltyApplies']);
+		$this->assertFalse(condition: $none['penaltyApplies']);
+		$this->assertFalse(condition: $unset['penaltyApplies']);
 	}//end testThePenaltyOnALateDecisionReadsAsASentence()
 
 	/**

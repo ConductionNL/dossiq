@@ -106,6 +106,7 @@ import FileContactMomentDialog from './dialogs/FileContactMomentDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
 import LinkProgrammeDialog from './dialogs/LinkProgrammeDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
+import NoticeOfDefaultDialog from './dialogs/NoticeOfDefaultDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
 // Remind a colleague about this case on a date (case-reminder-as-task).
 // @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
@@ -163,6 +164,7 @@ import { caseStatusTargets, moveCaseStatus } from './utils/caseStatusBoardMoves.
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
 import { openCaseOfDocument } from './utils/contactDocuments.js'
 import { openIntegriqConnections } from './utils/integriqConnections.js'
+import { prepareNoticePayout } from './utils/noticePayout.js'
 import { readFileAsMessage } from './utils/savedMail.js'
 
 // ADR-049 dissolution: the manifest Dashboard page's signal widgets (open /
@@ -401,6 +403,14 @@ const registry = {
 		component: DeelzaakCreateModal,
 		propsSchema: {},
 		_note: "CaseDetail `case-sub-cases` list's create action. Creates the sub-case through /api/deelzaken (validate, then derive), so it inherits what case.parentCase declares; the list's own create form would save the case directly and inherit nothing. parentCase arrives as the resolved `@objectId`; the modal reads the parent and its case type itself and says why when the parent cannot take a sub-case.",
+	},
+
+	// @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	NoticeOfDefaultDialog: {
+		kind: 'modal',
+		component: NoticeOfDefaultDialog,
+		propsSchema: {},
+		_note: "CaseDetail `notice-of-default-register` header action, boards DqZaak and DqTermijnen. Posts to /api/notices-of-default with the case id, so the server picks the case's statutory decision term, checks the caller may change the case, and refuses a notice while the term runs (409, nothing stored). A form over the noticeOfDefault schema would store a premature notice and start no accrual.",
 	},
 
 	LogContactDialog: {
@@ -1009,6 +1019,12 @@ const registry = {
 		kind: 'handler',
 		handler: openIntegriqConnections,
 		_note: "The Integrations page's Add integration header action. A function because a header action's `navigate` keyword only pushes a route name inside this app's router, which cannot leave the app.",
+	},
+	// @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+	prepareNoticePayout: {
+		kind: 'handler',
+		handler: prepareNoticePayout,
+		_note: "DqTermijnen notices card `payout-prepare` row action. A function because the object-table widget opens a declared modal without the row, and the payout dialog needs the row's accruing amount; it opens only on a definitive amount.",
 	},
 	// @spec openspec/specs/kcc-klantcontact-integratie/spec.md
 	openCaseOfDocument: {

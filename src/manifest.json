@@ -5873,6 +5873,31 @@
 						}
 					},
 					{
+						"id": "notice-of-default-register",
+						"type": "open-modal",
+						"label": "Register notice of default",
+						"icon": "EmailAlert",
+						"target": "NoticeOfDefaultDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"_visibleWhenNote": "notice-of-default-from-the-case REQ-ING-CASE-01: only on a case whose case type carries a penalty on a late decision (case-type-penalty-on-late-decision), read from the case type's terms.",
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								},
+								{
+									"endpoint": "/apps/dossiq/api/case-types/@object.caseType/terms",
+									"field": "penaltyApplies",
+									"op": "eq",
+									"value": true
+								}
+							]
+						}
+					},
+					{
 						"id": "generate-document",
 						"type": "open-modal",
 						"target": "BeschikkingComposerDialog",
@@ -11616,19 +11641,47 @@
 									"label": "Finances",
 									"widget": "badge",
 									"enum": [
+										"payout-due",
+										"prepared",
 										"signal-sent",
+										"paid",
+										"rejected",
+										"on-hold",
 										"amount-open"
 									],
 									"enumLabels": {
+										"payout-due": "Ready for payout",
+										"prepared": "Payout prepared",
 										"signal-sent": "Payment signal sent",
+										"paid": "Paid",
+										"rejected": "Payout rejected",
+										"on-hold": "On hold for an objection",
 										"amount-open": "Amount not fixed yet"
 									},
 									"widgetProps": {
 										"colorMap": {
-											"signal-sent": "teal"
+											"payout-due": "warning",
+											"signal-sent": "teal",
+											"paid": "success",
+											"rejected": "error"
 										}
 									},
 									"emptyLabel": "Not applicable"
+								}
+							],
+							"_actionsNote": "notice-of-default-from-the-case REQ-ING-CASE-02: a definitive amount is prepared for payout from its row, through the payout route (prepareNoticePayout opens PayoutPrepareDialog with the row). visibleWhen keeps it on rows ready for payout where the widget forwards it; the handler opens nothing on any other row.",
+							"actions": [
+								{
+									"id": "payout-prepare",
+									"type": "handler",
+									"handler": "prepareNoticePayout",
+									"label": "Prepare payout",
+									"icon": "Cash",
+									"visibleWhen": {
+										"field": "financeState",
+										"op": "eq",
+										"value": "payout-due"
+									}
 								}
 							],
 							"emptyText": "No notice of default has been received",

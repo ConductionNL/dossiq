@@ -17542,8 +17542,8 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"built": {
-				"state": "building",
-				"evidence": "DwangsomCalculationService accrues the penalty from TermijnTimerFiredListener; NoticeOfDefaultService is routed and has no caller; DwangsomUitbetalingService is never called; the TermijnDashboard audit widget and BezwaarDetail show the amounts, display only",
+				"state": "built",
+				"evidence": "CaseDetail header action notice-of-default-register (NoticeOfDefaultDialog, shown when the case type carries penaltyOnLateDecision) posts the case id to /api/notices-of-default; AccrualNoticeController picks the statutory term, checks case mutation access and refuses a notice while the term runs (409). The DqTermijnen notices card reads the payout state (NoticeOfDefaultRows over stored and finance-held payouts), and its payout-prepare row action (prepareNoticePayout, PayoutPrepareDialog) raises the payout through /api/accruing-amounts/{id}/payout. Live pass pending.",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
 					"openspec/specs/dwangsom-calculation",
@@ -17556,7 +17556,7 @@
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "TermijnDashboard audit widget; BezwaarDetail dwangsom fields (display only)",
-				"note": "Missing: registering the notice of default from the case, and the payout signal to finance.",
+				"note": "Built by notice-of-default-from-the-case. Not built yet: a notices list on the case page itself (task 3, second half).",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
 				"plan": "openspec/changes/notice-of-default-from-the-case",
 				"requirement": [

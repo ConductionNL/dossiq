@@ -11841,7 +11841,26 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "{value} of your cases are past their deadline or end today.",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Sent by": "Sent by",
+        "Choose a party or type a name": "Choose a party or type a name",
+        "Record the notice": "Record the notice",
+        "The notice of default is on this case. The penalty starts running on {date}.": "The notice of default is on this case. The penalty starts running on {date}.",
+        "The notice of default is on this case. An earlier notice already started the penalty.": "The notice of default is on this case. An earlier notice already started the penalty.",
+        "The notice of default could not be registered.": "The notice of default could not be registered.",
+        "The decision term runs until {date}. A notice of default only counts once the term has passed.": "The decision term runs until {date}. A notice of default only counts once the term has passed.",
+        "The decision term has not passed yet. A notice of default only counts once it has.": "The decision term has not passed yet. A notice of default only counts once it has.",
+        "Prepare payout": "Prepare payout",
+        "Account holder": "Account holder",
+        "Definitive penalty: € {amount}": "Definitive penalty: € {amount}",
+        "Payment signal sent. The financial administration pays it out.": "Payment signal sent. The financial administration pays it out.",
+        "The payout is prepared. No finance app took it yet.": "The payout is prepared. No finance app took it yet.",
+        "The payout could not be prepared.": "The payout could not be prepared.",
+        "Ready for payout": "Ready for payout",
+        "Payout prepared": "Payout prepared",
+        "Payout rejected": "Payout rejected",
+        "On hold for an objection": "On hold for an objection",
+        "Who sent the notice of default": "Who sent the notice of default"
     },
     "nplurals=2; plural=(n != 1);"
 )

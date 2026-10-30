@@ -11841,7 +11841,26 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Sent by": "Verzonden door",
+        "Choose a party or type a name": "Kies een betrokkene of typ een naam",
+        "Record the notice": "Ingebrekestelling vastleggen",
+        "The notice of default is on this case. The penalty starts running on {date}.": "De ingebrekestelling staat op deze zaak. De dwangsom gaat lopen op {date}.",
+        "The notice of default is on this case. An earlier notice already started the penalty.": "De ingebrekestelling staat op deze zaak. Een eerdere ingebrekestelling heeft de dwangsom al gestart.",
+        "The notice of default could not be registered.": "De ingebrekestelling kon niet worden vastgelegd.",
+        "The decision term runs until {date}. A notice of default only counts once the term has passed.": "De beslistermijn loopt tot {date}. Een ingebrekestelling telt pas als de termijn voorbij is.",
+        "The decision term has not passed yet. A notice of default only counts once it has.": "De beslistermijn is nog niet voorbij. Een ingebrekestelling telt pas daarna.",
+        "Prepare payout": "Uitbetaling voorbereiden",
+        "Account holder": "Rekeninghouder",
+        "Definitive penalty: € {amount}": "Definitieve dwangsom: € {amount}",
+        "Payment signal sent. The financial administration pays it out.": "Betaalsignaal verstuurd. De financiële administratie betaalt het uit.",
+        "The payout is prepared. No finance app took it yet.": "De uitbetaling is voorbereid. Nog geen financiële app heeft hem overgenomen.",
+        "The payout could not be prepared.": "De uitbetaling kon niet worden voorbereid.",
+        "Ready for payout": "Klaar voor uitbetaling",
+        "Payout prepared": "Uitbetaling voorbereid",
+        "Payout rejected": "Uitbetaling afgewezen",
+        "On hold for an objection": "Aangehouden voor bezwaar",
+        "Who sent the notice of default": "Wie de ingebrekestelling heeft gestuurd"
     },
     "nplurals=2; plural=(n != 1);"
 )
