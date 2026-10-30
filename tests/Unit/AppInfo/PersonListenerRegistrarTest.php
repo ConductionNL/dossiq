@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\PersonListenerRegistrar;
+use OCA\Dossiq\Listener\CaseSchemaVocabularyListener;
 use OCA\Dossiq\Listener\PersonLinkListener;
 use OCA\Dossiq\Listener\RoleTypeVocabularyListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -75,6 +76,30 @@ class PersonListenerRegistrarTest extends TestCase {
 			actual: ($registered[RoleTypeVocabularyListener::class] ?? []),
 		);
 	}//end testEveryRoleTypeChangeReachesTheVocabularyListener()
+
+	/**
+	 * An update of the case schema (a register re-import) reaches the vocabulary too.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-roles-survive-a-schema-reimport/specs/people-on-the-case/spec.md#requirement-the-case-schemas-role-vocabulary-survives-a-rewrite-of-the-schema
+	 */
+	public function testACaseSchemaUpdateReachesTheVocabulary(): void {
+		$registered = [];
+		$context = $this->createMock(originalClassName: IRegistrationContext::class);
+		$context->method('registerEventListener')->willReturnCallback(
+			static function (string $event, string $listener) use (&$registered): void {
+				$registered[$listener][] = $event;
+			}
+		);
+
+		(new PersonListenerRegistrar())->register(context: $context);
+
+		$this->assertSame(
+			expected: ['OCA\OpenRegister\Event\SchemaUpdatedEvent'],
+			actual: ($registered[CaseSchemaVocabularyListener::class] ?? []),
+		);
+	}//end testACaseSchemaUpdateReachesTheVocabulary()
 
 	/**
 	 * The three events are the ones OpenRegister raises for a person link.
