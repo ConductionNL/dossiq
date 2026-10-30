@@ -24,6 +24,6 @@ describe('the AWB deadline definitions table as the board draws it', () => {
 	})
 
 	it('adds no space above the tab content', () => {
-		expect(sfc).toMatch(/\.deadline-definitions-tab \{\s*padding: 0 0 8px;/)
+		expect(sfc).toMatch(/\.deadline-definitions-tab \{\s*padding: 0;/)
 	})
 })

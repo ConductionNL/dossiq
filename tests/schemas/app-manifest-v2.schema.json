@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.163.0",
+	"version": "2.167.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -1948,6 +1948,7 @@
 				"params": { "type": "object", "description": "Route params passed along with `route`.", "additionalProperties": { "type": ["string", "number"] } },
 				"query": { "type": "object", "description": "Query passed along with `route`.", "additionalProperties": { "type": ["string", "number", "boolean"] } },
 				"href": { "type": "string", "minLength": 1, "description": "External URL, opened in a new tab. Mutually exclusive with route." },
+				"action": { "type": "string", "enum": ["user-settings"], "description": "Built-in action instead of a link: 'user-settings' opens the user settings dialog (board PqGeavanceerdHub, Persoonlijke instellingen). Mutually exclusive with route and href. Outside a host that offers the dialog the card is left out." },
 				"permission": { "type": "string", "description": "Permission the user must hold for the card to render. Same rule as menuItem.permission." },
 				"visibleIf": { "$ref": "#/$defs/visibleIfCondition", "description": "Display condition, evaluated the way a menu entry's is." },
 				"status": {
@@ -1997,7 +1998,9 @@
 			},
 			"allOf": [
 				{ "not": { "required": ["route", "href"] } },
-				{ "anyOf": [{ "required": ["route"] }, { "required": ["href"] }] }
+				{ "not": { "required": ["route", "action"] } },
+				{ "not": { "required": ["href", "action"] } },
+				{ "anyOf": [{ "required": ["route"] }, { "required": ["href"] }, { "required": ["action"] }] }
 			]
 		},
 		"navCardEntry": {
@@ -2140,6 +2143,10 @@
 				"clear": {
 					"type": "boolean",
 					"description": "`true` starts this placement below every card that starts on an earlier row, in any column, so a row of cards after the tracks lines up under the taller one instead of rising under the shorter (DqMijnWerk, DqMijnTeam). Held in place outside edit mode."
+				},
+				"sameHeight": {
+					"type": "boolean",
+					"description": "`true` on placements that start on one row stretches the shorter size-to-content ones to the tallest of them (a fixed-height one counts but is not stretched), so the row reads as one band and the next row starts level (DqProcesanalyse KPI tiles and charts). Not in edit mode, not on a stacked narrow grid."
 				},
 				"sizeToContent": {
 					"type": ["boolean", "integer"],
@@ -2667,15 +2674,15 @@
 									"legendPosition": { "type": "string", "enum": ["top", "bottom", "left", "right"], "description": "Legend placement override (empty/omitted keeps the automatic placement)." },
 								"valueAxisBaseline": { "type": "string", "enum": ["auto", "zero", "fit"], "description": "Value-axis baseline: 'auto' (the default — zero for bar/area, a bounded window for line/scatter), 'zero' (force a zero baseline), or 'fit' (let ApexCharts frame the data range, for a series living far from zero such as an SLA hovering 95–99%)." },
 									"valueFormat": {
-										"description": "Named value formatter applied to the value axis + tooltip: 'currency' | 'currency-compact' | 'percent' | 'number', or the object form { name, currency?, decimals?, suffix? }. 'number' with `suffix` reads '9 d'.",
+										"description": "Named value formatter applied to the value axis + tooltip: 'currency' | 'currency-compact' | 'compact' | 'percent' | 'number', or the object form { name, currency?, decimals?, suffix? }. 'number' with `suffix` reads '9 d'; 'compact' writes 38000 as '38K' with no currency.",
 										"oneOf": [
-											{ "type": "string", "enum": ["currency", "currency-compact", "percent", "number"] },
+											{ "type": "string", "enum": ["currency", "currency-compact", "compact", "percent", "number"] },
 											{
 												"type": "object",
 												"additionalProperties": false,
 												"required": ["name"],
 												"properties": {
-													"name": { "type": "string", "enum": ["currency", "currency-compact", "percent", "number"] },
+													"name": { "type": "string", "enum": ["currency", "currency-compact", "compact", "percent", "number"] },
 													"currency": { "type": "string", "description": "ISO-4217 code (EUR default; invalid codes fall back to EUR)." },
 													"decimals": { "type": "integer", "minimum": 0, "description": "Fraction digits override." },
 													"suffix": { "type": "string", "description": "Text after a 'number' value, e.g. ' d'." }
@@ -4315,7 +4322,7 @@
 										"additionalProperties": false,
 										"properties": {
 											"key": { "type": "string", "minLength": 1 },
-											"format": { "enum": ["text", "mono", "badge", "user", "date", "strong"] },
+											"format": { "enum": ["text", "mono", "badge", "user", "date", "strong", "pill"] },
 											"labelField": { "type": "string" },
 											"colorField": { "type": "string" },
 											"warnWhenPast": { "type": "boolean" }
@@ -4603,12 +4610,21 @@
 							}
 						},
 						"layout": {
-							"type": "array",
-							"description": "Dashboard layout entries (for type='dashboard', legacy). Carry-forward from v1.",
-							"items": {
-								"type": "object",
-								"additionalProperties": true
-							}
+							"oneOf": [
+								{
+									"type": "array",
+									"description": "Dashboard layout entries (for type='dashboard', legacy). Carry-forward from v1.",
+									"items": {
+										"type": "object",
+										"additionalProperties": true
+									}
+								},
+								{
+									"type": "string",
+									"enum": ["cards", "canvas"],
+									"description": "type='flow' / 'flow-detail' in the board look: `canvas` draws the page as boards PqFlow and PqFlowRun do (actions under the title, floating toolbar and inspector); `cards` (default) keeps the DqFlow grid."
+								}
+							]
 						},
 						"content": {
 							"type": "array",
@@ -5504,16 +5520,28 @@
 						},
 						"headerMetaCounts": {
 							"type": "object",
-							"description": "type='index': the other lists headerMeta counts, by name. Each is read as one list total and fills `{count:<name>}` in headerMeta (\"{total} contracten bij {count:suppliers} leveranciers\"); while a count loads or when it fails, the note is left out.",
+							"description": "type='index' or 'detail': the other lists headerMeta counts, by name. Each is read as one list total and fills `{count:<name>}` in headerMeta (\"{total} contracten bij {count:suppliers} leveranciers\"); while a count loads or when it fails, the note is left out. A count reads a register + schema (with an optional filter) or a named entity source (`{ entitySource: \"organisations\" }`: DqTenant \"een van 6 organisaties op deze omgeving\").",
 							"additionalProperties": {
-								"type": "object",
-								"required": ["register", "schema"],
-								"additionalProperties": false,
-								"properties": {
-									"register": { "type": "string", "minLength": 1 },
-									"schema": { "type": "string", "minLength": 1 },
-									"filter": { "type": "object" }
-								}
+								"oneOf": [
+									{
+										"type": "object",
+										"required": ["register", "schema"],
+										"additionalProperties": false,
+										"properties": {
+											"register": { "type": "string", "minLength": 1 },
+											"schema": { "type": "string", "minLength": 1 },
+											"filter": { "type": "object" }
+										}
+									},
+									{
+										"type": "object",
+										"required": ["entitySource"],
+										"additionalProperties": false,
+										"properties": {
+											"entitySource": { "type": "string", "enum": ["flows", "flowRuns", "tasks", "endpoint", "search", "users", "organisations"] }
+										}
+									}
+								]
 							}
 						},
 						"tabsLabel": {
@@ -5731,7 +5759,7 @@
 								"field": { "type": "string", "minLength": 1 },
 								"label": { "type": "string", "minLength": 1, "description": "The strip's accessible name; default the field's title." },
 								"allLabel": { "type": "string", "minLength": 1, "description": "The first pill; default \"All\"." },
-								"options": { "type": "array", "minItems": 1, "items": { "type": "object", "additionalProperties": false, "required": ["value"], "properties": { "value": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 } } } },
+								"options": { "type": "array", "minItems": 1, "items": { "type": "object", "additionalProperties": false, "anyOf": [{ "required": ["value"] }, { "required": ["values"] }], "properties": { "value": { "type": "string", "minLength": 1 }, "values": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "description": "Several stored values under one pill (\"phone\" and \"telefoon\" as Telefoon); picking it filters on any of them." }, "label": { "type": "string", "minLength": 1 } } } },
 								"showCount": { "type": "boolean", "default": false }
 							}
 						},
@@ -5782,7 +5810,7 @@
 							"description": "type='index': the property keys the cards view shows as the facts list of each card, in order; defaults to the first four list columns under the board look (screens-card-parity). Maps to CnIndexPage `cardFields`.",
 							"items": { "type": "string", "minLength": 1 }
 						},
-						"expandableRows": { "type": "object", "additionalProperties": false, "description": "type='index', list view: every row opens to a sub-table (CnExpandableRow, index-expandable-rows). Closed: title, a badge while `badge.when` holds, description, a list field as chips (`tones` colour each by its entry) and meta templates. Open: the list as a table (columns `as` text, order, bar, check, yesNo or pill), a note and a footer action. A button or the footer action names a row action by id. `open` first or all opens rows at the start. Maps to CnIndexPage `expandableRows`.", "required": ["title"], "properties": { "title": { "type": "string", "minLength": 1 }, "badge": { "type": "object", "additionalProperties": false, "required": ["label"], "properties": { "when": { "type": "object" }, "label": { "type": "string", "minLength": 1 } } }, "description": { "type": "string", "minLength": 1 }, "chips": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "each": { "type": "string", "minLength": 1 }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "tones": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["when", "variant"], "properties": { "when": { "type": "object" }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "text": { "type": "string" } } } } } }, "meta": { "type": "array", "items": { "type": "string", "minLength": 1 } }, "table": { "type": "object", "additionalProperties": false, "required": ["field", "columns"], "properties": { "field": { "type": "string", "minLength": 1 }, "sortable": { "type": "boolean", "description": "Every column header sorts the sub-table (ascending, descending, off)." }, "filterable": { "type": "boolean", "description": "Every column header has a filter on the values the column holds." }, "reorder": { "type": "object", "additionalProperties": false, "description": "A drag handle per entry; a move saves the row with the list renumbered in `key` (default order).", "properties": { "key": { "type": "string", "minLength": 1 } } }, "columns": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "key": { "type": "string", "minLength": 1 }, "label": { "type": "string" }, "sortable": { "type": "boolean" }, "filterable": { "type": "boolean" }, "as": { "type": "string", "enum": ["text", "order", "bar", "check", "yesNo", "pill"] }, "template": { "type": "string", "minLength": 1 }, "strong": { "type": "boolean" }, "text": { "type": "string" }, "tones": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["when", "variant"], "properties": { "when": { "type": "object" }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "text": { "type": "string" } } } } } } }, "note": { "type": "string" }, "action": { "type": "object", "additionalProperties": false, "required": ["id"], "properties": { "id": { "type": "string", "minLength": 1 }, "label": { "type": "string" } } } } }, "buttons": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["action"], "properties": { "action": { "type": "string", "minLength": 1 }, "label": { "type": "string" }, "icon": { "type": "string", "minLength": 1, "description": "A CnIcon name drawn before the label." } } } }, "open": { "type": "string", "enum": ["first", "all", "none"] } } },
+						"expandableRows": { "type": "object", "additionalProperties": false, "description": "type='index', list view: every row opens to a sub-table (CnExpandableRow, index-expandable-rows). Closed: title, a badge while `badge.when` holds, description, a list field as chips (`tones` colour each by its entry) and meta templates. Open: the list as a table (columns `as` text, order, bar, check, yesNo or pill), a note and a footer action. A button or the footer action names a row action by id. `open` first or all opens rows at the start. Maps to CnIndexPage `expandableRows`.", "required": ["title"], "properties": { "title": { "type": "string", "minLength": 1 }, "badge": { "type": "object", "additionalProperties": false, "required": ["label"], "properties": { "when": { "type": "object" }, "label": { "type": "string", "minLength": 1 } } }, "description": { "type": "string", "minLength": 1 }, "chips": { "type": "object", "additionalProperties": false, "required": ["field"], "properties": { "field": { "type": "string", "minLength": 1 }, "each": { "type": "string", "minLength": 1 }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "tones": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["when", "variant"], "properties": { "when": { "type": "object" }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "text": { "type": "string" } } } } } }, "meta": { "type": "array", "items": { "type": "string", "minLength": 1 } }, "table": { "type": "object", "additionalProperties": false, "required": ["field", "columns"], "properties": { "field": { "type": "string", "minLength": 1 }, "sortable": { "type": "boolean", "description": "Every column header sorts the sub-table (ascending, descending, off)." }, "filterable": { "type": "boolean", "description": "Every column header has a filter on the values the column holds." }, "reorder": { "type": "object", "additionalProperties": false, "description": "A drag handle per entry; a move saves the row with the list renumbered in `key` (default order).", "properties": { "key": { "type": "string", "minLength": 1 } } }, "columns": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "key": { "type": "string", "minLength": 1 }, "label": { "type": "string" }, "sortable": { "type": "boolean" }, "filterable": { "type": "boolean" }, "as": { "type": "string", "enum": ["text", "order", "bar", "check", "yesNo", "pill"] }, "template": { "type": "string", "minLength": 1 }, "strong": { "type": "boolean" }, "text": { "type": "string" }, "tones": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["when", "variant"], "properties": { "when": { "type": "object" }, "variant": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }, "text": { "type": "string" } } } } } } }, "note": { "type": "string" }, "action": { "type": "object", "additionalProperties": false, "required": ["id"], "properties": { "id": { "type": "string", "minLength": 1 }, "label": { "type": "string" } } }, "entryAction": { "type": "object", "additionalProperties": false, "required": ["id", "label"], "description": "An icon button after every entry, named \"{label} {entry}\"; it runs the row action `id`.", "properties": { "id": { "type": "string", "minLength": 1 }, "label": { "type": "string", "minLength": 1 }, "icon": { "type": "string", "minLength": 1, "description": "A CnIcon name; Pencil when left out." } } } } }, "buttons": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["action"], "properties": { "action": { "type": "string", "minLength": 1 }, "label": { "type": "string" }, "icon": { "type": "string", "minLength": 1, "description": "A CnIcon name drawn before the label." } } } }, "open": { "type": "string", "enum": ["first", "all", "none"] } } },
 						"tableTitle": { "type": "string", "minLength": 1, "description": "type='index', table view: a title at the top of the table card, an i18n key; under the board look the head row then reads on white with a rule under it (index-table-title). Maps to CnIndexPage `tableTitle`." },
 						"cardLayout": {
 							"type": "object",
@@ -5849,6 +5877,7 @@
 									"icon": { "type": "string", "minLength": 1, "description": "MDI icon name." },
 									"format": { "type": "string", "enum": ["csv", "excel"], "default": "csv", "description": "For `export`." },
 									"run": { "type": "string", "minLength": 1, "description": "For `export`: the id of a `headerActions` entry the button runs instead of the export dialog. On a named or endpoint source an Export without `run` (and without a mass-export listener) is not drawn (2.127.0)." },
+									"placement": { "type": "string", "enum": ["header", "tabs"], "default": "header", "description": "For `actions-menu`: `tabs` draws the menu at the end of the page tabs' row instead of in the header, as PqBiExport and PqFlows draw \"Acties\" beside their tabs; a page without page tabs keeps it in the header (index-actions-menu-beside-tabs)." },
 									"items": { "type": "array", "minItems": 1, "items": { "anyOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "additionalProperties": false, "required": ["heading"], "properties": { "heading": { "type": "string", "minLength": 1, "description": "i18n key of a group heading." } } } ] }, "description": "For `actions-menu`: the menu's entries, in order. Each is `header-actions` (every header action), the id of one `headerActions` entry, or a built-in of the actions bar's own menu, which the bar drops while header buttons show: `import`, `export`, `refresh`, `copy-selected`, `delete-selected` (disabled until a row is selected) or `documentation` (a link to the page's documentationUrl, left out without one). An unknown name is left out. Absent: the header actions only (screens-index-header-actions-menu, 2.90.0). Entries can be grouped: `{ \"heading\": \"<i18n key>\" }` draws a group heading and `\"separator\"` a rule, each only when an entry follows it, so a group whose entries are all left out leaves no empty heading (screens-index-header-menu-headings, 2.93.0)." }
 								}
 							}
@@ -6261,7 +6290,7 @@
 										"description": "A closing card after the groups (board PqGeavanceerdHub, the menu structure): a badge, a paragraph and a link beside a titled list of facts. Strings are translated, then {runtime.<path>} is filled.",
 										"properties": {
 											"label": { "type": "string" },
-											"badge": { "type": "object", "required": ["label"], "additionalProperties": false, "properties": { "label": { "type": "string", "minLength": 1 }, "icon": { "type": "string" } } },
+											"badge": { "type": "object", "required": ["label"], "additionalProperties": false, "properties": { "label": { "type": "string", "minLength": 1 }, "icon": { "type": "string" }, "tone": { "type": "string", "enum": ["primary", "purple"], "description": "The pill tone: primary (default), or purple, as the boards draw an administrators-only badge." } } },
 											"text": { "type": "string" },
 											"link": { "type": "object", "required": ["label"], "additionalProperties": false, "properties": { "label": { "type": "string", "minLength": 1 }, "route": { "type": "string", "minLength": 1 }, "href": { "type": "string", "minLength": 1 }, "params": { "type": "object" }, "query": { "type": "object" } } },
 											"title": { "type": "string" },

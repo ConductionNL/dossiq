@@ -833,6 +833,7 @@
 										"{@self.viewedAt|ago}"
 									],
 									"rowRoute": "CaseDetail",
+									"chevron": true,
 									"emptyText": "Cases you open show up here",
 									"lensReasonTexts": {
 										"recent.audit-trail-disabled": "This server does not keep track of which cases you open.",
@@ -5323,7 +5324,7 @@
 								{
 									"key": "prompt",
 									"label": "Question or suggestion",
-									"cellClass": "cn-cell--wrap"
+									"cellClass": "cn-cell--wrap cn-cell--leading-normal"
 								},
 								{
 									"key": "status",
@@ -5351,7 +5352,7 @@
 								{
 									"key": "advisoryContext.model",
 									"label": "Model",
-									"cellClass": "cn-cell--wrap"
+									"cellClass": "cn-cell--wrap cn-cell--leading-normal"
 								}
 							],
 							"rowTitle": "text",
@@ -6093,6 +6094,8 @@
 					"isFinalStatus": false,
 					"assignedGroup": "@myTeam"
 				},
+				"heldDefaultFilters": ["isFinalStatus"],
+				"_heldDefaultFiltersNote": "Ruben, 29 October: the list and board views hide closed cases also when a link names filters of its own (a case type, a team), so DqWerkbord no longer shows a closed case in an \"Elders\" column. A link shows closed cases only when it names isFinalStatus itself (nextcloud-vue heldDefaultFilters).",
 				"_defaultFiltersNote": "The line says open cases in your teams, so the list opens on them: isFinalStatus false and the reader's team(s) (@myTeam) as removable default filters, \"Status: lopend\" and \"Team: Woo en informatie\" on the Active line (board DqZaken); a reader in no team gets no team filter. A link with filters of its own or a saved view starts from those instead (nextcloud-vue defaultFilters). The All lens filters drafts and hidden statuses only, so without this closed cases stood under \"lopende zaken\".",
 				"_savedViewCountTextNote": "DqFilterInMenu: while a saved view is applied the line names what it holds, \"3 van 48 lopende zaken · termijn binnen 7 dagen, van mij · gesorteerd op termijn\"; {view} is the view's description, else its filters in words (nextcloud-vue savedViewCountText).",
 				"savedViewCountText": "{shown} of {total} open cases · {view} · sorted by deadline",

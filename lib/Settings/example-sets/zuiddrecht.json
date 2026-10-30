@@ -9447,6 +9447,10 @@
 						{
 							"key": "deadline",
 							"order": "asc"
+						},
+						{
+							"key": "receivedAt",
+							"order": "asc"
 						}
 					],
 					"scope": "dossiq/case",
@@ -9492,6 +9496,10 @@
 						{
 							"key": "deadline",
 							"order": "asc"
+						},
+						{
+							"key": "receivedAt",
+							"order": "asc"
 						}
 					],
 					"scope": "dossiq/case",
@@ -9527,6 +9535,10 @@
 						{
 							"key": "deadline",
 							"order": "asc"
+						},
+						{
+							"key": "receivedAt",
+							"order": "asc"
 						}
 					],
 					"scope": "dossiq/case",
@@ -9561,6 +9573,10 @@
 					"sort": [
 						{
 							"key": "deadline",
+							"order": "asc"
+						},
+						{
+							"key": "receivedAt",
 							"order": "asc"
 						}
 					],

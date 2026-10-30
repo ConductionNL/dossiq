@@ -30,6 +30,10 @@ describe('the Cases list that counts open cases', () => {
 		expect(cases.defaultFilters).toMatchObject({ isFinalStatus: false })
 	})
 
+	it('keeps open cases only under a link that names its own filters (Ruben, 29 October)', () => {
+		expect(cases.heldDefaultFilters).toEqual(['isFinalStatus'])
+	})
+
 	it('opens on the reader\'s teams, as the line says ("in uw teams")', () => {
 		expect(cases.countText).toMatch(/in your teams/)
 		expect(cases.defaultFilters.assignedGroup).toBe('@myTeam')

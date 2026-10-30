@@ -408,16 +408,19 @@ export default {
 
 <style scoped>
 .deadline-definitions-tab {
-	padding: 0 0 8px;
+	padding: 0;
 }
 
 .deadline-definitions-tab__header {
 	margin-bottom: 16px;
 }
 
+/* The card's second paragraph, as the board draws it. */
 .deadline-definitions-tab__calendar {
 	color: var(--color-text-maxcontrast);
-	margin: 0 0 8px;
+	font-size: 14px;
+	line-height: 1.5;
+	margin: 0 0 16px;
 }
 
 /* One table, a definition per row, as board DqBeheerGeavanceerd

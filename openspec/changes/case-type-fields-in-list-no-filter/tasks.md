@@ -5,3 +5,4 @@
 - **files**: `src/manifest.json`
 - [x] Implement
 - [x] Test: `tests/vitest/caseTypeFieldsColumns.spec.js`
+- [x] r36: filterable false removed again; the grip width is held in nc-vue (fix/r36-reorder-grip-keeps-name-width)
