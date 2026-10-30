@@ -8,8 +8,8 @@
 
 ## 2. Payment schedule (generic)
 
-- [ ] 2.1 `paymentSchedule` (array of date and amount, raised flag) on the decision schema in the register.
-- [ ] 2.2 `lib/BackgroundJob/RaiseDuePayments.php`: raises each due instalment once through the shillinq payable seam (decision 192); `tests/Unit/BackgroundJob/RaiseDuePaymentsTest.php` (once per instalment, idempotent).
+- [x] 2.1 `paymentSchedule` on the decision schema (`beschikking` 1.2.0 in `lib/Settings/register.d/30-beschikking.json`, register 0.20.87): `payeeIban` and `instalments` (label, dueOn, amountCents, condition, conditionMet, and the payableId and raisedAt the job writes back). The payee name is the decision's addressee.
+- [x] 2.2 `lib/BackgroundJob/RaiseDuePayments.php` (daily, as the background service account) over `lib/Service/Money/PaymentScheduleRaiser.php`: raises each due instalment once through the shillinq payable seam (`PayoutRequester`, decision 192); an instalment with an unmet condition waits; `tests/Unit/BackgroundJob/RaiseDuePaymentsTest.php` (once per instalment, idempotent, condition, refusal).
 
 ## 3. Checks
 

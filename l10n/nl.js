@@ -11841,7 +11841,26 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Payment schedule": "Betaalschema",
+        "Instalments paid out under this decision, each raised once with the finance app on its due date.": "Termijnen die onder dit besluit worden uitbetaald. Elke termijn gaat op de vervaldag één keer naar de financiële app.",
+        "Payee IBAN": "IBAN van de ontvanger",
+        "The account the instalments are paid to.": "De rekening waarop de termijnen worden betaald.",
+        "Instalments": "Termijnen",
+        "Due date and amount per instalment.": "Vervaldag en bedrag per termijn.",
+        "Instalment": "Termijn",
+        "The name of the instalment, such as first advance.": "De naam van de termijn, zoals eerste voorschot.",
+        "Due on": "Vervalt op",
+        "The day the instalment is raised.": "De dag waarop de termijn wordt aangeboden.",
+        "Amount in cents": "Bedrag in centen",
+        "The amount in euro cents.": "Het bedrag in eurocenten.",
+        "What has to happen before the instalment is paid. Empty when nothing has to.": "Wat er moet gebeuren voordat de termijn wordt betaald. Leeg als er niets hoeft.",
+        "Condition met": "Voorwaarde vervuld",
+        "Whether the condition is met.": "Of aan de voorwaarde is voldaan.",
+        "Payable": "Betaalopdracht",
+        "The payable the finance app raised for this instalment.": "De betaalopdracht die de financiële app voor deze termijn heeft aangemaakt.",
+        "Raised on": "Aangeboden op",
+        "The day the instalment was raised.": "De dag waarop de termijn is aangeboden."
     },
     "nplurals=2; plural=(n != 1);"
 )

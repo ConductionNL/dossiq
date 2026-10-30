@@ -11930,6 +11930,25 @@
         "{value} of your cases are past their deadline or end today.": "{value} of your cases are past their deadline or end today.",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Payment schedule": "Payment schedule",
+        "Instalments paid out under this decision, each raised once with the finance app on its due date.": "Instalments paid out under this decision, each raised once with the finance app on its due date.",
+        "Payee IBAN": "Payee IBAN",
+        "The account the instalments are paid to.": "The account the instalments are paid to.",
+        "Instalments": "Instalments",
+        "Due date and amount per instalment.": "Due date and amount per instalment.",
+        "Instalment": "Instalment",
+        "The name of the instalment, such as first advance.": "The name of the instalment, such as first advance.",
+        "Due on": "Due on",
+        "The day the instalment is raised.": "The day the instalment is raised.",
+        "Amount in cents": "Amount in cents",
+        "The amount in euro cents.": "The amount in euro cents.",
+        "What has to happen before the instalment is paid. Empty when nothing has to.": "What has to happen before the instalment is paid. Empty when nothing has to.",
+        "Condition met": "Condition met",
+        "Whether the condition is met.": "Whether the condition is met.",
+        "Payable": "Payable",
+        "The payable the finance app raised for this instalment.": "The payable the finance app raised for this instalment.",
+        "Raised on": "Raised on",
+        "The day the instalment was raised.": "The day the instalment was raised."
     }
 }
