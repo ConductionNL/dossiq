@@ -36,9 +36,14 @@ describe('the Beslistabellen (DMN) card (DqBeheerGeavanceerd)', () => {
 		const at = admin.indexOf('.dq-settings-body-text {')
 		expect(at).toBeGreaterThan(-1)
 		const body = admin.slice(at, admin.indexOf('}', at))
-		expect(body).toContain('margin: 0;')
 		expect(body).toContain('font-size: 15px;')
 		expect(body).toContain('line-height: 1.5;')
 		expect(body).toContain('color: var(--color-main-text);')
+	})
+
+	it('starts it 16px under the title, as drawn: 2px past the card\'s 14px gap', () => {
+		const at = admin.indexOf('.dq-settings-body-text {')
+		const body = admin.slice(at, admin.indexOf('}', at))
+		expect(body).toContain('margin: 2px 0 0;')
 	})
 })
