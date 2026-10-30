@@ -76,7 +76,7 @@ class DoorlooptijdController extends Controller {
 	 * @return JSONResponse|DataDownloadResponse Metrics body, the CSV, or 400 on invalid parameters.
 	 *
 	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02
-	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
 	 */
 	public function metrics(): JSONResponse|DataDownloadResponse {
 		$denied = $this->refuseReader();
@@ -115,7 +115,7 @@ class DoorlooptijdController extends Controller {
 	 *
 	 * @return JSONResponse|null A 401 or 403 response, or null when the reader may see them.
 	 *
-	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
 	 */
 	private function refuseReader(): ?JSONResponse {
 		$user = $this->userSession->getUser();
@@ -143,7 +143,7 @@ class DoorlooptijdController extends Controller {
 	 *
 	 * @return JSONResponse|null A 400 response, or null when both are valid.
 	 *
-	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
 	 */
 	private function refuseChoice(mixed $format, mixed $granularity): ?JSONResponse {
 		if (in_array($format, ['json', 'csv'], true) === false) {
@@ -167,7 +167,7 @@ class DoorlooptijdController extends Controller {
 	 *
 	 * @return array<string, mixed> The parameters.
 	 *
-	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
 	 */
 	private function metricsParams(mixed $caseType, string $period, string $granularity, mixed $atRiskRaw): array {
 		$params = [
@@ -191,7 +191,7 @@ class DoorlooptijdController extends Controller {
 	 *
 	 * @return DataDownloadResponse The CSV, with a byte order mark so a spreadsheet reads it as UTF-8.
 	 *
-	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
 	 */
 	private function csv(mixed $caseType, string $period): DataDownloadResponse {
 		$params = ['period' => $period];

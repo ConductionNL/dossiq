@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/doorlooptijd-norm-and-months/specs/doorlooptijd-norm-and-months/spec.md
+ * @spec openspec/specs/doorlooptijd-norm-and-months/spec.md
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use DateTimeImmutable;
 /**
  * Averages the term of the recently closed cases.
  *
- * @spec openspec/changes/doorlooptijd-norm-and-months/specs/doorlooptijd-norm-and-months/spec.md
+ * @spec openspec/specs/doorlooptijd-norm-and-months/spec.md
  */
 class NormAverage {
 	/**
@@ -45,7 +45,7 @@ class NormAverage {
 	 *
 	 * @return int|null
 	 *
-	 * @spec openspec/changes/doorlooptijd-norm-and-months/specs/doorlooptijd-norm-and-months/spec.md#requirement-the-processing-time-chart-draws-the-norm-and-names-the-months
+	 * @spec openspec/specs/doorlooptijd-norm-and-months/spec.md#requirement-the-processing-time-chart-draws-the-norm-and-names-the-months
 	 */
 	public function averageOf(array $cases, ?DateTimeImmutable $today = null): ?int {
 		$cutoff = ($today ?? new DateTimeImmutable())->modify('-12 months')->format('Y-m-d');

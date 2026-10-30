@@ -8,7 +8,7 @@
  * where the money stands ("Betaalsignaal verstuurd" / "Bedrag nog niet vast" /
  * "Niet van toepassing"), from GET /api/deadlines/notices.
  *
- * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 import fs from 'fs'
 import path from 'path'

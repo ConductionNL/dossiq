@@ -8,7 +8,7 @@
  * state over three stored notices (DqTermijnen "Ingebrekestellingen en
  * dwangsom", r33).
  *
- * @spec openspec/changes/notices-table-reads-its-schema/specs/notices-table-reads-its-schema/spec.md#requirement-the-notices-table-names-its-schema-where-the-table-reads-it
+ * @spec openspec/specs/notices-table-reads-its-schema/spec.md#requirement-the-notices-table-names-its-schema-where-the-table-reads-it
  */
 
 import fs from 'fs'

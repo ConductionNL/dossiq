@@ -13,7 +13,7 @@
  * extractor finds it.
  *
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
- * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 import { translate as t } from '@nextcloud/l10n'

@@ -11,7 +11,7 @@
  * source, its verbs, the checklist widget, the pill `values`) is specified and
  * tested in nextcloud-vue.
  *
- * @spec openspec/changes/task-page-on-the-manifest/specs/task-management/spec.md#requirement-the-task-page-is-a-manifest-detail-page
+ * @spec openspec/specs/task-management/spec.md#requirement-the-task-page-is-a-manifest-detail-page
  */
 import fs from 'fs'
 import path from 'path'
