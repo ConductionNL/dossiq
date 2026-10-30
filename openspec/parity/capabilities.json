@@ -17531,8 +17531,7 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "TermijnDashboard audit widget; BezwaarDetail dwangsom fields (display only)",
 				"note": "Missing: registering the notice of default from the case, and the payout signal to finance.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
-				"requirement": "openspec/specs/dwangsom-calculation :: Dwangsom-staffel berekening volgens AWB 4:17 (REQ-TERM-006)"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -20034,9 +20033,7 @@
 					"board": null,
 					"reason": "backend: document generation vendor adapter"
 				},
-				"readOn": "2026-10-07",
-				"spec": "openspec/specs/beschikking-generatie",
-				"requirement": "openspec/specs/beschikking-generatie :: The template seam SHALL say whether a real renderer is behind it"
+				"readOn": "2026-10-07"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/TemplateMergeService.php merges DOCX, XLSX and ODT templates locally; no SmartDocuments or Xential client | round 2 drive: procest/opencase/round2/code-census.md:110 \"Document generation: DOCX/XLSX/ODT template merge (`lib/Service/TemplateMergeService.php`\"",
@@ -21277,8 +21274,7 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "none: no page or caller reaches the subsidy routes",
 				"note": "Rated no rather than the partial the reader proposed: nothing a user opens reaches the subsidy backend (same rule as the 2026-09-25 rows). subsidie-settlement-case-costs contradicts ADR-081 and needs a decision before it is built.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
-				"requirement": "openspec/specs/subsidieverlening-keten :: REQ-SUB-001 Multi-year beschikking with voorschot-schema"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
