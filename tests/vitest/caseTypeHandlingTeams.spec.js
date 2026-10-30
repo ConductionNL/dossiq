@@ -6,7 +6,7 @@
  * other required facts are: on the Case type card and in the create form.
  * The library edits a key inside an object property as a field of its own.
  *
- * @spec openspec/changes/case-type-publish-required-fields/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import fs from 'fs'

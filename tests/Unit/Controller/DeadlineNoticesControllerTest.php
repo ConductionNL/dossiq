@@ -69,7 +69,7 @@ class DeadlineNoticesControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	public function testNoticesAnswersTheNoticesByCase(): void {
 		$this->signIn();

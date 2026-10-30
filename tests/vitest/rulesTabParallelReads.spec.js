@@ -7,7 +7,7 @@
  * read after the other took about 17 seconds on :8080, so the tab showed a
  * spinner for longer than anyone waits.
  *
- * @spec openspec/changes/rules-tab-loads-in-parallel/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

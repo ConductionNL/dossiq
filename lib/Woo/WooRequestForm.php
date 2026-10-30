@@ -202,7 +202,7 @@ class WooRequestForm {
 	 *
 	 * @throws WooRequestRefused When it is given and is none of the three.
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
 	 */
 	private function requesterKind(string $value): string {
 		$kind = (self::REQUESTER_WORDS[mb_strtolower($value)] ?? mb_strtolower($value));
@@ -297,7 +297,7 @@ class WooRequestForm {
 	 *
 	 * @throws WooRequestRefused When it is given and is not a real date.
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
 	 */
 	private function date(string $value, string $field): string {
 		if ($value === '') {

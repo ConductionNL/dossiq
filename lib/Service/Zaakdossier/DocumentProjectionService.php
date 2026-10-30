@@ -317,7 +317,7 @@ class DocumentProjectionService {
 	 *
 	 * @throws RuntimeException When the folder stays locked.
 	 *
-	 * @spec openspec/changes/case-folder-lookup-survives-a-parallel-create/specs/document-projection/spec.md
+	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	private function folderWhenUnlocked(object $fileService, string $objectId, string $register): mixed {
 		$attempt = 0;

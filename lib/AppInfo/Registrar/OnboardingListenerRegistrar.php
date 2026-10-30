@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+ * @spec openspec/specs/first-load-onboarding/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -31,7 +31,7 @@ use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
 /**
  * Registers the listeners of a user's first loads.
  *
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+ * @spec openspec/specs/first-load-onboarding/spec.md
  */
 class OnboardingListenerRegistrar {
 
@@ -42,7 +42,7 @@ class OnboardingListenerRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+	 * @spec openspec/specs/first-load-onboarding/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		$context->registerEventListener(

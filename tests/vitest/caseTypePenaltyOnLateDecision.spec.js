@@ -6,7 +6,7 @@
  * na een ingebrekestelling". The case type says so in two generic fields,
  * edited where its other terms are.
  *
- * @spec openspec/changes/case-type-penalty-on-late-decision/specs/case-types/spec.md#requirement-a-case-type-says-whether-a-late-decision-costs-a-penalty
+ * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-says-whether-a-late-decision-costs-a-penalty
  */
 
 import fs from 'fs'

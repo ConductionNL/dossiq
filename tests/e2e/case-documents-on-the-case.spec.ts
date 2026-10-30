@@ -18,7 +18,7 @@
  *
  * @spec openspec/specs/document-projection/spec.md
  * @spec openspec/specs/case-dashboard-view/spec.md
- * @spec openspec/changes/files-dropped-on-the-list/specs/case-dashboard-view/spec.md
+ * @spec openspec/specs/case-dashboard-view/spec.md
  */
 
 import type { APIRequestContext } from '@playwright/test'
@@ -330,8 +330,8 @@ test.describe('Documents live on the case', () => {
 		).toHaveCount(1)
 	})
 
-	// @e2e openspec/changes/files-dropped-on-the-list/specs/case-dashboard-view/spec.md#add-files-is-a-button
-	// @e2e openspec/changes/files-dropped-on-the-list/specs/case-dashboard-view/spec.md#dragging-files-over-the-list-shows-the-drop-state
+	// @e2e openspec/changes/archive/2026-10-30-files-dropped-on-the-list/specs/case-dashboard-view/spec.md#add-files-is-a-button
+	// @e2e openspec/changes/archive/2026-10-30-files-dropped-on-the-list/specs/case-dashboard-view/spec.md#dragging-files-over-the-list-shows-the-drop-state
 	test('Add files is a button, and a drag shows the drop state on the list', async ({
 		page,
 	}) => {

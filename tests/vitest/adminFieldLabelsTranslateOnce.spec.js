@@ -8,7 +8,7 @@
  * (DqBeheerinstellingen, Zaak-e-mail). Every label the fields translate must
  * survive that; the folder label is handed over as its key.
  *
- * @spec openspec/changes/mailbox-folder-label-once/specs/admin-settings/spec.md#requirement-an-admin-field-label-reads-the-same-after-the-library-translates-it
+ * @spec openspec/specs/admin-settings/spec.md#requirement-an-admin-field-label-reads-the-same-after-the-library-translates-it
  */
 
 import fs from 'fs'

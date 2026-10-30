@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+ * @spec openspec/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
 /**
  * Runs the record imports flagged `runOnUpgrade` and reports their counts.
  *
- * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+ * @spec openspec/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
  */
 class RunUpgradeRecordImports implements IRepairStep {
 	/**
@@ -59,7 +59,7 @@ class RunUpgradeRecordImports implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
 	 */
 	public function getName(): string {
 		return 'Dossiq: move the records case types import on upgrade onto cases';
@@ -72,7 +72,7 @@ class RunUpgradeRecordImports implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
 	 */
 	public function run(IOutput $output): void {
 		if ($this->settings->isOpenRegisterAvailable() === false) {

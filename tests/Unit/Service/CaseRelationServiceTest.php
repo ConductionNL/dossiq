@@ -676,7 +676,7 @@ class CaseRelationServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function testALegacyRelationCarriesTheFarCaseTitle(): void {
 		$store = [

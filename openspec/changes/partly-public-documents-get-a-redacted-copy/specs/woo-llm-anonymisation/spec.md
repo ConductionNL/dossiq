@@ -11,6 +11,13 @@ The system MUST NOT treat a redaction proposal's spans as approved without an ex
 
 @e2e exclude Hermiq is not installed in the dossiq e2e environment. Covered by WOOAnonymisationAssistServiceTest.
 
+#### Scenario: A proposal is generated but never reviewed
+
+- **GIVEN** a `pending_review` redaction proposal exists for a document
+- **WHEN** no review decision has been recorded
+- **THEN** its spans MUST NOT be treated as approved
+- **AND** no redacted copy MUST be written for that document as a result of this feature
+
 #### Scenario: A reviewer approves a proposal
 
 - **GIVEN** a `pending_review` redaction proposal

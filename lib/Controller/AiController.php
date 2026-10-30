@@ -296,7 +296,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
+	 * @spec openspec/specs/ai-oversight-dispatch/spec.md
 	 */
 	public function recordAction(): JSONResponse {
 		$user = $this->userSession->getUser();

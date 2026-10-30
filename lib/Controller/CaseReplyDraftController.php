@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-reply-draft/specs/case-reply-draft/spec.md
+ * @spec openspec/specs/case-reply-draft/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -42,7 +42,7 @@ use OCP\IUserSession;
  * case, so nobody else reads it. The case read check runs before anything is
  * read or written.
  *
- * @spec openspec/changes/case-reply-draft/specs/case-reply-draft/spec.md#requirement-a-reader-of-a-case-keeps-one-reply-draft-on-it
+ * @spec openspec/specs/case-reply-draft/spec.md#requirement-a-reader-of-a-case-keeps-one-reply-draft-on-it
  */
 class CaseReplyDraftController extends Controller {
 
@@ -79,7 +79,7 @@ class CaseReplyDraftController extends Controller {
 	 *
 	 * @return JSONResponse The draft, or the refusal.
 	 *
-	 * @spec openspec/changes/case-reply-draft/specs/case-reply-draft/spec.md#requirement-a-reader-of-a-case-keeps-one-reply-draft-on-it
+	 * @spec openspec/specs/case-reply-draft/spec.md#requirement-a-reader-of-a-case-keeps-one-reply-draft-on-it
 	 */
 	#[NoAdminRequired]
 	public function show(string $id): JSONResponse {
@@ -107,7 +107,7 @@ class CaseReplyDraftController extends Controller {
 	 *
 	 * @return JSONResponse The stored draft, or the refusal.
 	 *
-	 * @spec openspec/changes/case-reply-draft/specs/case-reply-draft/spec.md#requirement-a-reader-of-a-case-keeps-one-reply-draft-on-it
+	 * @spec openspec/specs/case-reply-draft/spec.md#requirement-a-reader-of-a-case-keeps-one-reply-draft-on-it
 	 */
 	#[NoAdminRequired]
 	public function save(string $id, string $text=''): JSONResponse {

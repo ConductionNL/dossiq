@@ -4,7 +4,7 @@
  *
  * The case type's message templates, for any place a handler writes a message.
  *
- * @spec openspec/changes/compose-from-message-template/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
+ * @spec openspec/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
  */
 
 import axios from '@nextcloud/axios'

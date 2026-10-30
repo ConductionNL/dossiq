@@ -66,7 +66,7 @@ class CaseFlowSeedIndex {
 	 *
 	 * @return bool True when the demo cases are due.
 	 *
-	 * @spec openspec/changes/seed-cases-once/specs/seed-cases-once/spec.md#requirement-the-demo-cases-are-seeded-once
+	 * @spec openspec/specs/seed-cases-once/spec.md#requirement-the-demo-cases-are-seeded-once
 	 */
 	public function casesDue(array $data): bool {
 		if ($this->settingsService->getConfigValue(key: DemoDataService::DECIDED_KEY) !== DemoDataService::DECIDED_INSTALLED) {

@@ -399,7 +399,7 @@ class WOODocumentAssessmentService {
 	 *
 	 * @throws RuntimeException When OpenRegister is unavailable.
 	 *
-	 * @spec openspec/changes/the-redaction-stage-waits-for-every-redacted-copy/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
+	 * @spec openspec/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
 	 */
 	public function partlyPublicWithoutCopy(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();

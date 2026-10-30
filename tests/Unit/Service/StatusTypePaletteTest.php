@@ -15,7 +15,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/status-type-board-colours/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
+ * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
  */
 
 declare(strict_types=1);

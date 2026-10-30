@@ -4,7 +4,7 @@
  *
  * A case-type field as a list column: the answer the case holds under a name.
  *
- * @spec openspec/changes/re-integration-is-a-case-type/specs/dossiq-sociaal-domein-participatiewet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
  */
 import fs from 'fs'
 import path from 'path'

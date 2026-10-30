@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/status-type-board-colours/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
+ * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Service;
 /**
  * The board colour of each shipped status name, and what each shipped row held before.
  *
- * @spec openspec/changes/status-type-board-colours/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
+ * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
  */
 final class StatusTypePalette {
 
@@ -194,7 +194,7 @@ final class StatusTypePalette {
 	 *
 	 * @return string|null The colour to write, or null.
 	 *
-	 * @spec openspec/changes/status-type-board-colours/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
 	 */
 	public function recolour(array $row): ?string {
 		$target = $this->boardColourOf(row: $row);

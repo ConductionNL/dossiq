@@ -7,7 +7,7 @@
  * `standardDurationWeeks` (or `standardDurationDays`) and `caseType`.
  * Reading `basis` and `case_type` drew "(geen grondslag)" and "—" for all 23.
  *
- * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 import { describe, expect, it } from 'vitest'

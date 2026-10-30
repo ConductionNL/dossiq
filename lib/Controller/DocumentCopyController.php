@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/documents-copy-to-case/specs/documents-copy-to-case/spec.md
+ * @spec openspec/specs/documents-copy-to-case/spec.md
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -41,7 +41,7 @@ use OCP\IUserSession;
 /**
  * Copies documents to another case.
  *
- * @spec openspec/changes/documents-copy-to-case/specs/documents-copy-to-case/spec.md
+ * @spec openspec/specs/documents-copy-to-case/spec.md
  */
 class DocumentCopyController extends Controller {
 
@@ -75,7 +75,7 @@ class DocumentCopyController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/documents-copy-to-case/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
+	 * @spec openspec/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
 	 */
 	public function bulkCopy(): JSONResponse {
 		$user = $this->userSession->getUser();

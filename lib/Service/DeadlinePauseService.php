@@ -187,7 +187,7 @@ class DeadlinePauseService {
 	 *
 	 * @return array<int, array{key: string, name: string, legalBasis: string, defaultDays?: int}> Empty when none are declared.
 	 *
-	 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function offeredReasons(string $caseId): array {
 		if ($this->reasons === null) {
@@ -227,7 +227,7 @@ class DeadlinePauseService {
 	 * @throws RuntimeException `reason_required` without a reason, `pause_reason_not_declared`
 	 *                          for a key the case type does not declare.
 	 *
-	 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function suspendRationale(string $caseId, string $reason, string $pauseReason): string {
 		if ($pauseReason === '') {

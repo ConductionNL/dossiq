@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lhs-severity-very-serious/specs/lhs-advice/spec.md
+ * @spec openspec/specs/lhs-advice/spec.md
  */
 
 declare(strict_types=1);

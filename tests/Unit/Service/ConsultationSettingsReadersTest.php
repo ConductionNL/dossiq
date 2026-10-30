@@ -19,7 +19,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 
 declare(strict_types=1);
@@ -166,7 +166,7 @@ class ConsultationSettingsReadersTest extends TestCase {
 	/**
 	 * An advice request created without a deadline gets the default term.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-an-advice-request-without-a-deadline-gets-the-default-term
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-an-advice-request-without-a-deadline-gets-the-default-term
 	 *
 	 * @return void
 	 */

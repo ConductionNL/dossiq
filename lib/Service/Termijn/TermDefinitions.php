@@ -88,7 +88,7 @@ class TermDefinitions {
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function activeFor(string $caseType): ?array {
 		if (isset($this->cache[$caseType]) === true) {
@@ -222,7 +222,7 @@ class TermDefinitions {
 	 *
 	 * @return bool True when it sets the statutory term.
 	 *
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public static function isStatutory(array $definitie): bool {
 		$declared = trim((string)($definitie['kind'] ?? ''));
@@ -250,7 +250,7 @@ class TermDefinitions {
 	 * @return array{days: int, mode: string, extra: array<string, string>} The clock, with the
 	 *         fields to write on its instance. Zero days means no planned clock.
 	 *
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public static function plannedClock(int $declaredDays, ?array $definition): array {
 		if ($declaredDays > 0 || $definition === null) {

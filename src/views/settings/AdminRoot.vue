@@ -871,7 +871,7 @@ export default {
 		 * settings card on this page.
 		 *
 		 * @return {Array<object>} The row actions.
-		 * @spec openspec/changes/connection-row-menu/specs/admin-settings/spec.md#requirement-a-connection-row-has-a-menu-with-what-the-row-offers
+		 * @spec openspec/specs/admin-settings/spec.md#requirement-a-connection-row-has-a-menu-with-what-the-row-offers
 		 */
 		connectionRowActions() {
 			return [
@@ -946,7 +946,7 @@ export default {
 		 * application last arrived for it, then the activities no row links yet.
 		 *
 		 * @return {object} The table's endpoint source.
-		 * @spec openspec/changes/vth-dso-activity-board-columns/specs/admin-settings/spec.md#requirement-the-dso-activity-table-shows-what-each-activity-becomes-and-when-it-last-arrived
+		 * @spec openspec/specs/admin-settings/spec.md#requirement-the-dso-activity-table-shows-what-each-activity-becomes-and-when-it-last-arrived
 		 */
 		intakeActivitySource() {
 			return {
@@ -959,7 +959,7 @@ export default {
 		 * The DSO activity table's columns, as the board draws them.
 		 *
 		 * @return {Array<object>} The columns.
-		 * @spec openspec/changes/vth-dso-activity-board-columns/specs/admin-settings/spec.md#requirement-the-dso-activity-table-shows-what-each-activity-becomes-and-when-it-last-arrived
+		 * @spec openspec/specs/admin-settings/spec.md#requirement-the-dso-activity-table-shows-what-each-activity-becomes-and-when-it-last-arrived
 		 */
 		intakeActivityColumns() {
 			return [

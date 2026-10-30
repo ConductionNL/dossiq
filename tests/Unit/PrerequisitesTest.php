@@ -353,7 +353,7 @@ class PrerequisitesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function testTheNextcloudRowSaysWhetherThisInstanceIsInRange(): void {
 		$prerequisites = new Prerequisites();
@@ -389,7 +389,7 @@ class PrerequisitesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function testARenamedAppShowsItsNewNameAndKeepsItsLookupId(): void {
 		$report = (new Prerequisites())->check(
@@ -424,7 +424,7 @@ class PrerequisitesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function testEveryAppRowShowsAProductNameAndKeepsItsLookupId(): void {
 		$report = (new Prerequisites())->check($this->appManager([]));

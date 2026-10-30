@@ -7,7 +7,7 @@
  * the four cards of Phases and tasks, the workflow canvas on a page of its
  * own, the variants, the terms in words and the side facts as labels.
  *
- * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'

@@ -167,7 +167,7 @@ class PhaseSummary {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/phase-columns-in-case-type-order/specs/phase-columns-in-case-type-order/spec.md#requirement-the-phase-columns-follow-the-case-types-order
+	 * @spec openspec/specs/phase-columns-in-case-type-order/spec.md#requirement-the-phase-columns-follow-the-case-types-order
 	 */
 	private function inFlowOrder(array $columns, array $sequences): array {
 		$before = [];
@@ -239,7 +239,7 @@ class PhaseSummary {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/phase-days-from-completed-visits/specs/phase-days-from-completed-visits/spec.md#requirement-days-per-phase-counts-completed-visits
+	 * @spec openspec/specs/phase-days-from-completed-visits/spec.md#requirement-days-per-phase-counts-completed-visits
 	 */
 	private function namedStats(array $report, string $key='dwellTime'): array {
 		return array_values(

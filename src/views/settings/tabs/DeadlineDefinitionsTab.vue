@@ -178,7 +178,7 @@ export default {
 		 * Whether any definition names its case type, so the column is worth drawing.
 		 *
 		 * @return {boolean} TRUE when one does.
-		 * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		showCaseType() {
 			return this.definitions.some((def) => Boolean(this.caseTypeOf(def)))
@@ -320,7 +320,7 @@ export default {
 		 *
 		 * @param {object} def The definition.
 		 * @return {string} The basis, or the empty string.
-		 * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		basisOf(def) {
 			return String(def?.legalBasis || def?.basis || '')
@@ -331,7 +331,7 @@ export default {
 		 *
 		 * @param {object} def The definition.
 		 * @return {string} The slug, or the empty string.
-		 * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		caseTypeOf(def) {
 			return String(def?.caseType || def?.case_type || '')

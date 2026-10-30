@@ -7,7 +7,7 @@
  * done green. Each colour is one the status badge paints and one the badge
  * tone map knows.
  *
- * @spec openspec/changes/status-type-board-colours/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
+ * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
  */
 
 import fs from 'fs'

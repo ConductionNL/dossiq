@@ -6,7 +6,7 @@
  * gives for an extension or an app is a catalogue key with a Dutch text, and
  * the block renders it through the translation.
  *
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 import fs from 'fs'

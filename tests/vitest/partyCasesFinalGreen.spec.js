@@ -5,7 +5,7 @@
  * Boards DqContact and DqOrganisatie draw a case's status pill in its status
  * type's colour: "Afgehandeld" green, "Besluitvorming" teal.
  *
- * @spec openspec/changes/case-pills-status-colour/specs/party-pages/spec.md#requirement-a-case-pill-takes-its-status-types-colour
+ * @spec openspec/specs/party-pages/spec.md#requirement-a-case-pill-takes-its-status-types-colour
  */
 
 import fs from 'fs'

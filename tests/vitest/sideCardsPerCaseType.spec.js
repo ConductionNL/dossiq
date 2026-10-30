@@ -11,7 +11,7 @@
  * (nextcloud-vue detail-side-column-from, CnDetailPageSideColumnFrom.spec.js);
  * this holds dossiq's side of it: the key, the declared default and the lists.
  *
- * @spec openspec/changes/side-cards-per-case-type/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
 import fs from 'fs'

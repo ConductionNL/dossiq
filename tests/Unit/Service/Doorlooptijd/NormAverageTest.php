@@ -17,7 +17,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/doorlooptijd-norm-and-months/specs/doorlooptijd-norm-and-months/spec.md#requirement-the-processing-time-chart-draws-the-norm-and-names-the-months
+ * @spec openspec/specs/doorlooptijd-norm-and-months/spec.md#requirement-the-processing-time-chart-draws-the-norm-and-names-the-months
  */
 
 declare(strict_types=1);

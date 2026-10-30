@@ -238,7 +238,7 @@ class WooRequestIntake {
 	 *
 	 * @return array{intakeIdentification?: string, intakeSourceName?: string}
 	 *
-	 * @spec openspec/changes/requester-identified-at-intake/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
+	 * @spec openspec/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
 	 */
 	private function identification(array $request): array {
 		if (($request['origin'] ?? '') !== 'portal') {

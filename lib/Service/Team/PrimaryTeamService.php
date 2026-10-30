@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
+ * @spec openspec/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Answers which Nextcloud group is a user's primary team.
  *
- * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
+ * @spec openspec/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
  */
 class PrimaryTeamService {
 	use SearchesObjects;
@@ -71,7 +71,7 @@ class PrimaryTeamService {
 	 *
 	 * @throws Throwable When the organisation roles cannot be read.
 	 *
-	 * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
+	 * @spec openspec/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
 	 */
 	public function teamOf(IUser $user): ?array {
 		$groupIds = $this->groupManager->getUserGroupIds($user);
@@ -230,7 +230,7 @@ class PrimaryTeamService {
 	 *
 	 * @return array{groupId: string, name: string}|null The deepest bound role's group, or null.
 	 *
-	 * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
+	 * @spec openspec/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
 	 */
 	public static function primaryTeam(array $roles, array $userGroupIds): ?array {
 		$byId = self::rolesById(roles: $roles);

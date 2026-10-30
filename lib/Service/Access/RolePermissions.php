@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+ * @spec openspec/specs/admin-data-access/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCP\IUserSession;
 /**
  * Maps group membership to the manifest's role permissions.
  *
- * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+ * @spec openspec/specs/admin-data-access/spec.md
  */
 class RolePermissions {
 
@@ -90,7 +90,7 @@ class RolePermissions {
 	 *
 	 * @return array<int, string> The permissions, in a fixed order; empty when nobody is signed in.
 	 *
-	 * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+	 * @spec openspec/specs/admin-data-access/spec.md
 	 */
 	public function forCurrentUser(): array {
 		$user = $this->userSession->getUser();

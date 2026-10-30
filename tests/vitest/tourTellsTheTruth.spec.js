@@ -13,8 +13,8 @@
  * - step 2 said the list holds every case, open and closed, while the list
  *   itself says "open cases in your teams".
  *
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/getting-started-tour/spec.md
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/woo-refusal-grounds/spec.md
+ * @spec openspec/specs/getting-started-tour/spec.md
+ * @spec openspec/specs/woo-refusal-grounds/spec.md
  */
 import fs from 'node:fs'
 import path from 'node:path'

@@ -260,7 +260,7 @@ class PipelinqGateway {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>>|null Tickets per reference, or null.
 	 *
-	 * @spec openspec/changes/organisation-open-tickets/specs/pipelinq-consumption/spec.md
+	 * @spec openspec/specs/pipelinq-consumption/spec.md
 	 */
 	public function openTicketsByMasterEntity(array $refs): ?array {
 		$answer = $this->ask(

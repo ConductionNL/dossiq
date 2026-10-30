@@ -63,7 +63,7 @@ async function mountDialog() {
 }
 
 describe('CaseShareOrganisationDialog', () => {
-	// @spec openspec/changes/share-dialog-lists-every-partner/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
+	// @spec openspec/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
 	it('offers partner organisations only, named with their domain, and heads with the case', async () => {
 		const wrapper = await mountDialog()
 		expect(wrapper.vm.partners.map((p) => p.label)).toEqual(['Omgevingsdienst (odzhz.nl)'])
@@ -113,7 +113,7 @@ describe('CaseShareOrganisationDialog', () => {
 		expect(wrapper.vm.canSubmit).toBe(false)
 	})
 
-	// @spec openspec/changes/share-org-not-clearable/specs/share-org-not-clearable/spec.md#requirement-the-organisation-choice-has-no-clear-button
+	// @spec openspec/specs/share-org-not-clearable/spec.md#requirement-the-organisation-choice-has-no-clear-button
 	it('offers no clear button on the organisation, as on the act and the permission', async () => {
 		const wrapper = await mountDialog()
 		const selects = wrapper.findAllComponents({ name: 'NcSelect' })

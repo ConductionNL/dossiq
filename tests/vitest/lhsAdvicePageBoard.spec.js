@@ -6,7 +6,7 @@
  * control, the recommendation and the deviation as side cards, and the
  * history card titled as on every other record page.
  *
- * @spec openspec/changes/r21-enforcement-advice-board/specs/enforcement-advice-page/spec.md#requirement-the-enforcement-advice-page-follows-board-dqhandhaving
+ * @spec openspec/specs/enforcement-advice-page/spec.md#requirement-the-enforcement-advice-page-follows-board-dqhandhaving
  */
 
 import fs from 'fs'

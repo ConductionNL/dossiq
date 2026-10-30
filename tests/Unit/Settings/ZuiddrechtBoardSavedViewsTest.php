@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-board-saved-views/specs/example-set-board-saved-views/spec.md
+ * @spec openspec/specs/example-set-board-saved-views/spec.md
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The saved views the DqFilter boards draw in Pieter's Weergaven tab.
  *
- * @spec openspec/changes/example-set-board-saved-views/specs/example-set-board-saved-views/spec.md
+ * @spec openspec/specs/example-set-board-saved-views/spec.md
  */
 class ZuiddrechtBoardSavedViewsTest extends TestCase {
 
@@ -81,7 +81,7 @@ class ZuiddrechtBoardSavedViewsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-set-board-saved-views/specs/example-set-board-saved-views/spec.md#requirement-pieter-owns-the-boards-three-views
+	 * @spec openspec/specs/example-set-board-saved-views/spec.md#requirement-pieter-owns-the-boards-three-views
 	 */
 	public function testWaitingViewHasTheBoardsDescription(): void {
 		$this->assertSame(
@@ -95,7 +95,7 @@ class ZuiddrechtBoardSavedViewsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-set-board-saved-views/specs/example-set-board-saved-views/spec.md#requirement-pieter-owns-the-boards-three-views
+	 * @spec openspec/specs/example-set-board-saved-views/spec.md#requirement-pieter-owns-the-boards-three-views
 	 */
 	public function testPieterOwnsTheSuspendedView(): void {
 		$views = $this->views();
@@ -125,7 +125,7 @@ class ZuiddrechtBoardSavedViewsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-set-board-saved-views/specs/example-set-board-saved-views/spec.md#requirement-a-colleague-shares-a-view-with-pieter
+	 * @spec openspec/specs/example-set-board-saved-views/spec.md#requirement-a-colleague-shares-a-view-with-pieter
 	 */
 	public function testAnoukSharesTheWooTeamView(): void {
 		$views = $this->views();

@@ -5,7 +5,7 @@
  * DqVthInstellingen Inspectiechecklists: the rows start at the card's content
  * edge (live: 12px further in), under a line that closes the title off.
  *
- * @spec openspec/changes/vth-checklists-as-rows/specs/vth-checklists-as-rows/spec.md
+ * @spec openspec/specs/vth-checklists-as-rows/spec.md
  */
 
 import fs from 'fs'

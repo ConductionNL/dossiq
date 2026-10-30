@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-omgevingsvergunning-regulier/specs/example-set-omgevingsvergunning-regulier/spec.md#requirement-a-child-case-type-derives-from-omgevingsvergunning
+ * @spec openspec/specs/example-set-omgevingsvergunning-regulier/spec.md#requirement-a-child-case-type-derives-from-omgevingsvergunning
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The child case type and its own field.
  *
- * @spec openspec/changes/example-set-omgevingsvergunning-regulier/specs/example-set-omgevingsvergunning-regulier/spec.md#requirement-a-child-case-type-derives-from-omgevingsvergunning
+ * @spec openspec/specs/example-set-omgevingsvergunning-regulier/spec.md#requirement-a-child-case-type-derives-from-omgevingsvergunning
  */
 class ZuiddrechtChildCaseTypeTest extends TestCase {
 

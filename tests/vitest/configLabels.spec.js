@@ -6,7 +6,7 @@
  * config (the portal channel named after the portal, "Mijn Zuiddrecht"),
  * and the fallback when the setting is empty.
  *
- * @spec openspec/changes/portal-channel-label/specs/portal-channel-label/spec.md
+ * @spec openspec/specs/portal-channel-label/spec.md
  */
 
 import fs from 'fs'
@@ -32,7 +32,7 @@ describe('withConfigLabels', () => {
 })
 
 describe('the conversation channels (DqZaakContact)', () => {
-	// @spec openspec/changes/conversation-channel-icons/specs/conversation-channel-icons/spec.md#requirement-the-conversation-chips-carry-the-channel-icons
+	// @spec openspec/specs/conversation-channel-icons/spec.md#requirement-the-conversation-chips-carry-the-channel-icons
 	it('carry the same icon as the contact-moments Kanaal column', () => {
 		const column = widget('case-contact-moments-card').content.columns.find((entry) => entry.key === 'notificationChannel')
 		expect(widget('case-resident-thread').content.channelIcons).toEqual(column.widgetProps.icons)
@@ -40,7 +40,7 @@ describe('the conversation channels (DqZaakContact)', () => {
 })
 
 describe('the conversation message lines (DqZaakContact)', () => {
-	// @spec openspec/changes/contact-message-subject-note/specs/contact-message-subject-note/spec.md#requirement-a-contact-moment-carries-its-subject-note-and-attachment-count
+	// @spec openspec/specs/contact-message-subject-note/spec.md#requirement-a-contact-moment-carries-its-subject-note-and-attachment-count
 	it('reads the subject above the summary and the note with the attachment count under it', () => {
 		const content = widget('case-resident-thread').content
 		// The full message where the contact has one, else its summary; the table keeps the summary.

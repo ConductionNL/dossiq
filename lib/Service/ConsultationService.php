@@ -119,7 +119,7 @@ class ConsultationService {
 	 *
 	 * @return ConsultationTerms
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function terms(): ConsultationTerms {
 		return $this->terms;

@@ -196,7 +196,7 @@ export function traceOf(result) {
  * @param {string} schema The schema slug.
  * @return {Promise<object>} The properties by key.
  *
- * @spec openspec/changes/case-type-rules-as-rows/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
+ * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
  */
 export async function fetchSchemaProperties(schema) {
 	try {
@@ -244,7 +244,7 @@ function firstSentence(text) {
  * @param {object} kinds The vocabulary by kind.
  * @return {Array<{id: string, title: string, line: string, pill: string}>} The rows.
  *
- * @spec openspec/changes/case-type-rules-as-rows/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
+ * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
  */
 export function ruleRows(rules, properties = {}, kinds = {}) {
 	return (Array.isArray(rules) ? rules : []).map((rule) => {

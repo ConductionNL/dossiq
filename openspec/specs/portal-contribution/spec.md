@@ -513,6 +513,7 @@ portal inbox and close the follow-up.
 - **THEN** the timeline MUST show the question with an open follow-up
 - **AND** after the handler presses Reply and sends an answer, the follow-up
   MUST be closed and the answer MUST be in the resident's inbox
+
 ### Requirement: The resident sees what the organisation still needs from them (REQ-SRPD-001)
 An `aanvullingsverzoek` on a case that has a `portalSubject` MUST carry the same
 `portalSubject`, written when the request is asked. The citizen contribution, served to
@@ -630,3 +631,48 @@ sign in before the form opens.
 - **GIVEN** a site page with the start points widget and dossiq installed
 - **WHEN** a signed-out visitor opens it
 - **THEN** it MUST list "Informatie opvragen (Woo-verzoek)", "Bezwaar maken" and "Klacht indienen" with their summaries
+
+### Requirement: REQ-PORTAL-030: The citizen contribution MUST offer the resident's permits as products tagged with their theme
+
+Dossiq MUST record a `permit` for the resident when a case whose case type declares `issuesPermit` gets a granted decision, with the decision's validity and the details the case type names, and MUST mark it revoked when a later decision revokes it. The citizen contribution MUST declare a collection `mijnVergunningen` on schema `permit`, scoped by `portalSubject`, with `kind: products`, the permit's `theme`, and the title, validity, meta and count fields portaliq's products contract reads. It MUST NOT project a revoked permit. It MUST declare an `update` action that asks for a new licence plate by opening a change case, and MUST NOT let the portal write the permit itself.
+
+#### Scenario: a granted resident permit shows on the theme page
+- **WHEN** a "Parkeervergunning bewoners" case of resident S gets a granted decision effective 1 January 2026 until 31 December 2026
+- **THEN** a permit for S exists with theme `parkeren`, title "Bewonersvergunning binnenstad", the licence plate from the case and those dates
+- **AND** dossiq's citizen contribution for S lists it in `mijnVergunningen` with `kind: products`
+- @e2e exclude cross-app render belongs to portaliq's ThemaOverzicht e2e; the contribution and the issuing are covered by PHPUnit
+
+#### Scenario: a revoked permit leaves the list
+- **WHEN** a later decision on that case revokes the permit
+- **THEN** the permit's status is `revoked` and it is no longer in the collection
+- @e2e exclude backend listener; covered by PHPUnit
+
+#### Scenario: the resident asks for a new licence plate
+- **WHEN** resident S submits "Kenteken wijzigen" with plate GZ-123-X on her permit
+- **THEN** a change case is opened with the permit and the new plate, and the permit's plate is unchanged until that case is decided
+- @e2e exclude cross-app write path; covered by PHPUnit and portaliq's action e2e
+
+#### Scenario: another resident's permit
+- **WHEN** resident T reads `mijnVergunningen`
+- **THEN** S's permit is not returned
+- @e2e exclude scope check; covered by PHPUnit
+
+### Requirement: The Woo request form asks dates as dates and the requester as a choice (REQ-WDI-004)
+
+Both Woo request actions (`startWooVerzoek`, `startWooVerzoekAlgemeen`) SHALL declare `periodeVan` and `periodeTot` with `input: date`, and `verzoekerType` as choices whose Dutch words (Inwoner, Journalist, Organisatie) stand over the values the route keeps.
+
+#### Scenario: The period step
+- GIVEN a resident opens the Woo request from the overview tile or from a dossier
+- WHEN she reaches the period step
+- THEN the two dates are asked as dates
+- @e2e exclude pinned by `PortalContributionProviderTest::testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice`; the rendering is portaliq's
+
+### Requirement: The Woo request starts from the signed-in resident's name and e-mail address
+
+Both Woo request actions MUST declare `prefill: name` on `verzoekerNaam` and `prefill: email` on `verzoekerEmail`, so portaliq starts those fields from the signed-in resident's own details. The resident MUST still be able to change them.
+
+#### Scenario: Step 3 knows who is asking
+- GIVEN Henk Bakker is signed in to the portal
+- WHEN he reaches "Uw gegevens" in the Woo request
+- THEN his name and e-mail address are already filled in
+- @e2e exclude pinned by `PortalContributionProviderTest::testTheWooRequestPrefillsTheRequesterFromTheProfile`; the filling itself is portaliq's and pinned there

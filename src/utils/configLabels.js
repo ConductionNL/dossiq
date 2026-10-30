@@ -9,7 +9,7 @@
  * not read it as one of the library's tokens (`@config.city` and the like are
  * left to the pages that resolve them).
  *
- * @spec openspec/changes/portal-channel-label/specs/portal-channel-label/spec.md
+ * @spec openspec/specs/portal-channel-label/spec.md
  */
 
 const LABEL = /^config:([A-Za-z0-9_]+)\|(.*)$/s
@@ -58,7 +58,7 @@ function walk(node, config) {
  * @param {object} manifest The manifest; changed in place.
  * @param {object} config The app config (`loadState('dossiq', 'config')`).
  * @return {object} The manifest.
- * @spec openspec/changes/portal-channel-label/specs/portal-channel-label/spec.md#requirement-the-portal-channel-is-named-after-the-portal
+ * @spec openspec/specs/portal-channel-label/spec.md#requirement-the-portal-channel-is-named-after-the-portal
  */
 export function withConfigLabels(manifest, config) {
 	return walk(manifest, config && typeof config === 'object' ? config : {})

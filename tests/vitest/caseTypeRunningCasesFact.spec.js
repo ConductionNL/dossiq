@@ -5,7 +5,7 @@
  * DqZaaktype's Gegevens card ends in "Lopende zaken 43": the cases of this
  * case type that have not reached a final status.
  *
- * @spec openspec/changes/case-type-running-cases-fact/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import fs from 'fs'

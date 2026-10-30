@@ -9,7 +9,7 @@
  * leaves of filinq, shillinq and planninq, and no longer places planninq's
  * projects as a widget of its own.
  *
- * @spec openspec/changes/case-linked-card/specs/case-linked-card/spec.md#requirement-the-case-page-lists-its-links-in-one-side-card
+ * @spec openspec/specs/case-linked-card/spec.md#requirement-the-case-page-lists-its-links-in-one-side-card
  */
 
 import fs from 'fs'

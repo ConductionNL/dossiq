@@ -5,7 +5,7 @@
  * The household endpoint's refusal sentence is a catalogue key with Dutch, so
  * the household card shows it in the reader's language (DqSociaalDomein).
  *
- * @spec openspec/changes/household-refusal-reads-in-dutch/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 import fs from 'fs'
 import path from 'path'

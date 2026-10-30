@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
+ * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
  */
 
 declare(strict_types=1);

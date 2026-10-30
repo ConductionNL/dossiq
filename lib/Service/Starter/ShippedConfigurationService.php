@@ -444,7 +444,7 @@ class ShippedConfigurationService {
 	 *
 	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
 	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
-	 * @spec openspec/changes/package-refresh-as-system/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function refreshRows(string $set, string $version, array $rows, bool $overLocalChanges): array {
 		// A package install is an administrator's act (admin settings, `occ`); a CLI run has no

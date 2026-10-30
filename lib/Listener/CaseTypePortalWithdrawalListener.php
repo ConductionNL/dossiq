@@ -232,7 +232,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 *
 	 * @return array<int, array<string, mixed>> The transitions.
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function moves(string $caseTypeId, array $payload): array {
 		$named = ($payload['workflowDefinition'] ?? null);
