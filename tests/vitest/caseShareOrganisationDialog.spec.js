@@ -63,7 +63,7 @@ async function mountDialog() {
 }
 
 describe('CaseShareOrganisationDialog', () => {
-	// @spec openspec/changes/share-dialog-lists-every-partner/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
+	// @spec openspec/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
 	it('offers partner organisations only, named with their domain, and heads with the case', async () => {
 		const wrapper = await mountDialog()
 		expect(wrapper.vm.partners.map((p) => p.label)).toEqual(['Omgevingsdienst (odzhz.nl)'])

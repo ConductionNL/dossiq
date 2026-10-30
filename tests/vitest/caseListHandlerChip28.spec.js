@@ -6,7 +6,7 @@
  * in the table and in each card's footer (r32: 32px on live, the library's
  * board default).
  *
- * @spec openspec/changes/case-list-handler-chip-28/specs/case-list-handler-chip-28/spec.md#requirement-the-case-lists-handler-chip-is-28px
+ * @spec openspec/specs/case-list-handler-chip-28/spec.md#requirement-the-case-list-handler-chip-is-28px
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'

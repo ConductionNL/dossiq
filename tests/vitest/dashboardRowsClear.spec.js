@@ -8,7 +8,7 @@
  * "Zaken per status" and "Zaken per type" under the taller of the two cards
  * above. Without it each rose under its own column (r34 -189.8 / -23.8 / -28).
  *
- * @spec openspec/changes/dashboard-rows-clear/specs/dashboard-rows-clear/spec.md
+ * @spec openspec/specs/dashboard-rows-clear/spec.md
  */
 import fs from 'fs'
 import path from 'path'
