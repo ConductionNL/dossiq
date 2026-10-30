@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * A party's open pipelinq tickets, read by master entity through the gateway.
  *
- * @spec openspec/changes/organisation-open-tickets/specs/pipelinq-consumption/spec.md
+ * @spec openspec/specs/pipelinq-consumption/spec.md
  */
 class PipelinqOpenTicketsTest extends TestCase {
 

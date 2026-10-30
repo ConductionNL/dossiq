@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/social-domain-procedures-are-case-types/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -34,7 +34,7 @@ use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 /**
  * Answers whether a case answers a sensitive field, read as the system.
  *
- * @spec openspec/changes/social-domain-procedures-are-case-types/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class SensitiveAnswerCheck {
 	/**
@@ -60,7 +60,7 @@ class SensitiveAnswerCheck {
 	 *
 	 * @return bool True when answered.
 	 *
-	 * @spec openspec/changes/social-domain-procedures-are-case-types/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function isAnswered(string $caseId, string $name): bool {
 		$objectService = $this->settings->getObjectService();

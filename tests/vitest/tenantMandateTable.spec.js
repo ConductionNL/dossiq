@@ -6,7 +6,7 @@
  * ceiling it decides up to ("Unlimited" without one), whether it decides
  * objections, and its enforcement level, from the mandate's terms.
  *
- * @spec openspec/changes/tenant-mandate-table/specs/tenant-mandate-table/spec.md#requirement-the-tenant-page-shows-its-mandates-per-role
+ * @spec openspec/specs/tenant-mandate-table/spec.md#requirement-the-tenant-page-shows-its-mandates-per-role
  */
 import fs from 'node:fs'
 import path from 'node:path'

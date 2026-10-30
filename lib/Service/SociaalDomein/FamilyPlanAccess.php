@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use OCP\IUserSession;
 /**
  * The access check every family plan read and write runs first.
  *
- * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
  */
 class FamilyPlanAccess {
 
@@ -67,7 +67,7 @@ class FamilyPlanAccess {
 	 *
 	 * @return string The uid.
 	 *
-	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
 	 */
 	public function currentUid(): string {
 		$user = $this->userSession->getUser();
@@ -90,7 +90,7 @@ class FamilyPlanAccess {
 	 *
 	 * @throws RefusedException When the store cannot be read.
 	 *
-	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
 	 */
 	public function planWrite(string $planId, string $recordSchema = '', string $recordId = ''): int {
 		$plan = $this->store->read(schema: CasePlanReview::SCHEMA, id: $planId);
@@ -124,7 +124,7 @@ class FamilyPlanAccess {
 	 *
 	 * @throws RefusedException When the store cannot be read.
 	 *
-	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-an-intervention-serves-a-goal-of-its-own-plan
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-an-intervention-serves-a-goal-of-its-own-plan
 	 */
 	public function goalOnPlan(string $planId, string $goalId): int {
 		if ($goalId === '') {
@@ -149,7 +149,7 @@ class FamilyPlanAccess {
 	 *
 	 * @throws RefusedException When the store cannot be read.
 	 *
-	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
 	 */
 	public function goalWrite(string $goalId): int {
 		$goal = $this->store->read(schema: CasePlanGoals::SCHEMA, id: $goalId);
@@ -171,7 +171,7 @@ class FamilyPlanAccess {
 	 *
 	 * @throws RefusedException When the store cannot be read.
 	 *
-	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-family-plan-is-read-only-by-whoever-may-read-its-case
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-family-plan-is-read-only-by-whoever-may-read-its-case
 	 */
 	public function planRead(string $planId): int {
 		$plan = $this->store->read(schema: CasePlanReview::SCHEMA, id: $planId);
@@ -189,7 +189,7 @@ class FamilyPlanAccess {
 	 *
 	 * @return int The HTTP status.
 	 *
-	 * @spec openspec/changes/family-plan-writes-check-the-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-family-plan-is-read-only-by-whoever-may-read-its-case
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-family-plan-is-read-only-by-whoever-may-read-its-case
 	 */
 	public function caseRead(string $caseId): int {
 		return $this->caseCheck(write: false, caseId: trim($caseId));

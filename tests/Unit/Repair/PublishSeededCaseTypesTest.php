@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/seeded-case-types-are-published/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -181,7 +181,7 @@ class PublishSeededCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seeded-case-types-are-published/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testTheSeededDraftsArePublishedAndNothingElse(): void {
 		$objects = new FakePublishCaseTypeObjectService();
@@ -208,7 +208,7 @@ class PublishSeededCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seeded-case-types-are-published/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testARecordedRunDoesNotRunAgain(): void {
 		$objects = new FakePublishCaseTypeObjectService();
@@ -225,7 +225,7 @@ class PublishSeededCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seeded-case-types-are-published/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testAFailedWriteIsTriedAgainNextTime(): void {
 		$objects = new FakePublishCaseTypeObjectService();
@@ -244,7 +244,7 @@ class PublishSeededCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seeded-case-types-are-published/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testEveryShippedCaseTypeDeclaresIsDraft(): void {
 		$root = dirname(__DIR__, 3) . '/lib/Settings';

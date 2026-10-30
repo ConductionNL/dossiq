@@ -93,7 +93,7 @@ export default {
 		 *
 		 * @param {string} status The stored status.
 		 * @return {string} The label.
-		 * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		statusLabel(status) {
 			const labels = {

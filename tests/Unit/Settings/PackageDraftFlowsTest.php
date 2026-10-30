@@ -41,7 +41,7 @@ use Psr\Log\NullLogger;
  *
  * @coversNothing
  *
- * @spec openspec/changes/vth-package/specs/vth-workflow-templates/spec.md
+ * @spec openspec/specs/vth-workflow-templates/spec.md
  */
 class PackageDraftFlowsTest extends TestCase {
 

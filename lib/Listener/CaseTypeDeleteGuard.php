@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-delete-guard-and-template-versions/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -43,7 +43,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/case-type-delete-guard-and-template-versions/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class CaseTypeDeleteGuard implements IEventListener {
 
@@ -84,7 +84,7 @@ class CaseTypeDeleteGuard implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-delete-guard-and-template-versions/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectDeletingEvent === false) {

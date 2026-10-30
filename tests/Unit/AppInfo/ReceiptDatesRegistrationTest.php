@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);

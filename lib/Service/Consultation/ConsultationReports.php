@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Service\Consultation;
 /**
  * Reads the due-soon list and the bottleneck report.
  *
- * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 class ConsultationReports {
 
@@ -54,7 +54,7 @@ class ConsultationReports {
 	 *
 	 * @return array{results: array<int, array<string, mixed>>, warningOffsetDays: int} The list and the offset used.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
 	 */
 	public function getDueSoonConsultations(?callable $mayRead = null): array {
 		$waiting = $this->repository->getWaitingConsultations();
@@ -73,7 +73,7 @@ class ConsultationReports {
 	 *
 	 * @return array{threshold: float, windowDays: int, bodies: array<int, array<string, mixed>>} The report.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
 	 */
 	public function getBottlenecks(): array {
 		return $this->terms->bottlenecks(consultations: $this->repository->getRecentConsultations(days: ConsultationTerms::BOTTLENECK_WINDOW_DAYS));

@@ -10,8 +10,8 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/social-domain-procedures-are-case-types/specs/dossiq-sociaal-domein-participatiewet/spec.md
- * @spec openspec/changes/social-domain-procedures-are-case-types/specs/dossiq-sociaal-domein-wmo/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-wmo/spec.md
  */
 
 declare(strict_types=1);
@@ -290,7 +290,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-pill-teal-jeugdwet/specs/case-types/spec.md#requirement-the-jeugdwet-case-type-is-drawn-teal
+	 * @spec openspec/specs/case-types/spec.md#requirement-the-jeugdwet-case-type-is-drawn-teal
 	 */
 	public function testTheJeugdwetCaseTypeIsDrawnTeal(): void {
 		self::assertSame(expected: 'teal', actual: $this->caseTypeFile(package: 'jeugdwet')['caseType']['colour']);
@@ -302,7 +302,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/stages-off-path/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
 	 */
 	public function testTheJeugdwetSideStatusesAreOffThePath(): void {
 		$offPath = [];
@@ -322,7 +322,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/stages-off-path/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
 	 */
 	public function testEveryPackageMarksItsSideStatusesOffThePath(): void {
 		$onPath = [];

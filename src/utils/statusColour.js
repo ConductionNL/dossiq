@@ -177,7 +177,7 @@ export function statusBadgeStyle(colour) {
  * @param {string} fallback The CSS colour when the theme names none.
  * @return {string} A `var(--nl-color-<hue>-text, <fallback>)` expression.
  *
- * @spec openspec/changes/status-badge-text-token/specs/case-types/spec.md#requirement-a-status-badge-sets-the-theme-s-pill-text
+ * @spec openspec/changes/archive/2026-10-30-status-badge-text-token/specs/case-types/spec.md#requirement-a-status-badge-sets-the-theme-s-pill-text
  */
 export function statusTextToken(hue, fallback) {
 	return `var(--nl-color-${hue}-text, ${fallback})`

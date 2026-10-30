@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/penalty-payment-rows/specs/termijn-reporting/spec.md#requirement-the-annual-audit-lists-the-forfeited-payments-by-case
+ * @spec openspec/specs/termijn-reporting/spec.md#requirement-the-annual-audit-lists-the-forfeited-payments-by-case
  */
 
 declare(strict_types=1);
@@ -73,7 +73,7 @@ class PenaltyPaymentRows {
 	 *
 	 * @return array<string, mixed> The year, its rows, the summary and the summary as one row (`summaryRows`).
 	 *
-	 * @spec openspec/changes/penalty-payment-rows/specs/termijn-reporting/spec.md#requirement-the-annual-audit-lists-the-forfeited-payments-by-case
+	 * @spec openspec/specs/termijn-reporting/spec.md#requirement-the-annual-audit-lists-the-forfeited-payments-by-case
 	 */
 	public function forYear(int $year): array {
 		$none = ['count' => 0, 'totalEuros' => 0.0, 'disputedCount' => 0];

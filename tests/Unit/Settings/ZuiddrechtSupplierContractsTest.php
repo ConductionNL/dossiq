@@ -19,8 +19,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-supplier-contracts/specs/example-set-supplier-contracts/spec.md#requirement-the-zuiddrecht-set-has-supplier-contracts-in-every-status
- * @spec openspec/changes/example-set-supplier-contracts/specs/example-set-supplier-contracts/spec.md#requirement-a-contract-status-is-named-by-its-label
+ * @spec openspec/specs/example-set-supplier-contracts/spec.md#requirement-the-zuiddrecht-set-has-supplier-contracts-in-every-status
+ * @spec openspec/specs/example-set-supplier-contracts/spec.md#requirement-a-contract-status-is-named-by-its-label
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The contracts board's suppliers and contracts.
  *
- * @spec openspec/changes/example-set-supplier-contracts/specs/example-set-supplier-contracts/spec.md#requirement-the-zuiddrecht-set-has-supplier-contracts-in-every-status
+ * @spec openspec/specs/example-set-supplier-contracts/spec.md#requirement-the-zuiddrecht-set-has-supplier-contracts-in-every-status
  */
 class ZuiddrechtSupplierContractsTest extends TestCase {
 

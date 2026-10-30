@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-own-saved-view/specs/example-set-own-saved-view/spec.md#requirement-the-handler-the-boards-draw-owns-a-saved-view-on-the-case-list
+ * @spec openspec/specs/example-set-own-saved-view/spec.md#requirement-the-handler-the-boards-draw-owns-a-saved-view-on-the-case-list
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Pieter Jansen's own saved view on the case list.
  *
- * @spec openspec/changes/example-set-own-saved-view/specs/example-set-own-saved-view/spec.md#requirement-the-handler-the-boards-draw-owns-a-saved-view-on-the-case-list
+ * @spec openspec/specs/example-set-own-saved-view/spec.md#requirement-the-handler-the-boards-draw-owns-a-saved-view-on-the-case-list
  */
 class ZuiddrechtOwnSavedViewTest extends TestCase {
 

@@ -28,7 +28,7 @@ use OCP\IURLGenerator;
  * applies the case type's suspension rules. A macro such as "Opschorten voor
  * aanvulling" uses it (DqZaakAssistent).
  *
- * @spec openspec/changes/case-macros/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
+ * @spec openspec/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
  */
 class DossiqTxSuspendTermNode extends DossiqTransitionNode {
 
@@ -90,7 +90,7 @@ class DossiqTxSuspendTermNode extends DossiqTransitionNode {
      *
      * @return string The translated name.
      *
-     * @spec openspec/changes/case-macros/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
+     * @spec openspec/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
      */
     public function getDisplayName(): string {
         return $this->l10n->t('Suspend the term');
@@ -103,7 +103,7 @@ class DossiqTxSuspendTermNode extends DossiqTransitionNode {
      *
      * @return string The translated description.
      *
-     * @spec openspec/changes/case-macros/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
+     * @spec openspec/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
      */
     public function getDescription(): string {
         return $this->l10n->t('Suspend the case term for a number of days, under the case type\'s rules for suspending.');

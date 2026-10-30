@@ -6,7 +6,7 @@
  * the records a flow is tried with. The library tries the flow through
  * OpenRegister's dry-run, which changes and sends nothing.
  *
- * @spec openspec/changes/flow-test-with-a-case/specs/flow-test-with-a-case/spec.md#requirement-the-flow-page-tests-a-flow-with-a-case
+ * @spec openspec/specs/flow-test-with-a-case/spec.md#requirement-the-flow-page-tests-a-flow-with-a-case
  */
 
 import fs from 'fs'

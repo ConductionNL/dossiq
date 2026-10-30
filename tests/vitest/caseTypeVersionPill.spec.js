@@ -5,7 +5,7 @@
  * DqZaaktype, DqZaaktypeOverzicht and DqZaaktypeVelden: the status pill names
  * the version, "Versie 4 gepubliceerd" or "Versie 5 concept".
  *
- * @spec openspec/changes/case-type-version-pill/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import fs from 'fs'

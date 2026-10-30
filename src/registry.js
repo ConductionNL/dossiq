@@ -309,7 +309,7 @@ const registry = {
 	},
 	// --- The editors of the retired admin-settings case type editor, rehosted
 	// on CaseTypeDetail while their forms have no declarative equivalent. ---
-	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+	// @spec openspec/specs/case-types/spec.md
 	CaseTypeWorkflowEditorWidget: {
 		// @custom-widget-ratchet exclude a visual canvas of statuses, transitions, steps and guards with a version selector and publish; no declared widget draws or edits a graph
 		kind: 'widget',
@@ -317,7 +317,7 @@ const registry = {
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail Phases and tasks: the workflow canvas, kept by decision when the admin-settings editor was retired.',
 	},
-	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+	// @spec openspec/specs/case-types/spec.md
 	CaseTypeMessagesEditorWidget: {
 		// @custom-widget-ratchet exclude a message is edited with the case variables to insert and a live preview that flags an unresolved variable; no declared form offers either
 		kind: 'widget',
@@ -325,7 +325,7 @@ const registry = {
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail Phases and tasks: the messages to the applicant through the email template endpoints, so each change is a new version (EmailTemplateVersionListener keeps that on the object API too).',
 	},
-	// @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+	// @spec openspec/specs/case-types/spec.md
 	CaseTypeFieldRightsWidget: {
 		// @custom-widget-ratchet exclude the matrix has one column per status of the case type, read at run time, and its cells combine three stored declarations; a declared table has fixed columns
 		kind: 'widget',
@@ -334,7 +334,7 @@ const registry = {
 		...PANEL_WIDGET_META,
 		_note: 'CaseTypeDetail Fields: the field rights as a matrix of fields by status (DqZaaktypeVelden), read from fieldRoleRules, the statuses\' required field rules and requiredAtStatus.',
 	},
-	// @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+	// @spec openspec/specs/case-types/spec.md
 	CaseTypeRulesWidget: {
 		// @custom-widget-ratchet exclude the rules are read from OpenRegister's rules vocabulary and evaluated against a pasted case; no declared widget evaluates a rule
 		kind: 'widget',

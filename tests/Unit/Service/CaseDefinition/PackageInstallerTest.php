@@ -861,7 +861,7 @@ class PackageInstallerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testTheShippedWooPackageWritesItsFlowOnAnUpgradedInstance(): void {
 		$caseType = '3c0f5a00-0000-4000-a000-00000000a001';
@@ -1072,7 +1072,7 @@ class PackageInstallerTest extends TestCase {
 	/**
 	 * A reload installs what is installed here or automatic, and nothing else.
 	 *
-	 * @spec openspec/changes/reload-shipped-packages/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
 	 *
 	 * @return void
 	 */
@@ -1721,7 +1721,7 @@ class PackageInstallerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/package-examples-encoding/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testTheShippedBezwaarPackageInstallsWithItsExampleCase(): void {
 		$this->appConfigValues[DemoDataService::DECIDED_KEY] = DemoDataService::DECIDED_INSTALLED;

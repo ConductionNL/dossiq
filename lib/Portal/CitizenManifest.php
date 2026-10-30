@@ -305,7 +305,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed> The collection.
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function permitCollection(): array {
 		return [
@@ -342,7 +342,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed> The action.
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function permitPlateAction(): array {
 		return [

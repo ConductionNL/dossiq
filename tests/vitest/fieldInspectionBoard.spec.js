@@ -7,7 +7,7 @@
  * says Wacht (amber) or Conflict (red), and the running checklist opens at its
  * first open question.
  *
- * @spec openspec/changes/screens-round12-field-inspection/tasks.md
+ * @spec openspec/changes/archive/2026-10-30-screens-round12-field-inspection/tasks.md
  */
 
 import fs from 'fs'

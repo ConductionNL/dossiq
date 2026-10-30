@@ -59,7 +59,7 @@ class IntakeListenerRegistrar {
 	 *
 	 * @var int
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public const RECEIPT_DATES_PRIORITY = 100;
 

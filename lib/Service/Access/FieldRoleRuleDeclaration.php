@@ -133,7 +133,7 @@ class FieldRoleRuleDeclaration {
 	 * @return array<string, array<int, array<string, mixed>>> The `fields` block, possibly empty.
 	 *
 	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
-	 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function lifecycleFields(array $caseType, string $statusId = ''): array {
 		$block = [];
@@ -185,7 +185,7 @@ class FieldRoleRuleDeclaration {
 	 * @return array<string, array<string, array<int, array<string, string>>>> Blocks by property name.
 	 *
 	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
-	 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function propertyAuthorization(array $caseType): array {
 		$blocks = [];

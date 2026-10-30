@@ -526,7 +526,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @return JSONResponse `{message, error}` with the refusal's own status.
 	 *
-	 * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	private function handlerRefusal(RefusedException $e): JSONResponse {
 		$message = match ($e->getRule()) {

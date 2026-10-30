@@ -7,7 +7,7 @@
  * through what nextcloud-vue's columns read: the `label` widget with `enum` +
  * `enumLabels`, or a formatter with `formatterOptions`.
  *
- * @spec openspec/changes/tenant-tables-in-words/specs/tenant-tables-in-words/spec.md
+ * @spec openspec/specs/tenant-tables-in-words/spec.md
  */
 
 import fs from 'fs'

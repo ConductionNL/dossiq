@@ -7,7 +7,7 @@
  * titled card that leads with what the type offers in numbers, as board
  * DqZaaktypeStatussen draws it; every row stays one click away.
  *
- * @spec openspec/changes/case-type-blueprint-summary/specs/case-types/spec.md#requirement-the-blueprint-reads-as-a-summary-card
+ * @spec openspec/specs/case-types/spec.md#requirement-the-blueprint-reads-as-a-summary-card
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

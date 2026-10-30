@@ -3290,6 +3290,161 @@ access on the case may accept or refuse, and asking needs read access
 - **THEN** the request SHALL go to the unit holding the case
 - **AND** it SHALL NOT expire unanswered
 
+### Requirement: A recorded decision is listed on its case (REQ-CM-81)
+
+When a decision is recorded for a case from its document assessments, the case's `decisions` SHALL list it, once, alongside any decision listed before. Failing to update the case SHALL NOT undo the decision.
+
+#### Scenario: The checklist ticks after the decision
+@e2e exclude {asserted in tests/Unit/Service/WOODecisionServiceTest.php against an in-memory register; the checklist reads the field it fills}
+
+- **GIVEN** a case in its decision stage with every document assessed
+- **WHEN** the handler records the decision
+- **THEN** the case's `decisions` SHALL contain the new decision
+- **AND** the next-step item "Record the decision" SHALL read done
+
+### Requirement: A read or write with nobody signed in runs as the system (REQ-CM-83)
+
+When dossiq reads a case type or writes a timeline entry with nobody signed in (an install, an import, an occ command, cron), it SHALL do so as the system. A request with a signed-in user SHALL run with that user's rights.
+
+#### Scenario: The example set installs without anonymous refusals
+@e2e exclude {occ-time behaviour; asserted in tests/Unit/Service/Support/BackgroundReadsRunAsSystemTest.php and CaseTimelineTest with an object service that refuses anonymous reads}
+
+- **GIVEN** an instance installing an example set through occ
+- **WHEN** a case is created and its case type and timeline are read
+- **THEN** no "User 'Anonymous' does not have permission" line SHALL be logged by dossiq
+
+#### Scenario: A handler is never elevated
+- **GIVEN** a signed-in handler
+- **WHEN** the same read runs in their request
+- **THEN** it SHALL run with the handler's own rights
+
+### Requirement: The case page shows labels and names, not codes (REQ-CM-82)
+
+The case page SHALL show every enum value of the case it displays through a label in the reader's language, SHALL read a configured widget text through the app catalogue, and the Files tab SHALL show each file's name.
+
+#### Scenario: A Dutch reader reads the derived priority
+@e2e exclude {a register declaration; asserted in tests/Unit/Settings/CaseEnumLabelsTest.php}
+
+- **GIVEN** a case whose `priorityDerived` is `normal`, on an nl_NL instance
+- **WHEN** the handler opens the case
+- **THEN** the field SHALL read "Normaal"
+
+#### Scenario: The Files tab names its files
+@e2e exclude {asserted against the library's own column normaliser in tests/vitest/filesTabColumns.spec.js}
+
+- **GIVEN** a case with two documents in its folder
+- **WHEN** the handler opens the Files tab
+- **THEN** each row SHALL show the file's name
+
+### Requirement: The case page shows words, not raw values
+
+The case page SHALL show the initiator type as a translated label, and SHALL NOT count days overdue on a case in its final status.
+
+#### Scenario: A company initiator
+- **GIVEN** a case with `initiatorType: company`
+- **WHEN** a Dutch handler opens the case page
+- **THEN** the initiator type SHALL read "Bedrijf"
+
+#### Scenario: A closed case past its deadline
+- **GIVEN** a case with `isFinalStatus: true` whose deadline passed 24 days ago
+- **WHEN** a Dutch handler opens the case page
+- **THEN** the deadline tile SHALL read "Afgehandeld" and SHALL NOT read "24 dagen te laat"
+
+@e2e exclude Configuration over library widgets; tests/vitest/caseSettledAndInitiatorLabels.spec.js checks the declarations and the Dutch labels, and nextcloud-vue's own tests cover the rendering.
+
+### Requirement: A case's payment state reads as words
+
+Every value of a case's `paymentState` SHALL carry a label with a Dutch translation.
+
+#### Scenario: a case type without fees
+- **GIVEN** a case whose payment state is `notRequired`
+- **THEN** Termijn en betaling reads "Betaalstatus: Geen leges voor dit zaaktype"
+
+### Requirement: The term row reads in words with the extension the case type allows
+
+A case SHALL carry its type's extension period (`statutoryExtension`). The Termijn en betaling card SHALL label the term "Wettelijke termijn" and read it in words with that extension, and SHALL label the payment check "Laatst gecontroleerd".
+
+#### Scenario: a Woo case
+- **GIVEN** a Woo case whose type has a term of P28D and an extension of P14D
+- **THEN** the card reads "Wettelijke termijn: 4 weken, te verdagen met 2"
+
+### Requirement: A case type lists the fields its request card shows
+
+A case type MAY list `requestFields`, the facts entries the request card on a case's Overview shows. When the list is empty the card SHALL show the case description.
+
+#### Scenario: a Woo request
+- **GIVEN** the Woo type lists the request's scope, its period and the kinds of document
+- **THEN** the request card reads "Alle adviezen en mails …" with the pills "Periode 2025 tot en met 2026" and "Correspondentie, Rapporten"
+
+#### Scenario: a case type without request fields
+- **THEN** the request card shows the case description
+
+### Requirement: A view on my own cases reads "Mijn zaken"
+
+The Cases page SHALL name the assignee value `@me` "My cases" on its own in a saved view's summary.
+
+#### Scenario: Termijn deze week
+- THEN its summary reads "Mijn zaken, deadline binnen 7 dagen"
+
+### Requirement: Finishing or aborting a case picks its result from the case type (REQ-CM-80)
+
+The Finish and Abort acts SHALL offer the results a case of this case type can close with, including those a parent case type contributes, as a picker. The lifecycle dialog SHALL NOT ask for a result as free text. A close that names a result which is not one of the case type's results SHALL be refused with HTTP 422 and a sentence in the reader's language, before the case or a result row is written.
+
+#### Scenario: Finish offers the case type's results
+@e2e exclude {the picker is asserted in tests/vitest/finishingPicksAResult.spec.js and was checked on the rehearsal instance; no e2e fixture case type carries results}
+
+- **GIVEN** a case whose case type (or its parent) declares the results "Toegewezen" and "Deels toegewezen"
+- **WHEN** the handler opens Volgende stap and chooses Afronden
+- **THEN** the form SHALL offer "Toegewezen" and "Deels toegewezen" in a picker
+- **AND** the form SHALL NOT offer a free text field for the result
+
+#### Scenario: An unknown result is refused, not failed
+@e2e exclude {a server refusal asserted in tests/Unit/Service/Transitions/CaseResultWriterTest.php}
+
+- **GIVEN** a case type with results
+- **WHEN** a client posts finish with `resultTypeId` "Deels toegewezen"
+- **THEN** the server SHALL answer 422 with error `result-type-unknown`
+- **AND** the message SHALL be in the reader's language
+- **AND** no result row SHALL be written
+
+### Requirement: The hand-over list reads a team's description from its organisation role
+
+An organisation role SHALL be able to carry a short description, and the hand-over dialog SHALL show it under the team
+whose Nextcloud group the role names.
+
+#### Scenario: DqOverdragen
+
+- **WHEN** the organisation role for group "Juridische zaken" carries "bezwaar, beroep en Woo-advies"
+- **THEN** the team reads that line, after its member count where the viewer may read it
+
+### Requirement: The lifecycle dialog's acts start and end on the dialog body's padding
+
+The lifecycle dialog's list of acts SHALL add no padding of its own.
+
+#### Scenario: next step dialog
+- **THEN** the first act starts 22px under the subtitle and the footer 20px under the last act
+
+### Requirement: The lifecycle dialog's title stays clear of its close button (REQ-CM-78)
+
+The dialog that lists what a handler can do with a case SHALL be wide enough that
+its title does not run under the dialog's close button.
+
+#### Scenario: The title clears the close button
+@e2e exclude {a geometry check between two library-drawn elements; the size is asserted in tests/vitest/caseTransitionOutcome.spec.js and the result is checked on the live instance with a screenshot}
+
+- **GIVEN** a case page
+- **WHEN** the handler opens Meer and then Levensloop
+- **THEN** the dialog title SHALL not overlap the close button
+
+### Requirement: A person can switch e-mail on per notification
+
+dossiq's per-person notifications SHALL declare e-mail as an opt-in channel. The personal notification settings SHALL draw one column per channel the platform names for the notifications, e-mail unchecked until the person checks it, and a change SHALL write the row's full channel set.
+
+#### Scenario: Switch e-mail on
+- GIVEN "A case is assigned to me" with Nextcloud on and e-mail off
+- WHEN the person checks its "Per e-mail" cell
+- THEN the preference stored is enabled with channels nc-notification and email
+
 ### Requirement: Following and recently opened are lenses and tiles (REQ-FAV-03)
 
 The Cases index SHALL offer a Following chip and a Recently opened chip, each narrowing the list through OpenRegister's own lens rather than a dossiq query. The Dashboard SHALL carry a Cases you follow tile and a Recently opened tile over the same two lenses, each linking through to the matching chip. There SHALL be no Favourites chip and no favourites tile.
@@ -3318,18 +3473,6 @@ The Cases index SHALL offer a Following chip and a Recently opened chip, each na
 - **THEN** the Cases you follow tile SHALL show
 - **AND** the Recently opened tile SHALL show
 
-### Requirement: The lifecycle dialog's title stays clear of its close button (REQ-CM-78)
-
-The dialog that lists what a handler can do with a case SHALL be wide enough that
-its title does not run under the dialog's close button.
-
-#### Scenario: The title clears the close button
-@e2e exclude {a geometry check between two library-drawn elements; the size is asserted in tests/vitest/caseTransitionOutcome.spec.js and the result is checked on the live instance with a screenshot}
-
-- **GIVEN** a case page
-- **WHEN** the handler opens Meer and then Levensloop
-- **THEN** the dialog title SHALL not overlap the close button
-
 ### Requirement: The case page shows one Follow control (REQ-CM-40a)
 
 `#CaseDetail` SHALL show exactly one Follow control: the platform's follow toggle
@@ -3352,149 +3495,6 @@ lists and the Followers section on the People tab SHALL stay.
 - **WHEN** you press the bell beside the Follow control and reload
 - **THEN** the case SHALL still be followed
 - **AND** the bell SHALL read notifications off
-
-### Requirement: The case page shows words, not raw values
-
-The case page SHALL show the initiator type as a translated label, and SHALL NOT count days overdue on a case in its final status.
-
-#### Scenario: A company initiator
-- **GIVEN** a case with `initiatorType: company`
-- **WHEN** a Dutch handler opens the case page
-- **THEN** the initiator type SHALL read "Bedrijf"
-
-#### Scenario: A closed case past its deadline
-- **GIVEN** a case with `isFinalStatus: true` whose deadline passed 24 days ago
-- **WHEN** a Dutch handler opens the case page
-- **THEN** the deadline tile SHALL read "Afgehandeld" and SHALL NOT read "24 dagen te laat"
-
-@e2e exclude Configuration over library widgets; tests/vitest/caseSettledAndInitiatorLabels.spec.js checks the declarations and the Dutch labels, and nextcloud-vue's own tests cover the rendering.
-
-### Requirement: Finishing or aborting a case picks its result from the case type (REQ-CM-80)
-
-The Finish and Abort acts SHALL offer the results a case of this case type can close with, including those a parent case type contributes, as a picker. The lifecycle dialog SHALL NOT ask for a result as free text. A close that names a result which is not one of the case type's results SHALL be refused with HTTP 422 and a sentence in the reader's language, before the case or a result row is written.
-
-#### Scenario: Finish offers the case type's results
-@e2e exclude {the picker is asserted in tests/vitest/finishingPicksAResult.spec.js and was checked on the rehearsal instance; no e2e fixture case type carries results}
-
-- **GIVEN** a case whose case type (or its parent) declares the results "Toegewezen" and "Deels toegewezen"
-- **WHEN** the handler opens Volgende stap and chooses Afronden
-- **THEN** the form SHALL offer "Toegewezen" and "Deels toegewezen" in a picker
-- **AND** the form SHALL NOT offer a free text field for the result
-
-#### Scenario: An unknown result is refused, not failed
-@e2e exclude {a server refusal asserted in tests/Unit/Service/Transitions/CaseResultWriterTest.php}
-
-- **GIVEN** a case type with results
-- **WHEN** a client posts finish with `resultTypeId` "Deels toegewezen"
-- **THEN** the server SHALL answer 422 with error `result-type-unknown`
-- **AND** the message SHALL be in the reader's language
-- **AND** no result row SHALL be written
-
-### Requirement: A recorded decision is listed on its case (REQ-CM-81)
-
-When a decision is recorded for a case from its document assessments, the case's `decisions` SHALL list it, once, alongside any decision listed before. Failing to update the case SHALL NOT undo the decision.
-
-#### Scenario: The checklist ticks after the decision
-@e2e exclude {asserted in tests/Unit/Service/WOODecisionServiceTest.php against an in-memory register; the checklist reads the field it fills}
-
-- **GIVEN** a case in its decision stage with every document assessed
-- **WHEN** the handler records the decision
-- **THEN** the case's `decisions` SHALL contain the new decision
-- **AND** the next-step item "Record the decision" SHALL read done
-
-### Requirement: The case page shows labels and names, not codes (REQ-CM-82)
-
-The case page SHALL show every enum value of the case it displays through a label in the reader's language, SHALL read a configured widget text through the app catalogue, and the Files tab SHALL show each file's name.
-
-#### Scenario: A Dutch reader reads the derived priority
-@e2e exclude {a register declaration; asserted in tests/Unit/Settings/CaseEnumLabelsTest.php}
-
-- **GIVEN** a case whose `priorityDerived` is `normal`, on an nl_NL instance
-- **WHEN** the handler opens the case
-- **THEN** the field SHALL read "Normaal"
-
-#### Scenario: The Files tab names its files
-@e2e exclude {asserted against the library's own column normaliser in tests/vitest/filesTabColumns.spec.js}
-
-- **GIVEN** a case with two documents in its folder
-- **WHEN** the handler opens the Files tab
-- **THEN** each row SHALL show the file's name
-
-### Requirement: A read or write with nobody signed in runs as the system (REQ-CM-83)
-
-When dossiq reads a case type or writes a timeline entry with nobody signed in (an install, an import, an occ command, cron), it SHALL do so as the system. A request with a signed-in user SHALL run with that user's rights.
-
-#### Scenario: The example set installs without anonymous refusals
-@e2e exclude {occ-time behaviour; asserted in tests/Unit/Service/Support/BackgroundReadsRunAsSystemTest.php and CaseTimelineTest with an object service that refuses anonymous reads}
-
-- **GIVEN** an instance installing an example set through occ
-- **WHEN** a case is created and its case type and timeline are read
-- **THEN** no "User 'Anonymous' does not have permission" line SHALL be logged by dossiq
-
-#### Scenario: A handler is never elevated
-- **GIVEN** a signed-in handler
-- **WHEN** the same read runs in their request
-- **THEN** it SHALL run with the handler's own rights
-
-### Requirement: The hand-over list reads a team's description from its organisation role
-
-An organisation role SHALL be able to carry a short description, and the hand-over dialog SHALL show it under the team
-whose Nextcloud group the role names.
-
-#### Scenario: DqOverdragen
-
-- **WHEN** the organisation role for group "Juridische zaken" carries "bezwaar, beroep en Woo-advies"
-- **THEN** the team reads that line, after its member count where the viewer may read it
-
-### Requirement: A person can switch e-mail on per notification
-
-dossiq's per-person notifications SHALL declare e-mail as an opt-in channel. The personal notification settings SHALL draw one column per channel the platform names for the notifications, e-mail unchecked until the person checks it, and a change SHALL write the row's full channel set.
-
-#### Scenario: Switch e-mail on
-- GIVEN "A case is assigned to me" with Nextcloud on and e-mail off
-- WHEN the person checks its "Per e-mail" cell
-- THEN the preference stored is enabled with channels nc-notification and email
-
-### Requirement: The lifecycle dialog's acts start and end on the dialog body's padding
-
-The lifecycle dialog's list of acts SHALL add no padding of its own.
-
-#### Scenario: next step dialog
-- **THEN** the first act starts 22px under the subtitle and the footer 20px under the last act
-
-### Requirement: A case type lists the fields its request card shows
-
-A case type MAY list `requestFields`, the facts entries the request card on a case's Overview shows. When the list is empty the card SHALL show the case description.
-
-#### Scenario: a Woo request
-- **GIVEN** the Woo type lists the request's scope, its period and the kinds of document
-- **THEN** the request card reads "Alle adviezen en mails …" with the pills "Periode 2025 tot en met 2026" and "Correspondentie, Rapporten"
-
-#### Scenario: a case type without request fields
-- **THEN** the request card shows the case description
-
-### Requirement: A case's payment state reads as words
-
-Every value of a case's `paymentState` SHALL carry a label with a Dutch translation.
-
-#### Scenario: a case type without fees
-- **GIVEN** a case whose payment state is `notRequired`
-- **THEN** Termijn en betaling reads "Betaalstatus: Geen leges voor dit zaaktype"
-
-### Requirement: The term row reads in words with the extension the case type allows
-
-A case SHALL carry its type's extension period (`statutoryExtension`). The Termijn en betaling card SHALL label the term "Wettelijke termijn" and read it in words with that extension, and SHALL label the payment check "Laatst gecontroleerd".
-
-#### Scenario: a Woo case
-- **GIVEN** a Woo case whose type has a term of P28D and an extension of P14D
-- **THEN** the card reads "Wettelijke termijn: 4 weken, te verdagen met 2"
-
-### Requirement: A view on my own cases reads "Mijn zaken"
-
-The Cases page SHALL name the assignee value `@me` "My cases" on its own in a saved view's summary.
-
-#### Scenario: Termijn deze week
-- THEN its summary reads "Mijn zaken, deadline binnen 7 dagen"
 
 ## Sharing, Transfer, Email & Public Access (retrofit)
 

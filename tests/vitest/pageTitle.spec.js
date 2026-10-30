@@ -9,7 +9,7 @@
  * wiring test reads `src/main.js` itself, because a title helper with a full
  * suite and no call site changes nothing a person sees.
  *
- * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/page-titles/spec.md
+ * @spec openspec/specs/page-titles/spec.md
  */
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -89,7 +89,7 @@ const filteredRoute = {
 }
 
 describe('pageTitleFor on a list narrowed to one case type', () => {
-	// @spec openspec/changes/r7-dossiq-filtered-title-board-config/specs/page-titles/spec.md
+	// @spec openspec/specs/page-titles/spec.md
 	it('names the case type the menu entry names, not the whole list', () => {
 		expect(
 			pageTitleFor(manifest, filteredRoute, BASE, (s) => s, DELTA_MENU),
@@ -181,7 +181,7 @@ describe('installPageTitles', () => {
 		expect(source).toMatch(/installPageTitles\(\s*router,\s*builtManifest,/)
 	})
 
-	// @spec openspec/changes/r7-dossiq-filtered-title-board-config/specs/page-titles/spec.md
+	// @spec openspec/specs/page-titles/spec.md
 	it('re-titles the open list when the case type menu arrives', async () => {
 		const doc = { title: BASE }
 		const router = createRouter({

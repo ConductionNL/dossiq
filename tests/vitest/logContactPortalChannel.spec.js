@@ -6,7 +6,7 @@
  * Log contact names the portal channel after the portal, and says "Web form"
  * when no portal name is set.
  *
- * @spec openspec/changes/portal-channel-label/specs/portal-channel-label/spec.md
+ * @spec openspec/specs/portal-channel-label/spec.md
  */
 
 import { describe, expect, it, vi } from 'vitest'

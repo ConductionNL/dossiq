@@ -8,7 +8,7 @@
  * width the field names need.
  *
  * @spec openspec/changes/case-type-fields-columns/specs/case-types/spec.md
- * @spec openspec/changes/case-type-fields-in-list-no-filter/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import fs from 'fs'

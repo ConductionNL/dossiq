@@ -78,7 +78,7 @@ class ConsultationAccessGuard {
 	 *
 	 * @return callable(array<string, mixed>): bool The test, asked of each request before a list is built.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-a-consultation-list-shows-only-requests-on-cases-the-caller-may-read
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-a-consultation-list-shows-only-requests-on-cases-the-caller-may-read
 	 */
 	public function readableFilter(): callable {
 		$user = $this->userSession->getUser();
@@ -108,7 +108,7 @@ class ConsultationAccessGuard {
 	 *
 	 * @return JSONResponse|null Null when allowed, a 401 or 403 response otherwise.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-the-bottleneck-report-is-for-coordinators
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-the-bottleneck-report-is-for-coordinators
 	 */
 	public function requireCoordinator(): ?JSONResponse {
 		$user = $this->userSession->getUser();

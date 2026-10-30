@@ -2,7 +2,9 @@
 
 ## Purpose
 TBD - created by archiving change bag-register-adapter. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: The BAG adapter MUST be selected by configuration, defaulting to no external calls
 
 `BagAdapterInterface` SHALL offer a live adapter (`BagApiAdapter`) alongside a dormant default
@@ -78,30 +80,3 @@ mapping) SHALL live exclusively in `BagApiAdapter`.
 - **WHEN** `BagResponseMapper::map()` normalizes it
 - **THEN** both fields MUST be `null` in the output (distinguishable from a real `0`)
 - **AND** `gebruiksdoel` MUST always be an array, even when the source has a single string value
-
-### Requirement: The HTTP surface MUST expose graceful "not configured" responses, never a 500
-
-`BagController` SHALL return the adapter's `lookupStatus` (including `LOOKUP_DEFERRED` when
-dormant) as a 200 JSON body rather than surfacing an HTTP error for "not configured" — mirroring
-how the internal BRP/KvK seams already degrade for their callers. HTTP error statuses are reserved
-for request-shape problems (400) and unauthenticated access (401).
-
-#### Scenario: Dormant BAG adapter still returns 200
-
-- **GIVEN** `integration.bag.mode` is unset (Log adapter bound)
-- **WHEN** an authenticated user calls `GET /api/external/bag/address?postcode=1234AB&huisnummer=10`
-- **THEN** the response MUST be HTTP 200 with `lookupStatus = LOOKUP_DEFERRED` in the body
-
-#### Scenario: Missing required query parameters is a 400
-
-- **GIVEN** an authenticated user calls `GET /api/external/bag/address` with no `postcode` or
-  `huisnummer`
-- **WHEN** the request is handled
-- **THEN** the response MUST be HTTP 400 with an error message identifying the missing parameters
-
-#### Scenario: Unauthenticated access is rejected
-
-- **GIVEN** no active user session
-- **WHEN** any `bag#*` route is called
-- **THEN** the response MUST be HTTP 401
-

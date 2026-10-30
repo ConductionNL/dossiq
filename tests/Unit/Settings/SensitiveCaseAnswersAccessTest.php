@@ -16,7 +16,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/social-domain-procedures-are-case-types/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 
 declare(strict_types=1);

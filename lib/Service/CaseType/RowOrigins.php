@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+ * @spec openspec/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 /**
  * Marks and counts the origin of merged blueprint rows.
  *
- * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+ * @spec openspec/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
  */
 final class RowOrigins {
 
@@ -44,7 +44,7 @@ final class RowOrigins {
 	 *
 	 * @return string CaseTypeResolver::ORIGIN_OWN or CaseTypeResolver::ORIGIN_INHERITED.
 	 *
-	 * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+	 * @spec openspec/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
 	 */
 	public function originFor(bool $isOwn): string {
 		if ($isOwn === true) {
@@ -64,7 +64,7 @@ final class RowOrigins {
 	 *
 	 * @return array<string, mixed> The row, with `overrides: true` when it replaces one.
 	 *
-	 * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+	 * @spec openspec/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
 	 */
 	public function markOverride(array $row, bool $isOwn, array $merged, string $key): array {
 		if ($isOwn === true && isset($merged[$key]) === true) {
@@ -82,7 +82,7 @@ final class RowOrigins {
 	 *
 	 * @return array{total: int, inherited: int, overridden: int} The counts.
 	 *
-	 * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+	 * @spec openspec/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
 	 */
 	public function counts(array $rows, string $inheritedOrigin): array {
 		$inherited  = 0;

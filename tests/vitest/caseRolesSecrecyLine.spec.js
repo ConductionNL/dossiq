@@ -5,7 +5,7 @@
  * The Roles section of a case asks the parties widget for the secrecy line:
  * a person party without the geheimhouding indicator reads "Geen geheimhouding".
  *
- * @spec openspec/changes/case-roles-no-secrecy-line/specs/case-roles-no-secrecy-line/spec.md#requirement-a-person-on-a-case-says-whether-it-has-secrecy
+ * @spec openspec/specs/case-roles-no-secrecy-line/spec.md#requirement-a-person-on-a-case-says-whether-it-has-secrecy
  */
 import fs from 'node:fs'
 import path from 'node:path'

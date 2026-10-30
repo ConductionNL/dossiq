@@ -141,7 +141,7 @@ class TermResolution {
 	 *
 	 * @return array<string, mixed>|null The `planned` definition, or null when none resolves.
 	 *
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function plannedDefinitionFor(string $caseType, array $context): ?array {
 		$resolved = $this->resolve(caseType: $caseType, context: $context, kind: TermKind::PLANNED);

@@ -13,7 +13,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/case-document-verdicts/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
+ * @spec openspec/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
  */
 
 declare(strict_types=1);

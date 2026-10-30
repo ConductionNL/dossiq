@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use OCA\Dossiq\Service\SettingsService;
 /**
  * The consultation settings, read and applied.
  *
- * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 class ConsultationTerms {
 
@@ -87,7 +87,7 @@ class ConsultationTerms {
 	 *
 	 * @return string The deadline (Y-m-d).
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-an-advice-request-without-a-deadline-gets-the-default-term
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-an-advice-request-without-a-deadline-gets-the-default-term
 	 */
 	public function deadlineFor(?string $given): string {
 		$given = trim((string)$given);
@@ -108,7 +108,7 @@ class ConsultationTerms {
 	 *
 	 * @return int The offset.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
 	 */
 	public function warningOffsetDays(): int {
 		return $this->wholeDays(key: 'consultation_warning_offset_days', default: 5);
@@ -121,7 +121,7 @@ class ConsultationTerms {
 	 *
 	 * @return array<int, array<string, mixed>> The ones due soon, in the given order.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
 	 */
 	public function dueSoon(array $consultations): array {
 		$from = $this->today->format('Y-m-d');
@@ -148,7 +148,7 @@ class ConsultationTerms {
 	 *
 	 * @return string The address.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-the-external-invitation-uses-the-configured-response-address
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-the-external-invitation-uses-the-configured-response-address
 	 */
 	public function responseAddress(string $linkUrl): string {
 		$base = trim($this->settingsService->getConfigValue('consultation_external_response_url'));
@@ -168,7 +168,7 @@ class ConsultationTerms {
 	 *
 	 * @return string The message, in Dutch: the advisory bodies are Dutch organisations.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-the-external-invitation-uses-the-configured-response-address
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-the-external-invitation-uses-the-configured-response-address
 	 */
 	public function invitationMessage(array $consultation, string $address): string {
 		$subject = trim((string)($consultation['subject'] ?? ''));
@@ -187,7 +187,7 @@ class ConsultationTerms {
 	 *
 	 * @return array{threshold: float, windowDays: int, bodies: array<int, array<string, mixed>>} The report.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
 	 */
 	public function bottlenecks(array $consultations): array {
 		$threshold = $this->share(key: 'consultation_bottleneck_threshold', default: 0.2);

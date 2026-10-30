@@ -113,7 +113,7 @@ export default {
 		 *
 		 * @param {string} key The stored resource key.
 		 * @return {string} The name.
-		 * @spec openspec/changes/zgw-mapping-readable-names/specs/admin-settings/spec.md#requirement-a-zgw-mapping-row-names-its-resource
+		 * @spec openspec/specs/admin-settings/spec.md#requirement-a-zgw-mapping-row-names-its-resource
 		 */
 		resourceName(key) {
 			return zgwResourceName(key, translate)

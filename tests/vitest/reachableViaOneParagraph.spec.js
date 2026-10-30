@@ -6,7 +6,7 @@
  * registration note as one muted paragraph; the note still shows without a
  * contact moment (nextcloud-vue facts joinPrevious).
  *
- * @spec openspec/changes/reachable-via-one-paragraph/specs/party-pages/spec.md#requirement-reachable-via-is-one-paragraph
+ * @spec openspec/specs/party-pages/spec.md#requirement-reachable-via-is-one-paragraph
  */
 
 import fs from 'fs'

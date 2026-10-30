@@ -239,7 +239,7 @@ export default {
 		 * The rules as rows, titled and described in the reader's language.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/case-type-rules-as-rows/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
+		 * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
 		 */
 		rows() {
 			// A flow scoped to this case type is one of its own rules, projected; the rule row stands for it.

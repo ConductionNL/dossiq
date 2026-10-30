@@ -107,7 +107,7 @@ class IntakeTermStart {
 	 * @return array<string, mixed> The three fields, or [].
 	 *
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function stampFor(DateTimeImmutable $receivedAt): array {
 		$startsAt = $this->calendar->firstWorkingMomentAtOrAfter(moment: $receivedAt);
@@ -142,7 +142,7 @@ class IntakeTermStart {
 	 *
 	 * @return array<string, mixed> The three fields, or [].
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function stampForCase(array $case): array {
 		$receipt = $this->receiptOf(case: $case);
@@ -227,7 +227,7 @@ class IntakeTermStart {
 	 *
 	 * @return DateTimeImmutable The arrival moment.
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function arrivalOf(array $case): DateTimeImmutable {
 		return $this->receiptOf(case: $case)['moment'];
@@ -243,7 +243,7 @@ class IntakeTermStart {
 	 *
 	 * @return string The answer, trimmed, or ''.
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function receiptAnswerOf(array $case): string {
 		$entries = ($case['properties'] ?? []);

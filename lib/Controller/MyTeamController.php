@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
+ * @spec openspec/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use Throwable;
 /**
  * The current user's primary team.
  *
- * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
+ * @spec openspec/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
  */
 class MyTeamController extends Controller {
 
@@ -61,7 +61,7 @@ class MyTeamController extends Controller {
 	 *                      primary team and every team of the user; nulls and empty lists for a user in no team;
 	 *                      503 when the organisation roles cannot be read, so no team is guessed.
 	 *
-	 * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
+	 * @spec openspec/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
 	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
 	 */
 	#[NoAdminRequired]

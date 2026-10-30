@@ -8,7 +8,7 @@
  * informatie"), left out for a reader in no team. Needs nextcloud-vue
  * view-switch-order-and-more and count-line-my-team-name.
  *
- * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
+ * @spec openspec/specs/my-team/spec.md#requirement-the-team-queue-opens-on-the-readers-team
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

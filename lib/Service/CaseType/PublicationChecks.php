@@ -285,7 +285,7 @@ class PublicationChecks {
 	 *
 	 * @return array<int, string> The findings, in the order of REQUIRED_FIELDS.
 	 *
-	 * @spec openspec/changes/case-type-publish-required-fields/specs/case-type-publish-validation/spec.md
+	 * @spec openspec/specs/case-type-publish-validation/spec.md
 	 */
 	private function missingFieldFindings(array $caseType): array {
 		$findings = [];

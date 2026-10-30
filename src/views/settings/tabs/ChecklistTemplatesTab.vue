@@ -179,7 +179,7 @@ export default {
 		 * state as a status pill (success when active, neutral when not).
 		 *
 		 * @return {Array<object>} One row per checklist.
-		 * @spec openspec/changes/vth-checklists-as-rows/specs/vth-checklists-as-rows/spec.md#requirement-the-vth-checklists-are-library-rows-with-a-status-pill
+		 * @spec openspec/specs/vth-checklists-as-rows/spec.md#requirement-the-vth-checklists-are-library-rows-with-a-status-pill
 		 */
 		rows() {
 			return this.checklists.map((checklist) => {

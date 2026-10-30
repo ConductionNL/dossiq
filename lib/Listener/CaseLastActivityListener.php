@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-last-activity-at/specs/case-last-activity-at/spec.md
+ * @spec openspec/specs/case-last-activity-at/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/case-last-activity-at/specs/case-last-activity-at/spec.md
+ * @spec openspec/specs/case-last-activity-at/spec.md
  */
 class CaseLastActivityListener implements IEventListener {
 
@@ -96,7 +96,7 @@ class CaseLastActivityListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-last-activity-at/specs/case-last-activity-at/spec.md#requirement-work-on-a-case-stamps-its-last-activity
+	 * @spec openspec/specs/case-last-activity-at/spec.md#requirement-work-on-a-case-stamps-its-last-activity
 	 */
 	public function handle(Event $event): void {
 		$caseId = $this->workedOnCase(event: $event);

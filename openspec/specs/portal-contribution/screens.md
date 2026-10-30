@@ -7,3 +7,5 @@
 # Screens
 
 - No screen: no dossiq screen: dossiq provides the data, the portal pages are portaliq's
+- DqZaakContact https://identity.conduction.nl/screens/board?id=dossiq/DqZaakContact
+- DqZaakEmail https://identity.conduction.nl/screens/board?id=dossiq/DqZaakEmail

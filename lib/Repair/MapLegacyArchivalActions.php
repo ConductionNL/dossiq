@@ -34,7 +34,7 @@ use Throwable;
  * runs once per version behind a persisted key, and a result type that cannot
  * be written is named and left for the next run.
  *
- * @spec openspec/changes/case-type-archival-action-values/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class MapLegacyArchivalActions implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -84,7 +84,7 @@ class MapLegacyArchivalActions implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/case-type-archival-action-values/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function getName(): string {
 		return 'Map Dossiq result type archival actions retain and destroy onto bewaren and vernietigen';
@@ -97,7 +97,7 @@ class MapLegacyArchivalActions implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-archival-action-values/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
