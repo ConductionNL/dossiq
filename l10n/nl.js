@@ -5741,7 +5741,7 @@ OC.L10N.register(
         "Object document": "Objectdocument",
         "Object Identification": "Identificatie van het object",
         "Object linked to this case.": "Object aan deze zaak gekoppeld.",
-        "Object status": "Status object",
+        "Object status": "Objectstatus",
         "Object type": "Objecttype",
         "Object types": "Objecttypen",
         "Object types appear here once cases link objects.": "Objecttypen verschijnen hier zodra zaken objecten koppelen.",
