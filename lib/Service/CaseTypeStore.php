@@ -231,7 +231,7 @@ class CaseTypeStore {
 	 * @return array<int, array<string, mixed>> The case types, unordered.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function everyCaseType(array $scope=[]): array {
 		$objectService = $this->settingsService->getObjectService();

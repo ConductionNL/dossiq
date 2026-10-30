@@ -42,7 +42,7 @@ class BackgroundServiceAccountWiringTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function testTheSweptSchemasGrantTheGroupAndTheStaffOnly(): void {
 		$fragment = json_decode(
@@ -79,7 +79,7 @@ class BackgroundServiceAccountWiringTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function testTheJobSchemasGrantTheGroupAndTheStaffOnly(): void {
 		$fragment = json_decode(

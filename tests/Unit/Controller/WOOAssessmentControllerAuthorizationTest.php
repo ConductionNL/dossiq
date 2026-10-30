@@ -262,7 +262,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 	 *
 	 * @dataProvider publicationEndpointProvider
 	 *
-	 * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function testANonHandlerIsRefusedPublicationWithA403(string $method): void {
 		$this->publicationService->expects($this->never())->method('publish');
@@ -288,7 +288,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function testTheHandlerPublishesAsTheSystem(): void {
 		$inSystem = null;
@@ -345,7 +345,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function testTheHandlerIsRefusedBeforeThePublicationStep(): void {
 		$this->publicationService->expects($this->never())->method('publish');

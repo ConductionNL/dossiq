@@ -88,7 +88,7 @@ class CaseTypeListenerRegistrar {
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {

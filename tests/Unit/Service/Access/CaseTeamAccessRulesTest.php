@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Service\Access\CaseTeamAccessRules
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 class CaseTeamAccessRulesTest extends TestCase {
 
