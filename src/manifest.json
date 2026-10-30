@@ -12835,8 +12835,7 @@
 								{
 									"key": "caseType",
 									"label": "In the list",
-									"formatter": "fieldInCaseList",
-									"filterable": false
+									"formatter": "fieldInCaseList"
 								}
 							],
 							"readOnlyRows": {
