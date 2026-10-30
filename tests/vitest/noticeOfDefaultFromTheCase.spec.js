@@ -84,7 +84,7 @@ describe('the case page registers a notice of default', () => {
 		)
 		expect(action.target).toBe('NoticeOfDefaultDialog')
 		expect(action.props.caseId).toBe('@objectId')
-		const gate = action.visibleWhen.all.find((part) => part.endpoint)
+		const gate = action.visibleWhen
 		expect(gate).toEqual({
 			endpoint: '/apps/dossiq/api/case-types/@object.caseType/terms',
 			field: 'penaltyApplies',

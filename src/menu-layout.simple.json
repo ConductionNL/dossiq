@@ -1916,6 +1916,9 @@
 					"case-remind": {
 						"group": "Case"
 					},
+					"notice-of-default-register": {
+						"group": "Case"
+					},
 					"start-flow": {
 						"group": "Case",
 						"label": "Start a flow"
@@ -5573,6 +5576,7 @@
 					"case-acknowledgement-met",
 					"plan-follow-up",
 					"case-remind",
+					"notice-of-default-register",
 					"start-flow",
 					"case-split",
 					"case-merge",

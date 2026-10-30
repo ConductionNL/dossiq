@@ -5873,31 +5873,6 @@
 						}
 					},
 					{
-						"id": "notice-of-default-register",
-						"type": "open-modal",
-						"label": "Register notice of default",
-						"icon": "EmailAlert",
-						"target": "NoticeOfDefaultDialog",
-						"props": {
-							"caseId": "@objectId"
-						},
-						"_visibleWhenNote": "notice-of-default-from-the-case REQ-ING-CASE-01: only on a case whose case type carries a penalty on a late decision (case-type-penalty-on-late-decision), read from the case type's terms.",
-						"visibleWhen": {
-							"all": [
-								{
-									"field": "@self.archived",
-									"op": "empty"
-								},
-								{
-									"endpoint": "/apps/dossiq/api/case-types/@object.caseType/terms",
-									"field": "penaltyApplies",
-									"op": "eq",
-									"value": true
-								}
-							]
-						}
-					},
-					{
 						"id": "generate-document",
 						"type": "open-modal",
 						"target": "BeschikkingComposerDialog",
@@ -6456,6 +6431,22 @@
 						"label": "Known in another domain",
 						"icon": "AccountSearchOutline",
 						"target": "CrossDomainLookupDialog"
+					},
+					{
+						"id": "notice-of-default-register",
+						"type": "open-modal",
+						"label": "Register notice of default",
+						"icon": "EmailAlert",
+						"target": "NoticeOfDefaultDialog",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/case-types/@object.caseType/terms",
+							"field": "penaltyApplies",
+							"op": "eq",
+							"value": true
+						}
 					},
 					{
 						"id": "case-rebind",
@@ -11669,7 +11660,6 @@
 									"emptyLabel": "Not applicable"
 								}
 							],
-							"_actionsNote": "notice-of-default-from-the-case REQ-ING-CASE-02: a definitive amount is prepared for payout from its row, through the payout route (prepareNoticePayout opens PayoutPrepareDialog with the row). visibleWhen keeps it on rows ready for payout where the widget forwards it; the handler opens nothing on any other row.",
 							"actions": [
 								{
 									"id": "payout-prepare",
@@ -11690,7 +11680,8 @@
 							"footnote": "A notice of default only counts once the decision term has passed (Awb 4:17). A fixed amount goes to the financial administration as a payment signal; the result comes back on the case."
 						},
 						"subtitle": "Awb 4:17 and 4:18",
-						"_noticesNote": "DqTermijnen draws one row per notice of default: the case (opens it), when it came in, the assessment, the penalty it started and where that money stands. GET /api/deadlines/notices joins notice, term, case and penalty calculation (NoticeOfDefaultRows); a fixed penalty has gone to finance as a payment signal, a running one is not fixed yet, a notice without a penalty is not applicable (nextcloud-vue column emptyLabel)."
+						"_actionsNote": "notice-of-default-from-the-case REQ-ING-CASE-02: a definitive amount is prepared for payout from its row, through the payout route (prepareNoticePayout opens PayoutPrepareDialog with the row). visibleWhen keeps it on rows ready for payout where the widget forwards it (nextcloud-vue#2020); the handler opens nothing on any other row.",
+						"_noticesNote": "DqTermijnen draws one row per notice of default: the case (opens it), when it came in, the assessment, the penalty it started and where that money stands. GET /api/deadlines/notices joins notice, term, case and penalty calculation (NoticeOfDefaultRows); a fixed penalty is ready for payout until one is prepared, then reads the payout's status (prepared, signal sent, paid, rejected, on hold), a running one is not fixed yet, a notice without a penalty is not applicable (nextcloud-vue column emptyLabel)."
 					},
 					{
 						"id": "deadline-report-quarterly",
