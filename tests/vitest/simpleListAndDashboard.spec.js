@@ -317,6 +317,8 @@ describe('the cases list', () => {
 			_countTextByViewNote,
 			defaultFilters,
 			_defaultFiltersNote,
+			heldDefaultFilters,
+			_heldDefaultFiltersNote,
 			savedViewCountText,
 			_savedViewCountTextNote,
 			defaultOrder,
