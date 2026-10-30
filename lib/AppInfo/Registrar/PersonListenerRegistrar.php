@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\CaseSchemaVocabularyListener;
 use OCA\Dossiq\Listener\PersonLinkListener;
 use OCA\Dossiq\Listener\RoleTypeVocabularyListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -21,6 +22,7 @@ use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\PersonLinkedEvent;
 use OCA\OpenRegister\Event\PersonLinkUpdatedEvent;
 use OCA\OpenRegister\Event\PersonUnlinkedEvent;
+use OCA\OpenRegister\Event\SchemaUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -67,5 +69,8 @@ class PersonListenerRegistrar {
 		foreach (self::ROLE_TYPE_EVENTS as $event) {
 			$context->registerEventListener(event: $event, listener: RoleTypeVocabularyListener::class);
 		}
+
+		// A register import rewrites the case schema's link roles to the generic ones; this puts the role types back.
+		$context->registerEventListener(event: SchemaUpdatedEvent::class, listener: CaseSchemaVocabularyListener::class);
 	}//end register()
 }//end class
