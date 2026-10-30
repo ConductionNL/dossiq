@@ -305,17 +305,39 @@ class DocumentCorrespondentsTest extends TestCase {
 	 */
 	public function testADocumentWithoutCorrespondentsIsDescribedAsEmpty(): void {
 		$this->assertSame(
-			expected: ['senderName' => '', 'recipientNames' => []],
+			expected: ['senderName' => '', 'recipientNames' => [], 'partyName' => ''],
 			actual: $this->rules->describe(document: ['title' => 'Oud'], parties: self::PARTIES),
 		);
 		$this->assertSame(
-			expected: ['senderName' => '', 'recipientNames' => []],
+			expected: ['senderName' => '', 'recipientNames' => [], 'partyName' => ''],
 			actual: $this->rules->describe(
 				document: ['sender' => null, 'recipients' => null],
 				parties: self::PARTIES,
 			),
 		);
 	}//end testADocumentWithoutCorrespondentsIsDescribedAsEmpty()
+
+	/**
+	 * The other side of a document in one cell: the sender of an incoming
+	 * document, the recipients of an outgoing one, and for an internal one
+	 * the sender before the recipients.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
+	 */
+	public function testThePartyNameFollowsTheDirection(): void {
+		$both = ['sender' => 'party-jan', 'recipients' => ['party-council', 'uid-ouder']];
+		$partyOf = fn (array $document): string => $this->rules->describe(document: $document, parties: self::PARTIES)['partyName'];
+
+		$this->assertSame(expected: 'Jan Jansen', actual: $partyOf($both + ['direction' => 'incoming']));
+		$this->assertSame(expected: 'Gemeente Utrecht, Ouder Link', actual: $partyOf($both + ['direction' => 'outgoing']));
+		$this->assertSame(expected: 'Jan Jansen', actual: $partyOf($both + ['direction' => 'internal']));
+		$this->assertSame(
+			expected: 'Gemeente Utrecht, Ouder Link',
+			actual: $partyOf(['recipients' => ['party-council', 'uid-ouder'], 'direction' => 'internal']),
+		);
+	}//end testThePartyNameFollowsTheDirection()
 
 	/**
 	 * The filter behind "show me everything that went to this person", and

@@ -305,4 +305,41 @@ class DocumentRecordStoreTest extends TestCase {
 		$this->assertSame(expected: 'Advies', actual: $this->store->findRecord(recordId: 'doc-1')['title']);
 	}//end testALookupAnswersOnlyARowOfTheSchemaItAskedFor()
 
+	/**
+	 * The type catalogue is read once and every way a document refers to a
+	 * type maps to its name; a type without a name is passed over.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
+	 */
+	public function testDocumentTypeNamesAreKeyedByUuidSlugAndName(): void {
+		$this->objects->answers['informatieobjecttype'] = [
+			['@self' => ['id' => 'type-1', 'slug' => 'iot-aanvraag'], 'description' => 'Aanvraag'],
+			['@self' => ['id' => 'type-2'], 'description' => '  '],
+		];
+
+		$this->assertSame(
+			expected: ['type-1' => 'Aanvraag', 'iot-aanvraag' => 'Aanvraag', 'Aanvraag' => 'Aanvraag'],
+			actual: $this->store->documentTypeNames(),
+		);
+		$this->assertCount(expectedCount: 1, haystack: $this->objects->searches);
+		$this->assertSame(expected: 'informatieobjecttype', actual: $this->objects->searches[0]['schema']);
+	}//end testDocumentTypeNamesAreKeyedByUuidSlugAndName()
+
+	/**
+	 * Without OpenRegister the names are empty rather than an error, so the
+	 * listing still renders.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
+	 */
+	public function testDocumentTypeNamesAreEmptyWithoutOpenRegister(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$store = new DocumentRecordStore(settingsService: $settings);
+
+		$this->assertSame(expected: [], actual: $store->documentTypeNames());
+	}//end testDocumentTypeNamesAreEmptyWithoutOpenRegister()
 }//end class

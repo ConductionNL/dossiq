@@ -7703,6 +7703,7 @@ OC.L10N.register(
         "Sender domain": "Afzenderdomein",
         "sender domain is {value}": "afzenderdomein is {value}",
         "Sender name": "Afzendernaam",
+        "Sender or recipient": "Afzender of ontvanger",
         "Sender of messages": "Afzender van berichten",
         "Sender organisation": "Verzendende organisatie",
         "Sender organisation (gemeente).": "Verzendende organisatie (gemeente).",
