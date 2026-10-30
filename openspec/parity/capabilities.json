@@ -13611,7 +13611,12 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "none: no page, menu entry or action reaches the complaint routes",
 				"note": "Rated no rather than the partial the reader proposed: the backend is complete and nothing a user can open reaches it, which is the rule this file applied to fourteen rows on 2026-09-25. Missing: a complaint page or case-type entry that starts and works a complaint.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/complaints-are-a-case-type",
+				"requirement": [
+					"openspec/changes/complaints-are-a-case-type/specs/complaint-management :: A complaint is a case of the shipped complaint case type (REQ-CMP-CT-01)",
+					"openspec/changes/complaints-are-a-case-type/specs/complaint-management :: Existing complaint records move onto cases once (REQ-CMP-CT-02)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -14506,7 +14511,9 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "/my-queue (consultations waiting on you), /advice/:id (AdviceDetail, read-only), Settings > consultation tab",
 				"note": "Missing: a place on the case to request advice or a consultation and to read the answers (the advice and consultations tabs the queue links to). Pending proposal 3.32 covers outside advice.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/advice-and-consultation-on-the-case",
+				"requirement": "openspec/changes/advice-and-consultation-on-the-case/specs/advice-management :: A handler asks for advice or starts a consultation from the case (REQ-ADV-CASE-01)"
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -21254,7 +21261,13 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "needs assessment, MDO, re-integration and data breach register pages; family-plan widget",
 				"note": "Missing: the consent and classification UI, wijkteam-only access, seeded Wmo, Jeugdwet and Participatiewet case types, and the anonymised export.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/social-domain-consent-and-safeguards",
+				"requirement": [
+					"openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent :: Consent is recorded and revoked on the case (REQ-SDC-CONSENT-01)",
+					"openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent :: A case type can require a special-category classification and keep cases to its team (REQ-SDC-SAFE-01)",
+					"openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent :: A case list can be exported anonymised (REQ-SDC-ANON-01)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -21295,7 +21308,13 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "none: no page or caller reaches the subsidy routes",
 				"note": "Rated no rather than the partial the reader proposed: nothing a user opens reaches the subsidy backend (same rule as the 2026-09-25 rows). subsidie-settlement-case-costs contradicts ADR-081 and needs a decision before it is built.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/grant-cases-from-application-to-settlement",
+				"requirement": [
+					"openspec/specs/subsidieverlening-keten :: REQ-SUB-001 Multi-year beschikking with voorschot-schema",
+					"openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten :: A handler runs a grant from its case page (REQ-SUB-CASE-01)",
+					"openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten :: Advances are a payment schedule raised with finance when due (REQ-SUB-CASE-02)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
