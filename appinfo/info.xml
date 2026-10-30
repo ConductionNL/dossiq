@@ -198,6 +198,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
              rungs DsoDeadlineTimerFiredListener acts on
              (termijnbewaking-op-engine-timers 2.3). -->
         <job>OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob</job>
+        <job>OCA\Dossiq\BackgroundJob\RaiseDuePayments</job>
         <!-- Re-verifies stored document checksums once a day and records the check (document-integrity-check). -->
         <job>OCA\Dossiq\BackgroundJob\DocumentIntegrityCheckJob</job>
         <!--
