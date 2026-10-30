@@ -9695,6 +9695,18 @@
 			}
 		},
 		{
+			"key": "conceptbesluit-nalezen",
+			"data": {
+				"title": "Conceptbesluit nalezen",
+				"description": "Het conceptbesluit over de gunning van de ambulante jeugdhulp ligt klaar om na te lezen.",
+				"objectUuid": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+				"state": "active",
+				"priority": "high",
+				"dueAt": "{{date:2}}",
+				"assignee": "{{cast:anouk.uid}}"
+			}
+		},
+		{
 			"key": "herinnering-verzoeker",
 			"data": {
 				"title": "Herinnering sturen aan verzoeker",
