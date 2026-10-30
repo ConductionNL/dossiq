@@ -6,7 +6,7 @@
  * (board DqPersoonlijkeInstellingen), through nc-vue's filterLabels
  * `valuesAlone`.
  *
- * @spec openspec/changes/cases-my-cases-label/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-a-view-on-my-own-cases-reads-mijn-zaken
  */
 
 import fs from 'fs'

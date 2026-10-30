@@ -14,7 +14,7 @@
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Service\Support
  *
- * @spec openspec/changes/background-reads-run-as-the-system/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-a-read-or-write-with-nobody-signed-in-runs-as-the-system-req-cm-83
  */
 
 declare(strict_types=1);

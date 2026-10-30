@@ -10,7 +10,7 @@
  * of name, size and modified, so nothing was left. This runs the declaration
  * through the library's own normaliser, the one CnFilesBrowser renders from.
  *
- * @spec openspec/changes/case-page-reads-in-dutch/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-the-case-page-shows-labels-and-names-not-codes-req-cm-82
  */
 
 import { normaliseFileColumns } from '@conduction/nextcloud-vue/src/components/CnFilesBrowser/filesBrowserColumns.js'

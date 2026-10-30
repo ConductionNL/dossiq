@@ -159,7 +159,7 @@ class CaseActsOverviewTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/finishing-picks-a-result/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
 	 */
 	public function testTheReadCarriesTheResultsTheCaseCanCloseWith(): void {
 		$answer = $this->overview()->overview(caseId: 'case-1');
@@ -173,7 +173,7 @@ class CaseActsOverviewTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/finishing-picks-a-result/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
 	 */
 	public function testACaseTypeWithoutResultsReadsAnEmptyList(): void {
 		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);

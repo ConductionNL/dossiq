@@ -440,7 +440,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/background-reads-run-as-the-system/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-read-or-write-with-nobody-signed-in-runs-as-the-system-req-cm-83
 	 */
 	public function testAnEntryWrittenWithoutAUserReadsTheCaseAsTheSystem(): void {
 		$id = $this->timeline(userSession: $this->session(signedIn: false))->record(
@@ -458,7 +458,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/background-reads-run-as-the-system/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-read-or-write-with-nobody-signed-in-runs-as-the-system-req-cm-83
 	 */
 	public function testASignedInHandlerIsNeverElevated(): void {
 		$this->timeline(userSession: $this->session(signedIn: true))->record(

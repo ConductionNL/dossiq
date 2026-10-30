@@ -418,7 +418,7 @@ trait SearchesObjects {
 	 *
 	 * @phpstan-impure Runs the caller's closure.
 	 *
-	 * @spec openspec/changes/background-reads-run-as-the-system/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-read-or-write-with-nobody-signed-in-runs-as-the-system-req-cm-83
 	 */
 	protected function asSystemWithoutUser(object $objectService, ?IUserSession $userSession, callable $operation): mixed {
 		if ($userSession === null || $userSession->getUser() !== null) {

@@ -7,7 +7,7 @@
  * column per channel the platform declares, as board DqPersoonlijkeInstellingen
  * does ("In Nextcloud", "Per e-mail").
  *
- * @spec openspec/changes/notification-email-opt-in/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-a-person-can-switch-e-mail-on-per-notification
  */
 
 import fs from 'fs'

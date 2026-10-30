@@ -94,7 +94,7 @@ export function channelsFrom({
  *
  * @param {Array<object>} entries - The platform's entries.
  * @return {Array<string>} The channel ids, or none when the platform answered without them.
- * @spec openspec/changes/notification-email-opt-in/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-a-person-can-switch-e-mail-on-per-notification
  */
 export function channelAxisFrom(entries = []) {
 	const ids = []
@@ -114,7 +114,7 @@ export function channelAxisFrom(entries = []) {
  *
  * @param {object} entry - One entry.
  * @return {Array<string>} The channel ids that are on.
- * @spec openspec/changes/notification-email-opt-in/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-a-person-can-switch-e-mail-on-per-notification
  */
 export function channelsOnFor(entry) {
 	if (entry?.enabled !== true) {

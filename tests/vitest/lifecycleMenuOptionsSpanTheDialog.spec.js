@@ -8,7 +8,7 @@
  * 16px below made the dialog 24px taller (r30).
  *
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
- * @spec openspec/changes/lifecycle-dialog-list-unpadded/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-the-lifecycle-dialogs-acts-start-and-end-on-the-dialog-bodys-padding
  */
 
 import fs from 'fs'
