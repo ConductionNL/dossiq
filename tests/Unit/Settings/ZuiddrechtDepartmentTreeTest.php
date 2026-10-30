@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-department-tree/specs/example-set-department-tree/spec.md#requirement-the-zuiddrecht-departments-are-organisation-roles-with-a-group-and-a-parent
+ * @spec openspec/specs/example-set-department-tree/spec.md#requirement-the-zuiddrecht-departments-are-organisation-roles-with-a-group-and-a-parent
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The department tree of the Zuiddrecht set.
  *
- * @spec openspec/changes/example-set-department-tree/specs/example-set-department-tree/spec.md#requirement-the-zuiddrecht-departments-are-organisation-roles-with-a-group-and-a-parent
+ * @spec openspec/specs/example-set-department-tree/spec.md#requirement-the-zuiddrecht-departments-are-organisation-roles-with-a-group-and-a-parent
  */
 class ZuiddrechtDepartmentTreeTest extends TestCase {
 

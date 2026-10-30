@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-buurtvereniging-oost/specs/example-set-buurtvereniging-oost/spec.md#requirement-buurtvereniging-oost-has-its-cases-and-contact-moments
+ * @spec openspec/specs/example-set-buurtvereniging-oost/spec.md#requirement-buurtvereniging-oost-has-its-cases-and-contact-moments
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The organisation board's association.
  *
- * @spec openspec/changes/example-set-buurtvereniging-oost/specs/example-set-buurtvereniging-oost/spec.md#requirement-buurtvereniging-oost-has-its-cases-and-contact-moments
+ * @spec openspec/specs/example-set-buurtvereniging-oost/spec.md#requirement-buurtvereniging-oost-has-its-cases-and-contact-moments
  */
 class ZuiddrechtBuurtverenigingOostTest extends TestCase {
 
