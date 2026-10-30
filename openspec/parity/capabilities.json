@@ -14498,7 +14498,9 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"built": {
-				"state": "building",
+				"state": "built",
+				"change": "advice-and-consultation-on-the-case",
+				"builtEvidence": "src/menu-layout.simple.json CaseDetail Decisions tab, record-list case-advice-requests (Ask for advice, Remind) over adviesAanvraag, board DqZaakBesluiten; appinfo/routes.php /api/cases/{id}/advice-requests with the /api/vth/ address as advice#*LegacyPath; lib/Service/Queue/Source/ApprovalSource.php opens the case on #case-decisions-panel and drops received and expired requests",
 				"evidence": "lib/Service/AdviceService.php:110,359 and the ConsultationService routes (appinfo/routes.php:735-745) store requests, responses and deadlines; queue items link to CaseDetail tabs advice and consultations that do not exist; AdviceDetail is read-only; AdviesPanel and AdviceRequestPanel are registered and placed nowhere",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -14518,7 +14520,7 @@
 				"note": "Missing: a place on the case to request advice or a consultation and to read the answers (the advice and consultations tabs the queue links to). Pending proposal 3.32 covers outside advice.",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
 				"plan": "openspec/changes/advice-and-consultation-on-the-case",
-				"requirement": "openspec/changes/advice-and-consultation-on-the-case/specs/advice-management :: A handler asks for advice or starts a consultation from the case (REQ-ADV-CASE-01)"
+				"requirement": "openspec/changes/advice-and-consultation-on-the-case/specs/advice-management :: A handler asks for advice from the case (REQ-ADV-CASE-01)"
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
