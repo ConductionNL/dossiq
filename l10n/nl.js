@@ -3709,6 +3709,8 @@ OC.L10N.register(
         "Goal": "Doel",
         "Goal in the family plan": "Doel in het gezinsplan",
         "Goal prompt": "Doelvraag",
+        "Short name": "Korte naam",
+        "The case type's name in a word or two, for lines with little room, for example \"Woo\" for Woo-verzoek. Empty shows the title.": "De naam van het zaaktype in een of twee woorden, voor regels met weinig ruimte, bijvoorbeeld \"Woo\" voor Woo-verzoek. Leeg toont de titel.",
         "Goals": "Doelen",
         "Goedgekeurd": "Goedgekeurd",
         "goes along as it is": "gaat mee zoals het is",

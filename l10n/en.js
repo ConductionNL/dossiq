@@ -3709,6 +3709,8 @@ OC.L10N.register(
         "Goal": "Goal",
         "Goal in the family plan": "Goal in the family plan",
         "Goal prompt": "Goal prompt",
+        "Short name": "Short name",
+        "The case type's name in a word or two, for lines with little room, for example \"Woo\" for Woo-verzoek. Empty shows the title.": "The case type's name in a word or two, for lines with little room, for example \"Woo\" for Woo-verzoek. Empty shows the title.",
         "Goals": "Goals",
         "Goedgekeurd": "Goedgekeurd",
         "goes along as it is": "goes along as it is",
