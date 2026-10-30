@@ -145,7 +145,7 @@ class VaststellingService {
 	 *
 	 * @throws OCSBadRequestException When OpenRegister is unavailable/unconfigured.
 	 *
-	 * @spec openspec/specs/subsidie-settlement-case-costs/spec.md
+	 * @spec openspec/specs/subsidie-settlement-case-costs/spec.md#requirement-settling-a-grant-records-the-settled-amount-on-the-vaststelling-and-writes-nothing-to-the-linked-case-req-ssc-005
 	 */
 	public function finalize(
 		string $determinationId,
