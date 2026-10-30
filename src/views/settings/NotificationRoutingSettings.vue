@@ -446,11 +446,13 @@ export default {
 	gap: 16px;
 }
 
-/* Wide enough for the longest domain without squeezing the value. */
-/* DqPersoonlijkeInstellingen: the domain select runs the section's width. */
+/* DqPersoonlijkeInstellingen: the domain select runs the section's width and
+   stands 18px above the matrix (its 2px ring and the 16px gap), so NcSelect's
+   4px bottom margin goes. */
 .notification-routing__scope :deep(.v-select.select) {
 	width: 100%;
 	max-width: none;
+	margin-block-end: 0;
 }
 
 .notification-routing__explainer {
