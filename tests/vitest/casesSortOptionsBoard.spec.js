@@ -6,7 +6,7 @@
  * Zaak, Behandelaar and Laatst gewijzigd, so the list's own deadline order is
  * a choice it can name. The urgency and newest orders stay.
  *
- * @spec openspec/changes/cases-sort-options-board/specs/case-search-and-lists/spec.md#requirement-the-case-list-offers-the-orders-the-board-draws
+ * @spec openspec/specs/case-search-and-lists/spec.md#requirement-the-case-list-offers-the-orders-the-board-draws
  */
 
 import fs from 'fs'

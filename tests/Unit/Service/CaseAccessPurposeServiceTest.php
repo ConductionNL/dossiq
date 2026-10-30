@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-purpose/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
+ * @spec openspec/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
  */
 
 declare(strict_types=1);
@@ -323,7 +323,7 @@ class CaseAccessPurposeServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
 	 */
 	public function testTheHandlerOpensWithoutAPurposeAndAnotherReaderIsAsked(): void {
 		$this->holders = ['pieter'];
@@ -346,7 +346,7 @@ class CaseAccessPurposeServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
 	 */
 	public function testHandlingMakesTheReaderTheHandlerAndAdviceDoesNot(): void {
 		$service = $this->service(objects: $this->jeugdwet());
@@ -371,7 +371,7 @@ class CaseAccessPurposeServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md
+	 * @spec openspec/specs/case-access-purpose/spec.md
 	 */
 	public function testTheRulesAreConfiguration(): void {
 		$service = $this->service(objects: $this->jeugdwet(), rules: '{"assign": {"advice": "advisor"}}');

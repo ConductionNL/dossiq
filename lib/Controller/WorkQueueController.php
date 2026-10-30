@@ -165,7 +165,7 @@ class WorkQueueController extends Controller {
 	 *
 	 * @return array<int, array{handler: string, openCaseCount: int}> The handlers of the reader's teams.
 	 *
-	 * @spec openspec/changes/workload-of-the-readers-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
 	 */
 	private function ofReadersTeams(IUser $user, array $handlers): array {
 		try {

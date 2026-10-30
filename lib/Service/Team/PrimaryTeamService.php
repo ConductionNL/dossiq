@@ -91,7 +91,7 @@ class PrimaryTeamService {
 	 *
 	 * @throws Throwable When the organisation roles cannot be read.
 	 *
-	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
 	 */
 	public function teamsOf(IUser $user): array {
 		$groupIds = $this->groupManager->getUserGroupIds($user);
@@ -113,7 +113,7 @@ class PrimaryTeamService {
 	 *
 	 * @return array<int, array{groupId: string, name: string}> The teams.
 	 *
-	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
 	 */
 	public static function teams(array $roles, array $userGroupIds): array {
 		$byId = self::rolesById(roles: $roles);

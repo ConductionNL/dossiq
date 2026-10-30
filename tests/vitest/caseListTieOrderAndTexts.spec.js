@@ -16,7 +16,7 @@
  * - The cards view's footer says how the cards are sorted and where to
  *   change it (DqZakenSorteren).
  *
- * @spec openspec/changes/case-list-tie-order-and-texts/specs/case-search-and-lists/spec.md
+ * @spec openspec/specs/case-search-and-lists/spec.md
  */
 import fs from 'fs'
 import path from 'path'

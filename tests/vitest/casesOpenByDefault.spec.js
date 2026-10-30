@@ -10,7 +10,7 @@
  * true) under that line, because its default lens "All" filters drafts and
  * hidden statuses only.
  *
- * @spec openspec/changes/cases-open-by-default/specs/case-search-and-lists/spec.md#requirement-the-open-cases-list-opens-on-open-cases
+ * @spec openspec/specs/case-search-and-lists/spec.md#requirement-the-open-cases-list-opens-on-open-cases
  */
 import fs from 'fs'
 import path from 'path'

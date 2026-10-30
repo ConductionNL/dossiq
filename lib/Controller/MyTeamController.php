@@ -62,7 +62,7 @@ class MyTeamController extends Controller {
 	 *                      503 when the organisation roles cannot be read, so no team is guessed.
 	 *
 	 * @spec openspec/changes/my-team-queue/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
-	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
 	 */
 	#[NoAdminRequired]
 	public function show(): JSONResponse {

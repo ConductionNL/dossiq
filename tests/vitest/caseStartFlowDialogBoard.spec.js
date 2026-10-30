@@ -7,7 +7,7 @@
  * legend "Deelproces", the line "Alleen flows die het zaaktype toestaat."
  * beneath them, and "Starten" where it said "Uitvoeren".
  *
- * @spec openspec/changes/case-dialogs-start-flow-board/specs/case-dialogs/spec.md
+ * @spec openspec/specs/case-dialogs/spec.md
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

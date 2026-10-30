@@ -267,7 +267,7 @@ class WorkQueueControllerTest extends TestCase {
 	/**
 	 * The workload names the people of the reader's teams only, a free one with 0.
 	 *
-	 * @spec openspec/changes/workload-of-the-readers-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
 	 *
 	 * @return void
 	 */

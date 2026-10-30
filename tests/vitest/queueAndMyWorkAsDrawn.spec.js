@@ -11,7 +11,7 @@
  * - Dossiq's index pages put the footer 20px under a card grid, as the boards
  *   do (nextcloud-vue `--cn-board-pager-gap`).
  *
- * @spec openspec/changes/queue-and-my-work-as-drawn/specs/case-search-and-lists/spec.md
+ * @spec openspec/specs/case-search-and-lists/spec.md
  */
 import fs from 'fs'
 import path from 'path'

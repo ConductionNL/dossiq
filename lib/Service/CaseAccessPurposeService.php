@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-purpose/specs/case-access-purpose/spec.md
+ * @spec openspec/specs/case-access-purpose/spec.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
 /**
  * Records a reader's purpose for opening a case.
  *
- * @spec openspec/changes/case-access-purpose/specs/case-access-purpose/spec.md
+ * @spec openspec/specs/case-access-purpose/spec.md
  */
 class CaseAccessPurposeService {
 
@@ -104,7 +104,7 @@ class CaseAccessPurposeService {
 	 *
 	 * @throws RefusedException When the purpose is invalid, the case cannot be read, or the entry cannot be written.
 	 *
-	 * @spec openspec/changes/case-access-purpose/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
 	 */
 	public function record(string $caseId, string $readerId, string $purpose, string $note): array {
 		$note = trim($note);
@@ -160,7 +160,7 @@ class CaseAccessPurposeService {
 	 *
 	 * @throws RefusedException When the case cannot be read, or the automatic purpose cannot be written.
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
 	 */
 	public function check(string $caseId, string $readerId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -212,7 +212,7 @@ class CaseAccessPurposeService {
 	 *
 	 * @return bool True when the reader was bound.
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
 	 */
 	private function bindFor(object $mapper, object $case, string $readerId, string $purpose): bool {
 		$role = ($this->rules()['assign'][$purpose] ?? '');
@@ -267,7 +267,7 @@ class CaseAccessPurposeService {
 	 *
 	 * @return bool True when the reader holds one.
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
 	 */
 	private function holdsSkipRole(array $case, string $readerId, array $genericRoles): bool {
 		try {
@@ -286,7 +286,7 @@ class CaseAccessPurposeService {
 	 *
 	 * @return array{skipFor: array<int, string>, skipPurpose: string, assign: array<string, string>} The rules.
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md
+	 * @spec openspec/specs/case-access-purpose/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) fromConfig() is a pure reader of the configured JSON.
 	 */

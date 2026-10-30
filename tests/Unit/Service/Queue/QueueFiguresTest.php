@@ -82,7 +82,7 @@ class QueueFiguresTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/queue-oldest-case-note/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function testTheOldestWaitingCaseNamesItsTypeAndDeadline(): void {
 		$figures = (new QueueFigures(dayCount: new DayCount()))->fold(

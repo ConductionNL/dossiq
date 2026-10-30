@@ -6,7 +6,7 @@
  * Jansen; :8080 drew "P" from the user id "pieter" (r29). The board card reads
  * the assignee through nextcloud-vue's built-in userName formatter.
  *
- * @spec openspec/changes/board-card-owner-name/specs/case-search-and-lists/spec.md#requirement-a-board-cards-owner-reads-as-the-handlers-name
+ * @spec openspec/specs/case-search-and-lists/spec.md#requirement-a-board-cards-owner-reads-as-the-handlers-name
  */
 import fs from 'fs'
 import path from 'path'
