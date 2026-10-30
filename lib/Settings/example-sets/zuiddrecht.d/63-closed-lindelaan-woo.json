@@ -1,5 +1,5 @@
 {
-	"$comment": "A second, closed Lindelaan Woo request for DqArchiveren (coordinator 29 Oct, as for DqBesluit on 22 Oct), so portaliq's 2026-0110 stays open on every other board. Sanne de Vries asked through Mijn Zuiddrecht with DigiD; Pieter decided it yesterday (deels openbaar: 4 openbaar, 2 deels, 1 niet openbaar on 5.2.1), it was published the same day, every document is assessed and final, no task is open, and it waits to be archived (vernietigen after 5 jaar). It names Sanne the way a portal request does (initiatorDisplayName, portalSubject, DigiD) and has no requester row: the Woo type blocks a duplicate on requester and title, and with Sanne's person record as requester this case and 2026-0110 (same title, same requester) would refuse each other. Without it the pair scores 0.5 against the threshold of 0.6.",
+	"$comment": "A second, closed Lindelaan Woo request for DqArchiveren (coordinator 29 Oct, as for DqBesluit on 22 Oct), so portaliq's 2026-0110 stays open on every other board. Sanne de Vries asked through Mijn Zuiddrecht with DigiD; Pieter decided it yesterday (deels openbaar: 4 openbaar, 2 deels, 1 niet openbaar on 5.2.1), it was published the same day, every document is assessed and final, no task is open, and it waits to be archived (vernietigen after 5 jaar). It names Sanne the way a portal request does (initiatorDisplayName, portalSubject, DigiD) and has no requester row: the Woo type blocks a duplicate on requester and title, and with Sanne's person record as requester this case and 2026-0110 (same title, same requester) would refuse each other. Without it the pair scores 0.5 against the threshold of 0.6. Once its result and decision exist, a change names both on the case (`result`, `decisions`, as for woo-zaaksysteem): the archive dialog reads them for its result pill and its Resultaat and Besluit lines.",
 	"objects": [
 		{
 			"key": "woo-fietspad-afgehandeld",
@@ -499,6 +499,20 @@
 				"assessedAt": "{{datetime:-6 14:00}}",
 				"weigeringsgronden": [
 					"5.2.1"
+				]
+			}
+		}
+	],
+	"changes": [
+		{
+			"key": "woo-fietspad-afgehandeld-uitkomst",
+			"register": "dossiq",
+			"schema": "case",
+			"object": "woo-fietspad-afgehandeld",
+			"set": {
+				"result": "{{object:woo-fietspad-afgehandeld-resultaat.id}}",
+				"decisions": [
+					"{{object:woo-fietspad-afgehandeld-besluit.id}}"
 				]
 			}
 		}

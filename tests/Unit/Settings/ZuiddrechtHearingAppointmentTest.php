@@ -42,4 +42,19 @@ class ZuiddrechtHearingAppointmentTest extends TestCase {
 		$this->assertSame(['{{datetime:14 14:00}}', '{{datetime:14 15:00}}'], [$hearing['start'], $hearing['end']]);
 		$this->assertSame([['name' => '{{cast:fatima.displayName}}', 'email' => '{{cast:fatima.email}}', 'status' => 'invited']], $hearing['attendees']);
 	}//end testTheHearingIsOnTheTask()
+
+	/**
+	 * The task names who asked for it and when it expires, a week after the
+	 * hearing day the board counts from (DqTaak: Gevraagd door Anouk Bakker,
+	 * Verloopt 14 okt).
+	 *
+	 * @return void
+	 */
+	public function testTheTaskNamesWhoAskedAndWhenItExpires(): void {
+		$set  = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$task = array_column($set['tasks'], 'data', 'key')['hoorzitting-inplannen'];
+
+		$this->assertSame(expected: '{{cast:anouk.uid}}', actual: ($task['requester'] ?? null));
+		$this->assertSame(expected: '{{date:7}}', actual: ($task['expiresAt'] ?? null));
+	}//end testTheTaskNamesWhoAskedAndWhenItExpires()
 }//end class
