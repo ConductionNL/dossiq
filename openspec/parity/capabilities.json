@@ -18556,21 +18556,22 @@
 			"providerHow": "note-cites-dossiq-code",
 			"built": {
 				"state": "building",
-				"evidence": "Iv3TaakveldList holds the taakvelden and a picker sets one on the case; there is no Iv3ReportService and no report page",
+				"evidence": "Decision 261 / ADR-107: dossiq classifies, Shillinq reports. caseType.iv3TaskField exists; the duplicate Iv3TaakveldList, iv3_taakvelden.json and route GET /api/reports/iv3/taakvelden are still there to retire; no link card to Shillinq on the Reports page yet",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/iv3-taakveld-2023-refinement",
 				"screen": {
-					"board": null,
-					"reason": "no screen: reporting classification"
+					"board": "DqRapportages",
+					"reason": "reports page link card to Shillinq; the report itself is board shillinq/ShOverheid"
 				},
-				"readOn": "2026-10-07",
-				"reachedOn": "taakveld picker on the case (Iv3TaakveldList)",
-				"note": "Missing: the quarterly aggregation (Iv3ReportService) and a page or export that reports costs per taakveld.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"readOn": "2026-10-30",
+				"reachedOn": "case type field iv3TaskField (CaseTypeDetail)",
+				"note": "Rescoped by decision 261: the cost report per taakveld is Shillinq's Iv3ReportGenerator, fed by dossiq's case type classification and humaniq hours (Shillinq change iv3-report-takes-case-costs-by-case-type). Missing in dossiq: retiring the duplicate taakveld list, the catalogue lookup on the case type, the Reports link card.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md; rescoped 2026-10-30 by decision 261",
 				"plan": "openspec/changes/case-costs-reported-per-iv3-taakveld",
 				"requirement": [
-					"openspec/specs/iv3-taakveld-2023-refinement :: Iv3ReportService quarterly aggregation SHALL bucket cases by aggregation key, so old- and new-code-classified cases land in the same bucket",
-					"openspec/changes/case-costs-reported-per-iv3-taakveld/specs/iv3-taakveld-2023-refinement :: The reports page shows case costs per Iv3 taakveld per quarter (REQ-IV3-REPORT-01)"
+					"openspec/changes/case-costs-reported-per-iv3-taakveld/specs/iv3-taakveld-2023-refinement :: A case type carries its Iv3 taakveld as a code from Shillinq's catalogue (REQ-IV3-CLASS-01)",
+					"openspec/changes/case-costs-reported-per-iv3-taakveld/specs/iv3-taakveld-2023-refinement :: Dossiq exposes classification and hours, never a sum of money (REQ-IV3-CLASS-02)",
+					"openspec/changes/case-costs-reported-per-iv3-taakveld/specs/iv3-taakveld-2023-refinement :: The reports page links to Shillinq for costs per taakveld (REQ-IV3-CLASS-03)"
 				]
 			},
 			"evidence": {
