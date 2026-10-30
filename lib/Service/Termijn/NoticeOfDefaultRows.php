@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
+use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Throwable;
@@ -40,10 +41,13 @@ use Throwable;
  *
  * A notice points at its term, the term at the case. A penalty calculation
  * points at the notice it started from. A calculation with a definitive
- * amount is fixed, and a fixed amount goes to finance as a payment signal;
- * any other calculation is still running money, its amount not fixed yet.
+ * amount is fixed and ready for payout until a payout is prepared; the
+ * payout's own status (stored, or held by the finance app) then says where
+ * the money stands. Any other calculation is still running money, its amount
+ * not fixed yet.
  *
  * @spec openspec/specs/termijn-reporting/spec.md
+ * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
  */
 class NoticeOfDefaultRows {
 	use SearchesObjects;
@@ -58,10 +62,12 @@ class NoticeOfDefaultRows {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The app settings, for the object service and the schema ids.
+	 * @param SettingsService   $settingsService The app settings, for the object service and the schema ids.
+	 * @param PayoutReader|null $payoutReader    The payouts the finance app holds; null reads only stored payouts.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly ?PayoutReader $payoutReader = null,
 	) {
 	}//end __construct()
 
@@ -87,9 +93,10 @@ class NoticeOfDefaultRows {
 
 		$this->found = [];
 		$penalties = $this->penaltiesByNotice(objectService: $objectService, register: $register);
+		$payouts = $this->payoutsByCalculation(objectService: $objectService, register: $register);
 		$rows = [];
 		foreach ($notices as $notice) {
-			$rows[] = $this->rowOf(objectService: $objectService, register: $register, notice: $notice, penalties: $penalties);
+			$rows[] = $this->rowOf(objectService: $objectService, register: $register, notice: $notice, penalties: $penalties, payouts: $payouts);
 		}
 
 		usort($rows, static fn (array $a, array $b): int => strcmp((string)$b['receiptDate'], (string)$a['receiptDate']));
@@ -133,10 +140,11 @@ class NoticeOfDefaultRows {
 	 * @param string                              $register      The register id.
 	 * @param array<string, mixed>                $notice        The notice.
 	 * @param array<string, array<string, mixed>> $penalties     The penalty calculations by notice id.
+	 * @param array<string, array<string, mixed>> $payouts       The payouts, by calculation id.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function rowOf(object $objectService, string $register, array $notice, array $penalties): array {
+	private function rowOf(object $objectService, string $register, array $notice, array $penalties, array $payouts): array {
 		$id = (string)($notice['id'] ?? ($notice['@self']['id'] ?? ''));
 		$term = $this->read(
 			objectService: $objectService,
@@ -156,22 +164,59 @@ class NoticeOfDefaultRows {
 			'caseLabel'      => trim($identifier.' '.$title),
 			'receiptDate'    => (string)($notice['receiptDate'] ?? ''),
 			'validityStatus' => (string)($notice['validityStatus'] ?? 'unknown'),
-		] + $this->penaltyOf(calculation: ($penalties[$id] ?? null));
+		] + $this->penaltyOf(calculation: ($penalties[$id] ?? null), payouts: $payouts);
 	}//end rowOf()
+
+	/**
+	 * The payouts, by the calculation they pay: the stored ones, merged with
+	 * those the finance app holds when it answers.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register      The register id.
+	 *
+	 * @return array<string, array<string, mixed>> The payout per calculation id.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+	 */
+	private function payoutsByCalculation(object $objectService, string $register): array {
+		$schema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
+		$stored = [];
+		if ($schema !== '') {
+			$stored = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
+		}
+
+		if ($this->payoutReader !== null) {
+			$stored = $this->payoutReader->mergedRows(storedRows: $stored);
+		}
+
+		$byCalculation = [];
+		foreach ($stored as $payout) {
+			$calculation = (string)($payout['penaltyPaymentCalculation'] ?? '');
+			if ($calculation !== '') {
+				$byCalculation[$calculation] = $payout;
+			}
+		}
+
+		return $byCalculation;
+	}//end payoutsByCalculation()
 
 	/**
 	 * A notice's penalty: fixed, running or none, its amount in euros, the day
 	 * it started and where the money stands.
 	 *
-	 * @param array<string, mixed>|null $calculation The calculation the notice started, if any.
+	 * @param array<string, mixed>|null           $calculation The calculation the notice started, if any.
+	 * @param array<string, array<string, mixed>> $payouts     The payouts, by calculation id.
 	 *
-	 * @return array{penaltyState: string, penaltyEuros: float, penaltySince: string, financeState: string|null}
+	 * @return array{penaltyState: string, penaltyEuros: float, penaltySince: string, financeState: string|null, accruingAmountId: string}
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
 	 */
-	private function penaltyOf(?array $calculation): array {
+	private function penaltyOf(?array $calculation, array $payouts): array {
 		if ($calculation === null) {
-			return ['penaltyState' => 'none', 'penaltyEuros' => 0.0, 'penaltySince' => '', 'financeState' => null];
+			return ['penaltyState' => 'none', 'penaltyEuros' => 0.0, 'penaltySince' => '', 'financeState' => null, 'accruingAmountId' => ''];
 		}
 
+		$calculationId = (string)($calculation['id'] ?? ($calculation['@self']['id'] ?? ''));
 		$definitive = ($calculation['definitiveAmount'] ?? null);
 		$since = (string)($calculation['startDate'] ?? '');
 		if ($definitive !== null && $definitive !== '') {
@@ -179,14 +224,51 @@ class NoticeOfDefaultRows {
 				'penaltyState' => 'definitive',
 				'penaltyEuros' => round(((int)$definitive) / 100, 2),
 				'penaltySince' => $since,
-				'financeState' => 'signal-sent',
+				'financeState' => $this->payoutState(payout: ($payouts[$calculationId] ?? null)),
+				'accruingAmountId' => $calculationId,
 			];
 		}
 
 		$cents = (int)($calculation['cumulativeAmount'] ?? 0);
 
-		return ['penaltyState' => 'running', 'penaltyEuros' => round($cents / 100, 2), 'penaltySince' => $since, 'financeState' => 'amount-open'];
+		return [
+			'penaltyState' => 'running',
+			'penaltyEuros' => round($cents / 100, 2),
+			'penaltySince' => $since,
+			'financeState' => 'amount-open',
+			'accruingAmountId' => $calculationId,
+		];
 	}//end penaltyOf()
+
+	/**
+	 * Where the payout of a fixed amount stands.
+	 *
+	 * A prepared payout the finance app took (it has a payable id) or approved
+	 * has gone out as a payment signal; one only stored here is prepared.
+	 *
+	 * @param array<string, mixed>|null $payout The payout, if one was prepared.
+	 *
+	 * @return string payout-due, prepared, signal-sent, paid, rejected or on-hold.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
+	 */
+	private function payoutState(?array $payout): string {
+		if ($payout === null) {
+			return 'payout-due';
+		}
+
+		$status = (string)($payout['status'] ?? '');
+		if ($status === 'voorbereid' && (string)($payout['payableId'] ?? '') === '') {
+			return 'prepared';
+		}
+
+		return match ($status) {
+			'paid' => 'paid',
+			'rejected' => 'rejected',
+			'on-hold-objection' => 'on-hold',
+			default => 'signal-sent',
+		};
+	}//end payoutState()
 
 	/**
 	 * Read one object by the schema a setting names, once per call.

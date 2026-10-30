@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\Dossiq\Service\TermKind;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -76,35 +77,111 @@ class AccrualNoticeService {
 	}//end __construct()
 
 	/**
+	 * The term instance a notice would be registered against.
+	 *
+	 * @param string $termInstanceId The TermijnInstance id.
+	 *
+	 * @return array<string, mixed>|null The instance, or null when it does not exist.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	public function termInstance(string $termInstanceId): ?array {
+		return $this->termService->getTermijnInstance($termInstanceId);
+	}//end termInstance()
+
+	/**
+	 * The statutory decision term of a case, the one a notice of default is given on.
+	 *
+	 * A case carries several clocks (statutory, planned, internal, phase); only
+	 * the statutory term is owed to the applicant, so only it can be late in
+	 * the sense of Awb 4:17. The newest statutory instance wins.
+	 *
+	 * @param string $caseId The case id.
+	 *
+	 * @return array<string, mixed>|null The instance, or null when the case has none.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	public function statutoryTermOf(string $caseId): ?array {
+		foreach ($this->termService->instancesForCase($caseId) as $instance) {
+			// A kind outside the vocabulary reads as statutory, as TermKind::ofInstance() does.
+			$kind = (string)($instance['kind'] ?? '');
+			if ($kind === TermKind::STATUTORY || in_array($kind, TermKind::ALL, true) === false) {
+				return $instance;
+			}
+		}
+
+		return null;
+	}//end statutoryTermOf()
+
+	/**
+	 * Why a notice received on this day would be premature, or '' when the term has passed.
+	 *
+	 * @param array<string, mixed> $instance    The term instance.
+	 * @param DateTimeImmutable    $receiptDate The day the notice was received.
+	 *
+	 * @return string The reason, in the handler's terms, or '' when the notice may be registered.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	public function prematureReason(array $instance, DateTimeImmutable $receiptDate): string {
+		if ($this->termHasPassed(instance: $instance, receiptDate: $receiptDate) === true) {
+			return '';
+		}
+
+		$deadline = (string)($instance['endDateCurrent'] ?? '');
+		if ($deadline === '') {
+			return 'The decision term has no end date yet, so a notice of default cannot count.';
+		}
+
+		return 'The decision term runs until '.$deadline.'. A notice of default only counts once the term has passed (Awb 4:17).';
+	}//end prematureReason()
+
+	/**
+	 * Whether the term was exceeded before the notice came in.
+	 *
+	 * @param array<string, mixed> $instance    The term instance.
+	 * @param DateTimeImmutable    $receiptDate The day the notice was received.
+	 *
+	 * @return bool True when the notice is in time to count.
+	 */
+	private function termHasPassed(array $instance, DateTimeImmutable $receiptDate): bool {
+		$status = (string)($instance['status'] ?? '');
+		$deadline = (string)($instance['endDateCurrent'] ?? '');
+
+		return ($status === 'exceeded' && $deadline !== '' && $deadline < $receiptDate->format('Y-m-d'));
+	}//end termHasPassed()
+
+	/**
 	 * Register an ingebrekestelling against a TermijnInstance.
 	 *
 	 * @param string $termInstanceId TermijnInstance id.
 	 * @param DateTimeImmutable $receiptDate Receipt date.
 	 * @param string $channel Receipt channel.
 	 * @param string $documentLink Document link.
+	 * @param string $sender Who sent the notice; empty when not recorded.
 	 *
 	 * @return array<string, mixed> The ingebrekestelling row (with possibly null/created berekening).
 	 *
 	 * @throws RuntimeException When the instance is missing.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
 	public function registerNotice(
 		string $termInstanceId,
 		DateTimeImmutable $receiptDate,
 		string $channel,
 		string $documentLink = '',
+		string $sender = '',
 	): array {
 		$instance = $this->termService->getTermijnInstance($termInstanceId);
 		if ($instance === null) {
 			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
 		}
 
-		$status = (string)($instance['status'] ?? '');
-		$deadline = (string)($instance['endDateCurrent'] ?? '');
 		$receipt = $receiptDate->format('Y-m-d');
-
-		$isValid = ($status === 'exceeded' && $deadline !== '' && $deadline < $receipt);
+		$isValid = $this->termHasPassed(instance: $instance, receiptDate: $receiptDate);
 
 		$row = [
 			'deadlineInstance' => $termInstanceId,
@@ -113,6 +190,9 @@ class AccrualNoticeService {
 			'gevalideerd' => $isValid,
 			'documentLink' => $documentLink,
 		];
+		if ($sender !== '') {
+			$row['sender'] = $sender;
+		}
 
 		$row['validityStatus'] = 'premaat';
 		if ($isValid === true) {

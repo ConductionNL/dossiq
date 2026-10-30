@@ -11881,7 +11881,26 @@ OC.L10N.register(
         "Last month's invoice is handed to the finance app.": "Last month's invoice is handed to the finance app.",
         "No invoice was made for last month. Every billing event of that month may already be invoiced.": "No invoice was made for last month. Every billing event of that month may already be invoiced.",
         "Decision sent on": "Decision sent on",
-        "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand.": "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand."
+        "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand.": "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand.",
+        "Account holder": "Account holder",
+        "Choose a party or type a name": "Choose a party or type a name",
+        "Definitive penalty: € {amount}": "Definitive penalty: € {amount}",
+        "On hold for an objection": "On hold for an objection",
+        "Payment signal sent. The financial administration pays it out.": "Payment signal sent. The financial administration pays it out.",
+        "Payout prepared": "Payout prepared",
+        "Payout rejected": "Payout rejected",
+        "Prepare payout": "Prepare payout",
+        "Ready for payout": "Ready for payout",
+        "Record the notice": "Record the notice",
+        "Sent by": "Sent by",
+        "The decision term has not passed yet. A notice of default only counts once it has.": "The decision term has not passed yet. A notice of default only counts once it has.",
+        "The decision term runs until {date}. A notice of default only counts once the term has passed.": "The decision term runs until {date}. A notice of default only counts once the term has passed.",
+        "The notice of default could not be registered.": "The notice of default could not be registered.",
+        "The notice of default is on this case. An earlier notice already started the penalty.": "The notice of default is on this case. An earlier notice already started the penalty.",
+        "The notice of default is on this case. The penalty starts running on {date}.": "The notice of default is on this case. The penalty starts running on {date}.",
+        "The payout could not be prepared.": "The payout could not be prepared.",
+        "The payout is prepared. No finance app took it yet.": "The payout is prepared. No finance app took it yet.",
+        "Who sent the notice of default": "Who sent the notice of default"
     },
     "nplurals=2; plural=(n != 1);"
 )

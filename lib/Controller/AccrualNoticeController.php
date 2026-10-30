@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Money\AccrualNoticeService;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\SettingsService;
@@ -33,6 +34,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -57,6 +59,7 @@ class AccrualNoticeController extends Controller {
 	 * @param SettingsService $settings Settings.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CaseAccessGuard $caseAccess Who may change the case the notice is given on.
 	 */
 	public function __construct(
 		string $appName,
@@ -65,6 +68,7 @@ class AccrualNoticeController extends Controller {
 		private readonly SettingsService $settings,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly CaseAccessGuard $caseAccess,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -84,46 +88,45 @@ class AccrualNoticeController extends Controller {
 	}//end ensureAuthenticated()
 
 	/**
-	 * Register an ingebrekestelling.
+	 * Register a notice of default.
+	 *
+	 * Body: `caseId` (the case's statutory decision term is looked up) or
+	 * `termijnInstanceId`, plus `receiptDate`, `notificationChannel`, and
+	 * optionally `sender` and `documentLink`. A notice received while the term
+	 * still runs is refused with 409 and stored nowhere.
 	 *
 	 * @NoAdminRequired
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	 */
 	public function register(): JSONResponse {
-		$denied = $this->ensureAuthenticated();
-		if ($denied !== null) {
-			return $denied;
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
 		}
 
-		// OCP\IRequest::getContent() is marked protected on the concrete
-		// OC request — calling it across class scopes throws Error at runtime.
-		// Read the raw payload directly from php://input instead.
-		$raw = (string)file_get_contents('php://input');
-		$body = json_decode($raw, true);
-		if (is_array($body) === false) {
-			$body = [];
+		$body = $this->jsonBody();
+		$request = $this->noticeRequest(body: $body);
+		if ($request instanceof JSONResponse) {
+			return $request;
 		}
 
-		$instanceId = (string)($body['termijnInstanceId'] ?? '');
-		$channel = (string)($body['notificationChannel'] ?? '');
-		$whenStr = (string)($body['receiptDate'] ?? '');
-		$documentLink = (string)($body['documentLink'] ?? '');
-		if ($instanceId === '' || $channel === '' || $whenStr === '') {
-			return new JSONResponse(
-				['message' => 'termijnInstanceId, ontvangstDatum and kanaal are required'],
-				Http::STATUS_BAD_REQUEST
-			);
+		$instance = $this->termInstanceOf(caseId: $request['caseId'], instanceId: $request['instanceId']);
+		$refused = $this->refusalFor(instance: $instance, caseId: $request['caseId'], user: $user, receipt: $request['receipt']);
+		if ($refused !== null) {
+			return $refused;
 		}
 
 		try {
 			$row = $this->service->registerNotice(
-				$instanceId,
-				new DateTimeImmutable($whenStr),
-				$channel,
-				$documentLink
+				(string)($instance['id'] ?? $request['instanceId']),
+				$request['receipt'],
+				$request['channel'],
+				(string)($body['documentLink'] ?? ''),
+				trim((string)($body['sender'] ?? ''))
 			);
 			return new JSONResponse($row, Http::STATUS_CREATED);
 		} catch (Throwable $e) {
@@ -131,6 +134,117 @@ class AccrualNoticeController extends Controller {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end register()
+
+	/**
+	 * The fields a notice needs, read from the body, or the 400 that says what is missing.
+	 *
+	 * @param array<string, mixed> $body The request body.
+	 *
+	 * @return array{caseId: string, instanceId: string, channel: string, receipt: DateTimeImmutable}|JSONResponse
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	private function noticeRequest(array $body): array|JSONResponse {
+		$caseId = (string)($body['caseId'] ?? '');
+		$instanceId = (string)($body['termijnInstanceId'] ?? '');
+		$channel = (string)($body['notificationChannel'] ?? '');
+		$whenStr = (string)($body['receiptDate'] ?? '');
+		if (($instanceId === '' && $caseId === '') || $channel === '' || $whenStr === '') {
+			return new JSONResponse(
+				['message' => 'caseId or termijnInstanceId, receiptDate and notificationChannel are required'],
+				Http::STATUS_BAD_REQUEST
+			);
+		}
+
+		try {
+			$receipt = new DateTimeImmutable($whenStr);
+		} catch (Throwable $e) {
+			return new JSONResponse(['message' => 'receiptDate is not a date'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return ['caseId' => $caseId, 'instanceId' => $instanceId, 'channel' => $channel, 'receipt' => $receipt];
+	}//end noticeRequest()
+
+	/**
+	 * Why the notice may not be registered on this term, or null when it may.
+	 *
+	 * Fails closed: no term (404), a term without a case, a term of another
+	 * case or a case the caller may not change (403), and a term that still
+	 * runs (409, with the day it ends).
+	 *
+	 * @param array<string, mixed>|null $instance The term instance, or null.
+	 * @param string                    $caseId   The case the caller named, or ''.
+	 * @param IUser                     $user     The caller.
+	 * @param DateTimeImmutable         $receipt  The day the notice came in.
+	 *
+	 * @return JSONResponse|null The refusal, or null.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	private function refusalFor(?array $instance, string $caseId, IUser $user, DateTimeImmutable $receipt): ?JSONResponse {
+		if ($instance === null) {
+			return new JSONResponse(['message' => 'This case has no decision term to give notice on'], Http::STATUS_NOT_FOUND);
+		}
+
+		$owningCase = (string)($instance['case'] ?? '');
+		if ($owningCase === '' || ($caseId !== '' && $owningCase !== $caseId)
+			|| $this->caseAccess->hasCaseMutationAccess(caseId: $owningCase, user: $user) === false
+		) {
+			return new JSONResponse(['message' => 'Not authorized for this case'], Http::STATUS_FORBIDDEN);
+		}
+
+		$reason = $this->service->prematureReason(instance: $instance, receiptDate: $receipt);
+		if ($reason === '') {
+			return null;
+		}
+
+		return new JSONResponse(
+			['message' => $reason, 'refusal' => 'term-running', 'termEnds' => (string)($instance['endDateCurrent'] ?? '')],
+			Http::STATUS_CONFLICT
+		);
+	}//end refusalFor()
+
+	/**
+	 * The term instance the notice is given on: the case's statutory term, or the named instance.
+	 *
+	 * @param string $caseId     The case id, or ''.
+	 * @param string $instanceId The TermijnInstance id, or ''.
+	 *
+	 * @return array<string, mixed>|null The instance, or null when there is none.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	private function termInstanceOf(string $caseId, string $instanceId): ?array {
+		try {
+			if ($caseId !== '') {
+				return $this->service->statutoryTermOf(caseId: $caseId);
+			}
+
+			return $this->service->termInstance(termInstanceId: $instanceId);
+		} catch (Throwable $e) {
+			$this->logger->info('Notice of default: term lookup failed: ' . $e->getMessage());
+			return null;
+		}
+	}//end termInstanceOf()
+
+	/**
+	 * Decode the JSON request body.
+	 *
+	 * IRequest::getContent() is protected on the concrete OC request, so the
+	 * payload is read from php://input. Protected so a test can supply it.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	protected function jsonBody(): array {
+		$body = json_decode((string)file_get_contents('php://input'), true);
+		if (is_array($body) === true) {
+			return $body;
+		}
+
+		return [];
+	}//end jsonBody()
 
 	/**
 	 * Deprecated alias of /api/notices-of-default, kept for clients of the old URL.

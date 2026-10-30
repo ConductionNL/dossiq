@@ -11970,6 +11970,25 @@
         "Last month's invoice is handed to the finance app.": "De factuur van vorige maand is doorgegeven aan de financiële app.",
         "No invoice was made for last month. Every billing event of that month may already be invoiced.": "Er is geen factuur gemaakt voor vorige maand. Misschien is elke gebeurtenis van die maand al gefactureerd.",
         "Decision sent on": "Besluit verzonden op",
-        "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand.": "De dag waarop het laatste besluit in deze zaak is verzonden. Dossiq vult dit in als het besluit verstuurd wordt, niet met de hand."
+        "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand.": "De dag waarop het laatste besluit in deze zaak is verzonden. Dossiq vult dit in als het besluit verstuurd wordt, niet met de hand.",
+        "Account holder": "Rekeninghouder",
+        "Choose a party or type a name": "Kies een betrokkene of typ een naam",
+        "Definitive penalty: € {amount}": "Definitieve dwangsom: € {amount}",
+        "On hold for an objection": "Aangehouden voor bezwaar",
+        "Payment signal sent. The financial administration pays it out.": "Betaalsignaal verstuurd. De financiële administratie betaalt het uit.",
+        "Payout prepared": "Uitbetaling voorbereid",
+        "Payout rejected": "Uitbetaling afgewezen",
+        "Prepare payout": "Uitbetaling voorbereiden",
+        "Ready for payout": "Klaar voor uitbetaling",
+        "Record the notice": "Ingebrekestelling vastleggen",
+        "Sent by": "Verzonden door",
+        "The decision term has not passed yet. A notice of default only counts once it has.": "De beslistermijn is nog niet voorbij. Een ingebrekestelling telt pas daarna.",
+        "The decision term runs until {date}. A notice of default only counts once the term has passed.": "De beslistermijn loopt tot {date}. Een ingebrekestelling telt pas als de termijn voorbij is.",
+        "The notice of default could not be registered.": "De ingebrekestelling kon niet worden vastgelegd.",
+        "The notice of default is on this case. An earlier notice already started the penalty.": "De ingebrekestelling staat op deze zaak. Een eerdere ingebrekestelling heeft de dwangsom al gestart.",
+        "The notice of default is on this case. The penalty starts running on {date}.": "De ingebrekestelling staat op deze zaak. De dwangsom gaat lopen op {date}.",
+        "The payout could not be prepared.": "De uitbetaling kon niet worden voorbereid.",
+        "The payout is prepared. No finance app took it yet.": "De uitbetaling is voorbereid. Nog geen financiële app heeft hem overgenomen.",
+        "Who sent the notice of default": "Wie de ingebrekestelling heeft gestuurd"
     }
 }

@@ -560,7 +560,7 @@
       "noticeOfDefault": {
         "slug": "noticeOfDefault",
         "icon": "EmailAlert",
-        "version": "1.1.2",
+        "version": "1.2.0",
         "searchable": false,
         "x-schema-org": "schema:Message",
         "title": "Notice of default",
@@ -630,6 +630,11 @@
             "type": "string",
             "title": "Document Link",
             "description": "Reference to the scanned notice PDF"
+          },
+          "sender": {
+            "type": "string",
+            "title": "Sender",
+            "description": "Who sent the notice of default"
           }
         }
       },
