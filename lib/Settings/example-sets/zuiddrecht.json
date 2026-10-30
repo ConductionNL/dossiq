@@ -244,7 +244,7 @@
 					"city": "{{cast:henk.address.city}}"
 				},
 				"displayName": "{{cast:henk.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"description": "",
 				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000011"
 			}
 		},
@@ -268,7 +268,7 @@
 					"city": "{{cast:linda.address.city}}"
 				},
 				"displayName": "{{cast:linda.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": ""
 			}
 		},
 		{
@@ -291,7 +291,7 @@
 					"city": "{{cast:sanne.address.city}}"
 				},
 				"displayName": "{{cast:sanne.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"description": "Verzoeker Woo, verlichting fietspad Lindelaan",
 				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000012"
 			}
 		},
@@ -315,7 +315,7 @@
 					"city": "{{cast:fatima.address.city}}"
 				},
 				"displayName": "{{cast:fatima.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"description": "",
 				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000013"
 			}
 		},
@@ -339,7 +339,7 @@
 					"city": "{{cast:marja.address.city}}"
 				},
 				"displayName": "{{cast:marja.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"description": "",
 				"contactAddresses": [
 					{
 						"kind": "correspondence",
@@ -366,7 +366,7 @@
 					"city": "{{cast:keesdewit.address.city}}"
 				},
 				"displayName": "{{cast:keesdewit.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht, contactpersoon zonder BSN. Geen echte persoon.",
+				"description": "Contactpersoon zonder BSN",
 				"contactAddresses": [
 					{
 						"kind": "correspondence",
@@ -396,7 +396,7 @@
 					"city": "{{cast:pieterbos.address.city}}"
 				},
 				"displayName": "{{cast:pieterbos.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": ""
 			}
 		},
 		{
@@ -419,7 +419,7 @@
 					"city": "{{cast:henkvisser.address.city}}"
 				},
 				"displayName": "{{cast:henkvisser.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon.",
+				"description": "",
 				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000014"
 			}
 		},
@@ -443,7 +443,7 @@
 					"city": "{{cast:jvanwijk.address.city}}"
 				},
 				"displayName": "{{cast:jvanwijk.displayName}}",
-				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+				"description": ""
 			}
 		},
 		{
@@ -460,7 +460,7 @@
 					"postcode": "{{cast:slagerij.address.postcode}}",
 					"place": "{{cast:slagerij.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf.",
+				"description": "",
 				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000001"
 			}
 		},
@@ -478,7 +478,7 @@
 					"postcode": "{{cast:cloudgemeente.address.postcode}}",
 					"place": "{{cast:cloudgemeente.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf.",
+				"description": "",
 				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000002"
 			}
 		},
@@ -496,7 +496,7 @@
 					"postcode": "{{cast:buurtoost.address.postcode}}",
 					"place": "{{cast:buurtoost.address.city}}"
 				},
-				"description": "Organiseert het buurtfeest en de speeldagen in Oosthaven. Voorbeeldvereniging van de gemeente Zuiddrecht, geen echte vereniging.",
+				"description": "Organiseert het buurtfeest en de speeldagen in Oosthaven",
 				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000007"
 			}
 		},
@@ -514,7 +514,7 @@
 					"postcode": "{{cast:visserbouw.address.postcode}}",
 					"place": "{{cast:visserbouw.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": ""
 			}
 		},
 		{
@@ -531,7 +531,7 @@
 					"postcode": "{{cast:vanwijk.address.postcode}}",
 					"place": "{{cast:vanwijk.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": ""
 			}
 		},
 		{
@@ -548,7 +548,7 @@
 					"postcode": "{{cast:bewonerslindelaan.address.postcode}}",
 					"place": "{{cast:bewonerslindelaan.address.city}}"
 				},
-				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging.",
+				"description": "",
 				"indicators": [
 					{
 						"key": "meerdere-meldingen",
@@ -573,7 +573,7 @@
 					"postcode": "{{cast:vandam.address.postcode}}",
 					"place": "{{cast:vandam.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf.",
+				"description": "",
 				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000003"
 			}
 		},
@@ -591,7 +591,7 @@
 					"postcode": "{{cast:bakkerijdemolen.address.postcode}}",
 					"place": "{{cast:bakkerijdemolen.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": ""
 			}
 		},
 		{
@@ -608,7 +608,7 @@
 					"postcode": "{{cast:dagblad.address.postcode}}",
 					"place": "{{cast:dagblad.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": ""
 			}
 		},
 		{
@@ -625,7 +625,7 @@
 					"postcode": "{{cast:lumeninfra.address.postcode}}",
 					"place": "{{cast:lumeninfra.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": ""
 			}
 		},
 		{
@@ -642,7 +642,7 @@
 					"postcode": "{{cast:groenenco.address.postcode}}",
 					"place": "{{cast:groenenco.address.city}}"
 				},
-				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+				"description": ""
 			}
 		},
 		{
@@ -659,7 +659,7 @@
 					"postcode": "{{cast:sportclub.address.postcode}}",
 					"place": "{{cast:sportclub.address.city}}"
 				},
-				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+				"description": ""
 			}
 		},
 		{
@@ -676,7 +676,7 @@
 					"postcode": "{{cast:vvekerkplein.address.postcode}}",
 					"place": "{{cast:vvekerkplein.address.city}}"
 				},
-				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+				"description": ""
 			}
 		},
 		{
@@ -693,7 +693,7 @@
 					"postcode": "{{cast:harmonie.address.postcode}}",
 					"place": "{{cast:harmonie.address.city}}"
 				},
-				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+				"description": ""
 			}
 		},
 		{
@@ -710,7 +710,7 @@
 					"postcode": "{{cast:tennisdekade.address.postcode}}",
 					"place": "{{cast:tennisdekade.address.city}}"
 				},
-				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+				"description": ""
 			}
 		},
 		{
@@ -727,7 +727,7 @@
 					"postcode": "{{cast:ondernemers.address.postcode}}",
 					"place": "{{cast:ondernemers.address.city}}"
 				},
-				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+				"description": ""
 			}
 		},
 		{
@@ -744,7 +744,7 @@
 					"postcode": "{{cast:scouting.address.postcode}}",
 					"place": "{{cast:scouting.address.city}}"
 				},
-				"description": "Voorbeeldvereniging van de gemeente Zuiddrecht. Geen echte vereniging."
+				"description": ""
 			}
 		},
 		{
@@ -761,7 +761,7 @@
 					"postcode": "{{cast:kindzorg.address.postcode}}",
 					"place": "{{cast:kindzorg.address.city}}"
 				},
-				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+				"description": ""
 			}
 		},
 		{
@@ -778,7 +778,7 @@
 					"postcode": "{{cast:drechthof.address.postcode}}",
 					"place": "{{cast:drechthof.address.city}}"
 				},
-				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+				"description": ""
 			}
 		},
 		{
@@ -795,7 +795,7 @@
 					"postcode": "{{cast:voedselbank.address.postcode}}",
 					"place": "{{cast:voedselbank.address.city}}"
 				},
-				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+				"description": ""
 			}
 		},
 		{
@@ -812,7 +812,7 @@
 					"postcode": "{{cast:dorpshuis.address.postcode}}",
 					"place": "{{cast:dorpshuis.address.city}}"
 				},
-				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+				"description": ""
 			}
 		},
 		{
@@ -829,7 +829,7 @@
 					"postcode": "{{cast:jeugdtheater.address.postcode}}",
 					"place": "{{cast:jeugdtheater.address.city}}"
 				},
-				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+				"description": ""
 			}
 		},
 		{
@@ -846,7 +846,7 @@
 					"postcode": "{{cast:erfgoed.address.postcode}}",
 					"place": "{{cast:erfgoed.address.city}}"
 				},
-				"description": "Voorbeeldstichting van de gemeente Zuiddrecht. Geen echte stichting."
+				"description": ""
 			}
 		},
 		{
