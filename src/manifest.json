@@ -7279,9 +7279,16 @@
 							},
 							"presentation": "notes",
 							"title": "{title}",
+							"meta": "{meta}",
 							"pill": {
 								"field": "kindLabel",
-								"variant": "info"
+								"variant": "info",
+								"variantWhen": [
+									{
+										"when": { "field": "subjectType", "op": "eq", "value": "task" },
+										"variant": "purple"
+									}
+								]
 							},
 							"due": {
 								"field": "dueAt",
@@ -7352,10 +7359,24 @@
 							"title": "{title}",
 							"pill": {
 								"field": "kindLabel",
-								"variant": "info"
+								"variant": "info",
+								"variantWhen": [
+									{
+										"when": { "field": "subjectType", "op": "eq", "value": "task" },
+										"variant": "purple"
+									}
+								]
 							},
-							"meta": "{recordedTime}",
+							"meta": "{recordedMeta}",
 							"text": "{note}",
+							"headLine": true,
+							"iconTile": {
+								"size": 24,
+								"tone": "success"
+							},
+							"ruleAbove": true,
+							"chevron": false,
+							"_rowsNote": "Board DqDagAfsluiten Vandaag vastgelegd: a 24px green done mark, then the kind pill, the linked title and the case meta on one line, the note under it in the normal ink, each row ruled above (nextcloud-vue headLine, iconTile size/tone).",
 							"rowRouteField": "routeName",
 							"rowIdField": "routeId",
 							"headerCount": true,

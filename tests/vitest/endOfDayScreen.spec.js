@@ -143,6 +143,13 @@ describe('the end-of-day page', () => {
 	})
 })
 
+describe('each row names its case (DqDagAfsluiten r36)', () => {
+	it('templates the server\'s meta lines under the titles', () => {
+		expect(widget('eod-open').content.meta).toBe('{meta}')
+		expect(widget('eod-recorded').content.meta).toBe('{recordedMeta}')
+	})
+})
+
 describe('Ready for today? as its own card (DqDagAfsluiten r34)', () => {
 	it('is a text card after Recorded today, and the list puts its buttons at its foot', () => {
 		const ready = widget('eod-ready')
@@ -154,5 +161,28 @@ describe('Ready for today? as its own card (DqDagAfsluiten r34)', () => {
 		const recorded = at('eod-recorded')
 		expect(at('eod-ready')).toMatchObject({ gridX: 0, gridWidth: 8, track: 'main', sizeToContent: true })
 		expect(at('eod-ready').gridY).toBe(recorded.gridY + recorded.gridHeight)
+	})
+})
+
+describe('the kind pill (DqDagAfsluiten r36)', () => {
+	it('draws a task purple and a case in the info tone, in both day lists', () => {
+		for (const id of ['eod-open', 'eod-recorded']) {
+			const pill = widget(id).content.pill
+			expect(pill.field).toBe('kindLabel')
+			expect(pill.variant).toBe('info')
+			expect(pill.variantWhen).toEqual([{ when: { field: 'subjectType', op: 'eq', value: 'task' }, variant: 'purple' }])
+		}
+	})
+})
+
+describe('Recorded today as drawn (DqDagAfsluiten r36)', () => {
+	it('leads each row with a green done mark, the pill, title and meta on one line, the note under it, ruled from the first row', () => {
+		const content = widget('eod-recorded').content
+		expect(content.icon).toBe('Check')
+		expect(content.iconTile).toEqual({ size: 24, tone: 'success' })
+		expect(content.headLine).toBe(true)
+		expect(content.ruleAbove).toBe(true)
+		expect(content.chevron).toBe(false)
+		expect(content.text).toBe('{note}')
 	})
 })

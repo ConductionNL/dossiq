@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Queue;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Dossiq\Service\Queue\EndOfDayRowMeta;
 use OCA\Dossiq\Service\Queue\EndOfDayService;
 use OCA\Dossiq\Service\Queue\PersonalQueueService;
 use OCA\Dossiq\Service\SettingsService;
@@ -69,7 +70,20 @@ class EndOfDayServiceTest extends TestCase {
 					throw new RuntimeException('not an object');
 				}
 
-				return (object)['uuid' => $id, 'updated' => '2026-10-20T09:00:00+00:00'];
+				return new class($id) {
+					/**
+					 * @param string $uuid The uuid.
+					 */
+					public function __construct(public string $uuid) {
+					}
+
+					/**
+					 * @return array<string, mixed> The case, numbered after its uuid.
+					 */
+					public function jsonSerialize(): array {
+						return ['uuid' => $this->uuid, 'identifier' => 'N-' . $this->uuid, 'title' => 'Case ' . $this->uuid];
+					}
+				};
 			}
 		};
 		$readState = new class($lastSeen) {
@@ -185,7 +199,9 @@ class EndOfDayServiceTest extends TestCase {
 			static fn (string $text, array $parameters=[]): string => vsprintf($text, array_values($parameters))
 		);
 
-		return new EndOfDayService(queue: $queue, settings: $settings, l10n: $l10n, logger: new NullLogger(), tasks: $tasks);
+		$rowMeta = new EndOfDayRowMeta(settings: $settings, tasks: $tasks, l10n: $l10n, logger: new NullLogger());
+
+		return new EndOfDayService(queue: $queue, settings: $settings, l10n: $l10n, logger: new NullLogger(), tasks: $tasks, rowMeta: $rowMeta);
 	}//end service()
 
 	/**
@@ -245,6 +261,8 @@ class EndOfDayServiceTest extends TestCase {
 		$this->assertSame(3, $day['opened']);
 		$this->assertSame('/apps/openregister/api/objects/dossiq/case/c1/notes', $day['open'][0]['notesUrl']);
 		$this->assertSame(['CaseDetail', 'c1'], [$day['open'][0]['routeName'], $day['open'][0]['routeId']]);
+		$this->assertSame(expected: 'N-c1', actual: $day['open'][0]['meta']);
+		$this->assertSame(expected: 'N-c2 · 15:40', actual: $day['recorded'][0]['recordedMeta']);
 	}//end testSortsTheDayIntoOpenAndRecorded()
 
 	/**
