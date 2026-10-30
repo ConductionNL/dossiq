@@ -11841,7 +11841,9 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Decision sent on": "Besluit verzonden op",
+        "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand.": "De dag waarop het laatste besluit in deze zaak is verzonden. Dossiq vult dit in als het besluit verstuurd wordt, niet met de hand."
     },
     "nplurals=2; plural=(n != 1);"
 )
