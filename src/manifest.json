@@ -4694,7 +4694,7 @@
 						"title": "Email",
 						"content": {
 							"hint": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.",
-							"templates": { "url": "/apps/dossiq/api/casetypes/@object.caseType/email-templates", "responsePath": "results", "labelField": "name", "idField": "id" },
+							"templates": { "url": "/apps/dossiq/api/casetypes/@object.caseType/email-templates", "responsePath": "results", "labelField": "name", "idField": "id", "preselect": "first" },
 							"noTemplatesText": "No templates for this case type yet",
 							"draft": { "url": "/apps/dossiq/api/cases/@objectId/email-templates/{templateId}/draft", "blankTemplateId": "blank" },
 							"closedWhen": { "field": "endDate", "op": "notEmpty" },
