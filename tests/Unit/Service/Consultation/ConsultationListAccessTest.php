@@ -20,7 +20,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-a-consultation-list-shows-only-requests-on-cases-the-caller-may-read
+ * @spec openspec/specs/consultation-management/spec.md#requirement-a-consultation-list-shows-only-requests-on-cases-the-caller-may-read
  */
 
 declare(strict_types=1);
@@ -153,7 +153,7 @@ class ConsultationListAccessTest extends TestCase {
 	 * The bottleneck report: a plain user is refused, anonymous is 401,
 	 * coordinators, administrators and the service account pass.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-the-bottleneck-report-is-for-coordinators
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-the-bottleneck-report-is-for-coordinators
 	 *
 	 * @return void
 	 */

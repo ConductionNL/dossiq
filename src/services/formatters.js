@@ -555,7 +555,7 @@ export default {
 	 * @param {object} property The column's property.
 	 * @param {{name: string}} options The column's `formatterOptions`.
 	 * @return {string} The answer as text.
-	 * @spec openspec/changes/re-integration-is-a-case-type/specs/dossiq-sociaal-domein-participatiewet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
 	 */
 	caseAnswer: (value, row, property, options) => caseAnswerText(value, options),
 

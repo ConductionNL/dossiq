@@ -515,7 +515,7 @@ class CaseLifecycleServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lifecycle-gesture-saves-the-case-as-stored/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testPauseOnATermSavesTheCaseTheMirrorWrote(): void {
 		$service = $this->serviceWithTheDeadlineMirror();
@@ -538,7 +538,7 @@ class CaseLifecycleServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lifecycle-gesture-saves-the-case-as-stored/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testExtendOnATermSavesTheCaseTheMirrorWrote(): void {
 		$service = $this->serviceWithTheDeadlineMirror();

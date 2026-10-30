@@ -93,7 +93,7 @@ class RecordCaseMapping {
 	 *                                  outside its list, or the status is not declared.
 	 *
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-a-case-type-declares-how-another-apps-records-become-its-cases-req-cri-001
-	 * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
 	 */
 	public function map(array $import, array $record, string $recordId, string $caseTypeId): array {
 		$statusField = (string)($import['statusField'] ?? 'status');

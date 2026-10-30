@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -37,7 +37,7 @@ use OCP\IRequest;
 /**
  * The due-soon list and the bottleneck report.
  *
- * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 class ConsultationReportController extends Controller {
 
@@ -65,7 +65,7 @@ class ConsultationReportController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
 	 */
 	public function dueSoon(): JSONResponse {
 		$authError = $this->accessGuard->requireUser();
@@ -83,7 +83,7 @@ class ConsultationReportController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
 	 */
 	public function bottlenecks(): JSONResponse {
 		$authError = $this->accessGuard->requireCoordinator();

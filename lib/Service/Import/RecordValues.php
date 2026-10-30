@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
+ * @spec openspec/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Service\Import;
 /**
  * Shapes record values the way a case stores them.
  *
- * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
+ * @spec openspec/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
  */
 class RecordValues {
 	/**
@@ -40,7 +40,7 @@ class RecordValues {
 	 *
 	 * @return string|null The JSON text.
 	 *
-	 * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
 	 */
 	public function json(mixed $raw): ?string {
 		if ($raw === null || $raw === '' || $raw === []) {
@@ -62,7 +62,7 @@ class RecordValues {
 	 *
 	 * @return int|float|null The number.
 	 *
-	 * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
 	 */
 	public function number(string $text): int|float|null {
 		if (is_numeric($text) === false) {
@@ -80,7 +80,7 @@ class RecordValues {
 	 *
 	 * @return array{propertyDefinition: string, name: string, value: string}
 	 *
-	 * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
 	 */
 	public function answer(array $property, mixed $value): array {
 		$text = (string)json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

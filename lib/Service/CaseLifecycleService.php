@@ -469,7 +469,7 @@ class CaseLifecycleService {
 	 * @throws RuntimeException When the case can no longer be read
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/lifecycle-gesture-saves-the-case-as-stored/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function journal(string $caseId, array $changes, array $entry): void {
 		$case = array_merge($this->requireCase(caseId: $caseId), $changes);

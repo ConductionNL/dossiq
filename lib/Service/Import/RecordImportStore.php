@@ -286,7 +286,7 @@ class RecordImportStore {
 	 * @throws Throwable When the case types cannot be read: an unread list is
 	 *                   not "no case type imports anything", so the caller says so.
 	 *
-	 * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
 	 */
 	public function caseTypesInUse(object $objectService): array {
 		$rows = $this->listAll(
