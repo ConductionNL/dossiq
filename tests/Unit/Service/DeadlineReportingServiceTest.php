@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\DeadlineReportingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Money\PayoutReader;
 use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -367,6 +368,79 @@ class DeadlineReportingServiceTest extends TestCase {
 		self::assertSame(0.0, $k['penaltyRunningEuros']);
 		self::assertSame([], $k['onTimeByCaseType']['labels']);
 	}
+
+	/**
+	 * The KPI tiles say which case type most of the week's ending terms belong
+	 * to, and how far the longest running penalty is (DqTermijnen "3 bij
+	 * Woo-verzoeken", "1 zaak, dag 9 van 42").
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function testKpiNamesTheWeeksLeadCaseTypeAndThePenaltyDay(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'termijn_instance_schema' => 'deadlineInstance',
+				'case_type_schema' => 'caseType',
+				'case_schema' => 'case',
+				'accruing_amount_schema' => 'penaltyPaymentCalculation',
+				default => '',
+			},
+		);
+		foreach (['a', 'b'] as $id) {
+			$this->objects->seed('case', ['id' => 'case-woo-' . $id, 'caseType' => 'ct-woo']);
+			$this->objects->seed(
+				'deadlineInstance',
+				['id' => 'ti-woo-' . $id, 'case' => 'case-woo-' . $id, 'startDate' => '2026-06-20', 'endDateCurrent' => '2026-07-05', 'status' => 'lopend']
+			);
+		}
+
+		$this->objects->seed('case', ['id' => 'case-omv-week', 'caseType' => 'ct-omv']);
+		$this->objects->seed(
+			'deadlineInstance',
+			['id' => 'ti-omv-later', 'case' => 'case-omv-week', 'startDate' => '2026-06-20', 'endDateCurrent' => '2026-07-20', 'status' => 'lopend']
+		);
+		$bands = [['upTo' => 14, 'rate' => 2300], ['upTo' => 28, 'rate' => 3500], ['upTo' => 42, 'rate' => 4500]];
+		$this->objects->seed('penaltyPaymentCalculation', ['id' => 'pp-run', 'status' => 'lopend', 'currentDag' => 9, 'rateBands' => $bands]);
+		$this->objects->seed('penaltyPaymentCalculation', ['id' => 'pp-done', 'status' => 'gestopt', 'currentDag' => 30]);
+
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('n')->willReturnCallback(
+			static function (string $one, string $many, int $count, array $params = []): string {
+				$text = $many;
+				if ($count === 1) {
+					$text = $one;
+				}
+
+				return vsprintf(format: str_replace(search: '%n', replace: (string)$count, subject: $text), values: $params);
+			}
+		);
+
+		$k = (new DeadlineReportingService(settingsService: $settings, l10n: $l10n))->getTermijnKpi([], new \DateTimeImmutable('2026-07-02'));
+
+		self::assertSame(expected: 3, actual: $k['dueThisWeekCount']);
+		self::assertSame(expected: '2 at Woo-verzoek', actual: $k['dueThisWeekNote']);
+		self::assertSame(expected: '1 case, day 9 of 42', actual: $k['penaltyRunningNote']);
+	}//end testKpiNamesTheWeeksLeadCaseTypeAndThePenaltyDay()
+
+	/**
+	 * Without terms ending this week or a running penalty there is no note.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function testKpiHasNoNotesWithoutTheirFigures(): void {
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$k = (new DeadlineReportingService(settingsService: $this->settings, l10n: $l10n))->getTermijnKpi([], new \DateTimeImmutable('2027-07-02'));
+
+		self::assertSame(expected: '', actual: $k['dueThisWeekNote']);
+		self::assertSame(expected: '', actual: $k['penaltyRunningNote']);
+	}//end testKpiHasNoNotesWithoutTheirFigures()
 
 	/**
 	 * A window given by the page decides which terms the share per case type covers.

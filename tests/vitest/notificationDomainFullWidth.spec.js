@@ -21,4 +21,10 @@ describe('the notification domain select', () => {
 		expect(body).toContain('width: 100%;')
 		expect(body).not.toContain('360px')
 	})
+
+	it('stands 18px above the matrix, as drawn: no bottom margin under its ring', () => {
+		const at = source.indexOf('.notification-routing__scope :deep(.v-select.select) {')
+		const body = source.slice(at, source.indexOf('}', at))
+		expect(body).toContain('margin-block-end: 0;')
+	})
 })

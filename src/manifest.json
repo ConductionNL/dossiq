@@ -9981,12 +9981,12 @@
 				"stageField": "finalIntervention",
 				"_primaryActionByStageNote": "DqHandhaving: the Wat nu? card's button is the act the advice asks for next. A penalty order or administrative enforcement starts with the pre-announcement, a warning or remedial action with the warning letter. Both are a letter for the case from the template library (generate-document's composer), so nothing here is procedure code.",
 				"primaryActionByStage": {
-					"warning": { "id": "lhs-draft-warning", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the warning", "icon": "FileDocumentPlusOutline", "props": { "caseId": "@object.case", "open": true } },
-					"herstelactie": { "id": "lhs-draft-warning", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the warning", "icon": "FileDocumentPlusOutline", "props": { "caseId": "@object.case", "open": true } },
-					"last_under_penaltypayment": { "id": "lhs-draft-pre-announcement", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the pre-announcement", "icon": "FileDocumentPlusOutline", "props": { "caseId": "@object.case", "open": true } },
-					"last_plus_pv": { "id": "lhs-draft-pre-announcement", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the pre-announcement", "icon": "FileDocumentPlusOutline", "props": { "caseId": "@object.case", "open": true } },
-					"bestuursdwang": { "id": "lhs-draft-pre-announcement", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the pre-announcement", "icon": "FileDocumentPlusOutline", "props": { "caseId": "@object.case", "open": true } },
-					"pv_plus_bestuursdwang": { "id": "lhs-draft-pre-announcement", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the pre-announcement", "icon": "FileDocumentPlusOutline", "props": { "caseId": "@object.case", "open": true } }
+					"warning": { "id": "lhs-draft-warning", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the warning", "props": { "caseId": "@object.case", "open": true } },
+					"herstelactie": { "id": "lhs-draft-warning", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the warning", "props": { "caseId": "@object.case", "open": true } },
+					"last_under_penaltypayment": { "id": "lhs-draft-pre-announcement", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the pre-announcement", "props": { "caseId": "@object.case", "open": true } },
+					"last_plus_pv": { "id": "lhs-draft-pre-announcement", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the pre-announcement", "props": { "caseId": "@object.case", "open": true } },
+					"bestuursdwang": { "id": "lhs-draft-pre-announcement", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the pre-announcement", "props": { "caseId": "@object.case", "open": true } },
+					"pv_plus_bestuursdwang": { "id": "lhs-draft-pre-announcement", "type": "open-modal", "target": "BeschikkingComposerDialog", "label": "Draft the pre-announcement", "props": { "caseId": "@object.case", "open": true } }
 				},
 				"_nextStepNote": "DqHandhaving Wat nu?: the next act follows from the intervention the advice settles on (finalIntervention). A penalty order or administrative enforcement starts with a pre-announcement and a two-week period for a view; a warning or remedial action starts with the letter.",
 				"nextStep": {
@@ -11390,7 +11390,7 @@
 								"style": "decimal",
 								"decimals": 0
 							},
-							"caption": "within the next seven days"
+							"caption": "{dueThisWeekNote}"
 						}
 					},
 					{
@@ -11444,7 +11444,7 @@
 								"currency": "EUR",
 								"decimals": 0
 							},
-							"caption": "Cases: {penaltyRunningCount}",
+							"caption": "{penaltyRunningNote}",
 							"captionVariant": "error"
 						}
 					},
@@ -11676,6 +11676,7 @@
 								}
 							],
 							"exportId": "deadline-report-quarterly",
+							"fitWidth": false,
 							"exportFileName": "deadline-report",
 							"emptyText": "No terms started in this quarter."
 						}

@@ -195,6 +195,16 @@ describe('the stage', () => {
 		).toBe('Case')
 	})
 
+	it('draws Next step as a text button, as the DqZaak boards do (r36)', () => {
+		// nextcloud-vue 2.163 draws a stage button's own icon; the boards draw none.
+		const nextSteps = Object.values(simple.primaryActionByStage)
+			.filter((entry) => typeof entry === 'object' && entry.id === 'stage-next-step')
+		expect(nextSteps.length).toBe(3)
+		for (const entry of nextSteps) {
+			expect(entry.icon).toBeUndefined()
+		}
+	})
+
 	it('degrades on a case whose status has no role: no card, no stage button', () => {
 		for (const record of [
 			{ id: 'a', assignee: 'jan' },
