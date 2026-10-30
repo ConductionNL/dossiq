@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
@@ -36,11 +37,13 @@ use Throwable;
 /**
  * Reads what an end-of-day row's meta line names and writes the line.
  *
- * Whatever cannot be read is left out of the line: the row itself stays.
+ * A case or status that no longer exists is left out of the line: the row
+ * itself stays. A store that fails to answer is an error, not an empty line.
  *
  * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-each-row-names-its-case
  */
 class EndOfDayRowMeta {
+	use SearchesObjects;
 
 	private const SEPARATOR = ' · ';
 
@@ -152,7 +155,7 @@ class EndOfDayRowMeta {
 	}//end caseOfTask()
 
 	/**
-	 * A register object's data, [] when it cannot be read.
+	 * A register object's data, [] when it does not exist.
 	 *
 	 * @param string $id     The uuid.
 	 * @param string $schema The schema.
@@ -165,23 +168,12 @@ class EndOfDayRowMeta {
 			return [];
 		}
 
-		try {
-			$object = $objectService->find($id, register: $this->config(key: 'register', default: 'dossiq'), schema: $schema);
-		} catch (Throwable $e) {
-			$this->logger->debug('Dossiq: end-of-day object ' . $id . ' could not be read: ' . $e->getMessage());
-			return [];
-		}
-
-		if (is_object($object) === false || method_exists($object, 'jsonSerialize') === false) {
-			return [];
-		}
-
-		$data = $object->jsonSerialize();
-		if (is_array($data) === false) {
-			return [];
-		}
-
-		return $data;
+		return ($this->findObjectAsArray(
+			objectService: $objectService,
+			register: $this->config(key: 'register', default: 'dossiq'),
+			schema: $schema,
+			id: $id
+		) ?? []);
 	}//end objectData()
 
 	/**
