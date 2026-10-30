@@ -132,8 +132,8 @@ describe('the data-subject-requests view', () => {
 		expect(overrides.lockedFilters).toEqual({ dataSubjectRequestType: ['inzage', 'correctie', 'verwijdering'] })
 	})
 
-	it('opens ordered by deadline, soonest first', () => {
-		expect(entry.sort).toEqual([{ key: 'deadline', order: 'asc' }])
+	it('opens ordered by deadline, soonest first, then by receipt', () => {
+		expect(entry.sort).toEqual([{ key: 'deadline', order: 'asc' }, { key: 'receivedAt', order: 'asc' }])
 	})
 })
 
