@@ -14,7 +14,7 @@
       "beschikking": {
         "slug": "beschikking",
         "icon": "FileCertificateOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:GovernmentPermit",
         "title": "Beschikking",
         "description": "Formal decision (Awb besluit) with full lifecycle: ontwerp -> akkoord-mandaat -> ondertekend -> verzonden -> ontvangen-bevestiging -> gearchiveerd. Immutable once ondertekend. State transitions are guarded by mandaat-verificatie (akkoord) and TSP-handtekening (onderteken) and logged via stateMachineLog.",
@@ -122,6 +122,66 @@
             "title": "Levy Amount",
             "default": 0,
             "description": "Leges amount associated with the decision"
+          },
+          "paymentSchedule": {
+            "type": "object",
+            "title": "Payment schedule",
+            "description": "Instalments paid out under this decision, each raised once with the finance app on its due date.",
+            "properties": {
+              "payeeIban": {
+                "type": "string",
+                "title": "Payee IBAN",
+                "description": "The account the instalments are paid to."
+              },
+              "instalments": {
+                "type": "array",
+                "title": "Instalments",
+                "description": "Due date and amount per instalment.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": "string",
+                      "title": "Instalment",
+                      "description": "The name of the instalment, such as first advance."
+                    },
+                    "dueOn": {
+                      "type": "string",
+                      "format": "date",
+                      "title": "Due on",
+                      "description": "The day the instalment is raised."
+                    },
+                    "amountCents": {
+                      "type": "integer",
+                      "title": "Amount in cents",
+                      "description": "The amount in euro cents."
+                    },
+                    "condition": {
+                      "type": "string",
+                      "title": "Condition",
+                      "description": "What has to happen before the instalment is paid. Empty when nothing has to."
+                    },
+                    "conditionMet": {
+                      "type": "boolean",
+                      "title": "Condition met",
+                      "description": "Whether the condition is met.",
+                      "default": false
+                    },
+                    "payableId": {
+                      "type": "string",
+                      "title": "Payable",
+                      "description": "The payable the finance app raised for this instalment."
+                    },
+                    "raisedAt": {
+                      "type": "string",
+                      "format": "date",
+                      "title": "Raised on",
+                      "description": "The day the instalment was raised."
+                    }
+                  }
+                }
+              }
+            }
           },
           "rationale": {
             "type": "string",
