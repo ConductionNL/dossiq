@@ -18483,7 +18483,12 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "taakveld picker on the case (Iv3TaakveldList)",
 				"note": "Missing: the quarterly aggregation (Iv3ReportService) and a page or export that reports costs per taakveld.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/case-costs-reported-per-iv3-taakveld",
+				"requirement": [
+					"openspec/specs/iv3-taakveld-2023-refinement :: Iv3ReportService quarterly aggregation SHALL bucket cases by aggregation key, so old- and new-code-classified cases land in the same bucket",
+					"openspec/changes/case-costs-reported-per-iv3-taakveld/specs/iv3-taakveld-2023-refinement :: The reports page shows case costs per Iv3 taakveld per quarter (REQ-IV3-REPORT-01)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -19970,7 +19975,12 @@
 					"board": null,
 					"reason": "backend: document generation vendor adapter"
 				},
-				"readOn": "2026-10-07"
+				"readOn": "2026-10-07",
+				"plan": "openspec/changes/decision-templates-render-through-a-vendor",
+				"requirement": [
+					"openspec/specs/beschikking-generatie :: The template seam SHALL say whether a real renderer is behind it",
+					"openspec/changes/decision-templates-render-through-a-vendor/specs/beschikking-generatie :: A decision template may render through a document vendor (REQ-BG-VENDOR-01)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/TemplateMergeService.php merges DOCX, XLSX and ODT templates locally; no SmartDocuments or Xential client | round 2 drive: procest/opencase/round2/code-census.md:110 \"Document generation: DOCX/XLSX/ODT template merge (`lib/Service/TemplateMergeService.php`\"",
@@ -21279,7 +21289,13 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "Settings > Tenants (CRUD, lifecycle, onboarding tab)",
 				"note": "Missing: wiring provision and usage, enforcing quotas, and a billing view.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/tenant-quotas-enforced-and-billing-shown",
+				"requirement": [
+					"openspec/specs/tenant-crud-lifecycle :: Tenant lifecycle state machine (REQ-001-A-LIFECYCLE)",
+					"openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas :: A tenant past its hard quota cannot create more (REQ-TQ-ENF-01)",
+					"openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas :: An administrator sees and runs a tenant's monthly billing (REQ-TQ-BILL-01)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
