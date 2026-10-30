@@ -411,13 +411,11 @@
 			<CnSettingsSection
 				id="section-dmn"
 				:name="t('dossiq', 'Decision tables (DMN)')"
-				:description="
-					t(
-						'dossiq',
-						'Decision tables live in the decision-tables register of OpenRegister. Dossiq stores its own tables there under keys that start with dossiq. and evaluates them from workflow steps and the enforcement recommendation. Open OpenRegister to read or change a table.',
-					)
-				"
-				:loading="!storesReady" />
+				:loading="!storesReady">
+				<p class="dq-settings-body-text">
+					{{ t('dossiq', 'Decision tables live in the decision-tables register of OpenRegister. Dossiq stores its own tables there under keys that start with dossiq. and evaluates them from workflow steps and the enforcement recommendation. Open OpenRegister to read or change a table.') }}
+				</p>
+			</CnSettingsSection>
 
 			<CnSettingsFieldsSection
 				id="section-financial"
@@ -1394,6 +1392,15 @@ export default {
 </script>
 
 <style>
+/* A card whose text is its body, drawn as body text under the title
+   (DqBeheerGeavanceerd "Beslistabellen (DMN)"). */
+.dq-settings-body-text {
+	margin: 0;
+	font-size: 15px;
+	line-height: 1.5;
+	color: var(--color-main-text);
+}
+
 /* An activity no mapping links yet: its case type cell reads as a warning. */
 .dq-dso-activity--unmapped .dq-dso-activity__case-types {
 	color: var(--color-error-text);
