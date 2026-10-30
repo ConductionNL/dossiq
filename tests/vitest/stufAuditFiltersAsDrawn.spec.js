@@ -25,4 +25,8 @@ describe('the StUF audit log filters as the board draws them', () => {
 		expect((actions.match(/<NcButton variant="secondary"/g) || []).length).toBe(2)
 		expect(template).not.toMatch(/variant="(primary|tertiary)"/)
 	})
+
+	it('leaves 16px under the buttons to the results, as above them', () => {
+		expect(sfc).toMatch(/\.stuf-audit-log__buttons \{[^}]*margin: 16px 0;/)
+	})
 })
