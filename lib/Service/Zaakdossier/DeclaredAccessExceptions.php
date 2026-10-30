@@ -186,10 +186,11 @@ class DeclaredAccessExceptions {
 	 * @return bool
 	 */
 	private function sameException(mixed $left, array $right): bool {
-		$left = (is_array($left) === true ? ($left['new'] ?? null) : null);
-		if (is_array($left) === false) {
+		if (is_array($left) === false || is_array($left['new'] ?? null) === false) {
 			return false;
 		}
+
+		$left = $left['new'];
 
 		$value = new AccessExceptionValue();
 
