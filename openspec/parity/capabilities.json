@@ -13667,7 +13667,12 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "case Contract tab (shillinq) and the contract decision raised in decidiq",
 				"note": "Partial covers suppliers and the contract hand-offs only; the tender suite itself (publication, bids, evaluation, award) is not built. Missing: tenders, bids, evaluation, award, eForms/TED, thresholds and supplier pages.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/tenders-run-on-the-tender-case-type",
+				"requirement": [
+					"openspec/specs/dossiq-procurement-tender-management :: REQ-TND-001 — Tenders SHALL be modelled as dossiq cases (`schema:Project`), not as a parallel domain object",
+					"openspec/changes/tenders-run-on-the-tender-case-type/specs/dossiq-procurement-tender-management :: A tender is worked end to end on its case page (REQ-TND-CASE-01)"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -15955,7 +15960,9 @@
 				"readOn": "2026-10-07",
 				"reachedOn": "Settings > supplier users; supplier pages on the portaliq site",
 				"note": "Missing: the contract endpoints the supplier pages read (ContractController in supplier-portal), and with them a supplier's own contracts.",
-				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
+				"plan": "openspec/changes/supplier-portal-reads-its-collections",
+				"requirement": "openspec/changes/supplier-portal-reads-its-collections/specs/supplier-portal :: A supplier reads its own tenders, contracts and messages through portal collections (REQ-SUP-COL-01)"
 			},
 			"evidence": {
 				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
@@ -16259,7 +16266,10 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakContact"
-				}
+				},
+				"plan": "openspec/changes/portal-conversation-live-pass",
+				"spec": "openspec/specs/portal-contribution",
+				"requirement": "openspec/changes/portal-conversation-live-pass/specs/portal-contribution :: A message goes round trip between the handler and the resident (REQ-PORTAL-RT-01)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js:84 only a staff citizen search, no citizen route; appinfo/routes.php:20-34 public endpoints are mTLS machine receivers and a SAML bearer case API, no citizen login or message thread | round 2 drive: procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\"",
