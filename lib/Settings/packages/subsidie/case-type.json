@@ -34,9 +34,11 @@
     "confidentiality": "zaakvertrouwelijk",
     "initialStatus": "b3c1a000-0000-4000-a000-00005ab50001",
     "overviewCards": [
-      "case-grant-decisions-card"
+      "case-grant-decisions-card",
+      "case-payment-schedule"
     ],
     "sideCards": [
+      "side-payment-amounts",
       "side-requester",
       "case-banner-stack"
     ]
