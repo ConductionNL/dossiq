@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.167.0",
+	"version": "2.168.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -3060,12 +3060,13 @@
 													"register": { "type": "string" },
 													"schema": { "type": "string" },
 													"filter": { "type": "object", "additionalProperties": true },
-													"limit": { "type": "integer", "minimum": 1, "description": "Cap on the records fetched for the week (default 100)." }
+													"limit": { "type": "integer", "minimum": 1, "description": "Cap on the records fetched for the week (default 100)." },
+													"extend": { "type": "array", "items": { "type": "string" }, "description": "Relations OpenRegister inlines on each record (`_extend`), so a meta field can read a field of the related record, e.g. caseType.title." }
 												}
 											},
 											"dateField": { "type": "string", "description": "The field the items are bucketed by. Required with a source." },
 											"titleField": { "type": "string", "description": "The field shown as the item title. Defaults to the object's display name." },
-											"metaFields": { "type": "array", "items": { "type": "string" }, "description": "Fields shown under the title." },
+											"metaFields": { "type": "array", "items": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" }, "minItems": 1 }] }, "description": "Fields shown under the title, joined with a middle dot. An entry that is a list of fields shows the first one that is filled (e.g. [\"caseType.shortName\", \"caseType.title\"])." },
 											"itemRoute": { "type": "string", "description": "Route name an item links to; the record id goes in params.id." },
 											"lateWhen": {
 												"type": "object",
@@ -3096,6 +3097,7 @@
 											},
 											"emptyText": { "type": "string", "description": "Text of a day without items." },
 											"weekOffset": { "type": "integer", "description": "Whole weeks from the current one (1 = next week)." },
+											"lang": { "type": "string", "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$", "description": "Language of the item texts (BCP 47, e.g. nl), so long words hyphenate by its rules. Without it they follow the page." },
 											"inset": { "type": "boolean", "default": false, "description": "Draw the strip inside the board's inset (16px above, 24px at the sides, 22px below) instead of from card edge to card edge (zuiddrecht-pixel-gaps-3). Theme hook --cn-widget-board-inset." }
 										}
 									}
