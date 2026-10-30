@@ -18920,7 +18920,9 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqZaaktypeVelden"
-				}
+				},
+				"spec": "openspec/specs/case-search-and-lists",
+				"requirement": "openspec/specs/case-search-and-lists :: The columns of a list follow the case type (REQ-CSL-04)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseListView.vue fixed columns Sagsnummer, Titel, Organisation, KLE-nummer, Status, Opdateret; no column chooser and nothing per case type | round 2 drive: procest/opencase/round2/code-census.md:173 \"Per-case-type column configuration: none.\"",
