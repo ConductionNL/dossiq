@@ -124,7 +124,7 @@ class CaseRecordImport {
 	 * @return list<array<string, mixed>> One answer per declaration, as {@see run()} gives them,
 	 *                                    each with the `caseType` it belongs to.
 	 *
-	 * @spec openspec/changes/record-import-moves-in-app-records/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
 	 */
 	public function runOnUpgrade(): array {
 		$objectService = $this->settingsService->getObjectService();

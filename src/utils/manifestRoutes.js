@@ -102,7 +102,7 @@ export const RETIRED_ROUTES = [
  * @param {string} savedView    The view of the case list that replaced it.
  * @param {string} sourceSchema The schema the moved records are kept in.
  * @return {Array<object>} The two route records.
- * @spec openspec/changes/re-integration-page-retires/specs/dossiq-sociaal-domein-participatiewet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
  */
 export function movedRecordRoutes(path, savedView, sourceSchema) {
 	const view = { name: 'Cases', query: { savedView } }

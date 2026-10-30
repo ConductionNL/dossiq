@@ -201,7 +201,7 @@ class ConsultationRepository {
 	 *
 	 * @return array<int, array<string, mixed>> The consultations.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
 	 */
 	public function getWaitingConsultations(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -234,7 +234,7 @@ class ConsultationRepository {
 	 *
 	 * @return array<int, array<string, mixed>> The consultations.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
 	 */
 	public function getRecentConsultations(int $days): array {
 		$objectService = $this->settingsService->getObjectService();

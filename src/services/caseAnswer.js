@@ -6,7 +6,7 @@
  * a list JSON-encoded; a list column names the field it shows by `name` in
  * its `formatterOptions`.
  *
- * @spec openspec/changes/re-integration-is-a-case-type/specs/dossiq-sociaal-domein-participatiewet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
  */
 
 /**
