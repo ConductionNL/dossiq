@@ -20,7 +20,7 @@ export default {
 		 * The case type this page is bound to.
 		 *
 		 * @return {string} The route's id.
-		 * @spec openspec/changes/case-type-legacy-editor-retire/specs/case-types/spec.md
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		caseTypeId() {
 			return String(this.$route?.params?.id ?? '')

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-integrity-check/specs/document-integrity-check/spec.md
+ * @spec openspec/specs/document-integrity-check/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -42,7 +42,7 @@ use Throwable;
 /**
  * Re-verifies the stored checksums of documents, a batch at a time.
  *
- * @spec openspec/changes/document-integrity-check/specs/document-integrity-check/spec.md#requirement-stored-checksums-are-checked-again-and-the-check-is-recorded
+ * @spec openspec/specs/document-integrity-check/spec.md#requirement-stored-checksums-are-checked-again-and-the-check-is-recorded
  */
 class DocumentIntegrityVerifier {
 
@@ -78,7 +78,7 @@ class DocumentIntegrityVerifier {
 	 *
 	 * @return int How many documents with a stored hash were checked.
 	 *
-	 * @spec openspec/changes/document-integrity-check/specs/document-integrity-check/spec.md#requirement-stored-checksums-are-checked-again-and-the-check-is-recorded
+	 * @spec openspec/specs/document-integrity-check/spec.md#requirement-stored-checksums-are-checked-again-and-the-check-is-recorded
 	 */
 	public function verifyNext(int $batch = 200): int {
 		$objectService = $this->settingsService->getObjectService();

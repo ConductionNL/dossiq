@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-leaf-by-master-entity/specs/case-leaf/spec.md
+ * @spec openspec/specs/case-leaf/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Throwable;
  * Every read goes through OpenRegister as the calling user, so a party or a
  * case the caller may not read is not returned.
  *
- * @spec openspec/changes/case-leaf-by-master-entity/specs/case-leaf/spec.md
+ * @spec openspec/specs/case-leaf/spec.md
  */
 class CaseLeafProvider {
 
@@ -97,7 +97,7 @@ class CaseLeafProvider {
 	 *
 	 * @return array<string, mixed> `status` plus either `cases` or `error`.
 	 *
-	 * @spec openspec/changes/case-leaf-by-master-entity/specs/case-leaf/spec.md#requirement-a-host-app-reads-a-partys-cases-by-master-entity
+	 * @spec openspec/specs/case-leaf/spec.md#requirement-a-host-app-reads-a-partys-cases-by-master-entity
 	 */
 	public function byMasterEntity(string $ref, string $status = 'all'): array {
 		if (in_array($status, self::STATUS_FILTERS, true) === false) {

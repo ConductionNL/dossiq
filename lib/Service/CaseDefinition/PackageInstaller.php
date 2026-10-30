@@ -175,7 +175,7 @@ class PackageInstaller {
 	 *
 	 * @return array<int, array<string, mixed>> One outcome per package, in id order.
 	 *
-	 * @spec openspec/changes/reload-shipped-packages/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
 	 */
 	public function reloadInstalled(): array {
 		return $this->installEach(wanted: static fn (array $entry): bool => $entry['install'] === 'auto' || $entry['installed'] !== '');

@@ -164,7 +164,7 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 	 * that address with the link's token, in a message naming the subject
 	 * and the deadline.
 	 *
-	 * @spec openspec/changes/consultation-settings-readers/specs/consultation-management/spec.md#requirement-the-external-invitation-uses-the-configured-response-address
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-the-external-invitation-uses-the-configured-response-address
 	 *
 	 * @return void
 	 */

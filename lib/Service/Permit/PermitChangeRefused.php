@@ -23,7 +23,7 @@ use RuntimeException;
  * which ids exist), `not_active` is a suspended or revoked permit (409), and
  * `unavailable` is a missing register or case type (503).
  *
- * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class PermitChangeRefused extends RuntimeException {
 	/**
@@ -57,7 +57,7 @@ class PermitChangeRefused extends RuntimeException {
 	/**
 	 * @return string The reason code.
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function getReason(): string {
 		return $this->reason;
@@ -66,7 +66,7 @@ class PermitChangeRefused extends RuntimeException {
 	/**
 	 * @return string The sentence.
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function getDetail(): string {
 		return $this->detail;

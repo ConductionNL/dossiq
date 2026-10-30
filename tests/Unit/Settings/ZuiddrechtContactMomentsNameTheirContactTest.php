@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-contact-moments-name-their-contact/specs/example-set-contact-moments-name-their-contact/spec.md#requirement-a-contact-moment-names-its-contact
+ * @spec openspec/specs/example-set-contact-moments-name-their-contact/spec.md#requirement-a-contact-moment-names-its-contact
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Contact moments carry their contact.
  *
- * @spec openspec/changes/example-set-contact-moments-name-their-contact/specs/example-set-contact-moments-name-their-contact/spec.md#requirement-a-contact-moment-names-its-contact
+ * @spec openspec/specs/example-set-contact-moments-name-their-contact/spec.md#requirement-a-contact-moment-names-its-contact
  */
 class ZuiddrechtContactMomentsNameTheirContactTest extends TestCase {
 

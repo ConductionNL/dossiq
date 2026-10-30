@@ -5,7 +5,7 @@
  * r31 DqBeheerGeavanceerd: the AWB term definitions are one table, the
  * first-run titles read in the text ink, and a present badge is a light fill.
  *
- * @spec openspec/changes/deadline-definitions-board-table/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 import fs from 'fs'

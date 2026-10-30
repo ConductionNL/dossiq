@@ -6,7 +6,7 @@
  * alleen fictieve personen en organisaties.") as an info notice under the two
  * choices, not as a line of grey text.
  *
- * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 
 import fs from 'fs'

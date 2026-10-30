@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-lhs-molenweg-4/specs/example-set-lhs-molenweg-4/spec.md#requirement-molenweg-4-has-its-lhs-recommendation
+ * @spec openspec/specs/example-set-lhs-molenweg-4/spec.md#requirement-molenweg-4-has-its-lhs-recommendation
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The LHS recommendation the enforcement board draws.
  *
- * @spec openspec/changes/example-set-lhs-molenweg-4/specs/example-set-lhs-molenweg-4/spec.md#requirement-molenweg-4-has-its-lhs-recommendation
+ * @spec openspec/specs/example-set-lhs-molenweg-4/spec.md#requirement-molenweg-4-has-its-lhs-recommendation
  */
 class ZuiddrechtLhsMolenweg4Test extends TestCase {
 

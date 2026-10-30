@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/search-placeholder-default/specs/workplace/spec.md
+ * @spec openspec/specs/workplace/spec.md
  */
 
 declare(strict_types=1);

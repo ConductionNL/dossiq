@@ -427,7 +427,7 @@ class DecisionConcludedListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
+	 * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
 	 */
 	public function testATerminalOutcomeIsHandedToTheProductIssuerWithItsStatus(): void {
 		foreach (['approved', 'rejected'] as $status) {

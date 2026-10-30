@@ -9,7 +9,7 @@
  * grouped cards fill them: a part whose `when` does not hold, or whose token
  * is empty, is left out with its separator.
  *
- * @spec openspec/changes/case-type-task-meta-role-and-description/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { evaluateVisibleWhenLocal } from '@conduction/nextcloud-vue/src/utils/visibleWhen.js'

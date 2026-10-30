@@ -794,7 +794,7 @@ class WOOAssessmentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-woo-publication-carries-its-documents/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function testAnUnreadableDocumentRefusesThePublish(): void {
 		$user = $this->createMock(IUser::class);

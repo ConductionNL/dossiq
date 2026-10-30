@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Pause\PauseReason
  * @covers \OCA\Dossiq\Service\DeadlinePauseService
  *
- * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 class PauseReasonDefaultDaysTest extends TestCase {
 

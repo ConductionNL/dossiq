@@ -7,7 +7,7 @@
  * with a 4px radius; its rows 11px high padded, the field name plain. Read
  * from the component's style block.
  *
- * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { readFileSync } from 'node:fs'

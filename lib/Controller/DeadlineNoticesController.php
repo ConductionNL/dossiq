@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 class DeadlineNoticesController extends Controller {
 	use ReportingAudienceGuard;
@@ -78,7 +78,7 @@ class DeadlineNoticesController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/notices-of-default-by-case/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	public function notices(): JSONResponse {
 		$denied = $this->refuseOutsideReportingAudience(userSession: $this->userSession, audience: $this->audience);

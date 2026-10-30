@@ -217,7 +217,7 @@ class ContactMomentServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/contact-channel-letter/specs/contact-channel-letter/spec.md
+	 * @spec openspec/specs/contact-channel-letter/spec.md
 	 */
 	public function testALetterIsLoggedAsAChannel(): void {
 		$this->signIn('handler');

@@ -133,7 +133,7 @@ class TenantBillingServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/billing-subscription-fee/specs/tenant-billing/spec.md#requirement-the-monthly-package-fee-is-a-billing-event
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-the-monthly-package-fee-is-a-billing-event
 	 */
 	public function testTheMonthlyPackageFeeIsAnEventType(): void {
 		$this->assertContains(needle: 'subscription_fee', haystack: TenantBillingService::ALLOWED_EVENT_TYPES);

@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md
+ * @spec openspec/specs/document-writes-need-every-case/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -34,7 +34,7 @@ use OCP\IUser;
 /**
  * Names the case a document write is refused on, if any.
  *
- * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md#requirement-a-document-write-needs-the-change-right-on-every-case-of-the-document
+ * @spec openspec/specs/document-writes-need-every-case/spec.md#requirement-a-document-write-needs-the-change-right-on-every-case-of-the-document
  */
 class DocumentCaseWriteGuard {
 
@@ -60,7 +60,7 @@ class DocumentCaseWriteGuard {
 	 *
 	 * @return string|null The refused case id, null when every case allows the write or there is none.
 	 *
-	 * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md#requirement-a-document-write-needs-the-change-right-on-every-case-of-the-document
+	 * @spec openspec/specs/document-writes-need-every-case/spec.md#requirement-a-document-write-needs-the-change-right-on-every-case-of-the-document
 	 */
 	public function refusedCase(IUser $user, string $documentId): ?string {
 		foreach ($this->caseIds->caseIdsOf(recordId: $documentId) as $caseId) {
@@ -80,7 +80,7 @@ class DocumentCaseWriteGuard {
 	 *
 	 * @return array{documentId: string, caseId: string}|null The refusal, null when every write is allowed.
 	 *
-	 * @spec openspec/changes/document-writes-need-every-case/specs/document-writes-need-every-case/spec.md#requirement-a-bulk-document-write-is-refused-whole
+	 * @spec openspec/specs/document-writes-need-every-case/spec.md#requirement-a-bulk-document-write-is-refused-whole
 	 */
 	public function firstRefused(IUser $user, array $documentIds): ?array {
 		foreach ($documentIds as $documentId) {

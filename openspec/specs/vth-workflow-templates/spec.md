@@ -264,23 +264,58 @@ The step SHALL additionally:
 - The 9 private helpers (`processCatalogFile`, `resolveCaseTypeId`, `isAlreadySeeded`, `buildStatusMap`, `resolveSteps`, `resolveTransitions`, `deterministicId`, `extractFirstId`, `normalizeRow`) are not separately observable — they support the single `run()` contract above. Splitting them into separate REQs would inflate the spec without adding testable surface.
 - `crossLink` is reserved for templates that reference an unresolved caseType; the seeder logs the reference and counts it but does not block the run.
 
-### Requirement: VTH workflow template activation service
+### Requirement: The VTH flows ship in the vth package
 
-The system SHALL provide a `VTHWorkflowService` that loads and activates the three VTH workflow templates declared by the config-foundation member, creating each template's statuses and roles, and SHALL be idempotent on re-activation.
+The `vth` package SHALL carry four published flows: "Aanvraag omgevingsvergunning", "Toezichtbezoek", "Handhavingstraject" (route regulier) and "Spoedig herstel (Awb 5:31)" (route spoedeisend). A flow SHALL name only statuses of its own case type. Handhavingszaak SHALL name the regulier flow as its default.
 
-**Spec ref**: REQ-VTH-001, REQ-VTH-002, REQ-VTH-003
+#### Scenario: Handhavingszaak has two routes
+@e2e tests/e2e/packages/vth.spec.ts
 
-#### Scenario: Activate Omgevingsvergunning template
+- **GIVEN** an instance with the `vth` package installed
+- **WHEN** an administrator opens the case type handhavingszaak
+- **THEN** the page SHALL show the flows "Handhavingstraject" and "Spoedig herstel (Awb 5:31)"
 
-- **WHEN** an administrator activates the Omgevingsvergunning workflow template
-- **THEN** the service SHALL create the template's statuses (Aanvraag ontvangen … Afgehandeld) and roles (Vergunningverlener, Juridisch adviseur, Administratief medewerker)
+#### Scenario: A flow names a status of another case type
+@e2e exclude no user interface; tests/Unit/Settings/PackageFlowStatusReferencesTest.php sweeps every shipped package
 
-#### Scenario: Activate Toezichtzaak and Handhavingszaak templates
+- **GIVEN** a package flow whose step names a status of another case type
+- **WHEN** the unit suite runs
+- **THEN** the sweep SHALL fail and name the flow and the status
 
-- **WHEN** an administrator activates the Toezichtzaak or Handhavingszaak template
-- **THEN** the service SHALL create the corresponding statuses and roles defined in the respective template JSON
+### Requirement: The VTH flow drafts ship as draft flows
 
-#### Scenario: Idempotent re-activation
+The `vth` package SHALL carry six draft flows: "Omgevingsvergunning Bouwactiviteit (regulier)", "Omgevingsvergunning Bouwactiviteit (uitgebreid)", "Sloopmelding", "Toezichtzaak Bouw", "Toezichtzaak Milieu" and "Handhavingszaak". A draft flow SHALL be stored with `lifecycleStatus` `draft`, `isDraft` true and `isActive` false. A draft flow SHALL NOT be the flow a case follows, on any route, and SHALL NOT be the default flow of its case type, until an administrator publishes it. A draft flow SHALL meet the same guard, action and status rules as a published flow. A draft flow the instance already holds SHALL be left as it is on upgrade.
 
-- **WHEN** a template that has already been activated is activated again
-- **THEN** the service SHALL NOT create duplicate statuses or roles
+#### Scenario: A draft flow is stored as a draft
+@e2e tests/e2e/packages/vth.spec.ts
+
+- **GIVEN** an instance with the `vth` package installed
+- **WHEN** an administrator reads the flows of sloopmelding
+- **THEN** the flow "Sloopmelding" SHALL exist once
+- **AND** its `lifecycleStatus` SHALL be `draft`
+
+#### Scenario: A case does not follow a draft flow
+@e2e tests/e2e/packages/vth.spec.ts
+
+- **GIVEN** handhavingszaak holds the published flow "Handhavingstraject" and the draft flow "Handhavingszaak" on the route regulier
+- **WHEN** the app is asked which flow a case of handhavingszaak follows
+- **THEN** the answer SHALL be "Handhavingstraject"
+
+#### Scenario: A package flow has lifecycle fields that disagree
+@e2e exclude no user interface; tests/Unit/Settings/PackageDraftFlowsTest.php sweeps every shipped package
+
+- **GIVEN** a package flow with `lifecycleStatus` `draft` and `isActive` true
+- **WHEN** the unit suite runs
+- **THEN** the sweep SHALL fail and name the flow and the field
+
+### Requirement: A case type that holds only draft flows keeps its basis flow
+
+The workflow backfill SHALL write the basis flow for a case type whose only flows are drafts. It SHALL leave alone a case type that holds a published or a deprecated flow, or that names a default flow.
+
+#### Scenario: A case type with only a draft flow keeps its basis flow
+@e2e tests/e2e/packages/vth.spec.ts
+
+- **GIVEN** a clean instance, where the `vth` package gives sloopmelding one draft flow and no published flow
+- **WHEN** the app is asked which flow a case of sloopmelding follows
+- **THEN** the answer SHALL be a published flow
+- **AND** it SHALL NOT be the draft flow "Sloopmelding"

@@ -191,7 +191,7 @@ export default {
 		 * the library's credentials, guided tour and integrations.
 		 *
 		 * @return {Array<string>} The section keys CnAppRoot draws.
-		 * @spec openspec/changes/views-in-my-menu-settings/specs/personal-settings-surface/spec.md#requirement-the-personal-settings-open-with-the-views-in-my-menu
+		 * @spec openspec/specs/personal-settings-surface/spec.md#requirement-the-personal-settings-open-with-the-views-in-my-menu
 		 */
 		userSettingsSections() {
 			return ['views', 'app', 'credentials', 'walkthrough', 'integrations']

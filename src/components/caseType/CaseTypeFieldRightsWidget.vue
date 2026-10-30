@@ -101,7 +101,7 @@ export default {
 		 * the Field head's order.
 		 *
 		 * @return {Array<object>} The rows.
-		 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		shownRows() {
 			const kept = this.matrix.rows.filter((row) => Object.entries(this.filters)
@@ -117,7 +117,7 @@ export default {
 		 * The case type this page is bound to.
 		 *
 		 * @return {string} The route's id.
-		 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		caseTypeId() {
 			return String(this.$route?.params?.id ?? '')
@@ -127,7 +127,7 @@ export default {
 		 * The matrix of fields by status.
 		 *
 		 * @return {object} The columns and rows.
-		 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		matrix() {
 			return fieldRightsMatrix({ rules: this.rules, statuses: this.statuses, properties: this.properties, roleNames: this.roleNames })
@@ -178,7 +178,7 @@ export default {
 		 *
 		 * @param {string} state hidden, readOnly, required or edit.
 		 * @return {string} The pill's label.
-		 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		labelOf(state) {
 			return {
@@ -193,7 +193,7 @@ export default {
 		 *
 		 * @param {string} state hidden, readOnly, required or edit.
 		 * @return {string} A CnStatusBadge variant.
-		 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		variantOf(state) {
 			return { hidden: 'error', readOnly: 'default', required: 'info' }[state] || 'success'
@@ -203,7 +203,7 @@ export default {
 		 * Read the case type's rules, statuses and fields.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		async load() {
 			if (!this.caseTypeId) {

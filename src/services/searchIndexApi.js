@@ -70,7 +70,7 @@ export async function searchIndexStatus() {
  * @param {object|Array|string|null|undefined} report What openregister answered as `lastRun`.
  * @return {string|null} An ISO 8601 time, or null when no run is on record.
  *
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 export function lastRunTime(report) {
 	if (typeof report === 'string') {

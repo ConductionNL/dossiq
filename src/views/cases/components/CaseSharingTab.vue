@@ -442,7 +442,7 @@ export default {
 		 *
 		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md
 		 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
-		 * @spec openspec/changes/share-dialog-lists-every-partner/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
+		 * @spec openspec/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
 		 *
 		 * @return {Promise<void>}
 		 */

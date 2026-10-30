@@ -144,7 +144,7 @@ class SetupController extends Controller {
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function status(): DataResponse {
@@ -269,7 +269,7 @@ class SetupController extends Controller {
 	 * @return DataResponse `{ success }`.
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function saveConfig(): DataResponse {
@@ -325,7 +325,7 @@ class SetupController extends Controller {
 	 *
 	 * @return DataResponse|null The failure, or null when there was nothing to do or the load succeeded.
 	 *
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function loadPostedDataset(): ?DataResponse {
 		if ($this->request->getParam(self::DATASET_KEY) === null) {
@@ -350,7 +350,7 @@ class SetupController extends Controller {
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function runAction(string $actionId): DataResponse {

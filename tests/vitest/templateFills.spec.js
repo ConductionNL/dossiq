@@ -6,7 +6,7 @@
  * (DqDocumentGenereren, Verdagingsbrief: "Beslistermijn 1 november 2026",
  * "Verdaging 2 weken, tot 15 november 2026").
  *
- * @spec openspec/changes/generate-fills-per-template/specs/generate-fills-per-template/spec.md
+ * @spec openspec/specs/generate-fills-per-template/spec.md
  */
 
 import { describe, expect, it } from 'vitest'

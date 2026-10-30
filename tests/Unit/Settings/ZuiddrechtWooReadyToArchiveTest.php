@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-lindelaan-in-progress/specs/example-set-lindelaan-in-progress/spec.md#requirement-a-closed-woo-case-is-ready-to-archive
+ * @spec openspec/specs/example-set-lindelaan-in-progress/spec.md#requirement-a-closed-woo-case-is-ready-to-archive
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The closed Woo case meets every archive readiness item it can meet in seed data.
  *
- * @spec openspec/changes/example-set-lindelaan-in-progress/specs/example-set-lindelaan-in-progress/spec.md#requirement-a-closed-woo-case-is-ready-to-archive
+ * @spec openspec/specs/example-set-lindelaan-in-progress/spec.md#requirement-a-closed-woo-case-is-ready-to-archive
  */
 class ZuiddrechtWooReadyToArchiveTest extends TestCase {
 

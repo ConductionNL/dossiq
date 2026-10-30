@@ -32,7 +32,7 @@ shape addresses them. dossiq cannot close this, because the shape is
 OpenRegister's to define. The route `/tasks/:id` is unchanged, so the task
 page is ready the day a provider exists, and
 `tests/vitest/searchableSchemas.spec.js` pins the list at three. The gap is
-recorded in `openspec/changes/remove-casetask/tasks.md`.
+recorded in `openspec/changes/archive/2026-10-30-remove-casetask/tasks.md`.
 
 What decides whether a result is USEFUL is the deep link, not the flag. See
 the next requirement.

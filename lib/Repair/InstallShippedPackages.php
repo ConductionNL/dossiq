@@ -91,7 +91,7 @@ class InstallShippedPackages implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 * @spec openspec/changes/repair-updates-installed-packages/specs/case-types/spec.md
 	 */
 	public function run(IOutput $output): void {
@@ -136,7 +136,7 @@ class InstallShippedPackages implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function importRegisterAgain(IOutput $output): void {
 		$result = [];

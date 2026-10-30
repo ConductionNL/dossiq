@@ -6,6 +6,17 @@ The old addresses of Assigned to me, the team queue and the data subject
 requests SHALL redirect to the Cases page with that view applied, and the
 views SHALL filter as the pages did.
 
+#### Scenario: A bookmark of Assigned to me
+- GIVEN a bookmark of /my-work
+- WHEN it is opened
+- THEN the browser lands on `/cases?savedView=default:my-work`
+- AND the Cases page lists the open cases assigned to the reader, as the page did
+
+#### Scenario: A bookmark of the data subject requests
+- GIVEN a bookmark of /privacy/requests
+- WHEN it is opened
+- THEN the browser lands on `/cases?savedView=default:data-subject-requests`
+
 ### Requirement: A view keeps what its page had
 
 Each view that replaced a page SHALL carry that page's presentation as page

@@ -6,7 +6,7 @@
  * Onderwerp 168, Status 185, Prioriteit 133, Deadline 133, the handler takes
  * the rest), so the headings stand where the board puts them.
  *
- * @spec openspec/changes/tasks-board-column-widths/specs/task-list/spec.md#requirement-the-task-list-columns-take-the-boards-widths
+ * @spec openspec/specs/task-list/spec.md#requirement-the-task-list-columns-take-the-boards-widths
  */
 
 import fs from 'fs'

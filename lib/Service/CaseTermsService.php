@@ -111,7 +111,7 @@ class CaseTermsService {
 	 * @return array<int, array<string, mixed>> The instances this call created or moved.
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function bindForCase(
 		string $caseId,

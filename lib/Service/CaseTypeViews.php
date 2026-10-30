@@ -226,7 +226,7 @@ final class CaseTypeViews {
 	 *
 	 * @return string The icon name.
 	 *
-	 * @spec openspec/changes/case-type-colour-icon/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
 	 */
 	private function iconOf(array $caseType): string {
 		$icon = ($caseType['icon'] ?? '');

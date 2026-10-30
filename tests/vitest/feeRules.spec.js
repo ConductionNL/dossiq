@@ -5,7 +5,7 @@
  * The VTH settings' fee table names each shillinq fee rule, its basis and
  * how its amount is worked out (board DqVthInstellingen, Legesregels).
  *
- * @spec openspec/changes/fee-rules-column/specs/admin-settings/spec.md#requirement-the-fee-table-names-each-rule-and-its-calculation
+ * @spec openspec/specs/admin-settings/spec.md#requirement-the-fee-table-names-each-rule-and-its-calculation
  */
 import { describe, expect, it } from 'vitest'
 import { feeRuleBasis, feeRuleCalculation, feeRuleName } from '../../src/utils/feeRules.js'

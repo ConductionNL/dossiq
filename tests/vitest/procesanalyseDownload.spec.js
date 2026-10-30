@@ -5,7 +5,7 @@
  * DqProcesanalyse's "Downloaden": a header action that GETs the process-mining
  * report as CSV with the statistic and case type the page shows.
  *
- * @spec openspec/changes/procesanalyse-csv/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
+ * @spec openspec/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
  */
 
 import fs from 'fs'

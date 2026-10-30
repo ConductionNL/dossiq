@@ -7,7 +7,7 @@
  * and Integrations, which then end as their boards draw them, and keep every
  * feature one tab further.
  *
- * @spec openspec/changes/admin-advanced-tab/specs/admin-settings/spec.md#requirement-the-specialist-settings-sit-on-their-own-tab
+ * @spec openspec/specs/admin-settings/spec.md#requirement-the-specialist-settings-sit-on-their-own-tab
  */
 
 import fs from 'fs'

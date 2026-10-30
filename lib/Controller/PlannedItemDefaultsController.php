@@ -20,7 +20,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCP\IUserSession;
 /**
  * The defaults of a new planned item.
  *
- * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class PlannedItemDefaultsController extends Controller {
 	/**
@@ -51,7 +51,7 @@ class PlannedItemDefaultsController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		IRequest $request,
@@ -66,7 +66,7 @@ class PlannedItemDefaultsController extends Controller {
 	 *
 	 * @return JSONResponse The defaults.
 	 *
-	 * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function show(): JSONResponse {

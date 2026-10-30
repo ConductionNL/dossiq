@@ -17,7 +17,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The defaults a new planned item opens with.
  *
- * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class PlannedItemDefaultsControllerTest extends TestCase {
 
@@ -70,7 +70,7 @@ class PlannedItemDefaultsControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function testThePlanDefaultsStartAtTheNextWorkingDayAtTen(): void {
 		$startsAt = $this->controller(uid: 'alice')->show()->getData()['startsAt'];
@@ -84,7 +84,7 @@ class PlannedItemDefaultsControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/plan-item-starts-next-working-day/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function testAnUnauthenticatedCallIsRefused(): void {
 		$response = $this->controller(uid: null)->show();

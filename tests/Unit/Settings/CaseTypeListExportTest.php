@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/reload-shipped-packages/specs/case-types/spec.md#requirement-the-case-type-list-exports-its-selection
+ * @spec openspec/specs/case-types/spec.md#requirement-the-case-type-list-exports-its-selection
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The case type list's selection export is allowed.
  *
- * @spec openspec/changes/reload-shipped-packages/specs/case-types/spec.md#requirement-the-case-type-list-exports-its-selection
+ * @spec openspec/specs/case-types/spec.md#requirement-the-case-type-list-exports-its-selection
  */
 class CaseTypeListExportTest extends TestCase {
 

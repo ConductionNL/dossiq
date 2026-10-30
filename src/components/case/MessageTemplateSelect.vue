@@ -33,7 +33,7 @@ import { draftFromTemplate, listMessageTemplates } from '../../services/messageT
  * puts it in its own fields, which stay editable. Nothing shows when the case
  * type has no template for the host's channels.
  *
- * @spec openspec/changes/compose-from-message-template/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
+ * @spec openspec/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
  */
 export default {
 	name: 'MessageTemplateSelect',

@@ -4,7 +4,7 @@
  *
  * Board DqTaak Historie: "Taak opgepakt door Pieter Jansen" with "6 okt 09:05" under it.
  *
- * @spec openspec/changes/task-history-stacked/specs/task-page/spec.md#requirement-the-tasks-side-history-puts-the-moment-under-the-action
+ * @spec openspec/specs/task-page/spec.md#requirement-the-tasks-side-history-puts-the-moment-under-the-action
  */
 
 import fs from 'fs'

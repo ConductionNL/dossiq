@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -138,7 +138,7 @@ class CaseTypeTermsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-penalty-on-late-decision/specs/case-types/spec.md#requirement-a-case-type-says-whether-a-late-decision-costs-a-penalty
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-says-whether-a-late-decision-costs-a-penalty
 	 */
 	public function testThePenaltyOnALateDecisionReadsAsASentence(): void {
 		$capped = $this->terms(caseType: ['penaltyOnLateDecision' => true, 'penaltyMaxAmount' => 1442])->termsFor(caseTypeId: 'ct');

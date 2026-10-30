@@ -113,7 +113,7 @@ class TemplateLibraryService {
 	 *
 	 * @return array<int, mixed> The template's fills, or an empty list.
 	 *
-	 * @spec openspec/changes/generate-fills-per-template/specs/generate-fills-per-template/spec.md#requirement-a-template-names-what-it-fills-in
+	 * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-a-template-names-what-it-fills-in
 	 */
 	private function fillsOf(array $data): array {
 		if (isset($data['fills']) === false || is_array($data['fills']) === false) {

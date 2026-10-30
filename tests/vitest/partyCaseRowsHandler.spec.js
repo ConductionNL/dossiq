@@ -5,7 +5,7 @@
  * Boards DqContact and DqOrganisatie end a case row's meta line with the
  * handler: "2026-0110 · Woo-verzoek · behandelaar Pieter Jansen".
  *
- * @spec openspec/changes/party-case-rows-handler/specs/party-pages/spec.md#requirement-a-party-case-row-names-its-handler
+ * @spec openspec/specs/party-pages/spec.md#requirement-a-party-case-row-names-its-handler
  */
 
 import fs from 'fs'
