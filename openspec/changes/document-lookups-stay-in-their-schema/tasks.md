@@ -2,7 +2,7 @@
 
 ### Task 1: Lookups stay in their schema
 - **spec_ref**: `openspec/changes/document-lookups-stay-in-their-schema/specs/document-projection/spec.md#requirement-a-document-lookup-answers-only-its-own-schema`
-- **files**: `lib/Service/Zaakdossier/DocumentRecordStore.php`
+- **files**: `lib/Service/Zaakdossier/DocumentRecordStore.php`, `lib/Service/Support/KeepsLookupsInSchema.php`
 - [x] Implement
 - [x] Test: `tests/Unit/Service/Zaakdossier/DocumentRecordStoreTest.php`
 
