@@ -30,6 +30,14 @@ approximation.
 
 @e2e exclude The list shell is covered by `case-management/spec.md#cases-index-page-renders-list-shell`, which drives the same `CnIndexPage` over the same register and schema.
 
+#### Scenario: Objections are the Bezwaar folder of the Cases page
+
+- GIVEN cases of the Bezwaar case type and cases of other case types
+- WHEN the user opens Cases and picks the Bezwaar folder in the folder sidebar
+- THEN the list SHALL show only the cases whose `caseType` is the Bezwaar case type
+- AND no page SHALL be registered at `/bezwaren`
+- AND a link to `/bezwaren/<id>` SHALL still open that objection's detail page
+
 **ADDED Requirements**
 
 ### Requirement: Bezwaar Case Type Pre-Seeded Configuration
