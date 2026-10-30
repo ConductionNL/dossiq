@@ -11,6 +11,7 @@
         "slug": "tenantSubscription",
         "icon": "PackageVariantClosed",
         "version": "1.0.0",
+        "searchable": false,
         "title": "Tenant Subscription",
         "description": "The package an organisation on this environment subscribes to and the contract reference it is known by.",
         "type": "object",

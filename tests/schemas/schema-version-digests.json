@@ -1693,7 +1693,7 @@
     },
     "lib/Settings/register.d/93-tenant-subscription.json::tenantSubscription": {
         "version": "1.0.0",
-        "digest": "857e27e43c77a42a6cba132731725cddbb5a52a99825d548b05f547ea3d3cb3d"
+        "digest": "c80f0ab5414808ddb708c434d5d64dfec32c6b6d247c999e09254d2b1ac21a0b"
     },
     "lib/Settings/register.d/95-dmn-decision-tables.json::decisionTable": {
         "version": "1.0.1",
