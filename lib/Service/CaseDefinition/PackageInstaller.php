@@ -341,8 +341,10 @@ class PackageInstaller {
 			);
 		}
 
-		// After the write and the ledger record: a refreshed row replaces what
-		// was there and cannot be taken back with the rest of a failed install.
+		// After the write and the ledger record: a filled or refreshed row
+		// changes what was there and cannot be taken back with the rest of a
+		// failed install. An adopted case type only gains fields it lacked.
+		$filled = $this->writer->fillAdopted(adopted: $result['adopted']);
 		$refresh = $this->ledger->refreshRows(
 			set: $id,
 			version: $version,
@@ -353,13 +355,14 @@ class PackageInstaller {
 		$this->applySettings(settings: $settings);
 
 		$this->logger->info(
-			'Installed package {id} {version}: {written} row(s) written, {adopted} adopted, {skipped} already present'
-			. ' ({refreshed} refreshed, {kept} kept as this instance holds them)',
+			'Installed package {id} {version}: {written} row(s) written, {adopted} adopted ({filled} given fields they lacked),'
+			. ' {skipped} already present ({refreshed} refreshed, {kept} kept as this instance holds them)',
 			[
 				'id' => $id,
 				'version' => $version,
 				'written' => count($result['written']),
 				'adopted' => count($result['adopted']),
+				'filled' => count($filled),
 				'skipped' => count($result['skipped']),
 				'refreshed' => count($refresh['refreshed']),
 				'kept' => count($refresh['kept']),
@@ -370,6 +373,7 @@ class PackageInstaller {
 			+ [
 				'written' => count($result['written']),
 				'adopted' => count($result['adopted']),
+				'filled' => count($filled),
 				'skipped' => count($result['skipped']),
 				'refreshed' => count($refresh['refreshed']),
 				'kept' => $refresh['kept'],
