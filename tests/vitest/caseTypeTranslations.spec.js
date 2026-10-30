@@ -319,7 +319,7 @@ describe('the page is wired to the registry', () => {
  * row per language with how many labels it has and a pill, Compleet or the
  * number missing. The editor stays on the Translations tab.
  *
- * @spec openspec/changes/case-type-translations-summary/specs/case-types/spec.md#requirement-the-overview-tab-summarises-the-translations
+ * @spec openspec/specs/case-types/spec.md#requirement-the-overview-tab-summarises-the-translations
  */
 describe('the translations summary (DqZaaktypeOverzicht)', () => {
 	it('draws one row per language with its count and a pill, and no editor', async () => {

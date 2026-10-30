@@ -95,7 +95,7 @@ export async function fetchBlueprintCatalogue(caseTypeId) {
  *
  * @param {string} caseTypeId The case type.
  * @return {Promise<Object<string, Array<string>>>} The names per group.
- * @spec openspec/changes/field-rights-matrix-by-status/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 export async function fetchRoleNamesByGroup(caseTypeId) {
 	try {

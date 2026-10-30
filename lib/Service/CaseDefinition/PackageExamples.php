@@ -101,7 +101,7 @@ final class PackageExamples {
 	 *
 	 * @return array<int|string, mixed> The rows as the schema takes them.
 	 *
-	 * @spec openspec/changes/package-examples-encoding/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function encoded(array $rows, mixed $schema): array {
 		if (is_string($schema) === false) {

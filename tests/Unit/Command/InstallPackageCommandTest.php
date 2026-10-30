@@ -101,7 +101,7 @@ class InstallPackageCommandTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/package-install-reports-refresh/specs/case-types/spec.md#requirement-a-package-install-reports-what-its-refresh-did
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-package-install-reports-what-its-refresh-did
 	 */
 	public function testTheOutputNamesTheRefreshedAndKeptRows(): void {
 		$installer = $this->createMock(originalClassName: PackageInstaller::class);

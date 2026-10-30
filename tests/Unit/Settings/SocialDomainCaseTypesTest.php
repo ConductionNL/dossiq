@@ -290,7 +290,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-pill-teal-jeugdwet/specs/case-types/spec.md#requirement-the-jeugdwet-case-type-is-drawn-teal
+	 * @spec openspec/specs/case-types/spec.md#requirement-the-jeugdwet-case-type-is-drawn-teal
 	 */
 	public function testTheJeugdwetCaseTypeIsDrawnTeal(): void {
 		self::assertSame(expected: 'teal', actual: $this->caseTypeFile(package: 'jeugdwet')['caseType']['colour']);
@@ -302,7 +302,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/stages-off-path/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
 	 */
 	public function testTheJeugdwetSideStatusesAreOffThePath(): void {
 		$offPath = [];
@@ -322,7 +322,7 @@ class SocialDomainCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/stages-off-path/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-marks-its-side-statuses
 	 */
 	public function testEveryPackageMarksItsSideStatusesOffThePath(): void {
 		$onPath = [];

@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -187,7 +187,7 @@ class CaseTypePhasesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testAPhaseIsNamedAsTextInTheReadersLanguage(): void {
 		$result = $this->phases(

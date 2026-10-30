@@ -12,7 +12,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/besluitvorming-package/specs/case-types/spec.md
- * @spec openspec/changes/reload-shipped-packages/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
+ * @spec openspec/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
  */
 
 declare(strict_types=1);

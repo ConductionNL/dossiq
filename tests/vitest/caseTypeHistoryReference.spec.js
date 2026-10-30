@@ -5,8 +5,8 @@
  * DqZaaktype's Historie card ends in "Kenmerk ZT-OMV-REG": the case type's
  * identifier under the trail. Its rows are compact (56px a two-line row).
  *
- * @spec openspec/changes/case-type-history-reference/specs/case-types/spec.md
- * @spec openspec/changes/case-type-history-compact-rows/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import fs from 'fs'

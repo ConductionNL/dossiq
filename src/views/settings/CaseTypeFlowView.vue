@@ -41,7 +41,7 @@ export default {
 		 * The case type this page is bound to.
 		 *
 		 * @return {string} The route's id.
-		 * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		caseTypeId() {
 			return String(this.$route?.params?.id ?? '')
@@ -54,7 +54,7 @@ export default {
 	 * template type.
 	 *
 	 * @return {Promise<void>}
-	 * @spec openspec/changes/case-type-flow-direct-load/specs/case-types/spec.md#requirement-the-case-type-flow-page-loads-its-workflow-when-opened-directly
+	 * @spec openspec/specs/case-types/spec.md#requirement-the-case-type-flow-page-loads-its-workflow-when-opened-directly
 	 */
 	async created() {
 		try {

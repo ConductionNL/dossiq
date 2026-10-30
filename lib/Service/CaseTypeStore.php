@@ -80,7 +80,7 @@ class CaseTypeStore {
 	 *
 	 * @return array<string, mixed> The row, or an empty array.
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function readRow(string $schemaKey, string $id): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -143,7 +143,7 @@ class CaseTypeStore {
 	 * @return array<string, mixed> The template, or an empty array when there is none.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function activeTemplate(string $caseTypeId, string|array|null $named=null): array {
 		$namedId = $this->referenceId(value: $named);

@@ -559,7 +559,7 @@ class CaseTypeResolverTest extends TestCase {
 	 * ones the child overrides (DqZaaktypeVelden Moedertype "Geërfde velden
 	 * 6 van 14", "Overschreven"). A shared attribute is neither.
 	 *
-	 * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+	 * @spec openspec/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
 	 *
 	 * @return void
 	 */
@@ -589,7 +589,7 @@ class CaseTypeResolverTest extends TestCase {
 	/**
 	 * A type without a parent inherits and overrides nothing.
 	 *
-	 * @spec openspec/changes/case-type-inherited-field-counts/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
+	 * @spec openspec/specs/case-types/spec.md#requirement-the-blueprint-counts-inherited-and-overridden-fields
 	 *
 	 * @return void
 	 */

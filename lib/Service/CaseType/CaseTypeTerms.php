@@ -23,7 +23,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use OCP\IL10N;
 /**
  * Writes a case type's terms as sentences.
  *
- * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class CaseTypeTerms {
 
@@ -48,7 +48,7 @@ class CaseTypeTerms {
 	 * @param CaseTypeResolver $resolver The effective case type, the parent's fields where it is silent.
 	 * @param IL10N            $l10n     The reader's language.
 	 *
-	 * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $resolver,
@@ -64,7 +64,7 @@ class CaseTypeTerms {
 	 * @return array{decisionTerm: string, suspension: string, serviceTarget: string, penalty: string}|null
 	 *         The sentences, or null when the case type cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function termsFor(string $caseTypeId): ?array {
 		$caseType = $this->resolver->effectiveCaseType(caseTypeId: $caseTypeId);
@@ -119,7 +119,7 @@ class CaseTypeTerms {
 	 *
 	 * @return string The sentence, or '' when the case type does not say.
 	 *
-	 * @spec openspec/changes/case-type-penalty-on-late-decision/specs/case-types/spec.md#requirement-a-case-type-says-whether-a-late-decision-costs-a-penalty
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-says-whether-a-late-decision-costs-a-penalty
 	 */
 	private function penalty(array $caseType): string {
 		$applies = ($caseType['penaltyOnLateDecision'] ?? null);

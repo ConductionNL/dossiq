@@ -24,8 +24,8 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
- * @spec openspec/changes/case-type-task-meta-role-and-description/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCA\Dossiq\Service\WorkflowTemplateLoader;
 /**
  * Groups a case type's workflow steps under its statuses.
  *
- * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class CaseTypePhases {
 
@@ -54,7 +54,7 @@ class CaseTypePhases {
 	 * @param TranslatedText         $text         Reads a translatable status name in the reader's language.
 	 * @param CaseTypeStore          $store        Reads the role types of the case type and its ancestors.
 	 *
-	 * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $resolver,
@@ -80,7 +80,7 @@ class CaseTypePhases {
 	 *               alwaysAvailable: array<int, array<string, mixed>>, taskCount: int}|null
 	 *         The phases, or null when the case type cannot be read.
 	 *
-	 * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function phasesFor(string $caseTypeId): ?array {
 		$caseType = $this->resolver->effectiveCaseType(caseTypeId: $caseTypeId);
