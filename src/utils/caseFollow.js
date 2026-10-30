@@ -19,7 +19,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-you-follow-a-case-you-do-not-own-req-cm-40
  */
 
 import { showError, showSuccess } from '@nextcloud/dialogs'
@@ -44,7 +44,7 @@ import { announceCasesChanged } from './casesChanged.js'
  * @param {object} context.item The row the action was chosen on.
  * @return {Promise<void>}
  *
- * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-you-follow-a-case-you-do-not-own-req-cm-40
  */
 export async function toggleCaseFollow({ item }) {
 	const caseId = objectIdOf(item)

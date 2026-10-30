@@ -44,8 +44,8 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
  * @spec openspec/changes/case-followers/specs/case-management/spec.md
- * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
- * @spec openspec/changes/one-follow-control-in-the-header/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-you-follow-a-case-you-do-not-own-req-cm-40
+ * @spec openspec/specs/case-management/spec.md#requirement-the-case-page-shows-one-follow-control-req-cm-40a
  */
 
 import axios from '@nextcloud/axios'

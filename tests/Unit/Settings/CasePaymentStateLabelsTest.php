@@ -14,7 +14,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/case-payment-state-reads-as-words/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-a-cases-payment-state-reads-as-words
  */
 
 declare(strict_types=1);

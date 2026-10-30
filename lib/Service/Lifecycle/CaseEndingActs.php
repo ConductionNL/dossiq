@@ -342,7 +342,7 @@ class CaseEndingActs {
 	 *
 	 * @return array<int, array{id: string, name: string}> The choices, empty when none.
 	 *
-	 * @spec openspec/changes/finishing-picks-a-result/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
 	 */
 	public function resultChoicesOn(array $case): array {
 		return $this->results->resultTypeChoices(caseTypeId: (string)($case['caseType'] ?? ''));

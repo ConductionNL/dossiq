@@ -15,7 +15,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/case-term-row-reads-as-the-board/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-the-term-row-reads-in-words-with-the-extension-the-case-type-allows
  */
 
 declare(strict_types=1);

@@ -361,7 +361,7 @@ class WOODecisionServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/a-recorded-decision-is-listed-on-its-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-recorded-decision-is-listed-on-its-case-req-cm-81
 	 */
 	public function testTheRecordedDecisionIsListedOnItsCase(): void {
 		$store = $this->assembleForCases(

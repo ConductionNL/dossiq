@@ -26,7 +26,7 @@ use PHPUnit\Framework\TestCase;
  * as the stored code, which no catalogue translates. Each label is an English
  * catalogue key with a Dutch entry.
  *
- * @spec openspec/changes/case-page-reads-in-dutch/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-the-case-page-shows-labels-and-names-not-codes-req-cm-82
  */
 class CaseEnumLabelsTest extends TestCase {
 

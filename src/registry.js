@@ -972,7 +972,7 @@ const registry = {
 		handler: markCaseUnread,
 		_note: "The Queue's and Cases' mark-unread row action, for the reason markCaseRead is a function.",
 	},
-	// @spec openspec/changes/one-follow-control/specs/case-management/spec.md
+	// @spec openspec/specs/case-management/spec.md#requirement-you-follow-a-case-you-do-not-own-req-cm-40
 	toggleCaseFollow: {
 		kind: 'handler',
 		handler: toggleCaseFollow,

@@ -79,7 +79,7 @@ class CaseActsOverview {
 	 * @throws RefusedException When the case cannot be read.
 	 *
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
-	 * @spec openspec/changes/finishing-picks-a-result/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
 	 */
 	public function overview(string $caseId): array {
 		$case = $this->store->loadCase(caseId: $caseId);

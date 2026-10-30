@@ -14,7 +14,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-request-fields/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-a-case-type-lists-the-fields-its-request-card-shows
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2

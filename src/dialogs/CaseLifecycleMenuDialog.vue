@@ -30,8 +30,8 @@
 
   @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
   @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
-  @spec openspec/changes/lifecycle-dialog-title-clears-the-close-button/specs/case-management/spec.md
-  @spec openspec/changes/finishing-picks-a-result/specs/case-management/spec.md
+  @spec openspec/specs/case-management/spec.md#requirement-the-lifecycle-dialogs-title-stays-clear-of-its-close-button-req-cm-78
+  @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
 -->
 <template>
 	<CnDialog
