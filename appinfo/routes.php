@@ -734,9 +734,13 @@ $extra = [
         // and had no door, so a photo or a voice memo reached nobody and the
         // fieldEvidence page read a schema nothing wrote.
     ['name' => 'fieldEvidence#capture', 'url' => '/api/inspections/{inspectionRef}/evidence', 'verb' => 'POST'],
-        // Per-case advice request creation.
-    ['name' => 'advice#createForCase', 'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'POST'],
-    ['name' => 'advice#getForCase',    'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'GET'],
+        // Per-case advice requests, on any case type.
+    ['name' => 'advice#createForCase', 'url' => '/api/cases/{id}/advice-requests', 'verb' => 'POST'],
+    ['name' => 'advice#getForCase',    'url' => '/api/cases/{id}/advice-requests', 'verb' => 'GET'],
+        // DEPRECATED ALIASES of the two above, for one release. Each has its
+        // own method name because Routes::standard() rejects duplicate names.
+    ['name' => 'advice#createForCaseLegacyPath', 'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'POST'],
+    ['name' => 'advice#getForCaseLegacyPath',    'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'GET'],
 
         // ── Berichtenbox (government inbox integration) ─────────────────
     ['name' => 'berichtenbox#send',     'url' => '/api/berichtenbox/send',                 'verb' => 'POST'],

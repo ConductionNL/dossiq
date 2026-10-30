@@ -114,6 +114,7 @@ class ConsultationSource extends RegisterBackedSource {
 	 * @return array<int, QueueItem> The items.
 	 *
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 */
 	public function itemsFor(string $userId): array {
 		$rows = $this->rows(schema: 'consultation', filters: ['assignee' => $userId]);
@@ -129,7 +130,8 @@ class ConsultationSource extends RegisterBackedSource {
 			$case = trim((string)($row['parentCase'] ?? ''));
 			$route = ['name' => 'Cases'];
 			if ($case !== '') {
-				$route = ['name' => 'CaseDetail', 'params' => ['id' => $case], 'query' => ['tab' => 'consultations']];
+				// The case has no consultations tab, so the row opens the case itself.
+				$route = ['name' => 'CaseDetail', 'params' => ['id' => $case]];
 			}
 
 			$items[] = new QueueItem(
