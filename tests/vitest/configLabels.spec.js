@@ -6,7 +6,7 @@
  * config (the portal channel named after the portal, "Mijn Zuiddrecht"),
  * and the fallback when the setting is empty.
  *
- * @spec openspec/changes/portal-channel-label/specs/portal-channel-label/spec.md
+ * @spec openspec/specs/portal-channel-label/spec.md
  */
 
 import fs from 'fs'

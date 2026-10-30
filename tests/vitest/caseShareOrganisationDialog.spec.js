@@ -113,7 +113,7 @@ describe('CaseShareOrganisationDialog', () => {
 		expect(wrapper.vm.canSubmit).toBe(false)
 	})
 
-	// @spec openspec/changes/share-org-not-clearable/specs/share-org-not-clearable/spec.md#requirement-the-organisation-choice-has-no-clear-button
+	// @spec openspec/specs/share-org-not-clearable/spec.md#requirement-the-organisation-choice-has-no-clear-button
 	it('offers no clear button on the organisation, as on the act and the permission', async () => {
 		const wrapper = await mountDialog()
 		const selects = wrapper.findAllComponents({ name: 'NcSelect' })

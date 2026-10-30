@@ -203,7 +203,7 @@ class DashboardController extends Controller {
 	 * @return array{municipalityCity: string, portalName: string} The config.
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
-	 * @spec openspec/changes/receipt-confirmation-card-reads/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
+	 * @spec openspec/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
 	 */
 	private function listConfig(): array {
 		return [

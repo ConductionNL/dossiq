@@ -7,7 +7,7 @@
  * words (board DqZaakContact): dates formatted, the outbound messages as
  * lines instead of a table of stored codes.
  *
- * @spec openspec/changes/receipt-confirmation-card-reads/specs/receipt-confirmation-card/spec.md
+ * @spec openspec/specs/receipt-confirmation-card/spec.md
  */
 
 import fs from 'fs'

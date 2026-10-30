@@ -17,7 +17,7 @@
  * 🔴 A NOTE ON THE WRONG THING IS LOST. Each note goes to the row's own notes
  * endpoint, which the server names: a case's on the case, a task's on the task.
  *
- * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md
+ * @spec openspec/specs/end-of-day-manifest/spec.md
  */
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
