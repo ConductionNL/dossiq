@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * The tenant's Administrator card names the organisation's admin user, the
- * tenantUser with role admin, as DqTenant draws it ("Beheerder: Marieke
- * Visser"). The organisation itself has no owner field anything writes.
+ * tenantUser with role admin, as DqTenant draws it ("Beheerder: MV Marieke
+ * Visser", a person chip). The organisation itself has no owner field anything writes.
  *
  * @spec exclude board DqTenant Beheerder card source, configuration only
  */
@@ -27,12 +27,10 @@ describe('the tenant Administrator card', () => {
 		expect(card.content.source.id).toBeUndefined()
 	})
 
-	it('names that user, and the organisation\'s contact address', () => {
-		const owner = card.content.fields.find((field) => field.format === 'user')
-		expect(owner.path).toBe('userRef')
-		expect(owner.from).toBeUndefined()
-
-		const email = card.content.fields.find((field) => field.format === 'email')
-		expect(email).toMatchObject({ path: 'contactEmail', from: 'object' })
+	it('draws that user as a person chip, the organisation\'s contact address under it', () => {
+		const [chip, email] = card.content.fields
+		expect(chip).toMatchObject({ as: 'lead', title: { path: 'userRef', format: 'user' }, initialsFrom: 'title', size: 28, tone: 'teal' })
+		expect(chip.from).toBeUndefined()
+		expect(email).toMatchObject({ as: 'line', path: 'contactEmail', from: 'object' })
 	})
 })
