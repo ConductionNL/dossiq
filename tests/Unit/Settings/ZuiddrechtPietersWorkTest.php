@@ -72,14 +72,14 @@ class ZuiddrechtPietersWorkTest extends TestCase {
 	}//end testTheWorkBoardsCasesAreInTheSet()
 
 	/**
-	 * Six tasks: the hearing on the objection, every priority, one done and one in the pool.
+	 * Seven tasks: the hearing on the objection, every priority, one done, one in the pool and Anouk's concept decision (DqTaken).
 	 *
 	 * @return void
 	 */
 	public function testTheTaskListHasEveryPriorityAndState(): void {
 		$caseWork = array_filter($this->set()['tasks'], static fn (array $task): bool => isset($task['data']['kind']) === false);
 		$tasks    = array_column($caseWork, 'data', 'key');
-		$this->assertCount(expectedCount: 6, haystack: $tasks);
+		$this->assertCount(expectedCount: 7, haystack: $tasks);
 		$this->assertSame(expected: '{{object:bezwaar-parkeerboete-havenstraat.id}}', actual: $tasks['hoorzitting-inplannen']['objectUuid']);
 
 		$priorities = array_unique(array_map(static fn (array $task): string => ($task['priority'] ?? 'normal'), $tasks));
