@@ -167,7 +167,7 @@ class PhaseSummary {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/phase-columns-in-case-type-order/specs/phase-columns-in-case-type-order/spec.md#requirement-the-phase-columns-follow-the-case-types-order
+	 * @spec openspec/specs/phase-columns-in-case-type-order/spec.md#requirement-the-phase-columns-follow-the-case-types-order
 	 */
 	private function inFlowOrder(array $columns, array $sequences): array {
 		$before = [];

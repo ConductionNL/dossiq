@@ -8,7 +8,7 @@
  * descriptions are written for the data model ("Reference to the case
  * type"), not for the person filling the form in.
  *
- * @spec openspec/changes/new-case-board-hints/specs/new-case-board-hints/spec.md#requirement-the-new-case-form-carries-the-boards-helper-lines
+ * @spec openspec/specs/new-case-board-hints/spec.md#requirement-the-new-case-form-carries-the-boards-helper-lines
  */
 import { describe, expect, it } from 'vitest'
 import nl from '../../l10n/nl.json'

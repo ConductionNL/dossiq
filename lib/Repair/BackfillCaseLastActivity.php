@@ -25,7 +25,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-last-activity-at/specs/case-last-activity-at/spec.md
+ * @spec openspec/specs/case-last-activity-at/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Backfill `lastActivityAt` on the cases that lack it.
  *
- * @spec openspec/changes/case-last-activity-at/specs/case-last-activity-at/spec.md
+ * @spec openspec/specs/case-last-activity-at/spec.md
  */
 class BackfillCaseLastActivity implements IRepairStep {
 
@@ -130,7 +130,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-last-activity-at/specs/case-last-activity-at/spec.md
+	 * @spec openspec/specs/case-last-activity-at/spec.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '') === self::DONE) {
@@ -178,7 +178,7 @@ class BackfillCaseLastActivity implements IRepairStep {
 	 *
 	 * @return string The date (ISO 8601, UTC), or ''.
 	 *
-	 * @spec openspec/changes/case-last-activity-at/specs/case-last-activity-at/spec.md
+	 * @spec openspec/specs/case-last-activity-at/spec.md
 	 */
 	public function dateFor(array $case, DateTimeInterface $now): string {
 		if (trim((string)($case[CaseActivityStamp::FIELD] ?? '')) !== '') {

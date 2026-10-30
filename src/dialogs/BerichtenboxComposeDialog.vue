@@ -293,7 +293,7 @@ export default {
 		 * The case's case type, whose message templates are offered.
 		 *
 		 * @return {string} Its id, or ''.
-		 * @spec openspec/changes/compose-from-message-template/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
+		 * @spec openspec/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
 		 */
 		caseTypeId() {
 			const ref = this.kase?.caseType
@@ -345,7 +345,7 @@ export default {
 		 *
 		 * @param {{subject: string, body: string}} draft The filled template.
 		 * @return {void}
-		 * @spec openspec/changes/compose-from-message-template/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
+		 * @spec openspec/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
 		 */
 		onTemplateFill({ subject, body }) {
 			this.form.subject = subject

@@ -5,7 +5,7 @@
  * A stalled case is one nobody worked on: days idle and the stalled lists read
  * the case's lastActivityAt, not @self.updated, which every system save moves.
  *
- * @spec openspec/changes/case-last-activity-at/specs/case-last-activity-at/spec.md
+ * @spec openspec/specs/case-last-activity-at/spec.md
  */
 
 import { describe, expect, it } from 'vitest'
