@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
@@ -112,6 +113,7 @@ interface DossierObjectServiceStub {
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
  */
 class ZaakdossierServiceTest extends TestCase {
@@ -244,6 +246,7 @@ class ZaakdossierServiceTest extends TestCase {
 				people: $this->createMock(originalClassName: PersonLinkReader::class),
 				settingsService: $this->settings,
 				store: new DocumentRecordStore(settingsService: $this->settings),
+				labels: new DocumentListingLabels(settingsService: $this->settings),
 			),
 			logger: $this->createMock(LoggerInterface::class),
 		);

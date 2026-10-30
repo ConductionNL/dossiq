@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Tests\Unit\Fixtures\PatchingObjectService;
@@ -44,6 +45,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
  */
 class InformatieobjectMetadataWriteTest extends TestCase {
@@ -134,6 +136,7 @@ class InformatieobjectMetadataWriteTest extends TestCase {
 				people: $this->createMock(originalClassName: PersonLinkReader::class),
 				settingsService: $settings,
 				store: new DocumentRecordStore(settingsService: $settings),
+				labels: new DocumentListingLabels(settingsService: $settings),
 			),
 		);
 

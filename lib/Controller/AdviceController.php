@@ -223,7 +223,7 @@ class AdviceController extends Controller {
 	 *
 	 * Per-object guard: `CaseAccessGuard::hasCaseReadAccess()`.
 	 *
-	 * `GET /api/vth/cases/{id}/advice-requests` is a per-case sub-resource and
+	 * `GET /api/cases/{id}/advice-requests` is a per-case sub-resource and
 	 * `$id` is the CASE uuid, so the case-membership predicate applies directly
 	 * — no `OwningCaseResolver` hop is needed. This is the same relationship
 	 * `AdviceAuthorizationGuard::isHandlerOfLinkedCase()` already tests on the
@@ -252,6 +252,46 @@ class AdviceController extends Controller {
 		$advice = $this->adviceService->getAdviceForCase(caseId: $id);
 		return new JSONResponse(data: $advice, statusCode: Http::STATUS_OK);
 	}//end getForCase()
+
+	/**
+	 * createForCase() on its old address.
+	 *
+	 * Deprecated alias of POST /api/cases/{id}/advice-requests; remove after the next release.
+	 *
+	 * @param string $id UUID of the case
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-or-starts-a-consultation-from-the-case-req-adv-case-01
+	 *
+	 * @contract exclude Deprecated path alias for createForCase(); behaviour covered by the createForCase() tests.
+	 */
+	#[NoAdminRequired]
+	public function createForCaseLegacyPath(string $id): JSONResponse {
+		return $this->createForCase(id: $id);
+	}//end createForCaseLegacyPath()
+
+	/**
+	 * getForCase() on its old address.
+	 *
+	 * Deprecated alias of GET /api/cases/{id}/advice-requests; remove after the next release.
+	 *
+	 * @param string $id UUID of the case
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-or-starts-a-consultation-from-the-case-req-adv-case-01
+	 *
+	 * @contract exclude Deprecated path alias for getForCase(); behaviour covered by the getForCase() tests.
+	 */
+	#[NoAdminRequired]
+	public function getForCaseLegacyPath(string $id): JSONResponse {
+		return $this->getForCase(id: $id);
+	}//end getForCaseLegacyPath()
 
 	/**
 	 * Decode a JSON request body safely.

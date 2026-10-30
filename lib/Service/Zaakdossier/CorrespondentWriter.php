@@ -49,12 +49,14 @@ class CorrespondentWriter {
 	 * @param PersonLinkReader $people The parties of a case, read from OpenRegister.
 	 * @param SettingsService $settingsService OpenRegister access and the dispatch schema.
 	 * @param DocumentRecordStore $store The joins, for the case a document is on.
+	 * @param DocumentListingLabels $labels The type and party names a listing row shows.
 	 */
 	public function __construct(
 		private readonly DocumentCorrespondents $rules,
 		private readonly PersonLinkReader $people,
 		private readonly SettingsService $settingsService,
 		private readonly DocumentRecordStore $store,
+		private readonly DocumentListingLabels $labels,
 	) {
 	}//end __construct()
 
@@ -229,6 +231,9 @@ class CorrespondentWriter {
 	 * a dossier of forty letters would otherwise make forty identical reads
 	 * against OpenRegister to render one column.
 	 *
+	 * Each row also carries `documentType` and `partyName` for the Files tab
+	 * (DocumentListingLabels).
+	 *
 	 * @param string $caseId The case.
 	 * @param array<int, array<string, mixed>> $documents The documents.
 	 * @param string $correspondent A party identifier to narrow to, or ''.
@@ -236,6 +241,7 @@ class CorrespondentWriter {
 	 * @return array<int, array<string, mixed>> The documents, named and narrowed.
 	 *
 	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 * @spec openspec/changes/case-files-list-columns/specs/document-zaakdossier/spec.md#requirement-the-case-files-list-shows-the-document-columns-of-the-board-req-zak-col-01
 	 */
 	public function describeAll(string $caseId, array $documents, string $correspondent = ''): array {
 		$parties = $this->partiesOf(caseId: $caseId);
@@ -255,7 +261,7 @@ class CorrespondentWriter {
 			);
 		}
 
-		return $described;
+		return $this->labels->label(documents: $described);
 	}//end describeAll()
 
 	/**
