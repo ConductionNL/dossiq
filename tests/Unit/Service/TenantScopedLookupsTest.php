@@ -196,13 +196,17 @@ class TenantScopedLookupsTest extends TestCase {
 					return null;
 				}
 
-				if ($quotaType === 'storage_gb') {
+				if ($quotaType === 'storage_mb') {
 					$bytes = $organisation->getStorageQuota();
 					if ($bytes === null) {
 						return null;
 					}
 
-					return intdiv((int)$bytes, 1073741824);
+					return intdiv((int)$bytes, 1048576);
+				}
+
+				if ($quotaType === 'active_users') {
+					return $organisation->getUserQuota();
 				}
 
 				$requests = $organisation->getRequestQuota();
@@ -560,36 +564,61 @@ class TenantScopedLookupsTest extends TestCase {
 	/**
 	 * The storage limit is converted, not compared across units.
 	 *
-	 * `storage_gb` counts gigabytes and `storageQuota` stores bytes. Read
-	 * straight through, a 10 GB limit would read as 10737418240 and a tenant
-	 * would have roughly a billion times the headroom it was given.
+	 * `storage_mb` counts megabytes and `storageQuota` stores bytes. Read
+	 * straight through, a 10 MB limit would read as 10485760 and a tenant
+	 * would have roughly a million times the headroom it was given.
 	 *
 	 * @return void
 	 */
-	public function testTheStorageLimitIsReadBackInGigabytesNotBytes(): void {
+	public function testTheStorageLimitIsReadBackInMegabytesNotBytes(): void {
 		$organisation = new Organisation();
 		$organisation->setUuid('tenant-a');
-		$organisation->setStorageQuota((10 * 1073741824));
+		$organisation->setStorageQuota((10 * 1048576));
 
 		$row = $this->entity(
-			object: ['tenantRef' => 'tenant-a', 'quotaType' => 'storage_gb', 'currentUsage' => 0],
+			object: ['tenantRef' => 'tenant-a', 'quotaType' => 'storage_mb', 'currentUsage' => 0],
 			uuid: 'quota-2',
 		);
 
 		$quota = $this->quotaAnswering(rows: [$row], organisation: $organisation)
-			->getQuota(tenantId: 'tenant-a', quotaType: 'storage_gb');
+			->getQuota(tenantId: 'tenant-a', quotaType: 'storage_mb');
 
 		$this->assertNotNull($quota);
 		$this->assertSame(10, $quota['limit']);
 	}
 
 	/**
-	 * The two types with no column keep their own limit on the row.
+	 * The user limit is the Organisation's userQuota, whatever an old row says.
 	 *
-	 * `cases_per_month` and `active_users` have no Organisation column, so
-	 * decision 2b leaves them exactly as they are. An overlay that reached
-	 * them would blank a limit nothing else carries, and `decide()` reads a
-	 * null limit as unlimited, so the quota would fail OPEN.
+	 * The organisation page's quota card reads `userQuota`; a refusal reading
+	 * a different number off the row would name a limit the card does not show.
+	 *
+	 * @return void
+	 */
+	public function testTheUserLimitIsTheOrganisationUserQuota(): void {
+		$organisation = new Organisation();
+		$organisation->setUuid('tenant-a');
+		$organisation->setUserQuota(50);
+
+		$row = $this->entity(
+			object: ['tenantRef' => 'tenant-a', 'quotaType' => 'active_users', 'limit' => 5, 'currentUsage' => 3],
+			uuid: 'quota-4',
+		);
+
+		$quota = $this->quotaAnswering(rows: [$row], organisation: $organisation)
+			->getQuota(tenantId: 'tenant-a', quotaType: 'active_users');
+
+		$this->assertNotNull($quota);
+		$this->assertSame(50, $quota['limit']);
+	}
+
+	/**
+	 * The monthly count keeps its own limit on the row.
+	 *
+	 * `cases_per_month` has no Organisation column, so it stays exactly as it
+	 * is. An overlay that reached it would blank a limit nothing else carries,
+	 * and `decide()` reads a null limit as unlimited, so the quota would fail
+	 * OPEN.
 	 *
 	 * @return void
 	 */

@@ -108,6 +108,18 @@ class TenantQuotaServiceTest extends TestCase {
 		$this->assertSame(42, $next['currentUsage']);
 	}
 
+	/**
+	 * Storage held and users present are standing totals: the reset leaves them alone.
+	 *
+	 * @return void
+	 */
+	public function testResetIfDueLeavesStandingTotalsAlone(): void {
+		foreach (['storage_mb', 'active_users'] as $type) {
+			$row = ['quotaType' => $type, 'currentUsage' => 900, 'resetAt' => '2000-01-01T00:00:00+00:00'];
+			$this->assertSame(900, $this->svc->resetIfDue($row)['currentUsage'], $type);
+		}
+	}
+
 	public function testConsumeAllowsWhenNoQuotaRowExists(): void {
 		$d = $this->svc->consume('t-1', 'cases_per_month', 1);
 		$this->assertSame(TenantQuotaService::DECISION_ALLOW, $d['decision']);

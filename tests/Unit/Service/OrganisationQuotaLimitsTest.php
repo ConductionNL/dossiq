@@ -3,7 +3,7 @@
 /**
  * Organisation Quota Limits test
  *
- * The unit conversion between `storage_gb` and `storageQuota` is tested here,
+ * The unit conversion between `storage_mb` and `storageQuota` is tested here,
  * against the real class, because `TenantScopedLookupsTest` models this
  * collaborator with a mock and a mock's conversion is not evidence about the
  * code's.
@@ -122,37 +122,37 @@ class OrganisationQuotaLimitsTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testOnlyStorageAndRequestsAreOwnedByTheOrganisation(): void {
+	public function testOnlyStorageRequestsAndUsersAreOwnedByTheOrganisation(): void {
 		$limits = $this->limitsFor($this->organisation());
 
-		$this->assertTrue($limits->owns(quotaType: 'storage_gb'));
+		$this->assertTrue($limits->owns(quotaType: 'storage_mb'));
 		$this->assertTrue($limits->owns(quotaType: 'api_calls_per_hour'));
+		$this->assertTrue($limits->owns(quotaType: 'active_users'));
 		$this->assertFalse($limits->owns(quotaType: 'cases_per_month'));
-		$this->assertFalse($limits->owns(quotaType: 'active_users'));
 		$this->assertSame(
-			['storage_gb', 'api_calls_per_hour'],
+			['storage_mb', 'api_calls_per_hour', 'active_users'],
 			array_keys(OrganisationQuotaLimits::COLUMNS)
 		);
 	}
 
 	/**
-	 * Gigabytes are read back out of a byte column, not straight through.
+	 * Megabytes are read back out of a byte column, not straight through.
 	 *
-	 * Read straight through, a 10 GB limit reads as 10737418240 and a tenant
-	 * has roughly a billion times the headroom it was given. Nothing in the
+	 * Read straight through, a 10 MB limit reads as 10485760 and a tenant
+	 * has roughly a million times the headroom it was given. Nothing in the
 	 * response would say so, because the number is a perfectly valid limit.
 	 *
 	 * @return void
 	 */
-	public function testAStorageLimitIsReadBackInGigabytes(): void {
+	public function testAStorageLimitIsReadBackInMegabytes(): void {
 		$organisation = $this->organisation();
-		$organisation->setStorageQuota((10 * 1073741824));
+		$organisation->setStorageQuota((10 * 1048576));
 
-		$this->assertSame(10, $this->limitsFor($organisation)->read(tenantId: 'tenant-a', quotaType: 'storage_gb'));
+		$this->assertSame(10, $this->limitsFor($organisation)->read(tenantId: 'tenant-a', quotaType: 'storage_mb'));
 	}
 
 	/**
-	 * Gigabytes are written into a byte column, not straight through.
+	 * Megabytes are written into a byte column, not straight through.
 	 *
 	 * @return void
 	 */
@@ -160,10 +160,10 @@ class OrganisationQuotaLimitsTest extends TestCase {
 		$organisation = $this->organisation();
 
 		$this->assertTrue(
-			$this->limitsFor($organisation)->write(tenantId: 'tenant-a', quotaType: 'storage_gb', limit: 10)
+			$this->limitsFor($organisation)->write(tenantId: 'tenant-a', quotaType: 'storage_mb', limit: 10)
 		);
 		$this->assertCount(1, $this->updated);
-		$this->assertSame((10 * 1073741824), $this->updated[0]->getStorageQuota());
+		$this->assertSame((10 * 1048576), $this->updated[0]->getStorageQuota());
 	}
 
 	/**
@@ -178,9 +178,9 @@ class OrganisationQuotaLimitsTest extends TestCase {
 		$organisation = $this->organisation();
 		$limits = $this->limitsFor($organisation);
 
-		$limits->write(tenantId: 'tenant-a', quotaType: 'storage_gb', limit: 250);
+		$limits->write(tenantId: 'tenant-a', quotaType: 'storage_mb', limit: 250);
 
-		$this->assertSame(250, $limits->read(tenantId: 'tenant-a', quotaType: 'storage_gb'));
+		$this->assertSame(250, $limits->read(tenantId: 'tenant-a', quotaType: 'storage_mb'));
 	}
 
 	/**
@@ -259,8 +259,8 @@ class OrganisationQuotaLimitsTest extends TestCase {
 			logger: $logger,
 		);
 
-		$this->assertNull($limits->read(tenantId: 'not-migrated', quotaType: 'storage_gb'));
-		$this->assertFalse($limits->write(tenantId: 'not-migrated', quotaType: 'storage_gb', limit: 5));
+		$this->assertNull($limits->read(tenantId: 'not-migrated', quotaType: 'storage_mb'));
+		$this->assertFalse($limits->write(tenantId: 'not-migrated', quotaType: 'storage_mb', limit: 5));
 	}
 
 	/**

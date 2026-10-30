@@ -33,15 +33,16 @@ use Throwable;
 /**
  * Reads and writes the quota limits that the Organisation owns.
  *
- * Decision 2b. `storage_gb` maps to `Organisation.storageQuota` and
- * `api_calls_per_hour` to `Organisation.requestQuota`. For those two the row
- * keeps what the entity has no home for, `currentUsage`, `resetAt`,
- * `softLimitWarningPercent` and `enforcement`, and stops carrying `limit`.
- * One limit, in one place, with no second copy to drift.
+ * Decision 2b and 272. `storage_mb` maps to `Organisation.storageQuota`,
+ * `api_calls_per_hour` to `Organisation.requestQuota` and `active_users` to
+ * `Organisation.userQuota`. For those three the row keeps what the entity has
+ * no home for, `currentUsage`, `resetAt`, `softLimitWarningPercent` and
+ * `enforcement`, and stops carrying `limit`. One limit, in one place, so the
+ * organisation page's quota card and the refusal read the same number.
  *
- * `cases_per_month` and `active_users` have no column and stay rows exactly as
- * they are, limit included. `bandwidthQuota` has no dossiq counterpart and
- * stays OpenRegister's alone.
+ * `cases_per_month` is a monthly count with no column and stays a row exactly
+ * as it is, limit included. `bandwidthQuota` and `objectQuota` have no dossiq
+ * counterpart and stay OpenRegister's alone.
  *
  * This lives beside `TenantQuotaService` rather than inside it because the
  * service was already at the complexity ceiling, and because the mapping is a
@@ -56,19 +57,20 @@ class OrganisationQuotaLimits {
 	 * @var array<string, string>
 	 */
 	public const COLUMNS = [
-		'storage_gb' => 'storageQuota',
+		'storage_mb' => 'storageQuota',
 		'api_calls_per_hour' => 'requestQuota',
+		'active_users' => 'userQuota',
 	];
 
 	/**
-	 * Bytes in a gigabyte.
+	 * Bytes in a megabyte.
 	 *
-	 * `storage_gb` is counted in gigabytes and `storageQuota` is stored in
+	 * `storage_mb` is counted in megabytes and `storageQuota` is stored in
 	 * bytes, so the two are converted rather than compared. A limit written in
-	 * GB and read back as bytes would read as roughly a billion times more
+	 * MB and read back as bytes would read as roughly a million times more
 	 * headroom than the tenant has, and nothing would say so.
 	 */
-	private const BYTES_PER_GB = 1073741824;
+	public const BYTES_PER_MB = 1048576;
 
 	/**
 	 * Constructor.
@@ -185,8 +187,8 @@ class OrganisationQuotaLimits {
 	 * @return integer The limit in the quota's own units.
 	 */
 	private function fromStoredUnits(string $quotaType, int $stored): int {
-		if ($quotaType === 'storage_gb') {
-			return intdiv($stored, self::BYTES_PER_GB);
+		if ($quotaType === 'storage_mb') {
+			return intdiv($stored, self::BYTES_PER_MB);
 		}
 
 		return $stored;
@@ -201,8 +203,8 @@ class OrganisationQuotaLimits {
 	 * @return integer The column value.
 	 */
 	private function toStoredUnits(string $quotaType, int $limit): int {
-		if ($quotaType === 'storage_gb') {
-			return ($limit * self::BYTES_PER_GB);
+		if ($quotaType === 'storage_mb') {
+			return ($limit * self::BYTES_PER_MB);
 		}
 
 		return $limit;

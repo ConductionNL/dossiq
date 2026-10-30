@@ -11846,7 +11846,11 @@ OC.L10N.register(
         "%s users": "%s users",
         "%s cases per month": "%s cases per month",
         "Your organisation is close to its limit of %s": "Your organisation is close to its limit of %s",
-        "Used this period: %1$s of %2$s.": "Used this period: %1$s of %2$s."
+        "Used this period: %1$s of %2$s.": "Used this period: %1$s of %2$s.",
+        "%s MB of storage": "%s MB of storage",
+        "Cases this month": "Cases this month",
+        "Hard limit value (NULL = unlimited). Only for cases_per_month: the limits for storage_mb, api_calls_per_hour and active_users live on the Organisation, as storageQuota, requestQuota and userQuota, and are read from there": "Hard limit value (NULL = unlimited). Only for cases_per_month: the limits for storage_mb, api_calls_per_hour and active_users live on the Organisation, as storageQuota, requestQuota and userQuota, and are read from there",
+        "Quota dimension. storage_mb counts megabytes; storage_gb is the old name of the same row, rewritten to storage_mb on upgrade": "Quota dimension. storage_mb counts megabytes; storage_gb is the old name of the same row, rewritten to storage_mb on upgrade"
     },
     "nplurals=2; plural=(n != 1);"
 )

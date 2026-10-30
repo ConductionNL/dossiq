@@ -922,6 +922,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 stay readable; a second run raises nothing new.
             -->
             <step>OCA\Dossiq\Repair\MigratePayoutRowsToFinance</step>
+            <!--
+                Decision 272: storage quota rows count megabytes and the user
+                limit lives on the Organisation's userQuota. Renames stored
+                storage_gb rows and hands a row's user limit to an Organisation
+                that has none. Runs once; a fresh install has no rows.
+            -->
+            <step>OCA\Dossiq\Repair\MoveTenantQuotaLimitsOntoOrganisation</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -977,6 +984,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made
               MigratePayoutRowsToFinance        hands payout rows dossiq kept to the finance app; a fresh install has none
+              MoveTenantQuotaLimitsOntoOrganisation  rewrites existing tenant quota rows; a fresh install has none
 
             THE LIST ABOVE IS NOT PROSE. RepairStepRegistrationTest parses this file,
             sweeps every post-migration step, and fails on any step that is neither

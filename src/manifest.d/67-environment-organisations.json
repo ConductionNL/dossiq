@@ -414,10 +414,19 @@
 							}
 						],
 						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "tenantQuota",
+								"filter": {
+									"tenantRef": "@objectId",
+									"quotaType": "cases_per_month"
+								}
+							},
 							"fields": [
 								{
 									"as": "meter",
 									"key": "cases",
+									"from": "object",
 									"label": "Cases",
 									"path": "usage.objects",
 									"limitPath": "quota.objects"
@@ -425,6 +434,7 @@
 								{
 									"as": "meter",
 									"key": "storage",
+									"from": "object",
 									"label": "Storage",
 									"path": "usage.storage",
 									"limitPath": "quota.storage",
@@ -433,6 +443,7 @@
 								{
 									"as": "meter",
 									"key": "users",
+									"from": "object",
 									"label": "Users",
 									"path": "usage.users",
 									"limitPath": "quota.users"
@@ -440,15 +451,24 @@
 								{
 									"as": "meter",
 									"key": "requests",
+									"from": "object",
 									"label": "Requests this hour",
 									"path": "usage.requests",
 									"limitPath": "quota.requests"
+								},
+								{
+									"as": "meter",
+									"key": "cases-this-month",
+									"label": "Cases this month",
+									"path": "currentUsage",
+									"limitPath": "limit"
 								}
 							],
 							"emptyText": "No usage recorded for this organisation",
 							"footnote": "A different package takes effect within a quarter of an hour."
 						},
 						"_footnoteNote": "Board DqTenant Quota footnote. The card reads the quota fresh; OpenRegister enforces the request quota on the active organisation, which a signed-in session keeps for at most 15 minutes (OrganisationService::CACHE_TIMEOUT 900), so a quarter of an hour is the longest a change waits.",
+						"_sourceNote": "Decision 272: the card reads the organisation's own quota (from: object) and, on its own row, dossiq's monthly case count from the tenant's cases_per_month quota row. The Users row reads userQuota, the same limit dossiq's refusal enforces.",
 						"_note": "Board DqTenant Quota: Zaken, Opslag, Gebruikers, each against its limit. OpenRegister counts the organisation's live objects of the schema its object quota names (Waterland: case) and limits its users (openregister#4800). The requests row stays after them."
 					},
 					{

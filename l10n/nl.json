@@ -11935,6 +11935,10 @@
         "%s users": "%s gebruikers",
         "%s cases per month": "%s zaken per maand",
         "Your organisation is close to its limit of %s": "Uw organisatie nadert de limiet van %s",
-        "Used this period: %1$s of %2$s.": "Gebruikt in deze periode: %1$s van %2$s."
+        "Used this period: %1$s of %2$s.": "Gebruikt in deze periode: %1$s van %2$s.",
+        "%s MB of storage": "%s MB opslag",
+        "Cases this month": "Zaken deze maand",
+        "Hard limit value (NULL = unlimited). Only for cases_per_month: the limits for storage_mb, api_calls_per_hour and active_users live on the Organisation, as storageQuota, requestQuota and userQuota, and are read from there": "Harde bovengrens (leeg betekent onbeperkt). Alleen voor cases_per_month: de grenzen voor storage_mb, api_calls_per_hour en active_users staan op de Organisatie, als storageQuota, requestQuota en userQuota, en worden daar gelezen",
+        "Quota dimension. storage_mb counts megabytes; storage_gb is the old name of the same row, rewritten to storage_mb on upgrade": "Quotumsoort. storage_mb telt megabytes; storage_gb is de oude naam van dezelfde rij en wordt bij de upgrade omgezet naar storage_mb"
     }
 }

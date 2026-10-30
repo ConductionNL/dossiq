@@ -50,23 +50,33 @@ class TenantQuotaService {
 	public const TIER_DEFAULTS = [
 		'basic' => [
 			'cases_per_month' => ['limit' => 100,  'enforcement' => 'warn'],
-			'storage_gb' => ['limit' => 10,   'enforcement' => 'warn'],
+			'storage_mb' => ['limit' => 10240, 'enforcement' => 'warn'],
 			'active_users' => ['limit' => 5,    'enforcement' => 'block'],
 			'api_calls_per_hour' => ['limit' => 1000, 'enforcement' => 'throttle'],
 		],
 		'standard' => [
 			'cases_per_month' => ['limit' => 1000,  'enforcement' => 'warn'],
-			'storage_gb' => ['limit' => 100,   'enforcement' => 'warn'],
+			'storage_mb' => ['limit' => 102400, 'enforcement' => 'warn'],
 			'active_users' => ['limit' => 50,    'enforcement' => 'block'],
 			'api_calls_per_hour' => ['limit' => 10000, 'enforcement' => 'throttle'],
 		],
 		'enterprise' => [
 			'cases_per_month' => ['limit' => null, 'enforcement' => 'warn'],
-			'storage_gb' => ['limit' => null, 'enforcement' => 'warn'],
+			'storage_mb' => ['limit' => null, 'enforcement' => 'warn'],
 			'active_users' => ['limit' => null, 'enforcement' => 'warn'],
 			'api_calls_per_hour' => ['limit' => null, 'enforcement' => 'warn'],
 		],
 	];
+
+	/**
+	 * Quotas that measure a standing total rather than a count per window.
+	 *
+	 * Storage held and users present do not start again at zero on the first
+	 * of the month, so the reset leaves these rows alone.
+	 *
+	 * @var array<int, string>
+	 */
+	public const STANDING_QUOTAS = ['storage_mb', 'active_users'];
 
 	/**
 	 * Enforcement decisions.
@@ -217,7 +227,7 @@ class TenantQuotaService {
 	/**
 	 * Overlay the limit the Organisation carries, for the two types that map.
 	 *
-	 * For `storage_gb` and `api_calls_per_hour` the Organisation is the ONLY
+	 * For `storage_mb`, `api_calls_per_hour` and `active_users` the Organisation is the ONLY
 	 * place a limit lives, so whatever the row says about `limit` is replaced
 	 * rather than merged. A stale `limit` left on a row by an install
 	 * predating the move would otherwise win over the one an operator set, and
@@ -379,8 +389,13 @@ class TenantQuotaService {
 	 * @return array<string,mixed> Updated row.
 	 *
 	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-the-quota-card-and-the-refusal-read-the-same-limits-req-tq-enf-02
 	 */
 	public function resetIfDue(array $quota): array {
+		if (in_array((string)($quota['quotaType'] ?? ''), self::STANDING_QUOTAS, true) === true) {
+			return $quota;
+		}
+
 		$resetAt = strtotime((string)($quota['resetAt'] ?? ''));
 		$now = time();
 		if ($resetAt === false || $resetAt > $now) {
