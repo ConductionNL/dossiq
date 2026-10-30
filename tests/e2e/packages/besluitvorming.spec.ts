@@ -97,7 +97,7 @@ async function caseTypeIds(page: Page, identifier: string): Promise<string[]> {
 }
 
 test.describe('package besluitvorming', () => {
-	// @e2e openspec/changes/besluitvorming-package/specs/besluitvorming-workflow/spec.md#scenario-req-bvw-001-a-an-administrator-installs-the-besluitvorming-package
+	// @e2e openspec/changes/besluitvorming-package/specs/besluitvorming-workflow/spec.md#scenario-req-bvw-001-a-activate-college-besluit-template
 	// @e2e openspec/changes/besluitvorming-package/specs/case-types/spec.md#an-on-request-package-installs-through-the-api
 	test('an administrator installs besluitvorming and finds the three case types', async ({
 		page,

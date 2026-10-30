@@ -24,7 +24,7 @@ making.
 
 **Feature tier**: MVP
 
-#### Scenario: KvK reads Not available because dossiq has no KvK client
+#### Scenario: KvK reads Not available because nothing calls it
 @e2e tests/e2e/integrations-page.spec.ts
 
 - **GIVEN** the seeded Integrations page

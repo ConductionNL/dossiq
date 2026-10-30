@@ -2,7 +2,7 @@
 
 ## REMOVED Requirements
 
-### REQ-014: SeedDataService SHALL idempotently seed bezwaar/beroep case types from a bundled JSON template
+### Requirement: SeedDataService SHALL idempotently seed bezwaar/beroep case types from a bundled JSON template (REQ-014)
 
 **Reason**: `SeedDataService` and `bezwaar_seed_data.json` are deleted. The case types ship as the case definition package `bezwaar-beroep` (hydra ADR-118).
 
