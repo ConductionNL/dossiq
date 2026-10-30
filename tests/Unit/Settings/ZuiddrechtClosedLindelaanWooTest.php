@@ -119,6 +119,27 @@ class ZuiddrechtClosedLindelaanWooTest extends TestCase {
 	}//end testSevenDocumentsAreFinalAndAssessed()
 
 	/**
+	 * The case names its result and decision once both exist, so the archive
+	 * dialog draws "Deels openbaar gemaakt" and ticks Resultaat and Besluit.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseNamesItsResultAndDecision(): void {
+		$part    = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.d/63-closed-lindelaan-woo.json'), true);
+		$changes = array_column(($part['changes'] ?? []), null, 'key');
+		$change  = ($changes[self::CASE_KEY.'-uitkomst'] ?? []);
+
+		$this->assertSame(expected: self::CASE_KEY, actual: ($change['object'] ?? null));
+		$this->assertSame(
+			expected: [
+				'result'    => '{{object:'.self::CASE_KEY.'-resultaat.id}}',
+				'decisions' => ['{{object:'.self::CASE_KEY.'-besluit.id}}'],
+			],
+			actual: ($change['set'] ?? null)
+		);
+	}//end testTheCaseNamesItsResultAndDecision()
+
+	/**
 	 * The values counted, sorted by value.
 	 *
 	 * @param array<int, string> $values The values.

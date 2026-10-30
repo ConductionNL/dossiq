@@ -9657,6 +9657,8 @@
 				],
 				"priority": "high",
 				"dueAt": "{{date:0}}",
+				"requester": "{{cast:anouk.uid}}",
+				"expiresAt": "{{date:7}}",
 				"checklist": [
 					{
 						"id": "datum",
