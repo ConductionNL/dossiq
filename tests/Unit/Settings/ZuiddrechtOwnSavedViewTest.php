@@ -80,7 +80,7 @@ class ZuiddrechtOwnSavedViewTest extends TestCase {
 		}
 
 		$this->assertSame(expected: $defaults['mine-due-this-week']['filters'], actual: $view['query']['filters']);
-		$this->assertSame(expected: [['key' => 'deadline', 'order' => 'asc']], actual: $view['query']['sort']);
+		$this->assertSame(expected: [['key' => 'deadline', 'order' => 'asc'], ['key' => 'receivedAt', 'order' => 'asc']], actual: $view['query']['sort']);
 		$this->assertSame(expected: '', actual: $view['query']['search']);
 	}//end testItsConditionsAreTheShippedDefaultViews()
 
