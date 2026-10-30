@@ -366,6 +366,7 @@ class BeschikkingService {
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T09
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-a-case-records-the-day-its-decision-was-sent-req-cap-001
 	 */
 	public function verzend(string $decisionId, string $actor): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
@@ -423,6 +424,7 @@ class BeschikkingService {
 			decisionId: $decisionId,
 			sentOn: new DateTimeImmutable($bekendmaking),
 		);
+		$this->remedy->recordSent(caseId: (string)($decision['caseId'] ?? ''), sentOn: new DateTimeImmutable($bekendmaking));
 
 		$this->stateMachine->logTransition(
 			$decisionId,

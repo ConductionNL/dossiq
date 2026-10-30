@@ -11968,6 +11968,8 @@
         "Used this period: %1$s of %2$s.": "Gebruikt in deze periode: %1$s van %2$s.",
         "Invoice last month": "Vorige maand factureren",
         "Last month's invoice is handed to the finance app.": "De factuur van vorige maand is doorgegeven aan de financiële app.",
-        "No invoice was made for last month. Every billing event of that month may already be invoiced.": "Er is geen factuur gemaakt voor vorige maand. Misschien is elke gebeurtenis van die maand al gefactureerd."
+        "No invoice was made for last month. Every billing event of that month may already be invoiced.": "Er is geen factuur gemaakt voor vorige maand. Misschien is elke gebeurtenis van die maand al gefactureerd.",
+        "Decision sent on": "Besluit verzonden op",
+        "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand.": "De dag waarop het laatste besluit in deze zaak is verzonden. Dossiq vult dit in als het besluit verstuurd wordt, niet met de hand."
     }
 }

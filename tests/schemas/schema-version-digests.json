@@ -1739,6 +1739,10 @@
         "version": "1.56.0",
         "digest": "bccdde205e895600b8476004174994acce1a763354399f45ccd957709e43bd4c"
     },
+    "lib/Settings/register.d/99-case-decision-sent-on.json::case": {
+        "version": "1.61.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-case-dedup-threshold.json::case": {
         "version": "1.57.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"

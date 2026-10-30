@@ -11879,7 +11879,9 @@ OC.L10N.register(
         "Used this period: %1$s of %2$s.": "Used this period: %1$s of %2$s.",
         "Invoice last month": "Invoice last month",
         "Last month's invoice is handed to the finance app.": "Last month's invoice is handed to the finance app.",
-        "No invoice was made for last month. Every billing event of that month may already be invoiced.": "No invoice was made for last month. Every billing event of that month may already be invoiced."
+        "No invoice was made for last month. Every billing event of that month may already be invoiced.": "No invoice was made for last month. Every billing event of that month may already be invoiced.",
+        "Decision sent on": "Decision sent on",
+        "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand.": "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand."
     },
     "nplurals=2; plural=(n != 1);"
 )
