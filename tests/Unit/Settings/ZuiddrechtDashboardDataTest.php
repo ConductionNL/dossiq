@@ -119,6 +119,23 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 	}//end testPieterHasACaseTwoDaysLate()
 
 	/**
+	 * Close out your day lists Bezwaar parkeerboete Havenstraat, opened today
+	 * and still without a note, with "Termijn vandaag": its term ends on the install day.
+	 *
+	 * @return void
+	 */
+	public function testPietersObjectionTermEndsToday(): void {
+		$part = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.d/20-team-queue.json'), true);
+		$this->assertIsArray(actual: $part);
+		$terms = array_column(array: $part['objects'], column_key: null, index_key: 'key');
+		$term  = $terms['termijn-bezwaar-parkeerboete-havenstraat']['data'];
+
+		$this->assertSame(expected: '{{object:bezwaar-parkeerboete-havenstraat.id}}', actual: $term['case']);
+		$this->assertSame(expected: 0, actual: $this->dayOf(token: $term['endDateCurrent']));
+		$this->assertSame(expected: 0, actual: $this->dayOf(token: $term['endDateCalculated']));
+	}//end testPietersObjectionTermEndsToday()
+
+	/**
 	 * Pieter covers for Esra Demir this week, for all her work, so "Inclusief
 	 * werk waarvoor u waarneemt" adds her open cases.
 	 *
