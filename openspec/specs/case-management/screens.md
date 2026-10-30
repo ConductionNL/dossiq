@@ -13,3 +13,4 @@
 - DqZaakSamenwerken https://identity.conduction.nl/screens/board?id=dossiq/DqZaakSamenwerken
 - DqZaaktypeVelden https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypeVelden
 - DqZaken https://identity.conduction.nl/screens/board?id=dossiq/DqZaken
+- DqZaakBetrokkenen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBetrokkenen
