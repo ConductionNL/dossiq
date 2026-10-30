@@ -4740,6 +4740,7 @@ OC.L10N.register(
         "longer than this status allows": "langer dan deze status toestaat",
         "Longest answer": "Langste antwoord",
         "Longest value this property accepts.": "De langste waarde die deze eigenschap accepteert.",
+        "longest: {count} days": "langste: {count} dagen",
         "Longitude": "Lengtegraad",
         "Look up": "Opzoeken",
         "Look up in other domains": "Opzoeken in andere domeinen",
