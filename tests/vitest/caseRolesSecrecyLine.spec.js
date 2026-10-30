@@ -21,6 +21,6 @@ describe('the secrecy line on a case\'s parties', () => {
 		const people = caseDetail.config.widgets.find((widget) => widget.id === 'case-people-panel')
 		const roles = people.content.sections.map((section) => section.widget).find((widget) => widget.id === 'case-party-roles')
 
-		expect(roles.content.secrecy).toEqual({ indicator: 'geheimhouding', kinds: ['person'] })
+		expect(roles.content.secrecy).toEqual({ indicator: 'geheimhouding', kinds: ['person'], primaryOnly: true })
 	})
 })

@@ -6530,6 +6530,8 @@ OC.L10N.register(
         "Primary contact email": "Primary contact email",
         "Primary contact person": "Primary contact person",
         "Primary party": "Primary party",
+        "No secrecy": "No secrecy",
+        "Indicator: {label}": "Indicator: {label}",
         "Primary team of the agent": "Primary team of the agent",
         "Primary value (ja/nee/nvt, text, choice)": "Primary value (ja/nee/nvt, text, choice)",
         "Prior beschikking being superseded": "Prior beschikking being superseded",
