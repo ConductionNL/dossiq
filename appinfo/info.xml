@@ -237,6 +237,9 @@ Vrij en open source onder de EUPL-1.2-licentie.
              whatever hour the runner happened to fire.
              See openspec/changes/one-personal-queue. -->
         <job>OCA\Dossiq\BackgroundJob\DailyDigestJob</job>
+        <!-- Daily: an intake obligation past its due date is marked expired and
+             its kind's whenUnmet rule applied (obligations-placed-at-intake). -->
+        <job>OCA\Dossiq\BackgroundJob\IntakeObligationLapseJob</job>
     </background-jobs>
 
     <repair-steps>

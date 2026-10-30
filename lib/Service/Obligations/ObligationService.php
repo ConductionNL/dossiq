@@ -112,20 +112,23 @@ class ObligationService {
 	/**
 	 * Record that an obligation has been met, releasing what it blocked.
 	 *
-	 * @param string $obligationId The obligation.
-	 * @param string $note         What settled it, for the record.
+	 * @param string               $obligationId The obligation.
+	 * @param string               $note         What settled it, for the record.
+	 * @param array<string, mixed> $fields       Further fields to record with the settlement, such as who settled it.
 	 *
 	 * @return bool True when the obligation was settled.
 	 *
 	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-the-holder-settles-an-intake-obligation-from-the-portal
 	 */
-	public function meet(string $obligationId, string $note = ''): bool {
+	public function meet(string $obligationId, string $note = '', array $fields = []): bool {
 		return $this->close(
 			obligationId: $obligationId,
 			state: ObligationDeclaration::STATE_MET,
 			field: 'metAt',
 			reason: $note,
 			reasonField: 'settlementNote',
+			fields: $fields,
 		);
 	}//end meet()
 
@@ -223,6 +226,46 @@ class ObligationService {
 	}//end allFor()
 
 	/**
+	 * Open obligations across every case, at most `$limit` of them.
+	 *
+	 * For a sweep that runs daily: a row this run does not reach is read the
+	 * next day.
+	 *
+	 * @param int $limit The most rows to read.
+	 *
+	 * @return array<int, array<string, mixed>> The rows, or an empty list.
+	 *
+	 * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-a-refused-or-lapsed-intake-obligation-follows-its-kinds-rule
+	 */
+	public function openRows(int $limit): array {
+		[$objectService, $register, $schema] = $this->store();
+		if ($objectService === null) {
+			return [];
+		}
+
+		$rows = null;
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['state' => ObligationDeclaration::STATE_OPEN, '_limit' => $limit],
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq obligations: the open obligations could not be read',
+				['error' => $e->getMessage()],
+			);
+		}
+
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		return $rows;
+	}//end openRows()
+
+	/**
 	 * The obligation placed by a given object, if there is one.
 	 *
 	 * The advice request needs this to settle its own obligation when it is
@@ -310,6 +353,7 @@ class ObligationService {
 	 * @param string $field        The moment field to stamp.
 	 * @param string $reason       The reason or note.
 	 * @param string $reasonField  Which field the reason is written to.
+	 * @param array<string, mixed> $fields Further fields to record.
 	 *
 	 * @return bool True when the write landed.
 	 *
@@ -321,6 +365,7 @@ class ObligationService {
 		string $field,
 		string $reason,
 		string $reasonField,
+		array $fields = [],
 	): bool {
 		if (trim($obligationId) === '') {
 			return false;
@@ -350,6 +395,7 @@ class ObligationService {
 			return false;
 		}
 
+		$payload = array_merge($payload, $fields);
 		$payload['state'] = $state;
 		$payload[$field] = $this->dates->nowAsMoment();
 		if ($reason !== '') {

@@ -889,6 +889,9 @@ $extra = [
     ['name' => 'wooDeliveredSet#item', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}', 'verb' => 'GET', 'requirements' => ['index' => '\d+']],
     ['name' => 'wooDeliveredSet#file', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}/{side}', 'verb' => 'GET', 'requirements' => ['index' => '\d+', 'side' => 'original|delivered']],
     ['name' => 'portalPermit#changePlate', 'url' => '/api/portal/vergunning/kenteken', 'verb' => 'POST'],
+    // The person a form named, such as a second signer, signs or refuses from the portal
+    // (obligations-placed-at-intake); portaliq forwards with a signed X-Portal-Subject assertion.
+    ['name' => 'portalObligation#settle', 'url' => '/api/portal/obligations/settle', 'verb' => 'POST'],
     // Gather documents on a Woo case (woo-requests-gather-documents-from-sources D-2, D-3).
     ['name' => 'wooSources#index',  'url' => '/api/cases/{id}/woo/sources',        'verb' => 'GET'],
     ['name' => 'wooSources#search', 'url' => '/api/cases/{id}/woo/sources/search', 'verb' => 'POST'],

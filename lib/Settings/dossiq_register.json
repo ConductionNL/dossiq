@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.86"
+        "version": "0.20.87"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.44.0",
+                "version": "1.45.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -733,6 +733,16 @@
                                     "minimum": 1,
                                     "title": "Term",
                                     "description": "How many working days the holder has, where the kind has a term of its own. An obligation past its term is reported as overdue and STAYS blocking: an unmet term does not release the case, it says the wait has gone on too long."
+                                },
+                                "whenUnmet": {
+                                    "type": "string",
+                                    "enum": [
+                                        "stay",
+                                        "withdraw"
+                                    ],
+                                    "default": "stay",
+                                    "title": "When it is not met",
+                                    "description": "What happens when the holder refuses, or the due date passes, for an obligation placed at intake. stay keeps it open and blocking, so a handler decides what the case does next. withdraw releases the case with the reason written on the obligation. Either way the case's intake obligation says refused or expired, so the resident sees it."
                                 }
                             }
                         }
@@ -1854,7 +1864,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.53.0",
+                "version": "1.54.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -3366,6 +3376,54 @@
                         "description": "The phases this case never reached, recorded when it was closed early. A JSON-encoded array of statusType names. An intrekking or a niet-ontvankelijkverklaring arrives mid-process, and the phases it skipped are a fact somebody will ask about.",
                         "title": "Skipped phases",
                         "visible": false
+                    },
+                    "intakeObligations": {
+                        "type": "array",
+                        "title": "Waiting on at intake",
+                        "description": "What the form that opened this case asked to wait on, such as a second signer. The submit writes each entry with state awaiting; dossiq places an obligation for it and keeps the state in step: signed when the holder settles it from the portal, refused when they decline, expired when the due date passes. The portal reads this to tell the applicant what the case waits on.",
+                        "visible": false,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "kind": {
+                                    "type": "string",
+                                    "description": "The obligation kind, as the case type lists it under obligationKinds."
+                                },
+                                "title": {
+                                    "type": "string",
+                                    "description": "What is awaited, in the words the applicant reads."
+                                },
+                                "holderName": {
+                                    "type": "string",
+                                    "description": "The person the form named to do it."
+                                },
+                                "holderEmail": {
+                                    "type": "string",
+                                    "format": "email",
+                                    "description": "Where the portal sent that person the link."
+                                },
+                                "dueAt": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "description": "The last day it can be done."
+                                },
+                                "state": {
+                                    "type": "string",
+                                    "enum": [
+                                        "awaiting",
+                                        "signed",
+                                        "refused",
+                                        "expired"
+                                    ],
+                                    "description": "Where it stands."
+                                },
+                                "settledAt": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When it was signed, refused or expired."
+                                }
+                            }
+                        }
                     },
                     "heldUntil": {
                         "type": "string",
@@ -7595,7 +7653,7 @@
             "obligation": {
                 "slug": "obligation",
                 "icon": "AccountArrowRightOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Action",
                 "title": "Obligation",
                 "description": "Something this case is waiting on somebody else to do. ONE mechanism rather than one service per kind: an obligation is placed on a person or a unit, it blocks what it declares it blocks while it is open, and meeting it releases the case. A new kind of obligation is a declaration on the case type, not a new class. The advice request is the first obligation of this kind and keeps its own behaviour; see openspec/changes/what-a-transition-declares.",
@@ -7743,6 +7801,25 @@
                         "maxLength": 255,
                         "description": "The engine task this obligation was placed as. OpenRegister owns the work inbox, so dossiq never builds a second one; this is the handle back to the task that carries the ask.",
                         "title": "Engine task"
+                    },
+                    "holderName": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "description": "The name of the person outside the organisation this was placed on, such as a second signer the applicant named on the form. Empty for an obligation placed on a user or a unit.",
+                        "title": "Holder"
+                    },
+                    "settledBySubject": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "description": "The pseudonymous portal subject of the person who settled this from the portal. Never a BSN.",
+                        "title": "Settled by (portal subject)",
+                        "visible": false
+                    },
+                    "settledTrust": {
+                        "type": "string",
+                        "maxLength": 32,
+                        "description": "The level of assurance the portal stated for that person's sign-in when they settled it.",
+                        "title": "Level of assurance at settling"
                     }
                 }
             },

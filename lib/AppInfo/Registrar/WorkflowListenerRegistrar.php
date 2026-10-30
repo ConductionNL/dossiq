@@ -34,6 +34,7 @@ use OCA\Dossiq\Listener\CasePhaseTermListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\CustodyCaseCreatedListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
+use OCA\Dossiq\Listener\IntakeObligationListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -210,6 +211,17 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: self::DRAFT_SENT_EVENT,
 			listener: AcknowledgementOnCreateListener::class
+		);
+
+		// What the form asked the case to wait on, such as a second signer,
+		// becomes an obligation the moment the case is received (decision 271).
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: IntakeObligationListener::class
+		);
+		$context->registerEventListener(
+			event: self::DRAFT_SENT_EVENT,
+			listener: IntakeObligationListener::class
 		);
 	}//end registerTermijnListeners()
 
