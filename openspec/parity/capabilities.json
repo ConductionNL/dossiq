@@ -11404,7 +11404,8 @@
 		},
 		"avg-processing-surface": {
 			"board": [
-				"DqPrivacy"
+				"DqZaken",
+				"DqZaak"
 			]
 		},
 		"bag-location-save-validation": {
@@ -11420,7 +11421,7 @@
 		},
 		"beroep-escalation": {
 			"board": [
-				"DqBezwaar",
+				"DqZaak",
 				"DqZaaktypen"
 			]
 		},
@@ -11430,12 +11431,13 @@
 		},
 		"bezwaar-advisory-committee": {
 			"board": [
-				"DqBezwaar"
+				"DqZaak"
 			]
 		},
 		"bezwaar-rest-api": {
 			"board": [
-				"DqBezwaar"
+				"DqZaken",
+				"DqZaak"
 			]
 		},
 		"brk-woz-register-adapters": {
