@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Notification;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\QuotaLimitLabel;
 use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
 use OCP\Notification\INotification;
@@ -162,6 +163,11 @@ class Notifier implements INotifier {
 	public const SUBJECT_BACKGROUND_ACCOUNT_MISSING = 'background_service_account_missing';
 
 	/**
+	 * The subject key QuotaGate dispatches when a tenant crosses its soft limit.
+	 */
+	public const SUBJECT_QUOTA_SOFT_LIMIT = 'tenant_quota_soft_limit';
+
+	/**
 	 * Every subject key this notifier can render.
 	 *
 	 * A subject that is not on this list is refused in `prepare()`, and
@@ -193,6 +199,7 @@ class Notifier implements INotifier {
 		self::SUBJECT_APPLICANT_RESPONDED,
 		self::SUBJECT_APPLICANT_WITHDREW,
 		self::SUBJECT_BACKGROUND_ACCOUNT_MISSING,
+		self::SUBJECT_QUOTA_SOFT_LIMIT,
 	];
 
 	/**
@@ -200,10 +207,12 @@ class Notifier implements INotifier {
 	 *
 	 * @param IFactory $l10nFactory Resolves the localisation for the recipient's language.
 	 * @param IURLGenerator $urlGenerator Builds the notification icon URL.
+	 * @param QuotaLimitLabel $quotaLabels Words a quota limit.
 	 */
 	public function __construct(
 		private readonly IFactory $l10nFactory,
 		private readonly IURLGenerator $urlGenerator,
+		private readonly QuotaLimitLabel $quotaLabels = new QuotaLimitLabel(),
 	) {
 	}//end __construct()
 
@@ -288,6 +297,7 @@ class Notifier implements INotifier {
 				l: $l,
 			),
 			self::SUBJECT_BACKGROUND_ACCOUNT_MISSING => $this->backgroundAccountText(l: $l),
+			self::SUBJECT_QUOTA_SOFT_LIMIT => $this->quotaSoftLimitText(subjectRaw: $subjectRaw, l: $l),
 			default => $this->noteMentionText(subjectRaw: $subjectRaw, l: $l),
 		};
 
@@ -578,6 +588,29 @@ class Notifier implements INotifier {
 			$l->t('Reminders on suspended terms are not sent and nothing is saved until you choose an account in the Dossiq settings.'),
 		];
 	}//end backgroundAccountText()
+
+	/**
+	 * The text for a tenant administrator when the tenant nears a quota limit.
+	 *
+	 * @param array<string,mixed> $subjectRaw The stored subject parameters.
+	 * @param \OCP\IL10N          $l          The recipient's localisation.
+	 *
+	 * @return array{0:string,1:string} The [subject, message] pair.
+	 *
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-a-tenant-past-its-hard-quota-cannot-create-more-req-tq-enf-01
+	 */
+	private function quotaSoftLimitText(array $subjectRaw, \OCP\IL10N $l): array {
+		$label = $this->quotaLabels->label(
+			l: $l,
+			quotaType: (string)($subjectRaw['quotaType'] ?? ''),
+			limit: (int)($subjectRaw['limit'] ?? 0)
+		);
+
+		return [
+			$l->t('Your organisation is close to its limit of %s', [$label]),
+			$l->t('Used this period: %1$s of %2$s.', [(string)(int)($subjectRaw['used'] ?? 0), $label]),
+		];
+	}//end quotaSoftLimitText()
 
 	/**
 	 * The three StUF wordings.

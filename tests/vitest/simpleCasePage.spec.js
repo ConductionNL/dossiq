@@ -562,6 +562,7 @@ describe('the tabs', () => {
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
 		added.push('case-grant-decisions-card')
+		added.push('case-payment-schedule')
 		expect(others(simple)).toEqual(others(original))
 		expect(find(simple, 'case-banner-stack')).toEqual({ ...find(original, 'case-banner-stack'), title: 'Status', _note: expect.any(String) })
 		// Its attention strip asks the reason behind one button, with the board's hint.
@@ -762,14 +763,20 @@ describe('the header and the side column', () => {
 		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen && card.type !== 'banner' && card.type !== 'audit-trail')
 		expect(gated.map((card) => card.id)).toEqual([
 			'side-objection-appeal',
+			'side-payment-amounts',
 			'side-grant-application',
 			'side-social-consent',
 			'side-social-people',
 			'side-tender-bids',
 		])
 		for (const card of gated) {
-			// A list of those records, or (Consent) the facts of the newest one.
+			// A list of those records, or (Consent) the facts of the newest one,
+			// or (Amounts) the facts dossiq reads for this case.
 			expect(['record-list', 'facts']).toContain(card.type)
+			if (card.content.endpointSource) {
+				expect(card.content.endpointSource.url).toBe('/apps/dossiq/api/cases/@objectId/payment-schedule')
+				continue
+			}
 			const filter = card.type === 'facts' ? card.content.source.filter : card.content.filter
 			expect(Object.values(filter)).toEqual(['@objectId'])
 			expect(JSON.stringify(card.visibleWhen)).toContain('@context.caseType.category')

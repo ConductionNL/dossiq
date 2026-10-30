@@ -1547,6 +1547,50 @@
 						}
 					},
 					{
+						"id": "side-payment-amounts",
+						"type": "facts",
+						"title": "Amounts",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Subsidies",
+								"Grants"
+							]
+						},
+						"_note": "DqSubsidie Bedragen: the totals of the case's payment schedule from the same read as the Advance schedule card: the whole schedule, what is paid, what is ready for payment and what is still to pay. Shown on a case whose case type sits in the Subsidies folder, in the place its sideCards give it.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/payment-schedule"
+							},
+							"emptyWhen": "empty",
+							"fields": [
+								{
+									"label": "Granted",
+									"path": "totals.total",
+									"format": "currency"
+								},
+								{
+									"label": "Paid",
+									"path": "totals.paid",
+									"format": "currency"
+								},
+								{
+									"label": "Ready for payment",
+									"path": "totals.ready",
+									"format": "currency"
+								},
+								{
+									"label": "Still to pay",
+									"path": "totals.toPay",
+									"format": "currency"
+								}
+							],
+							"footnote": "Payments go through the finance department.",
+							"emptyText": "No advance schedule on this case"
+						}
+					},
+					{
 						"id": "side-grant-application",
 						"type": "record-list",
 						"title": "Grant application",
@@ -2076,6 +2120,7 @@
 										"case-household-cases-card",
 										"goal-plan",
 										"case-grant-decisions-card",
+										"case-payment-schedule",
 										"case-request",
 										"case-details",
 										"case-priority-card",
@@ -3898,6 +3943,79 @@
 								}
 							],
 							"emptyText": "No grant decisions yet"
+						}
+					},
+					{
+						"id": "case-payment-schedule",
+						"type": "record-list",
+						"title": "Advance schedule",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Subsidies",
+								"Grants"
+							]
+						},
+						"_note": "DqSubsidie Voorschotschema: the instalments of the payment schedules on the case's decisions (beschikking.paymentSchedule), one row each with its planned date, amount, condition and state, from GET /api/cases/{caseId}/payment-schedule. The state is the server's: paid once the finance app holds the instalment's payable, ready when only the next run of RaiseDuePayments stands between it and the finance app, waiting past its day on an unmet condition, planned otherwise. Shown on a case whose case type sits in the Subsidies folder and lists the card in overviewCards, as the Grant decisions card is.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/payment-schedule",
+								"responsePath": "instalments"
+							},
+							"presentation": "table",
+							"tableLook": "data",
+							"valueLabels": {
+								"state": {
+									"paid": "Paid",
+									"ready": "Ready for payment",
+									"waiting": "Waiting for its condition",
+									"planned": "Planned"
+								}
+							},
+							"columns": [
+								{
+									"label": "Instalment",
+									"value": "{label}"
+								},
+								{
+									"label": "Planned",
+									"value": [
+										"{dueOn|date}",
+										"At settlement"
+									]
+								},
+								{
+									"label": "Amount",
+									"value": "{amount|currency}",
+									"align": "end"
+								},
+								{
+									"label": "Condition",
+									"value": [
+										"{condition}",
+										"None"
+									]
+								},
+								{
+									"label": "Status",
+									"value": [
+										"Paid {raisedAt|date}",
+										"{state}"
+									],
+									"tone": {
+										"field": "state",
+										"map": {
+											"paid": "success",
+											"ready": "primary",
+											"waiting": "warning",
+											"planned": "default"
+										}
+									}
+								}
+							],
+							"emptyText": "No advance schedule on this case",
+							"errorText": "The advance schedule could not be read."
 						}
 					},
 					{
