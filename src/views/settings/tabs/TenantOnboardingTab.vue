@@ -468,7 +468,7 @@ export default {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
-	gap: 14px;
+	gap: 16px;
 	max-width: 560px;
 }
 

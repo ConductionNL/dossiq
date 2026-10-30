@@ -32,14 +32,14 @@ describe('the Statuses tab against DqZaaktypeStatussen', () => {
 		expect(labels).toEqual(['Status toevoegen', 'Resultaat toevoegen', 'Documenttype toevoegen', 'Besluittype toevoegen'])
 	})
 
-	it('names a status as strong text with its colour as a dot, and a result as strong text in sentence case', () => {
+	it('names a status as a link with its colour as a dot, and a result as a link in sentence case', () => {
 		const statuses = widget('case-type-statuses-editor').content
-		expect(statuses.rowTitle).toBe('strong')
+		expect(statuses.rowTitle).toBeUndefined()
 		const name = statuses.columns.find((c) => c.key === 'name')
 		expect(name.format).toMatchObject({ style: 'swatch', colorField: 'colour' })
 		expect(Object.keys(name.format.colorMap)).toEqual(expect.arrayContaining(['blue', 'orange', 'purple', 'teal', 'green', 'red']))
 		const results = widget('case-type-results').content
-		expect(results.rowTitle).toBe('strong')
+		expect(results.rowTitle).toBeUndefined()
 		const action = results.columns.find((c) => c.key === 'archivalAction')
 		expect(['bewaren', 'vernietigen', 'blijvend_bewaren'].map((v) => dutch(action.enumLabels[v]))).toEqual(['Bewaren', 'Vernietigen', 'Blijvend bewaren'])
 	})

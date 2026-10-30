@@ -7808,7 +7808,6 @@
 								"dir": "asc"
 							},
 							"limit": 50,
-							"rowTitle": "strong",
 							"columns": [
 								{
 									"key": "name",
