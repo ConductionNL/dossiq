@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.86"
+        "version": "0.20.87"
     },
     "x-openregister": {
         "type": "application",
@@ -12883,7 +12883,7 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
-                    "version": "1.2.1",
+                    "version": "1.3.0",
                     "slug": "klacht-behandeling"
                 },
                 "title": "Klacht behandeling",
@@ -12971,7 +12971,7 @@
                         }
                     ]
                 },
-                "description": "Behandeling van een klacht over een gedraging van de gemeente conform Awb hoofdstuk 9.",
+                "description": "Behandeling van een klacht over een gedraging van de gemeente conform Awb hoofdstuk 9. Afhandeling binnen zes weken na ontvangst, of tien weken als een klachtadviescommissie adviseert (Awb 9:11 lid 1); verdaging met ten hoogste vier weken (Awb 9:11 lid 2), daarna alleen met schriftelijke instemming van de klager (lid 3).",
                 "purpose": "Behandeling van klachten van burgers en bedrijven",
                 "trigger": "Klacht ingediend door burger of bedrijf",
                 "subject": "Klacht",
@@ -12983,7 +12983,123 @@
                 "internalOrExternal": "extern",
                 "publicationRequired": false,
                 "isDraft": false,
-                "confidentiality": "vertrouwelijk"
+                "confidentiality": "vertrouwelijk",
+                "sessions": [
+                    {
+                        "key": "hoorgesprek",
+                        "label": "Hoorgesprek",
+                        "inviteeRoles": [
+                            "Klager",
+                            "Betrokken medewerker",
+                            "Klachtencoördinator"
+                        ],
+                        "minInvitees": 1,
+                        "inspectionFloorDays": 0,
+                        "waivable": true,
+                        "minutesRequired": true,
+                        "recordingConsentRequired": true
+                    }
+                ],
+                "recordImports": [
+                    {
+                        "key": "klachten",
+                        "sourceApp": "dossiq",
+                        "sourceRegister": "dossiq",
+                        "sourceSchema": "complaint",
+                        "statusField": "status",
+                        "statuses": {
+                            "received": {
+                                "status": "@ref:klacht-ontvangen",
+                                "term": "running"
+                            },
+                            "receipt_confirmed": {
+                                "status": "@ref:klacht-bevestigd",
+                                "term": "running"
+                            },
+                            "in_handling": {
+                                "status": "@ref:klacht-onderzoek",
+                                "term": "running"
+                            },
+                            "hoorgesprek_planned": {
+                                "status": "@ref:klacht-onderzoek",
+                                "term": "running"
+                            },
+                            "hoorgesprek_completed": {
+                                "status": "@ref:klacht-oordeel",
+                                "term": "running"
+                            },
+                            "handled": {
+                                "status": "@ref:klacht-afgehandeld",
+                                "term": "closed"
+                            },
+                            "withdrawn": {
+                                "status": "@ref:klacht-afgehandeld",
+                                "term": "closed",
+                                "result": "@ref:klacht-ingetrokken"
+                            },
+                            "*": {
+                                "status": "@ref:klacht-ontvangen",
+                                "term": "running"
+                            }
+                        },
+                        "fields": [
+                            {
+                                "to": "title",
+                                "from": "subject",
+                                "maxLength": 255,
+                                "required": true
+                            },
+                            {
+                                "to": "description",
+                                "from": "description"
+                            },
+                            {
+                                "to": "startDate",
+                                "from": "receiptDate",
+                                "as": "date",
+                                "required": true
+                            },
+                            {
+                                "to": "initiatorDisplayName",
+                                "from": "complainant.name"
+                            },
+                            {
+                                "to": "assignee",
+                                "from": "handler"
+                            },
+                            {
+                                "to": "intakeChannel",
+                                "from": "receiptChannel",
+                                "values": {
+                                    "balie": "balie",
+                                    "phone": "phone",
+                                    "email": "email",
+                                    "brief": "post",
+                                    "website": "website",
+                                    "socialmedia": "other"
+                                },
+                                "default": "other"
+                            },
+                            {
+                                "to": "confidentiality",
+                                "value": "vertrouwelijk"
+                            },
+                            {
+                                "to": "externalReference",
+                                "from": "@id"
+                            }
+                        ],
+                        "matchField": "externalReference",
+                        "formerReference": {
+                            "application": "dossiq",
+                            "from": "complaintNumber"
+                        },
+                        "term": {
+                            "endDate": "afhandelDeadline"
+                        },
+                        "runOnUpgrade": true
+                    }
+                ]
             },
             {
                 "@self": {
@@ -13167,13 +13283,31 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "statusType",
-                    "slug": "klacht-onderzoek"
+                    "slug": "klacht-bevestigd"
+                },
+                "phase": "Ontvangst",
+                "name": "Bevestigd",
+                "caseType": "@ref:klacht-behandeling",
+                "description": "De ontvangst van de klacht is schriftelijk bevestigd (Awb 9:6)",
+                "order": 2,
+                "isFinal": false,
+                "role": "intake",
+                "colour": "blue",
+                "publicLabel": "Ontvangen",
+                "publicDescription": "Wij hebben de ontvangst van uw klacht bevestigd."
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "slug": "klacht-onderzoek",
+                    "version": "1.1.0"
                 },
                 "phase": "Beoordeling",
-                "name": "Onderzoek",
+                "name": "Hoorgesprek",
                 "caseType": "@ref:klacht-behandeling",
-                "description": "Klacht wordt onderzocht (hoor en wederhoor)",
-                "order": 2,
+                "description": "De klager en de betrokken medewerker worden gehoord (Awb 9:10)",
+                "order": 3,
                 "isFinal": false,
                 "role": "in-progress",
                 "colour": "purple",
@@ -13184,12 +13318,47 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "statusType",
-                    "slug": "klacht-afgehandeld"
+                    "slug": "klacht-oordeel"
+                },
+                "phase": "Beoordeling",
+                "name": "Oordeel",
+                "caseType": "@ref:klacht-behandeling",
+                "description": "Het bestuursorgaan oordeelt of de klacht gegrond is",
+                "order": 4,
+                "isFinal": false,
+                "role": "in-progress",
+                "colour": "purple",
+                "publicLabel": "In behandeling",
+                "publicDescription": "Wij beoordelen uw klacht."
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "slug": "klacht-antwoordbrief"
+                },
+                "phase": "Afhandeling",
+                "name": "Antwoordbrief",
+                "caseType": "@ref:klacht-behandeling",
+                "description": "De klager krijgt het oordeel, de gronden en eventuele conclusies schriftelijk (Awb 9:12)",
+                "order": 5,
+                "isFinal": false,
+                "role": "review",
+                "colour": "teal",
+                "publicLabel": "In behandeling",
+                "publicDescription": "Wij sturen u ons oordeel per brief."
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "slug": "klacht-afgehandeld",
+                    "version": "1.1.0"
                 },
                 "name": "Afgehandeld",
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht is afgehandeld met formeel antwoord",
-                "order": 3,
+                "order": 6,
                 "isFinal": true,
                 "role": "closed",
                 "colour": "green",
@@ -13368,6 +13537,75 @@
                 "description": "Klacht is ongegrond verklaard",
                 "archivalAction": "vernietigen",
                 "archivalPeriod": "P5Y"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "resultType",
+                    "slug": "klacht-deels-gegrond"
+                },
+                "name": "Klacht deels gegrond",
+                "caseType": "@ref:klacht-behandeling",
+                "description": "Een deel van de klacht is gegrond verklaard",
+                "archivalAction": "bewaren",
+                "archivalPeriod": "P10Y"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "resultType",
+                    "slug": "klacht-niet-ontvankelijk"
+                },
+                "name": "Klacht niet-ontvankelijk",
+                "caseType": "@ref:klacht-behandeling",
+                "description": "De klacht hoeft niet in behandeling te worden genomen (Awb 9:8)",
+                "archivalAction": "vernietigen",
+                "archivalPeriod": "P5Y"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "resultType",
+                    "slug": "klacht-ingetrokken"
+                },
+                "name": "Klacht ingetrokken",
+                "caseType": "@ref:klacht-behandeling",
+                "description": "De klager heeft de klacht ingetrokken",
+                "archivalAction": "vernietigen",
+                "archivalPeriod": "P5Y"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "roleType",
+                    "slug": "klacht-rol-klager"
+                },
+                "name": "Klager",
+                "description": "Wie de klacht indient (Awb 9:1)",
+                "genericRole": "initiator",
+                "caseType": "@ref:klacht-behandeling"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "roleType",
+                    "slug": "klacht-rol-betrokken-medewerker"
+                },
+                "name": "Betrokken medewerker",
+                "description": "Op wiens gedraging de klacht betrekking heeft (Awb 9:10)",
+                "genericRole": "stakeholder",
+                "caseType": "@ref:klacht-behandeling"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "roleType",
+                    "slug": "klacht-rol-klachtencoordinator"
+                },
+                "name": "Klachtencoördinator",
+                "description": "Bewaakt de termijn en de afhandeling van klachten",
+                "genericRole": "coordinator",
+                "caseType": "@ref:klacht-behandeling"
             },
             {
                 "@self": {

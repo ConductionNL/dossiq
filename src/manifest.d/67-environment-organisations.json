@@ -237,14 +237,14 @@
 						"id": "organisation-side-admin",
 						"type": "facts",
 						"title": "Administrator",
-						"_note": "Board DqTenant Beheerder: the organisation's admin user (the tenantUser with role admin, earliest joined) as a person chip, its initials in a 28px teal tile beside the display name, and the organisation's contact address under it.",
+						"_note": "Board DqTenant Beheerder: the organisation's admin user (the tenantUser with role tenant_admin, earliest joined) as a person chip, its initials in a 28px teal tile beside the display name, and the organisation's contact address under it.",
 						"content": {
 							"source": {
 								"register": "dossiq",
 								"schema": "tenantUser",
 								"filter": {
 									"tenantRef": "@objectId",
-									"role": "admin"
+									"role": "tenant_admin"
 								},
 								"sort": {
 									"field": "joinedAt",
