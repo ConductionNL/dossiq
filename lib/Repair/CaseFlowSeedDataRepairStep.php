@@ -352,7 +352,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @return array<string,mixed>|null The stored case type, or null.
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	private function existingCaseType(array $schemas, array $caseType, string $title): ?array {
 		$slug = trim((string)($caseType['slug'] ?? ''));

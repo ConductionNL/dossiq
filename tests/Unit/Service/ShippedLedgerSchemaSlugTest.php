@@ -12,7 +12,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * @version GIT: <git-id>
  * @link https://conduction.nl
- * @spec openspec/changes/shipped-ledger-schema-slug/specs/case-type-seed-data/spec.md
+ * @spec openspec/specs/case-type-seed-data/spec.md
  */
 
 declare(strict_types=1);

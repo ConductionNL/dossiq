@@ -70,7 +70,7 @@ class MenuCaseTypesControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function testIndexReturnsChosenAndAvailable(): void {
 		$visible = [['id' => 'a', 'title' => 'A'], ['id' => 'b', 'title' => 'B']];
@@ -91,7 +91,7 @@ class MenuCaseTypesControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function testAFailedCountShowsNoNumbers(): void {
 		$visible = [['id' => 'a', 'title' => 'A']];

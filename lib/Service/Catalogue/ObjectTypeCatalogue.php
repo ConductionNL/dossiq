@@ -222,7 +222,7 @@ class ObjectTypeCatalogue {
 	 *
 	 * @return string The line, '' without a schema.
 	 *
-	 * @spec openspec/changes/catalogue-object-count/specs/catalogue/spec.md
+	 * @spec openspec/specs/catalogue/spec.md
 	 */
 	private function schemaLine(string $title, ?int $objects): string {
 		if ($title === '' || $objects === null) {
@@ -239,7 +239,7 @@ class ObjectTypeCatalogue {
 	 *
 	 * @return array<int, string> The case ids.
 	 *
-	 * @spec openspec/changes/object-types-used-in-case-types/specs/catalogue/spec.md
+	 * @spec openspec/specs/catalogue/spec.md
 	 */
 	private function caseIdsIn(array $casesByType): array {
 		$ids = [];
@@ -262,7 +262,7 @@ class ObjectTypeCatalogue {
 	 *
 	 * @return array<string, string>|null The case type id per case id.
 	 *
-	 * @spec openspec/changes/object-types-used-in-case-types/specs/catalogue/spec.md
+	 * @spec openspec/specs/catalogue/spec.md
 	 */
 	private function caseTypesOf(object $objectService, string $register, array $caseIds): ?array {
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
@@ -302,7 +302,7 @@ class ObjectTypeCatalogue {
 	 *
 	 * @return int|null The count, null when the case types could not be read.
 	 *
-	 * @spec openspec/changes/object-types-used-in-case-types/specs/catalogue/spec.md
+	 * @spec openspec/specs/catalogue/spec.md
 	 */
 	private function caseTypeCount(array $cases, ?array $caseTypeOf): ?int {
 		if ($caseTypeOf === null) {

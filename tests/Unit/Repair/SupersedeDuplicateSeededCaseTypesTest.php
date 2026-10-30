@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+ * @spec openspec/specs/case-type-seed-data/spec.md
  */
 
 declare(strict_types=1);
@@ -145,7 +145,7 @@ class SupersedeDuplicateSeededCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function testTheOlderCopyIsSupersededByTheNewer(): void {
 		$objects = new FakeDuplicateCaseTypeObjectService();
@@ -167,7 +167,7 @@ class SupersedeDuplicateSeededCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function testVersionsAndSupersededCopiesAreLeftAlone(): void {
 		$objects = new FakeDuplicateCaseTypeObjectService();
@@ -191,7 +191,7 @@ class SupersedeDuplicateSeededCaseTypesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function testAnOrganisationsCopyIsNeverSupersededByAnothers(): void {
 		$objects = new FakeDuplicateCaseTypeObjectService();

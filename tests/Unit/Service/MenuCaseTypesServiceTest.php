@@ -200,7 +200,7 @@ class MenuCaseTypesServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-titles-in-the-readers-language/specs/case-type-navigation/spec.md
+	 * @spec openspec/specs/case-type-navigation/spec.md
 	 */
 	public function testATranslatableTitleIsReadInTheReadersLanguage(): void {
 		$rows = [
@@ -438,7 +438,7 @@ class MenuCaseTypesServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function testEachCaseTypeShowsItsOpenCasesFromOneQuery(): void {
 		$store = new FakeMenuCaseTypeObjectService();
@@ -478,7 +478,7 @@ class MenuCaseTypesServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function testACaseOnAnOlderVersionCountsForTheVersionInUse(): void {
 		$store = new FakeMenuCaseTypeObjectService();
@@ -528,7 +528,7 @@ class MenuCaseTypesServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function testAnUnreadableCountIsNullNotZero(): void {
 		$noFacet = new FakeMenuCaseTypeObjectService();

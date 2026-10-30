@@ -7,7 +7,7 @@
  * "Kenmerken" for the fields a type offers. The entry reads its own key,
  * English "Attributes" either way.
  *
- * @spec openspec/changes/catalogue-attributes-word/specs/catalogue/spec.md
+ * @spec openspec/specs/catalogue/spec.md
  */
 
 import fs from 'fs'

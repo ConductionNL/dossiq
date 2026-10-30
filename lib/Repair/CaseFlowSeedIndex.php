@@ -108,7 +108,7 @@ class CaseFlowSeedIndex {
 	 *
 	 * @return array<string,mixed>|null The case type, or null.
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	public function caseTypeBySlug(array $schemas, string $slug): ?array {
 		$rows = $this->rows(
