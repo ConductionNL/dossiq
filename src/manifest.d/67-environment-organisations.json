@@ -273,8 +273,20 @@
 							"limit": 2,
 							"ruleAbove": true,
 							"density": "compact",
-							"emptyText": "Nothing has happened to this organisation yet"
-						}
+							"emptyText": "Nothing has happened to this organisation yet",
+							"footnote": {
+								"text": "Reference {value}",
+								"source": {
+									"url": "/apps/openregister/api/objects/dossiq/tenantSubscription",
+									"params": {
+										"tenantRef": "@objectId",
+										"_limit": 1
+									},
+									"responsePath": "results.0.reference"
+								}
+							}
+						},
+						"_footnoteNote": "Board DqTenant Historie ends with the contract reference (Kenmerk TEN-0014) of the organisation's subscription record, read on its own; without a subscription the line is left out."
 					}
 				],
 				"widgets": [
@@ -346,15 +358,13 @@
 						"title": "Set up",
 						"icon": "ClipboardCheckOutline",
 						"content": {
-							"headerSubtitle": "{count:status=completed} of {total} steps done",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/saas/tenants/@objectId/onboarding/progress",
 								"responsePath": "progress.steps"
 							},
 							"limit": 7,
-							"presentation": "rows",
+							"presentation": "checklist",
 							"title": "{step}",
-							"meta": "{completedAt|date}",
 							"valueLabels": {
 								"step": {
 									"contract": "Contract signed",
@@ -366,22 +376,15 @@
 									"go_live": "Gone live"
 								}
 							},
-							"pill": {
+							"emptyText": "Onboarding has not started for this organisation",
+							"done": {
 								"field": "status",
-								"labels": {
-									"pending": "To do",
-									"in_progress": "In progress",
-									"completed": "Done",
-									"skipped": "Skipped"
-								},
-								"colorMap": {
-									"pending": "default",
-									"in_progress": "info",
-									"completed": "success",
-									"skipped": "default"
-								}
+								"op": "eq",
+								"value": "completed"
 							},
-							"emptyText": "Onboarding has not started for this organisation"
+							"progress": true,
+							"columns": 3,
+							"headerNote": "{count:status=completed} of {total} steps done"
 						}
 					},
 					{
@@ -402,6 +405,13 @@
 							"fields": [
 								{
 									"as": "meter",
+									"key": "cases",
+									"label": "Cases",
+									"path": "usage.objects",
+									"limitPath": "quota.objects"
+								},
+								{
+									"as": "meter",
 									"key": "storage",
 									"label": "Storage",
 									"path": "usage.storage",
@@ -412,7 +422,8 @@
 									"as": "meter",
 									"key": "users",
 									"label": "Users",
-									"path": "usage.users"
+									"path": "usage.users",
+									"limitPath": "quota.users"
 								},
 								{
 									"as": "meter",
@@ -422,8 +433,11 @@
 									"limitPath": "quota.requests"
 								}
 							],
-							"emptyText": "No usage recorded for this organisation"
-						}
+							"emptyText": "No usage recorded for this organisation",
+							"footnote": "A different package takes effect within a quarter of an hour."
+						},
+						"_footnoteNote": "Board DqTenant Quota footnote. The card reads the quota fresh; OpenRegister enforces the request quota on the active organisation, which a signed-in session keeps for at most 15 minutes (OrganisationService::CACHE_TIMEOUT 900), so a quarter of an hour is the longest a change waits.",
+						"_note": "Board DqTenant Quota: Zaken, Opslag, Gebruikers, each against its limit. OpenRegister counts the organisation's live objects of the schema its object quota names (Waterland: case) and limits its users (openregister#4800). The requests row stays after them."
 					},
 					{
 						"id": "organisation-mandates",
