@@ -4665,7 +4665,14 @@
 				"sender": "{{cast:groenenco.name}}",
 				"creatiedatum": "{{date:-10}}",
 				"taal": "nld",
-				"description": "Bedrijfsgevoelige prijzen: alleen Pieter Jansen en team Vergunningen."
+				"description": "Bedrijfsgevoelige prijzen: alleen Pieter Jansen en team Vergunningen.",
+				"accessException": {
+					"users": ["{{cast:pieter.uid}}"],
+					"groups": ["zuiddrecht-vergunningen"],
+					"reason": "Bedrijfsgevoelige prijzen",
+					"setBy": "{{cast:pieter.uid}}",
+					"setAt": "{{datetime:-10 10:12}}"
+				}
 			}
 		},
 		{

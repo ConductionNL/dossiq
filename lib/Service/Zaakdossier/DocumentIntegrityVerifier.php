@@ -9,6 +9,8 @@
  * `integrity.status` (unchanged, changed, missing, unchecked) with the time
  * of the check (`integrity.checkedAt`). The stored hash and its date stay as
  * they were, so a changed file never rewrites the evidence it is held to.
+ * A document whose file was never hashed (one written before its file, such
+ * as an example set's) gets its hash on its first check, dated that check.
  * Generic: every document of every case type.
  *
  * @category Service
@@ -76,7 +78,7 @@ class DocumentIntegrityVerifier {
 	 *
 	 * @param int $batch How many documents one run reads.
 	 *
-	 * @return int How many documents with a stored hash were checked.
+	 * @return int How many documents were checked or got their first hash.
 	 *
 	 * @spec openspec/changes/document-integrity-check/specs/document-integrity-check/spec.md#requirement-stored-checksums-are-checked-again-and-the-check-is-recorded
 	 */
@@ -114,7 +116,7 @@ class DocumentIntegrityVerifier {
 	}//end verifyNext()
 
 	/**
-	 * Check one document; a document without a stored hash is left alone.
+	 * Check one document, or give one whose file was never hashed its first hash.
 	 *
 	 * @param object               $objectService OpenRegister's object service.
 	 * @param string               $register      The register.
@@ -122,12 +124,21 @@ class DocumentIntegrityVerifier {
 	 * @param array<string, mixed> $row           The document.
 	 *
 	 * @return bool Whether the document was checked.
+	 *
+	 * @spec openspec/changes/a-document-without-a-checksum-gets-one/specs/document-integrity-check/spec.md#requirement-a-document-without-a-stored-checksum-gets-one-on-its-first-check
 	 */
 	private function verifyOne(object $objectService, string $register, string $schema, array $row): bool {
 		$integrity = $row['integrity'] ?? null;
 		$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
-		if (is_array($integrity) === false || (string)($integrity['value'] ?? '') === '' || $id === '') {
+		if ($id === '') {
 			return false;
+		}
+
+		if (is_array($integrity) === false || (string)($integrity['value'] ?? '') === '') {
+			$integrity = $this->firstHashOf(fileId: (int)($row['fileId'] ?? 0));
+			if ($integrity === []) {
+				return false;
+			}
 		}
 
 		$status = $this->statusOf(stored: (string)$integrity['value'], fileId: (int)($row['fileId'] ?? 0));
@@ -151,6 +162,31 @@ class DocumentIntegrityVerifier {
 
 		return true;
 	}//end verifyOne()
+
+	/**
+	 * The hash of a document's file as it is now, empty when there is no file or it is too large to hash.
+	 *
+	 * @param int $fileId The file id.
+	 *
+	 * @return array<string, mixed> The integrity block.
+	 */
+	private function firstHashOf(int $fileId): array {
+		$node = null;
+		if ($fileId > 0) {
+			$node = $this->rootFolder->getFirstNodeById(id: $fileId);
+		}
+
+		if ($node instanceof File === false) {
+			return [];
+		}
+
+		$integrity = $this->defaults->integrityOf(node: $node);
+		if ((string)($integrity['value'] ?? '') === '') {
+			return [];
+		}
+
+		return $integrity;
+	}//end firstHashOf()
 
 	/**
 	 * The outcome of hashing the file now against the stored hash.
