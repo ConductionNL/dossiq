@@ -791,6 +791,26 @@ class EngineTaskGateway {
     }//end complete()
 
     /**
+     * Whether an engine task has the column a getter reads. OpenRegister's
+     * Task is a Nextcloud Entity, whose column getters are magic (`__call`),
+     * so a declared method and a declared property both count.
+     *
+     * @param object $task   The engine task.
+     * @param string $getter The accessor, `get<Column>`.
+     *
+     * @return bool
+     *
+     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     */
+    private static function answers(object $task, string $getter): bool {
+        if (method_exists($task, $getter) === true) {
+            return true;
+        }
+
+        return str_starts_with($getter, 'get') === true && property_exists($task, lcfirst(substr($getter, 3))) === true;
+    }//end answers()
+
+    /**
      * One string column of an engine task, or '' when the engine has none.
      *
      * @param object $task   The engine task.
@@ -801,7 +821,7 @@ class EngineTaskGateway {
      * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
      */
     private static function stringFrom(object $task, string $getter): string {
-        if (method_exists($task, $getter) === false) {
+        if (self::answers(task: $task, getter: $getter) === false) {
             return '';
         }
 
@@ -819,7 +839,7 @@ class EngineTaskGateway {
      * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
      */
     private static function dateFrom(object $task, string $getter): string {
-        if (method_exists($task, $getter) === false) {
+        if (self::answers(task: $task, getter: $getter) === false) {
             return '';
         }
 
@@ -842,7 +862,7 @@ class EngineTaskGateway {
      * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
      */
     private static function listFrom(object $task, string $getter): array {
-        if (method_exists($task, $getter) === false) {
+        if (self::answers(task: $task, getter: $getter) === false) {
             return [];
         }
 
