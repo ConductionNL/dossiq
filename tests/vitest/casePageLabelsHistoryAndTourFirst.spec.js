@@ -12,8 +12,8 @@
  * the timeline tab History, and the sidebar named the audit trail History too.
  * N-7: a new user met the support note before the welcome tour.
  *
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/frontend-locale-completeness/spec.md
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+ * @spec openspec/specs/frontend-locale-completeness/spec.md
+ * @spec openspec/specs/first-load-onboarding/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'

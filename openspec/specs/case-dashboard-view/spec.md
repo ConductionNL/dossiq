@@ -859,6 +859,127 @@ hold the case folder and nothing else: no section heading and no second list.
 - **THEN** the document SHALL render as a linked row below the folder's files, naming case A as a link
 - **AND** the row SHALL offer open and download and no rename, delete or move
 
+### Requirement: Files are added with a button or by dropping them on the list (REQ-CDV-22)
+
+The case Files tab SHALL offer adding files as a primary button labelled "Add files" ("Bestanden toevoegen") beside the New menu, as the board `DqZaakDocumenten` draws it. Dragging files over the list SHALL show the drop state on the list itself, as `DqZaakDocumentenSlepen` draws it: a dashed frame with "Drop to add" ("Laat los om toe te voegen") centred over it. Dropping SHALL upload the files through the same path as the button. A line "Or drag files onto this list." ("Of sleep bestanden op deze lijst.") SHALL stand under the list, and no separate drop zone SHALL render. The drop target SHALL NOT be the only way in: the button stays, and the drop state SHALL be announced to screen readers through a polite live region, which after a drop says how many files were added.
+
+#### Scenario: Add files is a button
+@e2e tests/e2e/case-documents-on-the-case.spec.ts
+- **GIVEN** a case with a folder
+- **WHEN** the handler opens the Files tab
+- **THEN** a primary button "Add files" SHALL be shown beside the New menu
+- **AND** the line "Or drag files onto this list." SHALL stand under the list
+
+#### Scenario: Dragging files over the list shows the drop state
+@e2e tests/e2e/case-documents-on-the-case.spec.ts
+- **GIVEN** the Files tab is open
+- **WHEN** files are dragged over the list
+- **THEN** a dashed frame with "Drop to add" SHALL cover the list
+- **AND** a polite live region SHALL say "Drop to add"
+- **WHEN** the drag leaves the list
+- **THEN** the frame SHALL go
+
+#### Scenario: A drop uploads like the button
+@e2e exclude Asserted in nextcloud-vue's CnFilesBrowser tests (the drop and the picker share `uploadFiles`, one DAV PUT per file); the e2e above leaves the case folder untouched by not dropping.
+- **GIVEN** the Files tab is open
+- **WHEN** two files are dropped on the list
+- **THEN** both SHALL be uploaded into the case folder with the same request the button makes
+- **AND** the live region SHALL say "2 files added"
+
+### Requirement: The case page names every tab once (REQ-CDV-23)
+
+The case page's tab strip and its sidebar SHALL NOT carry two tabs with the same
+id or the same label in the reader's language. The history of the case is the
+tab in the strip; the sidebar tab over the audit trail SHALL be called
+"Audit trail" ("Audittrail"), as DqZaakHistorie points to it.
+
+#### Scenario: One Geschiedenis tab
+@e2e exclude {asserted for both structure profiles in tests/vitest/casePageLabelsHistoryAndTourFirst.spec.js and checked live on the tab list}
+
+- **GIVEN** a reader whose language is Dutch
+- **WHEN** they open a case
+- **THEN** exactly one tab SHALL read "Geschiedenis"
+- **AND** the sidebar SHALL offer the audit trail as "Audittrail"
+
+### Requirement: The Add location dialog draws the board
+
+The Add location dialog SHALL open at the wizard width, name its address field once, set the map beside a 200px layer
+list, and draw the BAG and cadastre cards 12px rounded with a 17px title at 700 over rows 8px apart.
+
+#### Scenario: DqZaakLocatie
+
+- **WHEN** a handler opens Add location on a case
+- **THEN** the dialog is 720px wide
+- **AND** the BAG card is half the content width with "BAG" at 17px
+
+### Requirement: The case page holds the assistant as a tab
+
+The simple case page SHALL offer an "AI oversight" tab that holds the AI Chat Companion embedded (`ai-chat`), with
+the case as its context, and SHALL say hermiq is not installed when it is absent. The tab SHALL wait under Acties and
+SHALL take its place in the strip while it is open. The launcher hex and the Assistant sidebar tab SHALL stay.
+
+#### Scenario: DqZaakAssistent
+
+- **WHEN** a handler opens AI-toezicht from Acties on a case
+- **THEN** the tab shows the assistant's window, open, with its agents, sessions and input
+
+### Requirement: The AI oversight tab shows what the assistant did, the macros and the chat
+
+The case page's AI oversight tab SHALL list hermiq's advisory decisions on the case, newest first, with the moment,
+the user, the question or suggestion, the outcome and the model; SHALL offer the case schema's macros; and SHALL
+show the assistant chat in the side column while it is open.
+
+#### Scenario: DqZaakAssistent
+
+- **WHEN** a handler opens AI-toezicht on a case
+- **THEN** "Wat de assistent op deze zaak deed" lists the decisions recorded for this case
+- **AND** "Macro's" lists the macros the case schema declares, or says there are none
+- **AND** the side column holds the Assistant chat
+
+### Requirement: The AI oversight list reads through the case
+
+The AI-toezicht list SHALL read the case's AI oversight records through hermiq's subject endpoint with the case as
+subject, and SHALL name the outcomes used, adapted, not used and rejected.
+
+#### Scenario: DqZaakAssistent
+
+- **WHEN** a handler who may open the case opens AI-toezicht
+- **THEN** the list shows the case's suggestions, a suggestion nobody acted on as "Niet gebruikt"
+
+### Requirement: The AI oversight tab has the side column to the assistant
+
+While the AI oversight tab is open, the four generic side cards SHALL stand aside, so the Assistant chat is the side
+column's card. Beside every other tab they SHALL show as before.
+
+#### Scenario: DqZaakAssistent
+
+- **WHEN** a handler opens AI-toezicht on a case
+- **THEN** the side column holds the Assistent card and not Termijn, Verzoeker, Behandeling or Werkinstructie
+
+### Requirement: A case type chooses the macros its cases offer
+
+A case type SHALL list the declared macros its cases offer, in order, and the Macro's card SHALL show only those. A case
+type that lists none SHALL offer none.
+
+#### Scenario: Woo request and objection
+
+- **WHEN** a handler opens AI-toezicht on a Woo request
+- **THEN** the card offers "Woo-verzoek afronden" and "Opschorten voor aanvulling"
+- **AND** on an objection it says no macros are set up for the case type
+
+### Requirement: The case schema ships the board's two macros
+
+The case schema SHALL declare the macros "Finish the Woo request" (status to Besluit, the Publiceren task) and "Suspend
+for supplementary information" (the term suspended under the case type's rules, the handler asked to send the message
+Aanvullende gegevens), each bound by name to a manual flow the schema declares. Every step that changes the case SHALL
+carry a label written for people.
+
+#### Scenario: DqZaakAssistent
+
+- **WHEN** a handler opens AI-toezicht on a case
+- **THEN** the Macro's card lists "Woo-verzoek afronden" and "Opschorten voor aanvulling"
+- **AND** after "Opschorten voor aanvulling" ran, the card says "2 wijzigingen: termijn opgeschort, bericht Aanvullende gegevens klaargezet"
+
 ## Dependencies
 
 - **Case Management spec** (`../case-management/spec.md`): Defines all individual panels (REQ-CM-06 through REQ-CM-13).

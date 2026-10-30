@@ -7,7 +7,7 @@
  * 200px layer list, and BAG and cadastre cards with a 17px title over 14px
  * rows 8px apart. Read from the component.
  *
- * @spec openspec/changes/case-location-dialog-board-look/specs/case-dashboard-view/spec.md
+ * @spec openspec/specs/case-dashboard-view/spec.md
  */
 import fs from 'fs'
 import path from 'path'

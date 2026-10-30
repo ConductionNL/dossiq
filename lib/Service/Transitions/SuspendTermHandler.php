@@ -34,7 +34,7 @@ use Throwable;
  * Config: `durationDays` (required, positive), `rationale` (the note beside the
  * pause), `pauseReason` (the key of a reason the case type declares).
  *
- * @spec openspec/changes/case-macros/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
+ * @spec openspec/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
  */
 class SuspendTermHandler implements ActionHandlerInterface {
 
@@ -61,7 +61,7 @@ class SuspendTermHandler implements ActionHandlerInterface {
 	 *
 	 * @return ActionResult The outcome.
 	 *
-	 * @spec openspec/changes/case-macros/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
+	 * @spec openspec/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		$caseId = trim((string)($case['id'] ?? ($case['uuid'] ?? '')));

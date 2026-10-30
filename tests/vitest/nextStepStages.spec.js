@@ -8,7 +8,7 @@
  * case type gives one role to two statuses (a flow moves a case by role). The
  * LHS advice page keys it on the intervention the advice settles on.
  *
- * @spec openspec/changes/next-step-per-stage/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 import fs from 'fs'
 import path from 'path'

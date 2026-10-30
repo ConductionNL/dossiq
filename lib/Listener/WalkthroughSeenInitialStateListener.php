@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+ * @spec openspec/specs/first-load-onboarding/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -40,7 +40,7 @@ use OCP\EventDispatcher\IEventListener;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+ * @spec openspec/specs/first-load-onboarding/spec.md
  */
 class WalkthroughSeenInitialStateListener implements IEventListener {
 
@@ -65,7 +65,7 @@ class WalkthroughSeenInitialStateListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+	 * @spec openspec/specs/first-load-onboarding/spec.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof BeforeTemplateRenderedEvent === false

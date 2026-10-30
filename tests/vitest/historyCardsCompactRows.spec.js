@@ -5,7 +5,7 @@
  * The Historie side cards of DqSociaalDomein and DqHandhaving draw compact
  * stacked rows: 10px above and below each row, the first 10px under the title.
  *
- * @spec openspec/changes/history-cards-compact-rows/specs/case-page/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 
 import fs from 'fs'
