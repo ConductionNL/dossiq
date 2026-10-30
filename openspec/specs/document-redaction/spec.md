@@ -80,7 +80,7 @@ For a partly public document the officer SHALL be able to upload a version redac
 - **WHEN** the officer uploads "offerte-gelakt.pdf"
 - **THEN** the file is stored on the case, recorded as an informatieobject, and `redactedDocumentRef` names it
 
-### Requirement: The redaction panel follows board DqLakken (REQ-DRD-005)
+### Requirement: The redaction panel follows board OcLakken (REQ-DRD-005)
 
 The case header SHALL offer the redaction step for a case type that configures it. The panel SHALL show, per partly public document, the document text with the passages marked, and beside it the proposal: the number of passages found and, per passage, its type and text with a verdict (Akkoord, Aanpassen, Niet lakken) and "Passage toevoegen". "Lakken vastleggen" SHALL be enabled only when every passage has a verdict; pressing it SHALL record the check of the passages to redact and then ask for the copy. "Vorig document" and "Volgende document" SHALL move between the partly public documents. "Gelakte versie uploaden" SHALL upload a version instead. A refusal SHALL be shown as the server's sentence.
 
