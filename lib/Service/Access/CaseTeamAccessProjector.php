@@ -38,7 +38,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Throwable;
 /**
  * Writes the handling team rules onto the live case schema.
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 class CaseTeamAccessProjector {
 
@@ -101,7 +101,7 @@ class CaseTeamAccessProjector {
 	 *
 	 * @return bool True when the schema was rewritten.
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function reapply(): bool {
 		// Asked, not caught: an instance without OpenRegister is an ordinary
@@ -127,7 +127,7 @@ class CaseTeamAccessProjector {
 	 *
 	 * @return array<int, array{id: string, teams: array<int, string>}> The case types.
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function caseTypeTeams(): array {
 		$caseTypes = [];
@@ -150,7 +150,7 @@ class CaseTeamAccessProjector {
 	 *
 	 * @return array<string, mixed> The shipped block.
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function shippedBlock(): array {
 		$configPath = __DIR__ . '/../../Settings/dossiq_register.json';
@@ -177,7 +177,7 @@ class CaseTeamAccessProjector {
 	 *
 	 * @return bool True when the schema was written.
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	private function writeToSchema(): bool {
 		$schemaMapper = $this->container->get(self::SCHEMA_MAPPER);
