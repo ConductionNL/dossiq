@@ -34,6 +34,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -108,6 +109,42 @@ class AccrualNoticeController extends Controller {
 		}
 
 		$body = $this->jsonBody();
+		$request = $this->noticeRequest(body: $body);
+		if ($request instanceof JSONResponse) {
+			return $request;
+		}
+
+		$instance = $this->termInstanceOf(caseId: $request['caseId'], instanceId: $request['instanceId']);
+		$refused = $this->refusalFor(instance: $instance, caseId: $request['caseId'], user: $user, receipt: $request['receipt']);
+		if ($refused !== null) {
+			return $refused;
+		}
+
+		try {
+			$row = $this->service->registerNotice(
+				(string)($instance['id'] ?? $request['instanceId']),
+				$request['receipt'],
+				$request['channel'],
+				(string)($body['documentLink'] ?? ''),
+				trim((string)($body['sender'] ?? ''))
+			);
+			return new JSONResponse($row, Http::STATUS_CREATED);
+		} catch (Throwable $e) {
+			$this->logger->info('Ingebrekestelling register failed: ' . $e->getMessage());
+			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end register()
+
+	/**
+	 * The fields a notice needs, read from the body, or the 400 that says what is missing.
+	 *
+	 * @param array<string, mixed> $body The request body.
+	 *
+	 * @return array{caseId: string, instanceId: string, channel: string, receipt: DateTimeImmutable}|JSONResponse
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	private function noticeRequest(array $body): array|JSONResponse {
 		$caseId = (string)($body['caseId'] ?? '');
 		$instanceId = (string)($body['termijnInstanceId'] ?? '');
 		$channel = (string)($body['notificationChannel'] ?? '');
@@ -125,12 +162,30 @@ class AccrualNoticeController extends Controller {
 			return new JSONResponse(['message' => 'receiptDate is not a date'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$instance = $this->termInstanceOf(caseId: $caseId, instanceId: $instanceId);
+		return ['caseId' => $caseId, 'instanceId' => $instanceId, 'channel' => $channel, 'receipt' => $receipt];
+	}//end noticeRequest()
+
+	/**
+	 * Why the notice may not be registered on this term, or null when it may.
+	 *
+	 * Fails closed: no term (404), a term without a case, a term of another
+	 * case or a case the caller may not change (403), and a term that still
+	 * runs (409, with the day it ends).
+	 *
+	 * @param array<string, mixed>|null $instance The term instance, or null.
+	 * @param string                    $caseId   The case the caller named, or ''.
+	 * @param IUser                     $user     The caller.
+	 * @param DateTimeImmutable         $receipt  The day the notice came in.
+	 *
+	 * @return JSONResponse|null The refusal, or null.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
+	 */
+	private function refusalFor(?array $instance, string $caseId, IUser $user, DateTimeImmutable $receipt): ?JSONResponse {
 		if ($instance === null) {
 			return new JSONResponse(['message' => 'This case has no decision term to give notice on'], Http::STATUS_NOT_FOUND);
 		}
 
-		// Fails closed: a term without a case, or a case the caller may not change, is refused.
 		$owningCase = (string)($instance['case'] ?? '');
 		if ($owningCase === '' || ($caseId !== '' && $owningCase !== $caseId)
 			|| $this->caseAccess->hasCaseMutationAccess(caseId: $owningCase, user: $user) === false
@@ -139,27 +194,15 @@ class AccrualNoticeController extends Controller {
 		}
 
 		$reason = $this->service->prematureReason(instance: $instance, receiptDate: $receipt);
-		if ($reason !== '') {
-			return new JSONResponse(
-				['message' => $reason, 'refusal' => 'term-running', 'termEnds' => (string)($instance['endDateCurrent'] ?? '')],
-				Http::STATUS_CONFLICT
-			);
+		if ($reason === '') {
+			return null;
 		}
 
-		try {
-			$row = $this->service->registerNotice(
-				(string)($instance['id'] ?? $instanceId),
-				$receipt,
-				$channel,
-				(string)($body['documentLink'] ?? ''),
-				trim((string)($body['sender'] ?? ''))
-			);
-			return new JSONResponse($row, Http::STATUS_CREATED);
-		} catch (Throwable $e) {
-			$this->logger->info('Ingebrekestelling register failed: ' . $e->getMessage());
-			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-	}//end register()
+		return new JSONResponse(
+			['message' => $reason, 'refusal' => 'term-running', 'termEnds' => (string)($instance['endDateCurrent'] ?? '')],
+			Http::STATUS_CONFLICT
+		);
+	}//end refusalFor()
 
 	/**
 	 * The term instance the notice is given on: the case's statutory term, or the named instance.

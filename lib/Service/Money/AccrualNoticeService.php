@@ -104,7 +104,9 @@ class AccrualNoticeService {
 	 */
 	public function statutoryTermOf(string $caseId): ?array {
 		foreach ($this->termService->instancesForCase($caseId) as $instance) {
-			if (TermKind::ofInstance(instance: $instance) === TermKind::STATUTORY) {
+			// A kind outside the vocabulary reads as statutory, as TermKind::ofInstance() does.
+			$kind = (string)($instance['kind'] ?? '');
+			if ($kind === TermKind::STATUTORY || in_array($kind, TermKind::ALL, true) === false) {
 				return $instance;
 			}
 		}
