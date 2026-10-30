@@ -216,7 +216,7 @@ class PackageWriter {
 			];
 		}
 
-		$run['adopted'] = $this->withFillsPointedAtAdopted(adopted: $run['adopted'], ids: $run['ids']);
+		$run['adopted'] = $this->fills()->withFillsPointedAt(adopted: $run['adopted'], ids: $run['ids']);
 
 		return [
 			'status' => 'success',
@@ -349,7 +349,7 @@ class PackageWriter {
 		$fill = [];
 		if ($group['schemaKey'] === ExistingRowMatcher::CASE_TYPE_KEY) {
 			$run['caseTypes'][] = $existingId;
-			$fill = (new LackedFields())->of(shipped: $this->withoutMetadata(row: $row), stored: $existing);
+			$fill = $this->fills()->lackedBy(shipped: $this->withoutMetadata(row: $row), stored: $existing);
 		}
 
 		$run['adopted'][] = [
@@ -363,32 +363,6 @@ class PackageWriter {
 	}//end adopt()
 
 	/**
-	 * The adopted rows with their fills pointing at this instance's ids, and
-	 * each row as it will read once filled.
-	 *
-	 * A fill is taken when its case type is adopted, before the statuses and
-	 * roles after it are; it is pointed at their ids once the whole run is known.
-	 *
-	 * @param array<int, array<string, mixed>> $adopted The rows adopted this run.
-	 * @param array<string, string>            $ids     Package id to existing id.
-	 *
-	 * @return array<int, array<string, mixed>> The adopted rows.
-	 */
-	private function withFillsPointedAtAdopted(array $adopted, array $ids): array {
-		foreach ($adopted as $index => $entry) {
-			if (($entry['fill'] ?? []) === []) {
-				continue;
-			}
-
-			$fill = $this->pointedAtAdopted(row: $entry['fill'], ids: $ids);
-			$adopted[$index]['fill'] = $fill;
-			$adopted[$index]['row'] = array_merge($entry['row'], $fill);
-		}
-
-		return $adopted;
-	}//end withFillsPointedAtAdopted()
-
-	/**
 	 * Give each adopted case type the fields it lacked, never touching one it has.
 	 *
 	 * Called by the installer after the install has been recorded, so a failed
@@ -398,40 +372,20 @@ class PackageWriter {
 	 *
 	 * @return array<int, string> The ids of the rows that were filled.
 	 *
-	 * @spec {S}
+	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function fillAdopted(array $adopted): array {
-		$objectService = $this->settings->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$filled = [];
-		foreach ($adopted as $entry) {
-			if (($entry['fill'] ?? []) === []) {
-				continue;
-			}
-
-			try {
-				// An administrator's install; see holds() for why it passes the access check.
-				$objectService->saveObject(
-					$this->withoutMetadata(row: (array)$entry['row']),
-					register: (string)$entry['register'],
-					schema: (string)$entry['schema'],
-					uuid: (string)$entry['id'],
-					_rbac: false
-				);
-				$filled[] = (string)$entry['id'];
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Package install: adopted case type {id} kept without the fields it lacked: {error}',
-					['id' => $entry['id'], 'error' => $e->getMessage()]
-				);
-			}
-		}//end foreach
-
-		return $filled;
+		return $this->fills()->write(adopted: $adopted);
 	}//end fillAdopted()
+
+	/**
+	 * The fill collaborator.
+	 *
+	 * @return AdoptedCaseTypeFill
+	 */
+	private function fills(): AdoptedCaseTypeFill {
+		return new AdoptedCaseTypeFill(settings: $this->settings, logger: $this->logger);
+	}//end fills()
 
 	/**
 	 * The row with every package id that was adopted replaced by the id it has here.
@@ -447,24 +401,7 @@ class PackageWriter {
 	 * @return array<string, mixed> The row.
 	 */
 	private function pointedAtAdopted(array $row, array $ids): array {
-		if ($ids === []) {
-			return $row;
-		}
-
-		$own = ($row['id'] ?? null);
-		array_walk_recursive(
-			$row,
-			static function (mixed &$value) use ($ids): void {
-				if (is_string($value) === true) {
-					$value = strtr($value, $ids);
-				}
-			}
-		);
-		if ($own !== null) {
-			$row['id'] = $own;
-		}
-
-		return $row;
+		return $this->fills()->pointedAt(row: $row, ids: $ids);
 	}//end pointedAtAdopted()
 
 	/**

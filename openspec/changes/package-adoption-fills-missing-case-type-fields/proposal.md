@@ -8,7 +8,7 @@ Decision 273 (Ruben, 30 Oct 2026): adoption fills only the fields the stored row
 
 ## What changes
 
-- `PackageWriter` reports, for each adopted case type, the shipped fields the stored row lacks (`LackedFields`: no such key, or null). An empty string or an empty list is a value somebody set and stays.
+- `PackageWriter` reports, for each adopted case type, the shipped fields the stored row lacks (`AdoptedCaseTypeFill::lackedBy()`: no such key, or null). An empty string or an empty list is a value somebody set and stays.
 - The fill points at this instance's ids, like every other adopted reference.
 - `PackageInstaller` writes the fills after the install is recorded, so a failed install leaves an adopted row as it was. The ledger stamps the adopted row as it reads once filled.
 - Only case types are filled. Statuses, roles and other adopted rows stay as they are.

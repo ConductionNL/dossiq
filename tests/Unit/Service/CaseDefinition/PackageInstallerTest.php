@@ -327,6 +327,7 @@ final class PackageTestSchemaEntity {
  * @covers \OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageSchemaReferences
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageSettingRules
+ * @covers \OCA\Dossiq\Service\CaseDefinition\AdoptedCaseTypeFill
  * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageValidator
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageWriter
