@@ -78,6 +78,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'RealignStatutoryVocabulary' => 'repairs rows an earlier rename touched; a fresh install never acquires them',
 		'MigrateArchivalToOpenRegister' => 'one-way migration of existing archival rows',
 		'MoveDocumentsIntoCaseFolders' => 'moves existing document files into their case folders; a fresh install has none',
+		'RemoveDocumentRecordTwins' => 'removes second records of a file an earlier projection made; a fresh install has none',
 		'BackfillPortalParty' => 'fills portalParty on existing portal cases; a fresh install has none',
 		'NormaliseCommunicationChannelValues' => 'turns existing case channels into slugs; a fresh install has none',
 		'MapLegacyArchivalActions' => 'rewrites archival actions the retired admin editor stored; a fresh install has none',

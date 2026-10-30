@@ -306,8 +306,41 @@ class DocumentRecordStore {
 			return null;
 		}
 
+		if ($this->inSchema(row: $row, schema: $this->schema(key: $schemaKey)) === false) {
+			return null;
+		}
+
 		return $this->rowOf(value: $row);
 	}//end findRow()
+
+	/**
+	 * Whether a found row lives in the schema it was asked under.
+	 *
+	 * OpenRegister's find falls back to every schema of the register when the
+	 * uuid is not in the one named, so a document's uuid answers a case
+	 * lookup. A row whose `@self.schema` names another schema is refused; one
+	 * that does not say, or says it as an id where the configuration holds a
+	 * slug (or the other way round), is kept.
+	 *
+	 * @param array<string, mixed> $row The row as OpenRegister serialised it.
+	 * @param string $schema The configured schema, an id or a slug.
+	 *
+	 * @return bool False when the row names another schema.
+	 */
+	private function inSchema(array $row, string $schema): bool {
+		$found = ((array)($row['@self'] ?? []))['schema'] ?? null;
+		if (is_scalar($found) === false || trim((string)$found) === '') {
+			return true;
+		}
+
+		$found = strtolower(basename(trim((string)$found)));
+		$asked = strtolower(basename(trim($schema)));
+		if ($found === $asked) {
+			return true;
+		}
+
+		return ctype_digit($found) !== ctype_digit($asked);
+	}//end inSchema()
 
 	/**
 	 * A row's uuid, from `id`, `uuid` or `@self.id`.
