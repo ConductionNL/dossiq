@@ -261,7 +261,7 @@ test.describe('One personal queue', () => {
 			.toContain(`${RUN_PREFIX} handled the intake`)
 	})
 
-	// @e2e openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
+	// @e2e openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
 	test('A note recorded at the end of the day is still listed after a reload', async ({
 		page,
 	}) => {

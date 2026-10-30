@@ -645,7 +645,7 @@ export default {
 	 *
 	 * @param {Array<object>} value The case's outbound communications.
 	 * @return {string} The lines joined with "; ", or '' without messages.
-	 * @spec openspec/changes/receipt-confirmation-card-reads/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
+	 * @spec openspec/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
 	 */
 	outboundMessages: (value) => {
 		if (!Array.isArray(value)) {

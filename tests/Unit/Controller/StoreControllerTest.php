@@ -168,7 +168,7 @@ class StoreControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/store-publish-passthrough/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	public function testAnAnonymousCallerCannotPublish(): void {
 		$this->userSession->method('getUser')->willReturn(null);
@@ -185,7 +185,7 @@ class StoreControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/store-publish-passthrough/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	public function testPublishRefusesAUserWhoMayNotPublish(): void {
 		$this->signIn();
@@ -204,7 +204,7 @@ class StoreControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/store-publish-passthrough/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	public function testPublishIsPassedToTheEngine(): void {
 		$this->signIn();
@@ -226,7 +226,7 @@ class StoreControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/store-publish-passthrough/specs/dossiq-store-surface/spec.md
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
 	 */
 	public function testPublishWithoutAnItemIsABadRequest(): void {
 		$this->signIn();

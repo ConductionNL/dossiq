@@ -11,7 +11,7 @@ import path from 'node:path'
  * pill is not a tag and keeps its own shape: the duration picker's preset
  * buttons. (The timeline's filter chips are the library timeline's now.)
  *
- * @spec openspec/changes/dossiq-pills-library-tag/specs/dossiq-pills-library-tag/spec.md
+ * @spec openspec/specs/dossiq-pills-library-tag/spec.md
  */
 import { describe, expect, it } from 'vitest'
 

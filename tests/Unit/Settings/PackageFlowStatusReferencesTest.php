@@ -34,7 +34,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @coversNothing
  *
- * @spec openspec/changes/vth-package/tasks.md#task-3
+ * @spec openspec/changes/archive/2026-10-30-vth-package/tasks.md#task-3
  */
 class PackageFlowStatusReferencesTest extends TestCase {
 

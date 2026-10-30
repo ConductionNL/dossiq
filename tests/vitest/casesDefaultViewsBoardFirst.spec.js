@@ -8,7 +8,7 @@
  * those three first, every other default under "Meer standaardweergaven"
  * (`secondary`, nc-vue feat/r25-default-views-secondary). None is removed.
  *
- * @spec openspec/changes/default-views-board-first/specs/default-views-board-first/spec.md
+ * @spec openspec/specs/default-views-board-first/spec.md
  */
 
 import fs from 'fs'

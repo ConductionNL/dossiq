@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+ * @spec openspec/specs/admin-data-access/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -38,7 +38,7 @@ use OCP\EventDispatcher\IEventListener;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+ * @spec openspec/specs/admin-data-access/spec.md
  */
 class RolePermissionsInitialStateListener implements IEventListener {
 
@@ -68,7 +68,7 @@ class RolePermissionsInitialStateListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+	 * @spec openspec/specs/admin-data-access/spec.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof BeforeTemplateRenderedEvent === false
