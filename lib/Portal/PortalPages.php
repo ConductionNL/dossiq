@@ -356,8 +356,8 @@ class PortalPages {
 		];
 		// The messages as a plain list: a title and the day, no badge.
 		$blocks[] = ['type' => 'inbox', 'collection' => 'berichten', 'limit' => 3, 'label' => 'Nieuwe berichten', 'display' => 'list'];
-		// "Bezwaar maken" and "Klacht indienen" act on one case, so they
-		// stand on the case page (residentCaseBlocks), not here.
+		// "Bezwaar maken" and "Klacht indienen" act on one case, so portaliq
+		// lists them on the case page through their `onCase`, not here.
 
 		return $blocks;
 	}//end residentOverviewBlocks()
@@ -365,7 +365,8 @@ class PortalPages {
 	/**
 	 * The case page's blocks, in the order the design reads them: the question
 	 * on THIS case, where it stands, the facts, its documents, what happened,
-	 * a way to write, a bezwaar or a klacht about it, and the case screen.
+	 * a way to write, and the case screen, which lists the bezwaar and the
+	 * klacht placed on the case.
 	 *
 	 * @param array<int, array<string, mixed>> $collections The citizen collections.
 	 * @param array<int, array<string, mixed>> $actions     The citizen actions.
@@ -373,7 +374,7 @@ class PortalPages {
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
-	 * @spec openspec/changes/case-actions-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 */
 	private function residentCaseBlocks(array $collections, array $actions): array {
 		$blocks = [];
@@ -395,12 +396,11 @@ class PortalPages {
 		$blocks[] = ['type' => 'detail', 'collection' => 'mijnZaken', 'label' => 'Gegevens', 'timeline' => false];
 		$blocks[] = ['type' => 'documents', 'collection' => 'mijnZaken', 'label' => 'Stukken', 'upload' => true];
 		$blocks[] = ['type' => 'timeline', 'collection' => 'mijnZaken'];
-		// A way to write, and the two things a resident can start about THIS
-		// case: each lands the open case in the action's recordField.
-		foreach (['replyToMessage' => 'Bericht sturen', 'createBezwaar' => 'Bezwaar maken', 'createKlacht' => 'Klacht indienen'] as $action => $label) {
-			if ($this->declares(rows: $actions, id: $action) === true) {
-				$blocks[] = ['type' => 'cta', 'action' => $action, 'label' => $label, 'withRecord' => true];
-			}
+		// A way to write, landing the open case in the reply's recordField.
+		// The bezwaar and the klacht declare `onCase`, so portaliq lists them
+		// in the case screen below with their window.
+		if ($this->declares(rows: $actions, id: 'replyToMessage') === true) {
+			$blocks[] = ['type' => 'cta', 'action' => 'replyToMessage', 'label' => 'Bericht sturen', 'withRecord' => true];
 		}
 
 		// The case screen as the board's notice: the closed-window sentence,

@@ -97,6 +97,16 @@ class CitizenManifest {
 	public const ANSWER_FILES_MAX_BYTES = 10485760;
 
 	/**
+	 * The case field holding the day the case's decision was sent (CaseRemedy::SENT_FIELD).
+	 */
+	public const DECISION_SENT_FIELD = 'decisionSentOn';
+
+	/**
+	 * The days after the decision was sent that a bezwaar stays open (Awb 6:7).
+	 */
+	public const OBJECTION_WINDOW_DAYS = 42;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array<string, string> $caseTypes The case type uuid each case-opening action
@@ -832,6 +842,7 @@ class CitizenManifest {
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-dossiq-offers-its-start-points-to-the-signed-out-home-req-srpd-006
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/zaakportaal-mijngemeente/spec.md#requirement-bezwaar-objection-filing-within-legal-deadline
+	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 */
 	private function objectionAction(): ?array {
 		$caseType = trim((string)($this->caseTypes['createBezwaar'] ?? ''));
@@ -882,6 +893,16 @@ class CitizenManifest {
 					'required' => true,
 				],
 			],
+			// On the page of the case it objects to, open from the day after
+			// the decision went out through the six weeks; portaliq computes
+			// the window and fills in the case.
+			'onCase' => [
+				'crossRef' => 'contestedCase',
+				'order' => 10,
+				'window' => ['from' => self::DECISION_SENT_FIELD, 'days' => self::OBJECTION_WINDOW_DAYS],
+				'closedText' => 'De termijn voor bezwaar is voorbij. Neem contact met ons op als u toch bezwaar wilt maken.',
+			],
+			'successMessage' => 'Uw bezwaar is ontvangen.',
 		];
 	}//end objectionAction()
 
@@ -902,6 +923,7 @@ class CitizenManifest {
 	 *
 	 * @spec openspec/changes/case-actions-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/zaakportaal-mijngemeente/spec.md#requirement-klacht-complaint-filing-and-optional-subsidie-aanvragen
+	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 */
 	private function complaintAction(): ?array {
 		$caseType = trim((string)($this->caseTypes['createKlacht'] ?? ''));
@@ -951,6 +973,13 @@ class CitizenManifest {
 					'required' => false,
 				],
 			],
+			// On the page of the case it is about, after the bezwaar. The
+			// "Klacht indienen" page keeps the klacht about no case.
+			'onCase' => [
+				'crossRef' => 'contestedCase',
+				'order' => 20,
+			],
+			'successMessage' => 'Uw klacht is ontvangen.',
 		];
 	}//end complaintAction()
 

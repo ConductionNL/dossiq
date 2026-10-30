@@ -11969,6 +11969,8 @@
         "Invoice last month": "Invoice last month",
         "Last month's invoice is handed to the finance app.": "Last month's invoice is handed to the finance app.",
         "No invoice was made for last month. Every billing event of that month may already be invoiced.": "No invoice was made for last month. Every billing event of that month may already be invoiced.",
+        "Decision sent on": "Decision sent on",
+        "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand.": "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand.",
         "Account holder": "Account holder",
         "Choose a party or type a name": "Choose a party or type a name",
         "Definitive penalty: € {amount}": "Definitive penalty: € {amount}",

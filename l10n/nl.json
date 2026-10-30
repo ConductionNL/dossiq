@@ -11969,6 +11969,8 @@
         "Invoice last month": "Vorige maand factureren",
         "Last month's invoice is handed to the finance app.": "De factuur van vorige maand is doorgegeven aan de financiële app.",
         "No invoice was made for last month. Every billing event of that month may already be invoiced.": "Er is geen factuur gemaakt voor vorige maand. Misschien is elke gebeurtenis van die maand al gefactureerd.",
+        "Decision sent on": "Besluit verzonden op",
+        "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand.": "De dag waarop het laatste besluit in deze zaak is verzonden. Dossiq vult dit in als het besluit verstuurd wordt, niet met de hand.",
         "Account holder": "Rekeninghouder",
         "Choose a party or type a name": "Kies een betrokkene of typ een naam",
         "Definitive penalty: € {amount}": "Definitieve dwangsom: € {amount}",
