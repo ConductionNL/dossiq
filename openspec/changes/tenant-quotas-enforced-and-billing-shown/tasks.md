@@ -9,8 +9,8 @@
 
 ## 2. Billing card
 
-- [ ] 2.1 Tenant detail page in `src/manifest.d/67-environment-organisations.json`: a billing card over `GET /api/saas/tenants/@objectId/billing/{month}` (month picker, lines, total).
-- [ ] 2.2 Header action `tenant-billing-run` (`POST .../billing/{month}/run`), admin only; the run is idempotent per tenant and month (`tests/Unit/Service/TenantBillingServiceTest.php`).
+- [x] 2.1 Tenant detail page in `src/manifest.d/67-environment-organisations.json`: the billing card is the event list board DqTenant draws (Facturatie: date, event, amount), already on the page as `organisation-billing` and `organisation-billing-list`. The board draws no month picker or total, so none is added (decision 130).
+- [x] 2.2 Header action `tenant-billing-run` (`POST .../billing/previous/run`, under More), admin only; the run is idempotent per tenant and month (`tests/Unit/Service/TenantBillingServiceTest.php`), and a run that exports nothing answers 409 with the reason.
 
 ## 3. Checks
 

@@ -20,7 +20,7 @@ Creating a case, uploading a document and adding a user SHALL consume the tenant
 
 ### Requirement: An administrator sees and runs a tenant's monthly billing (REQ-TQ-BILL-01)
 
-The tenant detail page SHALL show the chosen month's usage lines and amount from the billing summary, and an administrator SHALL be able to run the month's billing, which hands the invoice to the finance app once per tenant and month.
+The tenant detail page SHALL list the tenant's billing events with their amounts, as board DqTenant draws the Facturatie card, and an administrator SHALL be able to invoice last month from the page's More menu. A run hands the invoice to the finance app once per tenant and month; a run with nothing left to invoice says so instead of reporting success.
 
 #### Scenario: Running billing twice makes one invoice
 

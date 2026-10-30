@@ -11876,7 +11876,10 @@ OC.L10N.register(
         "%s users": "%s gebruikers",
         "%s cases per month": "%s zaken per maand",
         "Your organisation is close to its limit of %s": "Uw organisatie nadert de limiet van %s",
-        "Used this period: %1$s of %2$s.": "Gebruikt in deze periode: %1$s van %2$s."
+        "Used this period: %1$s of %2$s.": "Gebruikt in deze periode: %1$s van %2$s.",
+        "Invoice last month": "Vorige maand factureren",
+        "Last month's invoice is handed to the finance app.": "De factuur van vorige maand is doorgegeven aan de financiële app.",
+        "No invoice was made for last month. Every billing event of that month may already be invoiced.": "Er is geen factuur gemaakt voor vorige maand. Misschien is elke gebeurtenis van die maand al gefactureerd."
     },
     "nplurals=2; plural=(n != 1);"
 )

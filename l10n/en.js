@@ -11876,7 +11876,10 @@ OC.L10N.register(
         "%s users": "%s users",
         "%s cases per month": "%s cases per month",
         "Your organisation is close to its limit of %s": "Your organisation is close to its limit of %s",
-        "Used this period: %1$s of %2$s.": "Used this period: %1$s of %2$s."
+        "Used this period: %1$s of %2$s.": "Used this period: %1$s of %2$s.",
+        "Invoice last month": "Invoice last month",
+        "Last month's invoice is handed to the finance app.": "Last month's invoice is handed to the finance app.",
+        "No invoice was made for last month. Every billing event of that month may already be invoiced.": "No invoice was made for last month. Every billing event of that month may already be invoiced."
     },
     "nplurals=2; plural=(n != 1);"
 )
