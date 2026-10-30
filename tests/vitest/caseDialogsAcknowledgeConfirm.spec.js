@@ -7,7 +7,7 @@
  * counts as met, and confirms with "Vastleggen" and a check, where it asked
  * "Weet je zeker dat je wilt doorgaan?" and confirmed with "Bevestigen".
  *
- * @spec openspec/changes/case-dialogs-board-titles/specs/case-dialogs/spec.md#requirement-a-case-dialog-is-titled-by-what-it-does
+ * @spec openspec/specs/case-dialogs/spec.md#requirement-a-case-dialog-is-titled-by-what-it-does
  */
 
 import { describe, expect, it } from 'vitest'

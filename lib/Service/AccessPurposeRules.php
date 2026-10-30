@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md
+ * @spec openspec/specs/case-access-purpose/spec.md
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use OCA\Dossiq\Service\People\CaseRoleHolder;
 /**
  * Reads the access-purpose rules.
  *
- * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md
+ * @spec openspec/specs/case-access-purpose/spec.md
  */
 class AccessPurposeRules {
 
@@ -62,7 +62,7 @@ class AccessPurposeRules {
 	 *
 	 * @return array{skipFor: array<int, string>, skipPurpose: string, assign: array<string, string>} The rules.
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md
+	 * @spec openspec/specs/case-access-purpose/spec.md
 	 */
 	public static function fromConfig(string $raw, array $purposes): array {
 		$own = json_decode($raw, true);

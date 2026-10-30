@@ -6,7 +6,7 @@
  * intro where a paragraph stood, "Naar een andere versie" with its current
  * version in a notice, and the board's field and button words. No field goes.
  *
- * @spec openspec/changes/case-dialogs-board-titles/specs/case-dialogs/spec.md#requirement-a-case-dialog-is-titled-by-what-it-does
+ * @spec openspec/specs/case-dialogs/spec.md#requirement-a-case-dialog-is-titled-by-what-it-does
  */
 
 import fs from 'fs'

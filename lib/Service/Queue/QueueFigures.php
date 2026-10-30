@@ -62,7 +62,7 @@ class QueueFigures {
 	 *
 	 * @return array<string, mixed> The queue figures.
 	 *
-	 * @spec openspec/changes/queue-figures-per-user-teams/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-the-team-queue-is-the-unassigned-open-cases-of-the-readers-teams
 	 */
 	public function foldFor(string $userId, array $openCases, DateTimeImmutable $today, array $typeTitles): array {
 		if ($this->teamCases !== null) {
@@ -182,7 +182,7 @@ class QueueFigures {
 	 *
 	 * @return array<string, mixed> The figures.
 	 *
-	 * @spec openspec/changes/queue-oldest-case-note/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	private function noteOldest(array $figures, array $case, DateTimeImmutable $today, array $typeTitles): array {
 		$type = (string)($case['caseType'] ?? '');

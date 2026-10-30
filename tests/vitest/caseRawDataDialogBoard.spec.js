@@ -7,7 +7,7 @@
  * line on who it is for and that opening it is logged, and Annuleren beside
  * Kopiëren, which puts the JSON on the clipboard.
  *
- * @spec openspec/changes/case-dialogs-raw-data-board/specs/case-dialogs/spec.md
+ * @spec openspec/specs/case-dialogs/spec.md
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

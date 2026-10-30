@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/queue-oldest-case-note/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCP\IL10N;
 /**
  * Words the oldest waiting case for the "Waiting longest" tile.
  *
- * @spec openspec/changes/queue-oldest-case-note/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 class QueueOldestNote {
 	/**
@@ -53,7 +53,7 @@ class QueueOldestNote {
 	 *
 	 * @return string The line.
 	 *
-	 * @spec openspec/changes/queue-oldest-case-note/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function line(string $type, ?int $dueDays): string {
 		if ($type === '' || $dueDays === null) {

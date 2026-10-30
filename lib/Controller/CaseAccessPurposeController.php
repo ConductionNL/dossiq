@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-purpose/specs/case-access-purpose/spec.md
+ * @spec openspec/specs/case-access-purpose/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use OCP\IUserSession;
 /**
  * Records the purpose of opening a sensitive case.
  *
- * @spec openspec/changes/case-access-purpose/specs/case-access-purpose/spec.md
+ * @spec openspec/specs/case-access-purpose/spec.md
  */
 class CaseAccessPurposeController extends Controller {
 	/**
@@ -70,7 +70,7 @@ class CaseAccessPurposeController extends Controller {
 	 *
 	 * @return JSONResponse 201 recorded, 200 when the case asks no purpose, else the refusal.
 	 *
-	 * @spec openspec/changes/case-access-purpose/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
 	 */
 	#[NoAdminRequired]
 	public function record(string $id): JSONResponse {
@@ -110,7 +110,7 @@ class CaseAccessPurposeController extends Controller {
 	 *
 	 * @return JSONResponse `{ required, recorded }`, or the refusal.
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
 	 */
 	#[NoAdminRequired]
 	public function check(string $id): JSONResponse {

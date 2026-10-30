@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md
+ * @spec openspec/specs/case-access-purpose/spec.md
  */
 
 declare(strict_types=1);

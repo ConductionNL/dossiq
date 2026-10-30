@@ -6,7 +6,7 @@
  * ("De velden van de zaak. Status en termijn wijzigt u via Volgende stap."),
  * Behandelaar right after Zaaktype, and the requester asked as Verzoeker.
  *
- * @spec openspec/changes/case-dialogs-edit-form-board/specs/case-dialogs/spec.md
+ * @spec openspec/specs/case-dialogs/spec.md
  */
 
 import { describe, expect, it } from 'vitest'

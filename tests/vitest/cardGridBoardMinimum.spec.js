@@ -6,7 +6,7 @@
  * width. Dossiq sets the library's card track minimum for its lists in the
  * board look only; the fleet default stays.
  *
- * @spec openspec/changes/cases-card-grid-board/specs/case-search-and-lists/spec.md#requirement-the-case-cards-fit-three-beside-the-side-panel
+ * @spec openspec/specs/case-search-and-lists/spec.md#requirement-the-case-cards-fit-three-beside-the-side-panel
  */
 import { readFileSync } from 'node:fs'
 import path from 'node:path'

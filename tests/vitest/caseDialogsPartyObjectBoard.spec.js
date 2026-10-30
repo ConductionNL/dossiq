@@ -7,7 +7,7 @@
  * and "Zaakobject aanmaken"), confirm with the board's verb, ask their fields
  * in the board's order and carry no data-model hints.
  *
- * @spec openspec/changes/case-dialogs-board-titles/specs/case-dialogs/spec.md#requirement-a-case-dialog-is-titled-by-what-it-does
+ * @spec openspec/specs/case-dialogs/spec.md#requirement-a-case-dialog-is-titled-by-what-it-does
  */
 
 import { describe, expect, it } from 'vitest'

@@ -181,7 +181,7 @@ final class TimelineKinds {
 	 * The board's history chip "Documenten". One kind for every document act,
 	 * as the AVG kind is one for its acts: `act` says which it was.
 	 * @var string
-	 * @spec openspec/changes/timeline-kinds-for-the-history-chips/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public const DOCUMENT = 'document';
 
@@ -191,21 +191,21 @@ final class TimelineKinds {
 	 * mail and portal writers keep their own kinds, which carry a follow-up
 	 * where every entry needs an answer; this kind never does.
 	 * @var string
-	 * @spec openspec/changes/timeline-kinds-for-the-history-chips/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public const MESSAGE = 'bericht';
 
 	/**
 	 * A task on the case created, finished or handed on. The board's chip "Taken".
 	 * @var string
-	 * @spec openspec/changes/timeline-kinds-for-the-history-chips/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public const TASK = 'taak';
 
 	/**
 	 * The case picked up, handed over or put with a team. The board's chip "Toewijzing".
 	 * @var string
-	 * @spec openspec/changes/timeline-kinds-for-the-history-chips/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public const ASSIGNMENT = 'toewijzing';
 

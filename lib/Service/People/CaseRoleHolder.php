@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md
+ * @spec openspec/specs/case-access-purpose/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
 /**
  * Reads and adds generic-role bindings of a person on a case.
  *
- * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md
+ * @spec openspec/specs/case-access-purpose/spec.md
  */
 class CaseRoleHolder {
 
@@ -58,7 +58,7 @@ class CaseRoleHolder {
 	 * @param LoggerInterface  $logger          Says why a role could not be read or added.
 	 * @param IUserManager|null $userManager    Names a person bound without a display name.
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md
+	 * @spec openspec/specs/case-access-purpose/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -78,7 +78,7 @@ class CaseRoleHolder {
 	 *
 	 * @throws RuntimeException When the role bindings cannot be read.
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
 	 */
 	public function holdsAny(array $case, string $uid, array $genericRoles): bool {
 		$uid = trim($uid);
@@ -120,7 +120,7 @@ class CaseRoleHolder {
 	 *
 	 * @throws RuntimeException When the role types or bindings cannot be read.
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
 	 */
 	public function bind(array $case, string $uid, string $genericRole, string $displayName): bool {
 		$caseId = $this->idOf(row: $case);

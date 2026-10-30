@@ -12,7 +12,7 @@ import WorkloadSummaryBar from './WorkloadSummaryBar.vue'
 /**
  * The team workload's title and hint, under My Work's header (board DqAanMijToegewezen).
  *
- * @spec openspec/changes/my-work-team-chips-in-toolbar/specs/werkvoorraad-intelligent-queue/spec.md#requirement-assigned-to-me-draws-the-teams-name-chips-on-the-toolbar-row
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-assigned-to-me-draws-the-teams-name-chips-on-the-toolbar-row
  */
 export default {
 	name: 'WorkloadTeamHeading',

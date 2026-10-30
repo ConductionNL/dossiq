@@ -222,7 +222,7 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/case-dialogs-contact-selects/specs/case-dialogs/spec.md#requirement-contact-vastleggen-asks-channel-and-direction-as-two-selects */
+		/** @spec openspec/specs/case-dialogs/spec.md#requirement-contact-vastleggen-asks-channel-and-direction-as-two-selects */
 		directions() {
 			return [
 				{ value: 'inbound', label: t('dossiq', 'Inbound') },

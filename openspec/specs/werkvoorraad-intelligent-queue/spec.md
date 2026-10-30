@@ -115,8 +115,9 @@ can render it from the ranked answer. Unauthenticated callers MUST receive 401.
 ### Requirement: Coordinator Workload Endpoint [MVP]
 
 The system MUST expose `GET /api/work-queue/workload`, returning per-handler
-open-case counts across all cases, gated to the coordinator role (Nextcloud
-admin group membership, mirroring the existing coordinator model in
+open-case counts for the members of the reader's teams, a member without
+open cases listed with 0 (every handler for a reader in no team), gated to the coordinator role
+(Nextcloud admin group membership, mirroring the existing coordinator model in
 `SubstitutionController`). Non-coordinators MUST receive 403; unauthenticated
 callers MUST receive 401.
 
@@ -127,6 +128,13 @@ case data; not assertable without seeded fixtures.
 - GIVEN an admin-group user, and open cases distributed across 3 handlers
 - WHEN the admin calls `GET /api/work-queue/workload`
 - THEN the response MUST list each handler with their open-case count
+
+#### Scenario: Only the people of the reader's teams are listed
+- GIVEN a coordinator in team A, handlers Anouk (in team A) and Beheerder (not in team A), each with open cases
+- WHEN the coordinator calls `GET /api/work-queue/workload`
+- THEN the response MUST list Anouk with all her open cases
+- AND it MUST NOT list Beheerder
+- AND a team-A member without open cases MUST be listed with 0
 
 #### Scenario: Non-coordinator is denied
 - GIVEN an authenticated non-admin user
@@ -294,3 +302,40 @@ MUST be capped at 60. Tasks MUST have no idle part.
 - GIVEN a case with no `@self.updated`, no journal and a `startDate` 12 days ago
 - WHEN it is scored
 - THEN its idle days MUST be 12
+
+### Requirement: The waiting-longest tile names the oldest case's type and deadline
+
+The KPI answer SHALL carry `queueOldestNote`: the type of the case without a handler that has waited longest and the
+days to its deadline ("Woo-verzoek, termijn over 4 dagen"; "termijn vandaag"; "N dagen te laat" once passed), and "de
+oudste zaak in de wachtrij" when that case has no type or no deadline. The team queue's "Wacht het langst" tile SHALL
+show it as its caption in the error tone.
+
+#### Scenario: DqTeamwachtrij
+
+- GIVEN the oldest unassigned case is a Woo-verzoek waiting 6 days with its deadline in 4 days
+- THEN the tile reads "6 dagen" over "Woo-verzoek, termijn over 4 dagen" in red
+
+### Requirement: Assigned to me draws the team's name chips on the toolbar row
+
+For a coordinator, the Assigned to me view SHALL draw the team workload's title and hint under the page header and the
+name chips (the reader's own first, each with its open-case count) at the start of the toolbar row, before Filter and the
+view switch. The covering filter SHALL show only as a chip on the Active line, not as a tab. The workload SHALL be read
+once for both parts. A reader the workload endpoint refuses SHALL see neither part.
+
+#### Scenario: DqAanMijToegewezen
+
+- GIVEN Pieter, a coordinator with 7 open cases, opens Assigned to me
+- THEN the toolbar row reads "Pieter Jansen (u) 7, Anouk Bakker 9, ..., Filter, view switch"
+- AND the Active line reads "Actief: [Inclusief werk waarvoor u waarneemt ×] Alles wissen"
+
+### Requirement: The team queue is the unassigned open cases of the reader's teams
+
+The team queue's list, its "Zonder behandelaar" tile and its menu badge SHALL count the same cases: open cases without
+a handler whose team is one of the reader's teams. A reader's teams SHALL be the organisation roles that bind one of the
+reader's groups and are no ancestor of another such role; the admin group SHALL never be a team. For a reader in no
+team all three SHALL count without a team filter.
+
+#### Scenario: DqTeamwachtrij
+
+- GIVEN Pieter in the groups admin, zuiddrecht-medewerkers, zuiddrecht-woo-en-informatie and zuiddrecht-vergunningen
+- THEN his teams are Woo en informatie and Vergunningen, and the tile, the list total and the badge read the same number

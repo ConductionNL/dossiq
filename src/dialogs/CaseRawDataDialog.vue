@@ -148,7 +148,7 @@ export default {
 		 * Put the JSON on the clipboard, and say so.
 		 *
 		 * @return {Promise<void>} Nothing.
-		 * @spec openspec/changes/case-dialogs-raw-data-board/specs/case-dialogs/spec.md#requirement-ruwe-gegevens-copies-the-stored-case-and-says-who-it-is-for
+		 * @spec openspec/specs/case-dialogs/spec.md#requirement-ruwe-gegevens-copies-the-stored-case-and-says-who-it-is-for
 		 */
 		async copy() {
 			this.copied = false

@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-purpose/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
+ * @spec openspec/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
  */
 
 declare(strict_types=1);
@@ -119,7 +119,7 @@ class CaseAccessPurposeControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/access-purpose-handler/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
 	 */
 	public function testTheCheckAnswersForTheReader(): void {
 		$service = $this->createMock(CaseAccessPurposeService::class);
