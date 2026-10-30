@@ -23,7 +23,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/example-set-decided-terms/specs/example-set-decided-terms/spec.md#requirement-the-example-set-decides-terms-in-the-current-quarter
+ * @spec openspec/specs/example-set-decided-terms/spec.md#requirement-the-example-set-decides-terms-in-the-current-quarter
  */
 
 declare(strict_types=1);

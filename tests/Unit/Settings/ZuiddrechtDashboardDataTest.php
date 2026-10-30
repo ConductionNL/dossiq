@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-dashboard-data/specs/example-set-dashboard-data/spec.md
+ * @spec openspec/specs/example-set-dashboard-data/spec.md
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * DqMijnWerk "Vandaag eerst", DqAanMijToegewezen and DqPostvak have something to draw.
  *
- * @spec openspec/changes/example-set-dashboard-data/specs/example-set-dashboard-data/spec.md
+ * @spec openspec/specs/example-set-dashboard-data/spec.md
  */
 class ZuiddrechtDashboardDataTest extends TestCase {
 
@@ -83,7 +83,7 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-set-dashboard-data/specs/example-set-dashboard-data/spec.md#requirement-pieter-has-a-case-whose-term-ends-today
+	 * @spec openspec/specs/example-set-dashboard-data/spec.md#requirement-pieter-has-a-case-whose-term-ends-today
 	 */
 	public function testPieterHasACaseWhoseTermEndsToday(): void {
 		$case = $this->objectsOf(schema: 'case')['woo-parkeervergunningen-binnenstad']['data'];
@@ -141,7 +141,7 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-set-dashboard-data/specs/example-set-dashboard-data/spec.md#requirement-pieter-covers-for-a-colleague
+	 * @spec openspec/specs/example-set-dashboard-data/spec.md#requirement-pieter-covers-for-a-colleague
 	 */
 	public function testPieterCoversForAColleague(): void {
 		$substitutions = $this->objectsOf(schema: 'substitution');
@@ -168,7 +168,7 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-set-dashboard-data/specs/example-set-dashboard-data/spec.md#requirement-the-inbox-holds-unrouted-messages
+	 * @spec openspec/specs/example-set-dashboard-data/spec.md#requirement-the-inbox-holds-unrouted-messages
 	 */
 	public function testTheInboxHoldsSeventeenUnroutedMessages(): void {
 		$messages = $this->objectsOf(schema: 'mailIntakeEntry');
@@ -206,7 +206,7 @@ class ZuiddrechtDashboardDataTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-set-dashboard-data/specs/example-set-dashboard-data/spec.md#requirement-pieter-has-worked-today
+	 * @spec openspec/specs/example-set-dashboard-data/spec.md#requirement-pieter-has-worked-today
 	 */
 	public function testPieterHasWorkedToday(): void {
 		$set   = $this->set();

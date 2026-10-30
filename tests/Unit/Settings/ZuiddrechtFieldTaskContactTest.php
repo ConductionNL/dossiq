@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-field-task-contact/specs/example-set-field-task-contact/spec.md#requirement-the-example-data-carries-what-the-inspection-task-and-contact-boards-draw
+ * @spec openspec/specs/example-set-field-task-contact/spec.md#requirement-the-example-data-carries-what-the-inspection-task-and-contact-boards-draw
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Inspections today, a task with its checklist, a conversation over channels.
  *
- * @spec openspec/changes/example-set-field-task-contact/specs/example-set-field-task-contact/spec.md#requirement-the-example-data-carries-what-the-inspection-task-and-contact-boards-draw
+ * @spec openspec/specs/example-set-field-task-contact/spec.md#requirement-the-example-data-carries-what-the-inspection-task-and-contact-boards-draw
  */
 class ZuiddrechtFieldTaskContactTest extends TestCase {
 
