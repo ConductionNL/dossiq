@@ -183,7 +183,14 @@ class QuotaGate {
 	 * @return void
 	 */
 	private function notifyAdmins(string $tenantId, string $quotaType, int $used, int $limit): void {
-		foreach ($this->adminsOf(tenantId: $tenantId) as $userId) {
+		try {
+			$admins = $this->adminsOf(tenantId: $tenantId);
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: tenant administrators lookup failed, no soft quota notice sent', ['exception' => $e->getMessage()]);
+			return;
+		}
+
+		foreach ($admins as $userId) {
 			try {
 				$notification = $this->notifications->createNotification();
 				$notification->setApp(Application::APP_ID)
@@ -217,21 +224,16 @@ class QuotaGate {
 			return [];
 		}
 
-		try {
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => Application::REGISTER_SLUG,
-						'schema' => 'tenantUser',
-						'tenantRef' => $tenantId,
-						'role' => self::ADMIN_ROLE,
-					],
-				]
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: tenant administrators lookup failed', ['exception' => $e->getMessage()]);
-			return [];
-		}
+		$rows = $objectService->findAll(
+			[
+				'filters' => [
+					'register' => Application::REGISTER_SLUG,
+					'schema' => 'tenantUser',
+					'tenantRef' => $tenantId,
+					'role' => self::ADMIN_ROLE,
+				],
+			]
+		);
 
 		$admins = [];
 		foreach ((array)$rows as $row) {
