@@ -9,8 +9,8 @@
 				"case": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
 				"kind": "statutory",
 				"startDate": "{{datetime:-16 11:20}}",
-				"endDateCalculated": "{{date:1}}",
-				"endDateCurrent": "{{date:1}}",
+				"endDateCalculated": "{{date:0}}",
+				"endDateCurrent": "{{date:0}}",
 				"status": "lopend"
 			}
 		},
