@@ -879,6 +879,20 @@
                         "description": "The hash of the Nextcloud Forms form that opens a case of this type. Leave it empty and nothing listens. A submission of a bound form starts the case with this type’s first status and the clock running from the day it came in.",
                         "visible": true
                     },
+                    "portalIntake": {
+                        "type": "object",
+                        "title": "Intake of a received case",
+                        "description": "What dossiq does to a case of this type when it is received, whichever path wrote it: answersAt names the case field holding the answers as sent, origin is written there when they name none, copy fills an answer from the case field it landed on, party names the requester's party, properties fills the case's properties from answers named as this type's property definitions, and dossierAnswer names the answer that links the case to the resident's dossier. Empty does nothing.",
+                        "visible": false,
+                        "properties": {
+                            "answersAt": {"type": "string", "title": "Answers kept at"},
+                            "origin": {"type": "string", "title": "Origin"},
+                            "copy": {"type": "object", "title": "Answers copied from case fields", "additionalProperties": {"type": "string"}},
+                            "party": {"type": "boolean", "title": "Name the requester's party"},
+                            "properties": {"type": "boolean", "title": "Fill the property definitions"},
+                            "dossierAnswer": {"type": "string", "title": "Answer naming the dossier"}
+                        }
+                    },
                     "intakeFormMapping": {
                         "type": "object",
                         "title": "Intake form mapping",

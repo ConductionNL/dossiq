@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
+use OCA\Dossiq\Woo\WooRequestIntake;
 
 /**
  * The resident's collections and actions, as declared data.
@@ -129,6 +130,22 @@ class CitizenManifest {
 	 * What a Woo request asks, in the order the steps ask it. `collectionId`
 	 * is not here: only the dossier variant carries it, and it is hidden.
 	 */
+	/**
+	 * Where each Woo answer lands on the case: the subject and the question
+	 * are the case's title and description, the rest is the request as sent.
+	 */
+	private const WOO_FIELD_MAP = [
+		'onderwerp' => 'title',
+		'omschrijving' => 'description',
+		'periodeVan' => 'wooRequest.periodeVan',
+		'periodeTot' => 'wooRequest.periodeTot',
+		'documentSoorten' => 'wooRequest.documentSoorten',
+		'toelichting' => 'wooRequest.toelichting',
+		'verzoekerNaam' => 'wooRequest.verzoekerNaam',
+		'verzoekerEmail' => 'wooRequest.verzoekerEmail',
+		'verzoekerType' => 'wooRequest.verzoekerType',
+	];
+
 	private const WOO_FIELDS = [
 		'onderwerp',
 		'omschrijving',
@@ -589,8 +606,18 @@ class CitizenManifest {
 			// page instead.
 			'summary' => 'Vraag documenten van de gemeente op. Dit kan dankzij de Wet open overheid (Woo).',
 			'audiences' => ['citizen', 'client'],
-			'endpoint' => '/index.php/apps/dossiq/api/portal/woo-verzoek',
-			'method' => 'POST',
+			// A plain create, so the half-filled request is a draft of the case
+			// itself (decision 180, Ruben's a1). What the endpoint did on top of
+			// the write is the case type's own intake now (`portalIntake` on
+			// the Woo case type, CaseTypeIntakeListener), and the answers land
+			// where the case keeps them through `fieldMap` (portaliq
+			// create-action-field-map).
+			'type' => 'create',
+			'register' => PortalContributionProvider::REGISTER,
+			'schema' => 'case',
+			'scopeField' => 'portalSubject',
+			'defaults' => ['caseType' => WooRequestIntake::CASE_TYPE_ID, 'intakeChannel' => 'website'],
+			'fieldMap' => self::WOO_FIELD_MAP,
 			'minTrust' => 'low',
 			'fields' => self::WOO_FIELDS,
 			'requiredFields' => ['onderwerp'],
